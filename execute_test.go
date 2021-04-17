@@ -2,6 +2,7 @@ package command
 
 import (
 	"fmt"
+	"sort"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -346,6 +347,58 @@ func TestExecute(t *testing.T) {
 			wantErr:    fmt.Errorf("Unprocessed extra args: [6]"),
 			wantStderr: []string{"Unprocessed extra args: [6]"},
 		},
+		// Executor tests.
+		{
+			name: "executes with proper data",
+			node: SerialNodes(IntListNode("il", 2, 0), StringNode("s"), FloatListNode("fl", 1, 2), ExecutorNode(func(o Output, d *Data) error {
+				var keys []string
+				for k := range d.Values {
+					keys = append(keys, k)
+				}
+				sort.Strings(keys)
+				for _, k := range keys {
+					o.Stdout("%s: %s", k, d.Values[k].Str())
+				}
+				return nil
+			})),
+			args: []string{"0", "1", "two", "0.3", "-4"},
+			wantInput: &Input{
+				args: []string{"0", "1", "two", "0.3", "-4"},
+				pos:  5,
+			},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"il": IntListValue(0, 1),
+					"s":  StringValue("two"),
+					"fl": FloatListValue(0.3, -4),
+				},
+			},
+			wantStdout: []string{
+				"fl: 0.30, -4.00",
+				"il: 0, 1",
+				"s: two",
+			},
+		},
+		{
+			name: "executor error is returned",
+			node: SerialNodes(IntListNode("il", 2, 0), StringNode("s"), FloatListNode("fl", 1, 2), ExecutorNode(func(o Output, d *Data) error {
+				return o.Stderr("bad news bears")
+			})),
+			args: []string{"0", "1", "two", "0.3", "-4"},
+			wantInput: &Input{
+				args: []string{"0", "1", "two", "0.3", "-4"},
+				pos:  5,
+			},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"il": IntListValue(0, 1),
+					"s":  StringValue("two"),
+					"fl": FloatListValue(0.3, -4),
+				},
+			},
+			wantStderr: []string{"bad news bears"},
+			wantErr:    fmt.Errorf("bad news bears"),
+		},
 		/* Useful for commenting out tests. */
 	} {
 		t.Run(test.name, func(t *testing.T) {
@@ -371,7 +424,7 @@ func TestExecute(t *testing.T) {
 			if eData == nil {
 				eData = &ExecuteData{}
 			}
-			if diff := cmp.Diff(we, eData); diff != "" {
+			if diff := cmp.Diff(we, eData, cmpopts.IgnoreFields(ExecuteData{}, "Executor")); diff != "" {
 				t.Errorf("execute(%v) returned unexpected ExecuteData (-want, +got):\n%s", test.args, diff)
 			}
 

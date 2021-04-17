@@ -15,20 +15,36 @@ func SimpleEdge(n *Node) Edge {
 }
 
 // SerialNodes returns a graph that iterates serially over the provided processors.
-func SerialNodes(ps ...Processor) *Node {
-	if len(ps) == 0 {
-		return nil
+func SerialNodes(p Processor, ps ...Processor) *Node {
+	root := &Node{
+		Processor: p,
 	}
-
-	n := &Node{
-		Processor: ps[len(ps)-1],
-	}
-	for j := len(ps) - 2; j >= 0; j-- {
+	n := root
+	for _, newP := range ps {
 		newN := &Node{
-			Processor: ps[j],
-			Edge:      SimpleEdge(n),
+			Processor: newP,
 		}
+		n.Edge = SimpleEdge(newN)
 		n = newN
 	}
-	return n
+	return root
+}
+
+type executor struct {
+	executor func(Output, *Data) error
+}
+
+func (e *executor) Execute(_ *Input, _ Output, _ *Data, eData *ExecuteData) error {
+	eData.Executor = e.executor
+	return nil
+}
+
+func (e *executor) Complete(*Input, Output, *Data, *CompleteData) error {
+	return nil
+}
+
+func ExecutorNode(f func(Output, *Data) error) Processor {
+	return &executor{
+		executor: f,
+	}
 }
