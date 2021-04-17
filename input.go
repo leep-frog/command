@@ -1,9 +1,40 @@
 package command
 
-type InputArgs struct {
+type Input struct {
 	args      []string
 	pos       int
 	delimiter *rune
+}
+
+const (
+	UnboundedList = -1
+)
+
+func (i *Input) FullyProcessed() bool {
+	return i.pos >= len(i.args)
+}
+
+func (i *Input) Remaining() []string {
+	return i.args[i.pos:]
+}
+
+func (i *Input) Pop() (string, bool) {
+	sl, ok := i.PopN(1, 0)
+	if !ok {
+		return "", false
+	}
+	return sl[0], true
+}
+
+func (i *Input) PopN(n, optN int) ([]string, bool) {
+	remaining := len(i.args) - i.pos
+	shift := n + optN
+	if optN == UnboundedList || shift+i.pos > len(i.args) {
+		shift = remaining
+	}
+	ret := i.args[i.pos:(i.pos + shift)]
+	i.pos += shift
+	return ret, len(ret) >= n
 }
 
 var (
@@ -18,9 +49,9 @@ var (
 // absolutely no parsing required by the CLI side of it.
 // TODO: make this a state machine via interfaces.
 // ParseArgs parses raw, unsplit text.
-func ParseArgs(unparsedArgs []string) *InputArgs {
+func ParseArgs(unparsedArgs []string) *Input {
 	if len(unparsedArgs) == 0 {
-		return &InputArgs{}
+		return &Input{}
 	}
 
 	// Ignore if the last charater is just a quote
@@ -89,7 +120,7 @@ func ParseArgs(unparsedArgs []string) *InputArgs {
 		delimiter = currentQuote
 	}
 
-	return &InputArgs{
+	return &Input{
 		args:      parsedArgs,
 		delimiter: delimiter,
 	}

@@ -11,8 +11,8 @@ import (
 type Output interface {
 	// Writes a line to stdout.
 	Stdout(string, ...interface{})
-	// Writes a line to stderr.
-	Stderr(string, ...interface{})
+	// Writes a line to stderr and returns an error with the same message.
+	Stderr(string, ...interface{}) error
 	// Close informs the os that no more data will be written.
 	Close()
 }
@@ -27,8 +27,10 @@ func (o *output) Stdout(s string, a ...interface{}) {
 	o.stdoutChan <- fmt.Sprintf(s, a...)
 }
 
-func (o *output) Stderr(s string, a ...interface{}) {
-	o.stderrChan <- fmt.Sprintf(s, a...)
+func (o *output) Stderr(s string, a ...interface{}) error {
+	err := fmt.Errorf(s, a...)
+	o.stderrChan <- err.Error()
+	return err
 }
 
 func (o *output) Close() {
@@ -100,8 +102,8 @@ func (fo *FakeOutput) Stdout(s string, a ...interface{}) {
 	fo.c.Stdout(s, a...)
 }
 
-func (fo *FakeOutput) Stderr(s string, a ...interface{}) {
-	fo.c.Stderr(s, a...)
+func (fo *FakeOutput) Stderr(s string, a ...interface{}) error {
+	return fo.c.Stderr(s, a...)
 }
 
 func (fo *FakeOutput) Close() {
