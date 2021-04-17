@@ -5,8 +5,8 @@ import (
 )
 
 type argNode struct {
-	name string
-	//opt       *ArgOpt
+	name      string
+	opt       *ArgOpt
 	minN      int
 	optionalN int
 	transform func([]string) (*Value, error)
@@ -26,21 +26,17 @@ func (an *argNode) Execute(i *Input, o Output, data *Data, eData *ExecuteData) e
 	}
 
 	// Run custom transformer.
-	// TODO
-	/*if lan.opt != nil && lan.opt.Transformer != nil {
-		if !v.IsType(lan.opt.Transformer.ValueType()) {
-			err := fmt.Errorf("Transformer of type %v cannot be applied to a value with type %v", lan.opt.Transformer.ValueType(), v.Type())
-			ws.Cos.Stderr(err.Error())
-			return nil, err
+	if an.opt != nil && an.opt.Transformer != nil {
+		if !v.IsType(an.opt.Transformer.ValueType()) {
+			return o.Stderr("Transformer of type %v cannot be applied to a value with type %v", an.opt.Transformer.ValueType(), v.Type())
 		}
 
-		newV, err := lan.opt.Transformer.Transform(v)
+		newV, err := an.opt.Transformer.Transform(v)
 		if err != nil {
-			ws.Cos.Stderr("Custom transformer failed: %v", err)
-			return nil, err
+			return o.Stderr("Custom transformer failed: %v", err)
 		}
 		v = newV
-	}*/
+	}
 
 	v.provided = len(sl) > 0
 
@@ -62,13 +58,13 @@ func (an *argNode) Complete(input *Input, output Output, data *Data, cData *Comp
 	return nil
 }
 
-func StringListNode(name string, minN, optionalN int) Processor {
+func StringListNode(name string, minN, optionalN int, opt *ArgOpt) Processor {
 	t := func(s []string) (*Value, error) { return StringListValue(s...), nil }
-	return listNode(name, minN, optionalN, StringListType, t)
+	return listNode(name, minN, optionalN, StringListType, t, opt)
 }
 
-func IntListNode(name string, minN, optionalN int) Processor {
-	return listNode(name, minN, optionalN, IntListType, intListTransform)
+func IntListNode(name string, minN, optionalN int, opt *ArgOpt) Processor {
+	return listNode(name, minN, optionalN, IntListType, intListTransform, opt)
 }
 
 func intListTransform(sl []string) (*Value, error) {
@@ -86,8 +82,8 @@ func intListTransform(sl []string) (*Value, error) {
 	return IntListValue(is...), err
 }
 
-func FloatListNode(name string, minN, optionalN int) Processor {
-	return listNode(name, minN, optionalN, FloatListType, floatListTransform)
+func FloatListNode(name string, minN, optionalN int, opt *ArgOpt) Processor {
+	return listNode(name, minN, optionalN, FloatListType, floatListTransform, opt)
 }
 
 func floatListTransform(sl []string) (*Value, error) {
@@ -103,8 +99,12 @@ func floatListTransform(sl []string) (*Value, error) {
 	return FloatListValue(fs...), err
 }
 
-func StringNode(name string) Processor {
-	return listNode(name, 1, 0, StringType, stringTransform)
+func StringNode(name string, opt *ArgOpt) Processor {
+	return listNode(name, 1, 0, StringType, stringTransform, opt)
+}
+
+func OptionalStringNode(name string, opt *ArgOpt) Processor {
+	return listNode(name, 0, 1, StringType, stringTransform, opt)
 }
 
 func stringTransform(sl []string) (*Value, error) {
@@ -114,8 +114,12 @@ func stringTransform(sl []string) (*Value, error) {
 	return StringValue(sl[0]), nil
 }
 
-func IntNode(name string) Processor {
-	return listNode(name, 1, 0, IntType, intTransform)
+func IntNode(name string, opt *ArgOpt) Processor {
+	return listNode(name, 1, 0, IntType, intTransform, opt)
+}
+
+func OptionalIntNode(name string, opt *ArgOpt) Processor {
+	return listNode(name, 0, 1, IntType, intTransform, opt)
 }
 
 func intTransform(sl []string) (*Value, error) {
@@ -126,8 +130,12 @@ func intTransform(sl []string) (*Value, error) {
 	return IntValue(i), err
 }
 
-func FloatNode(name string) Processor {
-	return listNode(name, 1, 0, FloatType, floatTransform)
+func FloatNode(name string, opt *ArgOpt) Processor {
+	return listNode(name, 1, 0, FloatType, floatTransform, opt)
+}
+
+func OptionalFloatNode(name string, opt *ArgOpt) Processor {
+	return listNode(name, 0, 1, FloatType, floatTransform, opt)
 }
 
 func floatTransform(sl []string) (*Value, error) {
@@ -138,12 +146,12 @@ func floatTransform(sl []string) (*Value, error) {
 	return FloatValue(f), err
 }
 
-func listNode(name string, minN, optionalN int, vt ValueType, transformer func([]string) (*Value, error)) Processor { //opt *ArgOpt) //NodeProcessor {
+func listNode(name string, minN, optionalN int, vt ValueType, transformer func([]string) (*Value, error), opt *ArgOpt) Processor {
 	return &argNode{
 		name:      name,
 		minN:      minN,
 		optionalN: optionalN,
-		//opt:       opt,
+		opt:       opt,
 		vt:        vt,
 		transform: transformer,
 	}

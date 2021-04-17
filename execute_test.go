@@ -44,7 +44,7 @@ func TestExecute(t *testing.T) {
 		// Single arg tests.
 		{
 			name:       "Fails if arg and no argument",
-			node:       SerialNodes(StringNode("s")),
+			node:       SerialNodes(StringNode("s", nil)),
 			wantErr:    fmt.Errorf("not enough arguments"),
 			wantStderr: []string{"not enough arguments"},
 			wantData: &Data{
@@ -57,7 +57,7 @@ func TestExecute(t *testing.T) {
 			name: "Fails if edge fails",
 			args: []string{"hello"},
 			node: &Node{
-				Processor: StringNode("s"),
+				Processor: StringNode("s", nil),
 				Edge: &errorEdge{
 					e: fmt.Errorf("bad news bears"),
 				},
@@ -75,7 +75,7 @@ func TestExecute(t *testing.T) {
 		},
 		{
 			name:       "Fails if int arg and no argument",
-			node:       SerialNodes(IntNode("i")),
+			node:       SerialNodes(IntNode("i", nil)),
 			wantErr:    fmt.Errorf("not enough arguments"),
 			wantStderr: []string{"not enough arguments"},
 			wantData: &Data{
@@ -86,7 +86,7 @@ func TestExecute(t *testing.T) {
 		},
 		{
 			name:       "Fails if float arg and no argument",
-			node:       SerialNodes(FloatNode("f")),
+			node:       SerialNodes(FloatNode("f", nil)),
 			wantErr:    fmt.Errorf("not enough arguments"),
 			wantStderr: []string{"not enough arguments"},
 			wantData: &Data{
@@ -97,7 +97,7 @@ func TestExecute(t *testing.T) {
 		},
 		{
 			name: "Processes single string arg",
-			node: SerialNodes(StringNode("s")),
+			node: SerialNodes(StringNode("s", nil)),
 			args: []string{"hello"},
 			wantInput: &Input{
 				args: []string{"hello"},
@@ -111,7 +111,7 @@ func TestExecute(t *testing.T) {
 		},
 		{
 			name: "Processes single int arg",
-			node: SerialNodes(IntNode("i")),
+			node: SerialNodes(IntNode("i", nil)),
 			args: []string{"123"},
 			wantInput: &Input{
 				args: []string{"123"},
@@ -125,7 +125,7 @@ func TestExecute(t *testing.T) {
 		},
 		{
 			name: "Int arg fails if not an int",
-			node: SerialNodes(IntNode("i")),
+			node: SerialNodes(IntNode("i", nil)),
 			args: []string{"12.3"},
 			wantInput: &Input{
 				args: []string{"12.3"},
@@ -136,7 +136,7 @@ func TestExecute(t *testing.T) {
 		},
 		{
 			name: "Processes single float arg",
-			node: SerialNodes(FloatNode("f")),
+			node: SerialNodes(FloatNode("f", nil)),
 			args: []string{"-12.3"},
 			wantInput: &Input{
 				args: []string{"-12.3"},
@@ -150,7 +150,7 @@ func TestExecute(t *testing.T) {
 		},
 		{
 			name: "Float arg fails if not a float",
-			node: SerialNodes(FloatNode("f")),
+			node: SerialNodes(FloatNode("f", nil)),
 			args: []string{"twelve"},
 			wantInput: &Input{
 				args: []string{"twelve"},
@@ -162,7 +162,7 @@ func TestExecute(t *testing.T) {
 		// List args
 		{
 			name: "List fails if not enough args",
-			node: SerialNodes(StringListNode("sl", 1, 1)),
+			node: SerialNodes(StringListNode("sl", 1, 1, nil)),
 			args: []string{"hello", "there", "sir"},
 			wantInput: &Input{
 				args: []string{"hello", "there", "sir"},
@@ -178,7 +178,7 @@ func TestExecute(t *testing.T) {
 		},
 		{
 			name: "Processes string list if minimum provided",
-			node: SerialNodes(StringListNode("sl", 1, 2)),
+			node: SerialNodes(StringListNode("sl", 1, 2, nil)),
 			args: []string{"hello"},
 			wantInput: &Input{
 				args: []string{"hello"},
@@ -192,7 +192,7 @@ func TestExecute(t *testing.T) {
 		},
 		{
 			name: "Processes string list if some optional provided",
-			node: SerialNodes(StringListNode("sl", 1, 2)),
+			node: SerialNodes(StringListNode("sl", 1, 2, nil)),
 			args: []string{"hello", "there"},
 			wantInput: &Input{
 				args: []string{"hello", "there"},
@@ -206,7 +206,7 @@ func TestExecute(t *testing.T) {
 		},
 		{
 			name: "Processes string list if max args provided",
-			node: SerialNodes(StringListNode("sl", 1, 2)),
+			node: SerialNodes(StringListNode("sl", 1, 2, nil)),
 			args: []string{"hello", "there", "maam"},
 			wantInput: &Input{
 				args: []string{"hello", "there", "maam"},
@@ -220,7 +220,7 @@ func TestExecute(t *testing.T) {
 		},
 		{
 			name: "Unbounded string list fails if less than min provided",
-			node: SerialNodes(StringListNode("sl", 4, UnboundedList)),
+			node: SerialNodes(StringListNode("sl", 4, UnboundedList, nil)),
 			args: []string{"hello", "there", "kenobi"},
 			wantInput: &Input{
 				args: []string{"hello", "there", "kenobi"},
@@ -236,7 +236,7 @@ func TestExecute(t *testing.T) {
 		},
 		{
 			name: "Processes unbounded string list if min provided",
-			node: SerialNodes(StringListNode("sl", 1, UnboundedList)),
+			node: SerialNodes(StringListNode("sl", 1, UnboundedList, nil)),
 			args: []string{"hello"},
 			wantInput: &Input{
 				args: []string{"hello"},
@@ -250,7 +250,7 @@ func TestExecute(t *testing.T) {
 		},
 		{
 			name: "Processes unbounded string list if more than min provided",
-			node: SerialNodes(StringListNode("sl", 1, UnboundedList)),
+			node: SerialNodes(StringListNode("sl", 1, UnboundedList, nil)),
 			args: []string{"hello", "there", "kenobi"},
 			wantInput: &Input{
 				args: []string{"hello", "there", "kenobi"},
@@ -264,7 +264,7 @@ func TestExecute(t *testing.T) {
 		},
 		{
 			name: "Processes int list",
-			node: SerialNodes(IntListNode("il", 1, 2)),
+			node: SerialNodes(IntListNode("il", 1, 2, nil)),
 			args: []string{"1", "-23"},
 			wantInput: &Input{
 				args: []string{"1", "-23"},
@@ -278,7 +278,7 @@ func TestExecute(t *testing.T) {
 		},
 		{
 			name: "Int list fails if an arg isn't an int",
-			node: SerialNodes(IntListNode("il", 1, 2)),
+			node: SerialNodes(IntListNode("il", 1, 2, nil)),
 			args: []string{"1", "four", "-23"},
 			wantInput: &Input{
 				args: []string{"1", "four", "-23"},
@@ -289,7 +289,7 @@ func TestExecute(t *testing.T) {
 		},
 		{
 			name: "Processes float list",
-			node: SerialNodes(FloatListNode("fl", 1, 2)),
+			node: SerialNodes(FloatListNode("fl", 1, 2, nil)),
 			args: []string{"0.1", "-2.3"},
 			wantInput: &Input{
 				args: []string{"0.1", "-2.3"},
@@ -303,7 +303,7 @@ func TestExecute(t *testing.T) {
 		},
 		{
 			name: "Float list fails if an arg isn't an float",
-			node: SerialNodes(FloatListNode("fl", 1, 2)),
+			node: SerialNodes(FloatListNode("fl", 1, 2, nil)),
 			args: []string{"0.1", "four", "-23"},
 			wantInput: &Input{
 				args: []string{"0.1", "four", "-23"},
@@ -315,7 +315,7 @@ func TestExecute(t *testing.T) {
 		// Multiple args
 		{
 			name: "Processes multiple args",
-			node: SerialNodes(IntListNode("il", 2, 0), StringNode("s"), FloatListNode("fl", 1, 2)),
+			node: SerialNodes(IntListNode("il", 2, 0, nil), StringNode("s", nil), FloatListNode("fl", 1, 2, nil)),
 			args: []string{"0", "1", "two", "0.3", "-4"},
 			wantInput: &Input{
 				args: []string{"0", "1", "two", "0.3", "-4"},
@@ -331,7 +331,7 @@ func TestExecute(t *testing.T) {
 		},
 		{
 			name: "Fails if extra args when multiple",
-			node: SerialNodes(IntListNode("il", 2, 0), StringNode("s"), FloatListNode("fl", 1, 2)),
+			node: SerialNodes(IntListNode("il", 2, 0, nil), StringNode("s", nil), FloatListNode("fl", 1, 2, nil)),
 			args: []string{"0", "1", "two", "0.3", "-4", "0.5", "6"},
 			wantInput: &Input{
 				args: []string{"0", "1", "two", "0.3", "-4", "0.5", "6"},
@@ -350,7 +350,7 @@ func TestExecute(t *testing.T) {
 		// Executor tests.
 		{
 			name: "executes with proper data",
-			node: SerialNodes(IntListNode("il", 2, 0), StringNode("s"), FloatListNode("fl", 1, 2), ExecutorNode(func(o Output, d *Data) error {
+			node: SerialNodes(IntListNode("il", 2, 0, nil), StringNode("s", nil), FloatListNode("fl", 1, 2, nil), ExecutorNode(func(o Output, d *Data) error {
 				var keys []string
 				for k := range d.Values {
 					keys = append(keys, k)
@@ -381,7 +381,7 @@ func TestExecute(t *testing.T) {
 		},
 		{
 			name: "executor error is returned",
-			node: SerialNodes(IntListNode("il", 2, 0), StringNode("s"), FloatListNode("fl", 1, 2), ExecutorNode(func(o Output, d *Data) error {
+			node: SerialNodes(IntListNode("il", 2, 0, nil), StringNode("s", nil), FloatListNode("fl", 1, 2, nil), ExecutorNode(func(o Output, d *Data) error {
 				return o.Stderr("bad news bears")
 			})),
 			args: []string{"0", "1", "two", "0.3", "-4"},
@@ -398,6 +398,728 @@ func TestExecute(t *testing.T) {
 			},
 			wantStderr: []string{"bad news bears"},
 			wantErr:    fmt.Errorf("bad news bears"),
+		},
+		// ArgValidator tests
+		{
+			name: "breaks when arg option is for invalid type",
+			node: &Node{
+				Processor: StringNode("strArg", NewArgOpt(nil, nil, IntEQ(123))),
+			},
+			args: []string{"123"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"strArg": StringValue("123"),
+				},
+			},
+			wantStderr: []string{"validation failed: option can only be bound to arguments with type 3"},
+		},
+		// Contains
+		/*{
+			name: "contains works",
+			node: &Node{
+				Processor: StringNode("strArg", NewArgOpt(nil, nil, Contains("good"))),
+			},
+			args: []string{"goodbye"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"strArg": StringValue("goodbye"),
+				},
+			},
+		},
+		{
+			name: "contains fails",
+			node: &Node{
+				Processor: StringNode("strArg", NewArgOpt(nil, nil, Contains("good"))),
+			},
+			args: []string{"hello"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"strArg": StringValue("hello"),
+				},
+			},
+			wantStderr: []string{`validation failed: [Contains] value doesn't contain substring "good"`},
+		},
+		// MinLength
+		{
+			name: "MinLength works",
+			node: &Node{
+				Processor: StringNode("strArg", NewArgOpt(nil, nil, MinLength(3))),
+			},
+			args: []string{"hello"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"strArg": StringValue("hello"),
+				},
+			},
+		},
+		{
+			name: "MinLength works for exact count match",
+			node: &Node{
+				Processor: StringNode("strArg", NewArgOpt(nil, nil, MinLength(3))),
+			},
+			args: []string{"hey"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"strArg": StringValue("hey"),
+				},
+			},
+		},
+		{
+			name: "MinLength fails",
+			node: &Node{
+				Processor: StringNode("strArg", NewArgOpt(nil, nil, MinLength(3))),
+			},
+			args: []string{"hi"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"strArg": StringValue("hi"),
+				},
+			},
+			wantStderr: []string{`validation failed: [MinLength] value must be at least 3 characters`},
+		},
+		// IntEQ
+		{
+			name: "IntEQ works",
+			node: &Node{
+				Processor: IntNode("intArg", NewArgOpt(nil, nil, IntEQ(24))),
+			},
+			args: []string{"24"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"intArg": IntValue(24),
+				},
+			},
+		},
+		{
+			name: "IntEQ fails",
+			node: &Node{
+				Processor: IntNode("intArg", NewArgOpt(nil, nil, IntEQ(24))),
+			},
+			args: []string{"25"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"intArg": IntValue(25),
+				},
+			},
+			wantStderr: []string{`validation failed: [IntEQ] value isn't equal to 24`},
+		},
+		// IntNE
+		{
+			name: "IntNE works",
+			node: &Node{
+				Processor: IntNode("intArg", NewArgOpt(nil, nil, IntNE(24))),
+			},
+			args: []string{"25"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"intArg": IntValue(25),
+				},
+			},
+		},
+		{
+			name: "IntNE fails",
+			node: &Node{
+				Processor: IntNode("intArg", NewArgOpt(nil, nil, IntNE(24))),
+			},
+			args: []string{"24"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"intArg": IntValue(24),
+				},
+			},
+			wantStderr: []string{`validation failed: [IntNE] value isn't not equal to 24`},
+		},
+		// IntLT
+		{
+			name: "IntLT works when less than",
+			node: &Node{
+				Processor: IntNode("intArg", NewArgOpt(nil, nil, IntLT(25))),
+			},
+			args: []string{"24"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"intArg": IntValue(24),
+				},
+			},
+		},
+		{
+			name: "IntLT fails when equal to",
+			node: &Node{
+				Processor: IntNode("intArg", NewArgOpt(nil, nil, IntLT(25))),
+			},
+			args: []string{"25"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"intArg": IntValue(25),
+				},
+			},
+			wantStderr: []string{`validation failed: [IntLT] value isn't less than 25`},
+		},
+		{
+			name: "IntLT fails when greater than",
+			node: &Node{
+				Processor: IntNode("intArg", NewArgOpt(nil, nil, IntLT(25))),
+			},
+			args: []string{"26"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"intArg": IntValue(26),
+				},
+			},
+			wantStderr: []string{`validation failed: [IntLT] value isn't less than 25`},
+		},
+		// IntLTE
+		{
+			name: "IntLTE works when less than",
+			node: &Node{
+				Processor: IntNode("intArg", NewArgOpt(nil, nil, IntLTE(25))),
+			},
+			args: []string{"24"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"intArg": IntValue(24),
+				},
+			},
+		},
+		{
+			name: "IntLTE works when equal to",
+			node: &Node{
+				Processor: IntNode("intArg", NewArgOpt(nil, nil, IntLTE(25))),
+			},
+			args: []string{"25"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"intArg": IntValue(25),
+				},
+			},
+		},
+		{
+			name: "IntLTE fails when greater than",
+			node: &Node{
+				Processor: IntNode("intArg", NewArgOpt(nil, nil, IntLTE(25))),
+			},
+			args: []string{"26"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"intArg": IntValue(26),
+				},
+			},
+			wantStderr: []string{`validation failed: [IntLTE] value isn't less than or equal to 25`},
+		},
+		// IntGT
+		{
+			name: "IntGT fails when less than",
+			node: &Node{
+				Processor: IntNode("intArg", NewArgOpt(nil, nil, IntGT(25))),
+			},
+			args: []string{"24"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"intArg": IntValue(24),
+				},
+			},
+			wantStderr: []string{`validation failed: [IntGT] value isn't greater than 25`},
+		},
+		{
+			name: "IntGT fails when equal to",
+			node: &Node{
+				Processor: IntNode("intArg", NewArgOpt(nil, nil, IntGT(25))),
+			},
+			args: []string{"25"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"intArg": IntValue(25),
+				},
+			},
+			wantStderr: []string{`validation failed: [IntGT] value isn't greater than 25`},
+		},
+		{
+			name: "IntGT works when greater than",
+			node: &Node{
+				Processor: IntNode("intArg", NewArgOpt(nil, nil, IntGT(25))),
+			},
+			args: []string{"26"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"intArg": IntValue(26),
+				},
+			},
+		},
+		// IntGTE
+		{
+			name: "IntGTE fails when less than",
+			node: &Node{
+				Processor: IntNode("intArg", NewArgOpt(nil, nil, IntGTE(25))),
+			},
+			args: []string{"24"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"intArg": IntValue(24),
+				},
+			},
+			wantStderr: []string{`validation failed: [IntGTE] value isn't greater than or equal to 25`},
+		},
+		{
+			name: "IntGTE works when equal to",
+			node: &Node{
+				Processor: IntNode("intArg", NewArgOpt(nil, nil, IntGTE(25))),
+			},
+			args: []string{"25"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"intArg": IntValue(25),
+				},
+			},
+		},
+		{
+			name: "IntGTE works when greater than",
+			node: &Node{
+				Processor: IntNode("intArg", NewArgOpt(nil, nil, IntGTE(25))),
+			},
+			args: []string{"26"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"intArg": IntValue(26),
+				},
+			},
+		},
+		// IntPositive
+		{
+			name: "IntPositive fails when negative",
+			node: &Node{
+				Processor: IntNode("intArg", NewArgOpt(nil, nil, IntPositive())),
+			},
+			args: []string{"-1"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"intArg": IntValue(-1),
+				},
+			},
+			wantStderr: []string{`validation failed: [IntPositive] value isn't positive`},
+		},
+		{
+			name: "IntPositive fails when zero",
+			node: &Node{
+				Processor: IntNode("intArg", NewArgOpt(nil, nil, IntPositive())),
+			},
+			args: []string{"0"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"intArg": IntValue(0),
+				},
+			},
+			wantStderr: []string{`validation failed: [IntPositive] value isn't positive`},
+		},
+		{
+			name: "IntPositive works when positive",
+			node: &Node{
+				Processor: IntNode("intArg", NewArgOpt(nil, nil, IntPositive())),
+			},
+			args: []string{"1"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"intArg": IntValue(1),
+				},
+			},
+		},
+		// IntNegative
+		{
+			name: "IntNegative works when negative",
+			node: &Node{
+				Processor: IntNode("intArg", NewArgOpt(nil, nil, IntNegative())),
+			},
+			args: []string{"-1"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"intArg": IntValue(-1),
+				},
+			},
+		},
+		{
+			name: "IntNegative fails when zero",
+			node: &Node{
+				Processor: IntNode("intArg", NewArgOpt(nil, nil, IntNegative())),
+			},
+			args: []string{"0"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"intArg": IntValue(0),
+				},
+			},
+			wantStderr: []string{`validation failed: [IntNegative] value isn't negative`},
+		},
+		{
+			name: "IntNegative fails when positive",
+			node: &Node{
+				Processor: IntNode("intArg", NewArgOpt(nil, nil, IntNegative())),
+			},
+			args: []string{"1"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"intArg": IntValue(1),
+				},
+			},
+			wantStderr: []string{`validation failed: [IntNegative] value isn't negative`},
+		},
+		// IntNonNegative
+		{
+			name: "IntNonNegative fails when negative",
+			node: &Node{
+				Processor: IntNode("intArg", NewArgOpt(nil, nil, IntNonNegative())),
+			},
+			args: []string{"-1"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"intArg": IntValue(-1),
+				},
+			},
+			wantStderr: []string{`validation failed: [IntNonNegative] value isn't non-negative`},
+		},
+		{
+			name: "IntNonNegative works when zero",
+			node: &Node{
+				Processor: IntNode("intArg", NewArgOpt(nil, nil, IntNonNegative())),
+			},
+			args: []string{"0"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"intArg": IntValue(0),
+				},
+			},
+		},
+		{
+			name: "IntNonNegative works when positive",
+			node: &Node{
+				Processor: IntNode("intArg", NewArgOpt(nil, nil, IntNonNegative())),
+			},
+			args: []string{"1"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"intArg": IntValue(1),
+				},
+			},
+		},
+		// FloatEQ
+		{
+			name: "FloatEQ works",
+			node: &Node{
+				Processor: FloatNode("flArg", NewArgOpt(nil, nil, FloatEQ(2.4))),
+			},
+			args: []string{"2.4"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"flArg": FloatValue(2.4),
+				},
+			},
+		},
+		{
+			name: "FloatEQ fails",
+			node: &Node{
+				Processor: FloatNode("flArg", NewArgOpt(nil, nil, FloatEQ(2.4))),
+			},
+			args: []string{"2.5"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"flArg": FloatValue(2.5),
+				},
+			},
+			wantStderr: []string{`validation failed: [FloatEQ] value isn't equal to 2.40`},
+		},
+		// FloatNE
+		{
+			name: "FloatNE works",
+			node: &Node{
+				Processor: FloatNode("flArg", NewArgOpt(nil, nil, FloatNE(2.4))),
+			},
+			args: []string{"2.5"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"flArg": FloatValue(2.5),
+				},
+			},
+		},
+		{
+			name: "FloatNE fails",
+			node: &Node{
+				Processor: FloatNode("flArg", NewArgOpt(nil, nil, FloatNE(2.4))),
+			},
+			args: []string{"2.4"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"flArg": FloatValue(2.4),
+				},
+			},
+			wantStderr: []string{`validation failed: [FloatNE] value isn't not equal to 2.40`},
+		},
+		// FloatLT
+		{
+			name: "FloatLT works when less than",
+			node: &Node{
+				Processor: FloatNode("flArg", NewArgOpt(nil, nil, FloatLT(2.5))),
+			},
+			args: []string{"2.4"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"flArg": FloatValue(2.4),
+				},
+			},
+		},
+		{
+			name: "FloatLT fails when equal to",
+			node: &Node{
+				Processor: FloatNode("flArg", NewArgOpt(nil, nil, FloatLT(2.5))),
+			},
+			args: []string{"2.5"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"flArg": FloatValue(2.5),
+				},
+			},
+			wantStderr: []string{`validation failed: [FloatLT] value isn't less than 2.50`},
+		},
+		{
+			name: "FloatLT fails when greater than",
+			node: &Node{
+				Processor: FloatNode("flArg", NewArgOpt(nil, nil, FloatLT(2.5))),
+			},
+			args: []string{"2.6"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"flArg": FloatValue(2.6),
+				},
+			},
+			wantStderr: []string{`validation failed: [FloatLT] value isn't less than 2.50`},
+		},
+		// FloatLTE
+		{
+			name: "FloatLTE works when less than",
+			node: &Node{
+				Processor: FloatNode("flArg", NewArgOpt(nil, nil, FloatLTE(2.5))),
+			},
+			args: []string{"2.4"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"flArg": FloatValue(2.4),
+				},
+			},
+		},
+		{
+			name: "FloatLTE works when equal to",
+			node: &Node{
+				Processor: FloatNode("flArg", NewArgOpt(nil, nil, FloatLTE(2.5))),
+			},
+			args: []string{"2.5"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"flArg": FloatValue(2.5),
+				},
+			},
+		},
+		{
+			name: "FloatLTE fails when greater than",
+			node: &Node{
+				Processor: FloatNode("flArg", NewArgOpt(nil, nil, FloatLTE(2.5))),
+			},
+			args: []string{"2.6"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"flArg": FloatValue(2.6),
+				},
+			},
+			wantStderr: []string{`validation failed: [FloatLTE] value isn't less than or equal to 2.50`},
+		},
+		// FloatGT
+		{
+			name: "FloatGT fails when less than",
+			node: &Node{
+				Processor: FloatNode("flArg", NewArgOpt(nil, nil, FloatGT(2.5))),
+			},
+			args: []string{"2.4"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"flArg": FloatValue(2.4),
+				},
+			},
+			wantStderr: []string{`validation failed: [FloatGT] value isn't greater than 2.50`},
+		},
+		{
+			name: "FloatGT fails when equal to",
+			node: &Node{
+				Processor: FloatNode("flArg", NewArgOpt(nil, nil, FloatGT(2.5))),
+			},
+			args: []string{"2.5"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"flArg": FloatValue(2.5),
+				},
+			},
+			wantStderr: []string{`validation failed: [FloatGT] value isn't greater than 2.50`},
+		},
+		{
+			name: "FloatGT works when greater than",
+			node: &Node{
+				Processor: FloatNode("flArg", NewArgOpt(nil, nil, FloatGT(2.5))),
+			},
+			args: []string{"2.6"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"flArg": FloatValue(2.6),
+				},
+			},
+		},
+		// FloatGTE
+		{
+			name: "FloatGTE fails when less than",
+			node: &Node{
+				Processor: FloatNode("flArg", NewArgOpt(nil, nil, FloatGTE(2.5))),
+			},
+			args: []string{"2.4"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"flArg": FloatValue(2.4),
+				},
+			},
+			wantStderr: []string{`validation failed: [FloatGTE] value isn't greater than or equal to 2.50`},
+		},
+		{
+			name: "FloatGTE works when equal to",
+			node: &Node{
+				Processor: FloatNode("flArg", NewArgOpt(nil, nil, FloatGTE(2.5))),
+			},
+			args: []string{"2.5"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"flArg": FloatValue(2.5),
+				},
+			},
+		},
+		{
+			name: "FloatGTE works when greater than",
+			node: &Node{
+				Processor: FloatNode("flArg", NewArgOpt(nil, nil, FloatGTE(2.5))),
+			},
+			args: []string{"2.6"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"flArg": FloatValue(2.6),
+				},
+			},
+		},
+		// FloatPositive
+		{
+			name: "FloatPositive fails when negative",
+			node: &Node{
+				Processor: FloatNode("flArg", NewArgOpt(nil, nil, FloatPositive())),
+			},
+			args: []string{"-0.1"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"flArg": FloatValue(-0.1),
+				},
+			},
+			wantStderr: []string{`validation failed: [FloatPositive] value isn't positive`},
+		},
+		{
+			name: "FloatPositive fails when zero",
+			node: &Node{
+				Processor: FloatNode("flArg", NewArgOpt(nil, nil, FloatPositive())),
+			},
+			args: []string{"0"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"flArg": FloatValue(0),
+				},
+			},
+			wantStderr: []string{`validation failed: [FloatPositive] value isn't positive`},
+		},
+		{
+			name: "FloatPositive works when positive",
+			node: &Node{
+				Processor: FloatNode("flArg", NewArgOpt(nil, nil, FloatPositive())),
+			},
+			args: []string{"0.1"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"flArg": FloatValue(0.1),
+				},
+			},
+		},
+		// FloatNegative
+		{
+			name: "FloatNegative works when negative",
+			node: &Node{
+				Processor: FloatNode("flArg", NewArgOpt(nil, nil, FloatNegative())),
+			},
+			args: []string{"-0.1"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"flArg": FloatValue(-0.1),
+				},
+			},
+		},
+		{
+			name: "FloatNegative fails when zero",
+			node: &Node{
+				Processor: FloatNode("flArg", NewArgOpt(nil, nil, FloatNegative())),
+			},
+			args: []string{"0"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"flArg": FloatValue(0),
+				},
+			},
+			wantStderr: []string{`validation failed: [FloatNegative] value isn't negative`},
+		},
+		{
+			name: "FloatNegative fails when positive",
+			node: &Node{
+				Processor: FloatNode("flArg", NewArgOpt(nil, nil, FloatNegative())),
+			},
+			args: []string{"0.1"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"flArg": FloatValue(0.1),
+				},
+			},
+			wantStderr: []string{`validation failed: [FloatNegative] value isn't negative`},
+		},
+		// FloatNonNegative
+		{
+			name: "FloatNonNegative fails when negative",
+			node: &Node{
+				Processor: FloatNode("flArg", NewArgOpt(nil, nil, FloatNonNegative())),
+			},
+			args: []string{"-0.1"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"flArg": FloatValue(-0.1),
+				},
+			},
+			wantStderr: []string{`validation failed: [FloatNonNegative] value isn't non-negative`},
+		},
+		{
+			name: "FloatNonNegative works when zero",
+			node: &Node{
+				Processor: FloatNode("flArg", NewArgOpt(nil, nil, FloatNonNegative())),
+			},
+			args: []string{"0"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"flArg": FloatValue(0),
+				},
+			},
+		},
+		{
+			name: "FloatNonNegative works when positive",
+			node: &Node{
+				Processor: FloatNode("flArg", NewArgOpt(nil, nil, FloatNonNegative())),
+			},
+			args: []string{"0.1"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"flArg": FloatValue(0.1),
+				},
+			},
 		},
 		/* Useful for commenting out tests. */
 	} {
