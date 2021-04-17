@@ -8,6 +8,14 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 )
 
+type errorEdge struct {
+	e error
+}
+
+func (ee *errorEdge) Next(*Input, Output, *Data) (*Node, error) {
+	return nil, ee.e
+}
+
 func TestExecute(t *testing.T) {
 	for _, test := range []struct {
 		name       string
@@ -41,6 +49,26 @@ func TestExecute(t *testing.T) {
 			wantData: &Data{
 				Values: map[string]*Value{
 					"s": StringValue(""),
+				},
+			},
+		},
+		{
+			name: "Fails if edge fails",
+			args: []string{"hello"},
+			node: &Node{
+				Processor: StringNode("s"),
+				Edge: &errorEdge{
+					e: fmt.Errorf("bad news bears"),
+				},
+			},
+			wantInput: &Input{
+				args: []string{"hello"},
+				pos:  1,
+			},
+			wantErr: fmt.Errorf("bad news bears"),
+			wantData: &Data{
+				Values: map[string]*Value{
+					"s": StringValue("hello"),
 				},
 			},
 		},
@@ -190,6 +218,50 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
+			name: "Unbounded string list fails if less than min provided",
+			node: SerialNodes(StringListNode("sl", 4, UnboundedList)),
+			args: []string{"hello", "there", "kenobi"},
+			wantInput: &Input{
+				args: []string{"hello", "there", "kenobi"},
+				pos:  3,
+			},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"sl": StringListValue("hello", "there", "kenobi"),
+				},
+			},
+			wantErr:    fmt.Errorf("not enough arguments"),
+			wantStderr: []string{"not enough arguments"},
+		},
+		{
+			name: "Processes unbounded string list if min provided",
+			node: SerialNodes(StringListNode("sl", 1, UnboundedList)),
+			args: []string{"hello"},
+			wantInput: &Input{
+				args: []string{"hello"},
+				pos:  1,
+			},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"sl": StringListValue("hello"),
+				},
+			},
+		},
+		{
+			name: "Processes unbounded string list if more than min provided",
+			node: SerialNodes(StringListNode("sl", 1, UnboundedList)),
+			args: []string{"hello", "there", "kenobi"},
+			wantInput: &Input{
+				args: []string{"hello", "there", "kenobi"},
+				pos:  3,
+			},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"sl": StringListValue("hello", "there", "kenobi"),
+				},
+			},
+		},
+		{
 			name: "Processes int list",
 			node: SerialNodes(IntListNode("il", 1, 2)),
 			args: []string{"1", "-23"},
@@ -239,6 +311,41 @@ func TestExecute(t *testing.T) {
 			wantErr:    fmt.Errorf(`strconv.ParseFloat: parsing "four": invalid syntax`),
 			wantStderr: []string{`strconv.ParseFloat: parsing "four": invalid syntax`},
 		},
+		// Multiple args
+		{
+			name: "Processes multiple args",
+			node: SerialNodes(IntListNode("il", 2, 0), StringNode("s"), FloatListNode("fl", 1, 2)),
+			args: []string{"0", "1", "two", "0.3", "-4"},
+			wantInput: &Input{
+				args: []string{"0", "1", "two", "0.3", "-4"},
+				pos:  5,
+			},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"il": IntListValue(0, 1),
+					"s":  StringValue("two"),
+					"fl": FloatListValue(0.3, -4),
+				},
+			},
+		},
+		{
+			name: "Fails if extra args when multiple",
+			node: SerialNodes(IntListNode("il", 2, 0), StringNode("s"), FloatListNode("fl", 1, 2)),
+			args: []string{"0", "1", "two", "0.3", "-4", "0.5", "6"},
+			wantInput: &Input{
+				args: []string{"0", "1", "two", "0.3", "-4", "0.5", "6"},
+				pos:  6,
+			},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"il": IntListValue(0, 1),
+					"s":  StringValue("two"),
+					"fl": FloatListValue(0.3, -4, 0.5),
+				},
+			},
+			wantErr:    fmt.Errorf("Unprocessed extra args: [6]"),
+			wantStderr: []string{"Unprocessed extra args: [6]"},
+		},
 		/* Useful for commenting out tests. */
 	} {
 		t.Run(test.name, func(t *testing.T) {
@@ -284,10 +391,10 @@ func TestExecute(t *testing.T) {
 				t.Errorf("execute(%v) incorrectly modified input (-want, +got):\n%s", test.args, diff)
 			}
 
-			if diff := cmp.Diff(test.wantStdout, fo.stdout, cmpopts.EquateEmpty()); diff != "" {
+			if diff := cmp.Diff(test.wantStdout, fo.GetStdout(), cmpopts.EquateEmpty()); diff != "" {
 				t.Errorf("execute(%v) sent wrong data to stdout (-want, +got):\n%s", test.args, diff)
 			}
-			if diff := cmp.Diff(test.wantStderr, fo.stderr, cmpopts.EquateEmpty()); diff != "" {
+			if diff := cmp.Diff(test.wantStderr, fo.GetStderr(), cmpopts.EquateEmpty()); diff != "" {
 				t.Errorf("execute(%v) sent wrong data to stderr (-want, +got):\n%s", test.args, diff)
 			}
 		})
