@@ -406,20 +406,29 @@ func TestExecute(t *testing.T) {
 				Processor: StringNode("strArg", NewArgOpt(nil, nil, IntEQ(123))),
 			},
 			args: []string{"123"},
+			wantInput: &Input{
+				args: []string{"123"},
+				pos:  1,
+			},
 			wantData: &Data{
 				Values: map[string]*Value{
 					"strArg": StringValue("123"),
 				},
 			},
 			wantStderr: []string{"validation failed: option can only be bound to arguments with type 3"},
+			wantErr:    fmt.Errorf("validation failed: option can only be bound to arguments with type 3"),
 		},
 		// Contains
-		/*{
+		{
 			name: "contains works",
 			node: &Node{
 				Processor: StringNode("strArg", NewArgOpt(nil, nil, Contains("good"))),
 			},
 			args: []string{"goodbye"},
+			wantInput: &Input{
+				args: []string{"goodbye"},
+				pos:  1,
+			},
 			wantData: &Data{
 				Values: map[string]*Value{
 					"strArg": StringValue("goodbye"),
@@ -432,12 +441,17 @@ func TestExecute(t *testing.T) {
 				Processor: StringNode("strArg", NewArgOpt(nil, nil, Contains("good"))),
 			},
 			args: []string{"hello"},
+			wantInput: &Input{
+				args: []string{"hello"},
+				pos:  1,
+			},
 			wantData: &Data{
 				Values: map[string]*Value{
 					"strArg": StringValue("hello"),
 				},
 			},
 			wantStderr: []string{`validation failed: [Contains] value doesn't contain substring "good"`},
+			wantErr:    fmt.Errorf(`validation failed: [Contains] value doesn't contain substring "good"`),
 		},
 		// MinLength
 		{
@@ -446,6 +460,10 @@ func TestExecute(t *testing.T) {
 				Processor: StringNode("strArg", NewArgOpt(nil, nil, MinLength(3))),
 			},
 			args: []string{"hello"},
+			wantInput: &Input{
+				args: []string{"hello"},
+				pos:  1,
+			},
 			wantData: &Data{
 				Values: map[string]*Value{
 					"strArg": StringValue("hello"),
@@ -458,6 +476,10 @@ func TestExecute(t *testing.T) {
 				Processor: StringNode("strArg", NewArgOpt(nil, nil, MinLength(3))),
 			},
 			args: []string{"hey"},
+			wantInput: &Input{
+				args: []string{"hey"},
+				pos:  1,
+			},
 			wantData: &Data{
 				Values: map[string]*Value{
 					"strArg": StringValue("hey"),
@@ -470,12 +492,17 @@ func TestExecute(t *testing.T) {
 				Processor: StringNode("strArg", NewArgOpt(nil, nil, MinLength(3))),
 			},
 			args: []string{"hi"},
+			wantInput: &Input{
+				args: []string{"hi"},
+				pos:  1,
+			},
 			wantData: &Data{
 				Values: map[string]*Value{
 					"strArg": StringValue("hi"),
 				},
 			},
 			wantStderr: []string{`validation failed: [MinLength] value must be at least 3 characters`},
+			wantErr:    fmt.Errorf(`validation failed: [MinLength] value must be at least 3 characters`),
 		},
 		// IntEQ
 		{
@@ -484,6 +511,10 @@ func TestExecute(t *testing.T) {
 				Processor: IntNode("intArg", NewArgOpt(nil, nil, IntEQ(24))),
 			},
 			args: []string{"24"},
+			wantInput: &Input{
+				args: []string{"24"},
+				pos:  1,
+			},
 			wantData: &Data{
 				Values: map[string]*Value{
 					"intArg": IntValue(24),
@@ -496,12 +527,17 @@ func TestExecute(t *testing.T) {
 				Processor: IntNode("intArg", NewArgOpt(nil, nil, IntEQ(24))),
 			},
 			args: []string{"25"},
+			wantInput: &Input{
+				args: []string{"25"},
+				pos:  1,
+			},
 			wantData: &Data{
 				Values: map[string]*Value{
 					"intArg": IntValue(25),
 				},
 			},
 			wantStderr: []string{`validation failed: [IntEQ] value isn't equal to 24`},
+			wantErr:    fmt.Errorf(`validation failed: [IntEQ] value isn't equal to 24`),
 		},
 		// IntNE
 		{
@@ -510,6 +546,10 @@ func TestExecute(t *testing.T) {
 				Processor: IntNode("intArg", NewArgOpt(nil, nil, IntNE(24))),
 			},
 			args: []string{"25"},
+			wantInput: &Input{
+				args: []string{"25"},
+				pos:  1,
+			},
 			wantData: &Data{
 				Values: map[string]*Value{
 					"intArg": IntValue(25),
@@ -522,12 +562,17 @@ func TestExecute(t *testing.T) {
 				Processor: IntNode("intArg", NewArgOpt(nil, nil, IntNE(24))),
 			},
 			args: []string{"24"},
+			wantInput: &Input{
+				args: []string{"24"},
+				pos:  1,
+			},
 			wantData: &Data{
 				Values: map[string]*Value{
 					"intArg": IntValue(24),
 				},
 			},
 			wantStderr: []string{`validation failed: [IntNE] value isn't not equal to 24`},
+			wantErr:    fmt.Errorf(`validation failed: [IntNE] value isn't not equal to 24`),
 		},
 		// IntLT
 		{
@@ -536,6 +581,10 @@ func TestExecute(t *testing.T) {
 				Processor: IntNode("intArg", NewArgOpt(nil, nil, IntLT(25))),
 			},
 			args: []string{"24"},
+			wantInput: &Input{
+				args: []string{"24"},
+				pos:  1,
+			},
 			wantData: &Data{
 				Values: map[string]*Value{
 					"intArg": IntValue(24),
@@ -548,12 +597,17 @@ func TestExecute(t *testing.T) {
 				Processor: IntNode("intArg", NewArgOpt(nil, nil, IntLT(25))),
 			},
 			args: []string{"25"},
+			wantInput: &Input{
+				args: []string{"25"},
+				pos:  1,
+			},
 			wantData: &Data{
 				Values: map[string]*Value{
 					"intArg": IntValue(25),
 				},
 			},
 			wantStderr: []string{`validation failed: [IntLT] value isn't less than 25`},
+			wantErr:    fmt.Errorf(`validation failed: [IntLT] value isn't less than 25`),
 		},
 		{
 			name: "IntLT fails when greater than",
@@ -561,12 +615,17 @@ func TestExecute(t *testing.T) {
 				Processor: IntNode("intArg", NewArgOpt(nil, nil, IntLT(25))),
 			},
 			args: []string{"26"},
+			wantInput: &Input{
+				args: []string{"26"},
+				pos:  1,
+			},
 			wantData: &Data{
 				Values: map[string]*Value{
 					"intArg": IntValue(26),
 				},
 			},
 			wantStderr: []string{`validation failed: [IntLT] value isn't less than 25`},
+			wantErr:    fmt.Errorf(`validation failed: [IntLT] value isn't less than 25`),
 		},
 		// IntLTE
 		{
@@ -575,6 +634,10 @@ func TestExecute(t *testing.T) {
 				Processor: IntNode("intArg", NewArgOpt(nil, nil, IntLTE(25))),
 			},
 			args: []string{"24"},
+			wantInput: &Input{
+				args: []string{"24"},
+				pos:  1,
+			},
 			wantData: &Data{
 				Values: map[string]*Value{
 					"intArg": IntValue(24),
@@ -587,6 +650,10 @@ func TestExecute(t *testing.T) {
 				Processor: IntNode("intArg", NewArgOpt(nil, nil, IntLTE(25))),
 			},
 			args: []string{"25"},
+			wantInput: &Input{
+				args: []string{"25"},
+				pos:  1,
+			},
 			wantData: &Data{
 				Values: map[string]*Value{
 					"intArg": IntValue(25),
@@ -599,12 +666,17 @@ func TestExecute(t *testing.T) {
 				Processor: IntNode("intArg", NewArgOpt(nil, nil, IntLTE(25))),
 			},
 			args: []string{"26"},
+			wantInput: &Input{
+				args: []string{"26"},
+				pos:  1,
+			},
 			wantData: &Data{
 				Values: map[string]*Value{
 					"intArg": IntValue(26),
 				},
 			},
 			wantStderr: []string{`validation failed: [IntLTE] value isn't less than or equal to 25`},
+			wantErr:    fmt.Errorf(`validation failed: [IntLTE] value isn't less than or equal to 25`),
 		},
 		// IntGT
 		{
@@ -613,12 +685,17 @@ func TestExecute(t *testing.T) {
 				Processor: IntNode("intArg", NewArgOpt(nil, nil, IntGT(25))),
 			},
 			args: []string{"24"},
+			wantInput: &Input{
+				args: []string{"24"},
+				pos:  1,
+			},
 			wantData: &Data{
 				Values: map[string]*Value{
 					"intArg": IntValue(24),
 				},
 			},
 			wantStderr: []string{`validation failed: [IntGT] value isn't greater than 25`},
+			wantErr:    fmt.Errorf(`validation failed: [IntGT] value isn't greater than 25`),
 		},
 		{
 			name: "IntGT fails when equal to",
@@ -626,12 +703,17 @@ func TestExecute(t *testing.T) {
 				Processor: IntNode("intArg", NewArgOpt(nil, nil, IntGT(25))),
 			},
 			args: []string{"25"},
+			wantInput: &Input{
+				args: []string{"25"},
+				pos:  1,
+			},
 			wantData: &Data{
 				Values: map[string]*Value{
 					"intArg": IntValue(25),
 				},
 			},
 			wantStderr: []string{`validation failed: [IntGT] value isn't greater than 25`},
+			wantErr:    fmt.Errorf(`validation failed: [IntGT] value isn't greater than 25`),
 		},
 		{
 			name: "IntGT works when greater than",
@@ -639,6 +721,10 @@ func TestExecute(t *testing.T) {
 				Processor: IntNode("intArg", NewArgOpt(nil, nil, IntGT(25))),
 			},
 			args: []string{"26"},
+			wantInput: &Input{
+				args: []string{"26"},
+				pos:  1,
+			},
 			wantData: &Data{
 				Values: map[string]*Value{
 					"intArg": IntValue(26),
@@ -652,12 +738,17 @@ func TestExecute(t *testing.T) {
 				Processor: IntNode("intArg", NewArgOpt(nil, nil, IntGTE(25))),
 			},
 			args: []string{"24"},
+			wantInput: &Input{
+				args: []string{"24"},
+				pos:  1,
+			},
 			wantData: &Data{
 				Values: map[string]*Value{
 					"intArg": IntValue(24),
 				},
 			},
 			wantStderr: []string{`validation failed: [IntGTE] value isn't greater than or equal to 25`},
+			wantErr:    fmt.Errorf(`validation failed: [IntGTE] value isn't greater than or equal to 25`),
 		},
 		{
 			name: "IntGTE works when equal to",
@@ -665,6 +756,10 @@ func TestExecute(t *testing.T) {
 				Processor: IntNode("intArg", NewArgOpt(nil, nil, IntGTE(25))),
 			},
 			args: []string{"25"},
+			wantInput: &Input{
+				args: []string{"25"},
+				pos:  1,
+			},
 			wantData: &Data{
 				Values: map[string]*Value{
 					"intArg": IntValue(25),
@@ -677,6 +772,10 @@ func TestExecute(t *testing.T) {
 				Processor: IntNode("intArg", NewArgOpt(nil, nil, IntGTE(25))),
 			},
 			args: []string{"26"},
+			wantInput: &Input{
+				args: []string{"26"},
+				pos:  1,
+			},
 			wantData: &Data{
 				Values: map[string]*Value{
 					"intArg": IntValue(26),
@@ -690,12 +789,17 @@ func TestExecute(t *testing.T) {
 				Processor: IntNode("intArg", NewArgOpt(nil, nil, IntPositive())),
 			},
 			args: []string{"-1"},
+			wantInput: &Input{
+				args: []string{"-1"},
+				pos:  1,
+			},
 			wantData: &Data{
 				Values: map[string]*Value{
 					"intArg": IntValue(-1),
 				},
 			},
 			wantStderr: []string{`validation failed: [IntPositive] value isn't positive`},
+			wantErr:    fmt.Errorf(`validation failed: [IntPositive] value isn't positive`),
 		},
 		{
 			name: "IntPositive fails when zero",
@@ -703,12 +807,17 @@ func TestExecute(t *testing.T) {
 				Processor: IntNode("intArg", NewArgOpt(nil, nil, IntPositive())),
 			},
 			args: []string{"0"},
+			wantInput: &Input{
+				args: []string{"0"},
+				pos:  1,
+			},
 			wantData: &Data{
 				Values: map[string]*Value{
 					"intArg": IntValue(0),
 				},
 			},
 			wantStderr: []string{`validation failed: [IntPositive] value isn't positive`},
+			wantErr:    fmt.Errorf(`validation failed: [IntPositive] value isn't positive`),
 		},
 		{
 			name: "IntPositive works when positive",
@@ -716,6 +825,10 @@ func TestExecute(t *testing.T) {
 				Processor: IntNode("intArg", NewArgOpt(nil, nil, IntPositive())),
 			},
 			args: []string{"1"},
+			wantInput: &Input{
+				args: []string{"1"},
+				pos:  1,
+			},
 			wantData: &Data{
 				Values: map[string]*Value{
 					"intArg": IntValue(1),
@@ -729,6 +842,10 @@ func TestExecute(t *testing.T) {
 				Processor: IntNode("intArg", NewArgOpt(nil, nil, IntNegative())),
 			},
 			args: []string{"-1"},
+			wantInput: &Input{
+				args: []string{"-1"},
+				pos:  1,
+			},
 			wantData: &Data{
 				Values: map[string]*Value{
 					"intArg": IntValue(-1),
@@ -741,12 +858,17 @@ func TestExecute(t *testing.T) {
 				Processor: IntNode("intArg", NewArgOpt(nil, nil, IntNegative())),
 			},
 			args: []string{"0"},
+			wantInput: &Input{
+				args: []string{"0"},
+				pos:  1,
+			},
 			wantData: &Data{
 				Values: map[string]*Value{
 					"intArg": IntValue(0),
 				},
 			},
 			wantStderr: []string{`validation failed: [IntNegative] value isn't negative`},
+			wantErr:    fmt.Errorf(`validation failed: [IntNegative] value isn't negative`),
 		},
 		{
 			name: "IntNegative fails when positive",
@@ -754,12 +876,17 @@ func TestExecute(t *testing.T) {
 				Processor: IntNode("intArg", NewArgOpt(nil, nil, IntNegative())),
 			},
 			args: []string{"1"},
+			wantInput: &Input{
+				args: []string{"1"},
+				pos:  1,
+			},
 			wantData: &Data{
 				Values: map[string]*Value{
 					"intArg": IntValue(1),
 				},
 			},
 			wantStderr: []string{`validation failed: [IntNegative] value isn't negative`},
+			wantErr:    fmt.Errorf(`validation failed: [IntNegative] value isn't negative`),
 		},
 		// IntNonNegative
 		{
@@ -768,12 +895,17 @@ func TestExecute(t *testing.T) {
 				Processor: IntNode("intArg", NewArgOpt(nil, nil, IntNonNegative())),
 			},
 			args: []string{"-1"},
+			wantInput: &Input{
+				args: []string{"-1"},
+				pos:  1,
+			},
 			wantData: &Data{
 				Values: map[string]*Value{
 					"intArg": IntValue(-1),
 				},
 			},
 			wantStderr: []string{`validation failed: [IntNonNegative] value isn't non-negative`},
+			wantErr:    fmt.Errorf(`validation failed: [IntNonNegative] value isn't non-negative`),
 		},
 		{
 			name: "IntNonNegative works when zero",
@@ -781,6 +913,10 @@ func TestExecute(t *testing.T) {
 				Processor: IntNode("intArg", NewArgOpt(nil, nil, IntNonNegative())),
 			},
 			args: []string{"0"},
+			wantInput: &Input{
+				args: []string{"0"},
+				pos:  1,
+			},
 			wantData: &Data{
 				Values: map[string]*Value{
 					"intArg": IntValue(0),
@@ -793,6 +929,10 @@ func TestExecute(t *testing.T) {
 				Processor: IntNode("intArg", NewArgOpt(nil, nil, IntNonNegative())),
 			},
 			args: []string{"1"},
+			wantInput: &Input{
+				args: []string{"1"},
+				pos:  1,
+			},
 			wantData: &Data{
 				Values: map[string]*Value{
 					"intArg": IntValue(1),
@@ -806,6 +946,10 @@ func TestExecute(t *testing.T) {
 				Processor: FloatNode("flArg", NewArgOpt(nil, nil, FloatEQ(2.4))),
 			},
 			args: []string{"2.4"},
+			wantInput: &Input{
+				args: []string{"2.4"},
+				pos:  1,
+			},
 			wantData: &Data{
 				Values: map[string]*Value{
 					"flArg": FloatValue(2.4),
@@ -818,12 +962,17 @@ func TestExecute(t *testing.T) {
 				Processor: FloatNode("flArg", NewArgOpt(nil, nil, FloatEQ(2.4))),
 			},
 			args: []string{"2.5"},
+			wantInput: &Input{
+				args: []string{"2.5"},
+				pos:  1,
+			},
 			wantData: &Data{
 				Values: map[string]*Value{
 					"flArg": FloatValue(2.5),
 				},
 			},
 			wantStderr: []string{`validation failed: [FloatEQ] value isn't equal to 2.40`},
+			wantErr:    fmt.Errorf(`validation failed: [FloatEQ] value isn't equal to 2.40`),
 		},
 		// FloatNE
 		{
@@ -832,6 +981,10 @@ func TestExecute(t *testing.T) {
 				Processor: FloatNode("flArg", NewArgOpt(nil, nil, FloatNE(2.4))),
 			},
 			args: []string{"2.5"},
+			wantInput: &Input{
+				args: []string{"2.5"},
+				pos:  1,
+			},
 			wantData: &Data{
 				Values: map[string]*Value{
 					"flArg": FloatValue(2.5),
@@ -844,12 +997,17 @@ func TestExecute(t *testing.T) {
 				Processor: FloatNode("flArg", NewArgOpt(nil, nil, FloatNE(2.4))),
 			},
 			args: []string{"2.4"},
+			wantInput: &Input{
+				args: []string{"2.4"},
+				pos:  1,
+			},
 			wantData: &Data{
 				Values: map[string]*Value{
 					"flArg": FloatValue(2.4),
 				},
 			},
 			wantStderr: []string{`validation failed: [FloatNE] value isn't not equal to 2.40`},
+			wantErr:    fmt.Errorf(`validation failed: [FloatNE] value isn't not equal to 2.40`),
 		},
 		// FloatLT
 		{
@@ -858,6 +1016,10 @@ func TestExecute(t *testing.T) {
 				Processor: FloatNode("flArg", NewArgOpt(nil, nil, FloatLT(2.5))),
 			},
 			args: []string{"2.4"},
+			wantInput: &Input{
+				args: []string{"2.4"},
+				pos:  1,
+			},
 			wantData: &Data{
 				Values: map[string]*Value{
 					"flArg": FloatValue(2.4),
@@ -870,12 +1032,17 @@ func TestExecute(t *testing.T) {
 				Processor: FloatNode("flArg", NewArgOpt(nil, nil, FloatLT(2.5))),
 			},
 			args: []string{"2.5"},
+			wantInput: &Input{
+				args: []string{"2.5"},
+				pos:  1,
+			},
 			wantData: &Data{
 				Values: map[string]*Value{
 					"flArg": FloatValue(2.5),
 				},
 			},
 			wantStderr: []string{`validation failed: [FloatLT] value isn't less than 2.50`},
+			wantErr:    fmt.Errorf(`validation failed: [FloatLT] value isn't less than 2.50`),
 		},
 		{
 			name: "FloatLT fails when greater than",
@@ -883,12 +1050,17 @@ func TestExecute(t *testing.T) {
 				Processor: FloatNode("flArg", NewArgOpt(nil, nil, FloatLT(2.5))),
 			},
 			args: []string{"2.6"},
+			wantInput: &Input{
+				args: []string{"2.6"},
+				pos:  1,
+			},
 			wantData: &Data{
 				Values: map[string]*Value{
 					"flArg": FloatValue(2.6),
 				},
 			},
 			wantStderr: []string{`validation failed: [FloatLT] value isn't less than 2.50`},
+			wantErr:    fmt.Errorf(`validation failed: [FloatLT] value isn't less than 2.50`),
 		},
 		// FloatLTE
 		{
@@ -897,6 +1069,10 @@ func TestExecute(t *testing.T) {
 				Processor: FloatNode("flArg", NewArgOpt(nil, nil, FloatLTE(2.5))),
 			},
 			args: []string{"2.4"},
+			wantInput: &Input{
+				args: []string{"2.4"},
+				pos:  1,
+			},
 			wantData: &Data{
 				Values: map[string]*Value{
 					"flArg": FloatValue(2.4),
@@ -909,6 +1085,10 @@ func TestExecute(t *testing.T) {
 				Processor: FloatNode("flArg", NewArgOpt(nil, nil, FloatLTE(2.5))),
 			},
 			args: []string{"2.5"},
+			wantInput: &Input{
+				args: []string{"2.5"},
+				pos:  1,
+			},
 			wantData: &Data{
 				Values: map[string]*Value{
 					"flArg": FloatValue(2.5),
@@ -921,12 +1101,17 @@ func TestExecute(t *testing.T) {
 				Processor: FloatNode("flArg", NewArgOpt(nil, nil, FloatLTE(2.5))),
 			},
 			args: []string{"2.6"},
+			wantInput: &Input{
+				args: []string{"2.6"},
+				pos:  1,
+			},
 			wantData: &Data{
 				Values: map[string]*Value{
 					"flArg": FloatValue(2.6),
 				},
 			},
 			wantStderr: []string{`validation failed: [FloatLTE] value isn't less than or equal to 2.50`},
+			wantErr:    fmt.Errorf(`validation failed: [FloatLTE] value isn't less than or equal to 2.50`),
 		},
 		// FloatGT
 		{
@@ -935,12 +1120,17 @@ func TestExecute(t *testing.T) {
 				Processor: FloatNode("flArg", NewArgOpt(nil, nil, FloatGT(2.5))),
 			},
 			args: []string{"2.4"},
+			wantInput: &Input{
+				args: []string{"2.4"},
+				pos:  1,
+			},
 			wantData: &Data{
 				Values: map[string]*Value{
 					"flArg": FloatValue(2.4),
 				},
 			},
 			wantStderr: []string{`validation failed: [FloatGT] value isn't greater than 2.50`},
+			wantErr:    fmt.Errorf(`validation failed: [FloatGT] value isn't greater than 2.50`),
 		},
 		{
 			name: "FloatGT fails when equal to",
@@ -948,12 +1138,17 @@ func TestExecute(t *testing.T) {
 				Processor: FloatNode("flArg", NewArgOpt(nil, nil, FloatGT(2.5))),
 			},
 			args: []string{"2.5"},
+			wantInput: &Input{
+				args: []string{"2.5"},
+				pos:  1,
+			},
 			wantData: &Data{
 				Values: map[string]*Value{
 					"flArg": FloatValue(2.5),
 				},
 			},
 			wantStderr: []string{`validation failed: [FloatGT] value isn't greater than 2.50`},
+			wantErr:    fmt.Errorf(`validation failed: [FloatGT] value isn't greater than 2.50`),
 		},
 		{
 			name: "FloatGT works when greater than",
@@ -961,6 +1156,10 @@ func TestExecute(t *testing.T) {
 				Processor: FloatNode("flArg", NewArgOpt(nil, nil, FloatGT(2.5))),
 			},
 			args: []string{"2.6"},
+			wantInput: &Input{
+				args: []string{"2.6"},
+				pos:  1,
+			},
 			wantData: &Data{
 				Values: map[string]*Value{
 					"flArg": FloatValue(2.6),
@@ -974,12 +1173,17 @@ func TestExecute(t *testing.T) {
 				Processor: FloatNode("flArg", NewArgOpt(nil, nil, FloatGTE(2.5))),
 			},
 			args: []string{"2.4"},
+			wantInput: &Input{
+				args: []string{"2.4"},
+				pos:  1,
+			},
 			wantData: &Data{
 				Values: map[string]*Value{
 					"flArg": FloatValue(2.4),
 				},
 			},
 			wantStderr: []string{`validation failed: [FloatGTE] value isn't greater than or equal to 2.50`},
+			wantErr:    fmt.Errorf(`validation failed: [FloatGTE] value isn't greater than or equal to 2.50`),
 		},
 		{
 			name: "FloatGTE works when equal to",
@@ -987,6 +1191,10 @@ func TestExecute(t *testing.T) {
 				Processor: FloatNode("flArg", NewArgOpt(nil, nil, FloatGTE(2.5))),
 			},
 			args: []string{"2.5"},
+			wantInput: &Input{
+				args: []string{"2.5"},
+				pos:  1,
+			},
 			wantData: &Data{
 				Values: map[string]*Value{
 					"flArg": FloatValue(2.5),
@@ -999,6 +1207,10 @@ func TestExecute(t *testing.T) {
 				Processor: FloatNode("flArg", NewArgOpt(nil, nil, FloatGTE(2.5))),
 			},
 			args: []string{"2.6"},
+			wantInput: &Input{
+				args: []string{"2.6"},
+				pos:  1,
+			},
 			wantData: &Data{
 				Values: map[string]*Value{
 					"flArg": FloatValue(2.6),
@@ -1012,12 +1224,17 @@ func TestExecute(t *testing.T) {
 				Processor: FloatNode("flArg", NewArgOpt(nil, nil, FloatPositive())),
 			},
 			args: []string{"-0.1"},
+			wantInput: &Input{
+				args: []string{"-0.1"},
+				pos:  1,
+			},
 			wantData: &Data{
 				Values: map[string]*Value{
 					"flArg": FloatValue(-0.1),
 				},
 			},
 			wantStderr: []string{`validation failed: [FloatPositive] value isn't positive`},
+			wantErr:    fmt.Errorf(`validation failed: [FloatPositive] value isn't positive`),
 		},
 		{
 			name: "FloatPositive fails when zero",
@@ -1025,12 +1242,17 @@ func TestExecute(t *testing.T) {
 				Processor: FloatNode("flArg", NewArgOpt(nil, nil, FloatPositive())),
 			},
 			args: []string{"0"},
+			wantInput: &Input{
+				args: []string{"0"},
+				pos:  1,
+			},
 			wantData: &Data{
 				Values: map[string]*Value{
 					"flArg": FloatValue(0),
 				},
 			},
 			wantStderr: []string{`validation failed: [FloatPositive] value isn't positive`},
+			wantErr:    fmt.Errorf(`validation failed: [FloatPositive] value isn't positive`),
 		},
 		{
 			name: "FloatPositive works when positive",
@@ -1038,6 +1260,10 @@ func TestExecute(t *testing.T) {
 				Processor: FloatNode("flArg", NewArgOpt(nil, nil, FloatPositive())),
 			},
 			args: []string{"0.1"},
+			wantInput: &Input{
+				args: []string{"0.1"},
+				pos:  1,
+			},
 			wantData: &Data{
 				Values: map[string]*Value{
 					"flArg": FloatValue(0.1),
@@ -1051,6 +1277,10 @@ func TestExecute(t *testing.T) {
 				Processor: FloatNode("flArg", NewArgOpt(nil, nil, FloatNegative())),
 			},
 			args: []string{"-0.1"},
+			wantInput: &Input{
+				args: []string{"-0.1"},
+				pos:  1,
+			},
 			wantData: &Data{
 				Values: map[string]*Value{
 					"flArg": FloatValue(-0.1),
@@ -1063,12 +1293,17 @@ func TestExecute(t *testing.T) {
 				Processor: FloatNode("flArg", NewArgOpt(nil, nil, FloatNegative())),
 			},
 			args: []string{"0"},
+			wantInput: &Input{
+				args: []string{"0"},
+				pos:  1,
+			},
 			wantData: &Data{
 				Values: map[string]*Value{
 					"flArg": FloatValue(0),
 				},
 			},
 			wantStderr: []string{`validation failed: [FloatNegative] value isn't negative`},
+			wantErr:    fmt.Errorf(`validation failed: [FloatNegative] value isn't negative`),
 		},
 		{
 			name: "FloatNegative fails when positive",
@@ -1076,12 +1311,17 @@ func TestExecute(t *testing.T) {
 				Processor: FloatNode("flArg", NewArgOpt(nil, nil, FloatNegative())),
 			},
 			args: []string{"0.1"},
+			wantInput: &Input{
+				args: []string{"0.1"},
+				pos:  1,
+			},
 			wantData: &Data{
 				Values: map[string]*Value{
 					"flArg": FloatValue(0.1),
 				},
 			},
 			wantStderr: []string{`validation failed: [FloatNegative] value isn't negative`},
+			wantErr:    fmt.Errorf(`validation failed: [FloatNegative] value isn't negative`),
 		},
 		// FloatNonNegative
 		{
@@ -1090,12 +1330,17 @@ func TestExecute(t *testing.T) {
 				Processor: FloatNode("flArg", NewArgOpt(nil, nil, FloatNonNegative())),
 			},
 			args: []string{"-0.1"},
+			wantInput: &Input{
+				args: []string{"-0.1"},
+				pos:  1,
+			},
 			wantData: &Data{
 				Values: map[string]*Value{
 					"flArg": FloatValue(-0.1),
 				},
 			},
 			wantStderr: []string{`validation failed: [FloatNonNegative] value isn't non-negative`},
+			wantErr:    fmt.Errorf(`validation failed: [FloatNonNegative] value isn't non-negative`),
 		},
 		{
 			name: "FloatNonNegative works when zero",
@@ -1103,6 +1348,10 @@ func TestExecute(t *testing.T) {
 				Processor: FloatNode("flArg", NewArgOpt(nil, nil, FloatNonNegative())),
 			},
 			args: []string{"0"},
+			wantInput: &Input{
+				args: []string{"0"},
+				pos:  1,
+			},
 			wantData: &Data{
 				Values: map[string]*Value{
 					"flArg": FloatValue(0),
@@ -1115,6 +1364,10 @@ func TestExecute(t *testing.T) {
 				Processor: FloatNode("flArg", NewArgOpt(nil, nil, FloatNonNegative())),
 			},
 			args: []string{"0.1"},
+			wantInput: &Input{
+				args: []string{"0.1"},
+				pos:  1,
+			},
 			wantData: &Data{
 				Values: map[string]*Value{
 					"flArg": FloatValue(0.1),

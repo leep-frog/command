@@ -48,6 +48,14 @@ func (an *argNode) Execute(i *Input, o Output, data *Data, eData *ExecuteData) e
 
 	data.Set(an.name, v)
 
+	if an.opt != nil {
+		for _, validator := range an.opt.Validators {
+			if err := validator.Validate(v); err != nil {
+				return o.Stderr("validation failed: %v", err)
+			}
+		}
+	}
+
 	if !enough {
 		return o.Stderr("not enough arguments")
 	}
