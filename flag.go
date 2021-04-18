@@ -14,7 +14,7 @@ type Flag interface {
 
 // NewFlagNode returns a node that iterates over the remaining command line
 // arguments and processes any flags that are present.
-func NewFlagNode(fs ...Flag) NodeProcessor {
+func NewFlagNode(fs ...Flag) Processor {
 	m := map[string]Flag{}
 	for _, f := range fs {
 		m[fmt.Sprintf("--%s", f.Name())] = f

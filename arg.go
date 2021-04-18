@@ -1,7 +1,6 @@
 package command
 
 import (
-	"fmt"
 	"strconv"
 )
 
@@ -10,7 +9,7 @@ type argNode struct {
 	opt       *ArgOpt
 	minN      int
 	optionalN int
-	transform func([]string) (*Value, error)
+	transform func([]*string) (*Value, error)
 	vt        ValueType
 	shortName rune
 	flag      bool
@@ -44,7 +43,7 @@ func (an *argNode) Execute(i *Input, o Output, data *Data, eData *ExecuteData) e
 	// Copy values into returned list (required for aliasing)
 	newSl := v.ToArgs()
 	for i := 0; i < len(sl); i++ {
-		sl[i] = newSl[i]
+		*sl[i] = newSl[i]
 	}
 
 	data.Set(an.name, v)
@@ -90,7 +89,7 @@ func (an *argNode) Complete(input *Input, data *Data) *CompleteData {
 	// Copy values into returned list (required for aliasing)
 	newSl := v.ToArgs()
 	for i := 0; i < len(sl); i++ {
-		sl[i] = newSl[i]
+		*sl[i] = newSl[i]
 	}
 
 	data.Set(an.name, v)
@@ -98,11 +97,9 @@ func (an *argNode) Complete(input *Input, data *Data) *CompleteData {
 	// Don't run validations when completing.
 
 	// If we have enough and more needs to be processed.
-	fmt.Println("OY1", an.name)
 	if enough && !input.FullyProcessed() {
 		return nil
 	}
-	fmt.Println("OY2", an.name)
 
 	var lastArg string
 	ta := v.ToArgs()
@@ -115,19 +112,26 @@ func (an *argNode) Complete(input *Input, data *Data) *CompleteData {
 }
 
 func StringListNode(name string, minN, optionalN int, opt *ArgOpt) Processor {
-	t := func(s []string) (*Value, error) { return StringListValue(s...), nil }
-	return listNode(name, minN, optionalN, StringListType, t, opt)
+	return listNode(name, minN, optionalN, StringListType, stringListTransform, opt)
+}
+
+func stringListTransform(sl []*string) (*Value, error) {
+	r := make([]string, 0, len(sl))
+	for _, s := range sl {
+		r = append(r, *s)
+	}
+	return StringListValue(r...), nil
 }
 
 func IntListNode(name string, minN, optionalN int, opt *ArgOpt) Processor {
 	return listNode(name, minN, optionalN, IntListType, intListTransform, opt)
 }
 
-func intListTransform(sl []string) (*Value, error) {
+func intListTransform(sl []*string) (*Value, error) {
 	var err error
 	var is []int
 	for _, s := range sl {
-		i, e := strconv.Atoi(s)
+		i, e := strconv.Atoi(*s)
 		if e != nil {
 			// TODO: add failed to load field to values.
 			// These can be used in autocomplete if necessary.
@@ -142,11 +146,11 @@ func FloatListNode(name string, minN, optionalN int, opt *ArgOpt) Processor {
 	return listNode(name, minN, optionalN, FloatListType, floatListTransform, opt)
 }
 
-func floatListTransform(sl []string) (*Value, error) {
+func floatListTransform(sl []*string) (*Value, error) {
 	var err error
 	var fs []float64
 	for _, s := range sl {
-		f, e := strconv.ParseFloat(s, 64)
+		f, e := strconv.ParseFloat(*s, 64)
 		if e != nil {
 			err = e
 		}
@@ -163,11 +167,11 @@ func OptionalStringNode(name string, opt *ArgOpt) Processor {
 	return listNode(name, 0, 1, StringType, stringTransform, opt)
 }
 
-func stringTransform(sl []string) (*Value, error) {
+func stringTransform(sl []*string) (*Value, error) {
 	if len(sl) == 0 {
 		return StringValue(""), nil
 	}
-	return StringValue(sl[0]), nil
+	return StringValue(*sl[0]), nil
 }
 
 func IntNode(name string, opt *ArgOpt) Processor {
@@ -178,11 +182,11 @@ func OptionalIntNode(name string, opt *ArgOpt) Processor {
 	return listNode(name, 0, 1, IntType, intTransform, opt)
 }
 
-func intTransform(sl []string) (*Value, error) {
+func intTransform(sl []*string) (*Value, error) {
 	if len(sl) == 0 {
 		return IntValue(0), nil
 	}
-	i, err := strconv.Atoi(sl[0])
+	i, err := strconv.Atoi(*sl[0])
 	return IntValue(i), err
 }
 
@@ -194,15 +198,15 @@ func OptionalFloatNode(name string, opt *ArgOpt) Processor {
 	return listNode(name, 0, 1, FloatType, floatTransform, opt)
 }
 
-func floatTransform(sl []string) (*Value, error) {
+func floatTransform(sl []*string) (*Value, error) {
 	if len(sl) == 0 {
 		return FloatValue(0), nil
 	}
-	f, err := strconv.ParseFloat(sl[0], 64)
+	f, err := strconv.ParseFloat(*sl[0], 64)
 	return FloatValue(f), err
 }
 
-func listNode(name string, minN, optionalN int, vt ValueType, transformer func([]string) (*Value, error), opt *ArgOpt) Processor {
+func listNode(name string, minN, optionalN int, vt ValueType, transformer func([]*string) (*Value, error), opt *ArgOpt) Processor {
 	return &argNode{
 		name:      name,
 		minN:      minN,

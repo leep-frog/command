@@ -12,13 +12,11 @@ func runePtr(r rune) *rune {
 }
 
 func TestPop(t *testing.T) {
-	input := &Input{
-		args: []string{
-			"one",
-			"two",
-			"three",
-		},
-	}
+	input := NewInput([]string{
+		"one",
+		"two",
+		"three",
+	}, nil)
 
 	for idx, want := range []struct {
 		s  string
@@ -56,102 +54,92 @@ func TestPop(t *testing.T) {
 func TestPopN(t *testing.T) {
 	for _, test := range []struct {
 		name      string
-		input     *Input
+		input     []string
 		n         int
 		optN      int
-		modify    func([]string)
+		modify    func([]*string)
 		want      []string
 		wantOK    bool
 		wantInput *Input
 	}{
 		{
 			name:      "pops none",
-			input:     &Input{},
 			wantOK:    true,
 			wantInput: &Input{},
 		},
 		{
-			name: "pops none from list",
-			input: &Input{
-				args: []string{"hello"},
-			},
+			name:   "pops none from list",
+			input:  []string{"hello"},
 			wantOK: true,
 			wantInput: &Input{
-				args: []string{"hello"},
+				args:      []string{"hello"},
+				remaining: []int{0},
 			},
 		},
 		{
-			name: "returns all if unbounded list",
-			input: &Input{
-				args: []string{"hello", "there", "person"},
-			},
+			name:   "returns all if unbounded list",
+			input:  []string{"hello", "there", "person"},
 			optN:   UnboundedList,
 			want:   []string{"hello", "there", "person"},
 			wantOK: true,
 			wantInput: &Input{
 				args: []string{"hello", "there", "person"},
-				pos:  3,
 			},
 		},
 		{
-			name: "pops requested amount from list",
-			input: &Input{
-				args: []string{"hello", "there", "person"},
-			},
+			name:   "pops requested amount from list",
+			input:  []string{"hello", "there", "person"},
 			n:      2,
 			want:   []string{"hello", "there"},
 			wantOK: true,
 			wantInput: &Input{
-				args: []string{"hello", "there", "person"},
-				pos:  2,
+				args:      []string{"hello", "there", "person"},
+				remaining: []int{2},
 			},
 		},
 		{
-			name: "still returns values when too many requested",
-			input: &Input{
-				args: []string{"hello", "there", "person"},
-			},
-			n:    4,
-			want: []string{"hello", "there", "person"},
+			name:  "still returns values when too many requested",
+			input: []string{"hello", "there", "person"},
+			n:     4,
+			want:  []string{"hello", "there", "person"},
 			wantInput: &Input{
 				args: []string{"hello", "there", "person"},
-				pos:  3,
 			},
 		},
 		{
-			name: "modifies input",
-			input: &Input{
-				args: []string{"hello", "there", "person"},
-			},
-			n:    2,
-			want: []string{"hello", "there"},
-			modify: func(s []string) {
-				s[0] = "goodbye"
+			name:  "modifies input",
+			input: []string{"hello", "there", "person"},
+			n:     2,
+			want:  []string{"hello", "there"},
+			modify: func(s []*string) {
+				*s[0] = "goodbye"
 			},
 			wantOK: true,
 			wantInput: &Input{
-				args: []string{"goodbye", "there", "person"},
-				pos:  2,
+				args:      []string{"goodbye", "there", "person"},
+				remaining: []int{2},
 			},
 		},
 		{
-			name: "modifies when not enough",
-			input: &Input{
-				args: []string{"hello", "there", "person"},
-			},
-			n: 4,
-			modify: func(s []string) {
-				s[1] = "good"
+			name:  "modifies when not enough",
+			input: []string{"hello", "there", "person"},
+			n:     4,
+			modify: func(s []*string) {
+				*s[1] = "good"
 			},
 			want: []string{"hello", "there", "person"},
 			wantInput: &Input{
 				args: []string{"hello", "good", "person"},
-				pos:  3,
 			},
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			got, gotOK := test.input.PopN(test.n, test.optN)
+			input := NewInput(test.input, nil)
+			gotPtrs, gotOK := input.PopN(test.n, test.optN)
+			var got []string
+			for _, p := range gotPtrs {
+				got = append(got, *p)
+			}
 			if diff := cmp.Diff(test.want, got, cmpopts.EquateEmpty()); diff != "" {
 				t.Fatalf("PopN(%d, %d) returned incorrect values (-want, +got):\n%s", test.n, test.optN, diff)
 			}
@@ -161,10 +149,10 @@ func TestPopN(t *testing.T) {
 			}
 
 			if test.modify != nil {
-				test.modify(got)
+				test.modify(gotPtrs)
 			}
 
-			if diff := cmp.Diff(test.wantInput, test.input, cmp.AllowUnexported(Input{})); diff != "" {
+			if diff := cmp.Diff(test.wantInput, input, cmp.AllowUnexported(Input{}), cmpopts.EquateEmpty()); diff != "" {
 				t.Fatalf("PopN(%d, %d) resulted in incorrect input (-want, +got):\n%s", test.n, test.optN, diff)
 			}
 		})
@@ -185,7 +173,8 @@ func TestParseArgs(t *testing.T) {
 			name:  "converts single argument",
 			input: []string{"one"},
 			want: &Input{
-				args: []string{"one"},
+				args:      []string{"one"},
+				remaining: []int{0},
 			},
 		},
 		{
@@ -194,13 +183,15 @@ func TestParseArgs(t *testing.T) {
 			want: &Input{
 				args:      []string{"one"},
 				delimiter: runePtr('"'),
+				remaining: []int{0},
 			},
 		},
 		{
 			name:  "converts quoted argument",
 			input: []string{`"one"`},
 			want: &Input{
-				args: []string{"one"},
+				args:      []string{"one"},
+				remaining: []int{0},
 			},
 		},
 		{
@@ -209,27 +200,31 @@ func TestParseArgs(t *testing.T) {
 			want: &Input{
 				args:      []string{"one", ""},
 				delimiter: runePtr('"'),
+				remaining: []int{0, 1},
 			},
 		},
 		{
 			name:  "escaped space character",
 			input: []string{`ab\ cd`},
 			want: &Input{
-				args: []string{"ab cd"},
+				args:      []string{"ab cd"},
+				remaining: []int{0},
 			},
 		},
 		{
 			name:  "escaped space character between words",
 			input: []string{"ab\\", "cd"},
 			want: &Input{
-				args: []string{"ab cd"},
+				args:      []string{"ab cd"},
+				remaining: []int{0},
 			},
 		},
 		{
 			name:  "quotation between words",
 			input: []string{"a'b", "c'd"},
 			want: &Input{
-				args: []string{"ab cd"},
+				args:      []string{"ab cd"},
+				remaining: []int{0},
 			},
 		},
 	} {

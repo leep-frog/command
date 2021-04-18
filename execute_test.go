@@ -39,7 +39,8 @@ func TestExecute(t *testing.T) {
 			wantErr:    fmt.Errorf("Unprocessed extra args: [hello]"),
 			wantStderr: []string{"Unprocessed extra args: [hello]"},
 			wantInput: &Input{
-				args: []string{"hello"},
+				args:      []string{"hello"},
+				remaining: []int{0},
 			},
 		},
 		// Single arg tests.
@@ -65,7 +66,6 @@ func TestExecute(t *testing.T) {
 			},
 			wantInput: &Input{
 				args: []string{"hello"},
-				pos:  1,
 			},
 			wantErr: fmt.Errorf("bad news bears"),
 			wantData: &Data{
@@ -102,7 +102,6 @@ func TestExecute(t *testing.T) {
 			args: []string{"hello"},
 			wantInput: &Input{
 				args: []string{"hello"},
-				pos:  1,
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -116,7 +115,6 @@ func TestExecute(t *testing.T) {
 			args: []string{"123"},
 			wantInput: &Input{
 				args: []string{"123"},
-				pos:  1,
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -130,7 +128,6 @@ func TestExecute(t *testing.T) {
 			args: []string{"12.3"},
 			wantInput: &Input{
 				args: []string{"12.3"},
-				pos:  1,
 			},
 			wantErr:    fmt.Errorf(`strconv.Atoi: parsing "12.3": invalid syntax`),
 			wantStderr: []string{`strconv.Atoi: parsing "12.3": invalid syntax`},
@@ -141,7 +138,6 @@ func TestExecute(t *testing.T) {
 			args: []string{"-12.3"},
 			wantInput: &Input{
 				args: []string{"-12.3"},
-				pos:  1,
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -155,7 +151,6 @@ func TestExecute(t *testing.T) {
 			args: []string{"twelve"},
 			wantInput: &Input{
 				args: []string{"twelve"},
-				pos:  1,
 			},
 			wantErr:    fmt.Errorf(`strconv.ParseFloat: parsing "twelve": invalid syntax`),
 			wantStderr: []string{`strconv.ParseFloat: parsing "twelve": invalid syntax`},
@@ -166,8 +161,8 @@ func TestExecute(t *testing.T) {
 			node: SerialNodes(StringListNode("sl", 1, 1, nil)),
 			args: []string{"hello", "there", "sir"},
 			wantInput: &Input{
-				args: []string{"hello", "there", "sir"},
-				pos:  2,
+				args:      []string{"hello", "there", "sir"},
+				remaining: []int{2},
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -183,7 +178,6 @@ func TestExecute(t *testing.T) {
 			args: []string{"hello"},
 			wantInput: &Input{
 				args: []string{"hello"},
-				pos:  1,
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -197,7 +191,6 @@ func TestExecute(t *testing.T) {
 			args: []string{"hello", "there"},
 			wantInput: &Input{
 				args: []string{"hello", "there"},
-				pos:  2,
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -211,7 +204,6 @@ func TestExecute(t *testing.T) {
 			args: []string{"hello", "there", "maam"},
 			wantInput: &Input{
 				args: []string{"hello", "there", "maam"},
-				pos:  3,
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -225,7 +217,6 @@ func TestExecute(t *testing.T) {
 			args: []string{"hello", "there", "kenobi"},
 			wantInput: &Input{
 				args: []string{"hello", "there", "kenobi"},
-				pos:  3,
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -241,7 +232,6 @@ func TestExecute(t *testing.T) {
 			args: []string{"hello"},
 			wantInput: &Input{
 				args: []string{"hello"},
-				pos:  1,
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -255,7 +245,6 @@ func TestExecute(t *testing.T) {
 			args: []string{"hello", "there", "kenobi"},
 			wantInput: &Input{
 				args: []string{"hello", "there", "kenobi"},
-				pos:  3,
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -269,7 +258,6 @@ func TestExecute(t *testing.T) {
 			args: []string{"1", "-23"},
 			wantInput: &Input{
 				args: []string{"1", "-23"},
-				pos:  2,
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -283,7 +271,6 @@ func TestExecute(t *testing.T) {
 			args: []string{"1", "four", "-23"},
 			wantInput: &Input{
 				args: []string{"1", "four", "-23"},
-				pos:  3,
 			},
 			wantErr:    fmt.Errorf(`strconv.Atoi: parsing "four": invalid syntax`),
 			wantStderr: []string{`strconv.Atoi: parsing "four": invalid syntax`},
@@ -294,7 +281,6 @@ func TestExecute(t *testing.T) {
 			args: []string{"0.1", "-2.3"},
 			wantInput: &Input{
 				args: []string{"0.1", "-2.3"},
-				pos:  2,
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -308,7 +294,6 @@ func TestExecute(t *testing.T) {
 			args: []string{"0.1", "four", "-23"},
 			wantInput: &Input{
 				args: []string{"0.1", "four", "-23"},
-				pos:  3,
 			},
 			wantErr:    fmt.Errorf(`strconv.ParseFloat: parsing "four": invalid syntax`),
 			wantStderr: []string{`strconv.ParseFloat: parsing "four": invalid syntax`},
@@ -320,7 +305,6 @@ func TestExecute(t *testing.T) {
 			args: []string{"0", "1", "two", "0.3", "-4"},
 			wantInput: &Input{
 				args: []string{"0", "1", "two", "0.3", "-4"},
-				pos:  5,
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -335,8 +319,8 @@ func TestExecute(t *testing.T) {
 			node: SerialNodes(IntListNode("il", 2, 0, nil), StringNode("s", nil), FloatListNode("fl", 1, 2, nil)),
 			args: []string{"0", "1", "two", "0.3", "-4", "0.5", "6"},
 			wantInput: &Input{
-				args: []string{"0", "1", "two", "0.3", "-4", "0.5", "6"},
-				pos:  6,
+				remaining: []int{6},
+				args:      []string{"0", "1", "two", "0.3", "-4", "0.5", "6"},
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -365,7 +349,6 @@ func TestExecute(t *testing.T) {
 			args: []string{"0", "1", "two", "0.3", "-4"},
 			wantInput: &Input{
 				args: []string{"0", "1", "two", "0.3", "-4"},
-				pos:  5,
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -388,7 +371,6 @@ func TestExecute(t *testing.T) {
 			args: []string{"0", "1", "two", "0.3", "-4"},
 			wantInput: &Input{
 				args: []string{"0", "1", "two", "0.3", "-4"},
-				pos:  5,
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -409,7 +391,6 @@ func TestExecute(t *testing.T) {
 			args: []string{"123"},
 			wantInput: &Input{
 				args: []string{"123"},
-				pos:  1,
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -428,7 +409,6 @@ func TestExecute(t *testing.T) {
 			args: []string{"goodbye"},
 			wantInput: &Input{
 				args: []string{"goodbye"},
-				pos:  1,
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -444,7 +424,6 @@ func TestExecute(t *testing.T) {
 			args: []string{"hello"},
 			wantInput: &Input{
 				args: []string{"hello"},
-				pos:  1,
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -463,7 +442,6 @@ func TestExecute(t *testing.T) {
 			args: []string{"hello"},
 			wantInput: &Input{
 				args: []string{"hello"},
-				pos:  1,
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -479,7 +457,6 @@ func TestExecute(t *testing.T) {
 			args: []string{"hey"},
 			wantInput: &Input{
 				args: []string{"hey"},
-				pos:  1,
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -495,7 +472,6 @@ func TestExecute(t *testing.T) {
 			args: []string{"hi"},
 			wantInput: &Input{
 				args: []string{"hi"},
-				pos:  1,
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -514,7 +490,6 @@ func TestExecute(t *testing.T) {
 			args: []string{"24"},
 			wantInput: &Input{
 				args: []string{"24"},
-				pos:  1,
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -530,7 +505,6 @@ func TestExecute(t *testing.T) {
 			args: []string{"25"},
 			wantInput: &Input{
 				args: []string{"25"},
-				pos:  1,
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -549,7 +523,6 @@ func TestExecute(t *testing.T) {
 			args: []string{"25"},
 			wantInput: &Input{
 				args: []string{"25"},
-				pos:  1,
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -565,7 +538,6 @@ func TestExecute(t *testing.T) {
 			args: []string{"24"},
 			wantInput: &Input{
 				args: []string{"24"},
-				pos:  1,
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -584,7 +556,6 @@ func TestExecute(t *testing.T) {
 			args: []string{"24"},
 			wantInput: &Input{
 				args: []string{"24"},
-				pos:  1,
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -600,7 +571,6 @@ func TestExecute(t *testing.T) {
 			args: []string{"25"},
 			wantInput: &Input{
 				args: []string{"25"},
-				pos:  1,
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -618,7 +588,6 @@ func TestExecute(t *testing.T) {
 			args: []string{"26"},
 			wantInput: &Input{
 				args: []string{"26"},
-				pos:  1,
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -637,7 +606,6 @@ func TestExecute(t *testing.T) {
 			args: []string{"24"},
 			wantInput: &Input{
 				args: []string{"24"},
-				pos:  1,
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -653,7 +621,6 @@ func TestExecute(t *testing.T) {
 			args: []string{"25"},
 			wantInput: &Input{
 				args: []string{"25"},
-				pos:  1,
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -669,7 +636,6 @@ func TestExecute(t *testing.T) {
 			args: []string{"26"},
 			wantInput: &Input{
 				args: []string{"26"},
-				pos:  1,
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -688,7 +654,6 @@ func TestExecute(t *testing.T) {
 			args: []string{"24"},
 			wantInput: &Input{
 				args: []string{"24"},
-				pos:  1,
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -706,7 +671,6 @@ func TestExecute(t *testing.T) {
 			args: []string{"25"},
 			wantInput: &Input{
 				args: []string{"25"},
-				pos:  1,
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -724,7 +688,6 @@ func TestExecute(t *testing.T) {
 			args: []string{"26"},
 			wantInput: &Input{
 				args: []string{"26"},
-				pos:  1,
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -741,7 +704,6 @@ func TestExecute(t *testing.T) {
 			args: []string{"24"},
 			wantInput: &Input{
 				args: []string{"24"},
-				pos:  1,
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -759,7 +721,6 @@ func TestExecute(t *testing.T) {
 			args: []string{"25"},
 			wantInput: &Input{
 				args: []string{"25"},
-				pos:  1,
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -775,7 +736,6 @@ func TestExecute(t *testing.T) {
 			args: []string{"26"},
 			wantInput: &Input{
 				args: []string{"26"},
-				pos:  1,
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -792,7 +752,6 @@ func TestExecute(t *testing.T) {
 			args: []string{"-1"},
 			wantInput: &Input{
 				args: []string{"-1"},
-				pos:  1,
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -810,7 +769,6 @@ func TestExecute(t *testing.T) {
 			args: []string{"0"},
 			wantInput: &Input{
 				args: []string{"0"},
-				pos:  1,
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -828,7 +786,6 @@ func TestExecute(t *testing.T) {
 			args: []string{"1"},
 			wantInput: &Input{
 				args: []string{"1"},
-				pos:  1,
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -845,7 +802,6 @@ func TestExecute(t *testing.T) {
 			args: []string{"-1"},
 			wantInput: &Input{
 				args: []string{"-1"},
-				pos:  1,
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -861,7 +817,6 @@ func TestExecute(t *testing.T) {
 			args: []string{"0"},
 			wantInput: &Input{
 				args: []string{"0"},
-				pos:  1,
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -879,7 +834,6 @@ func TestExecute(t *testing.T) {
 			args: []string{"1"},
 			wantInput: &Input{
 				args: []string{"1"},
-				pos:  1,
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -898,7 +852,6 @@ func TestExecute(t *testing.T) {
 			args: []string{"-1"},
 			wantInput: &Input{
 				args: []string{"-1"},
-				pos:  1,
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -916,7 +869,6 @@ func TestExecute(t *testing.T) {
 			args: []string{"0"},
 			wantInput: &Input{
 				args: []string{"0"},
-				pos:  1,
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -932,7 +884,6 @@ func TestExecute(t *testing.T) {
 			args: []string{"1"},
 			wantInput: &Input{
 				args: []string{"1"},
-				pos:  1,
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -949,7 +900,6 @@ func TestExecute(t *testing.T) {
 			args: []string{"2.4"},
 			wantInput: &Input{
 				args: []string{"2.4"},
-				pos:  1,
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -965,7 +915,6 @@ func TestExecute(t *testing.T) {
 			args: []string{"2.5"},
 			wantInput: &Input{
 				args: []string{"2.5"},
-				pos:  1,
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -984,7 +933,6 @@ func TestExecute(t *testing.T) {
 			args: []string{"2.5"},
 			wantInput: &Input{
 				args: []string{"2.5"},
-				pos:  1,
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -1000,7 +948,6 @@ func TestExecute(t *testing.T) {
 			args: []string{"2.4"},
 			wantInput: &Input{
 				args: []string{"2.4"},
-				pos:  1,
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -1019,7 +966,6 @@ func TestExecute(t *testing.T) {
 			args: []string{"2.4"},
 			wantInput: &Input{
 				args: []string{"2.4"},
-				pos:  1,
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -1035,7 +981,6 @@ func TestExecute(t *testing.T) {
 			args: []string{"2.5"},
 			wantInput: &Input{
 				args: []string{"2.5"},
-				pos:  1,
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -1053,7 +998,6 @@ func TestExecute(t *testing.T) {
 			args: []string{"2.6"},
 			wantInput: &Input{
 				args: []string{"2.6"},
-				pos:  1,
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -1072,7 +1016,6 @@ func TestExecute(t *testing.T) {
 			args: []string{"2.4"},
 			wantInput: &Input{
 				args: []string{"2.4"},
-				pos:  1,
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -1088,7 +1031,6 @@ func TestExecute(t *testing.T) {
 			args: []string{"2.5"},
 			wantInput: &Input{
 				args: []string{"2.5"},
-				pos:  1,
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -1104,7 +1046,6 @@ func TestExecute(t *testing.T) {
 			args: []string{"2.6"},
 			wantInput: &Input{
 				args: []string{"2.6"},
-				pos:  1,
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -1123,7 +1064,6 @@ func TestExecute(t *testing.T) {
 			args: []string{"2.4"},
 			wantInput: &Input{
 				args: []string{"2.4"},
-				pos:  1,
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -1141,7 +1081,6 @@ func TestExecute(t *testing.T) {
 			args: []string{"2.5"},
 			wantInput: &Input{
 				args: []string{"2.5"},
-				pos:  1,
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -1159,7 +1098,6 @@ func TestExecute(t *testing.T) {
 			args: []string{"2.6"},
 			wantInput: &Input{
 				args: []string{"2.6"},
-				pos:  1,
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -1176,7 +1114,6 @@ func TestExecute(t *testing.T) {
 			args: []string{"2.4"},
 			wantInput: &Input{
 				args: []string{"2.4"},
-				pos:  1,
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -1194,7 +1131,6 @@ func TestExecute(t *testing.T) {
 			args: []string{"2.5"},
 			wantInput: &Input{
 				args: []string{"2.5"},
-				pos:  1,
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -1210,7 +1146,6 @@ func TestExecute(t *testing.T) {
 			args: []string{"2.6"},
 			wantInput: &Input{
 				args: []string{"2.6"},
-				pos:  1,
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -1227,7 +1162,6 @@ func TestExecute(t *testing.T) {
 			args: []string{"-0.1"},
 			wantInput: &Input{
 				args: []string{"-0.1"},
-				pos:  1,
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -1245,7 +1179,6 @@ func TestExecute(t *testing.T) {
 			args: []string{"0"},
 			wantInput: &Input{
 				args: []string{"0"},
-				pos:  1,
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -1263,7 +1196,6 @@ func TestExecute(t *testing.T) {
 			args: []string{"0.1"},
 			wantInput: &Input{
 				args: []string{"0.1"},
-				pos:  1,
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -1280,7 +1212,6 @@ func TestExecute(t *testing.T) {
 			args: []string{"-0.1"},
 			wantInput: &Input{
 				args: []string{"-0.1"},
-				pos:  1,
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -1296,7 +1227,6 @@ func TestExecute(t *testing.T) {
 			args: []string{"0"},
 			wantInput: &Input{
 				args: []string{"0"},
-				pos:  1,
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -1314,7 +1244,6 @@ func TestExecute(t *testing.T) {
 			args: []string{"0.1"},
 			wantInput: &Input{
 				args: []string{"0.1"},
-				pos:  1,
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -1333,7 +1262,6 @@ func TestExecute(t *testing.T) {
 			args: []string{"-0.1"},
 			wantInput: &Input{
 				args: []string{"-0.1"},
-				pos:  1,
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -1351,7 +1279,6 @@ func TestExecute(t *testing.T) {
 			args: []string{"0"},
 			wantInput: &Input{
 				args: []string{"0"},
-				pos:  1,
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -1367,7 +1294,6 @@ func TestExecute(t *testing.T) {
 			args: []string{"0.1"},
 			wantInput: &Input{
 				args: []string{"0.1"},
-				pos:  1,
 			},
 			wantData: &Data{
 				Values: map[string]*Value{

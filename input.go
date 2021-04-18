@@ -1,8 +1,12 @@
 package command
 
+type unprocessedArg struct {
+	originalIdx int
+}
+
 type Input struct {
 	args      []string
-	pos       int
+	remaining []int
 	delimiter *rune
 }
 
@@ -11,18 +15,22 @@ const (
 )
 
 func (i *Input) FullyProcessed() bool {
-	return i.pos >= len(i.args)
+	return len(i.remaining) == 0
 }
 
 func (i *Input) Remaining() []string {
-	return i.args[i.pos:]
+	r := make([]string, 0, len(i.remaining))
+	for _, v := range i.remaining {
+		r = append(r, i.args[v])
+	}
+	return r
 }
 
 func (i *Input) Peek() (string, bool) {
 	if i.FullyProcessed() {
 		return "", false
 	}
-	return i.args[i.pos], true
+	return i.args[i.remaining[0]], true
 }
 
 func (i *Input) Pop() (string, bool) {
@@ -30,17 +38,20 @@ func (i *Input) Pop() (string, bool) {
 	if !ok {
 		return "", false
 	}
-	return sl[0], true
+	return *sl[0], true
 }
 
-func (i *Input) PopN(n, optN int) ([]string, bool) {
-	remaining := len(i.args) - i.pos
+func (i *Input) PopN(n, optN int) ([]*string, bool) {
 	shift := n + optN
-	if optN == UnboundedList || shift+i.pos > len(i.args) {
-		shift = remaining
+	if optN == UnboundedList || shift > len(i.remaining) {
+		shift = len(i.remaining)
 	}
-	ret := i.args[i.pos:(i.pos + shift)]
-	i.pos += shift
+
+	ret := make([]*string, 0, shift)
+	for idx := 0; idx < shift; idx++ {
+		ret = append(ret, &i.args[i.remaining[idx]])
+	}
+	i.remaining = i.remaining[shift:]
 	return ret, len(ret) >= n
 }
 
@@ -127,8 +138,18 @@ func ParseArgs(unparsedArgs []string) *Input {
 		delimiter = currentQuote
 	}
 
+	return NewInput(parsedArgs, delimiter)
+}
+
+func NewInput(args []string, delimiter *rune) *Input {
+	r := make([]int, len(args))
+	for i := range args {
+		r[i] = i
+	}
+
 	return &Input{
-		args:      parsedArgs,
+		args:      args,
 		delimiter: delimiter,
+		remaining: r,
 	}
 }

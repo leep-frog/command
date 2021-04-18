@@ -73,17 +73,13 @@ func (*boolFetcher) Fetch(*Value, *Data) *Completion {
 
 func (c *Completor) Complete(rawValue string, value *Value, data *Data) *Completion {
 	if c == nil || c.SuggestionFetcher == nil {
-		fmt.Println("NO1")
 		return nil
 	}
 
 	completion := c.SuggestionFetcher.Fetch(value, data)
 	if completion == nil {
-		fmt.Println("NO2")
 		return nil
 	}
-
-	fmt.Println("Completions", completion)
 
 	if c.Distinct {
 		existingValues := map[string]bool{}
