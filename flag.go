@@ -68,11 +68,10 @@ func (fn *flagNode) Complete(input *Input, output Output) bool {
 }
 
 func (fn *flagNode) Execute(input *Input, output Output, data *Data, eData *ExecuteData) error {
-	for i := 0; i < len(ws.RawArgs); {
-		a, _ := ws.PeekAt(i)
+	for i := 0; i < len(input.remaining); {
+		a := input.args[input.remaining[i]]
 		f, ok := fn.flagMap[a]
 		if !ok {
-			//flaglessArgs = append(flaglessArgs, a)
 			i++
 			continue
 		}
@@ -147,8 +146,7 @@ func (bf *boolFlag) Execute(_ *Input, _ Output, data *Data, _ *ExecuteData) erro
 }
 
 func StringListFlag(name string, shortName rune, minN, optionalN int, opt *ArgOpt) Flag {
-	t := func(s []string) (*Value, error) { return StringListValue(s...), nil }
-	return listFlag(name, shortName, minN, optionalN, t, opt)
+	return listFlag(name, shortName, minN, optionalN, stringListTransform, opt)
 }
 
 func IntListFlag(name string, shortName rune, minN, optionalN int, opt *ArgOpt) Flag {
@@ -159,7 +157,7 @@ func FloatListFlag(name string, shortName rune, minN, optionalN int, opt *ArgOpt
 	return listFlag(name, shortName, minN, optionalN, floatListTransform, opt)
 }
 
-func listFlag(name string, shortName rune, minN, optionalN int, transform func(s []string) (*Value, error), opt *ArgOpt) Flag {
+func listFlag(name string, shortName rune, minN, optionalN int, transform func(s []*string) (*Value, error), opt *ArgOpt) Flag {
 	return &flag{
 		name:      name,
 		shortName: shortName,

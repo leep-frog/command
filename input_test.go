@@ -159,7 +159,7 @@ func TestPopN(t *testing.T) {
 	}
 }
 
-func TestPopNAt(t *testing.T) {
+func TestPopNOffset(t *testing.T) {
 	for _, test := range []struct {
 		name      string
 		input     []string
@@ -177,16 +177,20 @@ func TestPopNAt(t *testing.T) {
 			wantInput: &Input{},
 		},
 		{
-			name:      "pops none when offset",
-			offset:    1,
-			wantOK:    true,
-			wantInput: &Input{},
+			name:   "pops none when offset",
+			offset: 1,
+			wantOK: true,
+			wantInput: &Input{
+				offset: 1,
+			},
 		},
 		{
-			name:      "returns false if big offset and n",
-			offset:    1,
-			n:         1,
-			wantInput: &Input{},
+			name:   "returns false if big offset and n",
+			offset: 1,
+			n:      1,
+			wantInput: &Input{
+				offset: 1,
+			},
 		},
 		{
 			name:   "pops none from list",
@@ -206,6 +210,7 @@ func TestPopNAt(t *testing.T) {
 			wantInput: &Input{
 				args:      []string{"hello"},
 				remaining: []int{0},
+				offset:    1,
 			},
 		},
 		{
@@ -228,6 +233,7 @@ func TestPopNAt(t *testing.T) {
 			wantInput: &Input{
 				args:      []string{"hello", "there", "person"},
 				remaining: []int{0},
+				offset:    1,
 			},
 		},
 		{
@@ -251,6 +257,7 @@ func TestPopNAt(t *testing.T) {
 			wantInput: &Input{
 				args:      []string{"hello", "there", "general", "kenobi"},
 				remaining: []int{0, 3},
+				offset:    1,
 			},
 		},
 		{
@@ -271,6 +278,7 @@ func TestPopNAt(t *testing.T) {
 			wantInput: &Input{
 				args:      []string{"hello", "there", "person"},
 				remaining: []int{0, 1},
+				offset:    2,
 			},
 		},
 		{
@@ -301,6 +309,7 @@ func TestPopNAt(t *testing.T) {
 			wantInput: &Input{
 				args:      []string{"hello", "there", "general", "kenobi"},
 				remaining: []int{0, 1},
+				offset:    2,
 			},
 		},
 		{
@@ -327,12 +336,14 @@ func TestPopNAt(t *testing.T) {
 			wantInput: &Input{
 				args:      []string{"hello", "there", "general", "motors"},
 				remaining: []int{0, 1, 2},
+				offset:    3,
 			},
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			input := NewInput(test.input, nil)
-			gotPtrs, gotOK := input.PopNAt(test.offset, test.n, test.optN)
+			input.offset = test.offset
+			gotPtrs, gotOK := input.PopN(test.n, test.optN)
 			var got []string
 			for _, p := range gotPtrs {
 				got = append(got, *p)

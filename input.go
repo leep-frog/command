@@ -8,6 +8,7 @@ type Input struct {
 	args      []string
 	remaining []int
 	delimiter *rune
+	offset    int
 }
 
 const (
@@ -15,7 +16,7 @@ const (
 )
 
 func (i *Input) FullyProcessed() bool {
-	return len(i.remaining) == 0
+	return len(i.remaining) <= i.offset
 }
 
 func (i *Input) Remaining() []string {
@@ -34,11 +35,7 @@ func (i *Input) Peek() (string, bool) {
 }
 
 func (i *Input) Pop() (string, bool) {
-	return i.PopAt(0)
-}
-
-func (i *Input) PopAt(idx int) (string, bool) {
-	sl, ok := i.PopNAt(idx, 1, 0)
+	sl, ok := i.PopN(1, 0)
 	if !ok {
 		return "", false
 	}
@@ -46,13 +43,9 @@ func (i *Input) PopAt(idx int) (string, bool) {
 }
 
 func (i *Input) PopN(n, optN int) ([]*string, bool) {
-	return i.PopNAt(0, n, optN)
-}
-
-func (i *Input) PopNAt(offset, n, optN int) ([]*string, bool) {
 	shift := n + optN
-	if optN == UnboundedList || shift+offset > len(i.remaining) {
-		shift = len(i.remaining) - offset
+	if optN == UnboundedList || shift+i.offset > len(i.remaining) {
+		shift = len(i.remaining) - i.offset
 	}
 
 	if shift <= 0 {
@@ -61,9 +54,9 @@ func (i *Input) PopNAt(offset, n, optN int) ([]*string, bool) {
 
 	ret := make([]*string, 0, shift)
 	for idx := 0; idx < shift; idx++ {
-		ret = append(ret, &i.args[i.remaining[idx+offset]])
+		ret = append(ret, &i.args[i.remaining[idx+i.offset]])
 	}
-	i.remaining = append(i.remaining[:offset], i.remaining[offset+shift:]...)
+	i.remaining = append(i.remaining[:i.offset], i.remaining[i.offset+shift:]...)
 	return ret, len(ret) >= n
 }
 
