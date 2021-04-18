@@ -159,6 +159,203 @@ func TestPopN(t *testing.T) {
 	}
 }
 
+func TestPopNAt(t *testing.T) {
+	for _, test := range []struct {
+		name      string
+		input     []string
+		offset    int
+		n         int
+		optN      int
+		modify    func([]*string)
+		want      []string
+		wantOK    bool
+		wantInput *Input
+	}{
+		{
+			name:      "pops none",
+			wantOK:    true,
+			wantInput: &Input{},
+		},
+		{
+			name:      "pops none when offset",
+			offset:    1,
+			wantOK:    true,
+			wantInput: &Input{},
+		},
+		{
+			name:      "returns false if big offset and n",
+			offset:    1,
+			n:         1,
+			wantInput: &Input{},
+		},
+		{
+			name:   "pops none from list",
+			input:  []string{"hello"},
+			wantOK: true,
+			wantInput: &Input{
+				args:      []string{"hello"},
+				remaining: []int{0},
+			},
+		},
+		{
+			name:   "pops none from list with offset",
+			input:  []string{"hello"},
+			offset: 1,
+			optN:   2,
+			wantOK: true,
+			wantInput: &Input{
+				args:      []string{"hello"},
+				remaining: []int{0},
+			},
+		},
+		{
+			name:   "returns all if unbounded list",
+			input:  []string{"hello", "there", "person"},
+			optN:   UnboundedList,
+			want:   []string{"hello", "there", "person"},
+			wantOK: true,
+			wantInput: &Input{
+				args: []string{"hello", "there", "person"},
+			},
+		},
+		{
+			name:   "returns remaining if unbounded list",
+			offset: 1,
+			input:  []string{"hello", "there", "person"},
+			optN:   UnboundedList,
+			want:   []string{"there", "person"},
+			wantOK: true,
+			wantInput: &Input{
+				args:      []string{"hello", "there", "person"},
+				remaining: []int{0},
+			},
+		},
+		{
+			name:   "pops requested amount from list",
+			input:  []string{"hello", "there", "person"},
+			n:      2,
+			want:   []string{"hello", "there"},
+			wantOK: true,
+			wantInput: &Input{
+				args:      []string{"hello", "there", "person"},
+				remaining: []int{2},
+			},
+		},
+		{
+			name:   "pops requested amount from list with offset",
+			input:  []string{"hello", "there", "general", "kenobi"},
+			offset: 1,
+			n:      2,
+			want:   []string{"there", "general"},
+			wantOK: true,
+			wantInput: &Input{
+				args:      []string{"hello", "there", "general", "kenobi"},
+				remaining: []int{0, 3},
+			},
+		},
+		{
+			name:  "still returns values when too many requested",
+			input: []string{"hello", "there", "person"},
+			n:     4,
+			want:  []string{"hello", "there", "person"},
+			wantInput: &Input{
+				args: []string{"hello", "there", "person"},
+			},
+		},
+		{
+			name:   "still returns values when too many requested with offset",
+			input:  []string{"hello", "there", "person"},
+			offset: 2,
+			n:      4,
+			want:   []string{"person"},
+			wantInput: &Input{
+				args:      []string{"hello", "there", "person"},
+				remaining: []int{0, 1},
+			},
+		},
+		{
+			name:  "modifies input",
+			input: []string{"hello", "there", "person"},
+			n:     2,
+			want:  []string{"hello", "there"},
+			modify: func(s []*string) {
+				*s[0] = "goodbye"
+			},
+			wantOK: true,
+			wantInput: &Input{
+				args:      []string{"goodbye", "there", "person"},
+				remaining: []int{2},
+			},
+		},
+		{
+			name:   "modifies input with offset",
+			input:  []string{"hello", "there", "good", "sir"},
+			n:      2,
+			offset: 2,
+			want:   []string{"good", "sir"},
+			modify: func(s []*string) {
+				*s[0] = "general"
+				*s[1] = "kenobi"
+			},
+			wantOK: true,
+			wantInput: &Input{
+				args:      []string{"hello", "there", "general", "kenobi"},
+				remaining: []int{0, 1},
+			},
+		},
+		{
+			name:  "modifies when not enough",
+			input: []string{"hello", "there", "person"},
+			n:     4,
+			modify: func(s []*string) {
+				*s[1] = "good"
+			},
+			want: []string{"hello", "there", "person"},
+			wantInput: &Input{
+				args: []string{"hello", "good", "person"},
+			},
+		},
+		{
+			name:   "modifies when not enough with offset",
+			input:  []string{"hello", "there", "general", "kenobi"},
+			n:      3,
+			offset: 3,
+			modify: func(s []*string) {
+				*s[0] = "motors"
+			},
+			want: []string{"kenobi"},
+			wantInput: &Input{
+				args:      []string{"hello", "there", "general", "motors"},
+				remaining: []int{0, 1, 2},
+			},
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			input := NewInput(test.input, nil)
+			gotPtrs, gotOK := input.PopNAt(test.offset, test.n, test.optN)
+			var got []string
+			for _, p := range gotPtrs {
+				got = append(got, *p)
+			}
+			if diff := cmp.Diff(test.want, got, cmpopts.EquateEmpty()); diff != "" {
+				t.Fatalf("PopN(%d, %d) returned incorrect values (-want, +got):\n%s", test.n, test.optN, diff)
+			}
+
+			if test.wantOK != gotOK {
+				t.Fatalf("PopN(%d, %d) returned %v for ok, want %v", test.n, test.optN, gotOK, test.wantOK)
+			}
+
+			if test.modify != nil {
+				test.modify(gotPtrs)
+			}
+
+			if diff := cmp.Diff(test.wantInput, input, cmp.AllowUnexported(Input{}), cmpopts.EquateEmpty()); diff != "" {
+				t.Fatalf("PopN(%d, %d) resulted in incorrect input (-want, +got):\n%s", test.n, test.optN, diff)
+			}
+		})
+	}
+}
+
 func TestParseArgs(t *testing.T) {
 	for _, test := range []struct {
 		name  string

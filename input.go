@@ -34,7 +34,11 @@ func (i *Input) Peek() (string, bool) {
 }
 
 func (i *Input) Pop() (string, bool) {
-	sl, ok := i.PopN(1, 0)
+	return i.PopAt(0)
+}
+
+func (i *Input) PopAt(idx int) (string, bool) {
+	sl, ok := i.PopNAt(idx, 1, 0)
 	if !ok {
 		return "", false
 	}
@@ -42,16 +46,24 @@ func (i *Input) Pop() (string, bool) {
 }
 
 func (i *Input) PopN(n, optN int) ([]*string, bool) {
+	return i.PopNAt(0, n, optN)
+}
+
+func (i *Input) PopNAt(offset, n, optN int) ([]*string, bool) {
 	shift := n + optN
-	if optN == UnboundedList || shift > len(i.remaining) {
-		shift = len(i.remaining)
+	if optN == UnboundedList || shift+offset > len(i.remaining) {
+		shift = len(i.remaining) - offset
+	}
+
+	if shift <= 0 {
+		return nil, n == 0
 	}
 
 	ret := make([]*string, 0, shift)
 	for idx := 0; idx < shift; idx++ {
-		ret = append(ret, &i.args[i.remaining[idx]])
+		ret = append(ret, &i.args[i.remaining[idx+offset]])
 	}
-	i.remaining = i.remaining[shift:]
+	i.remaining = append(i.remaining[:offset], i.remaining[offset+shift:]...)
 	return ret, len(ret) >= n
 }
 
