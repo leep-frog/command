@@ -11,8 +11,6 @@ type ArgOpt struct {
 	Transformer ArgTransformer
 }
 
-type Completor struct{}
-
 func NewArgOpt(c *Completor, t ArgTransformer, v ...ArgValidator) *ArgOpt {
 	return &ArgOpt{
 		Completor:   c,
@@ -222,4 +220,41 @@ func FloatNegative() ArgValidator {
 		func(vi float64) bool { return vi < 0 },
 		fmt.Errorf("[FloatNegative] value isn't negative"),
 	)
+}
+
+type fileListTransformer struct{}
+
+func (flt *fileListTransformer) ValueType() ValueType {
+	return StringListType
+}
+
+func (flt *fileListTransformer) Transform(v *Value) (*Value, error) {
+	l := make([]string, 0, len(v.StringList()))
+	for i, s := range v.StringList() {
+		absStr, err := filepathAbs(s)
+		if err != nil {
+			return StringListValue(append(l, (v.StringList())[i:]...)...), err
+		}
+		l = append(l, absStr)
+	}
+	return StringListValue(l...), nil
+}
+
+type fileTransformer struct{}
+
+func (ft *fileTransformer) ValueType() ValueType {
+	return StringType
+}
+
+func (ft *fileTransformer) Transform(v *Value) (*Value, error) {
+	absStr, err := filepathAbs(v.String())
+	return StringValue(absStr), err
+}
+
+func FileTransformer() ArgTransformer {
+	return &fileTransformer{}
+}
+
+func FileListTransformer() ArgTransformer {
+	return &fileListTransformer{}
 }

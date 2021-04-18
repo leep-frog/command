@@ -2,6 +2,7 @@ package command
 
 import (
 	"fmt"
+	"path/filepath"
 	"sort"
 	"testing"
 
@@ -13,7 +14,7 @@ type errorEdge struct {
 	e error
 }
 
-func (ee *errorEdge) Next(*Input, Output, *Data) (*Node, error) {
+func (ee *errorEdge) Next(*Input, *Data) (*Node, error) {
 	return nil, ee.e
 }
 
@@ -508,7 +509,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "IntEQ works",
 			node: &Node{
-				Processor: IntNode("intArg", NewArgOpt(nil, nil, IntEQ(24))),
+				Processor: IntNode("IntNode", NewArgOpt(nil, nil, IntEQ(24))),
 			},
 			args: []string{"24"},
 			wantInput: &Input{
@@ -517,14 +518,14 @@ func TestExecute(t *testing.T) {
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
-					"intArg": IntValue(24),
+					"IntNode": IntValue(24),
 				},
 			},
 		},
 		{
 			name: "IntEQ fails",
 			node: &Node{
-				Processor: IntNode("intArg", NewArgOpt(nil, nil, IntEQ(24))),
+				Processor: IntNode("IntNode", NewArgOpt(nil, nil, IntEQ(24))),
 			},
 			args: []string{"25"},
 			wantInput: &Input{
@@ -533,7 +534,7 @@ func TestExecute(t *testing.T) {
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
-					"intArg": IntValue(25),
+					"IntNode": IntValue(25),
 				},
 			},
 			wantStderr: []string{`validation failed: [IntEQ] value isn't equal to 24`},
@@ -543,7 +544,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "IntNE works",
 			node: &Node{
-				Processor: IntNode("intArg", NewArgOpt(nil, nil, IntNE(24))),
+				Processor: IntNode("IntNode", NewArgOpt(nil, nil, IntNE(24))),
 			},
 			args: []string{"25"},
 			wantInput: &Input{
@@ -552,14 +553,14 @@ func TestExecute(t *testing.T) {
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
-					"intArg": IntValue(25),
+					"IntNode": IntValue(25),
 				},
 			},
 		},
 		{
 			name: "IntNE fails",
 			node: &Node{
-				Processor: IntNode("intArg", NewArgOpt(nil, nil, IntNE(24))),
+				Processor: IntNode("IntNode", NewArgOpt(nil, nil, IntNE(24))),
 			},
 			args: []string{"24"},
 			wantInput: &Input{
@@ -568,7 +569,7 @@ func TestExecute(t *testing.T) {
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
-					"intArg": IntValue(24),
+					"IntNode": IntValue(24),
 				},
 			},
 			wantStderr: []string{`validation failed: [IntNE] value isn't not equal to 24`},
@@ -578,7 +579,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "IntLT works when less than",
 			node: &Node{
-				Processor: IntNode("intArg", NewArgOpt(nil, nil, IntLT(25))),
+				Processor: IntNode("IntNode", NewArgOpt(nil, nil, IntLT(25))),
 			},
 			args: []string{"24"},
 			wantInput: &Input{
@@ -587,14 +588,14 @@ func TestExecute(t *testing.T) {
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
-					"intArg": IntValue(24),
+					"IntNode": IntValue(24),
 				},
 			},
 		},
 		{
 			name: "IntLT fails when equal to",
 			node: &Node{
-				Processor: IntNode("intArg", NewArgOpt(nil, nil, IntLT(25))),
+				Processor: IntNode("IntNode", NewArgOpt(nil, nil, IntLT(25))),
 			},
 			args: []string{"25"},
 			wantInput: &Input{
@@ -603,7 +604,7 @@ func TestExecute(t *testing.T) {
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
-					"intArg": IntValue(25),
+					"IntNode": IntValue(25),
 				},
 			},
 			wantStderr: []string{`validation failed: [IntLT] value isn't less than 25`},
@@ -612,7 +613,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "IntLT fails when greater than",
 			node: &Node{
-				Processor: IntNode("intArg", NewArgOpt(nil, nil, IntLT(25))),
+				Processor: IntNode("IntNode", NewArgOpt(nil, nil, IntLT(25))),
 			},
 			args: []string{"26"},
 			wantInput: &Input{
@@ -621,7 +622,7 @@ func TestExecute(t *testing.T) {
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
-					"intArg": IntValue(26),
+					"IntNode": IntValue(26),
 				},
 			},
 			wantStderr: []string{`validation failed: [IntLT] value isn't less than 25`},
@@ -631,7 +632,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "IntLTE works when less than",
 			node: &Node{
-				Processor: IntNode("intArg", NewArgOpt(nil, nil, IntLTE(25))),
+				Processor: IntNode("IntNode", NewArgOpt(nil, nil, IntLTE(25))),
 			},
 			args: []string{"24"},
 			wantInput: &Input{
@@ -640,14 +641,14 @@ func TestExecute(t *testing.T) {
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
-					"intArg": IntValue(24),
+					"IntNode": IntValue(24),
 				},
 			},
 		},
 		{
 			name: "IntLTE works when equal to",
 			node: &Node{
-				Processor: IntNode("intArg", NewArgOpt(nil, nil, IntLTE(25))),
+				Processor: IntNode("IntNode", NewArgOpt(nil, nil, IntLTE(25))),
 			},
 			args: []string{"25"},
 			wantInput: &Input{
@@ -656,14 +657,14 @@ func TestExecute(t *testing.T) {
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
-					"intArg": IntValue(25),
+					"IntNode": IntValue(25),
 				},
 			},
 		},
 		{
 			name: "IntLTE fails when greater than",
 			node: &Node{
-				Processor: IntNode("intArg", NewArgOpt(nil, nil, IntLTE(25))),
+				Processor: IntNode("IntNode", NewArgOpt(nil, nil, IntLTE(25))),
 			},
 			args: []string{"26"},
 			wantInput: &Input{
@@ -672,7 +673,7 @@ func TestExecute(t *testing.T) {
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
-					"intArg": IntValue(26),
+					"IntNode": IntValue(26),
 				},
 			},
 			wantStderr: []string{`validation failed: [IntLTE] value isn't less than or equal to 25`},
@@ -682,7 +683,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "IntGT fails when less than",
 			node: &Node{
-				Processor: IntNode("intArg", NewArgOpt(nil, nil, IntGT(25))),
+				Processor: IntNode("IntNode", NewArgOpt(nil, nil, IntGT(25))),
 			},
 			args: []string{"24"},
 			wantInput: &Input{
@@ -691,7 +692,7 @@ func TestExecute(t *testing.T) {
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
-					"intArg": IntValue(24),
+					"IntNode": IntValue(24),
 				},
 			},
 			wantStderr: []string{`validation failed: [IntGT] value isn't greater than 25`},
@@ -700,7 +701,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "IntGT fails when equal to",
 			node: &Node{
-				Processor: IntNode("intArg", NewArgOpt(nil, nil, IntGT(25))),
+				Processor: IntNode("IntNode", NewArgOpt(nil, nil, IntGT(25))),
 			},
 			args: []string{"25"},
 			wantInput: &Input{
@@ -709,7 +710,7 @@ func TestExecute(t *testing.T) {
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
-					"intArg": IntValue(25),
+					"IntNode": IntValue(25),
 				},
 			},
 			wantStderr: []string{`validation failed: [IntGT] value isn't greater than 25`},
@@ -718,7 +719,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "IntGT works when greater than",
 			node: &Node{
-				Processor: IntNode("intArg", NewArgOpt(nil, nil, IntGT(25))),
+				Processor: IntNode("IntNode", NewArgOpt(nil, nil, IntGT(25))),
 			},
 			args: []string{"26"},
 			wantInput: &Input{
@@ -727,7 +728,7 @@ func TestExecute(t *testing.T) {
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
-					"intArg": IntValue(26),
+					"IntNode": IntValue(26),
 				},
 			},
 		},
@@ -735,7 +736,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "IntGTE fails when less than",
 			node: &Node{
-				Processor: IntNode("intArg", NewArgOpt(nil, nil, IntGTE(25))),
+				Processor: IntNode("IntNode", NewArgOpt(nil, nil, IntGTE(25))),
 			},
 			args: []string{"24"},
 			wantInput: &Input{
@@ -744,7 +745,7 @@ func TestExecute(t *testing.T) {
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
-					"intArg": IntValue(24),
+					"IntNode": IntValue(24),
 				},
 			},
 			wantStderr: []string{`validation failed: [IntGTE] value isn't greater than or equal to 25`},
@@ -753,7 +754,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "IntGTE works when equal to",
 			node: &Node{
-				Processor: IntNode("intArg", NewArgOpt(nil, nil, IntGTE(25))),
+				Processor: IntNode("IntNode", NewArgOpt(nil, nil, IntGTE(25))),
 			},
 			args: []string{"25"},
 			wantInput: &Input{
@@ -762,14 +763,14 @@ func TestExecute(t *testing.T) {
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
-					"intArg": IntValue(25),
+					"IntNode": IntValue(25),
 				},
 			},
 		},
 		{
 			name: "IntGTE works when greater than",
 			node: &Node{
-				Processor: IntNode("intArg", NewArgOpt(nil, nil, IntGTE(25))),
+				Processor: IntNode("IntNode", NewArgOpt(nil, nil, IntGTE(25))),
 			},
 			args: []string{"26"},
 			wantInput: &Input{
@@ -778,7 +779,7 @@ func TestExecute(t *testing.T) {
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
-					"intArg": IntValue(26),
+					"IntNode": IntValue(26),
 				},
 			},
 		},
@@ -786,7 +787,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "IntPositive fails when negative",
 			node: &Node{
-				Processor: IntNode("intArg", NewArgOpt(nil, nil, IntPositive())),
+				Processor: IntNode("IntNode", NewArgOpt(nil, nil, IntPositive())),
 			},
 			args: []string{"-1"},
 			wantInput: &Input{
@@ -795,7 +796,7 @@ func TestExecute(t *testing.T) {
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
-					"intArg": IntValue(-1),
+					"IntNode": IntValue(-1),
 				},
 			},
 			wantStderr: []string{`validation failed: [IntPositive] value isn't positive`},
@@ -804,7 +805,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "IntPositive fails when zero",
 			node: &Node{
-				Processor: IntNode("intArg", NewArgOpt(nil, nil, IntPositive())),
+				Processor: IntNode("IntNode", NewArgOpt(nil, nil, IntPositive())),
 			},
 			args: []string{"0"},
 			wantInput: &Input{
@@ -813,7 +814,7 @@ func TestExecute(t *testing.T) {
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
-					"intArg": IntValue(0),
+					"IntNode": IntValue(0),
 				},
 			},
 			wantStderr: []string{`validation failed: [IntPositive] value isn't positive`},
@@ -822,7 +823,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "IntPositive works when positive",
 			node: &Node{
-				Processor: IntNode("intArg", NewArgOpt(nil, nil, IntPositive())),
+				Processor: IntNode("IntNode", NewArgOpt(nil, nil, IntPositive())),
 			},
 			args: []string{"1"},
 			wantInput: &Input{
@@ -831,7 +832,7 @@ func TestExecute(t *testing.T) {
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
-					"intArg": IntValue(1),
+					"IntNode": IntValue(1),
 				},
 			},
 		},
@@ -839,7 +840,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "IntNegative works when negative",
 			node: &Node{
-				Processor: IntNode("intArg", NewArgOpt(nil, nil, IntNegative())),
+				Processor: IntNode("IntNode", NewArgOpt(nil, nil, IntNegative())),
 			},
 			args: []string{"-1"},
 			wantInput: &Input{
@@ -848,14 +849,14 @@ func TestExecute(t *testing.T) {
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
-					"intArg": IntValue(-1),
+					"IntNode": IntValue(-1),
 				},
 			},
 		},
 		{
 			name: "IntNegative fails when zero",
 			node: &Node{
-				Processor: IntNode("intArg", NewArgOpt(nil, nil, IntNegative())),
+				Processor: IntNode("IntNode", NewArgOpt(nil, nil, IntNegative())),
 			},
 			args: []string{"0"},
 			wantInput: &Input{
@@ -864,7 +865,7 @@ func TestExecute(t *testing.T) {
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
-					"intArg": IntValue(0),
+					"IntNode": IntValue(0),
 				},
 			},
 			wantStderr: []string{`validation failed: [IntNegative] value isn't negative`},
@@ -873,7 +874,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "IntNegative fails when positive",
 			node: &Node{
-				Processor: IntNode("intArg", NewArgOpt(nil, nil, IntNegative())),
+				Processor: IntNode("IntNode", NewArgOpt(nil, nil, IntNegative())),
 			},
 			args: []string{"1"},
 			wantInput: &Input{
@@ -882,7 +883,7 @@ func TestExecute(t *testing.T) {
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
-					"intArg": IntValue(1),
+					"IntNode": IntValue(1),
 				},
 			},
 			wantStderr: []string{`validation failed: [IntNegative] value isn't negative`},
@@ -892,7 +893,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "IntNonNegative fails when negative",
 			node: &Node{
-				Processor: IntNode("intArg", NewArgOpt(nil, nil, IntNonNegative())),
+				Processor: IntNode("IntNode", NewArgOpt(nil, nil, IntNonNegative())),
 			},
 			args: []string{"-1"},
 			wantInput: &Input{
@@ -901,7 +902,7 @@ func TestExecute(t *testing.T) {
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
-					"intArg": IntValue(-1),
+					"IntNode": IntValue(-1),
 				},
 			},
 			wantStderr: []string{`validation failed: [IntNonNegative] value isn't non-negative`},
@@ -910,7 +911,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "IntNonNegative works when zero",
 			node: &Node{
-				Processor: IntNode("intArg", NewArgOpt(nil, nil, IntNonNegative())),
+				Processor: IntNode("IntNode", NewArgOpt(nil, nil, IntNonNegative())),
 			},
 			args: []string{"0"},
 			wantInput: &Input{
@@ -919,14 +920,14 @@ func TestExecute(t *testing.T) {
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
-					"intArg": IntValue(0),
+					"IntNode": IntValue(0),
 				},
 			},
 		},
 		{
 			name: "IntNonNegative works when positive",
 			node: &Node{
-				Processor: IntNode("intArg", NewArgOpt(nil, nil, IntNonNegative())),
+				Processor: IntNode("IntNode", NewArgOpt(nil, nil, IntNonNegative())),
 			},
 			args: []string{"1"},
 			wantInput: &Input{
@@ -935,7 +936,7 @@ func TestExecute(t *testing.T) {
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
-					"intArg": IntValue(1),
+					"IntNode": IntValue(1),
 				},
 			},
 		},
@@ -1374,6 +1375,311 @@ func TestExecute(t *testing.T) {
 				},
 			},
 		},
+		// Flag nodes
+		/*{
+			name: "empty flag node works",
+			node: &Node{Processor: NewFlagNode()},
+		},
+		{
+			name: "flag node allows empty",
+			node: &Node{Processor: NewFlagNode(StringFlag("strFlag", 'f', nil))},
+		},
+		{
+			name: "flag node fails if no argument",
+			node: &Node{Processor: NewFlagNode(StringFlag("strFlag", 'f', nil))},
+			ws: &WorldState{
+				RawArgs: []string{"--strFlag"},
+			},
+			wantStderr: []string{
+				`no argument provided for "strFlag"`,
+			},
+		},
+		{
+			name: "flag node parses flag",
+			node: &Node{Processor: NewFlagNode(StringFlag("strFlag", 'f', nil))},
+			ws: &WorldState{
+				RawArgs: []string{"--strFlag", "hello"},
+			},
+			wantOK: true,
+			want: &WorldState{
+				Values: map[string]*Value{
+					"strFlag": StringValue("hello"),
+				},
+			},
+		},
+		{
+			name: "flag node parses short name flag",
+			node: &Node{Processor: NewFlagNode(StringFlag("strFlag", 'f', nil))},
+			ws: &WorldState{
+				RawArgs: []string{"-f", "hello"},
+			},
+			wantOK: true,
+			want: &WorldState{
+				Values: map[string]*Value{
+					"strFlag": StringValue("hello"),
+				},
+			},
+		},
+		{
+			name: "flag node parses flag in the middle",
+			node: SerialNodes(
+				NewFlagNode(StringFlag("strFlag", 'f', nil)),
+				StringListNode("filler", 1, 2, nil),
+			),
+			ws: &WorldState{
+				RawArgs: []string{"un", "--strFlag", "hello", "deux"},
+			},
+			wantOK: true,
+			want: &WorldState{
+				Values: map[string]*Value{
+					"strFlag": StringValue("hello"),
+					"filler":  StringListValue("un", "deux"),
+				},
+			},
+		},
+		{
+			name: "flag node parses short name flag",
+			node: SerialNodes(
+				NewFlagNode(StringFlag("strFlag", 'f', nil)),
+				StringListNode("filler", 1, 2, nil),
+			),
+			ws: &WorldState{
+				RawArgs: []string{"uno", "dos", "-f", "hello"},
+			},
+			wantOK: true,
+			want: &WorldState{
+				Values: map[string]*Value{
+					"filler":  StringListValue("uno", "dos"),
+					"strFlag": StringValue("hello"),
+				},
+			},
+		},
+		// Int flag
+		{
+			name: "parses int flag",
+			node: SerialNodes(
+				NewFlagNode(IntFlag("intFlag", 'f', nil)),
+				StringListNode("filler", 1, 2, nil),
+			),
+			ws: &WorldState{
+				RawArgs: []string{"un", "deux", "-f", "3", "quatre"},
+			},
+			wantOK: true,
+			want: &WorldState{
+				Values: map[string]*Value{
+					"filler":  StringListValue("un", "deux", "quatre"),
+					"intFlag": IntValue(3),
+				},
+			},
+		},
+		{
+			name: "handles invalid int flag value",
+			node: SerialNodes(
+				NewFlagNode(IntFlag("intFlag", 'f', nil)),
+				StringListNode("filler", 1, 2, nil),
+			),
+			ws: &WorldState{
+				RawArgs: []string{"un", "deux", "-f", "trois", "quatre"},
+			},
+			want: &WorldState{
+				RawArgs: []string{"un", "deux", "quatre"},
+			},
+			wantStderr: []string{`Failed to transform argument: argument should be an integer: strconv.Atoi: parsing "trois": invalid syntax`},
+		},
+		// Float flag
+		{
+			name: "parses float flag",
+			node: SerialNodes(
+				NewFlagNode(FloatFlag("floatFlag", 'f', nil)),
+				StringListNode("filler", 1, 2, nil),
+			),
+			ws: &WorldState{
+				RawArgs: []string{"--floatFlag", "-1.2", "three"},
+			},
+			wantOK: true,
+			want: &WorldState{
+				Values: map[string]*Value{
+					"filler":    StringListValue("three"),
+					"floatFlag": FloatValue(-1.2),
+				},
+			},
+		},
+		{
+			name: "handles invalid float flag value",
+			node: SerialNodes(
+				NewFlagNode(FloatFlag("floatFlag", 'f', nil)),
+				StringListNode("filler", 1, 2, nil),
+			),
+			ws: &WorldState{
+				RawArgs: []string{"--floatFlag", "twelve", "eleven"},
+			},
+			want: &WorldState{
+				RawArgs: []string{"eleven"},
+			},
+			wantStderr: []string{`Failed to transform argument: argument should be a float: strconv.ParseFloat: parsing "twelve": invalid syntax`},
+		},
+		// Bool flag
+		{
+			name: "bool flag",
+			node: SerialNodes(
+				NewFlagNode(BoolFlag("boolFlag", 'b')),
+				StringListNode("filler", 1, 2, nil),
+			),
+			ws: &WorldState{
+				RawArgs: []string{"okay", "--boolFlag", "then"},
+			},
+			wantOK: true,
+			want: &WorldState{
+				Values: map[string]*Value{
+					"filler":   StringListValue("okay", "then"),
+					"boolFlag": BoolValue(true),
+				},
+			},
+		},
+		{
+			name: "short bool flag",
+			node: SerialNodes(
+				NewFlagNode(BoolFlag("boolFlag", 'b')),
+				StringListNode("filler", 1, 2, nil),
+			),
+			ws: &WorldState{
+				RawArgs: []string{"okay", "-b", "then"},
+			},
+			wantOK: true,
+			want: &WorldState{
+				Values: map[string]*Value{
+					"filler":   StringListValue("okay", "then"),
+					"boolFlag": BoolValue(true),
+				},
+			},
+		},
+		// flag list tests
+		{
+			name: "flag list works",
+			node: SerialNodes(
+				NewFlagNode(StringListFlag("slFlag", 's', 2, 3, nil)),
+				StringListNode("filler", 1, 2, nil),
+			),
+			ws: &WorldState{
+				RawArgs: []string{"un", "--slFlag", "hello", "there"},
+			},
+			wantOK: true,
+			want: &WorldState{
+				Values: map[string]*Value{
+					"filler": StringListValue("un"),
+					"slFlag": StringListValue("hello", "there"),
+				},
+			},
+		},
+		{
+			name: "flag list fails if not enough",
+			node: SerialNodes(
+				NewFlagNode(StringListFlag("slFlag", 's', 2, 3, nil)),
+				StringListNode("filler", 1, 2, nil),
+			),
+			ws: &WorldState{
+				RawArgs: []string{"un", "--slFlag", "hello"},
+			},
+			want: &WorldState{
+				RawArgs: []string{"un"},
+			},
+			// TODO: not enough args.
+			wantStderr: []string{`not enough arguments provided for "slFlag" arg`},
+		},
+		// Int list
+		{
+			name: "int list works",
+			node: SerialNodes(
+				NewFlagNode(IntListFlag("ilFlag", 'i', 2, 3, nil)),
+				StringListNode("filler", 1, 2, nil),
+			),
+			ws: &WorldState{
+				RawArgs: []string{"un", "-i", "2", "4", "8", "16", "32", "64"},
+			},
+			wantOK: true,
+			want: &WorldState{
+				Values: map[string]*Value{
+					"filler": StringListValue("un", "64"),
+					"ilFlag": IntListValue(2, 4, 8, 16, 32),
+				},
+			},
+		},
+		{
+			name: "int list transform failure",
+			node: SerialNodes(
+				NewFlagNode(IntListFlag("ilFlag", 'i', 2, 3, nil)),
+				StringListNode("filler", 1, 2, nil),
+			),
+			ws: &WorldState{
+				RawArgs: []string{"un", "-i", "2", "4", "8", "16.0", "32", "64"},
+			},
+			want: &WorldState{
+				RawArgs: []string{"un", "64"},
+			},
+			wantStderr: []string{
+				`strconv.Atoi: parsing "16.0": invalid syntax`,
+			},
+		},
+		// Float list
+		{
+			name: "float list works",
+			node: SerialNodes(
+				NewFlagNode(FloatListFlag("flFlag", 'f', 0, 3, nil)),
+				StringListNode("filler", 1, 3, nil),
+			),
+			ws: &WorldState{
+				RawArgs: []string{"un", "-f", "2", "-4.4", "0.8", "16.16", "-32", "64"},
+			},
+			wantOK: true,
+			want: &WorldState{
+				Values: map[string]*Value{
+					"filler": StringListValue("un", "16.16", "-32", "64"),
+					"flFlag": FloatListValue(2, -4.4, 0.8),
+				},
+			},
+		},
+		{
+			name: "float list transform failure",
+			node: SerialNodes(
+				NewFlagNode(FloatListFlag("flFlag", 'f', 0, 3, nil)),
+				StringListNode("filler", 1, 2, nil),
+			),
+			ws: &WorldState{
+				RawArgs: []string{"un", "--flFlag", "2", "4", "eight", "16.0", "32", "64"},
+			},
+			want: &WorldState{
+				RawArgs: []string{"un", "16.0", "32", "64"},
+			},
+			wantStderr: []string{
+				`strconv.ParseFloat: parsing "eight": invalid syntax`,
+			},
+		},
+		// Misc. flag tests
+		{
+			name: "processes multiple flags",
+			node: SerialNodes(
+				NewFlagNode(
+					FloatListFlag("coordinates", 'c', 2, 0, nil),
+					BoolFlag("boo", 'o'),
+					StringListFlag("names", 'n', 1, 2, nil),
+					IntFlag("rating", 'r', nil),
+				),
+				StringListNode("extra", 0, 10, nil),
+			),
+			wantOK: true,
+			ws: &WorldState{
+				RawArgs: []string{"it's", "--boo", "a", "-r", "9", "secret", "-n", "greggar", "groog", "beggars", "--coordinates", "2.2", "4.4", "message."},
+			},
+			want: &WorldState{
+				Values: map[string]*Value{
+					"boo":         BoolValue(true),
+					"extra":       StringListValue("it's", "a", "secret", "message."),
+					"names":       StringListValue("greggar", "groog", "beggars"),
+					"coordinates": FloatListValue(2.2, 4.4),
+					"rating":      IntValue(9),
+				},
+			},
+		},
 		/* Useful for commenting out tests. */
 	} {
 		t.Run(test.name, func(t *testing.T) {
@@ -1424,6 +1730,600 @@ func TestExecute(t *testing.T) {
 			}
 			if diff := cmp.Diff(test.wantStderr, fo.GetStderr(), cmpopts.EquateEmpty()); diff != "" {
 				t.Errorf("execute(%v) sent wrong data to stderr (-want, +got):\n%s", test.args, diff)
+			}
+		})
+	}
+}
+
+func TestComplete(t *testing.T) {
+	for _, test := range []struct {
+		name           string
+		node           *Node
+		args           []string
+		filepathAbs    string
+		filepathAbsErr error
+		want           []string
+		wantData       *Data
+	}{
+		// Basic tests
+		{
+			name: "empty graph",
+			node: &Node{},
+		},
+		{
+			name: "returns suggestions of first node if empty",
+			node: SerialNodes(
+				StringNode("s", NewArgOpt(SimpleCompletor("un", "deux", "trois"), nil)),
+				OptionalIntNode("i", NewArgOpt(SimpleCompletor("2", "1"), nil)),
+				StringListNode("sl", 0, 2, NewArgOpt(SimpleCompletor("uno", "dos"), nil)),
+			),
+			want: []string{"deux", "trois", "un"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"s": StringValue(""),
+				},
+			},
+		},
+		{
+			name: "returns suggestions of first node if up to first arg",
+			node: SerialNodes(
+				StringNode("s", NewArgOpt(SimpleCompletor("one", "two", "three"), nil)),
+				OptionalIntNode("i", NewArgOpt(SimpleCompletor("2", "1"), nil)),
+				StringListNode("sl", 0, 2, NewArgOpt(SimpleCompletor("uno", "dos"), nil)),
+			),
+			args: []string{"t"},
+			want: []string{"three", "two"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"s": StringValue("t"),
+				},
+			},
+		},
+		{
+			name: "returns suggestions of middle node if that's where we're at",
+			node: SerialNodes(
+				StringNode("s", NewArgOpt(SimpleCompletor("one", "two", "three"), nil)),
+				StringListNode("sl", 0, 2, NewArgOpt(SimpleCompletor("uno", "dos"), nil)),
+				OptionalIntNode("i", NewArgOpt(SimpleCompletor("2", "1"), nil)),
+			),
+			args: []string{"three", ""},
+			want: []string{"dos", "uno"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"s":  StringValue("three"),
+					"sl": StringListValue(""),
+				},
+			},
+		},
+		{
+			name: "returns suggestions of middle node if partial",
+			node: SerialNodes(
+				StringNode("s", NewArgOpt(SimpleCompletor("one", "two", "three"), nil)),
+				StringListNode("sl", 0, 2, NewArgOpt(SimpleCompletor("uno", "dos"), nil)),
+				OptionalIntNode("i", NewArgOpt(SimpleCompletor("2", "1"), nil)),
+			),
+			args: []string{"three", "d"},
+			want: []string{"dos"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"s":  StringValue("three"),
+					"sl": StringListValue("d"),
+				},
+			},
+		},
+		{
+			name: "returns suggestions in list",
+			node: SerialNodes(
+				StringNode("s", NewArgOpt(SimpleCompletor("one", "two", "three"), nil)),
+				StringListNode("sl", 0, 2, NewArgOpt(SimpleCompletor("uno", "dos"), nil)),
+				OptionalIntNode("i", NewArgOpt(SimpleCompletor("2", "1"), nil)),
+			),
+			args: []string{"three", "dos", ""},
+			want: []string{"dos", "uno"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"s":  StringValue("three"),
+					"sl": StringListValue("dos", ""),
+				},
+			},
+		},
+		/*{
+			name: "returns suggestions for last arg",
+			node: SerialNodes(
+				StringNode("s", NewArgOpt(SimpleCompletor("one", "two", "three"), nil)),
+				StringListNode("sl", 0, 2, NewArgOpt(SimpleCompletor("uno", "dos"), nil)),
+				OptionalIntNode("i", NewArgOpt(SimpleCompletor("2", "1"), nil)),
+			),
+			args: []string{"three", "uno", "dos", ""},
+			want: []string{"1", "2"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"s":  StringValue("three"),
+					"sl": StringListValue("uno", "dos"),
+					"i":  IntValue(0),
+				},
+			},
+		},*/
+		{
+			name: "returns nothing if iterate through all nodes",
+			node: SerialNodes(
+				StringNode("s", NewArgOpt(SimpleCompletor("one", "two", "three"), nil)),
+				StringListNode("sl", 0, 2, NewArgOpt(SimpleCompletor("uno", "dos"), nil)),
+				OptionalIntNode("i", NewArgOpt(SimpleCompletor("2", "1"), nil)),
+			),
+			args: []string{"three", "uno", "dos", "1", "what", "now"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"s":  StringValue("three"),
+					"sl": StringListValue("uno", "dos"),
+					"i":  IntValue(1),
+				},
+			},
+		},
+		{
+			name: "works if empty and list starts",
+			node: SerialNodes(
+				StringListNode("sl", 1, 2, NewArgOpt(SimpleCompletor("uno", "dos"), nil)),
+			),
+			want: []string{"dos", "uno"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"sl": StringListValue(""),
+				},
+			},
+		},
+		{
+			name: "only returns suggestions matching prefix",
+			node: SerialNodes(
+				StringListNode("sl", 1, 2, NewArgOpt(SimpleCompletor("zzz-1", "zzz-2", "yyy-3", "zzz-4"), nil)),
+			),
+			args: []string{"zz"},
+			want: []string{"zzz-1", "zzz-2", "zzz-4"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"sl": StringListValue("zz"),
+				},
+			},
+		},
+		// Flag completion
+		/*{
+			name: "flag name gets completed if single hyphen at end",
+			node: SerialNodes(
+				NewFlagNode(
+					StringFlag("greeting", 'h', NewArgOpt(SimpleCompletor("hey", "hi"), nil)),
+					StringListFlag("names", 'n', 1, 2, NewArgOpt(SimpleCompletor("ralph", "johnny", "renee"), nil)),
+					BoolFlag("good", 'g'),
+				),
+				IntNode("i", NewArgOpt(SimpleCompletor("1", "2"), nil)),
+			),
+			args: []string{"-"},
+			want: []string{"--good", "--greeting", "--names", "-g", "-h", "-n"},
+		},
+		{
+			name: "flag name gets completed if double hyphen at end",
+			node: SerialNodes(
+				NewFlagNode(
+					StringFlag("greeting", 'h', NewArgOpt(SimpleCompletor("hey", "hi"), nil)),
+					StringListFlag("names", 'n', 1, 2, NewArgOpt(SimpleCompletor("ralph", "johnny", "renee"), nil)),
+					BoolFlag("good", 'g'),
+				),
+				IntNode("i", NewArgOpt(SimpleCompletor("1", "2"), nil)),
+			),
+			args: []string{"--"},
+			want: []string{"--good", "--greeting", "--names"},
+		},
+		{
+			name: "flag name gets completed if it's the only arg",
+			node: SerialNodes(
+				NewFlagNode(
+					StringFlag("greeting", 'h', NewArgOpt(SimpleCompletor("hey", "hi"), nil)),
+					StringListFlag("names", 'n', 1, 2, NewArgOpt(SimpleCompletor("ralph", "johnny", "renee"), nil)),
+					BoolFlag("good", 'g'),
+				),
+				IntNode("i", NewArgOpt(SimpleCompletor("1", "2"), nil)),
+			),
+			args: []string{"1", "-"},
+			want: []string{"--good", "--greeting", "--names", "-g", "-h", "-n"},
+		},
+		{
+			name: "completes for single flag",
+			node: SerialNodes(
+				NewFlagNode(
+					StringFlag("greeting", 'h', NewArgOpt(SimpleCompletor("hey", "hi"), nil)),
+					StringListFlag("names", 'n', 1, 2, NewArgOpt(SimpleCompletor("ralph", "johnny", "renee"), nil)),
+					BoolFlag("good", 'g'),
+				),
+				IntNode("i", NewArgOpt(SimpleCompletor("1", "2"), nil)),
+			),
+			args: []string{"1", "--greeting", "h"},
+			want: []string{"hey", "hi"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"greeting": StringValue("h"),
+				},
+			},
+		},
+		{
+			name: "completes for single short flag",
+			node: SerialNodes(
+				NewFlagNode(
+					StringFlag("greeting", 'h', NewArgOpt(SimpleCompletor("hey", "hi"), nil)),
+					StringListFlag("names", 'n', 1, 2, NewArgOpt(SimpleCompletor("ralph", "johnny", "renee"), nil)),
+					BoolFlag("good", 'g'),
+				),
+				IntNode("i", NewArgOpt(SimpleCompletor("1", "2"), nil)),
+			),
+			args: []string{"1", "-h", "he"},
+			want: []string{"hey"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"greeting": StringValue("he"),
+				},
+			},
+		},
+		{
+			name: "completes for list flag",
+			node: SerialNodes(
+				NewFlagNode(
+					StringFlag("greeting", 'h', NewArgOpt(SimpleCompletor("hey", "hi"), nil)),
+					StringListFlag("names", 'n', 1, 2, NewArgOpt(SimpleCompletor("ralph", "johnny", "renee"), nil)),
+					BoolFlag("good", 'g'),
+				),
+				IntNode("i", NewArgOpt(SimpleCompletor("1", "2"), nil)),
+			),
+			args: []string{"1", "-h", "hey", "other", "--names", ""},
+			want: []string{"johnny", "ralph", "renee"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"greeting": StringValue("hey"),
+					"names":    StringListValue(""),
+				},
+			},
+		},
+		{
+			name: "completes distinct secondary for list flag",
+			node: SerialNodes(
+				NewFlagNode(
+					StringFlag("greeting", 'h', NewArgOpt(SimpleCompletor("hey", "hi"), nil)),
+					StringListFlag("names", 'n', 1, 2, NewArgOpt(distinctCompletor("ralph", "johnny", "renee"), nil)),
+					BoolFlag("good", 'g'),
+				),
+				IntNode("i", NewArgOpt(SimpleCompletor("1", "2"), nil)),
+			),
+			args: []string{"1", "-h", "hey", "other", "--names", "ralph", ""},
+			want: []string{"johnny", "renee"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"greeting": StringValue("hey"),
+					"names":    StringListValue("ralph", ""),
+				},
+			},
+		},
+		{
+			name: "completes last flag",
+			node: SerialNodes(
+				NewFlagNode(
+					StringFlag("greeting", 'h', NewArgOpt(SimpleCompletor("hey", "hi"), nil)),
+					StringListFlag("names", 'n', 1, 2, NewArgOpt(distinctCompletor("ralph", "johnny", "renee"), nil)),
+					BoolFlag("good", 'g'),
+					FloatFlag("float", 'f', NewArgOpt(SimpleCompletor("1.23", "12.3", "123.4"), nil)),
+				),
+				IntNode("i", NewArgOpt(SimpleCompletor("1", "2"), nil)),
+			),
+			args: []string{"1", "-h", "hey", "other", "--names", "ralph", "renee", "johnny", "-f", ""},
+			want: []string{"1.23", "12.3", "123.4"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"greeting": StringValue("hey"),
+					"names":    StringListValue("ralph", "renee", "johnny"),
+					"float":    FloatValue(0),
+				},
+			},
+		},
+		{
+			name: "completes arg if flag arg isn't at the end",
+			node: SerialNodes(
+				NewFlagNode(
+					StringFlag("greeting", 'h', NewArgOpt(SimpleCompletor("hey", "hi"), nil)),
+					StringListFlag("names", 'n', 1, 2, NewArgOpt(distinctCompletor("ralph", "johnny", "renee"), nil)),
+					BoolFlag("good", 'g'),
+				),
+				StringListNode("i", 1, 2, NewArgOpt(SimpleCompletor("hey", "ooo"), nil)),
+			),
+			args: []string{"1", "-h", "hello", "beta", "--names", "ralph", "renee", "johnny", ""},
+			want: []string{"hey", "ooo"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"i":        StringListValue("1", "beta", ""),
+					"greeting": StringValue("hello"),
+					"names":    StringListValue("ralph", "renee", "johnny"),
+				},
+			},
+		},
+		// Transformer arg tests.
+		{
+			name: "handles nil option",
+			node: &Node{
+				Processor: StringNode("strArg", nil),
+			},
+			args: []string{"abc"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"strArg": StringValue("abc"),
+				},
+			},
+		},
+		{
+			name: "list handles nil option",
+			node: &Node{
+				Processor: StringListNode("slArg", 1, 2, nil),
+			},
+			args: []string{"abc"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"slArg": StringListValue("abc"),
+				},
+			},
+		},
+		{
+			name: "transformer transforms values",
+			node: &Node{
+				Processor: StringNode("strArg", NewArgOpt(nil, FileTransformer())),
+			},
+			args: []string{filepath.Join("relative", "path.txt")},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"strArg": StringValue(filepath.Join("abso", "lutely", "relative", "path.txt")),
+				},
+			},
+			filepathAbs: filepath.Join("abso", "lutely"),
+		},
+		{
+			name: "handles transform error",
+			node: &Node{
+				Processor: StringNode("strArg", NewArgOpt(nil, FileTransformer())),
+			},
+			args: []string{filepath.Join("relative", "path.txt")},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"strArg": StringValue(filepath.Join("relative", "path.txt")),
+				},
+			},
+			filepathAbsErr: fmt.Errorf("bad news bears"),
+		},
+		{
+			name: "handles transformer of incorrect type",
+			node: &Node{
+				Processor: IntNode("IntNode", NewArgOpt(nil, FileTransformer())),
+			},
+			args: []string{"123"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"IntNode": IntValue(123),
+				},
+			},
+		},
+		{
+			name: "transformer list transforms values",
+			node: &Node{
+				Processor: StringListNode("slArg", 1, 2, NewArgOpt(nil, FileListTransformer())),
+			},
+			args: []string{
+				filepath.Join("relative", "path.txt"),
+				filepath.Join("other.txt"),
+			},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"slArg": StringListValue(
+						filepath.Join("abso", "lutely", "relative", "path.txt"),
+						filepath.Join("abso", "lutely", "other.txt"),
+					),
+				},
+			},
+			filepathAbs: filepath.Join("abso", "lutely"),
+		},
+		{
+			name: "handles transform list error",
+			node: &Node{
+				Processor: StringListNode("slArg", 1, 2, NewArgOpt(nil, FileListTransformer())),
+			},
+			args: []string{
+				filepath.Join("relative", "path.txt"),
+				filepath.Join("other.txt"),
+			},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"slArg": StringListValue(
+						filepath.Join("relative", "path.txt"),
+						filepath.Join("other.txt"),
+					),
+				},
+			},
+			filepathAbsErr: fmt.Errorf("bad news bears"),
+		},
+		{
+			name: "handles list transformer of incorrect type",
+			node: &Node{
+				Processor: StringListNode("slArg", 1, 2, NewArgOpt(nil, FileTransformer())),
+			},
+			args: []string{"123"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"slArg": StringListValue("123"),
+				},
+			},
+		},
+		// BranchNode completion tests.
+		{
+			name: "completes branch options",
+			node: BranchNode(map[string]*Node{
+				"a":     {},
+				"alpha": SerialNodes(OptionalStringNode("hello", NewArgOpt(SimpleCompletor("other", "stuff"), nil))),
+				"bravo": {},
+			}, SerialNodes(StringListNode("default", 1, 3, NewArgOpt(SimpleCompletor("default", "command", "opts"), nil)))),
+			want: []string{"a", "alpha", "bravo", "command", "default", "opts"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"default": StringListValue(""),
+				},
+			},
+		},
+		{
+			name: "completes for specific branch",
+			node: BranchNode(map[string]*Node{
+				"a":     {},
+				"alpha": SerialNodes(OptionalStringNode("hello", NewArgOpt(SimpleCompletor("other", "stuff"), nil))),
+				"bravo": {},
+			}, SerialNodes(StringListNode("default", 1, 3, NewArgOpt(SimpleCompletor("default", "command", "opts"), nil)))),
+			args: []string{"alpha", ""},
+			want: []string{"other", "stuff"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"hello": StringValue(""),
+				},
+			},
+		},
+		{
+			name: "branch node doesn't complete if no default and no branch match",
+			node: BranchNode(map[string]*Node{
+				"a":     {},
+				"alpha": SerialNodes(OptionalStringNode("hello", NewArgOpt(SimpleCompletor("other", "stuff"), nil))),
+				"bravo": {},
+			}, nil),
+			args: []string{"some", "thing", "else"},
+		},
+		{
+			name: "completes branch options with partial completion",
+			node: BranchNode(map[string]*Node{
+				"a":     {},
+				"alpha": SerialNodes(OptionalStringNode("hello", NewArgOpt(SimpleCompletor("other", "stuff"), nil))),
+				"bravo": {},
+			}, SerialNodes(StringListNode("default", 1, 3, NewArgOpt(SimpleCompletor("default", "command", "opts", "ahhhh"), nil)))),
+			args: []string{"a"},
+			want: []string{"a", "ahhhh", "alpha"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"default": StringListValue("a"),
+				},
+			},
+		},
+		{
+			name: "completes default options",
+			node: BranchNode(map[string]*Node{
+				"a":     {},
+				"alpha": SerialNodes(OptionalStringNode("hello", NewArgOpt(SimpleCompletor("other", "stuff"), nil))),
+				"bravo": {},
+			}, SerialNodes(StringListNode("default", 1, 3, NewArgOpt(SimpleCompletor("default", "command", "opts"), nil)))),
+			args: []string{"something", ""},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"default": StringListValue("something", ""),
+				},
+			},
+			want: []string{"command", "default", "opts"},
+		},
+		// Commands with different value types.
+		{
+			name: "int arg gets completed",
+			node:    SerialNodes(IntNode("iArg", NewArgOpt(SimpleCompletor("12", "45", "456", "468", "7"), nil))),
+			args: []string{"4"},
+			want: []string{"45", "456", "468"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"iArg": IntValue(4),
+				},
+			},
+		},
+		{
+			name: "optional int arg gets completed",
+			node:    SerialNodes(OptionalIntNode("iArg", NewArgOpt(SimpleCompletor("12", "45", "456", "468", "7"), nil))),
+			args: []string{"4"},
+			want: []string{"45", "456", "468"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"iArg": IntValue(4),
+				},
+			},
+		},
+		{
+			name: "int list arg gets completed",
+			node:    SerialNodes(IntListNode("iArg", 2, 3, NewArgOpt(SimpleCompletor("12", "45", "456", "468", "7"), nil))),
+			args: []string{"1", "4"},
+			want: []string{"45", "456", "468"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"iArg": IntListValue(1, 4),
+				},
+			},
+		},
+		{
+			name: "int list arg gets completed if previous one was invalid",
+			node:    SerialNodes(IntListNode("iArg", 2, 3, NewArgOpt(SimpleCompletor("12", "45", "456", "468", "7"), nil))),
+			args: []string{"one", "4"},
+			want: []string{"45", "456", "468"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"iArg": IntListValue(0, 4),
+				},
+			},
+		},
+		{
+			name: "int list arg optional args get completed",
+			node:    SerialNodes(IntListNode("iArg", 2, 3, NewArgOpt(SimpleCompletor("12", "45", "456", "468", "7"), nil))),
+			args: []string{"1", "2", "3", "4"},
+			want: []string{"45", "456", "468"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"iArg": IntListValue(1, 2, 3, 4),
+				},
+			},
+		},
+		{
+			name: "float arg gets completed",
+			node:    SerialNodes(FloatNode("fArg", NewArgOpt(SimpleCompletor("12", "4.5", "45.6", "468", "7"), nil))),
+			args: []string{"4"},
+			want: []string{"4.5", "45.6", "468"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"fArg": FloatValue(4),
+				},
+			},
+		},
+		{
+			name: "float list arg gets completed",
+			node:    SerialNodes(FloatListNode("fArg", 1, 2, NewArgOpt(SimpleCompletor("12", "4.5", "45.6", "468", "7"), nil))),
+			want: []string{"12", "4.5", "45.6", "468", "7"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"fArg": FloatListValue(0),
+				},
+			},
+		},
+		{
+			name: "bool arg gets completed",
+			node:    SerialNodes(BoolArg("bArg", true)),
+			want: []string{"0", "1", "F", "FALSE", "False", "T", "TRUE", "True", "f", "false", "t", "true"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"bArg": BoolValue(false),
+				},
+			},
+		},
+		/* Useful comment for commenting out tests */
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			fmt.Println("==========", test.name)
+			oldAbs := filepathAbs
+			filepathAbs = func(s string) (string, error) {
+				return filepath.Join(test.filepathAbs, s), test.filepathAbsErr
+			}
+			defer func() { filepathAbs = oldAbs }()
+
+			// TODO: remove test.wantOK
+			got := Autocomplete(test.node, test.args)
+
+			if diff := cmp.Diff(test.want, got, cmpopts.EquateEmpty()); diff != "" {
+				t.Errorf("Autocomplete(%v) produced incorrect completions (-want, +got):\n%s", test.args, diff)
 			}
 		})
 	}

@@ -4,7 +4,7 @@ type simpleEdge struct {
 	n *Node
 }
 
-func (se *simpleEdge) Next(*Input, Output, *Data) (*Node, error) {
+func (se *simpleEdge) Next(*Input, *Data) (*Node, error) {
 	return se.n, nil
 }
 
@@ -39,12 +39,39 @@ func (e *executor) Execute(_ *Input, _ Output, _ *Data, eData *ExecuteData) erro
 	return nil
 }
 
-func (e *executor) Complete(*Input, Output, *Data, *CompleteData) error {
+func (e *executor) Complete(*Input, *Data) *CompleteData {
 	return nil
 }
 
 func ExecutorNode(f func(Output, *Data) error) Processor {
 	return &executor{
 		executor: f,
+	}
+}
+
+type branchEdge struct {
+	branches map[string]*Node
+	def      *Node
+}
+
+func (be *branchEdge) Next(input *Input, data *Data) (*Node, error) {
+	s, ok := input.Peek()
+	if !ok {
+		return be.def, nil
+	}
+
+	if n, ok := be.branches[s]; ok {
+		return n, nil
+	}
+
+	return nil, nil
+}
+
+func BranchNode(branches map[string]*Node, dflt *Node) *Node {
+	return &Node{
+		Edge: &branchEdge{
+			branches: branches,
+			def:      dflt,
+		},
 	}
 }

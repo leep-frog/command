@@ -20,6 +20,6 @@ type ExecuteData struct {
 type CompleteData struct {
 	// Since printing out data during a completion command causes issues,
 	// any error encountered will be stored here.
-	Error error
-	// TODO
+	Completion *Completion
+	Error      error
 }

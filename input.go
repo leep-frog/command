@@ -18,6 +18,13 @@ func (i *Input) Remaining() []string {
 	return i.args[i.pos:]
 }
 
+func (i *Input) Peek() (string, bool) {
+	if i.FullyProcessed() {
+		return "", false
+	}
+	return i.args[i.pos], true
+}
+
 func (i *Input) Pop() (string, bool) {
 	sl, ok := i.PopN(1, 0)
 	if !ok {

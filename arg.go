@@ -1,6 +1,7 @@
 package command
 
 import (
+	"fmt"
 	"strconv"
 )
 
@@ -62,8 +63,55 @@ func (an *argNode) Execute(i *Input, o Output, data *Data, eData *ExecuteData) e
 	return nil
 }
 
-func (an *argNode) Complete(input *Input, output Output, data *Data, cData *CompleteData) error {
-	return nil
+func (an *argNode) Complete(input *Input, data *Data) *CompleteData {
+	sl, enough := input.PopN(an.minN, an.optionalN)
+
+	// Try to transform from string to value.
+	v, err := an.transform(sl)
+	if err != nil {
+		return &CompleteData{
+			Error: err,
+		}
+	}
+
+	// Run custom transformer.
+	if an.opt != nil && an.opt.Transformer != nil {
+		// Don't return an error because this may not be the last one.
+		if v.IsType(an.opt.Transformer.ValueType()) {
+			newV, err := an.opt.Transformer.Transform(v)
+			if err == nil {
+				v = newV
+			}
+		}
+	}
+
+	v.provided = len(sl) > 0
+
+	// Copy values into returned list (required for aliasing)
+	newSl := v.ToArgs()
+	for i := 0; i < len(sl); i++ {
+		sl[i] = newSl[i]
+	}
+
+	data.Set(an.name, v)
+
+	// Don't run validations when completing.
+
+	// If we have enough and more needs to be processed.
+	fmt.Println("OY1", an.name)
+	if enough && !input.FullyProcessed() {
+		return nil
+	}
+	fmt.Println("OY2", an.name)
+
+	var lastArg string
+	ta := v.ToArgs()
+	if len(ta) > 0 {
+		lastArg = ta[len(ta)-1]
+	}
+	return &CompleteData{
+		Completion: an.opt.Completor.Complete(lastArg, v, data),
+	}
 }
 
 func StringListNode(name string, minN, optionalN int, opt *ArgOpt) Processor {
