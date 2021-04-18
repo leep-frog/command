@@ -1611,6 +1611,67 @@ func TestExecute(t *testing.T) {
 				},
 			},
 		},
+		// BranchNode tests
+		{
+			name: "branch node requires branch argument",
+			node: BranchNode(map[string]*Node{
+				"h": printNode("hello"),
+				"b": printNode("goodbye"),
+			}, nil),
+			wantStderr: []string{"branching argument required"},
+			wantErr:    fmt.Errorf("branching argument required"),
+		},
+		{
+			name: "branch node requires matching branch argument",
+			node: BranchNode(map[string]*Node{
+				"h": printNode("hello"),
+				"b": printNode("goodbye"),
+			}, nil),
+			args:       []string{"uh"},
+			wantStderr: []string{"argument must be one of [b h]"},
+			wantErr:    fmt.Errorf("argument must be one of [b h]"),
+			wantInput: &Input{
+				args:      []string{"uh"},
+				remaining: []int{0},
+			},
+		},
+		{
+			name: "branch node forwards to proper node",
+			node: BranchNode(map[string]*Node{
+				"h": printNode("hello"),
+				"b": printNode("goodbye"),
+			}, nil),
+			args:       []string{"h"},
+			wantStdout: []string{"hello"},
+			wantInput: &Input{
+				args: []string{"h"},
+			},
+		},
+		{
+			name: "branch node forwards to default if none provided",
+			node: BranchNode(map[string]*Node{
+				"h": printNode("hello"),
+				"b": printNode("goodbye"),
+			}, printNode("default")),
+			wantStdout: []string{"default"},
+		},
+		{
+			name: "branch node forwards to default if unknown provided",
+			node: BranchNode(map[string]*Node{
+				"h": printNode("hello"),
+				"b": printNode("goodbye"),
+			}, SerialNodes(StringListNode("sl", 0, UnboundedList, nil), printArgsNode().Processor)),
+			args:       []string{"good", "morning"},
+			wantStdout: []string{"sl: good, morning"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"sl": StringListValue("good", "morning"),
+				},
+			},
+			wantInput: &Input{
+				args: []string{"good", "morning"},
+			},
+		},
 		/* Useful for commenting out tests. */
 	} {
 		t.Run(test.name, func(t *testing.T) {
@@ -1817,7 +1878,7 @@ func TestComplete(t *testing.T) {
 			},
 		},
 		// Flag completion
-		/*{
+		{
 			name: "flag name gets completed if single hyphen at end",
 			node: SerialNodes(
 				NewFlagNode(
@@ -1916,7 +1977,7 @@ func TestComplete(t *testing.T) {
 			node: SerialNodes(
 				NewFlagNode(
 					StringFlag("greeting", 'h', NewArgOpt(SimpleCompletor("hey", "hi"), nil)),
-					StringListFlag("names", 'n', 1, 2, NewArgOpt(distinctCompletor("ralph", "johnny", "renee"), nil)),
+					StringListFlag("names", 'n', 1, 2, NewArgOpt(SimpleDistinctCompletor("ralph", "johnny", "renee"), nil)),
 					BoolFlag("good", 'g'),
 				),
 				IntNode("i", NewArgOpt(SimpleCompletor("1", "2"), nil)),
@@ -1935,7 +1996,7 @@ func TestComplete(t *testing.T) {
 			node: SerialNodes(
 				NewFlagNode(
 					StringFlag("greeting", 'h', NewArgOpt(SimpleCompletor("hey", "hi"), nil)),
-					StringListFlag("names", 'n', 1, 2, NewArgOpt(distinctCompletor("ralph", "johnny", "renee"), nil)),
+					StringListFlag("names", 'n', 1, 2, NewArgOpt(SimpleDistinctCompletor("ralph", "johnny", "renee"), nil)),
 					BoolFlag("good", 'g'),
 					FloatFlag("float", 'f', NewArgOpt(SimpleCompletor("1.23", "12.3", "123.4"), nil)),
 				),
@@ -1956,7 +2017,7 @@ func TestComplete(t *testing.T) {
 			node: SerialNodes(
 				NewFlagNode(
 					StringFlag("greeting", 'h', NewArgOpt(SimpleCompletor("hey", "hi"), nil)),
-					StringListFlag("names", 'n', 1, 2, NewArgOpt(distinctCompletor("ralph", "johnny", "renee"), nil)),
+					StringListFlag("names", 'n', 1, 2, NewArgOpt(SimpleDistinctCompletor("ralph", "johnny", "renee"), nil)),
 					BoolFlag("good", 'g'),
 				),
 				StringListNode("i", 1, 2, NewArgOpt(SimpleCompletor("hey", "ooo"), nil)),
@@ -2156,7 +2217,7 @@ func TestComplete(t *testing.T) {
 		// Commands with different value types.
 		{
 			name: "int arg gets completed",
-			node:    SerialNodes(IntNode("iArg", NewArgOpt(SimpleCompletor("12", "45", "456", "468", "7"), nil))),
+			node: SerialNodes(IntNode("iArg", NewArgOpt(SimpleCompletor("12", "45", "456", "468", "7"), nil))),
 			args: []string{"4"},
 			want: []string{"45", "456", "468"},
 			wantData: &Data{
@@ -2167,7 +2228,7 @@ func TestComplete(t *testing.T) {
 		},
 		{
 			name: "optional int arg gets completed",
-			node:    SerialNodes(OptionalIntNode("iArg", NewArgOpt(SimpleCompletor("12", "45", "456", "468", "7"), nil))),
+			node: SerialNodes(OptionalIntNode("iArg", NewArgOpt(SimpleCompletor("12", "45", "456", "468", "7"), nil))),
 			args: []string{"4"},
 			want: []string{"45", "456", "468"},
 			wantData: &Data{
@@ -2178,7 +2239,7 @@ func TestComplete(t *testing.T) {
 		},
 		{
 			name: "int list arg gets completed",
-			node:    SerialNodes(IntListNode("iArg", 2, 3, NewArgOpt(SimpleCompletor("12", "45", "456", "468", "7"), nil))),
+			node: SerialNodes(IntListNode("iArg", 2, 3, NewArgOpt(SimpleCompletor("12", "45", "456", "468", "7"), nil))),
 			args: []string{"1", "4"},
 			want: []string{"45", "456", "468"},
 			wantData: &Data{
@@ -2189,7 +2250,7 @@ func TestComplete(t *testing.T) {
 		},
 		{
 			name: "int list arg gets completed if previous one was invalid",
-			node:    SerialNodes(IntListNode("iArg", 2, 3, NewArgOpt(SimpleCompletor("12", "45", "456", "468", "7"), nil))),
+			node: SerialNodes(IntListNode("iArg", 2, 3, NewArgOpt(SimpleCompletor("12", "45", "456", "468", "7"), nil))),
 			args: []string{"one", "4"},
 			want: []string{"45", "456", "468"},
 			wantData: &Data{
@@ -2200,7 +2261,7 @@ func TestComplete(t *testing.T) {
 		},
 		{
 			name: "int list arg optional args get completed",
-			node:    SerialNodes(IntListNode("iArg", 2, 3, NewArgOpt(SimpleCompletor("12", "45", "456", "468", "7"), nil))),
+			node: SerialNodes(IntListNode("iArg", 2, 3, NewArgOpt(SimpleCompletor("12", "45", "456", "468", "7"), nil))),
 			args: []string{"1", "2", "3", "4"},
 			want: []string{"45", "456", "468"},
 			wantData: &Data{
@@ -2211,7 +2272,7 @@ func TestComplete(t *testing.T) {
 		},
 		{
 			name: "float arg gets completed",
-			node:    SerialNodes(FloatNode("fArg", NewArgOpt(SimpleCompletor("12", "4.5", "45.6", "468", "7"), nil))),
+			node: SerialNodes(FloatNode("fArg", NewArgOpt(SimpleCompletor("12", "4.5", "45.6", "468", "7"), nil))),
 			args: []string{"4"},
 			want: []string{"4.5", "45.6", "468"},
 			wantData: &Data{
@@ -2222,7 +2283,7 @@ func TestComplete(t *testing.T) {
 		},
 		{
 			name: "float list arg gets completed",
-			node:    SerialNodes(FloatListNode("fArg", 1, 2, NewArgOpt(SimpleCompletor("12", "4.5", "45.6", "468", "7"), nil))),
+			node: SerialNodes(FloatListNode("fArg", 1, 2, NewArgOpt(SimpleCompletor("12", "4.5", "45.6", "468", "7"), nil))),
 			want: []string{"12", "4.5", "45.6", "468", "7"},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -2230,9 +2291,9 @@ func TestComplete(t *testing.T) {
 				},
 			},
 		},
-		{
+		/*{
 			name: "bool arg gets completed",
-			node:    SerialNodes(BoolArg("bArg", true)),
+			node: SerialNodes(BoolArg("bArg", true)),
 			want: []string{"0", "1", "F", "FALSE", "False", "T", "TRUE", "True", "f", "false", "t", "true"},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -2257,5 +2318,25 @@ func TestComplete(t *testing.T) {
 				t.Errorf("Autocomplete(%v) produced incorrect completions (-want, +got):\n%s", test.args, diff)
 			}
 		})
+	}
+}
+
+func printNode(s string) *Node {
+	return &Node{
+		Processor: ExecutorNode(func(output Output, _ *Data) error {
+			output.Stdout(s)
+			return nil
+		}),
+	}
+}
+
+func printArgsNode() *Node {
+	return &Node{
+		Processor: ExecutorNode(func(output Output, data *Data) error {
+			for k, v := range data.Values {
+				output.Stdout("%s: %s", k, v.Str())
+			}
+			return nil
+		}),
 	}
 }

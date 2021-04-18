@@ -1,5 +1,10 @@
 package command
 
+import (
+	"fmt"
+	"sort"
+)
+
 type simpleEdge struct {
 	n *Node
 }
@@ -49,29 +54,84 @@ func ExecutorNode(f func(Output, *Data) error) Processor {
 	}
 }
 
-type branchEdge struct {
+type branchNode struct {
 	branches map[string]*Node
 	def      *Node
+	next     *Node
+	nextErr  error
 }
 
-func (be *branchEdge) Next(input *Input, data *Data) (*Node, error) {
+func (bn *branchNode) Execute(input *Input, output Output, data *Data, eData *ExecuteData) error {
+	// The edge will figure out what needs to be done next.
+	if err := bn.getNext(input, data); err != nil {
+		return output.Stderr(err.Error())
+	}
+	return nil
+}
+
+func (bn *branchNode) Complete(input *Input, data *Data) *CompleteData {
+	if len(input.remaining) > 1 {
+		bn.getNext(input, data)
+		return nil
+	}
+
+	cd := &CompleteData{}
+	if bn.def != nil {
+		if newCD := bn.def.Processor.Complete(input, data); newCD != nil {
+			cd = newCD
+		}
+	}
+
+	if cd.Completion == nil {
+		cd.Completion = &Completion{}
+	}
+
+	for k := range bn.branches {
+		cd.Completion.Suggestions = append(cd.Completion.Suggestions, k)
+	}
+	return cd
+}
+
+func (bn *branchNode) getNext(input *Input, data *Data) error {
 	s, ok := input.Peek()
 	if !ok {
-		return be.def, nil
+		if bn.def == nil {
+			return fmt.Errorf("branching argument required")
+		}
+		bn.next = bn.def
+		return nil
 	}
 
-	if n, ok := be.branches[s]; ok {
-		return n, nil
+	if n, ok := bn.branches[s]; ok {
+		input.Pop()
+		bn.next = n
+		return nil
 	}
 
-	return nil, nil
+	if bn.def != nil {
+		bn.next = bn.def
+		return nil
+	}
+
+	choices := make([]string, 0, len(bn.branches))
+	for k := range bn.branches {
+		choices = append(choices, k)
+	}
+	sort.Strings(choices)
+	return fmt.Errorf("argument must be one of %v", choices)
+}
+
+func (bn *branchNode) Next(input *Input, data *Data) (*Node, error) {
+	return bn.next, nil
 }
 
 func BranchNode(branches map[string]*Node, dflt *Node) *Node {
+	bn := &branchNode{
+		branches: branches,
+		def:      dflt,
+	}
 	return &Node{
-		Edge: &branchEdge{
-			branches: branches,
-			def:      dflt,
-		},
+		Processor: bn,
+		Edge:      bn,
 	}
 }

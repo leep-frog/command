@@ -2,6 +2,7 @@ package command
 
 import (
 	"fmt"
+	"sort"
 )
 
 // Flag defines a flag argument that is parsed regardless of it's position in
@@ -34,41 +35,39 @@ type flagNode struct {
 }
 
 func (fn *flagNode) Complete(input *Input, data *Data) *CompleteData {
-	/*for i := 0; i <
-	for i := 0; i < len(ws.RawArgs); {
-		a, _ := ws.Peek()
+	for i := 0; i < len(input.remaining); {
+		a := input.args[input.remaining[i]]
 		f, ok := fn.flagMap[a]
 		if !ok {
-			//flaglessArgs = append(flaglessArgs, a)
 			i++
 			continue
 		}
 
-		// Remove flag argument
-		ws.Process(SimpleProcessor)
-		beforeArgs := ws.RawArgs[:i]
-		ws.RawArgs = ws.RawArgs[i:]
-		if !f.Processor().Complete(ws) {
-			//ws.RawArgs = append(flaglessArgs, ws.RawArgs...)
-			ws.RawArgs = append(beforeArgs, ws.RawArgs...)
-			return false
+		input.offset = i
+		// Remove flag argument (e.g. --flagName).
+		input.Pop()
+		fmt.Println(a)
+		if cd := f.Processor().Complete(input, data); cd != nil {
+			fmt.Println("ayo", cd.Completion)
+			input.offset = 0
+			return cd
 		}
-		ws.RawArgs = append(beforeArgs, ws.RawArgs...)
+		fmt.Println("uh oh")
+		input.offset = 0
 	}
 
-	// Complete flag arg if last arg looks like beginning of a flag.
-	if len(ws.RawArgs) > 0 && len(ws.RawArgs[len(ws.RawArgs)-1]) > 0 && ws.RawArgs[len(ws.RawArgs)-1][:1] == "-" {
+	if lastArg, ok := input.PeekAt(len(input.remaining) - 1); ok && len(lastArg) > 0 && lastArg[0] == '-' {
 		k := make([]string, 0, len(fn.flagMap))
 		for n := range fn.flagMap {
 			k = append(k, n)
 		}
 		sort.Strings(k)
-		ws.CompleteResponse = &Completion{
-			Suggestions: k,
+		return &CompleteData{
+			Completion: &Completion{
+				Suggestions: k,
+			},
 		}
-		return false
 	}
-	return true*/
 	return nil
 }
 

@@ -34,6 +34,16 @@ func (i *Input) Peek() (string, bool) {
 	return i.args[i.remaining[0]], true
 }
 
+func (i *Input) PeekAt(idx int) (string, bool) {
+	if idx < 0 {
+		return "", false
+	}
+	if idx >= len(i.remaining) {
+		return "", false
+	}
+	return i.args[i.remaining[idx]], true
+}
+
 func (i *Input) Pop() (string, bool) {
 	sl, ok := i.PopN(1, 0)
 	if !ok {

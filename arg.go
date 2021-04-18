@@ -68,12 +68,24 @@ func (an *argNode) Complete(input *Input, data *Data) *CompleteData {
 	// Try to transform from string to value.
 	v, err := an.transform(sl)
 	if err != nil {
+		// If we're on the last one, then complete it.
+		if !enough || input.FullyProcessed() {
+			var lastArg string
+			if len(sl) > 0 {
+				lastArg = *sl[len(sl)-1]
+			}
+			return &CompleteData{
+				Completion: an.opt.Completor.Complete(lastArg, v, data),
+			}
+		}
+
 		return &CompleteData{
 			Error: err,
 		}
 	}
 
-	// Run custom transformer.
+	// Run custom transformer on a best effor basis (i.e. if the transformer fails,
+	// then we just continue with the original value).
 	if an.opt != nil && an.opt.Transformer != nil {
 		// Don't return an error because this may not be the last one.
 		if v.IsType(an.opt.Transformer.ValueType()) {
@@ -98,6 +110,10 @@ func (an *argNode) Complete(input *Input, data *Data) *CompleteData {
 
 	// If we have enough and more needs to be processed.
 	if enough && !input.FullyProcessed() {
+		return nil
+	}
+
+	if an.opt == nil || an.opt.Completor == nil {
 		return nil
 	}
 
