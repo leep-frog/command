@@ -1,6 +1,9 @@
 package command
 
-/*
+import (
+	"fmt"
+)
+
 // Flag defines a flag argument that is parsed regardless of it's position in
 // the provided command line arguments.
 type Flag interface {
@@ -30,7 +33,8 @@ type flagNode struct {
 	flagMap map[string]Flag
 }
 
-func (fn *flagNode) Complete(input *Input, output Output) bool {
+func (fn *flagNode) Complete(input *Input, data *Data) *CompleteData {
+	/*for i := 0; i <
 	for i := 0; i < len(ws.RawArgs); {
 		a, _ := ws.Peek()
 		f, ok := fn.flagMap[a]
@@ -64,7 +68,8 @@ func (fn *flagNode) Complete(input *Input, output Output) bool {
 		}
 		return false
 	}
-	return true
+	return true*/
+	return nil
 }
 
 func (fn *flagNode) Execute(input *Input, output Output, data *Data, eData *ExecuteData) error {
@@ -76,18 +81,14 @@ func (fn *flagNode) Execute(input *Input, output Output, data *Data, eData *Exec
 			continue
 		}
 
-		// Remove flag argument.
-		ws.ProcessAt(i, SimpleProcessor)
-		fmt.Println("proAt", i, ws.RawArgs)
-		beforeArgs := ws.RawArgs[:i]
-		ws.RawArgs = ws.RawArgs[i:]
-		if err := f.Processor().Execute(ws); err != nil {
-			fmt.Println("err", i, ws.RawArgs)
-			//ws.RawArgs = append(flaglessArgs, ws.RawArgs...)
-			ws.RawArgs = append(beforeArgs, ws.RawArgs...)
+		input.offset = i
+		// Remove flag argument (e.g. --flagName).
+		input.Pop()
+		if err := f.Processor().Execute(input, output, data, eData); err != nil {
+			input.offset = 0
 			return err
 		}
-		ws.RawArgs = append(beforeArgs, ws.RawArgs...)
+		input.offset = 0
 	}
 	return nil
 }
@@ -171,4 +172,3 @@ func listFlag(name string, shortName rune, minN, optionalN int, transform func(s
 		},
 	}
 }
-*/

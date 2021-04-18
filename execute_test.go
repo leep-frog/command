@@ -1302,7 +1302,7 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		// Flag nodes
-		/*{
+		{
 			name: "empty flag node works",
 			node: &Node{Processor: NewFlagNode()},
 		},
@@ -1311,39 +1311,44 @@ func TestExecute(t *testing.T) {
 			node: &Node{Processor: NewFlagNode(StringFlag("strFlag", 'f', nil))},
 		},
 		{
-			name: "flag node fails if no argument",
-			node: &Node{Processor: NewFlagNode(StringFlag("strFlag", 'f', nil))},
-			ws: &WorldState{
-				RawArgs: []string{"--strFlag"},
+			name:       "flag node fails if no argument",
+			node:       &Node{Processor: NewFlagNode(StringFlag("strFlag", 'f', nil))},
+			args:       []string{"--strFlag"},
+			wantStderr: []string{"not enough arguments"},
+			wantErr:    fmt.Errorf("not enough arguments"),
+			wantData: &Data{
+				Values: map[string]*Value{
+					"strFlag": StringValue(""),
+				},
 			},
-			wantStderr: []string{
-				`no argument provided for "strFlag"`,
+			wantInput: &Input{
+				args: []string{"--strFlag"},
 			},
 		},
 		{
 			name: "flag node parses flag",
 			node: &Node{Processor: NewFlagNode(StringFlag("strFlag", 'f', nil))},
-			ws: &WorldState{
-				RawArgs: []string{"--strFlag", "hello"},
-			},
-			wantOK: true,
-			want: &WorldState{
+			args: []string{"--strFlag", "hello"},
+			wantData: &Data{
 				Values: map[string]*Value{
 					"strFlag": StringValue("hello"),
 				},
+			},
+			wantInput: &Input{
+				args: []string{"--strFlag", "hello"},
 			},
 		},
 		{
 			name: "flag node parses short name flag",
 			node: &Node{Processor: NewFlagNode(StringFlag("strFlag", 'f', nil))},
-			ws: &WorldState{
-				RawArgs: []string{"-f", "hello"},
-			},
-			wantOK: true,
-			want: &WorldState{
+			args: []string{"-f", "hello"},
+			wantData: &Data{
 				Values: map[string]*Value{
 					"strFlag": StringValue("hello"),
 				},
+			},
+			wantInput: &Input{
+				args: []string{"-f", "hello"},
 			},
 		},
 		{
@@ -1352,15 +1357,15 @@ func TestExecute(t *testing.T) {
 				NewFlagNode(StringFlag("strFlag", 'f', nil)),
 				StringListNode("filler", 1, 2, nil),
 			),
-			ws: &WorldState{
-				RawArgs: []string{"un", "--strFlag", "hello", "deux"},
-			},
-			wantOK: true,
-			want: &WorldState{
+			args: []string{"un", "--strFlag", "hello", "deux"},
+			wantData: &Data{
 				Values: map[string]*Value{
 					"strFlag": StringValue("hello"),
 					"filler":  StringListValue("un", "deux"),
 				},
+			},
+			wantInput: &Input{
+				args: []string{"un", "--strFlag", "hello", "deux"},
 			},
 		},
 		{
@@ -1369,15 +1374,15 @@ func TestExecute(t *testing.T) {
 				NewFlagNode(StringFlag("strFlag", 'f', nil)),
 				StringListNode("filler", 1, 2, nil),
 			),
-			ws: &WorldState{
-				RawArgs: []string{"uno", "dos", "-f", "hello"},
-			},
-			wantOK: true,
-			want: &WorldState{
+			args: []string{"uno", "dos", "-f", "hello"},
+			wantData: &Data{
 				Values: map[string]*Value{
 					"filler":  StringListValue("uno", "dos"),
 					"strFlag": StringValue("hello"),
 				},
+			},
+			wantInput: &Input{
+				args: []string{"uno", "dos", "-f", "hello"},
 			},
 		},
 		// Int flag
@@ -1387,11 +1392,11 @@ func TestExecute(t *testing.T) {
 				NewFlagNode(IntFlag("intFlag", 'f', nil)),
 				StringListNode("filler", 1, 2, nil),
 			),
-			ws: &WorldState{
-				RawArgs: []string{"un", "deux", "-f", "3", "quatre"},
+			args: []string{"un", "deux", "-f", "3", "quatre"},
+			wantInput: &Input{
+				args: []string{"un", "deux", "-f", "3", "quatre"},
 			},
-			wantOK: true,
-			want: &WorldState{
+			wantData: &Data{
 				Values: map[string]*Value{
 					"filler":  StringListValue("un", "deux", "quatre"),
 					"intFlag": IntValue(3),
@@ -1404,13 +1409,13 @@ func TestExecute(t *testing.T) {
 				NewFlagNode(IntFlag("intFlag", 'f', nil)),
 				StringListNode("filler", 1, 2, nil),
 			),
-			ws: &WorldState{
-				RawArgs: []string{"un", "deux", "-f", "trois", "quatre"},
+			args: []string{"un", "deux", "-f", "trois", "quatre"},
+			wantInput: &Input{
+				args:      []string{"un", "deux", "-f", "trois", "quatre"},
+				remaining: []int{0, 1, 4},
 			},
-			want: &WorldState{
-				RawArgs: []string{"un", "deux", "quatre"},
-			},
-			wantStderr: []string{`Failed to transform argument: argument should be an integer: strconv.Atoi: parsing "trois": invalid syntax`},
+			wantStderr: []string{`strconv.Atoi: parsing "trois": invalid syntax`},
+			wantErr:    fmt.Errorf(`strconv.Atoi: parsing "trois": invalid syntax`),
 		},
 		// Float flag
 		{
@@ -1419,11 +1424,11 @@ func TestExecute(t *testing.T) {
 				NewFlagNode(FloatFlag("floatFlag", 'f', nil)),
 				StringListNode("filler", 1, 2, nil),
 			),
-			ws: &WorldState{
-				RawArgs: []string{"--floatFlag", "-1.2", "three"},
+			args: []string{"--floatFlag", "-1.2", "three"},
+			wantInput: &Input{
+				args: []string{"--floatFlag", "-1.2", "three"},
 			},
-			wantOK: true,
-			want: &WorldState{
+			wantData: &Data{
 				Values: map[string]*Value{
 					"filler":    StringListValue("three"),
 					"floatFlag": FloatValue(-1.2),
@@ -1436,13 +1441,13 @@ func TestExecute(t *testing.T) {
 				NewFlagNode(FloatFlag("floatFlag", 'f', nil)),
 				StringListNode("filler", 1, 2, nil),
 			),
-			ws: &WorldState{
-				RawArgs: []string{"--floatFlag", "twelve", "eleven"},
+			args: []string{"--floatFlag", "twelve", "eleven"},
+			wantInput: &Input{
+				args:      []string{"--floatFlag", "twelve", "eleven"},
+				remaining: []int{2},
 			},
-			want: &WorldState{
-				RawArgs: []string{"eleven"},
-			},
-			wantStderr: []string{`Failed to transform argument: argument should be a float: strconv.ParseFloat: parsing "twelve": invalid syntax`},
+			wantStderr: []string{`strconv.ParseFloat: parsing "twelve": invalid syntax`},
+			wantErr:    fmt.Errorf(`strconv.ParseFloat: parsing "twelve": invalid syntax`),
 		},
 		// Bool flag
 		{
@@ -1451,11 +1456,11 @@ func TestExecute(t *testing.T) {
 				NewFlagNode(BoolFlag("boolFlag", 'b')),
 				StringListNode("filler", 1, 2, nil),
 			),
-			ws: &WorldState{
-				RawArgs: []string{"okay", "--boolFlag", "then"},
+			args: []string{"okay", "--boolFlag", "then"},
+			wantInput: &Input{
+				args: []string{"okay", "--boolFlag", "then"},
 			},
-			wantOK: true,
-			want: &WorldState{
+			wantData: &Data{
 				Values: map[string]*Value{
 					"filler":   StringListValue("okay", "then"),
 					"boolFlag": BoolValue(true),
@@ -1468,11 +1473,11 @@ func TestExecute(t *testing.T) {
 				NewFlagNode(BoolFlag("boolFlag", 'b')),
 				StringListNode("filler", 1, 2, nil),
 			),
-			ws: &WorldState{
-				RawArgs: []string{"okay", "-b", "then"},
+			args: []string{"okay", "-b", "then"},
+			wantInput: &Input{
+				args: []string{"okay", "-b", "then"},
 			},
-			wantOK: true,
-			want: &WorldState{
+			wantData: &Data{
 				Values: map[string]*Value{
 					"filler":   StringListValue("okay", "then"),
 					"boolFlag": BoolValue(true),
@@ -1486,11 +1491,11 @@ func TestExecute(t *testing.T) {
 				NewFlagNode(StringListFlag("slFlag", 's', 2, 3, nil)),
 				StringListNode("filler", 1, 2, nil),
 			),
-			ws: &WorldState{
-				RawArgs: []string{"un", "--slFlag", "hello", "there"},
+			args: []string{"un", "--slFlag", "hello", "there"},
+			wantInput: &Input{
+				args: []string{"un", "--slFlag", "hello", "there"},
 			},
-			wantOK: true,
-			want: &WorldState{
+			wantData: &Data{
 				Values: map[string]*Value{
 					"filler": StringListValue("un"),
 					"slFlag": StringListValue("hello", "there"),
@@ -1503,14 +1508,18 @@ func TestExecute(t *testing.T) {
 				NewFlagNode(StringListFlag("slFlag", 's', 2, 3, nil)),
 				StringListNode("filler", 1, 2, nil),
 			),
-			ws: &WorldState{
-				RawArgs: []string{"un", "--slFlag", "hello"},
+			args: []string{"un", "--slFlag", "hello"},
+			wantInput: &Input{
+				args:      []string{"un", "--slFlag", "hello"},
+				remaining: []int{0},
 			},
-			want: &WorldState{
-				RawArgs: []string{"un"},
+			wantStderr: []string{"not enough arguments"},
+			wantErr:    fmt.Errorf("not enough arguments"),
+			wantData: &Data{
+				Values: map[string]*Value{
+					"slFlag": StringListValue("hello"),
+				},
 			},
-			// TODO: not enough args.
-			wantStderr: []string{`not enough arguments provided for "slFlag" arg`},
 		},
 		// Int list
 		{
@@ -1519,11 +1528,11 @@ func TestExecute(t *testing.T) {
 				NewFlagNode(IntListFlag("ilFlag", 'i', 2, 3, nil)),
 				StringListNode("filler", 1, 2, nil),
 			),
-			ws: &WorldState{
-				RawArgs: []string{"un", "-i", "2", "4", "8", "16", "32", "64"},
+			args: []string{"un", "-i", "2", "4", "8", "16", "32", "64"},
+			wantInput: &Input{
+				args: []string{"un", "-i", "2", "4", "8", "16", "32", "64"},
 			},
-			wantOK: true,
-			want: &WorldState{
+			wantData: &Data{
 				Values: map[string]*Value{
 					"filler": StringListValue("un", "64"),
 					"ilFlag": IntListValue(2, 4, 8, 16, 32),
@@ -1536,15 +1545,13 @@ func TestExecute(t *testing.T) {
 				NewFlagNode(IntListFlag("ilFlag", 'i', 2, 3, nil)),
 				StringListNode("filler", 1, 2, nil),
 			),
-			ws: &WorldState{
-				RawArgs: []string{"un", "-i", "2", "4", "8", "16.0", "32", "64"},
+			args: []string{"un", "-i", "2", "4", "8", "16.0", "32", "64"},
+			wantInput: &Input{
+				args:      []string{"un", "-i", "2", "4", "8", "16.0", "32", "64"},
+				remaining: []int{0, 7},
 			},
-			want: &WorldState{
-				RawArgs: []string{"un", "64"},
-			},
-			wantStderr: []string{
-				`strconv.Atoi: parsing "16.0": invalid syntax`,
-			},
+			wantStderr: []string{`strconv.Atoi: parsing "16.0": invalid syntax`},
+			wantErr:    fmt.Errorf(`strconv.Atoi: parsing "16.0": invalid syntax`),
 		},
 		// Float list
 		{
@@ -1553,11 +1560,11 @@ func TestExecute(t *testing.T) {
 				NewFlagNode(FloatListFlag("flFlag", 'f', 0, 3, nil)),
 				StringListNode("filler", 1, 3, nil),
 			),
-			ws: &WorldState{
-				RawArgs: []string{"un", "-f", "2", "-4.4", "0.8", "16.16", "-32", "64"},
+			args: []string{"un", "-f", "2", "-4.4", "0.8", "16.16", "-32", "64"},
+			wantInput: &Input{
+				args: []string{"un", "-f", "2", "-4.4", "0.8", "16.16", "-32", "64"},
 			},
-			wantOK: true,
-			want: &WorldState{
+			wantData: &Data{
 				Values: map[string]*Value{
 					"filler": StringListValue("un", "16.16", "-32", "64"),
 					"flFlag": FloatListValue(2, -4.4, 0.8),
@@ -1570,15 +1577,13 @@ func TestExecute(t *testing.T) {
 				NewFlagNode(FloatListFlag("flFlag", 'f', 0, 3, nil)),
 				StringListNode("filler", 1, 2, nil),
 			),
-			ws: &WorldState{
-				RawArgs: []string{"un", "--flFlag", "2", "4", "eight", "16.0", "32", "64"},
+			args: []string{"un", "--flFlag", "2", "4", "eight", "16.0", "32", "64"},
+			wantInput: &Input{
+				args:      []string{"un", "--flFlag", "2", "4", "eight", "16.0", "32", "64"},
+				remaining: []int{0, 5, 6, 7},
 			},
-			want: &WorldState{
-				RawArgs: []string{"un", "16.0", "32", "64"},
-			},
-			wantStderr: []string{
-				`strconv.ParseFloat: parsing "eight": invalid syntax`,
-			},
+			wantStderr: []string{`strconv.ParseFloat: parsing "eight": invalid syntax`},
+			wantErr:    fmt.Errorf(`strconv.ParseFloat: parsing "eight": invalid syntax`),
 		},
 		// Misc. flag tests
 		{
@@ -1592,14 +1597,14 @@ func TestExecute(t *testing.T) {
 				),
 				StringListNode("extra", 0, 10, nil),
 			),
-			wantOK: true,
-			ws: &WorldState{
-				RawArgs: []string{"it's", "--boo", "a", "-r", "9", "secret", "-n", "greggar", "groog", "beggars", "--coordinates", "2.2", "4.4", "message."},
+			args: []string{"its", "--boo", "a", "-r", "9", "secret", "-n", "greggar", "groog", "beggars", "--coordinates", "2.2", "4.4", "message."},
+			wantInput: &Input{
+				args: []string{"its", "--boo", "a", "-r", "9", "secret", "-n", "greggar", "groog", "beggars", "--coordinates", "2.2", "4.4", "message."},
 			},
-			want: &WorldState{
+			wantData: &Data{
 				Values: map[string]*Value{
 					"boo":         BoolValue(true),
-					"extra":       StringListValue("it's", "a", "secret", "message."),
+					"extra":       StringListValue("its", "a", "secret", "message."),
 					"names":       StringListValue("greggar", "groog", "beggars"),
 					"coordinates": FloatListValue(2.2, 4.4),
 					"rating":      IntValue(9),
