@@ -1,5 +1,7 @@
 package command
 
+import "fmt"
+
 type unprocessedArg struct {
 	originalIdx int
 }
@@ -32,6 +34,28 @@ func (i *Input) Peek() (string, bool) {
 		return "", false
 	}
 	return i.args[i.remaining[0]], true
+}
+
+func (i *Input) PushFront(sl ...string) {
+	// Update remaining.
+	startIdx := len(i.args)
+	if len(i.remaining) > 0 {
+		if i.offset < len(i.remaining) {
+			startIdx = i.remaining[i.offset]
+		}
+	}
+	fmt.Println("B4", i.args)
+	i.args = append(i.args[:startIdx], append(sl, i.args[startIdx:]...)...)
+	fmt.Println("AF", i.args)
+	// increment all remaining after offset.
+	for j := i.offset; j < len(i.remaining); j++ {
+		i.remaining[j] += len(sl)
+	}
+	insert := make([]int, 0, len(sl))
+	for j := 0; j < len(sl); j++ {
+		insert = append(insert, j+startIdx)
+	}
+	i.remaining = append(i.remaining[:i.offset], append(insert, i.remaining[i.offset:]...)...)
 }
 
 func (i *Input) PeekAt(idx int) (string, bool) {

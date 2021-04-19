@@ -58,12 +58,12 @@ type executeAlias struct {
 }
 
 func (ea *executeAlias) Execute(input *Input, output Output, data *Data, eData *ExecuteData) error {
-	/*nxt, ok := input.Peek()
+	nxt, ok := input.Peek()
 	if !ok {
 		return nil
 	}
-	/sl, _ := getAlias(ea.ac, ea.name, nxt)
-	input.*/
+	sl, _ := getAlias(ea.ac, ea.name, nxt)
+	input.PushFront(sl...)
 	return nil
 }
 

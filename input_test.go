@@ -11,6 +11,72 @@ func runePtr(r rune) *rune {
 	return &r
 }
 
+func TestPushFront(t *testing.T) {
+	for _, test := range []struct {
+		name string
+		i    *Input
+		sl   []string
+		want *Input
+	}{
+		{
+			name: "handles empty list",
+			i: &Input{
+				args:      []string{"zero", "one", "two", "three", "four"},
+				remaining: []int{1, 3, 4},
+			},
+			want: &Input{
+				args:      []string{"zero", "one", "two", "three", "four"},
+				remaining: []int{1, 3, 4},
+			},
+		},
+		{
+			name: "adds list",
+			sl:   []string{"zero.one", "zero.two"},
+			i: &Input{
+				args:      []string{"zero", "one", "two", "three", "four"},
+				remaining: []int{1, 3, 4},
+			},
+			want: &Input{
+				args:      []string{"zero", "zero.one", "zero.two", "one", "two", "three", "four"},
+				remaining: []int{1, 2, 3, 5, 6},
+			},
+		},
+		{
+			name: "adds list to the front",
+			sl:   []string{"zero.one", "zero.two"},
+			i: &Input{
+				args:      []string{"zero", "one", "two", "three", "four"},
+				remaining: []int{0, 1, 3, 4},
+			},
+			want: &Input{
+				args:      []string{"zero.one", "zero.two", "zero", "one", "two", "three", "four"},
+				remaining: []int{0, 1, 2, 3, 5, 6},
+			},
+		},
+		{
+			name: "adds list with offset",
+			sl:   []string{"two.one", "two.two"},
+			i: &Input{
+				args:      []string{"zero", "one", "two", "three", "four"},
+				remaining: []int{0, 1, 3, 4},
+				offset:    2,
+			},
+			want: &Input{
+				args:      []string{"zero", "one", "two", "two.one", "two.two", "three", "four"},
+				remaining: []int{0, 1, 3, 4, 5, 6},
+				offset:    2,
+			},
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			test.i.PushFront(test.sl...)
+			if diff := cmp.Diff(test.want, test.i, cmp.AllowUnexported(Input{})); diff != "" {
+				t.Errorf("i.PushFront(%v) resulted in incorrect Input object:\n%s", test.sl, diff)
+			}
+		})
+	}
+}
+
 func TestPop(t *testing.T) {
 	input := NewInput([]string{
 		"one",
