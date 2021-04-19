@@ -19,6 +19,26 @@ func NewArgOpt(c *Completor, t ArgTransformer, v ...ArgValidator) *ArgOpt {
 	}
 }
 
+func SimpleTransformer(vt ValueType, f func(v *Value) (*Value, error)) ArgTransformer {
+	return &simpleTransformer{
+		vt: vt,
+		t:  f,
+	}
+}
+
+type simpleTransformer struct {
+	vt ValueType
+	t  func(v *Value) (*Value, error)
+}
+
+func (st *simpleTransformer) ValueType() ValueType {
+	return st.vt
+}
+
+func (st *simpleTransformer) Transform(v *Value) (*Value, error) {
+	return st.t(v)
+}
+
 type ArgTransformer interface {
 	ValueType() ValueType
 	Transform(v *Value) (*Value, error)
@@ -62,9 +82,13 @@ func Contains(s string) ArgValidator {
 }
 
 func MinLength(length int) ArgValidator {
+	var plural string
+	if length != 1 {
+		plural = "s"
+	}
 	return StringOption(
 		func(vs string) bool { return len(vs) >= length },
-		fmt.Errorf("[MinLength] value must be at least %d characters", length),
+		fmt.Errorf("[MinLength] value must be at least %d character%s", length, plural),
 	)
 }
 

@@ -1,5 +1,7 @@
 package command
 
+import "fmt"
+
 type Node struct {
 	Processor Processor
 	Edge      Edge
@@ -41,11 +43,23 @@ func execute(n *Node, input *Input, output Output, data *Data) (*ExecuteData, er
 	}
 
 	if !input.FullyProcessed() {
-		return nil, output.Stderr("Unprocessed extra args: %v", input.Remaining())
+		return nil, output.Err(ExtraArgsErr(input))
 	}
 
 	if eData.Executor != nil {
 		return eData, eData.Executor(output, data)
 	}
 	return eData, nil
+}
+
+func ExtraArgsErr(input *Input) error {
+	return &extraArgsErr{input}
+}
+
+type extraArgsErr struct {
+	input *Input
+}
+
+func (eae *extraArgsErr) Error() string {
+	return fmt.Sprintf("Unprocessed extra args: %v", eae.input.Remaining())
 }

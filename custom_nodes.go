@@ -14,6 +14,9 @@ func (se *simpleEdge) Next(*Input, *Data) (*Node, error) {
 }
 
 func SimpleEdge(n *Node) Edge {
+	if n == nil {
+		return nil
+	}
 	return &simpleEdge{
 		n: n,
 	}
@@ -21,6 +24,10 @@ func SimpleEdge(n *Node) Edge {
 
 // SerialNodes returns a graph that iterates serially over the provided processors.
 func SerialNodes(p Processor, ps ...Processor) *Node {
+	return SerialNodesTo(nil, p, ps...)
+}
+
+func SerialNodesTo(to *Node, p Processor, ps ...Processor) *Node {
 	root := &Node{
 		Processor: p,
 	}
@@ -32,6 +39,7 @@ func SerialNodes(p Processor, ps ...Processor) *Node {
 		n.Edge = SimpleEdge(newN)
 		n = newN
 	}
+	n.Edge = SimpleEdge(to)
 	return root
 }
 

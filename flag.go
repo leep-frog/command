@@ -46,13 +46,10 @@ func (fn *flagNode) Complete(input *Input, data *Data) *CompleteData {
 		input.offset = i
 		// Remove flag argument (e.g. --flagName).
 		input.Pop()
-		fmt.Println(a)
 		if cd := f.Processor().Complete(input, data); cd != nil {
-			fmt.Println("ayo", cd.Completion)
 			input.offset = 0
 			return cd
 		}
-		fmt.Println("uh oh")
 		input.offset = 0
 	}
 

@@ -16,6 +16,7 @@ type argNode struct {
 }
 
 func (an *argNode) Execute(i *Input, o Output, data *Data, eData *ExecuteData) error {
+	// TODO: If not enough for single, don't do validation and transforming.
 	sl, enough := i.PopN(an.minN, an.optionalN)
 
 	// Transform from string to value.
@@ -57,9 +58,24 @@ func (an *argNode) Execute(i *Input, o Output, data *Data, eData *ExecuteData) e
 	}
 
 	if !enough {
-		return o.Stderr("not enough arguments")
+		return o.Err(NotEnoughArgs())
 	}
 	return nil
+}
+
+func IsNotEnoughArgsErr(err error) bool {
+	_, ok := err.(*notEnoughArgs)
+	return ok
+}
+
+func NotEnoughArgs() error {
+	return &notEnoughArgs{}
+}
+
+type notEnoughArgs struct{}
+
+func (ne *notEnoughArgs) Error() string {
+	return "not enough arguments"
 }
 
 func (an *argNode) Complete(input *Input, data *Data) *CompleteData {

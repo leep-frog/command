@@ -13,6 +13,8 @@ type Output interface {
 	Stdout(string, ...interface{})
 	// Writes a line to stderr and returns an error with the same message.
 	Stderr(string, ...interface{}) error
+	// Writes the provided error to stderr and returns the provided error.
+	Err(err error) error
 	// Close informs the os that no more data will be written.
 	Close()
 }
@@ -30,6 +32,11 @@ func (o *output) Stdout(s string, a ...interface{}) {
 func (o *output) Stderr(s string, a ...interface{}) error {
 	err := fmt.Errorf(s, a...)
 	o.stderrChan <- err.Error()
+	return err
+}
+
+func (o *output) Err(err error) error {
+	o.Stderr(err.Error())
 	return err
 }
 
@@ -104,6 +111,10 @@ func (fo *FakeOutput) Stdout(s string, a ...interface{}) {
 
 func (fo *FakeOutput) Stderr(s string, a ...interface{}) error {
 	return fo.c.Stderr(s, a...)
+}
+
+func (fo *FakeOutput) Err(err error) error {
+	return fo.c.Err(err)
 }
 
 func (fo *FakeOutput) Close() {

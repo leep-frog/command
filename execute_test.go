@@ -1675,54 +1675,7 @@ func TestExecute(t *testing.T) {
 		/* Useful for commenting out tests. */
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			fo := NewFakeOutput()
-			data := &Data{}
-			input := ParseArgs(test.args)
-			eData, err := execute(test.node, input, fo, data)
-			if test.wantErr == nil && err != nil {
-				t.Fatalf("execute(%v) returned error (%v) when shouldn't have", test.args, err)
-			}
-			if test.wantErr != nil {
-				if err == nil {
-					t.Fatalf("execute(%v) returned no error when should have returned %v", test.args, test.wantErr)
-				} else if diff := cmp.Diff(test.wantErr.Error(), err.Error()); diff != "" {
-					t.Errorf("execute(%v) returned unexpected error (-want, +got):\n%s", test.args, diff)
-				}
-			}
-
-			we := test.want
-			if we == nil {
-				we = &ExecuteData{}
-			}
-			if eData == nil {
-				eData = &ExecuteData{}
-			}
-			if diff := cmp.Diff(we, eData, cmpopts.IgnoreFields(ExecuteData{}, "Executor")); diff != "" {
-				t.Errorf("execute(%v) returned unexpected ExecuteData (-want, +got):\n%s", test.args, diff)
-			}
-
-			wd := test.wantData
-			if test.wantData == nil {
-				wd = &Data{}
-			}
-			if diff := cmp.Diff(wd, data); diff != "" {
-				t.Errorf("execute(%v) returned unexpected Data (-want, +got):\n%s", test.args, diff)
-			}
-
-			wi := test.wantInput
-			if wi == nil {
-				wi = &Input{}
-			}
-			if diff := cmp.Diff(wi, input, cmpopts.EquateEmpty(), cmp.AllowUnexported(Input{})); diff != "" {
-				t.Errorf("execute(%v) incorrectly modified input (-want, +got):\n%s", test.args, diff)
-			}
-
-			if diff := cmp.Diff(test.wantStdout, fo.GetStdout(), cmpopts.EquateEmpty()); diff != "" {
-				t.Errorf("execute(%v) sent wrong data to stdout (-want, +got):\n%s", test.args, diff)
-			}
-			if diff := cmp.Diff(test.wantStderr, fo.GetStderr(), cmpopts.EquateEmpty()); diff != "" {
-				t.Errorf("execute(%v) sent wrong data to stderr (-want, +got):\n%s", test.args, diff)
-			}
+			ExecuteTest(t, test.node, test.args, test.wantErr, test.want, test.wantData, test.wantInput, test.wantStdout, test.wantStderr)
 		})
 	}
 }
@@ -2304,7 +2257,6 @@ func TestComplete(t *testing.T) {
 		/* Useful comment for commenting out tests */
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			fmt.Println("==========", test.name)
 			oldAbs := filepathAbs
 			filepathAbs = func(s string) (string, error) {
 				return filepath.Join(test.filepathAbs, s), test.filepathAbsErr
