@@ -76,6 +76,10 @@ func (i *Input) Pop() (string, bool) {
 	return *sl[0], true
 }
 
+func (i *Input) Replace(s string) {
+	i.args[i.remaining[0]] = s
+}
+
 func (i *Input) PopN(n, optN int) ([]*string, bool) {
 	shift := n + optN
 	if optN == UnboundedList || shift+i.offset > len(i.remaining) {

@@ -36,7 +36,9 @@ func (o *output) Stderr(s string, a ...interface{}) error {
 }
 
 func (o *output) Err(err error) error {
-	o.Stderr(err.Error())
+	if err != nil {
+		o.Stderr(err.Error())
+	}
 	return err
 }
 

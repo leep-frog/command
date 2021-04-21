@@ -2,6 +2,7 @@ package command
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -25,7 +26,7 @@ func TestAlias(t *testing.T) {
 	}{
 		{
 			name:       "alias requires arg",
-			n:          AliasNode(SerialNodes(StringListNode("sl", 1, 2, nil)), ac, "pioneer"),
+			n:          AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
 			wantErr:    fmt.Errorf("not enough arguments"),
 			wantStderr: []string{"not enough arguments"},
 			wantData: &Data{
@@ -37,7 +38,7 @@ func TestAlias(t *testing.T) {
 		// Add alias tests.
 		{
 			name: "requires an alias value",
-			n:    AliasNode(SerialNodes(StringListNode("sl", 1, 2, nil)), ac, "pioneer"),
+			n:    AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
 			args: []string{"a"},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -52,7 +53,7 @@ func TestAlias(t *testing.T) {
 		},
 		{
 			name: "errors on empty alias",
-			n:    AliasNode(SerialNodes(StringListNode("sl", 1, 2, nil)), ac, "pioneer"),
+			n:    AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
 			args: []string{"a", ""},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -67,7 +68,7 @@ func TestAlias(t *testing.T) {
 		},
 		{
 			name: "errors on too many values",
-			n:    AliasNode(SerialNodes(StringListNode("sl", 1, 2, nil)), ac, "pioneer"),
+			n:    AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
 			args: []string{"a", "overload", "five", "four", "three", "two", "one"},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -84,7 +85,7 @@ func TestAlias(t *testing.T) {
 		},
 		{
 			name: "adds empty alias list",
-			n:    AliasNode(SerialNodes(StringListNode("sl", 1, 2, nil)), ac, "pioneer"),
+			n:    AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
 			args: []string{"a", "empty"},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -111,7 +112,7 @@ func TestAlias(t *testing.T) {
 		},
 		{
 			name: "adds alias list when just enough",
-			n:    AliasNode(SerialNodes(StringListNode("sl", 1, 2, nil)), ac, "pioneer"),
+			n:    AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
 			args: []string{"a", "bearMinimum", "grizzly"},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -133,7 +134,7 @@ func TestAlias(t *testing.T) {
 		},
 		{
 			name: "fails if alias already exists",
-			n:    AliasNode(SerialNodes(StringListNode("sl", 1, 2, nil)), ac, "pioneer"),
+			n:    AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
 			am: map[string]map[string][]string{
 				"pioneer": {
 					"bearMinimum": nil,
@@ -161,7 +162,7 @@ func TestAlias(t *testing.T) {
 		},
 		{
 			name: "adds alias list when maximum amount",
-			n:    AliasNode(SerialNodes(StringListNode("sl", 1, 2, nil)), ac, "pioneer"),
+			n:    AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
 			args: []string{"a", "bearMinimum", "grizzly", "teddy", "brown"},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -183,7 +184,7 @@ func TestAlias(t *testing.T) {
 		},
 		{
 			name: "adds alias for multiple nodes",
-			n:    AliasNode(SerialNodes(StringListNode("sl", 1, 2, nil), IntNode("i", nil), FloatListNode("fl", 10, 0, nil)), ac, "pioneer"),
+			n:    AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil), IntNode("i", nil), FloatListNode("fl", 10, 0, nil))),
 			args: []string{"a", "bearMinimum", "grizzly", "teddy", "brown", "3", "2.2", "-1.1"},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -208,7 +209,7 @@ func TestAlias(t *testing.T) {
 		},
 		{
 			name: "adds alias when doesn't reach nodes",
-			n:    AliasNode(SerialNodes(StringListNode("sl", 1, 2, nil), IntNode("i", nil), FloatListNode("fl", 10, 0, nil)), ac, "pioneer"),
+			n:    AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil), IntNode("i", nil), FloatListNode("fl", 10, 0, nil))),
 			args: []string{"a", "bearMinimum", "grizzly"},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -232,7 +233,7 @@ func TestAlias(t *testing.T) {
 		},
 		{
 			name: "adds alias for unbounded list",
-			n:    AliasNode(SerialNodes(StringListNode("sl", 1, UnboundedList, nil), IntNode("i", nil), FloatListNode("fl", 10, 0, nil)), ac, "pioneer"),
+			n:    AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, UnboundedList, nil), IntNode("i", nil), FloatListNode("fl", 10, 0, nil))),
 			args: []string{"a", "bearMinimum", "grizzly", "teddy", "brown", "3", "2.2", "-1.1"},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -257,11 +258,11 @@ func TestAlias(t *testing.T) {
 		// Adding transformed arguments
 		{
 			name: "adds transformed arguments",
-			n: AliasNode(SerialNodes(StringListNode("sl", 1, 2, &ArgOpt{
+			n: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, &ArgOpt{
 				Transformer: SimpleTransformer(StringListType, func(v *Value) (*Value, error) {
 					return StringListValue("papa", "mama", "baby"), nil
 				}),
-			})), ac, "pioneer"),
+			}))),
 			args: []string{"a", "bearMinimum", "grizzly", "teddy", "brown"},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -283,11 +284,11 @@ func TestAlias(t *testing.T) {
 		},
 		{
 			name: "fails if transform error",
-			n: AliasNode(SerialNodes(StringListNode("sl", 1, 2, &ArgOpt{
+			n: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, &ArgOpt{
 				Transformer: SimpleTransformer(StringListType, func(v *Value) (*Value, error) {
 					return nil, fmt.Errorf("bad news bears")
 				}),
-			})), ac, "pioneer"),
+			}))),
 			args: []string{"a", "bearMinimum", "grizzly", "teddy", "brown"},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -302,6 +303,139 @@ func TestAlias(t *testing.T) {
 			wantErr:    fmt.Errorf("Custom transformer failed: bad news bears"),
 		},
 		// Executing node tests.
+		{
+			name: "Replaces alias with value",
+			n:    AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
+			args: []string{"t"},
+			am: map[string]map[string][]string{
+				"pioneer": {
+					"t": []string{"teddy"},
+				},
+			},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"sl": StringListValue("teddy"),
+				},
+			},
+			wantInput: &Input{
+				args: []string{"teddy"},
+			},
+			wantAC: &simpleAliasCLI{
+				mp: map[string]map[string][]string{
+					"pioneer": {
+						"t": []string{"teddy"},
+					},
+				},
+			},
+		},
+		{
+			name: "Ignores non-alias values",
+			n:    AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
+			args: []string{"tee"},
+			am: map[string]map[string][]string{
+				"pioneer": {
+					"t": []string{"teddy"},
+				},
+			},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"sl": StringListValue("tee"),
+				},
+			},
+			wantInput: &Input{
+				args: []string{"tee"},
+			},
+			wantAC: &simpleAliasCLI{
+				mp: map[string]map[string][]string{
+					"pioneer": {
+						"t": []string{"teddy"},
+					},
+				},
+			},
+		},
+		{
+			name: "Replaces only alias value",
+			n:    AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
+			args: []string{"t", "grizzly"},
+			am: map[string]map[string][]string{
+				"pioneer": {
+					"t": []string{"teddy"},
+				},
+			},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"sl": StringListValue("teddy", "grizzly"),
+				},
+			},
+			wantInput: &Input{
+				args: []string{"teddy", "grizzly"},
+			},
+			wantAC: &simpleAliasCLI{
+				mp: map[string]map[string][]string{
+					"pioneer": {
+						"t": []string{"teddy"},
+					},
+				},
+			},
+		},
+		{
+			name: "Replaces with multiple values",
+			n:    AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
+			args: []string{"t", "grizzly"},
+			am: map[string]map[string][]string{
+				"pioneer": {
+					"t": []string{"teddy", "brown"},
+				},
+			},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"sl": StringListValue("teddy", "brown", "grizzly"),
+				},
+			},
+			wantInput: &Input{
+				args: []string{"teddy", "brown", "grizzly"},
+			},
+			wantAC: &simpleAliasCLI{
+				mp: map[string]map[string][]string{
+					"pioneer": {
+						"t": []string{"teddy", "brown"},
+					},
+				},
+			},
+		},
+		{
+			name: "Replaces with multiple values and transformers",
+			n: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, &ArgOpt{
+				Transformer: SimpleTransformer(StringListType, func(v *Value) (*Value, error) {
+					r := make([]string, 0, len(v.StringList()))
+					for _, v := range v.StringList() {
+						r = append(r, strings.ToUpper(v))
+					}
+					return StringListValue(r...), nil
+				}),
+			}))),
+			args: []string{"t", "grizzly"},
+			am: map[string]map[string][]string{
+				"pioneer": {
+					"t": []string{"teddy", "brown"},
+				},
+			},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"sl": StringListValue("TEDDY", "BROWN", "GRIZZLY"),
+				},
+			},
+			wantInput: &Input{
+				args: []string{"TEDDY", "BROWN", "GRIZZLY"},
+			},
+			wantAC: &simpleAliasCLI{
+				mp: map[string]map[string][]string{
+					"pioneer": {
+						"t": []string{"teddy", "brown"},
+					},
+				},
+			},
+		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			ac.changed = false

@@ -42,7 +42,8 @@ func setAlias(ac AliasCLI, name, alias string, value []string) {
 	m[alias] = value
 }
 
-func AliasNode(n *Node, ac AliasCLI, name string) *Node {
+// TODO: put string and ac as first inputs
+func AliasNode(name string, ac AliasCLI, n *Node) *Node {
 	// TODO: the default node should check for aliases.
 	adder := SerialNodes(aliasArg, &addAlias{node: n, ac: ac, name: name})
 	executor := SerialNodesTo(n, &executeAlias{node: n, ac: ac, name: name})
@@ -58,17 +59,29 @@ type executeAlias struct {
 }
 
 func (ea *executeAlias) Execute(input *Input, output Output, data *Data, eData *ExecuteData) error {
-	nxt, ok := input.Peek()
-	if !ok {
-		return nil
-	}
-	sl, _ := getAlias(ea.ac, ea.name, nxt)
-	input.PushFront(sl...)
+	ea.checkForAlias(input)
 	return nil
 }
 
+func (ea *executeAlias) checkForAlias(input *Input) {
+	nxt, ok := input.Peek()
+	if !ok {
+		return
+	}
+	sl, ok := getAlias(ea.ac, ea.name, nxt)
+	if !ok {
+		return
+	}
+	// TODO: verify that sl isn't 0?  Or only allow non-zero alias values.
+	// Guaranteed to have at least one since we already peeked.
+	end := len(sl) - 1
+	input.Replace(sl[end])
+	input.PushFront(sl[:end]...)
+}
+
 func (ea *executeAlias) Complete(input *Input, data *Data) *CompleteData {
-	return ea.node.Processor.Complete(input, data)
+	ea.checkForAlias(input)
+	return nil
 }
 
 type addAlias struct {
