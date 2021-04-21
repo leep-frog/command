@@ -479,6 +479,128 @@ func TestAliasComplete(t *testing.T) {
 			want: []string{"a", "deux", "trois", "un"},
 		},
 		// Add alias test
+		{
+			name: "suggests nothing for alias",
+			n: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, &ArgOpt{
+				Completor: &Completor{
+					SuggestionFetcher: &ListFetcher{[]string{"un", "deux", "trois"}},
+				},
+			}))),
+			args: []string{"a", ""},
+			wantData: &Data{
+				Values: map[string]*Value{
+					aliasArgName: StringValue(""),
+				},
+			},
+		},
+		{
+			name: "suggests regular things after alias",
+			n: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, &ArgOpt{
+				Completor: &Completor{
+					SuggestionFetcher: &ListFetcher{[]string{"un", "deux", "trois"}},
+				},
+			}))),
+			args: []string{"a", "b", ""},
+			wantData: &Data{
+				Values: map[string]*Value{
+					aliasArgName: StringValue("b"),
+					"sl":         StringListValue(""),
+				},
+			},
+			want: []string{"deux", "trois", "un"},
+		},
+		{
+			name: "suggests regular things after alias",
+			n: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, &ArgOpt{
+				Completor: &Completor{
+					SuggestionFetcher: &ListFetcher{[]string{"un", "deux", "trois"}},
+				},
+			}))),
+			args: []string{"a", "b", ""},
+			wantData: &Data{
+				Values: map[string]*Value{
+					aliasArgName: StringValue("b"),
+					"sl":         StringListValue(""),
+				},
+			},
+			want: []string{"deux", "trois", "un"},
+		},
+		// Execute alias tests
+		{
+			name: "suggests regular things for regular command",
+			n: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, &ArgOpt{
+				Completor: &Completor{
+					SuggestionFetcher: &ListFetcher{[]string{"un", "deux", "trois"}},
+				},
+			}))),
+			args: []string{"zero", ""},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"sl": StringListValue("zero", ""),
+				},
+			},
+			want: []string{"deux", "trois", "un"},
+		},
+		{
+			name: "doesn't replace last argument if it's one",
+			n: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, &ArgOpt{
+				Completor: &Completor{
+					SuggestionFetcher: &ListFetcher{[]string{"un", "deux", "trois"}},
+				},
+			}))),
+			mp: map[string]map[string][]string{
+				"pioneer": {
+					"dee": []string{"d"},
+				},
+			},
+			args: []string{"dee"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"sl": StringListValue("dee"),
+				},
+			},
+		},
+		{
+			name: "suggests args after replacement",
+			n: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, &ArgOpt{
+				Completor: &Completor{
+					SuggestionFetcher: &ListFetcher{[]string{"un", "deux", "trois"}},
+				},
+			}))),
+			mp: map[string]map[string][]string{
+				"pioneer": {
+					"dee": []string{"d"},
+				},
+			},
+			args: []string{"dee", "t"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"sl": StringListValue("d", "t"),
+				},
+			},
+			want: []string{"trois"},
+		},
+		{
+			name: "replaced args are considered in distinct ops",
+			n: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, &ArgOpt{
+				Completor: &Completor{
+					Distinct:          true,
+					SuggestionFetcher: &ListFetcher{[]string{"un", "deux", "trois"}},
+				},
+			}))),
+			mp: map[string]map[string][]string{
+				"pioneer": {
+					"dee": []string{"deux"},
+				},
+			},
+			args: []string{"dee", ""},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"sl": StringListValue("deux", ""),
+				},
+			},
+			want: []string{"trois", "un"},
+		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			fmt.Println(test.name, "==============")

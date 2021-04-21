@@ -59,11 +59,16 @@ type executeAlias struct {
 }
 
 func (ea *executeAlias) Execute(input *Input, output Output, data *Data, eData *ExecuteData) error {
-	ea.checkForAlias(input)
+	ea.checkForAlias(input, false)
 	return nil
 }
 
-func (ea *executeAlias) checkForAlias(input *Input) {
+func (ea *executeAlias) checkForAlias(input *Input, complete bool) {
+	// We don't care if the arg being completed is an alias so we shouldn't replace
+	if complete && len(input.remaining) == 1 {
+		return
+	}
+
 	nxt, ok := input.Peek()
 	if !ok {
 		return
@@ -80,7 +85,7 @@ func (ea *executeAlias) checkForAlias(input *Input) {
 }
 
 func (ea *executeAlias) Complete(input *Input, data *Data) *CompleteData {
-	ea.checkForAlias(input)
+	ea.checkForAlias(input, true)
 	return nil
 }
 
@@ -100,6 +105,7 @@ func (aa *addAlias) Execute(input *Input, output Output, data *Data, eData *Exec
 		remaining = append(remaining, r)
 	}
 	n := aa.node
+	// TODO: make function for this (used here and in execute.go)
 	for n != nil {
 		if n.Processor != nil {
 			err := n.Processor.Execute(input, output, data, eData)
@@ -137,5 +143,5 @@ func (aa *addAlias) Execute(input *Input, output Output, data *Data, eData *Exec
 }
 
 func (aa *addAlias) Complete(input *Input, data *Data) *CompleteData {
-	return aa.node.Processor.Complete(input, data)
+	return getCompleteData(aa.node, input, data)
 }

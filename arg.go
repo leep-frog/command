@@ -130,7 +130,8 @@ func (an *argNode) Complete(input *Input, data *Data) *CompleteData {
 	}
 
 	if an.opt == nil || an.opt.Completor == nil {
-		return nil
+		// We are completing for this arg so we should return.
+		return &CompleteData{}
 	}
 
 	var lastArg string
