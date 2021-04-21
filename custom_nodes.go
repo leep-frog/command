@@ -85,7 +85,9 @@ func (bn *branchNode) Complete(input *Input, data *Data) *CompleteData {
 
 	cd := &CompleteData{}
 	if bn.def != nil {
-		if newCD := bn.def.Processor.Complete(input, data); newCD != nil {
+		// Need to iterate over the remaining nodes in case the immediately next node
+		// doesn't process any args and the one after it does.
+		if newCD := getCompleteData(bn.def, input, data); newCD != nil {
 			cd = newCD
 		}
 	}
@@ -134,6 +136,9 @@ func (bn *branchNode) Next(input *Input, data *Data) (*Node, error) {
 }
 
 func BranchNode(branches map[string]*Node, dflt *Node) *Node {
+	if branches == nil {
+		branches = map[string]*Node{}
+	}
 	bn := &branchNode{
 		branches: branches,
 		def:      dflt,

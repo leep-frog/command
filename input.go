@@ -1,7 +1,5 @@
 package command
 
-import "fmt"
-
 type unprocessedArg struct {
 	originalIdx int
 }
@@ -44,9 +42,7 @@ func (i *Input) PushFront(sl ...string) {
 			startIdx = i.remaining[i.offset]
 		}
 	}
-	fmt.Println("B4", i.args)
 	i.args = append(i.args[:startIdx], append(sl, i.args[startIdx:]...)...)
-	fmt.Println("AF", i.args)
 	// increment all remaining after offset.
 	for j := i.offset; j < len(i.remaining); j++ {
 		i.remaining[j] += len(sl)

@@ -9,7 +9,7 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 )
 
-func TestAlias(t *testing.T) {
+func TestAliasExecute(t *testing.T) {
 	ac := &simpleAliasCLI{}
 	for _, test := range []struct {
 		name       string
@@ -448,6 +448,55 @@ func TestAlias(t *testing.T) {
 			}
 			if diff := cmp.Diff(wac, ac, cmp.AllowUnexported(simpleAliasCLI{}), cmpopts.EquateEmpty()); diff != "" {
 				t.Fatalf("Alias.Execute(%v) incorrectly modified alias values:\n%s", test.args, diff)
+			}
+		})
+	}
+}
+
+func TestAliasComplete(t *testing.T) {
+	ac := &simpleAliasCLI{}
+	for _, test := range []struct {
+		name     string
+		n        *Node
+		args     []string
+		mp       map[string]map[string][]string
+		wantData *Data
+		want     []string
+	}{
+		{
+			name: "suggests command names and arg suggestions",
+			n: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, &ArgOpt{
+				Completor: &Completor{
+					SuggestionFetcher: &ListFetcher{[]string{"un", "deux", "trois"}},
+				},
+			}))),
+			args: []string{""},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"sl": StringListValue(""),
+				},
+			},
+			want: []string{"a", "deux", "trois", "un"},
+		},
+		// Add alias test
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			fmt.Println(test.name, "==============")
+			ac.mp = test.mp
+			data := &Data{}
+			input := ParseArgs(test.args)
+			got := getCompleteData(test.n, input, data)
+			var results []string
+			if got != nil && got.Completion != nil {
+				results = got.Completion.Process(input)
+			}
+
+			if diff := cmp.Diff(test.wantData, data, cmpopts.EquateEmpty()); diff != "" {
+				t.Errorf("getCompleteData(%s) improperly parsed args (-want, +got)\n:%s", test.args, diff)
+			}
+
+			if diff := cmp.Diff(test.want, results); diff != "" {
+				t.Errorf("getCompleteData(%s) returned incorrect suggestions (-want, +got):\n%s", test.args, diff)
 			}
 		})
 	}
