@@ -1557,56 +1557,6 @@ func newSimpleAlias(existing map[string]map[string][]string) AliasCLI {
 	}
 }
 
-func ExecuteTest(t *testing.T, node *Node, args []string, wantErr error, want *ExecuteData, wantData *Data, wantInput *Input, wantStdout, wantStderr []string) {
-	t.Helper()
-
-	fo := NewFakeOutput()
-	data := &Data{}
-	input := ParseArgs(args)
-	eData, err := execute(node, input, fo, data)
-	if wantErr == nil && err != nil {
-		t.Fatalf("execute(%v) returned error (%v) when shouldn't have", args, err)
-	}
-	if wantErr != nil {
-		if err == nil {
-			t.Fatalf("execute(%v) returned no error when should have returned %v", args, wantErr)
-		} else if diff := cmp.Diff(wantErr.Error(), err.Error()); diff != "" {
-			t.Errorf("execute(%v) returned unexpected error (-want, +got):\n%s", args, diff)
-		}
-	}
-
-	if want == nil {
-		want = &ExecuteData{}
-	}
-	if eData == nil {
-		eData = &ExecuteData{}
-	}
-	if diff := cmp.Diff(want, eData, cmpopts.IgnoreFields(ExecuteData{}, "Executor")); diff != "" {
-		t.Errorf("execute(%v) returned unexpected ExecuteData (-want, +got):\n%s", args, diff)
-	}
-
-	if wantData == nil {
-		wantData = &Data{}
-	}
-	if diff := cmp.Diff(wantData, data); diff != "" {
-		t.Errorf("execute(%v) returned unexpected Data (-want, +got):\n%s", args, diff)
-	}
-
-	if wantInput == nil {
-		wantInput = &Input{}
-	}
-	if diff := cmp.Diff(wantInput, input, cmpopts.EquateEmpty(), cmp.AllowUnexported(Input{})); diff != "" {
-		t.Errorf("execute(%v) incorrectly modified input (-want, +got):\n%s", args, diff)
-	}
-
-	if diff := cmp.Diff(wantStdout, fo.GetStdout(), cmpopts.EquateEmpty()); diff != "" {
-		t.Errorf("execute(%v) sent wrong data to stdout (-want, +got):\n%s", args, diff)
-	}
-	if diff := cmp.Diff(wantStderr, fo.GetStderr(), cmpopts.EquateEmpty()); diff != "" {
-		t.Errorf("execute(%v) sent wrong data to stderr (-want, +got):\n%s", args, diff)
-	}
-}
-
 func UpperCaseTransformer() ArgTransformer {
 	return SimpleTransformer(StringListType, func(v *Value) (*Value, error) {
 		r := make([]string, 0, len(v.StringList()))
