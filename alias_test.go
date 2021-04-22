@@ -649,6 +649,31 @@ func TestAliasExecute(t *testing.T) {
 				args: []string{"three", "trois", "tres", "III", "3"},
 			},
 		},
+		{
+			name: "don't alias for later args",
+			n: SerialNodes(StringListNode("sl", 3, 0, &ArgOpt{
+				Alias: &AliasOpt{
+					AliasName: "pioneer",
+					AliasCLI:  ac,
+				},
+			}), StringNode("s", nil), OptionalIntNode("i", nil)),
+			am: map[string]map[string][]string{
+				"pioneer": {
+					"t": []string{"three", "trois", "tres"},
+				},
+			},
+			args: []string{"I", "II", "III", "t"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"sl": StringListValue("I", "II", "III"),
+					"s":  StringValue("t"),
+					"i":  IntValue(0),
+				},
+			},
+			wantInput: &Input{
+				args: []string{"I", "II", "III", "t"},
+			},
+		},
 		// Get alias tests.
 		{
 			name: "Get alias requires argument",
@@ -1460,6 +1485,29 @@ func TestAliasComplete(t *testing.T) {
 				Values: map[string]*Value{
 					"sl": StringListValue("three", "trois", "tres"),
 					"s":  StringValue("III"),
+					"i":  StringValue(""),
+				},
+			},
+			want: []string{"alpha", "beta"},
+		},
+		{
+			name: "don't alias for later args",
+			n: SerialNodes(StringListNode("sl", 3, 0, &ArgOpt{
+				Alias: &AliasOpt{
+					AliasName: "pioneer",
+					AliasCLI:  ac,
+				},
+			}), StringNode("s", nil), StringNode("i", &ArgOpt{Completor: SimpleCompletor("alpha", "beta")})),
+			mp: map[string]map[string][]string{
+				"pioneer": {
+					"t": []string{"three", "trois", "tres", "III"},
+				},
+			},
+			args: []string{"I", "II", "III", "t", ""},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"sl": StringListValue("I", "II", "III"),
+					"s":  StringValue("t"),
 					"i":  StringValue(""),
 				},
 			},
