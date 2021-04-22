@@ -979,7 +979,7 @@ func TestAliasExecute(t *testing.T) {
 			}
 			ac.changed = false
 			ac.mp = test.am
-			ExecuteTest(t, test.n, test.args, test.wantErr, test.wantEData, test.wantData, test.wantInput, test.wantStdout, test.wantStderr)
+			executeTest(t, test.n, test.args, test.wantErr, test.wantEData, test.wantData, test.wantInput, test.wantStdout, test.wantStderr)
 
 			wac := test.wantAC
 			if wac == nil {

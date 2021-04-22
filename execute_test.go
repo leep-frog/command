@@ -1675,7 +1675,7 @@ func TestExecute(t *testing.T) {
 		/* Useful for commenting out tests. */
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			ExecuteTest(t, test.node, test.args, test.wantErr, test.want, test.wantData, test.wantInput, test.wantStdout, test.wantStderr)
+			executeTest(t, test.node, test.args, test.wantErr, test.want, test.wantData, test.wantInput, test.wantStdout, test.wantStderr)
 		})
 	}
 }

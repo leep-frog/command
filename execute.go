@@ -76,12 +76,29 @@ func (eae *extraArgsErr) Error() string {
 
 // TODO: if this function isn't in test package, then it isn't exposed publicly.
 // Find out best place to put this.
-func ExecuteTest(t *testing.T, node *Node, args []string, wantErr error, want *ExecuteData, wantData *Data, wantInput *Input, wantStdout, wantStderr []string) {
+func executeTest(t *testing.T, node *Node, args []string, wantErr error, want *ExecuteData, wantData *Data, wantInput *Input, wantStdout, wantStderr []string) {
+	input := ParseArgs(args)
+	testExecute(t, node, args, input, wantErr, want, wantData, wantStdout, wantStderr)
+
+	if wantInput == nil {
+		wantInput = &Input{}
+	}
+	if diff := cmp.Diff(wantInput, input, cmpopts.EquateEmpty(), cmp.AllowUnexported(Input{})); diff != "" {
+		t.Errorf("execute(%v) incorrectly modified input (-want, +got):\n%s", args, diff)
+	}
+}
+
+func ExecuteTest(t *testing.T, node *Node, args []string, wantErr error, want *ExecuteData, wantData *Data, wantStdout, wantStderr []string) {
+	input := ParseArgs(args)
+	testExecute(t, node, args, input, wantErr, want, wantData, wantStdout, wantStderr)
+}
+
+func testExecute(t *testing.T, node *Node, args []string, input *Input, wantErr error, want *ExecuteData, wantData *Data, wantStdout, wantStderr []string) {
 	t.Helper()
 
 	fo := NewFakeOutput()
 	data := &Data{}
-	input := ParseArgs(args)
+
 	eData, err := execute(node, input, fo, data)
 	if wantErr == nil && err != nil {
 		t.Fatalf("execute(%v) returned error (%v) when shouldn't have", args, err)
@@ -109,13 +126,6 @@ func ExecuteTest(t *testing.T, node *Node, args []string, wantErr error, want *E
 	}
 	if diff := cmp.Diff(wantData, data); diff != "" {
 		t.Errorf("execute(%v) returned unexpected Data (-want, +got):\n%s", args, diff)
-	}
-
-	if wantInput == nil {
-		wantInput = &Input{}
-	}
-	if diff := cmp.Diff(wantInput, input, cmpopts.EquateEmpty(), cmp.AllowUnexported(Input{})); diff != "" {
-		t.Errorf("execute(%v) incorrectly modified input (-want, +got):\n%s", args, diff)
 	}
 
 	if diff := cmp.Diff(wantStdout, fo.GetStdout(), cmpopts.EquateEmpty()); diff != "" {
