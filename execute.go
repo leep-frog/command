@@ -24,6 +24,10 @@ func Execute(n *Node, input *Input, output Output) (*ExecuteData, error) {
 
 // Separate method for testing purposes.
 func execute(n *Node, input *Input, output Output, data *Data) (*ExecuteData, error) {
+	// TODO: combine logic with
+	// - complete
+	// - alias.execute
+	// - alias.complete
 	eData := &ExecuteData{}
 	for n != nil {
 		if n.Processor != nil {
