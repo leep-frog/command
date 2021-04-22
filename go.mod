@@ -1,4 +1,4 @@
-module command
+module github.com/leep-frog/command
 
 go 1.14
 
