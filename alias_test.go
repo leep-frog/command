@@ -436,6 +436,97 @@ func TestAliasExecute(t *testing.T) {
 				},
 			},
 		},
+		// Delete alias tests.
+		{
+			name: "Delete requires argument",
+			n:    AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
+			args: []string{"d"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"ALIAS": StringListValue(),
+				},
+			},
+			wantErr:    fmt.Errorf("not enough arguments"),
+			wantStderr: []string{"not enough arguments"},
+			wantInput: &Input{
+				args: []string{"d"},
+			},
+			wantAC: &simpleAliasCLI{},
+		},
+		{
+			name: "Delete returns error if alias group does not exist",
+			n:    AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
+			args: []string{"d", "e"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"ALIAS": StringListValue("e"),
+				},
+			},
+			wantErr:    fmt.Errorf("Alias group has no aliases yet."),
+			wantStderr: []string{"Alias group has no aliases yet."},
+			wantInput: &Input{
+				args: []string{"d", "e"},
+			},
+			wantAC: &simpleAliasCLI{},
+		},
+		{
+			name: "Delete prints error if alias does not exist",
+			n:    AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
+			args: []string{"d", "t"},
+			am: map[string]map[string][]string{
+				"pioneer": {
+					"t": []string{"teddy", "grizzly"},
+				},
+			},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"ALIAS": StringListValue("t"),
+				},
+			},
+			wantInput: &Input{
+				args: []string{"d", "t"},
+			},
+			wantAC: &simpleAliasCLI{
+				changed: true,
+				mp: map[string]map[string][]string{
+					"pioneer": {},
+				},
+			},
+		},
+		{
+			name: "Delete deletes multiple aliases",
+			n:    AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
+			args: []string{"d", "t", "penguin", "colors", "bare"},
+			am: map[string]map[string][]string{
+				"pioneer": {
+					"p":      []string{"polar", "pooh"},
+					"colors": []string{"brown", "black"},
+					"t":      []string{"teddy"},
+					"g":      []string{"grizzly"},
+				},
+			},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"ALIAS": StringListValue("t", "penguin", "colors", "bare"),
+				},
+			},
+			wantStderr: []string{
+				`Alias "penguin" does not exist`,
+				`Alias "bare" does not exist`,
+			},
+			wantInput: &Input{
+				args: []string{"d", "t", "penguin", "colors", "bare"},
+			},
+			wantAC: &simpleAliasCLI{
+				changed: true,
+				mp: map[string]map[string][]string{
+					"pioneer": {
+						"p": []string{"polar", "pooh"},
+						"g": []string{"grizzly"},
+					},
+				},
+			},
+		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			ac.changed = false
@@ -476,7 +567,7 @@ func TestAliasComplete(t *testing.T) {
 					"sl": StringListValue(""),
 				},
 			},
-			want: []string{"a", "deux", "trois", "un"},
+			want: []string{"a", "d", "deux", "trois", "un"},
 		},
 		// Add alias test
 		{

@@ -1,5 +1,7 @@
 package command
 
+import "fmt"
+
 var (
 	aliasArgName = "ALIAS"
 	// TODO: completor
@@ -32,6 +34,19 @@ func getAlias(ac AliasCLI, name, alias string) ([]string, bool) {
 	return v, ok
 }
 
+func popAlias(ac AliasCLI, name, alias string) error {
+	m, ok := ac.AliasMap()[name]
+	if !ok {
+		return fmt.Errorf("No aliases exist for alias type %q", name)
+	}
+	if _, ok := m[alias]; !ok {
+		return fmt.Errorf("Alias %q does not exist", alias)
+	}
+	ac.MarkChanged()
+	delete(m, alias)
+	return nil
+}
+
 func setAlias(ac AliasCLI, name, alias string, value []string) {
 	ac.MarkChanged()
 	m, ok := ac.AliasMap()[name]
@@ -49,7 +64,26 @@ func AliasNode(name string, ac AliasCLI, n *Node) *Node {
 	executor := SerialNodesTo(n, &executeAlias{node: n, ac: ac, name: name})
 	return BranchNode(map[string]*Node{
 		"a": adder,
+		"d": deleteAlias(name, ac, n),
+		//"g": aliasGetter(name, ac, n),
+		//"s": aliasSearcher(name, ac, n),
+		//"l": aliasLister(name, ac, n),
 	}, executor)
+}
+
+func deleteAlias(name string, ac AliasCLI, n *Node) *Node {
+	aliasListArg := StringListNode(aliasArgName, 1, UnboundedList, nil /* TODO */)
+	return SerialNodes(aliasListArg, ExecutorNode(func(output Output, data *Data) error {
+		if len(getAliasMap(ac, name)) == 0 {
+			return output.Stderr("Alias group has no aliases yet.")
+		}
+		for _, a := range data.Values[aliasArgName].StringList() {
+			if err := popAlias(ac, name, a); err != nil {
+				output.Err(err)
+			}
+		}
+		return nil
+	}))
 }
 
 type executeAlias struct {
