@@ -148,3 +148,29 @@ func BranchNode(branches map[string]*Node, dflt *Node) *Node {
 		Edge:      bn,
 	}
 }
+
+func SimpleProcessor(e func(*Input, Output, *Data, *ExecuteData) error, c func(*Input, *Data) *CompleteData) Processor {
+	return &simpleProcessor{
+		e: e,
+		c: c,
+	}
+}
+
+type simpleProcessor struct {
+	e func(*Input, Output, *Data, *ExecuteData) error
+	c func(*Input, *Data) *CompleteData
+}
+
+func (sp *simpleProcessor) Execute(i *Input, o Output, d *Data, e *ExecuteData) error {
+	if sp.e == nil {
+		return nil
+	}
+	return sp.e(i, o, d, e)
+}
+
+func (sp *simpleProcessor) Complete(i *Input, d *Data) *CompleteData {
+	if sp.c == nil {
+		return nil
+	}
+	return sp.c(i, d)
+}
