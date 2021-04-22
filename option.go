@@ -9,6 +9,12 @@ type ArgOpt struct {
 	Validators  []ArgValidator
 	Completor   *Completor
 	Transformer ArgTransformer
+	Alias       *AliasOpt
+}
+
+type AliasOpt struct {
+	AliasName string
+	AliasCLI  AliasCLI
 }
 
 func NewArgOpt(c *Completor, t ArgTransformer, v ...ArgValidator) *ArgOpt {

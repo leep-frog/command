@@ -9,10 +9,13 @@ import (
 
 var (
 	aliasArgName = "ALIAS"
-	// TODO: completor
-	aliasArg   = StringNode(aliasArgName, &ArgOpt{Validators: []ArgValidator{MinLength(1)}})
-	aliasesArg = StringListNode(aliasArgName, 1, UnboundedList, nil)
+	aliasArg     = StringNode(aliasArgName, &ArgOpt{Validators: []ArgValidator{MinLength(1)}})
+	aliasesArg   = StringListNode(aliasArgName, 1, UnboundedList, nil)
 )
+
+type aliasedArg struct {
+	Processor
+}
 
 type AliasCLI interface {
 	// AliasMap returns a map from "alias type" to "alias name" to an array of "aliased values".
@@ -181,33 +184,12 @@ type executeAlias struct {
 }
 
 func (ea *executeAlias) Execute(input *Input, output Output, data *Data, eData *ExecuteData) error {
-	ea.checkForAlias(input, false)
+	input.CheckAliases(1, ea.ac, ea.name, false)
 	return nil
 }
 
-func (ea *executeAlias) checkForAlias(input *Input, complete bool) {
-	// We don't care if the arg being completed is an alias so we shouldn't replace
-	if complete && len(input.remaining) == 1 {
-		return
-	}
-
-	nxt, ok := input.Peek()
-	if !ok {
-		return
-	}
-	sl, ok := getAlias(ea.ac, ea.name, nxt)
-	if !ok {
-		return
-	}
-	// TODO: verify that sl isn't 0?  Or only allow non-zero alias values.
-	// Guaranteed to have at least one since we already peeked.
-	end := len(sl) - 1
-	input.Replace(sl[end])
-	input.PushFront(sl[:end]...)
-}
-
 func (ea *executeAlias) Complete(input *Input, data *Data) *CompleteData {
-	ea.checkForAlias(input, true)
+	input.CheckAliases(1, ea.ac, ea.name, true)
 	return nil
 }
 

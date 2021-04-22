@@ -16,6 +16,8 @@ type argNode struct {
 }
 
 func (an *argNode) Execute(i *Input, o Output, data *Data, eData *ExecuteData) error {
+	an.aliasCheck(i, false)
+
 	// TODO: If not enough for single, don't do validation and transforming.
 	sl, enough := i.PopN(an.minN, an.optionalN)
 
@@ -78,7 +80,19 @@ func (ne *notEnoughArgs) Error() string {
 	return "not enough arguments"
 }
 
+func (an *argNode) aliasCheck(input *Input, complete bool) {
+	if an.opt != nil && an.opt.Alias != nil {
+		if an.optionalN == UnboundedList {
+			input.CheckAliases(len(input.remaining), an.opt.Alias.AliasCLI, an.opt.Alias.AliasName, complete)
+		} else {
+			input.CheckAliases(an.minN+an.optionalN, an.opt.Alias.AliasCLI, an.opt.Alias.AliasName, complete)
+		}
+	}
+}
+
 func (an *argNode) Complete(input *Input, data *Data) *CompleteData {
+	an.aliasCheck(input, true)
+
 	sl, enough := input.PopN(an.minN, an.optionalN)
 
 	// Try to transform from string to value.

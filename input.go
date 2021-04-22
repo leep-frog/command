@@ -1,5 +1,7 @@
 package command
 
+import "fmt"
+
 type unprocessedArg struct {
 	originalIdx int
 }
@@ -34,24 +36,62 @@ func (i *Input) Peek() (string, bool) {
 	return i.args[i.remaining[0]], true
 }
 
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+
+func (i *Input) CheckAliases(upTo int, ac AliasCLI, name string, complete bool) {
+	k := 0
+	if complete {
+		k = -1
+	}
+
+	// TODO: test this works with offset (specifically push front and replace near end of function).
+	fmt.Println("START", upTo, i.offset)
+	for j := i.offset; j < len(i.remaining)+k && j < i.offset+upTo; {
+		sl, ok := getAlias(ac, name, i.args[j])
+		if !ok {
+			j++
+			continue
+		}
+
+		// TODO: Verify this works for empty aliases
+		end := len(sl) - 1
+		// TODO: do these functions need to be public at all anymore?
+		i.args[i.remaining[j]] = sl[end]
+		i.PushFrontAt(j, sl[:end]...)
+		j += len(sl)
+		fmt.Println(i.args, i.remaining)
+		// TODO: return bool if replacement caused to go past upTo limit?
+	}
+}
+
 func (i *Input) PushFront(sl ...string) {
+	i.PushFrontAt(0, sl...)
+}
+
+func (i *Input) PushFrontAt(idx int, sl ...string) {
+	tmpOffset := i.offset + idx
 	// Update remaining.
 	startIdx := len(i.args)
 	if len(i.remaining) > 0 {
-		if i.offset < len(i.remaining) {
-			startIdx = i.remaining[i.offset]
+		if tmpOffset < len(i.remaining) {
+			startIdx = i.remaining[tmpOffset]
 		}
 	}
 	i.args = append(i.args[:startIdx], append(sl, i.args[startIdx:]...)...)
 	// increment all remaining after offset.
-	for j := i.offset; j < len(i.remaining); j++ {
+	for j := tmpOffset; j < len(i.remaining); j++ {
 		i.remaining[j] += len(sl)
 	}
 	insert := make([]int, 0, len(sl))
 	for j := 0; j < len(sl); j++ {
 		insert = append(insert, j+startIdx)
 	}
-	i.remaining = append(i.remaining[:i.offset], append(insert, i.remaining[i.offset:]...)...)
+	i.remaining = append(i.remaining[:tmpOffset], append(insert, i.remaining[tmpOffset:]...)...)
 }
 
 func (i *Input) PeekAt(idx int) (string, bool) {
@@ -70,10 +110,6 @@ func (i *Input) Pop() (string, bool) {
 		return "", false
 	}
 	return *sl[0], true
-}
-
-func (i *Input) Replace(s string) {
-	i.args[i.remaining[0]] = s
 }
 
 func (i *Input) PopN(n, optN int) ([]*string, bool) {

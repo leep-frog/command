@@ -1077,6 +1077,209 @@ func TestAliasComplete(t *testing.T) {
 			},
 			want: []string{"trois", "un"},
 		},
+		// Arg with alias opt tests
+		{
+			name: "alias opt suggests regular things for regular command",
+			n: SerialNodes(StringListNode("sl", 1, 2, &ArgOpt{
+				Alias: &AliasOpt{
+					AliasName: "pioneer",
+					AliasCLI:  ac,
+				},
+				Completor: &Completor{
+					SuggestionFetcher: &ListFetcher{[]string{"un", "deux", "trois"}},
+				},
+			})),
+			args: []string{"zero", ""},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"sl": StringListValue("zero", ""),
+				},
+			},
+			want: []string{"deux", "trois", "un"},
+		},
+		{
+			name: "alias opt doesn't replace last argument if it's one",
+			n: SerialNodes(StringListNode("sl", 1, 2, &ArgOpt{
+				Alias: &AliasOpt{
+					AliasName: "pioneer",
+					AliasCLI:  ac,
+				},
+				Completor: &Completor{
+					SuggestionFetcher: &ListFetcher{[]string{"un", "deux", "trois"}},
+				},
+			})),
+			mp: map[string]map[string][]string{
+				"pioneer": {
+					"dee": []string{"d"},
+				},
+			},
+			args: []string{"hello", "dee"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"sl": StringListValue("hello", "dee"),
+				},
+			},
+		},
+		{
+			name: "alias opt suggests args after replacement",
+			n: SerialNodes(StringListNode("sl", 1, 2, &ArgOpt{
+				Alias: &AliasOpt{
+					AliasName: "pioneer",
+					AliasCLI:  ac,
+				},
+				Completor: &Completor{
+					SuggestionFetcher: &ListFetcher{[]string{"un", "deux", "trois"}},
+				},
+			})),
+			mp: map[string]map[string][]string{
+				"pioneer": {
+					"dee": []string{"d"},
+				},
+			},
+			args: []string{"hello", "dee", "t"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"sl": StringListValue("hello", "d", "t"),
+				},
+			},
+			want: []string{"trois"},
+		},
+		{
+			name: "alias opt replaced args are considered in distinct ops",
+			n: SerialNodes(StringListNode("sl", 1, 2, &ArgOpt{
+				Alias: &AliasOpt{
+					AliasName: "pioneer",
+					AliasCLI:  ac,
+				},
+				Completor: &Completor{
+					Distinct:          true,
+					SuggestionFetcher: &ListFetcher{[]string{"un", "deux", "trois"}},
+				},
+			})),
+			mp: map[string]map[string][]string{
+				"pioneer": {
+					"dee": []string{"deux"},
+				},
+			},
+			args: []string{"dee", ""},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"sl": StringListValue("deux", ""),
+				},
+			},
+			want: []string{"trois", "un"},
+		},
+		{
+			name: "alias opt replaces multiple args",
+			n: SerialNodes(StringListNode("sl", 1, 2, &ArgOpt{
+				Alias: &AliasOpt{
+					AliasName: "pioneer",
+					AliasCLI:  ac,
+				},
+				Completor: &Completor{
+					Distinct:          true,
+					SuggestionFetcher: &ListFetcher{[]string{"un", "deux", "trois"}},
+				},
+			})),
+			mp: map[string]map[string][]string{
+				"pioneer": {
+					"dee": []string{"deux"},
+					"t":   []string{"trois"},
+				},
+			},
+			args: []string{"dee", "t", ""},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"sl": StringListValue("deux", "trois", ""),
+				},
+			},
+			want: []string{"un"},
+		},
+		{
+			name: "alias opt replaces multiple aliases with more than one value",
+			n: SerialNodes(StringListNode("sl", 1, UnboundedList, &ArgOpt{
+				Alias: &AliasOpt{
+					AliasName: "pioneer",
+					AliasCLI:  ac,
+				},
+				Completor: &Completor{
+					Distinct:          true,
+					SuggestionFetcher: &ListFetcher{[]string{"un", "deux", "trois"}},
+				},
+			})),
+			mp: map[string]map[string][]string{
+				"pioneer": {
+					"dee": []string{"two", "deux"},
+					"t":   []string{"three", "trois", "tres"},
+					"f":   []string{"four"},
+				},
+			},
+			args: []string{"f", "dee", ""},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"sl": StringListValue("four", "two", "deux", ""),
+				},
+			},
+			want: []string{"trois", "un"},
+		},
+		{
+			name: "alias opt replaces multiple aliases intertwined with regular args more than one value",
+			n: SerialNodes(StringListNode("sl", 1, UnboundedList, &ArgOpt{
+				Alias: &AliasOpt{
+					AliasName: "pioneer",
+					AliasCLI:  ac,
+				},
+				Completor: &Completor{
+					Distinct:          true,
+					SuggestionFetcher: &ListFetcher{[]string{"un", "deux", "trois", "five", "six"}},
+				},
+			})),
+			mp: map[string]map[string][]string{
+				"pioneer": {
+					"dee":  []string{"two", "deux"},
+					"t":    []string{"three", "trois", "tres"},
+					"f":    []string{"four"},
+					"u":    []string{"un"},
+					"zero": []string{"0"},
+				},
+			},
+			args: []string{"f", "zero", "zero", "n1", "dee", "n2", "n3", "t", "u", "n4", "n5", ""},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"sl": StringListValue("four", "0", "0", "n1", "two", "deux", "n2", "n3", "three", "trois", "tres", "un", "n4", "n5", ""),
+				},
+			},
+			want: []string{"five", "six"},
+		},
+		{
+			name: "alias opt doesn't replace last value",
+			n: SerialNodes(StringListNode("sl", 1, UnboundedList, &ArgOpt{
+				Alias: &AliasOpt{
+					AliasName: "pioneer",
+					AliasCLI:  ac,
+				},
+				Completor: &Completor{
+					Distinct:          true,
+					SuggestionFetcher: &ListFetcher{[]string{"un", "deux", "trois", "five", "six"}},
+				},
+			})),
+			mp: map[string]map[string][]string{
+				"pioneer": {
+					"dee":  []string{"two", "deux"},
+					"t":    []string{"three", "trois", "tres"},
+					"f":    []string{"four"},
+					"u":    []string{"un"},
+					"zero": []string{"0"},
+				},
+			},
+			args: []string{"f", "zero", "n1", "t"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"sl": StringListValue("four", "0", "n1", "t"),
+				},
+			},
+			want: []string{"trois"},
+		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			fmt.Println(test.name, "==============")
