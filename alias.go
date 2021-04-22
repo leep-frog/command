@@ -1,6 +1,9 @@
 package command
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 var (
 	aliasArgName = "ALIAS"
@@ -65,7 +68,7 @@ func AliasNode(name string, ac AliasCLI, n *Node) *Node {
 	return BranchNode(map[string]*Node{
 		"a": adder,
 		"d": deleteAlias(name, ac, n),
-		//"g": aliasGetter(name, ac, n),
+		"g": aliasGetter(name, ac, n),
 		//"s": aliasSearcher(name, ac, n),
 		//"l": aliasLister(name, ac, n),
 	}, executor)
@@ -80,6 +83,29 @@ func deleteAlias(name string, ac AliasCLI, n *Node) *Node {
 		for _, a := range data.Values[aliasArgName].StringList() {
 			if err := popAlias(ac, name, a); err != nil {
 				output.Err(err)
+			}
+		}
+		return nil
+	}))
+}
+
+func aliasStr(alias string, values []string) string {
+	return fmt.Sprintf("%s: %s", alias, strings.Join(values, " "))
+}
+
+func aliasGetter(name string, ac AliasCLI, n *Node) *Node {
+	// TODO: merge with delete definition and add completor.
+	aliasListArg := StringListNode(aliasArgName, 1, UnboundedList, nil)
+	return SerialNodes(aliasListArg, ExecutorNode(func(output Output, data *Data) error {
+		if getAliasMap(ac, name) == nil {
+			return output.Stderr("No aliases exist for alias type %q", name)
+		}
+
+		for _, alias := range data.Values[aliasArgName].StringList() {
+			if v, ok := getAlias(ac, name, alias); ok {
+				output.Stdout(aliasStr(alias, v))
+			} else {
+				output.Stderr("Alias %q does not exist", alias)
 			}
 		}
 		return nil

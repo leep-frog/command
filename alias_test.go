@@ -436,6 +436,82 @@ func TestAliasExecute(t *testing.T) {
 				},
 			},
 		},
+		// Get alias tests.
+		{
+			name: "Get alias requires argument",
+			n:    AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
+			args: []string{"g"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"ALIAS": StringListValue(),
+				},
+			},
+			wantErr:    fmt.Errorf("not enough arguments"),
+			wantStderr: []string{"not enough arguments"},
+			wantInput: &Input{
+				args: []string{"g"},
+			},
+			wantAC: &simpleAliasCLI{},
+		},
+		{
+			name: "Get alias handles missing alias type",
+			n:    AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
+			args: []string{"g", "h"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"ALIAS": StringListValue("h"),
+				},
+			},
+			wantErr:    fmt.Errorf(`No aliases exist for alias type "pioneer"`),
+			wantStderr: []string{`No aliases exist for alias type "pioneer"`},
+			wantInput: &Input{
+				args: []string{"g", "h"},
+			},
+			wantAC: &simpleAliasCLI{},
+		},
+		{
+			name: "Gets alias",
+			n:    AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
+			args: []string{"g", "h", "i", "j", "k", "l", "m"},
+			am: map[string]map[string][]string{
+				"pioneer": {
+					"h": nil,
+					"i": []string{},
+					"k": []string{"alpha"},
+					"m": []string{"one", "two", "three"},
+					"z": []string{"omega"},
+				},
+			},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"ALIAS": StringListValue("h", "i", "j", "k", "l", "m"),
+				},
+			},
+			wantStderr: []string{
+				`Alias "j" does not exist`,
+				`Alias "l" does not exist`,
+			},
+			wantStdout: []string{
+				"h: ",
+				"i: ",
+				"k: alpha",
+				"m: one two three",
+			},
+			wantInput: &Input{
+				args: []string{"g", "h", "i", "j", "k", "l", "m"},
+			},
+			wantAC: &simpleAliasCLI{
+				mp: map[string]map[string][]string{
+					"pioneer": {
+						"h": nil,
+						"i": []string{},
+						"k": []string{"alpha"},
+						"m": []string{"one", "two", "three"},
+						"z": []string{"omega"},
+					},
+				},
+			},
+		},
 		// Delete alias tests.
 		{
 			name: "Delete requires argument",
@@ -567,7 +643,7 @@ func TestAliasComplete(t *testing.T) {
 					"sl": StringListValue(""),
 				},
 			},
-			want: []string{"a", "d", "deux", "trois", "un"},
+			want: []string{"a", "d", "deux", "g", "trois", "un"},
 		},
 		// Add alias test
 		{
