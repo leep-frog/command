@@ -2,6 +2,7 @@ package command
 
 import (
 	"fmt"
+	"regexp"
 	"sort"
 	"strings"
 )
@@ -58,7 +59,6 @@ func setAlias(ac AliasCLI, name, alias string, value []string) {
 	m[alias] = value
 }
 
-// TODO: put string and ac as first inputs
 func AliasNode(name string, ac AliasCLI, n *Node) *Node {
 	// TODO: the default node should check for aliases.
 	adder := SerialNodes(aliasArg, &addAlias{node: n, ac: ac, name: name})
@@ -67,9 +67,43 @@ func AliasNode(name string, ac AliasCLI, n *Node) *Node {
 		"a": adder,
 		"d": aliasDeleter(name, ac, n),
 		"g": aliasGetter(name, ac, n),
-		//"s": aliasSearcher(name, ac, n),
 		"l": aliasLister(name, ac, n),
+		"s": aliasSearcher(name, ac, n),
 	}, executor)
+}
+
+func aliasSearcher(name string, ac AliasCLI, n *Node) *Node {
+	// TODO: make regexp arg type.
+	regexArg := StringListNode("regexp", 1, UnboundedList, nil)
+	return SerialNodes(regexArg, ExecutorNode(func(output Output, data *Data) error {
+		rs := []*regexp.Regexp{}
+		for _, r := range data.Values["regexp"].StringList() {
+			rx, err := regexp.Compile(r)
+			if err != nil {
+				return output.Stderr("Invalid regexp: %v", err)
+			}
+			rs = append(rs, rx)
+		}
+
+		var as []string
+		for k, v := range getAliasMap(ac, name) {
+			as = append(as, aliasStr(k, v))
+		}
+		sort.Strings(as)
+		for _, a := range as {
+			matches := true
+			for _, r := range rs {
+				if !r.MatchString(a) {
+					matches = false
+					break
+				}
+			}
+			if matches {
+				output.Stdout(a)
+			}
+		}
+		return nil
+	}))
 }
 
 func aliasLister(name string, ac AliasCLI, n *Node) *Node {

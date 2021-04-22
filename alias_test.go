@@ -556,6 +556,123 @@ func TestAliasExecute(t *testing.T) {
 				},
 			},
 		},
+		// Search alias tests.
+		{
+			name:       "search alias requires argument",
+			n:          AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
+			args:       []string{"s"},
+			wantStderr: []string{"not enough arguments"},
+			wantErr:    fmt.Errorf("not enough arguments"),
+			wantData: &Data{
+				Values: map[string]*Value{
+					"regexp": StringListValue(),
+				},
+			},
+			wantInput: &Input{
+				args: []string{"s"},
+			},
+		},
+		{
+			name:       "search alias fails on invalid regexp",
+			n:          AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
+			args:       []string{"s", ":)"},
+			wantStderr: []string{"Invalid regexp: error parsing regexp: unexpected ): `:)`"},
+			wantErr:    fmt.Errorf("Invalid regexp: error parsing regexp: unexpected ): `:)`"),
+			wantData: &Data{
+				Values: map[string]*Value{
+					"regexp": StringListValue(":)"),
+				},
+			},
+			wantInput: &Input{
+				args: []string{"s", ":)"},
+			},
+		},
+		{
+			name: "searches through aliases",
+			n:    AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
+			args: []string{"s", "ga$"},
+			am: map[string]map[string][]string{
+				"pioneer": {
+					"h": nil,
+					"i": []string{},
+					"j": []string{"bazzinga"},
+					"k": []string{"alpha"},
+					"l": []string{"garage"},
+					"m": []string{"one", "two", "three"},
+					"n": []string{"four"},
+					"z": []string{"omega"},
+				},
+			},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"regexp": StringListValue("ga$"),
+				},
+			},
+			wantStdout: []string{
+				"j: bazzinga",
+				"z: omega",
+			},
+			wantInput: &Input{
+				args: []string{"s", "ga$"},
+			},
+			wantAC: &simpleAliasCLI{
+				mp: map[string]map[string][]string{
+					"pioneer": {
+						"h": nil,
+						"i": []string{},
+						"j": []string{"bazzinga"},
+						"k": []string{"alpha"},
+						"l": []string{"garage"},
+						"m": []string{"one", "two", "three"},
+						"n": []string{"four"},
+						"z": []string{"omega"},
+					},
+				},
+			},
+		},
+		{
+			name: "searches through aliases with multiple",
+			n:    AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
+			args: []string{"s", "a$", "^.: [aeiou]"},
+			am: map[string]map[string][]string{
+				"pioneer": {
+					"h": nil,
+					"i": []string{},
+					"j": []string{"bazzinga"},
+					"k": []string{"alpha"},
+					"l": []string{"garage"},
+					"m": []string{"one", "two", "three"},
+					"n": []string{"four"},
+					"z": []string{"omega"},
+				},
+			},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"regexp": StringListValue("a$", "^.: [aeiou]"),
+				},
+			},
+			wantStdout: []string{
+				"k: alpha",
+				"z: omega",
+			},
+			wantInput: &Input{
+				args: []string{"s", "a$", "^.: [aeiou]"},
+			},
+			wantAC: &simpleAliasCLI{
+				mp: map[string]map[string][]string{
+					"pioneer": {
+						"h": nil,
+						"i": []string{},
+						"j": []string{"bazzinga"},
+						"k": []string{"alpha"},
+						"l": []string{"garage"},
+						"m": []string{"one", "two", "three"},
+						"n": []string{"four"},
+						"z": []string{"omega"},
+					},
+				},
+			},
+		},
 		// Delete alias tests.
 		{
 			name: "Delete requires argument",
@@ -713,7 +830,7 @@ func TestAliasComplete(t *testing.T) {
 					"sl": StringListValue(""),
 				},
 			},
-			want: []string{"a", "d", "deux", "g", "l", "trois", "un"},
+			want: []string{"a", "d", "deux", "g", "l", "s", "trois", "un"},
 		},
 		// Add alias test
 		{
