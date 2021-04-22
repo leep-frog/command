@@ -1,7 +1,5 @@
 package command
 
-import "fmt"
-
 type unprocessedArg struct {
 	originalIdx int
 }
@@ -50,7 +48,6 @@ func (i *Input) CheckAliases(upTo int, ac AliasCLI, name string, complete bool) 
 	}
 
 	// TODO: test this works with offset (specifically push front and replace near end of function).
-	fmt.Println("START", upTo, i.offset)
 	for j := i.offset; j < len(i.remaining)+k && j < i.offset+upTo; {
 		sl, ok := getAlias(ac, name, i.args[j])
 		if !ok {
@@ -64,8 +61,6 @@ func (i *Input) CheckAliases(upTo int, ac AliasCLI, name string, complete bool) 
 		i.args[i.remaining[j]] = sl[end]
 		i.PushFrontAt(j, sl[:end]...)
 		j += len(sl)
-		fmt.Println(i.args, i.remaining)
-		// TODO: return bool if replacement caused to go past upTo limit?
 	}
 }
 
