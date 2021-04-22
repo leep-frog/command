@@ -72,8 +72,27 @@ func AliasNode(name string, ac AliasCLI, n *Node) *Node {
 	}, executor)
 }
 
+func aliasCompletor(name string, ac AliasCLI) *Completor {
+	return &Completor{
+		Distinct: true,
+		SuggestionFetcher: SimpleFetcher(func(v *Value, d *Data) *Completion {
+			s := []string{}
+			for k := range getAliasMap(ac, name) {
+				s = append(s, k)
+			}
+			return &Completion{
+				Suggestions: s,
+			}
+		}),
+	}
+}
+
+func aliasListArg(name string, ac AliasCLI) Processor {
+	return StringListNode(aliasArgName, 1, UnboundedList, &ArgOpt{Completor: aliasCompletor(name, ac)})
+}
+
 func aliasSearcher(name string, ac AliasCLI, n *Node) *Node {
-	// TODO: make regexp arg type.
+	// TODO: make regexp arg type (maybe after Go implements type parameters).
 	regexArg := StringListNode("regexp", 1, UnboundedList, nil)
 	return SerialNodes(regexArg, ExecutorNode(func(output Output, data *Data) error {
 		rs := []*regexp.Regexp{}
@@ -121,8 +140,7 @@ func aliasLister(name string, ac AliasCLI, n *Node) *Node {
 }
 
 func aliasDeleter(name string, ac AliasCLI, n *Node) *Node {
-	aliasListArg := StringListNode(aliasArgName, 1, UnboundedList, nil /* TODO */)
-	return SerialNodes(aliasListArg, ExecutorNode(func(output Output, data *Data) error {
+	return SerialNodes(aliasListArg(name, ac), ExecutorNode(func(output Output, data *Data) error {
 		if len(getAliasMap(ac, name)) == 0 {
 			return output.Stderr("Alias group has no aliases yet.")
 		}
@@ -140,9 +158,7 @@ func aliasStr(alias string, values []string) string {
 }
 
 func aliasGetter(name string, ac AliasCLI, n *Node) *Node {
-	// TODO: merge with delete definition and add completor.
-	aliasListArg := StringListNode(aliasArgName, 1, UnboundedList, nil)
-	return SerialNodes(aliasListArg, ExecutorNode(func(output Output, data *Data) error {
+	return SerialNodes(aliasListArg(name, ac), ExecutorNode(func(output Output, data *Data) error {
 		if getAliasMap(ac, name) == nil {
 			return output.Stderr("No aliases exist for alias type %q", name)
 		}

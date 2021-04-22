@@ -879,6 +879,128 @@ func TestAliasComplete(t *testing.T) {
 			},
 			want: []string{"deux", "trois", "un"},
 		},
+		// Get alias test
+		{
+			name: "get alias makes suggestions",
+			n:    AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
+			mp: map[string]map[string][]string{
+				"pioneer": {
+					"alpha":   nil,
+					"any":     []string{},
+					"alright": nil,
+					"balloon": []string{"red"},
+					"bear":    []string{"lee"},
+				},
+			},
+			args: []string{"g", ""},
+			wantData: &Data{
+				Values: map[string]*Value{
+					aliasArgName: StringListValue(""),
+				},
+			},
+			want: []string{"alpha", "alright", "any", "balloon", "bear"},
+		},
+		{
+			name: "get alias makes partial suggestions",
+			n:    AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
+			mp: map[string]map[string][]string{
+				"pioneer": {
+					"alpha":   nil,
+					"any":     []string{},
+					"alright": nil,
+					"balloon": []string{"red"},
+					"bear":    []string{"lee"},
+				},
+			},
+			args: []string{"g", "b"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					aliasArgName: StringListValue("b"),
+				},
+			},
+			want: []string{"balloon", "bear"},
+		},
+		{
+			name: "get alias makes unique suggestions",
+			n:    AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
+			mp: map[string]map[string][]string{
+				"pioneer": {
+					"alpha":   nil,
+					"any":     []string{},
+					"alright": nil,
+					"balloon": []string{"red"},
+					"bear":    []string{"lee"},
+				},
+			},
+			args: []string{"g", "alright", "balloon", ""},
+			wantData: &Data{
+				Values: map[string]*Value{
+					aliasArgName: StringListValue("alright", "balloon", ""),
+				},
+			},
+			want: []string{"alpha", "any", "bear"},
+		},
+		// Delete alias test
+		{
+			name: "get alias makes suggestions",
+			n:    AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
+			mp: map[string]map[string][]string{
+				"pioneer": {
+					"alpha":   nil,
+					"any":     []string{},
+					"alright": nil,
+					"balloon": []string{"red"},
+					"bear":    []string{"lee"},
+				},
+			},
+			args: []string{"d", ""},
+			wantData: &Data{
+				Values: map[string]*Value{
+					aliasArgName: StringListValue(""),
+				},
+			},
+			want: []string{"alpha", "alright", "any", "balloon", "bear"},
+		},
+		{
+			name: "get alias makes partial suggestions",
+			n:    AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
+			mp: map[string]map[string][]string{
+				"pioneer": {
+					"alpha":   nil,
+					"any":     []string{},
+					"alright": nil,
+					"balloon": []string{"red"},
+					"bear":    []string{"lee"},
+				},
+			},
+			args: []string{"d", "b"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					aliasArgName: StringListValue("b"),
+				},
+			},
+			want: []string{"balloon", "bear"},
+		},
+		{
+			name: "get alias makes unique suggestions",
+			n:    AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
+			mp: map[string]map[string][]string{
+				"pioneer": {
+					"alpha":   nil,
+					"any":     []string{},
+					"alright": nil,
+					"balloon": []string{"red"},
+					"bear":    []string{"lee"},
+				},
+			},
+			args: []string{"d", "alright", "balloon", ""},
+			wantData: &Data{
+				Values: map[string]*Value{
+					aliasArgName: StringListValue("alright", "balloon", ""),
+				},
+			},
+			want: []string{"alpha", "any", "bear"},
+		},
 		// Execute alias tests
 		{
 			name: "suggests regular things for regular command",

@@ -36,6 +36,18 @@ func SimpleDistinctCompletor(s ...string) *Completor {
 	}
 }
 
+type simpleFetcher struct {
+	f func(*Value, *Data) *Completion
+}
+
+func (sf *simpleFetcher) Fetch(v *Value, d *Data) *Completion {
+	return sf.f(v, d)
+}
+
+func SimpleFetcher(f func(*Value, *Data) *Completion) Fetcher {
+	return &simpleFetcher{f: f}
+}
+
 type Fetcher interface {
 	Fetch(*Value, *Data) *Completion
 }
