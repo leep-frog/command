@@ -512,6 +512,50 @@ func TestAliasExecute(t *testing.T) {
 				},
 			},
 		},
+		// List aliases
+		{
+			name: "lists alias handles unset map",
+			n:    AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
+			args: []string{"l"},
+			wantInput: &Input{
+				args: []string{"l"},
+			},
+		},
+		{
+			name: "lists aliases",
+			n:    AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
+			args: []string{"l"},
+			am: map[string]map[string][]string{
+				"pioneer": {
+					"h": nil,
+					"i": []string{},
+					"k": []string{"alpha"},
+					"m": []string{"one", "two", "three"},
+					"z": []string{"omega"},
+				},
+			},
+			wantStdout: []string{
+				"h: ",
+				"i: ",
+				"k: alpha",
+				"m: one two three",
+				"z: omega",
+			},
+			wantInput: &Input{
+				args: []string{"l"},
+			},
+			wantAC: &simpleAliasCLI{
+				mp: map[string]map[string][]string{
+					"pioneer": {
+						"h": nil,
+						"i": []string{},
+						"k": []string{"alpha"},
+						"m": []string{"one", "two", "three"},
+						"z": []string{"omega"},
+					},
+				},
+			},
+		},
 		// Delete alias tests.
 		{
 			name: "Delete requires argument",
@@ -547,6 +591,32 @@ func TestAliasExecute(t *testing.T) {
 		},
 		{
 			name: "Delete prints error if alias does not exist",
+			n:    AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
+			args: []string{"d", "tee"},
+			am: map[string]map[string][]string{
+				"pioneer": {
+					"t": []string{"teddy", "grizzly"},
+				},
+			},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"ALIAS": StringListValue("tee"),
+				},
+			},
+			wantInput: &Input{
+				args: []string{"d", "tee"},
+			},
+			wantStderr: []string{`Alias "tee" does not exist`},
+			wantAC: &simpleAliasCLI{
+				mp: map[string]map[string][]string{
+					"pioneer": {
+						"t": []string{"teddy", "grizzly"},
+					},
+				},
+			},
+		},
+		{
+			name: "Deletes an alias",
 			n:    AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
 			args: []string{"d", "t"},
 			am: map[string]map[string][]string{
@@ -643,7 +713,7 @@ func TestAliasComplete(t *testing.T) {
 					"sl": StringListValue(""),
 				},
 			},
-			want: []string{"a", "d", "deux", "g", "trois", "un"},
+			want: []string{"a", "d", "deux", "g", "l", "trois", "un"},
 		},
 		// Add alias test
 		{
