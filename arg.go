@@ -125,7 +125,7 @@ func (an *argNode) Complete(input *Input, data *Data) *CompleteData {
 
 	// Run custom transformer on a best effor basis (i.e. if the transformer fails,
 	// then we just continue with the original value).
-	if an.opt != nil && an.opt.Transformer != nil {
+	if an.opt != nil && an.opt.Transformer != nil && an.opt.Transformer.ForComplete() {
 		// Don't return an error because this may not be the last one.
 		if v.IsType(an.opt.Transformer.ValueType()) {
 			newV, err := an.opt.Transformer.Transform(v)

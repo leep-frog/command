@@ -38,6 +38,10 @@ type simpleTransformer struct {
 	t  func(v *Value) (*Value, error)
 }
 
+func (st *simpleTransformer) ForComplete() bool {
+	return true
+}
+
 func (st *simpleTransformer) ValueType() ValueType {
 	return st.vt
 }
@@ -49,6 +53,9 @@ func (st *simpleTransformer) Transform(v *Value) (*Value, error) {
 type ArgTransformer interface {
 	ValueType() ValueType
 	Transform(v *Value) (*Value, error)
+	// TODO: test this functionality (see arg.go)
+	// specifically around file [list] transformers.
+	ForComplete() bool
 }
 
 type ArgValidator interface {
@@ -271,6 +278,10 @@ func (flt *fileListTransformer) Transform(v *Value) (*Value, error) {
 	return StringListValue(l...), nil
 }
 
+func (flt *fileListTransformer) ForComplete() bool {
+	return false
+}
+
 type fileTransformer struct{}
 
 func (ft *fileTransformer) ValueType() ValueType {
@@ -280,6 +291,10 @@ func (ft *fileTransformer) ValueType() ValueType {
 func (ft *fileTransformer) Transform(v *Value) (*Value, error) {
 	absStr, err := filepathAbs(v.String())
 	return StringValue(absStr), err
+}
+
+func (ft *fileTransformer) ForComplete() bool {
+	return false
 }
 
 func FileTransformer() ArgTransformer {
