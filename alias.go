@@ -199,7 +199,10 @@ type addAlias struct {
 	name string
 }
 
-func (aa *addAlias) Execute(input *Input, output Output, data *Data, eData *ExecuteData) error {
+func (aa *addAlias) Execute(input *Input, output Output, data *Data, _ *ExecuteData) error {
+	// We don't want the executor to run, so we pass fakeEData to children nodes.
+	fakeEData := &ExecuteData{}
+
 	alias := data.Values[aliasArgName].String()
 	if _, ok := getAlias(aa.ac, aa.name, alias); ok {
 		return output.Stderr("Alias %q already exists", alias)
@@ -212,7 +215,7 @@ func (aa *addAlias) Execute(input *Input, output Output, data *Data, eData *Exec
 	// TODO: make function for this (used here and in execute.go)
 	for n != nil {
 		if n.Processor != nil {
-			err := n.Processor.Execute(input, output, data, eData)
+			err := n.Processor.Execute(input, output, data, fakeEData)
 			if IsNotEnoughArgsErr(err) {
 				break
 			}

@@ -51,6 +51,41 @@ func TestAliasExecute(t *testing.T) {
 			wantErr:    fmt.Errorf("validation failed: [MinLength] value must be at least 1 character"),
 			wantStderr: []string{"validation failed: [MinLength] value must be at least 1 character"},
 		},
+		// TODO: test empty alias.  Shouldn't allow? Otherwise, need to test it with
+		// a lot of existing functionality.
+		{
+			name: "ignores execute data from children nodes",
+			n: AliasNode("pioneer", ac, SerialNodes(StringNode("s", nil), SimpleProcessor(func(i *Input, o Output, d *Data, ed *ExecuteData) error {
+				ed.Executable = [][]string{
+					{"ab", "cd"},
+					{},
+					{"e"},
+				}
+				ed.Executor = func(o Output, d *Data) error {
+					o.Stdout("here we are")
+					return o.Stderr("unfortunately")
+				}
+				return nil
+			}, nil), nil)),
+			args: []string{"a", "b", "c"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"ALIAS": StringValue("b"),
+					"s":     StringValue("c"),
+				},
+			},
+			wantAC: &simpleAliasCLI{
+				changed: true,
+				mp: map[string]map[string][]string{
+					"pioneer": {
+						"b": []string{"c"},
+					},
+				},
+			},
+			wantInput: &Input{
+				args: []string{"a", "b", "c"},
+			},
+		},
 		{
 			name: "errors on empty alias",
 			n:    AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
