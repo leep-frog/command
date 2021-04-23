@@ -527,6 +527,48 @@ func TestAliasExecute(t *testing.T) {
 			},
 		},
 		{
+			name: "alias opt replaces values across multiple args",
+			n: SerialNodes(
+				StringListNode("sl", 1, 2, &ArgOpt{
+					Alias: &AliasOpt{
+						AliasName: "pioneer",
+						AliasCLI:  ac,
+					},
+				}),
+				StringNode("s", &ArgOpt{
+					Alias: &AliasOpt{
+						AliasName: "pioneer",
+						AliasCLI:  ac,
+					},
+				}),
+				OptionalStringNode("o", &ArgOpt{
+					Alias: &AliasOpt{
+						AliasName: "pioneer",
+						AliasCLI:  ac,
+					},
+				}),
+			),
+			am: map[string]map[string][]string{
+				"pioneer": {
+					"dee": []string{"two", "deux"},
+					"t":   []string{"three", "trois", "tres"},
+					"f":   []string{"four"},
+					"z":   []string{"zero"},
+				},
+			},
+			args: []string{"un", "dee", "z", "f"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"sl": StringListValue("un", "two", "deux"),
+					"s":  StringValue("zero"),
+					"o":  StringValue("four"),
+				},
+			},
+			wantInput: &Input{
+				args: []string{"un", "two", "deux", "zero", "four"},
+			},
+		},
+		{
 			name: "alias opt replaces multiple aliases intertwined with regular args more than one value",
 			n: SerialNodes(StringListNode("sl", 1, UnboundedList, &ArgOpt{
 				Alias: &AliasOpt{

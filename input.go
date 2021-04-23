@@ -49,7 +49,9 @@ func (i *Input) CheckAliases(upTo int, ac AliasCLI, name string, complete bool) 
 
 	// TODO: test this works with offset (specifically push front and replace near end of function).
 	for j := i.offset; j < len(i.remaining)+k && j < i.offset+upTo; {
-		sl, ok := getAlias(ac, name, i.args[j])
+		// TODO: make func (input) Get(j) { return i.args[i.remaining[j]] }
+		// A couple silly errors caused by forgetting to do nested lookup in places.
+		sl, ok := getAlias(ac, name, i.args[i.remaining[j]])
 		if !ok {
 			j++
 			continue
