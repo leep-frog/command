@@ -10,6 +10,7 @@ type ArgOpt struct {
 	Completor   *Completor
 	Transformer ArgTransformer
 	Alias       *AliasOpt
+	CustomSet   func(*Value, *Data)
 }
 
 type AliasOpt struct {

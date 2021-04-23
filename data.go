@@ -14,7 +14,8 @@ func (d *Data) Set(s string, v *Value) {
 type ExecuteData struct {
 	// Executable is a list of commands to run after execution in the commands package.
 	Executable [][]string
-	Executor   func(Output, *Data) error
+	// TODO: make this a list of functions.
+	Executor func(Output, *Data) error
 }
 
 type CompleteData struct {

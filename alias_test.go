@@ -330,6 +330,7 @@ func TestAliasExecute(t *testing.T) {
 			wantErr:    fmt.Errorf("Custom transformer failed: bad news bears"),
 		},
 		// Executing node tests.
+		// TODO: test that executable is returned and that executor is run (by adding output.Stdout(...) and ensuring it is included in test.wantStdout).
 		{
 			name: "Replaces alias with value",
 			n:    AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),

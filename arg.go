@@ -15,6 +15,14 @@ type argNode struct {
 	flag      bool
 }
 
+func (an *argNode) Set(v *Value, data *Data) {
+	if an.opt != nil && an.opt.CustomSet != nil {
+		an.opt.CustomSet(v, data)
+	} else {
+		data.Set(an.name, v)
+	}
+}
+
 func (an *argNode) Execute(i *Input, o Output, data *Data, eData *ExecuteData) error {
 	an.aliasCheck(i, false)
 
@@ -49,7 +57,8 @@ func (an *argNode) Execute(i *Input, o Output, data *Data, eData *ExecuteData) e
 		*sl[i] = newSl[i]
 	}
 
-	data.Set(an.name, v)
+	// TODO: move this after validators
+	an.Set(v, data)
 
 	if an.opt != nil {
 		for _, validator := range an.opt.Validators {
@@ -134,7 +143,7 @@ func (an *argNode) Complete(input *Input, data *Data) *CompleteData {
 		*sl[i] = newSl[i]
 	}
 
-	data.Set(an.name, v)
+	an.Set(v, data)
 
 	// Don't run validations when completing.
 
@@ -263,58 +272,3 @@ func listNode(name string, minN, optionalN int, vt ValueType, transformer func([
 		transform: transformer,
 	}
 }
-
-/*func (lan *listArgNode) Complete(ws *WorldState) bool {
-	return ws.ProcessMultiple(lan.minN, lan.optionalN, func(args []string, _ bool) ([]string, error) {
-		v, _ := lan.transform(args)
-		if lan.opt != nil && lan.opt.Transformer != nil {
-			if v.IsType(lan.opt.Transformer.ValueType()) {
-				newV, err := lan.opt.Transformer.Transform(v)
-				if err == nil {
-					v = newV
-				}
-			}
-		}
-		lan.set(v, ws)
-		if len(ws.RawArgs) == 0 {
-			if len(args) > 0 {
-				lan.completeArg(ws, args[len(args)-1], v)
-			} else {
-				lan.completeArg(ws, "", v)
-			}
-			return v.ToArgs(), fmt.Errorf("terminate")
-		}
-		return v.ToArgs(), nil
-	}) == nil
-}
-
-func (lan *listArgNode) completeArg(ws *WorldState, rawValue string, v *Value) {
-	if lan.opt != nil && lan.opt.Completor != nil {
-		ws.CompleteResponse = lan.opt.Completor.Complete(rawValue, v, ws.Values)
-	}
-}
-
-func StringListNode(name string, minN, optionalN int, opt *ArgOpt) NodeProcessor {
-	t := func(s []string) (*Value, error) { return StringListValue(s...), nil }
-	return listNode(name, minN, optionalN, StringListType, t, opt)
-}
-
-func IntListNode(name string, minN, optionalN int, opt *ArgOpt) NodeProcessor {
-	return listNode(name, minN, optionalN, IntListType, intListTransform, opt)
-}
-
-func FloatListNode(name string, minN, optionalN int, opt *ArgOpt) NodeProcessor {
-	return listNode(name, minN, optionalN, FloatListType, floatListTransform, opt)
-}
-
-func listNode(name string, minN, optionalN int, vt ValueType, transformer func([]string) (*Value, error), opt *ArgOpt) NodeProcessor {
-	return &listArgNode{
-		name:      name,
-		minN:      minN,
-		optionalN: optionalN,
-		opt:       opt,
-		vt:        vt,
-		transform: transformer,
-	}
-}
-*/
