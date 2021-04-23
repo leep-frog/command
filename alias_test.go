@@ -1083,7 +1083,7 @@ func TestAliasComplete(t *testing.T) {
 		want     []string
 	}{
 		{
-			name: "suggests command names and arg suggestions",
+			name: "suggests arg suggestions, but not command names",
 			n: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, &ArgOpt{
 				Completor: &Completor{
 					SuggestionFetcher: &ListFetcher{[]string{"un", "deux", "trois"}},
@@ -1095,7 +1095,7 @@ func TestAliasComplete(t *testing.T) {
 					"sl": StringListValue(""),
 				},
 			},
-			want: []string{"a", "d", "deux", "g", "l", "s", "trois", "un"},
+			want: []string{"deux", "trois", "un"},
 		},
 		// Add alias test
 		{

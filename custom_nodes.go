@@ -63,10 +63,11 @@ func ExecutorNode(f func(Output, *Data) error) Processor {
 }
 
 type branchNode struct {
-	branches map[string]*Node
-	def      *Node
-	next     *Node
-	nextErr  error
+	branches     map[string]*Node
+	def          *Node
+	next         *Node
+	nextErr      error
+	scCompletion bool
 }
 
 func (bn *branchNode) Execute(input *Input, output Output, data *Data, eData *ExecuteData) error {
@@ -90,6 +91,10 @@ func (bn *branchNode) Complete(input *Input, data *Data) *CompleteData {
 		if newCD := getCompleteData(bn.def, input, data); newCD != nil {
 			cd = newCD
 		}
+	}
+
+	if !bn.scCompletion {
+		return cd
 	}
 
 	if cd.Completion == nil {
@@ -135,13 +140,14 @@ func (bn *branchNode) Next(input *Input, data *Data) (*Node, error) {
 	return bn.next, nil
 }
 
-func BranchNode(branches map[string]*Node, dflt *Node) *Node {
+func BranchNode(branches map[string]*Node, dflt *Node, completeSubcommands bool) *Node {
 	if branches == nil {
 		branches = map[string]*Node{}
 	}
 	bn := &branchNode{
-		branches: branches,
-		def:      dflt,
+		branches:     branches,
+		def:          dflt,
+		scCompletion: completeSubcommands,
 	}
 	return &Node{
 		Processor: bn,

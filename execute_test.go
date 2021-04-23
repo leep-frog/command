@@ -1617,7 +1617,7 @@ func TestExecute(t *testing.T) {
 			node: BranchNode(map[string]*Node{
 				"h": printNode("hello"),
 				"b": printNode("goodbye"),
-			}, nil),
+			}, nil, true),
 			wantStderr: []string{"branching argument required"},
 			wantErr:    fmt.Errorf("branching argument required"),
 		},
@@ -1626,7 +1626,7 @@ func TestExecute(t *testing.T) {
 			node: BranchNode(map[string]*Node{
 				"h": printNode("hello"),
 				"b": printNode("goodbye"),
-			}, nil),
+			}, nil, true),
 			args:       []string{"uh"},
 			wantStderr: []string{"argument must be one of [b h]"},
 			wantErr:    fmt.Errorf("argument must be one of [b h]"),
@@ -1640,7 +1640,7 @@ func TestExecute(t *testing.T) {
 			node: BranchNode(map[string]*Node{
 				"h": printNode("hello"),
 				"b": printNode("goodbye"),
-			}, nil),
+			}, nil, true),
 			args:       []string{"h"},
 			wantStdout: []string{"hello"},
 			wantInput: &Input{
@@ -1652,7 +1652,7 @@ func TestExecute(t *testing.T) {
 			node: BranchNode(map[string]*Node{
 				"h": printNode("hello"),
 				"b": printNode("goodbye"),
-			}, printNode("default")),
+			}, printNode("default"), true),
 			wantStdout: []string{"default"},
 		},
 		{
@@ -1660,7 +1660,7 @@ func TestExecute(t *testing.T) {
 			node: BranchNode(map[string]*Node{
 				"h": printNode("hello"),
 				"b": printNode("goodbye"),
-			}, SerialNodes(StringListNode("sl", 0, UnboundedList, nil), printArgsNode().Processor)),
+			}, SerialNodes(StringListNode("sl", 0, UnboundedList, nil), printArgsNode().Processor), true),
 			args:       []string{"good", "morning"},
 			wantStdout: []string{"sl: good, morning"},
 			wantData: &Data{
@@ -2105,8 +2105,22 @@ func TestComplete(t *testing.T) {
 				"a":     {},
 				"alpha": SerialNodes(OptionalStringNode("hello", NewArgOpt(SimpleCompletor("other", "stuff"), nil))),
 				"bravo": {},
-			}, SerialNodes(StringListNode("default", 1, 3, NewArgOpt(SimpleCompletor("default", "command", "opts"), nil)))),
+			}, SerialNodes(StringListNode("default", 1, 3, NewArgOpt(SimpleCompletor("default", "command", "opts"), nil))), true),
 			want: []string{"a", "alpha", "bravo", "command", "default", "opts"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"default": StringListValue(""),
+				},
+			},
+		},
+		{
+			name: "doesn't completes branch options if complete arg is false",
+			node: BranchNode(map[string]*Node{
+				"a":     {},
+				"alpha": SerialNodes(OptionalStringNode("hello", NewArgOpt(SimpleCompletor("other", "stuff"), nil))),
+				"bravo": {},
+			}, SerialNodes(StringListNode("default", 1, 3, NewArgOpt(SimpleCompletor("default", "command", "opts"), nil))), false),
+			want: []string{"command", "default", "opts"},
 			wantData: &Data{
 				Values: map[string]*Value{
 					"default": StringListValue(""),
@@ -2119,7 +2133,7 @@ func TestComplete(t *testing.T) {
 				"a":     {},
 				"alpha": SerialNodes(OptionalStringNode("hello", NewArgOpt(SimpleCompletor("other", "stuff"), nil))),
 				"bravo": {},
-			}, SerialNodes(StringListNode("default", 1, 3, NewArgOpt(SimpleCompletor("default", "command", "opts"), nil)))),
+			}, SerialNodes(StringListNode("default", 1, 3, NewArgOpt(SimpleCompletor("default", "command", "opts"), nil))), true),
 			args: []string{"alpha", ""},
 			want: []string{"other", "stuff"},
 			wantData: &Data{
@@ -2134,7 +2148,7 @@ func TestComplete(t *testing.T) {
 				"a":     {},
 				"alpha": SerialNodes(OptionalStringNode("hello", NewArgOpt(SimpleCompletor("other", "stuff"), nil))),
 				"bravo": {},
-			}, nil),
+			}, nil, true),
 			args: []string{"some", "thing", "else"},
 		},
 		{
@@ -2143,7 +2157,7 @@ func TestComplete(t *testing.T) {
 				"a":     {},
 				"alpha": SerialNodes(OptionalStringNode("hello", NewArgOpt(SimpleCompletor("other", "stuff"), nil))),
 				"bravo": {},
-			}, SerialNodes(StringListNode("default", 1, 3, NewArgOpt(SimpleCompletor("default", "command", "opts", "ahhhh"), nil)))),
+			}, SerialNodes(StringListNode("default", 1, 3, NewArgOpt(SimpleCompletor("default", "command", "opts", "ahhhh"), nil))), true),
 			args: []string{"a"},
 			want: []string{"a", "ahhhh", "alpha"},
 			wantData: &Data{
@@ -2158,7 +2172,7 @@ func TestComplete(t *testing.T) {
 				"a":     {},
 				"alpha": SerialNodes(OptionalStringNode("hello", NewArgOpt(SimpleCompletor("other", "stuff"), nil))),
 				"bravo": {},
-			}, SerialNodes(StringListNode("default", 1, 3, NewArgOpt(SimpleCompletor("default", "command", "opts"), nil)))),
+			}, SerialNodes(StringListNode("default", 1, 3, NewArgOpt(SimpleCompletor("default", "command", "opts"), nil))), true),
 			args: []string{"something", ""},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -2263,7 +2277,6 @@ func TestComplete(t *testing.T) {
 			}
 			defer func() { filepathAbs = oldAbs }()
 
-			// TODO: remove test.wantOK
 			got := Autocomplete(test.node, test.args)
 
 			if diff := cmp.Diff(test.want, got, cmpopts.EquateEmpty()); diff != "" {

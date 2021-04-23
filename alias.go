@@ -72,7 +72,7 @@ func AliasNode(name string, ac AliasCLI, n *Node) *Node {
 		"g": aliasGetter(name, ac, n),
 		"l": aliasLister(name, ac, n),
 		"s": aliasSearcher(name, ac, n),
-	}, executor)
+	}, executor, false)
 }
 
 func aliasCompletor(name string, ac AliasCLI) *Completor {
