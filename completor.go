@@ -174,9 +174,10 @@ type FileFetcher struct {
 	Distinct          bool
 	IgnoreFiles       bool
 	IgnoreDirectories bool
+	IgnoreFunc        func(*Value, *Data) []string
 }
 
-func (ff *FileFetcher) Fetch(value *Value, _ *Data) *Completion {
+func (ff *FileFetcher) Fetch(value *Value, data *Data) *Completion {
 	var lastArg string
 	if value.IsType(StringType) {
 		lastArg = value.String()
@@ -223,26 +224,30 @@ func (ff *FileFetcher) Fetch(value *Value, _ *Data) *Completion {
 		return nil
 	}
 
+	ignorable := map[string]bool{}
+	// TODO: test this.
+	if ff.IgnoreFunc != nil {
+		for _, s := range ff.IgnoreFunc(value, data) {
+			ignorable[s] = true
+		}
+	}
 	// Remove any non-distinct matches, if relevant.
 	if ff.Distinct {
-		valSet := map[string]bool{}
-		// TODO: make validation function so file fetchers can only be
-		// assigned to string lists.
 		for _, v := range value.StringList() {
-			valSet[v] = true
+			ignorable[v] = true
 		}
-
-		distinctSuggestions := make([]string, 0, len(suggestions))
-		for _, s := range suggestions {
-			if !valSet[fmt.Sprintf("%s%s", laDir, s)] {
-				distinctSuggestions = append(distinctSuggestions, s)
-			}
-		}
-		if len(distinctSuggestions) == 0 {
-			return nil
-		}
-		suggestions = distinctSuggestions
 	}
+
+	relevantSuggestions := make([]string, 0, len(suggestions))
+	for _, s := range suggestions {
+		if !ignorable[fmt.Sprintf("%s%s", laDir, s)] {
+			relevantSuggestions = append(relevantSuggestions, s)
+		}
+	}
+	if len(relevantSuggestions) == 0 {
+		return nil
+	}
+	suggestions = relevantSuggestions
 
 	c := &Completion{
 		Suggestions:        suggestions,

@@ -582,6 +582,17 @@ func TestFetchers(t *testing.T) {
 			},
 		},
 		{
+			name:     "file fetcher works when distinct",
+			distinct: true,
+			f: &FileFetcher{
+				Distinct: true,
+			},
+			args: []string{"execute.go", "ex"},
+			want: []string{
+				"execute_test.go",
+			},
+		},
+		{
 			name:      "file fetcher works with string arg",
 			f:         &FileFetcher{},
 			args:      []string{"ex"},
