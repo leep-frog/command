@@ -26,13 +26,15 @@ var (
 )
 
 // TODO: have this accept commandOS and write to stderr with any issues
-func ApplyCodes(f *Format, data *command.Data) (*Format, bool) {
+func ApplyCodes(f *Format, output command.Output, data *command.Data) (*Format, error) {
 	if f == nil {
 		f = &Format{}
 	}
 	codes := data.Values[ArgName].StringList()
 	for _, c := range codes {
-		f.AddAttribute(c)
+		if err := f.AddAttribute(c); err != nil {
+			return nil, output.Err(err)
+		}
 	}
-	return f, len(codes) != 0
+	return f, nil
 }
