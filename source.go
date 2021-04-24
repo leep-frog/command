@@ -19,11 +19,13 @@ const (
 	autocompleteFunction = `
 	function _custom_autocomplete {
 		tFile=$(mktemp)
+		tFileT=$(mktemp)
 	
 		# autocomplete might only need to just print newline-separated items to the file
 		$1 autocomplete $COMP_CWORD $COMP_LINE > $tFile
 		local IFS=$'\n'
 		echo $tFile
+		echo $1 autocomplete $COMP_CWORD $COMP_LINE > $tFileT
 		COMPREPLY=( $(cat $tFile) )
 		#rm $tFile
 	}
