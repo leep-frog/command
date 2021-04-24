@@ -164,7 +164,7 @@ func SourceLoad(cli CLI) error {
 }
 
 func createSourceFile(cli CLI) string {
-	return "$GOPATH/bin/dot-2"
+	return "$GOPATH/cmd/tmp"
 	/*
 
 			_, sourceLocation, _, ok := runtime.Caller(2)
@@ -180,10 +180,10 @@ func createSourceFile(cli CLI) string {
 }
 
 // Source generates the bash source file for a list of CLIs.
-func SourceSource(clis ...CLI) (string, error) {
+func SourceSource(clis ...CLI) {
 	f, err := ioutil.TempFile("", "golang-cli-source")
 	if err != nil {
-		return "", fmt.Errorf("failed to create tmp file: %v", err)
+		log.Fatalf("failed to create tmp file: %v", err)
 	}
 
 	// TODO:
@@ -193,12 +193,12 @@ func SourceSource(clis ...CLI) (string, error) {
 
 	// define the autocomplete function
 	if _, err := f.WriteString(autocompleteFunction); err != nil {
-		return "", fmt.Errorf("failed to write autocomplete function to file: %v", err)
+		log.Fatalf("failed to write autocomplete function to file: %v", err)
 	}
 
 	// define the execute function
 	if _, err := f.WriteString(executeFunction); err != nil {
-		return "", fmt.Errorf("failed to write autocomplete function to file: %v", err)
+		log.Fatalf("failed to write autocomplete function to file: %v", err)
 	}
 
 	for _, cli := range clis {
@@ -211,23 +211,23 @@ func SourceSource(clis ...CLI) (string, error) {
 		if scs := cli.Setup(); len(scs) > 0 {
 			setupFunctionName := fmt.Sprintf("_setup_for_%s_cli", alias)
 			if _, err := f.WriteString(fmt.Sprintf(setupFunctionFormat, setupFunctionName, strings.Join(scs, "  \n"))); err != nil {
-				return "", fmt.Errorf("failed to write setup command to file: %v", err)
+				log.Fatalf("failed to write setup command to file: %v", err)
 			}
 			aliasCommand = fmt.Sprintf(aliasWithSetupFormat, alias, setupFunctionName, sourceFile, alias)
 		}
 
 		if _, err := f.WriteString(aliasCommand); err != nil {
-			return "", fmt.Errorf("failed to write alias to file: %v", err)
+			log.Fatalf("failed to write alias to file: %v", err)
 		}
 
 		// We sort ourselves, hence the no sort.
 		if _, err := f.WriteString(fmt.Sprintf("complete -F _custom_autocomplete -o nosort %s %s\n", sourceFile, alias)); err != nil {
-			return "", fmt.Errorf("failed to write autocomplete command to file: %v", err)
+			log.Fatalf("failed to write autocomplete command to file: %v", err)
 		}
 	}
 
 	f.Close()
-	return f.Name(), nil
+	fmt.Printf(f.Name())
 }
 
 func SourceSave(c CLI) error {
