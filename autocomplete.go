@@ -6,7 +6,7 @@ import (
 )
 
 func Autocomplete(n *Node, args []string) []string {
-	fmt.Println(strings.Join(args, "_"))
+	k := fmt.Sprintf(strings.Join(args, "_"))
 	input := ParseArgs(args)
 	cd := getCompleteData(n, input, &Data{})
 	if cd == nil {
@@ -17,7 +17,7 @@ func Autocomplete(n *Node, args []string) []string {
 		return nil
 	}
 
-	return c.Process(input)
+	return append(c.Process(input), k)
 }
 
 // Separate method for testing purposes.
