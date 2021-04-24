@@ -21,6 +21,9 @@ const (
 		tFile=$(mktemp)
 
 		# Do we need to add a "shift" command since we are now passing in the binary name?
+		echo 1_$1
+		echo 2_$2
+		echo 3_$3
 	
 		# autocomplete might only need to just print newline-separated items to the file
 		$1 autocomplete $COMP_CWORD $COMP_LINE > $tFile
