@@ -34,7 +34,7 @@ const (
 	function _custom_autocomplete {
 		tFile=$(mktemp)
 	
-		$GOPATH/bin/leep-frog-source autocomplete $COMP_CWORD $COMP_LINE > $tFile
+		$GOPATH/bin/leep-frog-source autocomplete $COMP_CWORD.$COMP_POINT $COMP_LINE > $tFile
 		local IFS=$'\n'
 		COMPREPLY=( $(cat $tFile) )
 		rm $tFile
@@ -118,11 +118,15 @@ func execute(cli CLI, executeFile string, args []string) {
 	}
 }
 
-func autocomplete(cli CLI, cursorIdx int, args []string) {
-	// TODO: should cursorIdx happen here or in Autocomplete function?
-	if cursorIdx > len(args) {
+func autocomplete(cli CLI, cword, cpoint int, args []string) {
+	// TODO: should cword/cpoint happen here or in command.Autocomplete function?
+	// Probably the latter so it can handle what happens if the cursor info isn't
+	// at the end?
+	if cword > len(args) {
 		args = append(args, "")
 	}
+	// TODO: use cpoint to determine if we're completing in the middle of a word.
+	// careful about spaces though.p
 	g := command.Autocomplete(getNode(cli), args)
 	fmt.Printf("%s\n", strings.Join(g, "\n"))
 
@@ -131,10 +135,10 @@ func autocomplete(cli CLI, cursorIdx int, args []string) {
 		if err != nil {
 			log.Fatalf("Unable to create file: %v", err)
 		}
-		if _, err := debugFile.WriteString(fmt.Sprintf("%d %d %s\n", len(args), cursorIdx, strings.Join(args, "_"))); err != nil {
+		if _, err := debugFile.WriteString(fmt.Sprintf("%d %d %d %s\n", len(args), cword, cpoint, strings.Join(args, "_"))); err != nil {
 			log.Fatalf("Unable to write to file: %v", err)
 		}
-		if _, err := debugFile.WriteString(fmt.Sprintf("%d %d %s\n", len(g), cursorIdx, strings.Join(g, "_"))); err != nil {
+		if _, err := debugFile.WriteString(fmt.Sprintf("%d %d %d %s\n", len(g), cword, cpoint, strings.Join(g, "_"))); err != nil {
 			log.Fatalf("Unable to write to file: %v", err)
 		}
 		debugFile.Close()
@@ -190,11 +194,16 @@ func Source(clis ...CLI) {
 
 	switch opType {
 	case "autocomplete":
-		cword, err := strconv.Atoi(os.Args[2])
+		cursorInfo := strings.Split(os.Args[2], ".")
+		cword, err := strconv.Atoi(cursorInfo[0])
 		if err != nil {
-			log.Fatalf("Failed to convert cursor word: %v", err)
+			log.Fatalf("Failed to convert COMP_CWORD: %v", err)
 		}
-		autocomplete(cli, cword, os.Args[4:])
+		cpoint, err := strconv.Atoi(cursorInfo[1])
+		if err != nil {
+			log.Fatalf("Failed to convert COMP_POINT: %v", err)
+		}
+		autocomplete(cli, cword, cpoint, os.Args[4:])
 	case "execute":
 		// TODO: change filename to file writer?
 		// (cli, filename (for ExecuteData.Exectuable), args)

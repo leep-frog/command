@@ -17,10 +17,6 @@ type SimpleCLI struct {
 }
 
 func (*SimpleCLI) Name() string {
-	return "leep-frog"
-}
-
-func (*SimpleCLI) Alias() string {
 	return "lf"
 }
 
