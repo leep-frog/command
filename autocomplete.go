@@ -1,12 +1,6 @@
 package command
 
-import (
-	"fmt"
-	"strings"
-)
-
 func Autocomplete(n *Node, args []string) []string {
-	k := fmt.Sprintf(strings.Join(args, "_"))
 	input := ParseArgs(args)
 	cd := getCompleteData(n, input, &Data{})
 	if cd == nil {
@@ -17,7 +11,7 @@ func Autocomplete(n *Node, args []string) []string {
 		return nil
 	}
 
-	return append(c.Process(input), k)
+	return append(c.Process(input))
 }
 
 // Separate method for testing purposes.
