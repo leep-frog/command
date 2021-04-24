@@ -54,7 +54,7 @@ const (
 	`
 
 	aliasWithSetupFormat = "alias %s='o=$(mktemp) && %s > $o && _custom_execute %s %s $o'\n"
-	aliasFormat          = "alias %s='_custom_execute %s'\n"
+	aliasFormat          = "alias %s='_custom_execute %s %s'\n"
 )
 
 // CLI provides a way to construct CLIs in go, with tab-completion.
@@ -207,7 +207,7 @@ func SourceSource(clis ...CLI) {
 		alias := cli.Alias()
 
 		// TODO: aliasFormat ANNNDDD aliasWithSetupFormat should pass in custom binary name as input to _custom_execute.
-		aliasCommand := fmt.Sprintf(aliasFormat, alias, alias)
+		aliasCommand := fmt.Sprintf(aliasFormat, alias, sourceFile, alias)
 		if scs := cli.Setup(); len(scs) > 0 {
 			setupFunctionName := fmt.Sprintf("_setup_for_%s_cli", alias)
 			if _, err := f.WriteString(fmt.Sprintf(setupFunctionFormat, setupFunctionName, strings.Join(scs, "  \n"))); err != nil {
