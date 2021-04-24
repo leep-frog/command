@@ -24,11 +24,8 @@ const (
 		# autocomplete might only need to just print newline-separated items to the file
 		$1 autocomplete $COMP_CWORD $COMP_LINE > $tFile
 		local IFS=$'\n'
-		echo $tFile
-		echo TWO$tFileT
-		echo $1 autocomplete $COMP_CWORD $COMP_LINE > $tFileT
 		COMPREPLY=( $(cat $tFile) )
-		#rm $tFile
+		rm $tFile
 	}
 	`
 	specificAutocompleteFunction = `
@@ -137,10 +134,12 @@ func SourceAutocomplete(cli CLI) {
 
 	cursorIdx, err := strconv.Atoi(cursorWord)
 	if err != nil {
+		fmt.Println("NOOOOOOO1")
 		log.Fatalf("failed to parse cursor position: %v", err)
 	}
 
 	if err := SourceLoad(cli); err != nil {
+		fmt.Println("NOOOOOOO2")
 		log.Fatalf("failed to load cli: %v", err)
 	}
 
@@ -148,7 +147,7 @@ func SourceAutocomplete(cli CLI) {
 	// TODO: actually use cursorIdx here.
 	_ = cursorIdx
 	g := Autocomplete(getNode(cli), os.Args[4:])
-	fmt.Printf("%s\n", strings.Join(append(g, strings.Join(os.Args, "_")), "\n"))
+	fmt.Printf("%s\n", strings.Join(g, "\n"))
 }
 
 func getNode(c CLI) *Node {
