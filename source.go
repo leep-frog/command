@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"runtime"
 	"strconv"
 	"strings"
 )
@@ -22,27 +23,19 @@ const (
 		tFileT=$(mktemp)
 	
 		# autocomplete might only need to just print newline-separated items to the file
-		$1 autocomplete $COMP_CWORD $COMP_LINE > $tFile
+		$GOPATH/bin/leep-frog-source autocomplete $COMP_CWORD $COMP_LINE > $tFile
 		local IFS=$'\n'
 		COMPREPLY=( $(cat $tFile) )
 		rm $tFile
 	}
 	`
-	specificAutocompleteFunction = `
-	function _custom_autocomplete_%s {
-		_custom_autocomplete %s
-	}
-	`
 
 	executeFunction = `
 	function _custom_execute {
-		# TODO: might not be named source (if provided by user)
-		binary="$1"
-		shift
-
+		# tmpFile is the file to which we write ExecuteData.Executable
 		tmpFile=$(mktemp)
 		chmod +x $tmpFile
-		$binary execute $tmpFile "$@"
+		$GOPATH/bin/leep-frog-source execute $tmpFile "$@"
 		if [[ ! -z $LEEP_DEBUG ]]; then
 			echo Executing: $(cat $tmpFile)
 		fi
@@ -73,32 +66,11 @@ type CLI interface {
 	Setup() []string
 }
 
-func Sourcerer(cli CLI) {
-	if os.Args[1] == "autocomplete" {
-		SourceAutocomplete(cli)
-		return
-	}
-
-	if os.Args[1] == "execute" {
-		SourceExecute(cli)
-		return
-	}
-
-	log.Fatalf("unknown process: %v", os.Args)
-}
-
-func SourceExecute(cli CLI) {
-	// Args:
-	// No setup command:   [binary execute $tmpFile $alias]
-	// With setup command: [binary execute $tmpFile $alias $outputFile]
-	executeFile := os.Args[2]
-	args := os.Args[3:]
-
+func SourceExecute(cli CLI, executeFile string, args []string) {
 	if err := SourceLoad(cli); err != nil {
 		log.Fatalf("failed to load cli: %v", err)
 	}
 
-	// TODO: add oi.
 	output := NewOutput()
 	eData, err := Execute(getNode(cli), ParseExecuteArgs(args), output)
 	output.Close()
@@ -129,24 +101,14 @@ func SourceExecute(cli CLI) {
 	}
 }
 
-func SourceAutocomplete(cli CLI) {
-	cursorWord := os.Args[2]
-
-	cursorIdx, err := strconv.Atoi(cursorWord)
-	if err != nil {
-		fmt.Println("NOOOOOOO1")
-		log.Fatalf("failed to parse cursor position: %v", err)
-	}
-
+func SourceAutocomplete(cli CLI, cursorIdx int, args []string) {
 	if err := SourceLoad(cli); err != nil {
-		fmt.Println("NOOOOOOO2")
 		log.Fatalf("failed to load cli: %v", err)
 	}
 
-	// Remove this file's name, the command alias, and the cursor word and pass to autocomplete.
 	// TODO: actually use cursorIdx here.
 	_ = cursorIdx
-	g := Autocomplete(getNode(cli), os.Args[4:])
+	g := Autocomplete(getNode(cli), args)
 	fmt.Printf("%s\n", strings.Join(g, "\n"))
 }
 
@@ -168,33 +130,63 @@ func SourceLoad(cli CLI) error {
 	return cli.Load(s)
 }
 
-func createSourceFile(cli CLI) string {
-	return "$GOPATH/bin/tmp"
-	/*
-
-			_, sourceLocation, _, ok := runtime.Caller(2)
-			if !ok {
-				return "", fmt.Errorf("failed to fetch caller")
-			}
-
-			// cd into the directory of the file that is actually calling this and install dependencies.
-		if _, err := f.WriteString(fmt.Sprintf(generateBinary, sourceLocation)); err != nil {
-			return "", fmt.Errorf("failed to write binary generator code to file: %v", err)
-		}
-	*/
-}
-
 // Source generates the bash source file for a list of CLIs.
 func SourceSource(clis ...CLI) {
+	if len(os.Args) <= 1 {
+		generateFile(clis...)
+	}
+
+	if len(os.Args) < 3 {
+		log.Fatalf("Not enough arguments provided to leep-frog function")
+	}
+
+	opType := os.Args[1]
+	cliName := os.Args[3]
+
+	var cli CLI
+	for _, c := range clis {
+		if cli.Name() == cliName {
+			cli = c
+			break
+		}
+	}
+
+	if cli == nil {
+		log.Fatalf("attempting to execute unknown CLI %q", cliName)
+	}
+
+	switch opType {
+	case "autocomplete":
+		cword, err := strconv.Atoi(os.Args[2])
+		if err != nil {
+			log.Fatalf("Failed to convert cursor word: %v", err)
+		}
+		SourceAutocomplete(cli, cword, os.Args[4:])
+	case "execute":
+		// TODO: change filename to file writer?
+		// (cli, filename (for ExecuteData.Exectuable), args)
+		SourceExecute(cli, os.Args[2], os.Args[4:])
+	default:
+		log.Fatalf("unknown process: %v", os.Args)
+	}
+}
+
+func generateFile(clis ...CLI) {
 	f, err := ioutil.TempFile("", "golang-cli-source")
 	if err != nil {
 		log.Fatalf("failed to create tmp file: %v", err)
 	}
 
-	// TODO:
-	// - create a temporary dir/file under the source location with a main package
-	// - build the file and store it with a unique (per-alias) name in $GOPATH/bin/leep-frog/...
-	// - clean up temporary directory
+	_, sourceLocation, _, ok := runtime.Caller(2)
+	if !ok {
+		// TODO: return error everywhere so we can test?
+		log.Fatalf("failed to fetch caller")
+	}
+
+	// cd into the directory of the file that is actually calling this and install dependencies.
+	if _, err := f.WriteString(fmt.Sprintf(generateBinary, sourceLocation)); err != nil {
+		log.Fatalf("failed to write binary generator code to file: %v", err)
+	}
 
 	// define the autocomplete function
 	if _, err := f.WriteString(autocompleteFunction); err != nil {
@@ -207,32 +199,23 @@ func SourceSource(clis ...CLI) {
 	}
 
 	for _, cli := range clis {
-		sourceFile := createSourceFile(cli)
-
 		alias := cli.Alias()
 
-		// TODO: aliasFormat ANNNDDD aliasWithSetupFormat should pass in custom binary name as input to _custom_execute.
-		aliasCommand := fmt.Sprintf(aliasFormat, alias, sourceFile)
+		aliasCommand := fmt.Sprintf(aliasFormat, alias, alias)
 		if scs := cli.Setup(); len(scs) > 0 {
 			setupFunctionName := fmt.Sprintf("_setup_for_%s_cli", alias)
 			if _, err := f.WriteString(fmt.Sprintf(setupFunctionFormat, setupFunctionName, strings.Join(scs, "  \n"))); err != nil {
 				log.Fatalf("failed to write setup command to file: %v", err)
 			}
-			aliasCommand = fmt.Sprintf(aliasWithSetupFormat, alias, setupFunctionName, sourceFile)
+			aliasCommand = fmt.Sprintf(aliasWithSetupFormat, alias, setupFunctionName, alias)
 		}
 
 		if _, err := f.WriteString(aliasCommand); err != nil {
 			log.Fatalf("failed to write alias to file: %v", err)
 		}
 
-		// TODO: replace (or disallow) weird characters if need be.
-		if _, err := f.WriteString(fmt.Sprintf(specificAutocompleteFunction, alias, sourceFile)); err != nil {
-			log.Fatalf("failed to write specific autocomplete command: %v", err)
-		}
-
 		// We sort ourselves, hence the no sort.
-		// TODO: tightly couple custom_autocomplete_%s with previous write via a shared variable.
-		if _, err := f.WriteString(fmt.Sprintf("complete -F _custom_autocomplete_%s -o nosort %s\n", alias, alias)); err != nil {
+		if _, err := f.WriteString(fmt.Sprintf("complete -F _custom_autocomplete -o nosort %s\n", alias)); err != nil {
 			log.Fatalf("failed to write autocomplete command to file: %v", err)
 		}
 	}
