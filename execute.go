@@ -27,17 +27,11 @@ func Execute(n *Node, input *Input, output Output) (*ExecuteData, error) {
 	return execute(n, input, output, &Data{})
 }
 
-// Separate method for testing purposes.
-func execute(n *Node, input *Input, output Output, data *Data) (*ExecuteData, error) {
-	// TODO: combine logic with
-	// - complete
-	// - alias.execute
-	// - alias.complete
-	eData := &ExecuteData{}
+func iterativeExecute(n *Node, input *Input, output Output, data *Data, eData *ExecuteData) error {
 	for n != nil {
 		if n.Processor != nil {
 			if err := n.Processor.Execute(input, output, data, eData); err != nil {
-				return nil, err
+				return err
 			}
 		}
 
@@ -47,12 +41,21 @@ func execute(n *Node, input *Input, output Output, data *Data) (*ExecuteData, er
 
 		var err error
 		if n, err = n.Edge.Next(input, data); err != nil {
-			return nil, err
+			return err
 		}
 	}
 
 	if !input.FullyProcessed() {
-		return nil, output.Err(ExtraArgsErr(input))
+		return output.Err(ExtraArgsErr(input))
+	}
+	return nil
+}
+
+// Separate method for testing purposes.
+func execute(n *Node, input *Input, output Output, data *Data) (*ExecuteData, error) {
+	eData := &ExecuteData{}
+	if err := iterativeExecute(n, input, output, data, eData); err != nil {
+		return eData, err
 	}
 
 	if eData.Executor != nil {

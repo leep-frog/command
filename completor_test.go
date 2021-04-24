@@ -1034,6 +1034,7 @@ func TestFetchers(t *testing.T) {
 			},
 			args: []string{"c"},
 			want: []string{
+				"cache.go",
 				"cache/",
 				"color/",
 				"completor.go",
@@ -1060,6 +1061,7 @@ func TestFetchers(t *testing.T) {
 			},
 			args: []string{"completor.go", "c"},
 			want: []string{
+				"cache.go",
 				"cache/",
 				"color/",
 				"completor_test.go",
@@ -1074,6 +1076,7 @@ func TestFetchers(t *testing.T) {
 			},
 			args: []string{"completor.go", "completor_test.go", "c"},
 			want: []string{
+				"cache.go",
 				"cache/",
 				"color/",
 				"custom_nodes.go",

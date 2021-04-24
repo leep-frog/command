@@ -212,32 +212,9 @@ func (aa *addAlias) Execute(input *Input, output Output, data *Data, _ *ExecuteD
 		remaining = append(remaining, r)
 	}
 	n := aa.node
-	// TODO: make function for this (used here and in execute.go)
-	for n != nil {
-		if n.Processor != nil {
-			err := n.Processor.Execute(input, output, data, fakeEData)
-			if IsNotEnoughArgsErr(err) {
-				break
-			}
-
-			if err != nil {
-				// Check for not enough args error
-				return err
-			}
-		}
-
-		if n.Edge == nil {
-			break
-		}
-
-		var err error
-		if n, err = n.Edge.Next(input, data); err != nil {
-			return err
-		}
-	}
-
-	if !input.FullyProcessed() {
-		return output.Err(ExtraArgsErr(input))
+	err := iterativeExecute(n, input, output, data, fakeEData)
+	if err != nil && !IsNotEnoughArgsErr(err) {
+		return err
 	}
 
 	var transformedArgs []string
