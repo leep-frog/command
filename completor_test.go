@@ -575,7 +575,7 @@ func TestFetchers(t *testing.T) {
 		{
 			name: "file fetcher works with string list arg",
 			f:    &FileFetcher{},
-			args: []string{"ex"},
+			args: []string{"exe"},
 			want: []string{
 				"execute",
 				"execute_",
@@ -587,7 +587,7 @@ func TestFetchers(t *testing.T) {
 			f: &FileFetcher{
 				Distinct: true,
 			},
-			args: []string{"execute.go", "ex"},
+			args: []string{"execute.go", "exe"},
 			want: []string{
 				"execute_test.go",
 			},
@@ -595,7 +595,7 @@ func TestFetchers(t *testing.T) {
 		{
 			name:      "file fetcher works with string arg",
 			f:         &FileFetcher{},
-			args:      []string{"ex"},
+			args:      []string{"exe"},
 			stringArg: true,
 			want: []string{
 				"execute",
@@ -1024,7 +1024,7 @@ func TestFetchers(t *testing.T) {
 			f: &FileFetcher{
 				Distinct: true,
 			},
-			args: []string{"co"},
+			args: []string{"com"},
 			want: []string{"completor", "completor_"},
 		},
 		{
@@ -1034,6 +1034,8 @@ func TestFetchers(t *testing.T) {
 			},
 			args: []string{"c"},
 			want: []string{
+				"cache/",
+				"color/",
 				"completor.go",
 				"completor_test.go",
 				"custom_nodes.go",
@@ -1045,7 +1047,7 @@ func TestFetchers(t *testing.T) {
 			f: &FileFetcher{
 				Distinct: true,
 			},
-			args: []string{"custom_nodes.go", "c"},
+			args: []string{"custom_nodes.go", "com"},
 			want: []string{
 				"completor",
 				"completor_",
@@ -1058,6 +1060,8 @@ func TestFetchers(t *testing.T) {
 			},
 			args: []string{"completor.go", "c"},
 			want: []string{
+				"cache/",
+				"color/",
 				"completor_test.go",
 				"custom_nodes.go",
 				" ",
@@ -1070,7 +1074,10 @@ func TestFetchers(t *testing.T) {
 			},
 			args: []string{"completor.go", "completor_test.go", "c"},
 			want: []string{
+				"cache/",
+				"color/",
 				"custom_nodes.go",
+				" ",
 			},
 		},
 		/* Useful for commenting out tests */
