@@ -147,7 +147,7 @@ func SourceAutocomplete(cli CLI) {
 	// Remove this file's name, the command alias, and the cursor word and pass to autocomplete.
 	// TODO: actually use cursorIdx here.
 	_ = cursorIdx
-	g := Autocomplete(getNode(cli), os.Args[3:])
+	g := Autocomplete(getNode(cli), os.Args[4:])
 	fmt.Printf("%s\n", strings.Join(g, "\n"))
 }
 
