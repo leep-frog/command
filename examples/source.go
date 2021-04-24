@@ -5,10 +5,11 @@ import (
 	"fmt"
 
 	"github.com/leep-frog/command"
+	"github.com/leep-frog/command/sourcerer"
 )
 
 func main() {
-	command.SourceSource(&SimpleCLI{})
+	sourcerer.Source(&SimpleCLI{})
 }
 
 type SimpleCLI struct {
