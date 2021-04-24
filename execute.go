@@ -24,12 +24,7 @@ type Edge interface {
 }
 
 func Execute(n *Node, input *Input, output Output) (*ExecuteData, error) {
-	data := &Data{}
-	eData, err := execute(n, input, output, data)
-	if err == nil && eData.Executor != nil {
-		err = eData.Executor(output, data)
-	}
-	return eData, err
+	return execute(n, input, output, &Data{})
 }
 
 // Separate method for testing purposes.
