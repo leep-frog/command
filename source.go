@@ -14,7 +14,8 @@ const (
 	generateBinary = `
 	pushd . > /dev/null
 	cd "$(dirname %s)"
-	go install 
+	# TODO: this won't work if two separate source files are used.
+	go build -o $GOPATH/bin/leep-frog-source 
 	popd > /dev/null
 	`
 	autocompleteFunction = `
@@ -36,7 +37,7 @@ const (
 		tmpFile=$(mktemp)
 		chmod +x $tmpFile
 		$GOPATH/bin/leep-frog-source execute $tmpFile "$@"
-		if [[ ! -z $LEEP_DEBUG ]]; then
+		if [[ ! -z $LEEP_FROG_DEBUG ]]; then
 			echo Executing: $(cat $tmpFile)
 		fi
 		source $tmpFile
@@ -106,10 +107,26 @@ func SourceAutocomplete(cli CLI, cursorIdx int, args []string) {
 		log.Fatalf("failed to load cli: %v", err)
 	}
 
-	// TODO: actually use cursorIdx here.
-	_ = cursorIdx
+	// TODO: should cursorIdx happen here or in Autocomplete function?
+	if cursorIdx > len(args) {
+		args = append(args, "")
+	}
 	g := Autocomplete(getNode(cli), args)
 	fmt.Printf("%s\n", strings.Join(g, "\n"))
+
+	if len(os.Getenv("LEEP_FROG_DEBUG")) > 0 {
+		debugFile, err := os.Create("leepFrogDebug.txt")
+		if err != nil {
+			log.Fatalf("Unable to create file: %v", err)
+		}
+		if _, err := debugFile.WriteString(fmt.Sprintf("%d %d %s\n", len(args), cursorIdx, strings.Join(args, "_"))); err != nil {
+			log.Fatalf("Unable to write to file: %v", err)
+		}
+		if _, err := debugFile.WriteString(fmt.Sprintf("%d %d %s\n", len(g), cursorIdx, strings.Join(g, "_"))); err != nil {
+			log.Fatalf("Unable to write to file: %v", err)
+		}
+		debugFile.Close()
+	}
 }
 
 func getNode(c CLI) *Node {
@@ -134,6 +151,7 @@ func SourceLoad(cli CLI) error {
 func SourceSource(clis ...CLI) {
 	if len(os.Args) <= 1 {
 		generateFile(clis...)
+		return
 	}
 
 	if len(os.Args) < 3 {
@@ -145,7 +163,7 @@ func SourceSource(clis ...CLI) {
 
 	var cli CLI
 	for _, c := range clis {
-		if cli.Name() == cliName {
+		if c.Alias() == cliName {
 			cli = c
 			break
 		}
