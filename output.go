@@ -53,12 +53,10 @@ func NewOutput() Output {
 	stdout := log.New(os.Stdout, "", 0)
 	stderr := log.New(os.Stderr, "", 0)
 	so := func(s string) {
-		fmt.Println("SO", s)
-		stdout.Println(stdout)
+		stdout.Println(s)
 	}
 	se := func(s string) {
-		fmt.Println("SE", s)
-		stderr.Println(stderr)
+		stderr.Println(s)
 	}
 	return osFromChan(so, se)
 }
