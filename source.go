@@ -19,11 +19,6 @@ const (
 	autocompleteFunction = `
 	function _custom_autocomplete {
 		tFile=$(mktemp)
-
-		# Do we need to add a "shift" command since we are now passing in the binary name?
-		echo 1_$1
-		echo 2_$2
-		echo 3_$3
 	
 		# autocomplete might only need to just print newline-separated items to the file
 		$1 autocomplete $COMP_CWORD $COMP_LINE > $tFile
@@ -31,7 +26,11 @@ const (
 		COMPREPLY=( $(cat $tFile) )
 		rm $tFile
 	}
-
+	`
+	specificAutocompleteFunction = `
+	function _custom_autocomplete_%s {
+		_custom_autocomplete %s
+	}
 	`
 
 	executeFunction = `
@@ -223,8 +222,14 @@ func SourceSource(clis ...CLI) {
 			log.Fatalf("failed to write alias to file: %v", err)
 		}
 
+		// TODO: replace (or disallow) weird characters if need be.
+		if _, err := f.WriteString(fmt.Sprintf(specificAutocompleteFunction, alias, sourceFile)); err != nil {
+			log.Fatalf("failed to write specific autocomplete command: %v", err)
+		}
+
 		// We sort ourselves, hence the no sort.
-		if _, err := f.WriteString(fmt.Sprintf("complete -F _custom_autocomplete -o nosort %s %s\n", sourceFile, alias)); err != nil {
+		// TODO: tightly couple custom_autocomplete_%s with previous write via a shared variable.
+		if _, err := f.WriteString(fmt.Sprintf("complete -F _custom_autocomplete_%s -o nosort %s\n", alias, alias)); err != nil {
 			log.Fatalf("failed to write autocomplete command to file: %v", err)
 		}
 	}
