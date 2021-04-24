@@ -1,6 +1,12 @@
 package command
 
+import (
+	"fmt"
+	"strings"
+)
+
 func Autocomplete(n *Node, args []string) []string {
+	fmt.Println(strings.Join(args, "_"))
 	input := ParseArgs(args)
 	cd := getCompleteData(n, input, &Data{})
 	if cd == nil {
