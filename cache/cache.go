@@ -16,7 +16,7 @@ const (
 var (
 	// EnvCacheVar is the environment variable pointing to the path for caching.
 	// var so it can be modified for tests
-	EnvCacheVar = "CACHE"
+	EnvCacheVar = "LEEP_CACHE"
 )
 
 type Cache struct{}
@@ -77,7 +77,7 @@ func (c *Cache) getCacheDir() (string, error) {
 		return "", fmt.Errorf("invalid cache path: %v", err)
 	}
 	if !cacheDir.Mode().IsDir() {
-		return "", fmt.Errorf("CACHE must point to a directory")
+		return "", fmt.Errorf("%q must point to a directory", EnvCacheVar)
 	}
 	return cacheDirStr, nil
 }
