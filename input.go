@@ -135,6 +135,17 @@ var (
 	}
 )
 
+func ParseExecuteArgs(args []string) *Input {
+	r := make([]int, 0, len(args))
+	for i := range args {
+		r = append(r, i)
+	}
+	return &Input{
+		args:      args,
+		remaining: r,
+	}
+}
+
 // TODO: this should just take in a "string" argument so there is
 // absolutely no parsing required by the CLI side of it.
 // TODO: make this a state machine via interfaces.
