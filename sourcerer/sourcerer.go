@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/leep-frog/command"
+	"github.com/leep-frog/command/cache"
 )
 
 // TODO: test this package or move as much as relevant into the command
@@ -154,7 +155,7 @@ func getNode(c CLI) *command.Node {
 
 func load(cli CLI) error {
 	ck := cacheKey(cli)
-	cash := &command.Cache{}
+	cash := &cache.Cache{}
 	s, err := cash.Get(ck)
 	if err != nil {
 		return fmt.Errorf("failed to load cli %q: %v", cli.Name(), err)
@@ -268,7 +269,7 @@ func generateFile(clis ...CLI) {
 
 func save(c CLI) error {
 	ck := cacheKey(c)
-	cash := &command.Cache{}
+	cash := &cache.Cache{}
 	if err := cash.PutStruct(ck, c); err != nil {
 		return fmt.Errorf("failed to save cli %q: %v", c.Name(), err)
 	}
