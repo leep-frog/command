@@ -25,6 +25,7 @@ const (
 		$1 autocomplete $COMP_CWORD $COMP_LINE > $tFile
 		local IFS=$'\n'
 		echo $tFile
+		echo TWO$tFileT
 		echo $1 autocomplete $COMP_CWORD $COMP_LINE > $tFileT
 		COMPREPLY=( $(cat $tFile) )
 		#rm $tFile
