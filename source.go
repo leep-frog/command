@@ -164,7 +164,7 @@ func SourceLoad(cli CLI) error {
 }
 
 func createSourceFile(cli CLI) string {
-	return "$GOPATH/cmd/tmp"
+	return "$GOPATH/bin/tmp"
 	/*
 
 			_, sourceLocation, _, ok := runtime.Caller(2)
