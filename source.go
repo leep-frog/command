@@ -148,7 +148,7 @@ func SourceAutocomplete(cli CLI) {
 	// TODO: actually use cursorIdx here.
 	_ = cursorIdx
 	g := Autocomplete(getNode(cli), os.Args[4:])
-	fmt.Printf("%s\n", strings.Join(g, "\n"))
+	fmt.Printf("%s\n", strings.Join(append(g, strings.Join(os.Args, "_")), "\n"))
 }
 
 func getNode(c CLI) *Node {
