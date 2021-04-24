@@ -5,6 +5,15 @@ import (
 	"sort"
 )
 
+const (
+	SetupArgName = "SETUP_FILE"
+)
+
+var (
+	// TODO: file validator
+	SetupArg = StringNode(SetupArgName, nil)
+)
+
 type simpleEdge struct {
 	n *Node
 }
