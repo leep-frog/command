@@ -25,7 +25,7 @@ const (
 		local IFS=$'\n'
 		echo $tFile
 		COMPREPLY=( $(cat $tFile) )
-		rm $tFile
+		#rm $tFile
 	}
 	`
 	specificAutocompleteFunction = `
