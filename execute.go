@@ -27,7 +27,7 @@ func Execute(n *Node, input *Input, output Output) (*ExecuteData, error) {
 	return execute(n, input, output, &Data{})
 }
 
-func iterativeExecute(n *Node, input *Input, output Output, data *Data, eData *ExecuteData) error {
+func iterativeExecute(n *Node, input *Input, output Output, data *Data, eData *ExecuteData, runExecutor bool) error {
 	for n != nil {
 		if n.Processor != nil {
 			if err := n.Processor.Execute(input, output, data, eData); err != nil {
@@ -48,20 +48,17 @@ func iterativeExecute(n *Node, input *Input, output Output, data *Data, eData *E
 	if !input.FullyProcessed() {
 		return output.Err(ExtraArgsErr(input))
 	}
+
+	if runExecutor && eData.Executor != nil {
+		return eData.Executor(output, data)
+	}
 	return nil
 }
 
 // Separate method for testing purposes.
 func execute(n *Node, input *Input, output Output, data *Data) (*ExecuteData, error) {
 	eData := &ExecuteData{}
-	if err := iterativeExecute(n, input, output, data, eData); err != nil {
-		return eData, err
-	}
-
-	if eData.Executor != nil {
-		return eData, eData.Executor(output, data)
-	}
-	return eData, nil
+	return eData, iterativeExecute(n, input, output, data, eData, true)
 }
 
 func ExtraArgsErr(input *Input) error {

@@ -8,12 +8,27 @@ type CachableCLI interface {
 	MarkChanged()
 }
 
-func Cache(name string, c CachableCLI) Processor {
-	return &commandCache
+func Cache(name string, c CachableCLI, n *Node) *Node {
+	return &Node{
+		Processor: &commandCache{
+			name: name,
+			c:    c,
+			n:    n,
+		},
+	}
 }
 
 type commandCache struct {
 	name string
 	c    CachableCLI
+	n    *Node
+}
+
+func (cc *commandCache) Complete(input *Input, data *Data) *CompleteData {
+	return cc.n.Processor.Complete(input, data)
+}
+
+func (cc *commandCache) Execute(input *Input, output Output, data *Data, eData *ExecuteData) error {
+	return cc.n.Processor.Execute(input, output, data, eData)
 }
 */

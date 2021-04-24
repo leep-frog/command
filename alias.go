@@ -212,7 +212,7 @@ func (aa *addAlias) Execute(input *Input, output Output, data *Data, _ *ExecuteD
 		remaining = append(remaining, r)
 	}
 	n := aa.node
-	err := iterativeExecute(n, input, output, data, fakeEData)
+	err := iterativeExecute(n, input, output, data, fakeEData, false)
 	if err != nil && !IsNotEnoughArgsErr(err) {
 		return err
 	}
