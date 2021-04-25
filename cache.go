@@ -40,6 +40,22 @@ func (cc *commandCache) Execute(input *Input, output Output, data *Data, eData *
 	snapshot := input.Snapshot()
 	err := iterativeExecute(cc.n, input, output, data, eData)
 	// Even if it resulted in an error, we want to add the command to the cache.
-	cc.c.Cache()[cc.name] = input.GetSnapshot(snapshot)
+	s := input.GetSnapshot(snapshot)
+	if existing := cc.c.Cache()[cc.name]; !sliceEquals(existing, s) {
+		cc.c.Cache()[cc.name] = s
+		cc.c.MarkChanged()
+	}
 	return err
+}
+
+func sliceEquals(this, that []string) bool {
+	if len(this) != len(that) {
+		return false
+	}
+	for i := range this {
+		if this[i] != that[i] {
+			return false
+		}
+	}
+	return true
 }

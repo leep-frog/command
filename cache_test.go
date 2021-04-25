@@ -70,6 +70,7 @@ func TestCacheExecution(t *testing.T) {
 				snapshotCount: 1,
 			},
 			wantCache: &simpleCacheCLI{
+				changed: true,
 				cache: map[string][]string{
 					"money": []string{"dollar", "bills"},
 				},
@@ -95,8 +96,65 @@ func TestCacheExecution(t *testing.T) {
 				snapshotCount: 1,
 			},
 			wantCache: &simpleCacheCLI{
+				changed: true,
 				cache: map[string][]string{
 					"money": []string{"dollar"},
+				},
+			},
+		},
+		{
+			name: "Doesn't mark as changed if same values",
+			n: CacheNode("money", cc, SerialNodes(
+				StringNode("s", nil),
+			)),
+			args: []string{"dollar"},
+			cache: map[string][]string{
+				"money": []string{"dollar"},
+			},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"s": StringValue("dollar"),
+				},
+			},
+			wantInput: &Input{
+				args: []*inputArg{
+					{value: "dollar", snapshots: snapshotsMap(1)},
+				},
+				snapshotCount: 1,
+			},
+			wantCache: &simpleCacheCLI{
+				cache: map[string][]string{
+					"money": []string{"dollar"},
+				},
+			},
+		},
+		{
+			name: "Doesn't mark as changed if transformed is same values",
+			n: CacheNode("money", cc, SerialNodes(
+				StringNode("s", &ArgOpt{
+					Transformer: SimpleTransformer(StringType, func(v *Value) (*Value, error) {
+						return StringValue("usd"), nil
+					}),
+				}),
+			)),
+			args: []string{"dollar"},
+			cache: map[string][]string{
+				"money": []string{"usd"},
+			},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"s": StringValue("usd"),
+				},
+			},
+			wantInput: &Input{
+				args: []*inputArg{
+					{value: "usd", snapshots: snapshotsMap(1)},
+				},
+				snapshotCount: 1,
+			},
+			wantCache: &simpleCacheCLI{
+				cache: map[string][]string{
+					"money": []string{"usd"},
 				},
 			},
 		},
@@ -118,6 +176,7 @@ func TestCacheExecution(t *testing.T) {
 				snapshotCount: 1,
 			},
 			wantCache: &simpleCacheCLI{
+				changed: true,
 				cache: map[string][]string{
 					"money": []string{"dollar"},
 				},
@@ -145,6 +204,7 @@ func TestCacheExecution(t *testing.T) {
 				snapshotCount: 1,
 			},
 			wantCache: &simpleCacheCLI{
+				changed: true,
 				cache: map[string][]string{
 					"money": []string{"dollar"},
 					"other": []string{"one", "two"},
@@ -173,6 +233,7 @@ func TestCacheExecution(t *testing.T) {
 				snapshotCount: 1,
 			},
 			wantCache: &simpleCacheCLI{
+				changed: true,
 				cache: map[string][]string{
 					"money": []string{"usd"},
 				},
@@ -219,6 +280,7 @@ func TestCacheExecution(t *testing.T) {
 				snapshotCount: 1,
 			},
 			wantCache: &simpleCacheCLI{
+				changed: true,
 				cache: map[string][]string{
 					"money": []string{"123", "usd", "3.4", "4.5", "$six", "$7"},
 				},
@@ -247,6 +309,7 @@ func TestCacheExecution(t *testing.T) {
 				snapshotCount: 1,
 			},
 			wantCache: &simpleCacheCLI{
+				changed: true,
 				cache: map[string][]string{
 					"money": []string{"dollar"},
 				},
