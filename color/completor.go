@@ -25,7 +25,6 @@ var (
 	Arg     = command.StringListNode(ArgName, 1, command.UnboundedList, &command.ArgOpt{Completor: Completor()})
 )
 
-// TODO: have this accept commandOS and write to stderr with any issues
 func ApplyCodes(f *Format, output command.Output, data *command.Data) (*Format, error) {
 	if f == nil {
 		f = &Format{}

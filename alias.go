@@ -63,7 +63,6 @@ func setAlias(ac AliasCLI, name, alias string, value []string) {
 }
 
 func AliasNode(name string, ac AliasCLI, n *Node) *Node {
-	// TODO: the default node should check for aliases.
 	adder := SerialNodes(aliasArg, &addAlias{node: n, ac: ac, name: name})
 	executor := SerialNodesTo(n, &executeAlias{node: n, ac: ac, name: name})
 	return BranchNode(map[string]*Node{

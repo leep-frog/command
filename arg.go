@@ -26,7 +26,6 @@ func (an *argNode) Set(v *Value, data *Data) {
 func (an *argNode) Execute(i *Input, o Output, data *Data, eData *ExecuteData) error {
 	an.aliasCheck(i, false)
 
-	// TODO: If not enough for single, don't do validation and transforming.
 	sl, enough := i.PopN(an.minN, an.optionalN)
 
 	// Don't set at all if no arguments provided for arg.

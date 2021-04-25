@@ -2540,9 +2540,9 @@ func TestComplete(t *testing.T) {
 				},
 			},
 		},
-		/*TODO: add BoolNode{
+		{
 			name: "bool arg gets completed",
-			node: SerialNodes(BoolNode("bArg", true)),
+			node: SerialNodes(BoolNode("bArg")),
 			want: []string{"0", "1", "F", "FALSE", "False", "T", "TRUE", "True", "f", "false", "t", "true"},
 			wantData: &Data{
 				Values: map[string]*Value{

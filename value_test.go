@@ -23,13 +23,19 @@ func TestValueCommands(t *testing.T) {
 		wantFloatList  []float64
 		wantBool       bool
 		wantOK         bool
+		wantProvided   bool
 		wantStdout     []string
 		wantStderr     []string
 	}{
 		{
-			name: "string is populated",
-			n:    StringNode("argName", nil),
-			args: []string{"string-val"},
+			name:   "empty value",
+			wantOK: true,
+		},
+		{
+			name:         "string is populated",
+			n:            StringNode("argName", nil),
+			args:         []string{"string-val"},
+			wantProvided: true,
 			wantData: &Data{
 				Values: map[string]*Value{
 					"argName": StringValue("string-val"),
@@ -44,9 +50,10 @@ func TestValueCommands(t *testing.T) {
 			wantOK:     true,
 		},
 		{
-			name: "string list is populated",
-			n:    StringListNode("argName", 2, 3, nil),
-			args: []string{"string", "list", "val"},
+			name:         "string list is populated",
+			n:            StringListNode("argName", 2, 3, nil),
+			args:         []string{"string", "list", "val"},
+			wantProvided: true,
 			wantData: &Data{
 				Values: map[string]*Value{
 					"argName": StringListValue("string", "list", "val"),
@@ -63,9 +70,10 @@ func TestValueCommands(t *testing.T) {
 			wantOK:         true,
 		},
 		{
-			name: "int is populated",
-			n:    IntNode("argName", nil),
-			args: []string{"123"},
+			name:         "int is populated",
+			n:            IntNode("argName", nil),
+			args:         []string{"123"},
+			wantProvided: true,
 			wantData: &Data{
 				Values: map[string]*Value{
 					"argName": IntValue(123),
@@ -80,9 +88,10 @@ func TestValueCommands(t *testing.T) {
 			wantOK:  true,
 		},
 		{
-			name: "int list is populated",
-			n:    IntListNode("argName", 2, 3, nil),
-			args: []string{"12", "345", "6"},
+			name:         "int list is populated",
+			n:            IntListNode("argName", 2, 3, nil),
+			args:         []string{"12", "345", "6"},
+			wantProvided: true,
 			wantData: &Data{
 				Values: map[string]*Value{
 					"argName": IntListValue(12, 345, 6),
@@ -99,9 +108,10 @@ func TestValueCommands(t *testing.T) {
 			wantOK:      true,
 		},
 		{
-			name: "flaot is populated",
-			n:    FloatNode("argName", nil),
-			args: []string{"12.3"},
+			name:         "flaot is populated",
+			n:            FloatNode("argName", nil),
+			args:         []string{"12.3"},
+			wantProvided: true,
 			wantData: &Data{
 				Values: map[string]*Value{
 					"argName": FloatValue(12.3),
@@ -116,9 +126,10 @@ func TestValueCommands(t *testing.T) {
 			wantOK:    true,
 		},
 		{
-			name: "float list is populated",
-			n:    FloatListNode("argName", 2, 3, nil),
-			args: []string{"1.2", "-345", ".6"},
+			name:         "float list is populated",
+			n:            FloatListNode("argName", 2, 3, nil),
+			args:         []string{"1.2", "-345", ".6"},
+			wantProvided: true,
 			wantData: &Data{
 				Values: map[string]*Value{
 					"argName": FloatListValue(1.2, -345, 0.6),
@@ -135,9 +146,10 @@ func TestValueCommands(t *testing.T) {
 			wantOK:        true,
 		},
 		{
-			name: "bool is populated",
-			n:    BoolNode("argName"),
-			args: []string{"true"},
+			name:         "bool is populated",
+			n:            BoolNode("argName"),
+			args:         []string{"true"},
+			wantProvided: true,
 			wantData: &Data{
 				Values: map[string]*Value{
 					"argName": BoolValue(true),
@@ -155,6 +167,10 @@ func TestValueCommands(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			n := SerialNodes(test.n, ExecutorNode(func(output Output, data *Data) error {
 				v := data.Values["argName"]
+
+				if v.Provided() != test.wantProvided {
+					t.Errorf("Provided() returned incorrect value, got %v, want %v", v.Provided(), test.wantProvided)
+				}
 
 				// strings
 				if diff := cmp.Diff(test.wantString, v.String()); diff != "" {

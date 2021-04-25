@@ -17,7 +17,6 @@ type Input struct {
 type inputArg struct {
 	value     string
 	snapshots map[InputSnapshot]bool
-	// TODO: snapshots
 }
 
 func (ia *inputArg) addSnapshots(is ...InputSnapshot) {
@@ -69,7 +68,6 @@ func (i *Input) CheckAliases(upTo int, ac AliasCLI, name string, complete bool) 
 		k = -1
 	}
 
-	// TODO: test this works with offset (specifically push front and replace near end of function).
 	for j := i.offset; j < len(i.remaining)+k && j < i.offset+upTo; {
 		// TODO: make func (input) Get(j) { return i.args[i.remaining[j]] }
 		// A couple silly errors caused by forgetting to do nested lookup in places.
@@ -118,7 +116,6 @@ func (i *Input) PushFrontAt(idx int, sl ...string) {
 			}
 		}
 
-		// TODO: copy snapshots
 		ial[j] = &inputArg{
 			value:     sl[j],
 			snapshots: sCopy,
