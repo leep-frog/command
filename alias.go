@@ -219,7 +219,7 @@ func (aa *addAlias) Execute(input *Input, output Output, data *Data, _ *ExecuteD
 
 	var transformedArgs []string
 	for _, r := range remaining {
-		transformedArgs = append(transformedArgs, input.args[r])
+		transformedArgs = append(transformedArgs, input.args[r].value)
 	}
 	// Remove the alias arg value.
 	setAlias(aa.ac, aa.name, alias, transformedArgs)

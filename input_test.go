@@ -21,11 +21,11 @@ func TestPushFront(t *testing.T) {
 		{
 			name: "handles empty list",
 			i: &Input{
-				args:      []string{"zero", "one", "two", "three", "four"},
+				args:      []*inputArg{{value: "zero"}, {value: "one"}, {value: "two"}, {value: "three"}, {value: "four"}},
 				remaining: []int{1, 3, 4},
 			},
 			want: &Input{
-				args:      []string{"zero", "one", "two", "three", "four"},
+				args:      []*inputArg{{value: "zero"}, {value: "one"}, {value: "two"}, {value: "three"}, {value: "four"}},
 				remaining: []int{1, 3, 4},
 			},
 		},
@@ -33,11 +33,11 @@ func TestPushFront(t *testing.T) {
 			name: "adds list",
 			sl:   []string{"zero.one", "zero.two"},
 			i: &Input{
-				args:      []string{"zero", "one", "two", "three", "four"},
+				args:      []*inputArg{{value: "zero"}, {value: "one"}, {value: "two"}, {value: "three"}, {value: "four"}},
 				remaining: []int{1, 3, 4},
 			},
 			want: &Input{
-				args:      []string{"zero", "zero.one", "zero.two", "one", "two", "three", "four"},
+				args:      []*inputArg{{value: "zero"}, {value: "zero.one"}, {value: "zero.two"}, {value: "one"}, {value: "two"}, {value: "three"}, {value: "four"}},
 				remaining: []int{1, 2, 3, 5, 6},
 			},
 		},
@@ -45,11 +45,11 @@ func TestPushFront(t *testing.T) {
 			name: "adds list to the front",
 			sl:   []string{"zero.one", "zero.two"},
 			i: &Input{
-				args:      []string{"zero", "one", "two", "three", "four"},
+				args:      []*inputArg{{value: "zero"}, {value: "one"}, {value: "two"}, {value: "three"}, {value: "four"}},
 				remaining: []int{0, 1, 3, 4},
 			},
 			want: &Input{
-				args:      []string{"zero.one", "zero.two", "zero", "one", "two", "three", "four"},
+				args:      []*inputArg{{value: "zero.one"}, {value: "zero.two"}, {value: "zero"}, {value: "one"}, {value: "two"}, {value: "three"}, {value: "four"}},
 				remaining: []int{0, 1, 2, 3, 5, 6},
 			},
 		},
@@ -57,12 +57,12 @@ func TestPushFront(t *testing.T) {
 			name: "adds list with offset",
 			sl:   []string{"two.one", "two.two"},
 			i: &Input{
-				args:      []string{"zero", "one", "two", "three", "four"},
+				args:      []*inputArg{{value: "zero"}, {value: "one"}, {value: "two"}, {value: "three"}, {value: "four"}},
 				remaining: []int{0, 1, 3, 4},
 				offset:    2,
 			},
 			want: &Input{
-				args:      []string{"zero", "one", "two", "two.one", "two.two", "three", "four"},
+				args:      []*inputArg{{value: "zero"}, {value: "one"}, {value: "two"}, {value: "two.one"}, {value: "two.two"}, {value: "three"}, {value: "four"}},
 				remaining: []int{0, 1, 3, 4, 5, 6},
 				offset:    2,
 			},
@@ -70,7 +70,7 @@ func TestPushFront(t *testing.T) {
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			test.i.PushFront(test.sl...)
-			if diff := cmp.Diff(test.want, test.i, cmp.AllowUnexported(Input{})); diff != "" {
+			if diff := cmp.Diff(test.want, test.i, cmp.AllowUnexported(Input{}, inputArg{})); diff != "" {
 				t.Errorf("i.PushFront(%v) resulted in incorrect Input object:\n%s", test.sl, diff)
 			}
 		})
@@ -112,7 +112,7 @@ func TestPop(t *testing.T) {
 		}
 	}
 
-	if diff := cmp.Diff(input.args, []string{"one", "two", "three"}); diff != "" {
+	if diff := cmp.Diff(input.args, []*inputArg{{value: "one"}, {value: "two"}, {value: "three"}}, cmp.AllowUnexported(inputArg{})); diff != "" {
 		t.Errorf("Input.args changed improperly (-want, +got):\n%s", diff)
 	}
 }
@@ -138,7 +138,7 @@ func TestPopN(t *testing.T) {
 			input:  []string{"hello"},
 			wantOK: true,
 			wantInput: &Input{
-				args:      []string{"hello"},
+				args:      []*inputArg{{value: "hello"}},
 				remaining: []int{0},
 			},
 		},
@@ -149,7 +149,7 @@ func TestPopN(t *testing.T) {
 			want:   []string{"hello", "there", "person"},
 			wantOK: true,
 			wantInput: &Input{
-				args: []string{"hello", "there", "person"},
+				args: []*inputArg{{value: "hello"}, {value: "there"}, {value: "person"}},
 			},
 		},
 		{
@@ -159,7 +159,7 @@ func TestPopN(t *testing.T) {
 			want:   []string{"hello", "there"},
 			wantOK: true,
 			wantInput: &Input{
-				args:      []string{"hello", "there", "person"},
+				args:      []*inputArg{{value: "hello"}, {value: "there"}, {value: "person"}},
 				remaining: []int{2},
 			},
 		},
@@ -169,7 +169,7 @@ func TestPopN(t *testing.T) {
 			n:     4,
 			want:  []string{"hello", "there", "person"},
 			wantInput: &Input{
-				args: []string{"hello", "there", "person"},
+				args: []*inputArg{{value: "hello"}, {value: "there"}, {value: "person"}},
 			},
 		},
 		{
@@ -182,7 +182,7 @@ func TestPopN(t *testing.T) {
 			},
 			wantOK: true,
 			wantInput: &Input{
-				args:      []string{"goodbye", "there", "person"},
+				args:      []*inputArg{{value: "goodbye"}, {value: "there"}, {value: "person"}},
 				remaining: []int{2},
 			},
 		},
@@ -195,7 +195,7 @@ func TestPopN(t *testing.T) {
 			},
 			want: []string{"hello", "there", "person"},
 			wantInput: &Input{
-				args: []string{"hello", "good", "person"},
+				args: []*inputArg{{value: "hello"}, {value: "good"}, {value: "person"}},
 			},
 		},
 	} {
@@ -218,7 +218,7 @@ func TestPopN(t *testing.T) {
 				test.modify(gotPtrs)
 			}
 
-			if diff := cmp.Diff(test.wantInput, input, cmp.AllowUnexported(Input{}), cmpopts.EquateEmpty()); diff != "" {
+			if diff := cmp.Diff(test.wantInput, input, cmp.AllowUnexported(Input{}, inputArg{}), cmpopts.EquateEmpty()); diff != "" {
 				t.Fatalf("PopN(%d, %d) resulted in incorrect input (-want, +got):\n%s", test.n, test.optN, diff)
 			}
 		})
@@ -263,7 +263,7 @@ func TestPopNOffset(t *testing.T) {
 			input:  []string{"hello"},
 			wantOK: true,
 			wantInput: &Input{
-				args:      []string{"hello"},
+				args:      []*inputArg{{value: "hello"}},
 				remaining: []int{0},
 			},
 		},
@@ -274,7 +274,7 @@ func TestPopNOffset(t *testing.T) {
 			optN:   2,
 			wantOK: true,
 			wantInput: &Input{
-				args:      []string{"hello"},
+				args:      []*inputArg{{value: "hello"}},
 				remaining: []int{0},
 				offset:    1,
 			},
@@ -286,7 +286,7 @@ func TestPopNOffset(t *testing.T) {
 			want:   []string{"hello", "there", "person"},
 			wantOK: true,
 			wantInput: &Input{
-				args: []string{"hello", "there", "person"},
+				args: []*inputArg{{value: "hello"}, {value: "there"}, {value: "person"}},
 			},
 		},
 		{
@@ -297,7 +297,7 @@ func TestPopNOffset(t *testing.T) {
 			want:   []string{"there", "person"},
 			wantOK: true,
 			wantInput: &Input{
-				args:      []string{"hello", "there", "person"},
+				args:      []*inputArg{{value: "hello"}, {value: "there"}, {value: "person"}},
 				remaining: []int{0},
 				offset:    1,
 			},
@@ -309,7 +309,7 @@ func TestPopNOffset(t *testing.T) {
 			want:   []string{"hello", "there"},
 			wantOK: true,
 			wantInput: &Input{
-				args:      []string{"hello", "there", "person"},
+				args:      []*inputArg{{value: "hello"}, {value: "there"}, {value: "person"}},
 				remaining: []int{2},
 			},
 		},
@@ -321,7 +321,7 @@ func TestPopNOffset(t *testing.T) {
 			want:   []string{"there", "general"},
 			wantOK: true,
 			wantInput: &Input{
-				args:      []string{"hello", "there", "general", "kenobi"},
+				args:      []*inputArg{{value: "hello"}, {value: "there"}, {value: "general"}, {value: "kenobi"}},
 				remaining: []int{0, 3},
 				offset:    1,
 			},
@@ -332,7 +332,7 @@ func TestPopNOffset(t *testing.T) {
 			n:     4,
 			want:  []string{"hello", "there", "person"},
 			wantInput: &Input{
-				args: []string{"hello", "there", "person"},
+				args: []*inputArg{{value: "hello"}, {value: "there"}, {value: "person"}},
 			},
 		},
 		{
@@ -342,7 +342,7 @@ func TestPopNOffset(t *testing.T) {
 			n:      4,
 			want:   []string{"person"},
 			wantInput: &Input{
-				args:      []string{"hello", "there", "person"},
+				args:      []*inputArg{{value: "hello"}, {value: "there"}, {value: "person"}},
 				remaining: []int{0, 1},
 				offset:    2,
 			},
@@ -357,7 +357,7 @@ func TestPopNOffset(t *testing.T) {
 			},
 			wantOK: true,
 			wantInput: &Input{
-				args:      []string{"goodbye", "there", "person"},
+				args:      []*inputArg{{value: "goodbye"}, {value: "there"}, {value: "person"}},
 				remaining: []int{2},
 			},
 		},
@@ -373,7 +373,7 @@ func TestPopNOffset(t *testing.T) {
 			},
 			wantOK: true,
 			wantInput: &Input{
-				args:      []string{"hello", "there", "general", "kenobi"},
+				args:      []*inputArg{{value: "hello"}, {value: "there"}, {value: "general"}, {value: "kenobi"}},
 				remaining: []int{0, 1},
 				offset:    2,
 			},
@@ -387,7 +387,7 @@ func TestPopNOffset(t *testing.T) {
 			},
 			want: []string{"hello", "there", "person"},
 			wantInput: &Input{
-				args: []string{"hello", "good", "person"},
+				args: []*inputArg{{value: "hello"}, {value: "good"}, {value: "person"}},
 			},
 		},
 		{
@@ -400,7 +400,7 @@ func TestPopNOffset(t *testing.T) {
 			},
 			want: []string{"kenobi"},
 			wantInput: &Input{
-				args:      []string{"hello", "there", "general", "motors"},
+				args:      []*inputArg{{value: "hello"}, {value: "there"}, {value: "general"}, {value: "motors"}},
 				remaining: []int{0, 1, 2},
 				offset:    3,
 			},
@@ -426,7 +426,7 @@ func TestPopNOffset(t *testing.T) {
 				test.modify(gotPtrs)
 			}
 
-			if diff := cmp.Diff(test.wantInput, input, cmp.AllowUnexported(Input{}), cmpopts.EquateEmpty()); diff != "" {
+			if diff := cmp.Diff(test.wantInput, input, cmp.AllowUnexported(Input{}, inputArg{}), cmpopts.EquateEmpty()); diff != "" {
 				t.Fatalf("PopN(%d, %d) resulted in incorrect input (-want, +got):\n%s", test.n, test.optN, diff)
 			}
 		})
@@ -447,7 +447,7 @@ func TestParseArgs(t *testing.T) {
 			name:  "converts single argument",
 			input: []string{"one"},
 			want: &Input{
-				args:      []string{"one"},
+				args:      []*inputArg{{value: "one"}},
 				remaining: []int{0},
 			},
 		},
@@ -455,7 +455,7 @@ func TestParseArgs(t *testing.T) {
 			name:  "converts single argument with quote",
 			input: []string{`"one`},
 			want: &Input{
-				args:      []string{"one"},
+				args:      []*inputArg{{value: "one"}},
 				delimiter: runePtr('"'),
 				remaining: []int{0},
 			},
@@ -464,7 +464,7 @@ func TestParseArgs(t *testing.T) {
 			name:  "converts quoted argument",
 			input: []string{`"one"`},
 			want: &Input{
-				args:      []string{"one"},
+				args:      []*inputArg{{value: "one"}},
 				remaining: []int{0},
 			},
 		},
@@ -472,7 +472,7 @@ func TestParseArgs(t *testing.T) {
 			name:  "ignores last argument if quote",
 			input: []string{`one`, `"`},
 			want: &Input{
-				args:      []string{"one", ""},
+				args:      []*inputArg{{value: "one"}, {value: ""}},
 				delimiter: runePtr('"'),
 				remaining: []int{0, 1},
 			},
@@ -481,7 +481,7 @@ func TestParseArgs(t *testing.T) {
 			name:  "escaped space character",
 			input: []string{`ab\ cd`},
 			want: &Input{
-				args:      []string{"ab cd"},
+				args:      []*inputArg{{value: "ab cd"}},
 				remaining: []int{0},
 			},
 		},
@@ -489,7 +489,7 @@ func TestParseArgs(t *testing.T) {
 			name:  "escaped space character between words",
 			input: []string{"ab\\", "cd"},
 			want: &Input{
-				args:      []string{"ab cd"},
+				args:      []*inputArg{{value: "ab cd"}},
 				remaining: []int{0},
 			},
 		},
@@ -497,14 +497,14 @@ func TestParseArgs(t *testing.T) {
 			name:  "quotation between words",
 			input: []string{"a'b", "c'd"},
 			want: &Input{
-				args:      []string{"ab cd"},
+				args:      []*inputArg{{value: "ab cd"}},
 				remaining: []int{0},
 			},
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			got := ParseArgs(test.input)
-			if diff := cmp.Diff(test.want, got, cmp.AllowUnexported(Input{})); diff != "" {
+			if diff := cmp.Diff(test.want, got, cmp.AllowUnexported(Input{}, inputArg{})); diff != "" {
 				t.Fatalf("ParseArgs(%v) created incorrect args (-want, +got):\n%s", test.input, diff)
 			}
 		})

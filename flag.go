@@ -36,7 +36,7 @@ type flagNode struct {
 
 func (fn *flagNode) Complete(input *Input, data *Data) *CompleteData {
 	for i := 0; i < len(input.remaining); {
-		a := input.args[input.remaining[i]]
+		a, _ := input.PeekAt(i)
 		f, ok := fn.flagMap[a]
 		if !ok {
 			i++
@@ -70,7 +70,7 @@ func (fn *flagNode) Complete(input *Input, data *Data) *CompleteData {
 
 func (fn *flagNode) Execute(input *Input, output Output, data *Data, eData *ExecuteData) error {
 	for i := 0; i < len(input.remaining); {
-		a := input.args[input.remaining[i]]
+		a, _ := input.PeekAt(i)
 		f, ok := fn.flagMap[a]
 		if !ok {
 			i++

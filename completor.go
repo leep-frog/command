@@ -117,7 +117,7 @@ func (c *Completor) Complete(rawValue string, value *Value, data *Data) *Complet
 func (c *Completion) Process(input *Input) []string {
 	var lastArg string
 	if input != nil && len(input.args) > 0 {
-		lastArg = input.args[len(input.args)-1]
+		lastArg = input.args[len(input.args)-1].value
 	}
 	results := c.Suggestions
 

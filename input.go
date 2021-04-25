@@ -1,31 +1,50 @@
 package command
 
-type unprocessedArg struct {
-	originalIdx int
-}
+const (
+	UnboundedList = -1
+)
 
 type Input struct {
-	args      []string
+	args      []*inputArg
 	remaining []int
 	delimiter *rune
 	offset    int
 }
 
-const (
-	UnboundedList = -1
-)
+type inputArg struct {
+	value string
+	// TODO: snapshots
+}
 
 func (i *Input) FullyProcessed() bool {
-	return len(i.remaining) <= i.offset
+	return i.offset >= len(i.remaining)
 }
 
 func (i *Input) Remaining() []string {
 	r := make([]string, 0, len(i.remaining))
 	for _, v := range i.remaining {
-		r = append(r, i.args[v])
+		r = append(r, i.args[v].value)
 	}
 	return r
 }
+
+/*type InputSnapshot struct {
+	offset  int
+	indices []int
+	input   *Input
+}
+
+func (i *Input) Snapshot() *InputSnapshot {
+	idxs := make([]int, len(i.remaining))
+	for _, r := range i.remaining {
+		idxs = append(idxs, r)
+	}
+	return &InputSnapshot{
+		//offset: nil,
+		indices: idx,
+		input:   i,
+	}
+}*/
 
 func (i *Input) Peek() (string, bool) {
 	return i.PeekAt(0)
@@ -48,7 +67,7 @@ func (i *Input) CheckAliases(upTo int, ac AliasCLI, name string, complete bool) 
 	for j := i.offset; j < len(i.remaining)+k && j < i.offset+upTo; {
 		// TODO: make func (input) Get(j) { return i.args[i.remaining[j]] }
 		// A couple silly errors caused by forgetting to do nested lookup in places.
-		sl, ok := getAlias(ac, name, i.args[i.remaining[j]])
+		sl, ok := getAlias(ac, name, i.args[i.remaining[j]].value)
 		if !ok {
 			j++
 			continue
@@ -57,7 +76,7 @@ func (i *Input) CheckAliases(upTo int, ac AliasCLI, name string, complete bool) 
 		// TODO: Verify this works for empty aliases
 		end := len(sl) - 1
 		// TODO: do these functions need to be public at all anymore?
-		i.args[i.remaining[j]] = sl[end]
+		i.args[i.remaining[j]].value = sl[end]
 		i.PushFrontAt(j, sl[:end]...)
 		j += len(sl)
 	}
@@ -71,12 +90,14 @@ func (i *Input) PushFrontAt(idx int, sl ...string) {
 	tmpOffset := i.offset + idx
 	// Update remaining.
 	startIdx := len(i.args)
-	if len(i.remaining) > 0 {
-		if tmpOffset < len(i.remaining) {
-			startIdx = i.remaining[tmpOffset]
-		}
+	if len(i.remaining) > 0 && tmpOffset < len(i.remaining) {
+		startIdx = i.remaining[tmpOffset]
 	}
-	i.args = append(i.args[:startIdx], append(sl, i.args[startIdx:]...)...)
+	ial := make([]*inputArg, len(sl))
+	for j := 0; j < len(sl); j++ {
+		ial[j] = &inputArg{sl[j]}
+	}
+	i.args = append(i.args[:startIdx], append(ial, i.args[startIdx:]...)...)
 	// increment all remaining after offset.
 	for j := tmpOffset; j < len(i.remaining); j++ {
 		i.remaining[j] += len(sl)
@@ -89,13 +110,10 @@ func (i *Input) PushFrontAt(idx int, sl ...string) {
 }
 
 func (i *Input) PeekAt(idx int) (string, bool) {
-	if idx < 0 {
+	if idx < 0 || idx >= len(i.remaining) {
 		return "", false
 	}
-	if idx >= len(i.remaining) {
-		return "", false
-	}
-	return i.args[i.remaining[idx]], true
+	return i.args[i.remaining[idx]].value, true
 }
 
 func (i *Input) Pop() (string, bool) {
@@ -118,7 +136,7 @@ func (i *Input) PopN(n, optN int) ([]*string, bool) {
 
 	ret := make([]*string, 0, shift)
 	for idx := 0; idx < shift; idx++ {
-		ret = append(ret, &i.args[i.remaining[idx+i.offset]])
+		ret = append(ret, &i.args[i.remaining[idx+i.offset]].value)
 	}
 	i.remaining = append(i.remaining[:i.offset], i.remaining[i.offset+shift:]...)
 	return ret, len(ret) >= n
@@ -132,10 +150,12 @@ var (
 	}
 )
 
-func ParseExecuteArgs(args []string) *Input {
-	r := make([]int, 0, len(args))
-	for i := range args {
-		r = append(r, i)
+func ParseExecuteArgs(strArgs []string) *Input {
+	r := make([]int, len(strArgs))
+	args := make([]*inputArg, len(strArgs))
+	for i := range strArgs {
+		r[i] = i
+		args[i] = &inputArg{strArgs[i]}
 	}
 	return &Input{
 		args:      args,
@@ -222,14 +242,7 @@ func ParseArgs(unparsedArgs []string) *Input {
 }
 
 func NewInput(args []string, delimiter *rune) *Input {
-	r := make([]int, len(args))
-	for i := range args {
-		r[i] = i
-	}
-
-	return &Input{
-		args:      args,
-		delimiter: delimiter,
-		remaining: r,
-	}
+	i := ParseExecuteArgs(args)
+	i.delimiter = delimiter
+	return i
 }

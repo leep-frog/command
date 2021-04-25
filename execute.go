@@ -82,7 +82,7 @@ func executeTest(t *testing.T, node *Node, args []string, wantErr error, want *E
 	if wantInput == nil {
 		wantInput = &Input{}
 	}
-	if diff := cmp.Diff(wantInput, input, cmpopts.EquateEmpty(), cmp.AllowUnexported(Input{})); diff != "" {
+	if diff := cmp.Diff(wantInput, input, cmpopts.EquateEmpty(), cmp.AllowUnexported(Input{}, inputArg{})); diff != "" {
 		t.Errorf("execute(%v) incorrectly modified input (-want, +got):\n%s", args, diff)
 	}
 }

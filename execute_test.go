@@ -39,7 +39,7 @@ func TestExecute(t *testing.T) {
 			wantErr:    fmt.Errorf("Unprocessed extra args: [hello]"),
 			wantStderr: []string{"Unprocessed extra args: [hello]"},
 			wantInput: &Input{
-				args:      []string{"hello"},
+				args:      []*inputArg{{value: "hello"}},
 				remaining: []int{0},
 			},
 		},
@@ -65,7 +65,7 @@ func TestExecute(t *testing.T) {
 				},
 			},
 			wantInput: &Input{
-				args: []string{"hello"},
+				args: []*inputArg{{value: "hello"}},
 			},
 			wantErr: fmt.Errorf("bad news bears"),
 			wantData: &Data{
@@ -101,7 +101,7 @@ func TestExecute(t *testing.T) {
 			node: SerialNodes(StringNode("s", nil)),
 			args: []string{"hello"},
 			wantInput: &Input{
-				args: []string{"hello"},
+				args: []*inputArg{{value: "hello"}},
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -114,7 +114,7 @@ func TestExecute(t *testing.T) {
 			node: SerialNodes(IntNode("i", nil)),
 			args: []string{"123"},
 			wantInput: &Input{
-				args: []string{"123"},
+				args: []*inputArg{{value: "123"}},
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -127,7 +127,7 @@ func TestExecute(t *testing.T) {
 			node: SerialNodes(IntNode("i", nil)),
 			args: []string{"12.3"},
 			wantInput: &Input{
-				args: []string{"12.3"},
+				args: []*inputArg{{value: "12.3"}},
 			},
 			wantErr:    fmt.Errorf(`strconv.Atoi: parsing "12.3": invalid syntax`),
 			wantStderr: []string{`strconv.Atoi: parsing "12.3": invalid syntax`},
@@ -137,7 +137,7 @@ func TestExecute(t *testing.T) {
 			node: SerialNodes(FloatNode("f", nil)),
 			args: []string{"-12.3"},
 			wantInput: &Input{
-				args: []string{"-12.3"},
+				args: []*inputArg{{value: "-12.3"}},
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -150,7 +150,7 @@ func TestExecute(t *testing.T) {
 			node: SerialNodes(FloatNode("f", nil)),
 			args: []string{"twelve"},
 			wantInput: &Input{
-				args: []string{"twelve"},
+				args: []*inputArg{{value: "twelve"}},
 			},
 			wantErr:    fmt.Errorf(`strconv.ParseFloat: parsing "twelve": invalid syntax`),
 			wantStderr: []string{`strconv.ParseFloat: parsing "twelve": invalid syntax`},
@@ -161,7 +161,7 @@ func TestExecute(t *testing.T) {
 			node: SerialNodes(StringListNode("sl", 1, 1, nil)),
 			args: []string{"hello", "there", "sir"},
 			wantInput: &Input{
-				args:      []string{"hello", "there", "sir"},
+				args:      []*inputArg{{value: "hello"}, {value: "there"}, {value: "sir"}},
 				remaining: []int{2},
 			},
 			wantData: &Data{
@@ -177,7 +177,7 @@ func TestExecute(t *testing.T) {
 			node: SerialNodes(StringListNode("sl", 1, 2, nil)),
 			args: []string{"hello"},
 			wantInput: &Input{
-				args: []string{"hello"},
+				args: []*inputArg{{value: "hello"}},
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -190,7 +190,7 @@ func TestExecute(t *testing.T) {
 			node: SerialNodes(StringListNode("sl", 1, 2, nil)),
 			args: []string{"hello", "there"},
 			wantInput: &Input{
-				args: []string{"hello", "there"},
+				args: []*inputArg{{value: "hello"}, {value: "there"}},
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -203,7 +203,7 @@ func TestExecute(t *testing.T) {
 			node: SerialNodes(StringListNode("sl", 1, 2, nil)),
 			args: []string{"hello", "there", "maam"},
 			wantInput: &Input{
-				args: []string{"hello", "there", "maam"},
+				args: []*inputArg{{value: "hello"}, {value: "there"}, {value: "maam"}},
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -216,7 +216,7 @@ func TestExecute(t *testing.T) {
 			node: SerialNodes(StringListNode("sl", 4, UnboundedList, nil)),
 			args: []string{"hello", "there", "kenobi"},
 			wantInput: &Input{
-				args: []string{"hello", "there", "kenobi"},
+				args: []*inputArg{{value: "hello"}, {value: "there"}, {value: "kenobi"}},
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -231,7 +231,7 @@ func TestExecute(t *testing.T) {
 			node: SerialNodes(StringListNode("sl", 1, UnboundedList, nil)),
 			args: []string{"hello"},
 			wantInput: &Input{
-				args: []string{"hello"},
+				args: []*inputArg{{value: "hello"}},
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -244,7 +244,7 @@ func TestExecute(t *testing.T) {
 			node: SerialNodes(StringListNode("sl", 1, UnboundedList, nil)),
 			args: []string{"hello", "there", "kenobi"},
 			wantInput: &Input{
-				args: []string{"hello", "there", "kenobi"},
+				args: []*inputArg{{value: "hello"}, {value: "there"}, {value: "kenobi"}},
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -257,7 +257,7 @@ func TestExecute(t *testing.T) {
 			node: SerialNodes(IntListNode("il", 1, 2, nil)),
 			args: []string{"1", "-23"},
 			wantInput: &Input{
-				args: []string{"1", "-23"},
+				args: []*inputArg{{value: "1"}, {value: "-23"}},
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -270,7 +270,7 @@ func TestExecute(t *testing.T) {
 			node: SerialNodes(IntListNode("il", 1, 2, nil)),
 			args: []string{"1", "four", "-23"},
 			wantInput: &Input{
-				args: []string{"1", "four", "-23"},
+				args: []*inputArg{{value: "1"}, {value: "four"}, {value: "-23"}},
 			},
 			wantErr:    fmt.Errorf(`strconv.Atoi: parsing "four": invalid syntax`),
 			wantStderr: []string{`strconv.Atoi: parsing "four": invalid syntax`},
@@ -280,7 +280,7 @@ func TestExecute(t *testing.T) {
 			node: SerialNodes(FloatListNode("fl", 1, 2, nil)),
 			args: []string{"0.1", "-2.3"},
 			wantInput: &Input{
-				args: []string{"0.1", "-2.3"},
+				args: []*inputArg{{value: "0.1"}, {value: "-2.3"}},
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -293,7 +293,7 @@ func TestExecute(t *testing.T) {
 			node: SerialNodes(FloatListNode("fl", 1, 2, nil)),
 			args: []string{"0.1", "four", "-23"},
 			wantInput: &Input{
-				args: []string{"0.1", "four", "-23"},
+				args: []*inputArg{{value: "0.1"}, {value: "four"}, {value: "-23"}},
 			},
 			wantErr:    fmt.Errorf(`strconv.ParseFloat: parsing "four": invalid syntax`),
 			wantStderr: []string{`strconv.ParseFloat: parsing "four": invalid syntax`},
@@ -304,7 +304,7 @@ func TestExecute(t *testing.T) {
 			node: SerialNodes(IntListNode("il", 2, 0, nil), StringNode("s", nil), FloatListNode("fl", 1, 2, nil)),
 			args: []string{"0", "1", "two", "0.3", "-4"},
 			wantInput: &Input{
-				args: []string{"0", "1", "two", "0.3", "-4"},
+				args: []*inputArg{{value: "0"}, {value: "1"}, {value: "two"}, {value: "0.3"}, {value: "-4"}},
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -320,7 +320,7 @@ func TestExecute(t *testing.T) {
 			args: []string{"0", "1", "two", "0.3", "-4", "0.5", "6"},
 			wantInput: &Input{
 				remaining: []int{6},
-				args:      []string{"0", "1", "two", "0.3", "-4", "0.5", "6"},
+				args:      []*inputArg{{value: "0"}, {value: "1"}, {value: "two"}, {value: "0.3"}, {value: "-4"}, {value: "0.5"}, {value: "6"}},
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -348,7 +348,7 @@ func TestExecute(t *testing.T) {
 			})),
 			args: []string{"0", "1", "two", "0.3", "-4"},
 			wantInput: &Input{
-				args: []string{"0", "1", "two", "0.3", "-4"},
+				args: []*inputArg{{value: "0"}, {value: "1"}, {value: "two"}, {value: "0.3"}, {value: "-4"}},
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -370,7 +370,7 @@ func TestExecute(t *testing.T) {
 			})),
 			args: []string{"0", "1", "two", "0.3", "-4"},
 			wantInput: &Input{
-				args: []string{"0", "1", "two", "0.3", "-4"},
+				args: []*inputArg{{value: "0"}, {value: "1"}, {value: "two"}, {value: "0.3"}, {value: "-4"}},
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -390,7 +390,7 @@ func TestExecute(t *testing.T) {
 			},
 			args: []string{"123"},
 			wantInput: &Input{
-				args: []string{"123"},
+				args: []*inputArg{{value: "123"}},
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -408,7 +408,7 @@ func TestExecute(t *testing.T) {
 			},
 			args: []string{"goodbye"},
 			wantInput: &Input{
-				args: []string{"goodbye"},
+				args: []*inputArg{{value: "goodbye"}},
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -423,7 +423,7 @@ func TestExecute(t *testing.T) {
 			},
 			args: []string{"hello"},
 			wantInput: &Input{
-				args: []string{"hello"},
+				args: []*inputArg{{value: "hello"}},
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -441,7 +441,7 @@ func TestExecute(t *testing.T) {
 			},
 			args: []string{"hello"},
 			wantInput: &Input{
-				args: []string{"hello"},
+				args: []*inputArg{{value: "hello"}},
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -456,7 +456,7 @@ func TestExecute(t *testing.T) {
 			},
 			args: []string{"hey"},
 			wantInput: &Input{
-				args: []string{"hey"},
+				args: []*inputArg{{value: "hey"}},
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -471,7 +471,7 @@ func TestExecute(t *testing.T) {
 			},
 			args: []string{"hi"},
 			wantInput: &Input{
-				args: []string{"hi"},
+				args: []*inputArg{{value: "hi"}},
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -489,7 +489,7 @@ func TestExecute(t *testing.T) {
 			},
 			args: []string{"24"},
 			wantInput: &Input{
-				args: []string{"24"},
+				args: []*inputArg{{value: "24"}},
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -504,7 +504,7 @@ func TestExecute(t *testing.T) {
 			},
 			args: []string{"25"},
 			wantInput: &Input{
-				args: []string{"25"},
+				args: []*inputArg{{value: "25"}},
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -522,7 +522,7 @@ func TestExecute(t *testing.T) {
 			},
 			args: []string{"25"},
 			wantInput: &Input{
-				args: []string{"25"},
+				args: []*inputArg{{value: "25"}},
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -537,7 +537,7 @@ func TestExecute(t *testing.T) {
 			},
 			args: []string{"24"},
 			wantInput: &Input{
-				args: []string{"24"},
+				args: []*inputArg{{value: "24"}},
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -555,7 +555,7 @@ func TestExecute(t *testing.T) {
 			},
 			args: []string{"24"},
 			wantInput: &Input{
-				args: []string{"24"},
+				args: []*inputArg{{value: "24"}},
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -570,7 +570,7 @@ func TestExecute(t *testing.T) {
 			},
 			args: []string{"25"},
 			wantInput: &Input{
-				args: []string{"25"},
+				args: []*inputArg{{value: "25"}},
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -587,7 +587,7 @@ func TestExecute(t *testing.T) {
 			},
 			args: []string{"26"},
 			wantInput: &Input{
-				args: []string{"26"},
+				args: []*inputArg{{value: "26"}},
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -605,7 +605,7 @@ func TestExecute(t *testing.T) {
 			},
 			args: []string{"24"},
 			wantInput: &Input{
-				args: []string{"24"},
+				args: []*inputArg{{value: "24"}},
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -620,7 +620,7 @@ func TestExecute(t *testing.T) {
 			},
 			args: []string{"25"},
 			wantInput: &Input{
-				args: []string{"25"},
+				args: []*inputArg{{value: "25"}},
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -635,7 +635,7 @@ func TestExecute(t *testing.T) {
 			},
 			args: []string{"26"},
 			wantInput: &Input{
-				args: []string{"26"},
+				args: []*inputArg{{value: "26"}},
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -653,7 +653,7 @@ func TestExecute(t *testing.T) {
 			},
 			args: []string{"24"},
 			wantInput: &Input{
-				args: []string{"24"},
+				args: []*inputArg{{value: "24"}},
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -670,7 +670,7 @@ func TestExecute(t *testing.T) {
 			},
 			args: []string{"25"},
 			wantInput: &Input{
-				args: []string{"25"},
+				args: []*inputArg{{value: "25"}},
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -687,7 +687,7 @@ func TestExecute(t *testing.T) {
 			},
 			args: []string{"26"},
 			wantInput: &Input{
-				args: []string{"26"},
+				args: []*inputArg{{value: "26"}},
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -703,7 +703,7 @@ func TestExecute(t *testing.T) {
 			},
 			args: []string{"24"},
 			wantInput: &Input{
-				args: []string{"24"},
+				args: []*inputArg{{value: "24"}},
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -720,7 +720,7 @@ func TestExecute(t *testing.T) {
 			},
 			args: []string{"25"},
 			wantInput: &Input{
-				args: []string{"25"},
+				args: []*inputArg{{value: "25"}},
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -735,7 +735,7 @@ func TestExecute(t *testing.T) {
 			},
 			args: []string{"26"},
 			wantInput: &Input{
-				args: []string{"26"},
+				args: []*inputArg{{value: "26"}},
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -751,7 +751,7 @@ func TestExecute(t *testing.T) {
 			},
 			args: []string{"-1"},
 			wantInput: &Input{
-				args: []string{"-1"},
+				args: []*inputArg{{value: "-1"}},
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -768,7 +768,7 @@ func TestExecute(t *testing.T) {
 			},
 			args: []string{"0"},
 			wantInput: &Input{
-				args: []string{"0"},
+				args: []*inputArg{{value: "0"}},
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -785,7 +785,7 @@ func TestExecute(t *testing.T) {
 			},
 			args: []string{"1"},
 			wantInput: &Input{
-				args: []string{"1"},
+				args: []*inputArg{{value: "1"}},
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -801,7 +801,7 @@ func TestExecute(t *testing.T) {
 			},
 			args: []string{"-1"},
 			wantInput: &Input{
-				args: []string{"-1"},
+				args: []*inputArg{{value: "-1"}},
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -816,7 +816,7 @@ func TestExecute(t *testing.T) {
 			},
 			args: []string{"0"},
 			wantInput: &Input{
-				args: []string{"0"},
+				args: []*inputArg{{value: "0"}},
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -833,7 +833,7 @@ func TestExecute(t *testing.T) {
 			},
 			args: []string{"1"},
 			wantInput: &Input{
-				args: []string{"1"},
+				args: []*inputArg{{value: "1"}},
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -851,7 +851,7 @@ func TestExecute(t *testing.T) {
 			},
 			args: []string{"-1"},
 			wantInput: &Input{
-				args: []string{"-1"},
+				args: []*inputArg{{value: "-1"}},
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -868,7 +868,7 @@ func TestExecute(t *testing.T) {
 			},
 			args: []string{"0"},
 			wantInput: &Input{
-				args: []string{"0"},
+				args: []*inputArg{{value: "0"}},
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -883,7 +883,7 @@ func TestExecute(t *testing.T) {
 			},
 			args: []string{"1"},
 			wantInput: &Input{
-				args: []string{"1"},
+				args: []*inputArg{{value: "1"}},
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -899,7 +899,7 @@ func TestExecute(t *testing.T) {
 			},
 			args: []string{"2.4"},
 			wantInput: &Input{
-				args: []string{"2.4"},
+				args: []*inputArg{{value: "2.4"}},
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -914,7 +914,7 @@ func TestExecute(t *testing.T) {
 			},
 			args: []string{"2.5"},
 			wantInput: &Input{
-				args: []string{"2.5"},
+				args: []*inputArg{{value: "2.5"}},
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -932,7 +932,7 @@ func TestExecute(t *testing.T) {
 			},
 			args: []string{"2.5"},
 			wantInput: &Input{
-				args: []string{"2.5"},
+				args: []*inputArg{{value: "2.5"}},
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -947,7 +947,7 @@ func TestExecute(t *testing.T) {
 			},
 			args: []string{"2.4"},
 			wantInput: &Input{
-				args: []string{"2.4"},
+				args: []*inputArg{{value: "2.4"}},
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -965,7 +965,7 @@ func TestExecute(t *testing.T) {
 			},
 			args: []string{"2.4"},
 			wantInput: &Input{
-				args: []string{"2.4"},
+				args: []*inputArg{{value: "2.4"}},
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -980,7 +980,7 @@ func TestExecute(t *testing.T) {
 			},
 			args: []string{"2.5"},
 			wantInput: &Input{
-				args: []string{"2.5"},
+				args: []*inputArg{{value: "2.5"}},
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -997,7 +997,7 @@ func TestExecute(t *testing.T) {
 			},
 			args: []string{"2.6"},
 			wantInput: &Input{
-				args: []string{"2.6"},
+				args: []*inputArg{{value: "2.6"}},
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -1015,7 +1015,7 @@ func TestExecute(t *testing.T) {
 			},
 			args: []string{"2.4"},
 			wantInput: &Input{
-				args: []string{"2.4"},
+				args: []*inputArg{{value: "2.4"}},
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -1030,7 +1030,7 @@ func TestExecute(t *testing.T) {
 			},
 			args: []string{"2.5"},
 			wantInput: &Input{
-				args: []string{"2.5"},
+				args: []*inputArg{{value: "2.5"}},
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -1045,7 +1045,7 @@ func TestExecute(t *testing.T) {
 			},
 			args: []string{"2.6"},
 			wantInput: &Input{
-				args: []string{"2.6"},
+				args: []*inputArg{{value: "2.6"}},
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -1063,7 +1063,7 @@ func TestExecute(t *testing.T) {
 			},
 			args: []string{"2.4"},
 			wantInput: &Input{
-				args: []string{"2.4"},
+				args: []*inputArg{{value: "2.4"}},
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -1080,7 +1080,7 @@ func TestExecute(t *testing.T) {
 			},
 			args: []string{"2.5"},
 			wantInput: &Input{
-				args: []string{"2.5"},
+				args: []*inputArg{{value: "2.5"}},
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -1097,7 +1097,7 @@ func TestExecute(t *testing.T) {
 			},
 			args: []string{"2.6"},
 			wantInput: &Input{
-				args: []string{"2.6"},
+				args: []*inputArg{{value: "2.6"}},
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -1113,7 +1113,7 @@ func TestExecute(t *testing.T) {
 			},
 			args: []string{"2.4"},
 			wantInput: &Input{
-				args: []string{"2.4"},
+				args: []*inputArg{{value: "2.4"}},
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -1130,7 +1130,7 @@ func TestExecute(t *testing.T) {
 			},
 			args: []string{"2.5"},
 			wantInput: &Input{
-				args: []string{"2.5"},
+				args: []*inputArg{{value: "2.5"}},
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -1145,7 +1145,7 @@ func TestExecute(t *testing.T) {
 			},
 			args: []string{"2.6"},
 			wantInput: &Input{
-				args: []string{"2.6"},
+				args: []*inputArg{{value: "2.6"}},
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -1161,7 +1161,7 @@ func TestExecute(t *testing.T) {
 			},
 			args: []string{"-0.1"},
 			wantInput: &Input{
-				args: []string{"-0.1"},
+				args: []*inputArg{{value: "-0.1"}},
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -1178,7 +1178,7 @@ func TestExecute(t *testing.T) {
 			},
 			args: []string{"0"},
 			wantInput: &Input{
-				args: []string{"0"},
+				args: []*inputArg{{value: "0"}},
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -1195,7 +1195,7 @@ func TestExecute(t *testing.T) {
 			},
 			args: []string{"0.1"},
 			wantInput: &Input{
-				args: []string{"0.1"},
+				args: []*inputArg{{value: "0.1"}},
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -1211,7 +1211,7 @@ func TestExecute(t *testing.T) {
 			},
 			args: []string{"-0.1"},
 			wantInput: &Input{
-				args: []string{"-0.1"},
+				args: []*inputArg{{value: "-0.1"}},
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -1226,7 +1226,7 @@ func TestExecute(t *testing.T) {
 			},
 			args: []string{"0"},
 			wantInput: &Input{
-				args: []string{"0"},
+				args: []*inputArg{{value: "0"}},
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -1243,7 +1243,7 @@ func TestExecute(t *testing.T) {
 			},
 			args: []string{"0.1"},
 			wantInput: &Input{
-				args: []string{"0.1"},
+				args: []*inputArg{{value: "0.1"}},
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -1261,7 +1261,7 @@ func TestExecute(t *testing.T) {
 			},
 			args: []string{"-0.1"},
 			wantInput: &Input{
-				args: []string{"-0.1"},
+				args: []*inputArg{{value: "-0.1"}},
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -1278,7 +1278,7 @@ func TestExecute(t *testing.T) {
 			},
 			args: []string{"0"},
 			wantInput: &Input{
-				args: []string{"0"},
+				args: []*inputArg{{value: "0"}},
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -1293,7 +1293,7 @@ func TestExecute(t *testing.T) {
 			},
 			args: []string{"0.1"},
 			wantInput: &Input{
-				args: []string{"0.1"},
+				args: []*inputArg{{value: "0.1"}},
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -1322,7 +1322,7 @@ func TestExecute(t *testing.T) {
 				},
 			},
 			wantInput: &Input{
-				args: []string{"--strFlag"},
+				args: []*inputArg{{value: "--strFlag"}},
 			},
 		},
 		{
@@ -1335,7 +1335,7 @@ func TestExecute(t *testing.T) {
 				},
 			},
 			wantInput: &Input{
-				args: []string{"--strFlag", "hello"},
+				args: []*inputArg{{value: "--strFlag"}, {value: "hello"}},
 			},
 		},
 		{
@@ -1348,7 +1348,7 @@ func TestExecute(t *testing.T) {
 				},
 			},
 			wantInput: &Input{
-				args: []string{"-f", "hello"},
+				args: []*inputArg{{value: "-f"}, {value: "hello"}},
 			},
 		},
 		{
@@ -1365,7 +1365,12 @@ func TestExecute(t *testing.T) {
 				},
 			},
 			wantInput: &Input{
-				args: []string{"un", "--strFlag", "hello", "deux"},
+				args: []*inputArg{
+					{value: "un"},
+					{value: "--strFlag"},
+					{value: "hello"},
+					{value: "deux"},
+				},
 			},
 		},
 		{
@@ -1382,7 +1387,12 @@ func TestExecute(t *testing.T) {
 				},
 			},
 			wantInput: &Input{
-				args: []string{"uno", "dos", "-f", "hello"},
+				args: []*inputArg{
+					{value: "uno"},
+					{value: "dos"},
+					{value: "-f"},
+					{value: "hello"},
+				},
 			},
 		},
 		// Int flag
@@ -1394,7 +1404,13 @@ func TestExecute(t *testing.T) {
 			),
 			args: []string{"un", "deux", "-f", "3", "quatre"},
 			wantInput: &Input{
-				args: []string{"un", "deux", "-f", "3", "quatre"},
+				args: []*inputArg{
+					{value: "un"},
+					{value: "deux"},
+					{value: "-f"},
+					{value: "3"},
+					{value: "quatre"},
+				},
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -1411,7 +1427,13 @@ func TestExecute(t *testing.T) {
 			),
 			args: []string{"un", "deux", "-f", "trois", "quatre"},
 			wantInput: &Input{
-				args:      []string{"un", "deux", "-f", "trois", "quatre"},
+				args: []*inputArg{
+					{value: "un"},
+					{value: "deux"},
+					{value: "-f"},
+					{value: "trois"},
+					{value: "quatre"},
+				},
 				remaining: []int{0, 1, 4},
 			},
 			wantStderr: []string{`strconv.Atoi: parsing "trois": invalid syntax`},
@@ -1426,7 +1448,11 @@ func TestExecute(t *testing.T) {
 			),
 			args: []string{"--floatFlag", "-1.2", "three"},
 			wantInput: &Input{
-				args: []string{"--floatFlag", "-1.2", "three"},
+				args: []*inputArg{
+					{value: "--floatFlag"},
+					{value: "-1.2"},
+					{value: "three"},
+				},
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -1443,7 +1469,11 @@ func TestExecute(t *testing.T) {
 			),
 			args: []string{"--floatFlag", "twelve", "eleven"},
 			wantInput: &Input{
-				args:      []string{"--floatFlag", "twelve", "eleven"},
+				args: []*inputArg{
+					{value: "--floatFlag"},
+					{value: "twelve"},
+					{value: "eleven"},
+				},
 				remaining: []int{2},
 			},
 			wantStderr: []string{`strconv.ParseFloat: parsing "twelve": invalid syntax`},
@@ -1458,7 +1488,7 @@ func TestExecute(t *testing.T) {
 			),
 			args: []string{"okay", "--boolFlag", "then"},
 			wantInput: &Input{
-				args: []string{"okay", "--boolFlag", "then"},
+				args: []*inputArg{{value: "okay"}, {value: "--boolFlag"}, {value: "then"}},
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -1475,7 +1505,7 @@ func TestExecute(t *testing.T) {
 			),
 			args: []string{"okay", "-b", "then"},
 			wantInput: &Input{
-				args: []string{"okay", "-b", "then"},
+				args: []*inputArg{{value: "okay"}, {value: "-b"}, {value: "then"}},
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -1493,7 +1523,7 @@ func TestExecute(t *testing.T) {
 			),
 			args: []string{"un", "--slFlag", "hello", "there"},
 			wantInput: &Input{
-				args: []string{"un", "--slFlag", "hello", "there"},
+				args: []*inputArg{{value: "un"}, {value: "--slFlag"}, {value: "hello"}, {value: "there"}},
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -1510,7 +1540,7 @@ func TestExecute(t *testing.T) {
 			),
 			args: []string{"un", "--slFlag", "hello"},
 			wantInput: &Input{
-				args:      []string{"un", "--slFlag", "hello"},
+				args:      []*inputArg{{value: "un"}, {value: "--slFlag"}, {value: "hello"}},
 				remaining: []int{0},
 			},
 			wantStderr: []string{"not enough arguments"},
@@ -1530,7 +1560,7 @@ func TestExecute(t *testing.T) {
 			),
 			args: []string{"un", "-i", "2", "4", "8", "16", "32", "64"},
 			wantInput: &Input{
-				args: []string{"un", "-i", "2", "4", "8", "16", "32", "64"},
+				args: []*inputArg{{value: "un"}, {value: "-i"}, {value: "2"}, {value: "4"}, {value: "8"}, {value: "16"}, {value: "32"}, {value: "64"}},
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -1547,7 +1577,7 @@ func TestExecute(t *testing.T) {
 			),
 			args: []string{"un", "-i", "2", "4", "8", "16.0", "32", "64"},
 			wantInput: &Input{
-				args:      []string{"un", "-i", "2", "4", "8", "16.0", "32", "64"},
+				args:      []*inputArg{{value: "un"}, {value: "-i"}, {value: "2"}, {value: "4"}, {value: "8"}, {value: "16.0"}, {value: "32"}, {value: "64"}},
 				remaining: []int{0, 7},
 			},
 			wantStderr: []string{`strconv.Atoi: parsing "16.0": invalid syntax`},
@@ -1562,7 +1592,7 @@ func TestExecute(t *testing.T) {
 			),
 			args: []string{"un", "-f", "2", "-4.4", "0.8", "16.16", "-32", "64"},
 			wantInput: &Input{
-				args: []string{"un", "-f", "2", "-4.4", "0.8", "16.16", "-32", "64"},
+				args: []*inputArg{{value: "un"}, {value: "-f"}, {value: "2"}, {value: "-4.4"}, {value: "0.8"}, {value: "16.16"}, {value: "-32"}, {value: "64"}},
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -1579,7 +1609,7 @@ func TestExecute(t *testing.T) {
 			),
 			args: []string{"un", "--flFlag", "2", "4", "eight", "16.0", "32", "64"},
 			wantInput: &Input{
-				args:      []string{"un", "--flFlag", "2", "4", "eight", "16.0", "32", "64"},
+				args:      []*inputArg{{value: "un"}, {value: "--flFlag"}, {value: "2"}, {value: "4"}, {value: "eight"}, {value: "16.0"}, {value: "32"}, {value: "64"}},
 				remaining: []int{0, 5, 6, 7},
 			},
 			wantStderr: []string{`strconv.ParseFloat: parsing "eight": invalid syntax`},
@@ -1599,7 +1629,7 @@ func TestExecute(t *testing.T) {
 			),
 			args: []string{"its", "--boo", "a", "-r", "9", "secret", "-n", "greggar", "groog", "beggars", "--coordinates", "2.2", "4.4", "message."},
 			wantInput: &Input{
-				args: []string{"its", "--boo", "a", "-r", "9", "secret", "-n", "greggar", "groog", "beggars", "--coordinates", "2.2", "4.4", "message."},
+				args: []*inputArg{{value: "its"}, {value: "--boo"}, {value: "a"}, {value: "-r"}, {value: "9"}, {value: "secret"}, {value: "-n"}, {value: "greggar"}, {value: "groog"}, {value: "beggars"}, {value: "--coordinates"}, {value: "2.2"}, {value: "4.4"}, {value: "message."}},
 			},
 			wantData: &Data{
 				Values: map[string]*Value{
@@ -1631,7 +1661,7 @@ func TestExecute(t *testing.T) {
 			wantStderr: []string{"argument must be one of [b h]"},
 			wantErr:    fmt.Errorf("argument must be one of [b h]"),
 			wantInput: &Input{
-				args:      []string{"uh"},
+				args:      []*inputArg{{value: "uh"}},
 				remaining: []int{0},
 			},
 		},
@@ -1644,7 +1674,7 @@ func TestExecute(t *testing.T) {
 			args:       []string{"h"},
 			wantStdout: []string{"hello"},
 			wantInput: &Input{
-				args: []string{"h"},
+				args: []*inputArg{{value: "h"}},
 			},
 		},
 		{
@@ -1669,7 +1699,7 @@ func TestExecute(t *testing.T) {
 				},
 			},
 			wantInput: &Input{
-				args: []string{"good", "morning"},
+				args: []*inputArg{{value: "good"}, {value: "morning"}},
 			},
 		},
 		/* Useful for commenting out tests. */
