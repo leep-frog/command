@@ -46,7 +46,9 @@ func TestAliasExecute(t *testing.T) {
 				},
 			},
 			wantInput: &Input{
-				args: []*inputArg{{value: "a"}},
+				args: []*inputArg{
+					{value: "a"},
+				},
 			},
 			wantErr:    fmt.Errorf("validation failed: [MinLength] value must be at least 1 character"),
 			wantStderr: []string{"validation failed: [MinLength] value must be at least 1 character"},
@@ -83,7 +85,12 @@ func TestAliasExecute(t *testing.T) {
 				},
 			},
 			wantInput: &Input{
-				args: []*inputArg{{value: "a"}, {value: "b"}, {value: "c"}},
+				snapshotCount: 1,
+				args: []*inputArg{
+					{value: "a"},
+					{value: "b"},
+					{value: "c", snapshots: snapshotsMap(1)},
+				},
 			},
 		},
 		{
@@ -96,7 +103,10 @@ func TestAliasExecute(t *testing.T) {
 				},
 			},
 			wantInput: &Input{
-				args: []*inputArg{{value: "a"}, {value: ""}},
+				args: []*inputArg{
+					{value: "a"},
+					{value: ""},
+				},
 			},
 			wantErr:    fmt.Errorf("validation failed: [MinLength] value must be at least 1 character"),
 			wantStderr: []string{"validation failed: [MinLength] value must be at least 1 character"},
@@ -112,7 +122,16 @@ func TestAliasExecute(t *testing.T) {
 				},
 			},
 			wantInput: &Input{
-				args:      []*inputArg{{value: "a"}, {value: "overload"}, {value: "five"}, {value: "four"}, {value: "three"}, {value: "two"}, {value: "one"}},
+				snapshotCount: 1,
+				args: []*inputArg{
+					{value: "a"},
+					{value: "overload"},
+					{value: "five", snapshots: snapshotsMap(1)},
+					{value: "four", snapshots: snapshotsMap(1)},
+					{value: "three", snapshots: snapshotsMap(1)},
+					{value: "two", snapshots: snapshotsMap(1)},
+					{value: "one", snapshots: snapshotsMap(1)},
+				},
 				remaining: []int{5, 6},
 			},
 			wantErr:    fmt.Errorf("Unprocessed extra args: [two one]"),
@@ -129,7 +148,11 @@ func TestAliasExecute(t *testing.T) {
 				},
 			},
 			wantInput: &Input{
-				args: []*inputArg{{value: "a"}, {value: "empty"}},
+				snapshotCount: 1,
+				args: []*inputArg{
+					{value: "a"},
+					{value: "empty"},
+				},
 			},
 			// TODO: find a way to prevent stderr from this. Either
 			// - modify error definition
@@ -156,7 +179,12 @@ func TestAliasExecute(t *testing.T) {
 				},
 			},
 			wantInput: &Input{
-				args: []*inputArg{{value: "a"}, {value: "bearMinimum"}, {value: "grizzly"}},
+				snapshotCount: 1,
+				args: []*inputArg{
+					{value: "a"},
+					{value: "bearMinimum"},
+					{value: "grizzly", snapshots: snapshotsMap(1)},
+				},
 			},
 			wantAC: &simpleAliasCLI{
 				changed: true,
@@ -182,7 +210,11 @@ func TestAliasExecute(t *testing.T) {
 				},
 			},
 			wantInput: &Input{
-				args:      []*inputArg{{value: "a"}, {value: "bearMinimum"}, {value: "grizzly"}},
+				args: []*inputArg{
+					{value: "a"},
+					{value: "bearMinimum"},
+					{value: "grizzly"},
+				},
 				remaining: []int{2},
 			},
 			wantStderr: []string{`Alias "bearMinimum" already exists`},
@@ -199,7 +231,14 @@ func TestAliasExecute(t *testing.T) {
 				},
 			},
 			wantInput: &Input{
-				args: []*inputArg{{value: "a"}, {value: "bearMinimum"}, {value: "grizzly"}, {value: "teddy"}, {value: "brown"}},
+				snapshotCount: 1,
+				args: []*inputArg{
+					{value: "a"},
+					{value: "bearMinimum"},
+					{value: "grizzly", snapshots: snapshotsMap(1)},
+					{value: "teddy", snapshots: snapshotsMap(1)},
+					{value: "brown", snapshots: snapshotsMap(1)},
+				},
 			},
 			wantAC: &simpleAliasCLI{
 				changed: true,
@@ -223,15 +262,16 @@ func TestAliasExecute(t *testing.T) {
 				},
 			},
 			wantInput: &Input{
+				snapshotCount: 1,
 				args: []*inputArg{
 					{value: "a"},
 					{value: "bearMinimum"},
-					{value: "grizzly"},
-					{value: "teddy"},
-					{value: "brown"},
-					{value: "3"},
-					{value: "2.2"},
-					{value: "-1.1"},
+					{value: "grizzly", snapshots: snapshotsMap(1)},
+					{value: "teddy", snapshots: snapshotsMap(1)},
+					{value: "brown", snapshots: snapshotsMap(1)},
+					{value: "3", snapshots: snapshotsMap(1)},
+					{value: "2.2", snapshots: snapshotsMap(1)},
+					{value: "-1.1", snapshots: snapshotsMap(1)},
 				},
 			},
 			wantAC: &simpleAliasCLI{
@@ -256,7 +296,12 @@ func TestAliasExecute(t *testing.T) {
 				},
 			},
 			wantInput: &Input{
-				args: []*inputArg{{value: "a"}, {value: "bearMinimum"}, {value: "grizzly"}},
+				snapshotCount: 1,
+				args: []*inputArg{
+					{value: "a"},
+					{value: "bearMinimum"},
+					{value: "grizzly", snapshots: snapshotsMap(1)},
+				},
 			},
 			wantAC: &simpleAliasCLI{
 				changed: true,
@@ -280,15 +325,16 @@ func TestAliasExecute(t *testing.T) {
 				},
 			},
 			wantInput: &Input{
+				snapshotCount: 1,
 				args: []*inputArg{
 					{value: "a"},
 					{value: "bearMinimum"},
-					{value: "grizzly"},
-					{value: "teddy"},
-					{value: "brown"},
-					{value: "3"},
-					{value: "2.2"},
-					{value: "-1.1"},
+					{value: "grizzly", snapshots: snapshotsMap(1)},
+					{value: "teddy", snapshots: snapshotsMap(1)},
+					{value: "brown", snapshots: snapshotsMap(1)},
+					{value: "3", snapshots: snapshotsMap(1)},
+					{value: "2.2", snapshots: snapshotsMap(1)},
+					{value: "-1.1", snapshots: snapshotsMap(1)},
 				},
 			},
 			wantAC: &simpleAliasCLI{
@@ -317,12 +363,13 @@ func TestAliasExecute(t *testing.T) {
 				},
 			},
 			wantInput: &Input{
+				snapshotCount: 1,
 				args: []*inputArg{
 					{value: "a"},
 					{value: "bearMinimum"},
-					{value: "papa"},
-					{value: "mama"},
-					{value: "baby"},
+					{value: "papa", snapshots: snapshotsMap(1)},
+					{value: "mama", snapshots: snapshotsMap(1)},
+					{value: "baby", snapshots: snapshotsMap(1)},
 				},
 			},
 			wantAC: &simpleAliasCLI{
@@ -348,12 +395,13 @@ func TestAliasExecute(t *testing.T) {
 				},
 			},
 			wantInput: &Input{
+				snapshotCount: 1,
 				args: []*inputArg{
 					{value: "a"},
 					{value: "bearMinimum"},
-					{value: "grizzly"},
-					{value: "teddy"},
-					{value: "brown"},
+					{value: "grizzly", snapshots: snapshotsMap(1)},
+					{value: "teddy", snapshots: snapshotsMap(1)},
+					{value: "brown", snapshots: snapshotsMap(1)},
 				},
 			},
 			wantStderr: []string{"Custom transformer failed: bad news bears"},
@@ -376,7 +424,9 @@ func TestAliasExecute(t *testing.T) {
 				},
 			},
 			wantInput: &Input{
-				args: []*inputArg{{value: "teddy"}},
+				args: []*inputArg{
+					{value: "teddy"},
+				},
 			},
 		},
 		{
@@ -394,7 +444,9 @@ func TestAliasExecute(t *testing.T) {
 				},
 			},
 			wantInput: &Input{
-				args: []*inputArg{{value: "tee"}},
+				args: []*inputArg{
+					{value: "tee"},
+				},
 			},
 		},
 		{
@@ -412,7 +464,10 @@ func TestAliasExecute(t *testing.T) {
 				},
 			},
 			wantInput: &Input{
-				args: []*inputArg{{value: "teddy"}, {value: "grizzly"}},
+				args: []*inputArg{
+					{value: "teddy"},
+					{value: "grizzly"},
+				},
 			},
 		},
 		{
@@ -430,7 +485,11 @@ func TestAliasExecute(t *testing.T) {
 				},
 			},
 			wantInput: &Input{
-				args: []*inputArg{{value: "teddy"}, {value: "brown"}, {value: "grizzly"}},
+				args: []*inputArg{
+					{value: "teddy"},
+					{value: "brown"},
+					{value: "grizzly"},
+				},
 			},
 		},
 		{
@@ -450,7 +509,11 @@ func TestAliasExecute(t *testing.T) {
 				},
 			},
 			wantInput: &Input{
-				args: []*inputArg{{value: "TEDDY"}, {value: "BROWN"}, {value: "GRIZZLY"}},
+				args: []*inputArg{
+					{value: "TEDDY"},
+					{value: "BROWN"},
+					{value: "GRIZZLY"},
+				},
 			},
 		},
 		// Arg with alias opt tests
@@ -470,7 +533,9 @@ func TestAliasExecute(t *testing.T) {
 				},
 			},
 			wantInput: &Input{
-				args: []*inputArg{{value: "zero"}},
+				args: []*inputArg{
+					{value: "zero"},
+				},
 			},
 		},
 		{
@@ -493,7 +558,10 @@ func TestAliasExecute(t *testing.T) {
 				},
 			},
 			wantInput: &Input{
-				args: []*inputArg{{value: "hello"}, {value: "d"}},
+				args: []*inputArg{
+					{value: "hello"},
+					{value: "d"},
+				},
 			},
 		},
 		{
@@ -553,7 +621,11 @@ func TestAliasExecute(t *testing.T) {
 				},
 			},
 			wantInput: &Input{
-				args: []*inputArg{{value: "four"}, {value: "two"}, {value: "deux"}},
+				args: []*inputArg{
+					{value: "four"},
+					{value: "two"},
+					{value: "deux"},
+				},
 			},
 		},
 		{
@@ -740,7 +812,10 @@ func TestAliasExecute(t *testing.T) {
 				},
 			},
 			wantInput: &Input{
-				args: []*inputArg{{value: "two"}, {value: "deux"}},
+				args: []*inputArg{
+					{value: "two"},
+					{value: "deux"},
+				},
 			},
 			wantErr:    fmt.Errorf("not enough arguments"),
 			wantStderr: []string{"not enough arguments"},
@@ -765,7 +840,11 @@ func TestAliasExecute(t *testing.T) {
 				},
 			},
 			wantInput: &Input{
-				args: []*inputArg{{value: "three"}, {value: "trois"}, {value: "tres"}},
+				args: []*inputArg{
+					{value: "three"},
+					{value: "trois"},
+					{value: "tres"},
+				},
 			},
 		},
 		{
@@ -842,7 +921,9 @@ func TestAliasExecute(t *testing.T) {
 			wantErr:    fmt.Errorf("not enough arguments"),
 			wantStderr: []string{"not enough arguments"},
 			wantInput: &Input{
-				args: []*inputArg{{value: "g"}},
+				args: []*inputArg{
+					{value: "g"},
+				},
 			},
 		},
 		{
@@ -857,7 +938,10 @@ func TestAliasExecute(t *testing.T) {
 			wantErr:    fmt.Errorf(`No aliases exist for alias type "pioneer"`),
 			wantStderr: []string{`No aliases exist for alias type "pioneer"`},
 			wantInput: &Input{
-				args: []*inputArg{{value: "g"}, {value: "h"}},
+				args: []*inputArg{
+					{value: "g"},
+					{value: "h"},
+				},
 			},
 		},
 		{
@@ -906,7 +990,9 @@ func TestAliasExecute(t *testing.T) {
 			n:    AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
 			args: []string{"l"},
 			wantInput: &Input{
-				args: []*inputArg{{value: "l"}},
+				args: []*inputArg{
+					{value: "l"},
+				},
 			},
 		},
 		{
@@ -930,7 +1016,9 @@ func TestAliasExecute(t *testing.T) {
 				"z: omega",
 			},
 			wantInput: &Input{
-				args: []*inputArg{{value: "l"}},
+				args: []*inputArg{
+					{value: "l"},
+				},
 			},
 		},
 		// Search alias tests.
@@ -946,7 +1034,9 @@ func TestAliasExecute(t *testing.T) {
 				},
 			},
 			wantInput: &Input{
-				args: []*inputArg{{value: "s"}},
+				args: []*inputArg{
+					{value: "s"},
+				},
 			},
 		},
 		{
@@ -961,7 +1051,10 @@ func TestAliasExecute(t *testing.T) {
 				},
 			},
 			wantInput: &Input{
-				args: []*inputArg{{value: "s"}, {value: ":)"}},
+				args: []*inputArg{
+					{value: "s"},
+					{value: ":)"},
+				},
 			},
 		},
 		{
@@ -990,7 +1083,10 @@ func TestAliasExecute(t *testing.T) {
 				"z: omega",
 			},
 			wantInput: &Input{
-				args: []*inputArg{{value: "s"}, {value: "ga$"}},
+				args: []*inputArg{
+					{value: "s"},
+					{value: "ga$"},
+				},
 			},
 		},
 		{
@@ -1019,7 +1115,11 @@ func TestAliasExecute(t *testing.T) {
 				"z: omega",
 			},
 			wantInput: &Input{
-				args: []*inputArg{{value: "s"}, {value: "a$"}, {value: "^.: [aeiou]"}},
+				args: []*inputArg{
+					{value: "s"},
+					{value: "a$"},
+					{value: "^.: [aeiou]"},
+				},
 			},
 		},
 		// Delete alias tests.
@@ -1035,7 +1135,9 @@ func TestAliasExecute(t *testing.T) {
 			wantErr:    fmt.Errorf("not enough arguments"),
 			wantStderr: []string{"not enough arguments"},
 			wantInput: &Input{
-				args: []*inputArg{{value: "d"}},
+				args: []*inputArg{
+					{value: "d"},
+				},
 			},
 		},
 		{
@@ -1050,7 +1152,10 @@ func TestAliasExecute(t *testing.T) {
 			wantErr:    fmt.Errorf("Alias group has no aliases yet."),
 			wantStderr: []string{"Alias group has no aliases yet."},
 			wantInput: &Input{
-				args: []*inputArg{{value: "d"}, {value: "e"}},
+				args: []*inputArg{
+					{value: "d"},
+					{value: "e"},
+				},
 			},
 		},
 		{
@@ -1068,7 +1173,10 @@ func TestAliasExecute(t *testing.T) {
 				},
 			},
 			wantInput: &Input{
-				args: []*inputArg{{value: "d"}, {value: "tee"}},
+				args: []*inputArg{
+					{value: "d"},
+					{value: "tee"},
+				},
 			},
 			wantStderr: []string{`Alias "tee" does not exist`},
 		},
@@ -1087,7 +1195,10 @@ func TestAliasExecute(t *testing.T) {
 				},
 			},
 			wantInput: &Input{
-				args: []*inputArg{{value: "d"}, {value: "t"}},
+				args: []*inputArg{
+					{value: "d"},
+					{value: "t"},
+				},
 			},
 			wantAC: &simpleAliasCLI{
 				changed: true,

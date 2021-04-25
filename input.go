@@ -4,16 +4,47 @@ const (
 	UnboundedList = -1
 )
 
+type InputSnapshot int
+
 type Input struct {
-	args      []*inputArg
-	remaining []int
-	delimiter *rune
-	offset    int
+	args          []*inputArg
+	remaining     []int
+	delimiter     *rune
+	offset        int
+	snapshotCount InputSnapshot
 }
 
 type inputArg struct {
-	value string
+	value     string
+	snapshots map[InputSnapshot]bool
 	// TODO: snapshots
+}
+
+func (ia *inputArg) addSnapshots(is ...InputSnapshot) {
+	if ia.snapshots == nil {
+		ia.snapshots = map[InputSnapshot]bool{}
+	}
+	for _, i := range is {
+		ia.snapshots[i] = true
+	}
+}
+
+func (i *Input) Snapshot() InputSnapshot {
+	i.snapshotCount++
+	for j := i.offset; j < len(i.remaining); j++ {
+		i.args[i.remaining[j]].addSnapshots(i.snapshotCount)
+	}
+	return i.snapshotCount
+}
+
+func (i *Input) GetSnapshot(is InputSnapshot) []string {
+	var r []string
+	for _, arg := range i.args {
+		if arg.snapshots[is] {
+			r = append(r, arg.value)
+		}
+	}
+	return r
 }
 
 func (i *Input) FullyProcessed() bool {
@@ -28,33 +59,8 @@ func (i *Input) Remaining() []string {
 	return r
 }
 
-/*type InputSnapshot struct {
-	offset  int
-	indices []int
-	input   *Input
-}
-
-func (i *Input) Snapshot() *InputSnapshot {
-	idxs := make([]int, len(i.remaining))
-	for _, r := range i.remaining {
-		idxs = append(idxs, r)
-	}
-	return &InputSnapshot{
-		//offset: nil,
-		indices: idx,
-		input:   i,
-	}
-}*/
-
 func (i *Input) Peek() (string, bool) {
 	return i.PeekAt(0)
-}
-
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
 }
 
 func (i *Input) CheckAliases(upTo int, ac AliasCLI, name string, complete bool) {
@@ -90,12 +96,33 @@ func (i *Input) PushFrontAt(idx int, sl ...string) {
 	tmpOffset := i.offset + idx
 	// Update remaining.
 	startIdx := len(i.args)
+	var snapshots map[InputSnapshot]bool
 	if len(i.remaining) > 0 && tmpOffset < len(i.remaining) {
 		startIdx = i.remaining[tmpOffset]
+
+		if len(i.args[startIdx].snapshots) > 0 {
+			snapshots = map[InputSnapshot]bool{}
+			for s := range i.args[startIdx].snapshots {
+				snapshots[s] = true
+			}
+		}
 	}
+
 	ial := make([]*inputArg, len(sl))
 	for j := 0; j < len(sl); j++ {
-		ial[j] = &inputArg{sl[j]}
+		var sCopy map[InputSnapshot]bool
+		if snapshots != nil {
+			sCopy = map[InputSnapshot]bool{}
+			for s := range snapshots {
+				sCopy[s] = true
+			}
+		}
+
+		// TODO: copy snapshots
+		ial[j] = &inputArg{
+			value:     sl[j],
+			snapshots: sCopy,
+		}
 	}
 	i.args = append(i.args[:startIdx], append(ial, i.args[startIdx:]...)...)
 	// increment all remaining after offset.
@@ -155,7 +182,9 @@ func ParseExecuteArgs(strArgs []string) *Input {
 	args := make([]*inputArg, len(strArgs))
 	for i := range strArgs {
 		r[i] = i
-		args[i] = &inputArg{strArgs[i]}
+		args[i] = &inputArg{
+			value: strArgs[i],
+		}
 	}
 	return &Input{
 		args:      args,
@@ -245,4 +274,15 @@ func NewInput(args []string, delimiter *rune) *Input {
 	i := ParseExecuteArgs(args)
 	i.delimiter = delimiter
 	return i
+}
+
+func snapshotsMap(iss ...InputSnapshot) map[InputSnapshot]bool {
+	if len(iss) == 0 {
+		return nil
+	}
+	m := map[InputSnapshot]bool{}
+	for _, is := range iss {
+		m[is] = true
+	}
+	return m
 }

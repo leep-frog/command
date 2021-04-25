@@ -207,22 +207,15 @@ func (aa *addAlias) Execute(input *Input, output Output, data *Data, _ *ExecuteD
 	if _, ok := getAlias(aa.ac, aa.name, alias); ok {
 		return output.Stderr("Alias %q already exists", alias)
 	}
-	var remaining []int
-	for _, r := range input.remaining {
-		remaining = append(remaining, r)
-	}
+
+	snapshot := input.Snapshot()
 	n := aa.node
 	err := iterativeExecute(n, input, output, data, fakeEData, false)
 	if err != nil && !IsNotEnoughArgsErr(err) {
 		return err
 	}
 
-	var transformedArgs []string
-	for _, r := range remaining {
-		transformedArgs = append(transformedArgs, input.args[r].value)
-	}
-	// Remove the alias arg value.
-	setAlias(aa.ac, aa.name, alias, transformedArgs)
+	setAlias(aa.ac, aa.name, alias, input.GetSnapshot(snapshot))
 	return nil
 }
 
