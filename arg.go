@@ -266,6 +266,20 @@ func floatTransform(sl []*string) (*Value, error) {
 	return FloatValue(f), err
 }
 
+func BoolNode(name string) Processor {
+	return listNode(name, 1, 0, BoolType, boolTransform, &ArgOpt{
+		Completor: BoolCompletor(),
+	})
+}
+
+func boolTransform(sl []*string) (*Value, error) {
+	if len(sl) == 0 {
+		return BoolValue(false), nil
+	}
+	b, err := strconv.ParseBool(*sl[0])
+	return BoolValue(b), err
+}
+
 func listNode(name string, minN, optionalN int, vt ValueType, transformer func([]*string) (*Value, error), opt *ArgOpt) Processor {
 	return &argNode{
 		name:      name,

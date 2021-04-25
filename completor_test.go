@@ -547,31 +547,6 @@ func TestFetchers(t *testing.T) {
 			f:    &FileFetcher{},
 			args: []string{"testing/empty/"},
 		},
-		/*TODO: uncomment {
-			name: "file fetcher returns files in the current working directory",
-			f:    &FileFetcher{},
-			want: []string{
-				"aliaser.go",
-				"aliaser_test.go",
-				"arg_node.go",
-				"arg_options.go",
-				"arg_types.go",
-				"commands.go",
-				"commands_test.go",
-				"completor_test.go",
-				"completors.go",
-				"flag_node.go",
-				"list_arg_node.go",
-				"node.go",
-				"README.md",
-				"testing/",
-				"value.proto",
-				"value/",
-				"value_test.go",
-				"values.go",
-				" ",
-			},
-		},*/
 		{
 			name: "file fetcher works with string list arg",
 			f:    &FileFetcher{},
@@ -1107,10 +1082,6 @@ func TestFetchers(t *testing.T) {
 			if test.stringArg {
 				gn = SerialNodes(StringNode("test", NewArgOpt(completor, nil)))
 			}
-			/*if test.commandBranch {
-				TODO
-				gn = SerialNodes()
-			}*/
 
 			got := Autocomplete(gn, test.args)
 			if diff := cmp.Diff(test.want, got); diff != "" {

@@ -8,12 +8,13 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-/*func TestValueCommands(t *testing.T) {
+func TestValueCommands(t *testing.T) {
 	for _, test := range []struct {
 		name           string
-		n              NodeProcessor
+		n              Processor
 		args           []string
-		want           *WorldState
+		wantData       *Data
+		wantInput      *Input
 		wantString     string
 		wantStringList []string
 		wantInt        int
@@ -27,11 +28,16 @@ import (
 	}{
 		{
 			name: "string is populated",
-			n:    StringArg("argName", true, nil),
+			n:    StringNode("argName", nil),
 			args: []string{"string-val"},
-			want: &WorldState{
+			wantData: &Data{
 				Values: map[string]*Value{
 					"argName": StringValue("string-val"),
+				},
+			},
+			wantInput: &Input{
+				args: []*inputArg{
+					{value: "string-val"},
 				},
 			},
 			wantString: "string-val",
@@ -41,9 +47,16 @@ import (
 			name: "string list is populated",
 			n:    StringListNode("argName", 2, 3, nil),
 			args: []string{"string", "list", "val"},
-			want: &WorldState{
+			wantData: &Data{
 				Values: map[string]*Value{
 					"argName": StringListValue("string", "list", "val"),
+				},
+			},
+			wantInput: &Input{
+				args: []*inputArg{
+					{value: "string"},
+					{value: "list"},
+					{value: "val"},
 				},
 			},
 			wantStringList: []string{"string", "list", "val"},
@@ -51,11 +64,16 @@ import (
 		},
 		{
 			name: "int is populated",
-			n:    IntArg("argName", true, nil),
+			n:    IntNode("argName", nil),
 			args: []string{"123"},
-			want: &WorldState{
+			wantData: &Data{
 				Values: map[string]*Value{
 					"argName": IntValue(123),
+				},
+			},
+			wantInput: &Input{
+				args: []*inputArg{
+					{value: "123"},
 				},
 			},
 			wantInt: 123,
@@ -65,9 +83,16 @@ import (
 			name: "int list is populated",
 			n:    IntListNode("argName", 2, 3, nil),
 			args: []string{"12", "345", "6"},
-			want: &WorldState{
+			wantData: &Data{
 				Values: map[string]*Value{
 					"argName": IntListValue(12, 345, 6),
+				},
+			},
+			wantInput: &Input{
+				args: []*inputArg{
+					{value: "12"},
+					{value: "345"},
+					{value: "6"},
 				},
 			},
 			wantIntList: []int{12, 345, 6},
@@ -75,11 +100,16 @@ import (
 		},
 		{
 			name: "flaot is populated",
-			n:    FloatArg("argName", true, nil),
+			n:    FloatNode("argName", nil),
 			args: []string{"12.3"},
-			want: &WorldState{
+			wantData: &Data{
 				Values: map[string]*Value{
 					"argName": FloatValue(12.3),
+				},
+			},
+			wantInput: &Input{
+				args: []*inputArg{
+					{value: "12.3"},
 				},
 			},
 			wantFloat: 12.3,
@@ -89,9 +119,16 @@ import (
 			name: "float list is populated",
 			n:    FloatListNode("argName", 2, 3, nil),
 			args: []string{"1.2", "-345", ".6"},
-			want: &WorldState{
+			wantData: &Data{
 				Values: map[string]*Value{
 					"argName": FloatListValue(1.2, -345, 0.6),
+				},
+			},
+			wantInput: &Input{
+				args: []*inputArg{
+					{value: "1.2"},
+					{value: "-345"},
+					{value: "0.6"},
 				},
 			},
 			wantFloatList: []float64{1.2, -345, .6},
@@ -99,11 +136,16 @@ import (
 		},
 		{
 			name: "bool is populated",
-			n:    BoolArg("argName", true),
+			n:    BoolNode("argName"),
 			args: []string{"true"},
-			want: &WorldState{
+			wantData: &Data{
 				Values: map[string]*Value{
 					"argName": BoolValue(true),
+				},
+			},
+			wantInput: &Input{
+				args: []*inputArg{
+					{value: "true"},
 				},
 			},
 			wantBool: true,
@@ -111,67 +153,45 @@ import (
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			tn := &testNode{
-				execute: func(ws *WorldState) error {
-					v := ws.Values["argName"]
+			n := SerialNodes(test.n, ExecutorNode(func(output Output, data *Data) error {
+				v := data.Values["argName"]
 
-					// strings
-					if diff := cmp.Diff(test.wantString, v.String()); diff != "" {
-						t.Errorf("String() produced diff (-want, +got):\n%s", diff)
-					}
-					if diff := cmp.Diff(test.wantStringList, v.StringList()); diff != "" {
-						t.Errorf("StringList() produced diff (-want, +got):\n%s", diff)
-					}
+				// strings
+				if diff := cmp.Diff(test.wantString, v.String()); diff != "" {
+					t.Errorf("String() produced diff (-want, +got):\n%s", diff)
+				}
+				if diff := cmp.Diff(test.wantStringList, v.StringList()); diff != "" {
+					t.Errorf("StringList() produced diff (-want, +got):\n%s", diff)
+				}
 
-					// ints
-					if diff := cmp.Diff(test.wantInt, v.Int()); diff != "" {
-						t.Errorf("Int() produced diff (-want, +got):\n%s", diff)
-					}
-					if diff := cmp.Diff(test.wantIntList, v.IntList()); diff != "" {
-						t.Errorf("IntList() produced diff (-want, +got):\n%s", diff)
-					}
+				// ints
+				if diff := cmp.Diff(test.wantInt, v.Int()); diff != "" {
+					t.Errorf("Int() produced diff (-want, +got):\n%s", diff)
+				}
+				if diff := cmp.Diff(test.wantIntList, v.IntList()); diff != "" {
+					t.Errorf("IntList() produced diff (-want, +got):\n%s", diff)
+				}
 
-					// floats
-					if diff := cmp.Diff(test.wantFloat, v.Float()); diff != "" {
-						t.Errorf("Float() produced diff (-want, +got):\n%s", diff)
-					}
-					if diff := cmp.Diff(test.wantFloatList, v.FloatList()); diff != "" {
-						t.Errorf("FloatList() produced diff (-want, +got):\n%s", diff)
-					}
+				// floats
+				if diff := cmp.Diff(test.wantFloat, v.Float()); diff != "" {
+					t.Errorf("Float() produced diff (-want, +got):\n%s", diff)
+				}
+				if diff := cmp.Diff(test.wantFloatList, v.FloatList()); diff != "" {
+					t.Errorf("FloatList() produced diff (-want, +got):\n%s", diff)
+				}
 
-					// bool
-					if diff := cmp.Diff(test.wantBool, v.Bool()); diff != "" {
-						t.Errorf("Bool() produced diff (-want, +got):\n%s", diff)
-					}
+				// bool
+				if diff := cmp.Diff(test.wantBool, v.Bool()); diff != "" {
+					t.Errorf("Bool() produced diff (-want, +got):\n%s", diff)
+				}
 
-					return nil
-				},
-			}
+				return nil
+			}))
 
-			tcos := NewTestCommandOS()
-			ws := &WorldState{
-				RawArgs: test.args,
-			}
-
-			gn := SerialNodes(test.n, tn)
-			Execute(gn, ws)
-
-			if len(ws.RawArgs) == 0 {
-				ws.RawArgs = nil
-			}
-			if diff := cmp.Diff(test.want, ws); diff != "" {
-				t.Errorf("command.Execute(%v) returned diff (-want, +got):\n%s", test.args, diff)
-			}
-
-			if diff := cmp.Diff(test.wantStdout, tcos.GetStdout()); diff != "" {
-				t.Errorf("command.Execute(%v) produced stdout diff (-want, +got):\n%s", test.args, diff)
-			}
-			if diff := cmp.Diff(test.wantStderr, tcos.GetStderr()); diff != "" {
-				t.Errorf("command.Execute(%v) produced stderr diff (-want, +got):\n%s", test.args, diff)
-			}
+			executeTest(t, n, test.args, nil, nil, test.wantData, test.wantInput, test.wantStdout, test.wantStderr)
 		})
 	}
-}*/
+}
 
 func TestValueStrAndListAndJson(t *testing.T) {
 	for _, test := range []struct {

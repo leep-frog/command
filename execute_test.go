@@ -2054,7 +2054,7 @@ func TestComplete(t *testing.T) {
 				},
 			},
 		},
-		/*{
+		{
 			name: "returns suggestions for last arg",
 			node: SerialNodes(
 				StringNode("s", NewArgOpt(SimpleCompletor("one", "two", "three"), nil)),
@@ -2070,7 +2070,7 @@ func TestComplete(t *testing.T) {
 					"i":  IntValue(0),
 				},
 			},
-		},*/
+		},
 		{
 			name: "returns nothing if iterate through all nodes",
 			node: SerialNodes(
@@ -2540,9 +2540,9 @@ func TestComplete(t *testing.T) {
 				},
 			},
 		},
-		/*{
+		/*TODO: add BoolNode{
 			name: "bool arg gets completed",
-			node: SerialNodes(BoolArg("bArg", true)),
+			node: SerialNodes(BoolNode("bArg", true)),
 			want: []string{"0", "1", "F", "FALSE", "False", "T", "TRUE", "True", "f", "false", "t", "true"},
 			wantData: &Data{
 				Values: map[string]*Value{
