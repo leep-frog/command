@@ -228,6 +228,7 @@ func (v *Value) UnmarshalJSON(b []byte) error {
 	return err
 }
 
+// TODO: test this.
 func (v *Value) Provided() bool {
 	return v != nil && v.provided
 }
@@ -365,6 +366,7 @@ func (v *Value) Equal(that *Value) bool {
 	if v.type_ != that.type_ {
 		return false
 	}
+	// TODO: check provided
 	switch v.type_ {
 	case StringType:
 		return (v.string == nil && that.string == nil) || (v.string != nil && that.string != nil && *v.string == *that.string)

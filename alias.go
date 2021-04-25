@@ -210,7 +210,7 @@ func (aa *addAlias) Execute(input *Input, output Output, data *Data, _ *ExecuteD
 
 	snapshot := input.Snapshot()
 	n := aa.node
-	err := iterativeExecute(n, input, output, data, fakeEData, false)
+	err := iterativeExecute(n, input, output, data, fakeEData)
 	if err != nil && !IsNotEnoughArgsErr(err) {
 		return err
 	}

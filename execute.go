@@ -27,7 +27,7 @@ func Execute(n *Node, input *Input, output Output) (*ExecuteData, error) {
 	return execute(n, input, output, &Data{})
 }
 
-func iterativeExecute(n *Node, input *Input, output Output, data *Data, eData *ExecuteData, runExecutor bool) error {
+func iterativeExecute(n *Node, input *Input, output Output, data *Data, eData *ExecuteData) error {
 	for n != nil {
 		if n.Processor != nil {
 			if err := n.Processor.Execute(input, output, data, eData); err != nil {
@@ -49,16 +49,20 @@ func iterativeExecute(n *Node, input *Input, output Output, data *Data, eData *E
 		return output.Err(ExtraArgsErr(input))
 	}
 
-	if runExecutor && eData.Executor != nil {
-		return eData.Executor(output, data)
-	}
 	return nil
 }
 
 // Separate method for testing purposes.
 func execute(n *Node, input *Input, output Output, data *Data) (*ExecuteData, error) {
 	eData := &ExecuteData{}
-	return eData, iterativeExecute(n, input, output, data, eData, true)
+	if err := iterativeExecute(n, input, output, data, eData); err != nil {
+		return eData, err
+	}
+
+	if eData.Executor != nil {
+		return eData, eData.Executor(output, data)
+	}
+	return eData, nil
 }
 
 func ExtraArgsErr(input *Input) error {
@@ -100,11 +104,11 @@ func testExecute(t *testing.T, node *Node, args []string, input *Input, wantErr 
 
 	eData, err := execute(node, input, fo, data)
 	if wantErr == nil && err != nil {
-		t.Fatalf("execute(%v) returned error (%v) when shouldn't have", args, err)
+		t.Errorf("execute(%v) returned error (%v) when shouldn't have", args, err)
 	}
 	if wantErr != nil {
 		if err == nil {
-			t.Fatalf("execute(%v) returned no error when should have returned %v", args, wantErr)
+			t.Errorf("execute(%v) returned no error when should have returned %v", args, wantErr)
 		} else if diff := cmp.Diff(wantErr.Error(), err.Error()); diff != "" {
 			t.Errorf("execute(%v) returned unexpected error (-want, +got):\n%s", args, diff)
 		}
