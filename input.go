@@ -28,10 +28,7 @@ func (i *Input) Remaining() []string {
 }
 
 func (i *Input) Peek() (string, bool) {
-	if i.FullyProcessed() {
-		return "", false
-	}
-	return i.args[i.remaining[0]], true
+	return i.PeekAt(0)
 }
 
 func min(a, b int) int {
