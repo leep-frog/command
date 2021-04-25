@@ -51,11 +51,6 @@ func TestExecute(t *testing.T) {
 			node:       SerialNodes(StringNode("s", nil)),
 			wantErr:    fmt.Errorf("not enough arguments"),
 			wantStderr: []string{"not enough arguments"},
-			wantData: &Data{
-				Values: map[string]*Value{
-					"s": StringValue(""),
-				},
-			},
 		},
 		{
 			name: "Fails if edge fails",
@@ -83,22 +78,12 @@ func TestExecute(t *testing.T) {
 			node:       SerialNodes(IntNode("i", nil)),
 			wantErr:    fmt.Errorf("not enough arguments"),
 			wantStderr: []string{"not enough arguments"},
-			wantData: &Data{
-				Values: map[string]*Value{
-					"i": IntValue(0),
-				},
-			},
 		},
 		{
 			name:       "Fails if float arg and no argument",
 			node:       SerialNodes(FloatNode("f", nil)),
 			wantErr:    fmt.Errorf("not enough arguments"),
 			wantStderr: []string{"not enough arguments"},
-			wantData: &Data{
-				Values: map[string]*Value{
-					"f": FloatValue(0),
-				},
-			},
 		},
 		{
 			name: "Processes single string arg",
@@ -1505,11 +1490,6 @@ func TestExecute(t *testing.T) {
 			args:       []string{"--strFlag"},
 			wantStderr: []string{"not enough arguments"},
 			wantErr:    fmt.Errorf("not enough arguments"),
-			wantData: &Data{
-				Values: map[string]*Value{
-					"strFlag": StringValue(""),
-				},
-			},
 			wantInput: &Input{
 				args: []*inputArg{
 					{value: "--strFlag"},

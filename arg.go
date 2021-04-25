@@ -29,6 +29,14 @@ func (an *argNode) Execute(i *Input, o Output, data *Data, eData *ExecuteData) e
 	// TODO: If not enough for single, don't do validation and transforming.
 	sl, enough := i.PopN(an.minN, an.optionalN)
 
+	// Don't set at all if no arguments provided for arg.
+	if len(sl) == 0 {
+		if !enough {
+			return o.Err(NotEnoughArgs())
+		}
+		return nil
+	}
+
 	// Transform from string to value.
 	v, err := an.transform(sl)
 	if err != nil {
@@ -48,8 +56,6 @@ func (an *argNode) Execute(i *Input, o Output, data *Data, eData *ExecuteData) e
 		}
 		v = newV
 	}
-
-	v.provided = len(sl) > 0
 
 	// Copy values into returned list (required for aliasing)
 	newSl := v.ToArgs()
@@ -134,8 +140,6 @@ func (an *argNode) Complete(input *Input, data *Data) *CompleteData {
 			}
 		}
 	}
-
-	v.provided = len(sl) > 0
 
 	// Copy values into returned list (required for aliasing)
 	newSl := v.ToArgs()

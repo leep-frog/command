@@ -11,15 +11,13 @@ func StringListValue(s ...string) *Value {
 	return &Value{
 		type_:      StringListType,
 		stringList: s,
-		provided:   true,
 	}
 }
 
 func IntListValue(l ...int) *Value {
 	return &Value{
-		type_:    IntListType,
-		intList:  l,
-		provided: true,
+		type_:   IntListType,
+		intList: l,
 	}
 }
 
@@ -27,45 +25,39 @@ func FloatListValue(l ...float64) *Value {
 	return &Value{
 		type_:     FloatListType,
 		floatList: l,
-		provided:  true,
 	}
 }
 
 func BoolValue(b bool) *Value {
 	return &Value{
-		type_:    BoolType,
-		bool:     &b,
-		provided: true,
+		type_: BoolType,
+		bool:  &b,
 	}
 }
 
 func StringValue(s string) *Value {
 	return &Value{
-		type_:    StringType,
-		string:   &s,
-		provided: true,
+		type_:  StringType,
+		string: &s,
 	}
 }
 
 func IntValue(i int) *Value {
 	return &Value{
-		type_:    IntType,
-		int:      &i,
-		provided: true,
+		type_: IntType,
+		int:   &i,
 	}
 }
 
 func FloatValue(f float64) *Value {
 	return &Value{
-		type_:    FloatType,
-		float:    &f,
-		provided: true,
+		type_: FloatType,
+		float: &f,
 	}
 }
 
 type Value struct {
-	type_    ValueType
-	provided bool
+	type_ ValueType
 
 	string     *string
 	int        *int
@@ -230,7 +222,7 @@ func (v *Value) UnmarshalJSON(b []byte) error {
 
 // TODO: test this.
 func (v *Value) Provided() bool {
-	return v != nil && v.provided
+	return v != nil
 }
 
 func (v *Value) String() string {

@@ -47,11 +47,6 @@ func TestCacheExecution(t *testing.T) {
 			)),
 			wantErr:    fmt.Errorf("not enough arguments"),
 			wantStderr: []string{"not enough arguments"},
-			wantData: &Data{
-				Values: map[string]*Value{
-					"s": StringValue(""),
-				},
-			},
 		},
 		{
 			name: "Fails if extra arguments, but still caches",
@@ -261,11 +256,6 @@ func TestCacheExecution(t *testing.T) {
 		{
 			name: "Works when no cache exists",
 			n:    CacheNode("money", cc, SerialNodes(OptionalStringNode("s", nil))),
-			wantData: &Data{
-				Values: map[string]*Value{
-					"s": StringValue(""),
-				},
-			},
 		},
 		{
 			name: "Works when cache exists",

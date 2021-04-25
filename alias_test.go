@@ -29,17 +29,24 @@ func TestAliasExecute(t *testing.T) {
 			n:          AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
 			wantErr:    fmt.Errorf("not enough arguments"),
 			wantStderr: []string{"not enough arguments"},
-			wantData: &Data{
-				Values: map[string]*Value{
-					"sl": StringListValue(),
-				},
-			},
 		},
 		// Add alias tests.
 		{
 			name: "requires an alias value",
 			n:    AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
 			args: []string{"a"},
+			wantInput: &Input{
+				args: []*inputArg{
+					{value: "a"},
+				},
+			},
+			wantErr:    fmt.Errorf("not enough arguments"),
+			wantStderr: []string{"not enough arguments"},
+		},
+		{
+			name: "requires a non-empty alias value",
+			n:    AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
+			args: []string{"a", ""},
 			wantData: &Data{
 				Values: map[string]*Value{
 					"ALIAS": StringValue(""),
@@ -48,6 +55,7 @@ func TestAliasExecute(t *testing.T) {
 			wantInput: &Input{
 				args: []*inputArg{
 					{value: "a"},
+					{},
 				},
 			},
 			wantErr:    fmt.Errorf("validation failed: [MinLength] value must be at least 1 character"),
@@ -144,7 +152,6 @@ func TestAliasExecute(t *testing.T) {
 			wantData: &Data{
 				Values: map[string]*Value{
 					"ALIAS": StringValue("empty"),
-					"sl":    StringListValue(),
 				},
 			},
 			wantInput: &Input{
@@ -292,7 +299,6 @@ func TestAliasExecute(t *testing.T) {
 				Values: map[string]*Value{
 					"ALIAS": StringValue("bearMinimum"),
 					"sl":    StringListValue("grizzly"),
-					"i":     IntValue(0),
 				},
 			},
 			wantInput: &Input{
@@ -321,7 +327,6 @@ func TestAliasExecute(t *testing.T) {
 				Values: map[string]*Value{
 					"ALIAS": StringValue("bearMinimum"),
 					"sl":    StringListValue("grizzly", "teddy", "brown", "3", "2.2", "-1.1"),
-					"i":     IntValue(0),
 				},
 			},
 			wantInput: &Input{
@@ -896,7 +901,6 @@ func TestAliasExecute(t *testing.T) {
 				Values: map[string]*Value{
 					"sl": StringListValue("I", "II", "III"),
 					"s":  StringValue("t"),
-					"i":  IntValue(0),
 				},
 			},
 			wantInput: &Input{
@@ -910,14 +914,9 @@ func TestAliasExecute(t *testing.T) {
 		},
 		// Get alias tests.
 		{
-			name: "Get alias requires argument",
-			n:    AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
-			args: []string{"g"},
-			wantData: &Data{
-				Values: map[string]*Value{
-					"ALIAS": StringListValue(),
-				},
-			},
+			name:       "Get alias requires argument",
+			n:          AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
+			args:       []string{"g"},
 			wantErr:    fmt.Errorf("not enough arguments"),
 			wantStderr: []string{"not enough arguments"},
 			wantInput: &Input{
@@ -1028,11 +1027,6 @@ func TestAliasExecute(t *testing.T) {
 			args:       []string{"s"},
 			wantStderr: []string{"not enough arguments"},
 			wantErr:    fmt.Errorf("not enough arguments"),
-			wantData: &Data{
-				Values: map[string]*Value{
-					"regexp": StringListValue(),
-				},
-			},
 			wantInput: &Input{
 				args: []*inputArg{
 					{value: "s"},
@@ -1124,14 +1118,9 @@ func TestAliasExecute(t *testing.T) {
 		},
 		// Delete alias tests.
 		{
-			name: "Delete requires argument",
-			n:    AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
-			args: []string{"d"},
-			wantData: &Data{
-				Values: map[string]*Value{
-					"ALIAS": StringListValue(),
-				},
-			},
+			name:       "Delete requires argument",
+			n:          AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
+			args:       []string{"d"},
 			wantErr:    fmt.Errorf("not enough arguments"),
 			wantStderr: []string{"not enough arguments"},
 			wantInput: &Input{
