@@ -77,6 +77,11 @@ func (eae *extraArgsErr) Error() string {
 	return fmt.Sprintf("Unprocessed extra args: %v", eae.input.Remaining())
 }
 
+func IsExtraArgsError(err error) bool {
+	_, ok := err.(*extraArgsErr)
+	return ok
+}
+
 // TODO: if this function isn't in test package, then it isn't exposed publicly.
 // Find out best place to put this.
 func executeTest(t *testing.T, node *Node, args []string, wantErr error, want *ExecuteData, wantData *Data, wantInput *Input, wantStdout, wantStderr []string) {

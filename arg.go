@@ -80,7 +80,7 @@ func (an *argNode) Execute(i *Input, o Output, data *Data, eData *ExecuteData) e
 	return nil
 }
 
-func IsNotEnoughArgsErr(err error) bool {
+func IsNotEnoughArgsError(err error) bool {
 	_, ok := err.(*notEnoughArgs)
 	return ok
 }

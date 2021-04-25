@@ -49,7 +49,7 @@ func TestCacheExecution(t *testing.T) {
 			wantStderr: []string{"not enough arguments"},
 		},
 		{
-			name: "Fails if extra arguments, but still caches",
+			name: "Fails if extra arguments and doesn't cache",
 			n: CacheNode("money", cc, SerialNodes(
 				StringNode("s", nil),
 			)),
@@ -69,11 +69,26 @@ func TestCacheExecution(t *testing.T) {
 				remaining:     []int{1},
 				snapshotCount: 1,
 			},
-			wantCache: &simpleCacheCLI{
-				changed: true,
-				cache: map[string][]string{
-					"money": []string{"dollar", "bills"},
+		},
+		{
+			name: "Fails if not enough arguments error",
+			n: CacheNode("money", cc, SerialNodes(
+				StringListNode("sl", 3, 0, nil),
+			)),
+			args:       []string{"dollar", "bills"},
+			wantErr:    fmt.Errorf("not enough arguments"),
+			wantStderr: []string{"not enough arguments"},
+			wantData: &Data{
+				Values: map[string]*Value{
+					"sl": StringListValue("dollar", "bills"),
 				},
+			},
+			wantInput: &Input{
+				args: []*inputArg{
+					{value: "dollar", snapshots: snapshotsMap(1)},
+					{value: "bills", snapshots: snapshotsMap(1)},
+				},
+				snapshotCount: 1,
 			},
 		},
 		{

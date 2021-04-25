@@ -39,6 +39,13 @@ func (cc *commandCache) Execute(input *Input, output Output, data *Data, eData *
 
 	snapshot := input.Snapshot()
 	err := iterativeExecute(cc.n, input, output, data, eData)
+
+	// Don't cache if retrying will never fix the issue (outside of a change
+	// to the code for the specific CLI).
+	if IsExtraArgsError(err) || IsNotEnoughArgsError(err) {
+		return err
+	}
+
 	// Even if it resulted in an error, we want to add the command to the cache.
 	s := input.GetSnapshot(snapshot)
 	if existing := cc.c.Cache()[cc.name]; !sliceEquals(existing, s) {
