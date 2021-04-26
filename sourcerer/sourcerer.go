@@ -88,7 +88,7 @@ type CLI interface {
 
 func execute(cli CLI, executeFile string, args []string) {
 	output := command.NewOutput()
-	eData, err := command.Execute(getNode(cli), command.ParseExecuteArgs(args), output)
+	eData, err := command.Execute(cli.Node(), command.ParseExecuteArgs(args), output)
 	output.Close()
 	if err != nil {
 		// Commands are responsible for printing out error messages so
@@ -128,7 +128,7 @@ func autocomplete(cli CLI, cword, cpoint int, args []string) {
 	}
 	// TODO: use cpoint to determine if we're completing in the middle of a word.
 	// careful about spaces though.p
-	g := command.Autocomplete(getNode(cli), args)
+	g := command.Autocomplete(cli.Node(), args)
 	fmt.Printf("%s\n", strings.Join(g, "\n"))
 
 	if len(os.Getenv("LEEP_FROG_DEBUG")) > 0 {
@@ -144,13 +144,6 @@ func autocomplete(cli CLI, cword, cpoint int, args []string) {
 		}
 		debugFile.Close()
 	}
-}
-
-func getNode(c CLI) *command.Node {
-	if len(c.Setup()) == 0 {
-		return c.Node()
-	}
-	return command.SerialNodesTo(c.Node(), command.SetupArg)
 }
 
 func load(cli CLI) error {
