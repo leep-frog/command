@@ -1,6 +1,8 @@
 package command
 
 import (
+	"fmt"
+	"io/ioutil"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -23,6 +25,23 @@ type ExecuteTestCase struct {
 
 type ExecuteTestOptions struct {
 	testInput bool
+
+	RequiresSetup bool
+	SetupContents []string
+}
+
+func setupForTest(t *testing.T, contents []string) string {
+	t.Helper()
+
+	f, err := ioutil.TempFile("", "command_test_setup")
+	if err != nil {
+		t.Fatalf(`ioutil.TempFile("", "command_test_setup") returned error: %v`, err)
+	}
+	defer f.Close()
+	for _, s := range contents {
+		fmt.Fprintln(f, s)
+	}
+	return f.Name()
 }
 
 func ExecuteTest(t *testing.T, etc *ExecuteTestCase, opts *ExecuteTestOptions) {
@@ -32,12 +51,25 @@ func ExecuteTest(t *testing.T, etc *ExecuteTestCase, opts *ExecuteTestOptions) {
 		etc = &ExecuteTestCase{}
 	}
 
-	input := ParseArgs(etc.Args)
+	args := etc.Args
+	node := etc.Node
+	wantData := etc.WantData
+	if wantData == nil {
+		wantData = &Data{}
+	}
+	if opts != nil && opts.RequiresSetup {
+		setupFile := setupForTest(t, opts.SetupContents)
+		args = append([]string{setupFile}, args...)
+		node = SerialNodesTo(node, SetupArg)
+		wantData.Values[SetupArgName] = StringValue(setupFile)
+	}
+
+	input := ParseArgs(args)
 
 	fo := NewFakeOutput()
 	data := &Data{}
 
-	eData, err := execute(etc.Node, input, fo, data)
+	eData, err := execute(node, input, fo, data)
 	if etc.WantErr == nil && err != nil {
 		t.Errorf("execute(%v) returned error (%v) when shouldn't have", etc.Args, err)
 	}
@@ -62,10 +94,6 @@ func ExecuteTest(t *testing.T, etc *ExecuteTestCase, opts *ExecuteTestOptions) {
 	}
 
 	// Check Data.
-	wantData := etc.WantData
-	if wantData == nil {
-		wantData = &Data{}
-	}
 	if diff := cmp.Diff(wantData, data); diff != "" {
 		t.Errorf("execute(%v) returned unexpected Data (-want, +got):\n%s", etc.Args, diff)
 	}
