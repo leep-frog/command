@@ -55,7 +55,9 @@ func ExecuteTest(t *testing.T, etc *ExecuteTestCase, opts *ExecuteTestOptions) {
 	node := etc.Node
 	wantData := etc.WantData
 	if wantData == nil {
-		wantData = &Data{}
+		wantData = &Data{
+			Values: map[string]*Value{},
+		}
 	}
 	if opts != nil && opts.RequiresSetup {
 		setupFile := setupForTest(t, opts.SetupContents)
@@ -94,7 +96,7 @@ func ExecuteTest(t *testing.T, etc *ExecuteTestCase, opts *ExecuteTestOptions) {
 	}
 
 	// Check Data.
-	if diff := cmp.Diff(wantData, data); diff != "" {
+	if diff := cmp.Diff(wantData, data, cmpopts.EquateEmpty()); diff != "" {
 		t.Errorf("execute(%v) returned unexpected Data (-want, +got):\n%s", etc.Args, diff)
 	}
 
