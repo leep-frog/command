@@ -79,7 +79,7 @@ func ExecuteTest(t *testing.T, etc *ExecuteTestCase, opts *ExecuteTestOptions) {
 	}
 
 	// Check input (if relevant).
-	if opts.testInput {
+	if opts != nil opts.testInput {
 		wantInput := etc.wantInput
 		if wantInput == nil {
 			wantInput = &Input{}
