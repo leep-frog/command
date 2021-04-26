@@ -52,7 +52,6 @@ func ExecuteTest(t *testing.T, etc *ExecuteTestCase, opts *ExecuteTestOptions) {
 	}
 
 	args := etc.Args
-	node := etc.Node
 	wantData := etc.WantData
 	if wantData == nil {
 		wantData = &Data{
@@ -62,7 +61,6 @@ func ExecuteTest(t *testing.T, etc *ExecuteTestCase, opts *ExecuteTestOptions) {
 	if opts != nil && opts.RequiresSetup {
 		setupFile := setupForTest(t, opts.SetupContents)
 		args = append([]string{setupFile}, args...)
-		node = SerialNodesTo(node, SetupArg)
 		wantData.Values[SetupArgName] = StringValue(setupFile)
 	}
 
@@ -71,7 +69,7 @@ func ExecuteTest(t *testing.T, etc *ExecuteTestCase, opts *ExecuteTestOptions) {
 	fo := NewFakeOutput()
 	data := &Data{}
 
-	eData, err := execute(node, input, fo, data)
+	eData, err := execute(etc.Node, input, fo, data)
 	if etc.WantErr == nil && err != nil {
 		t.Errorf("execute(%v) returned error (%v) when shouldn't have", etc.Args, err)
 	}
