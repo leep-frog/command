@@ -36,10 +36,11 @@ func SimpleTransformer(vt ValueType, f func(v *Value) (*Value, error)) ArgTransf
 type simpleTransformer struct {
 	vt ValueType
 	t  func(v *Value) (*Value, error)
+	fc bool
 }
 
 func (st *simpleTransformer) ForComplete() bool {
-	return true
+	return st.fc
 }
 
 func (st *simpleTransformer) ValueType() ValueType {

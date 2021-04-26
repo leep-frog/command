@@ -2,10 +2,6 @@ package command
 
 import (
 	"fmt"
-	"testing"
-
-	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
 )
 
 type Node struct {
@@ -25,6 +21,19 @@ type Edge interface {
 
 func Execute(n *Node, input *Input, output Output) (*ExecuteData, error) {
 	return execute(n, input, output, &Data{})
+}
+
+// Separate method for testing purposes.
+func execute(n *Node, input *Input, output Output, data *Data) (*ExecuteData, error) {
+	eData := &ExecuteData{}
+	if err := iterativeExecute(n, input, output, data, eData); err != nil {
+		return eData, err
+	}
+
+	if eData.Executor != nil {
+		return eData, eData.Executor(output, data)
+	}
+	return eData, nil
 }
 
 func iterativeExecute(n *Node, input *Input, output Output, data *Data, eData *ExecuteData) error {
@@ -52,19 +61,6 @@ func iterativeExecute(n *Node, input *Input, output Output, data *Data, eData *E
 	return nil
 }
 
-// Separate method for testing purposes.
-func execute(n *Node, input *Input, output Output, data *Data) (*ExecuteData, error) {
-	eData := &ExecuteData{}
-	if err := iterativeExecute(n, input, output, data, eData); err != nil {
-		return eData, err
-	}
-
-	if eData.Executor != nil {
-		return eData, eData.Executor(output, data)
-	}
-	return eData, nil
-}
-
 func ExtraArgsErr(input *Input) error {
 	return &extraArgsErr{input}
 }
@@ -80,66 +76,4 @@ func (eae *extraArgsErr) Error() string {
 func IsExtraArgsError(err error) bool {
 	_, ok := err.(*extraArgsErr)
 	return ok
-}
-
-// TODO: if this function isn't in test package, then it isn't exposed publicly.
-// Find out best place to put this.
-func executeTest(t *testing.T, node *Node, args []string, wantErr error, want *ExecuteData, wantData *Data, wantInput *Input, wantStdout, wantStderr []string) {
-	input := ParseArgs(args)
-	testExecute(t, node, args, input, wantErr, want, wantData, wantStdout, wantStderr)
-
-	if wantInput == nil {
-		wantInput = &Input{}
-	}
-	if diff := cmp.Diff(wantInput, input, cmpopts.EquateEmpty(), cmp.AllowUnexported(Input{}, inputArg{})); diff != "" {
-		t.Errorf("execute(%v) incorrectly modified input (-want, +got):\n%s", args, diff)
-	}
-}
-
-func ExecuteTest(t *testing.T, node *Node, args []string, wantErr error, want *ExecuteData, wantData *Data, wantStdout, wantStderr []string) {
-	input := ParseArgs(args)
-	testExecute(t, node, args, input, wantErr, want, wantData, wantStdout, wantStderr)
-}
-
-func testExecute(t *testing.T, node *Node, args []string, input *Input, wantErr error, want *ExecuteData, wantData *Data, wantStdout, wantStderr []string) {
-	t.Helper()
-
-	fo := NewFakeOutput()
-	data := &Data{}
-
-	eData, err := execute(node, input, fo, data)
-	if wantErr == nil && err != nil {
-		t.Errorf("execute(%v) returned error (%v) when shouldn't have", args, err)
-	}
-	if wantErr != nil {
-		if err == nil {
-			t.Errorf("execute(%v) returned no error when should have returned %v", args, wantErr)
-		} else if diff := cmp.Diff(wantErr.Error(), err.Error()); diff != "" {
-			t.Errorf("execute(%v) returned unexpected error (-want, +got):\n%s", args, diff)
-		}
-	}
-
-	if want == nil {
-		want = &ExecuteData{}
-	}
-	if eData == nil {
-		eData = &ExecuteData{}
-	}
-	if diff := cmp.Diff(want, eData, cmpopts.IgnoreFields(ExecuteData{}, "Executor")); diff != "" {
-		t.Errorf("execute(%v) returned unexpected ExecuteData (-want, +got):\n%s", args, diff)
-	}
-
-	if wantData == nil {
-		wantData = &Data{}
-	}
-	if diff := cmp.Diff(wantData, data); diff != "" {
-		t.Errorf("execute(%v) returned unexpected Data (-want, +got):\n%s", args, diff)
-	}
-
-	if diff := cmp.Diff(wantStdout, fo.GetStdout(), cmpopts.EquateEmpty()); diff != "" {
-		t.Errorf("execute(%v) sent wrong data to stdout (-want, +got):\n%s", args, diff)
-	}
-	if diff := cmp.Diff(wantStderr, fo.GetStderr(), cmpopts.EquateEmpty()); diff != "" {
-		t.Errorf("execute(%v) sent wrong data to stderr (-want, +got):\n%s", args, diff)
-	}
 }

@@ -999,7 +999,7 @@ func TestFetchers(t *testing.T) {
 			f: &FileFetcher{
 				Distinct: true,
 			},
-			args: []string{"com"},
+			args: []string{"comp"},
 			want: []string{"completor", "completor_"},
 		},
 		{
@@ -1013,6 +1013,7 @@ func TestFetchers(t *testing.T) {
 				"cache/",
 				"cache_test.go",
 				"color/",
+				"commandtest.go",
 				"completor.go",
 				"completor_test.go",
 				"custom_nodes.go",
@@ -1024,7 +1025,7 @@ func TestFetchers(t *testing.T) {
 			f: &FileFetcher{
 				Distinct: true,
 			},
-			args: []string{"custom_nodes.go", "com"},
+			args: []string{"custom_nodes.go", "comp"},
 			want: []string{
 				"completor",
 				"completor_",
@@ -1041,6 +1042,7 @@ func TestFetchers(t *testing.T) {
 				"cache/",
 				"cache_test.go",
 				"color/",
+				"commandtest.go",
 				"completor_test.go",
 				"custom_nodes.go",
 				" ",
@@ -1057,6 +1059,7 @@ func TestFetchers(t *testing.T) {
 				"cache/",
 				"cache_test.go",
 				"color/",
+				"commandtest.go",
 				"custom_nodes.go",
 				" ",
 			},

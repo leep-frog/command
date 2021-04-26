@@ -11,10 +11,7 @@ import (
 func TestValueCommands(t *testing.T) {
 	for _, test := range []struct {
 		name           string
-		n              Processor
-		args           []string
-		wantData       *Data
-		wantInput      *Input
+		etc            *ExecuteTestCase
 		wantString     string
 		wantStringList []string
 		wantInt        int
@@ -22,150 +19,156 @@ func TestValueCommands(t *testing.T) {
 		wantFloat      float64
 		wantFloatList  []float64
 		wantBool       bool
-		wantOK         bool
 		wantProvided   bool
-		wantStdout     []string
-		wantStderr     []string
 	}{
 		{
-			name:   "empty value",
-			wantOK: true,
+			name: "empty value",
 		},
 		{
-			name:         "string is populated",
-			n:            StringNode("argName", nil),
-			args:         []string{"string-val"},
+			name: "string is populated",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(StringNode("argName", nil)),
+				Args: []string{"string-val"},
+				WantData: &Data{
+					Values: map[string]*Value{
+						"argName": StringValue("string-val"),
+					},
+				},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "string-val"},
+					},
+				},
+			},
+			wantString:   "string-val",
 			wantProvided: true,
-			wantData: &Data{
-				Values: map[string]*Value{
-					"argName": StringValue("string-val"),
-				},
-			},
-			wantInput: &Input{
-				args: []*inputArg{
-					{value: "string-val"},
-				},
-			},
-			wantString: "string-val",
-			wantOK:     true,
 		},
 		{
-			name:         "string list is populated",
-			n:            StringListNode("argName", 2, 3, nil),
-			args:         []string{"string", "list", "val"},
-			wantProvided: true,
-			wantData: &Data{
-				Values: map[string]*Value{
-					"argName": StringListValue("string", "list", "val"),
+			name: "string list is populated",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(StringListNode("argName", 2, 3, nil)),
+				Args: []string{"string", "list", "val"},
+				WantData: &Data{
+					Values: map[string]*Value{
+						"argName": StringListValue("string", "list", "val"),
+					},
 				},
-			},
-			wantInput: &Input{
-				args: []*inputArg{
-					{value: "string"},
-					{value: "list"},
-					{value: "val"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "string"},
+						{value: "list"},
+						{value: "val"},
+					},
 				},
 			},
 			wantStringList: []string{"string", "list", "val"},
-			wantOK:         true,
+			wantProvided:   true,
 		},
 		{
-			name:         "int is populated",
-			n:            IntNode("argName", nil),
-			args:         []string{"123"},
+			name: "int is populated",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(IntNode("argName", nil)),
+				Args: []string{"123"},
+				WantData: &Data{
+					Values: map[string]*Value{
+						"argName": IntValue(123),
+					},
+				},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "123"},
+					},
+				},
+			},
+			wantInt:      123,
 			wantProvided: true,
-			wantData: &Data{
-				Values: map[string]*Value{
-					"argName": IntValue(123),
-				},
-			},
-			wantInput: &Input{
-				args: []*inputArg{
-					{value: "123"},
-				},
-			},
-			wantInt: 123,
-			wantOK:  true,
 		},
 		{
-			name:         "int list is populated",
-			n:            IntListNode("argName", 2, 3, nil),
-			args:         []string{"12", "345", "6"},
+			name: "int list is populated",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(IntListNode("argName", 2, 3, nil)),
+				Args: []string{"12", "345", "6"},
+				WantData: &Data{
+					Values: map[string]*Value{
+						"argName": IntListValue(12, 345, 6),
+					},
+				},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "12"},
+						{value: "345"},
+						{value: "6"},
+					},
+				},
+			},
 			wantProvided: true,
-			wantData: &Data{
-				Values: map[string]*Value{
-					"argName": IntListValue(12, 345, 6),
-				},
-			},
-			wantInput: &Input{
-				args: []*inputArg{
-					{value: "12"},
-					{value: "345"},
-					{value: "6"},
-				},
-			},
-			wantIntList: []int{12, 345, 6},
-			wantOK:      true,
+			wantIntList:  []int{12, 345, 6},
 		},
 		{
-			name:         "flaot is populated",
-			n:            FloatNode("argName", nil),
-			args:         []string{"12.3"},
+			name: "flaot is populated",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(FloatNode("argName", nil)),
+				Args: []string{"12.3"},
+				WantData: &Data{
+					Values: map[string]*Value{
+						"argName": FloatValue(12.3),
+					},
+				},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "12.3"},
+					},
+				},
+			},
+			wantFloat:    12.3,
 			wantProvided: true,
-			wantData: &Data{
-				Values: map[string]*Value{
-					"argName": FloatValue(12.3),
-				},
-			},
-			wantInput: &Input{
-				args: []*inputArg{
-					{value: "12.3"},
-				},
-			},
-			wantFloat: 12.3,
-			wantOK:    true,
 		},
 		{
-			name:         "float list is populated",
-			n:            FloatListNode("argName", 2, 3, nil),
-			args:         []string{"1.2", "-345", ".6"},
-			wantProvided: true,
-			wantData: &Data{
-				Values: map[string]*Value{
-					"argName": FloatListValue(1.2, -345, 0.6),
+			name: "float list is populated",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(FloatListNode("argName", 2, 3, nil)),
+				Args: []string{"1.2", "-345", ".6"},
+				WantData: &Data{
+					Values: map[string]*Value{
+						"argName": FloatListValue(1.2, -345, 0.6),
+					},
 				},
-			},
-			wantInput: &Input{
-				args: []*inputArg{
-					{value: "1.2"},
-					{value: "-345"},
-					{value: "0.6"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "1.2"},
+						{value: "-345"},
+						{value: "0.6"},
+					},
 				},
 			},
 			wantFloatList: []float64{1.2, -345, .6},
-			wantOK:        true,
+			wantProvided:  true,
 		},
 		{
-			name:         "bool is populated",
-			n:            BoolNode("argName"),
-			args:         []string{"true"},
+			name: "bool is populated",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(BoolNode("argName")),
+				Args: []string{"true"},
+				WantData: &Data{
+					Values: map[string]*Value{
+						"argName": BoolValue(true),
+					},
+				},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "true"},
+					},
+				},
+			},
+			wantBool:     true,
 			wantProvided: true,
-			wantData: &Data{
-				Values: map[string]*Value{
-					"argName": BoolValue(true),
-				},
-			},
-			wantInput: &Input{
-				args: []*inputArg{
-					{value: "true"},
-				},
-			},
-			wantBool: true,
-			wantOK:   true,
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			n := SerialNodes(test.n, ExecutorNode(func(output Output, data *Data) error {
+			if test.etc == nil {
+				test.etc = &ExecuteTestCase{}
+			}
+			test.etc.Node = SerialNodesTo(test.etc.Node, ExecutorNode(func(output Output, data *Data) error {
 				v := data.Values["argName"]
 
 				if v.Provided() != test.wantProvided {
@@ -204,7 +207,7 @@ func TestValueCommands(t *testing.T) {
 				return nil
 			}))
 
-			executeTest(t, n, test.args, nil, nil, test.wantData, test.wantInput, test.wantStdout, test.wantStderr)
+			ExecuteTest(t, test.etc, &ExecuteTestOptions{testInput: true})
 		})
 	}
 }
