@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
 )
 
 func TestAliasExecute(t *testing.T) {
@@ -1335,16 +1334,7 @@ func TestAliasExecute(t *testing.T) {
 			ac.mp = test.am
 
 			ExecuteTest(t, test.etc, &ExecuteTestOptions{testInput: true})
-
-			wac := test.wantAC
-			if wac == nil {
-				wac = &simpleAliasCLI{
-					mp: originalMP,
-				}
-			}
-			if diff := cmp.Diff(wac, ac, cmp.AllowUnexported(simpleAliasCLI{}), cmpopts.EquateEmpty()); diff != "" {
-				t.Fatalf("Alias.Execute(%v) incorrectly modified alias values:\n%s", test.etc.Args, diff)
-			}
+			ChangeTest(t, test.wantAC, ac, cmp.AllowUnexported(simpleAliasCLI{}))
 		})
 	}
 }
@@ -1926,6 +1916,10 @@ func (sac *simpleAliasCLI) AliasMap() map[string]map[string][]string {
 		sac.mp = map[string]map[string][]string{}
 	}
 	return sac.mp
+}
+
+func (sac *simpleAliasCLI) Changed() bool {
+	return sac.changed
 }
 
 func (sac *simpleAliasCLI) MarkChanged() {

@@ -5,12 +5,15 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
 )
 
 type simpleCacheCLI struct {
 	changed bool
 	cache   map[string][]string
+}
+
+func (sc *simpleCacheCLI) Changed() bool {
+	return sc.changed
 }
 
 func (sc *simpleCacheCLI) MarkChanged() {
@@ -114,14 +117,14 @@ func TestCacheExecution(t *testing.T) {
 			wantCache: &simpleCacheCLI{
 				changed: true,
 				cache: map[string][]string{
-					"money": []string{"dollar"},
+					"money": {"dollar"},
 				},
 			},
 		},
 		{
 			name: "Doesn't mark as changed if same values",
 			cache: map[string][]string{
-				"money": []string{"dollar"},
+				"money": {"dollar"},
 			},
 			etc: &ExecuteTestCase{
 				Node: CacheNode("money", cc, SerialNodes(
@@ -140,16 +143,11 @@ func TestCacheExecution(t *testing.T) {
 					snapshotCount: 1,
 				},
 			},
-			wantCache: &simpleCacheCLI{
-				cache: map[string][]string{
-					"money": []string{"dollar"},
-				},
-			},
 		},
 		{
 			name: "Doesn't mark as changed if transformed is same values",
 			cache: map[string][]string{
-				"money": []string{"usd"},
+				"money": {"usd"},
 			},
 			etc: &ExecuteTestCase{
 				Node: CacheNode("money", cc, SerialNodes(
@@ -170,11 +168,6 @@ func TestCacheExecution(t *testing.T) {
 						{value: "usd", snapshots: snapshotsMap(1)},
 					},
 					snapshotCount: 1,
-				},
-			},
-			wantCache: &simpleCacheCLI{
-				cache: map[string][]string{
-					"money": []string{"usd"},
 				},
 			},
 		},
@@ -200,15 +193,15 @@ func TestCacheExecution(t *testing.T) {
 			wantCache: &simpleCacheCLI{
 				changed: true,
 				cache: map[string][]string{
-					"money": []string{"dollar"},
+					"money": {"dollar"},
 				},
 			},
 		},
 		{
 			name: "Replaces cache value",
 			cache: map[string][]string{
-				"money": []string{"euro", "peso"},
-				"other": []string{"one", "two"},
+				"money": {"euro", "peso"},
+				"other": {"one", "two"},
 			},
 			etc: &ExecuteTestCase{
 				Node: CacheNode("money", cc, SerialNodes(
@@ -230,8 +223,8 @@ func TestCacheExecution(t *testing.T) {
 			wantCache: &simpleCacheCLI{
 				changed: true,
 				cache: map[string][]string{
-					"money": []string{"dollar"},
-					"other": []string{"one", "two"},
+					"money": {"dollar"},
+					"other": {"one", "two"},
 				},
 			},
 		},
@@ -261,7 +254,7 @@ func TestCacheExecution(t *testing.T) {
 			wantCache: &simpleCacheCLI{
 				changed: true,
 				cache: map[string][]string{
-					"money": []string{"usd"},
+					"money": {"usd"},
 				},
 			},
 		},
@@ -310,7 +303,7 @@ func TestCacheExecution(t *testing.T) {
 			wantCache: &simpleCacheCLI{
 				changed: true,
 				cache: map[string][]string{
-					"money": []string{"123", "usd", "3.4", "4.5", "$six", "$7"},
+					"money": {"123", "usd", "3.4", "4.5", "$six", "$7"},
 				},
 			},
 		},
@@ -341,7 +334,7 @@ func TestCacheExecution(t *testing.T) {
 			wantCache: &simpleCacheCLI{
 				changed: true,
 				cache: map[string][]string{
-					"money": []string{"dollar"},
+					"money": {"dollar"},
 				},
 			},
 		},
@@ -354,7 +347,7 @@ func TestCacheExecution(t *testing.T) {
 		{
 			name: "Works when cache exists",
 			cache: map[string][]string{
-				"money": []string{"usd"},
+				"money": {"usd"},
 			},
 			etc: &ExecuteTestCase{
 				Node: CacheNode("money", cc, SerialNodes(OptionalStringNode("s", nil))),
@@ -371,7 +364,7 @@ func TestCacheExecution(t *testing.T) {
 		{
 			name: "Works for long cache",
 			cache: map[string][]string{
-				"money": []string{"usd", "1", "2", "4"},
+				"money": {"usd", "1", "2", "4"},
 			},
 			etc: &ExecuteTestCase{
 				Node: CacheNode("money", cc, SerialNodes(
@@ -408,17 +401,7 @@ func TestCacheExecution(t *testing.T) {
 
 			// Generic testing.
 			ExecuteTest(t, test.etc, &ExecuteTestOptions{testInput: true})
-
-			// Test specific checks.
-			wc := test.wantCache
-			if wc == nil {
-				wc = &simpleCacheCLI{
-					cache: originalCache,
-				}
-			}
-			if diff := cmp.Diff(wc, cc, cmp.AllowUnexported(simpleCacheCLI{}), cmpopts.EquateEmpty()); diff != "" {
-				t.Fatalf("Cache.Execute(%v) incorrectly modified alias values:\n%s", test.etc.Args, diff)
-			}
+			ChangeTest(t, test.wantCache, cc, cmp.AllowUnexported(simpleCacheCLI{}))
 		})
 	}
 }

@@ -2888,10 +2888,8 @@ func TestComplete(t *testing.T) {
 		/* Useful comment for commenting out tests */
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			fmt.Println("=======", test.name)
 			oldAbs := filepathAbs
 			filepathAbs = func(s string) (string, error) {
-				fmt.Println("AAAAAAAAAAAAAAAAAA")
 				return filepath.Join(test.filepathAbs, s), test.filepathAbsErr
 			}
 			defer func() { filepathAbs = oldAbs }()

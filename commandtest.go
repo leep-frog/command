@@ -3,6 +3,7 @@ package command
 import (
 	"fmt"
 	"io/ioutil"
+	"reflect"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -114,6 +115,28 @@ func ExecuteTest(t *testing.T, etc *ExecuteTestCase, opts *ExecuteTestOptions) {
 		}
 		if diff := cmp.Diff(wantInput, input, cmpopts.EquateEmpty(), cmp.AllowUnexported(Input{}, inputArg{})); diff != "" {
 			t.Errorf("execute(%v) incorrectly modified input (-want, +got):\n%s", etc.Args, diff)
+		}
+	}
+}
+
+type Changeable interface {
+	Changed() bool
+}
+
+// ChangeTest tests if an object has changed.
+func ChangeTest(t *testing.T, want interface{}, original Changeable, opts ...cmp.Option) {
+	wantChanged := want != nil && !reflect.ValueOf(want).IsNil()
+	if original.Changed() != wantChanged {
+		if wantChanged {
+			t.Errorf("object didn't change when it should have")
+		} else {
+			t.Errorf("object changed when it shouldn't have")
+		}
+	}
+
+	if wantChanged {
+		if diff := cmp.Diff(want, original, opts...); diff != "" {
+			t.Errorf("object changed incorrectly (-want, +got):\n%s", diff)
 		}
 	}
 }
