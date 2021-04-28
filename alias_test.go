@@ -59,8 +59,6 @@ func TestAliasExecute(t *testing.T) {
 				WantStderr: []string{"validation failed: [MinLength] value must be at least 1 character"},
 			},
 		},
-		// TODO: test empty alias.  Shouldn't allow? Otherwise, need to test it with
-		// a lot of existing functionality.
 		{
 			name: "ignores execute data from children nodes",
 			etc: &ExecuteTestCase{

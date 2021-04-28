@@ -33,7 +33,7 @@ func (ia *inputArg) addSnapshots(is ...InputSnapshot) {
 func (i *Input) Snapshot() InputSnapshot {
 	i.snapshotCount++
 	for j := i.offset; j < len(i.remaining); j++ {
-		i.args[i.remaining[j]].addSnapshots(i.snapshotCount)
+		i.get(j).addSnapshots(i.snapshotCount)
 	}
 	return i.snapshotCount
 }
@@ -64,6 +64,10 @@ func (i *Input) Peek() (string, bool) {
 	return i.PeekAt(0)
 }
 
+func (i *Input) get(j int) *inputArg {
+	return i.args[i.remaining[j]]
+}
+
 func (i *Input) CheckAliases(upTo int, ac AliasCLI, name string, complete bool) error {
 	k := 0
 	if complete {
@@ -71,9 +75,7 @@ func (i *Input) CheckAliases(upTo int, ac AliasCLI, name string, complete bool) 
 	}
 
 	for j := i.offset; j < len(i.remaining)+k && j < i.offset+upTo; {
-		// TODO: make func (input) Get(j) { return i.args[i.remaining[j]] }
-		// A couple silly errors caused by forgetting to do nested lookup in places.
-		sl, ok := getAlias(ac, name, i.args[i.remaining[j]].value)
+		sl, ok := getAlias(ac, name, i.get(j).value)
 		if !ok {
 			j++
 			continue
@@ -82,10 +84,8 @@ func (i *Input) CheckAliases(upTo int, ac AliasCLI, name string, complete bool) 
 		if len(sl) == 0 {
 			return fmt.Errorf("alias has empty value")
 		}
-		// TODO: Verify this works for empty aliases
 		end := len(sl) - 1
-		// TODO: do these functions need to be public at all anymore?
-		i.args[i.remaining[j]].value = sl[end]
+		i.get(j).value = sl[end]
 		i.PushFrontAt(j, sl[:end]...)
 		j += len(sl)
 	}
@@ -143,7 +143,7 @@ func (i *Input) PeekAt(idx int) (string, bool) {
 	if idx < 0 || idx >= len(i.remaining) {
 		return "", false
 	}
-	return i.args[i.remaining[idx]].value, true
+	return i.get(idx).value, true
 }
 
 func (i *Input) Pop() (string, bool) {
@@ -166,7 +166,7 @@ func (i *Input) PopN(n, optN int) ([]*string, bool) {
 
 	ret := make([]*string, 0, shift)
 	for idx := 0; idx < shift; idx++ {
-		ret = append(ret, &i.args[i.remaining[idx+i.offset]].value)
+		ret = append(ret, &i.get(idx+i.offset).value)
 	}
 	i.remaining = append(i.remaining[:i.offset], i.remaining[i.offset+shift:]...)
 	return ret, len(ret) >= n

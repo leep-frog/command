@@ -6,7 +6,6 @@ import (
 
 type fetcher struct{}
 
-// TODO: add existing stuff in here so don't display already present format.
 func (f *fetcher) Fetch(value *command.Value, data *command.Data) *command.Completion {
 	return &command.Completion{
 		Suggestions: Attributes(),
