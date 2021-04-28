@@ -87,6 +87,41 @@ func osFromChan(so, se func(string)) Output {
 	}
 }
 
+func NewIgnoreErrOutput(o Output, fs ...func(error) bool) Output {
+	return &ignoreErrOutput{
+		o:  o,
+		fs: fs,
+	}
+}
+
+type ignoreErrOutput struct {
+	o  Output
+	fs []func(error) bool
+}
+
+func (ieo *ignoreErrOutput) Stdout(s string, a ...interface{}) {
+	ieo.o.Stdout(s, a...)
+}
+
+func (ieo *ignoreErrOutput) Stderr(s string, a ...interface{}) error {
+	return ieo.o.Stderr(s, a...)
+}
+
+func (ieo *ignoreErrOutput) Err(err error) error {
+	// Don't output the error if it matches a filter.
+	for _, f := range ieo.fs {
+		if f(err) {
+			return err
+		}
+	}
+	// Regular output functionality if no filter matched.
+	return ieo.o.Err(err)
+}
+
+func (ieo *ignoreErrOutput) Close() {
+	ieo.o.Close()
+}
+
 type FakeOutput struct {
 	stdout []string
 	stderr []string

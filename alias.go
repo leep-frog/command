@@ -199,8 +199,6 @@ type addAlias struct {
 }
 
 func (aa *addAlias) Execute(input *Input, output Output, data *Data, _ *ExecuteData) error {
-	// We don't want the executor to run, so we pass fakeEData to children nodes.
-	fakeEData := &ExecuteData{}
 
 	alias := data.Values[aliasArgName].String()
 	if _, ok := getAlias(aa.ac, aa.name, alias); ok {
@@ -208,13 +206,22 @@ func (aa *addAlias) Execute(input *Input, output Output, data *Data, _ *ExecuteD
 	}
 
 	snapshot := input.Snapshot()
-	n := aa.node
-	err := iterativeExecute(n, input, output, data, fakeEData)
+
+	// We don't want the executor to run, so we pass fakeEData to children nodes.
+	fakeEData := &ExecuteData{}
+	// We don't want to output not enough args error, because we actually
+	// don't mind those when adding aliases.
+	ieo := NewIgnoreErrOutput(output, IsNotEnoughArgsError)
+	err := iterativeExecute(aa.node, input, ieo, data, fakeEData)
 	if err != nil && !IsNotEnoughArgsError(err) {
 		return err
 	}
 
-	setAlias(aa.ac, aa.name, alias, input.GetSnapshot(snapshot))
+	sl := input.GetSnapshot(snapshot)
+	if len(sl) == 0 {
+		return output.Err(NotEnoughArgs())
+	}
+	setAlias(aa.ac, aa.name, alias, sl)
 	return nil
 }
 

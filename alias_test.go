@@ -150,7 +150,7 @@ func TestAliasExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "adds empty alias list",
+			name: "fails to add empty alias list",
 			etc: &ExecuteTestCase{
 				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
 				Args: []string{"a", "empty"},
@@ -159,24 +159,13 @@ func TestAliasExecute(t *testing.T) {
 						"ALIAS": StringValue("empty"),
 					},
 				},
+				WantErr:    fmt.Errorf("not enough arguments"),
+				WantStderr: []string{"not enough arguments"},
 				wantInput: &Input{
 					snapshotCount: 1,
 					args: []*inputArg{
 						{value: "a"},
 						{value: "empty"},
-					},
-				},
-				// TODO: find a way to prevent stderr from this. Either
-				// - modify error definition
-				// - remove output.Err function (and just have caller log errors to stderr)
-				// - pass in modified output type in alias
-				WantStderr: []string{"not enough arguments"},
-			},
-			wantAC: &simpleAliasCLI{
-				changed: true,
-				mp: map[string]map[string][]string{
-					"pioneer": {
-						"empty": nil,
 					},
 				},
 			},
@@ -294,7 +283,6 @@ func TestAliasExecute(t *testing.T) {
 						{value: "-1.1", snapshots: snapshotsMap(1)},
 					},
 				},
-				WantStderr: []string{"not enough arguments"},
 			},
 			wantAC: &simpleAliasCLI{
 				changed: true,
@@ -324,7 +312,6 @@ func TestAliasExecute(t *testing.T) {
 						{value: "grizzly", snapshots: snapshotsMap(1)},
 					},
 				},
-				WantStderr: []string{"not enough arguments"},
 			},
 			wantAC: &simpleAliasCLI{
 				changed: true,
@@ -359,7 +346,6 @@ func TestAliasExecute(t *testing.T) {
 						{value: "-1.1", snapshots: snapshotsMap(1)},
 					},
 				},
-				WantStderr: []string{"not enough arguments"},
 			},
 			wantAC: &simpleAliasCLI{
 				changed: true,
