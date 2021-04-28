@@ -423,6 +423,28 @@ func TestAliasExecute(t *testing.T) {
 		// Executing node tests.
 		// TODO: test that executable is returned and that executor is run (by adding output.Stdout(...) and ensuring it is included in test.WantStdout).
 		{
+			name: "Fails to replace alias with empty value",
+			am: map[string]map[string][]string{
+				"pioneer": {
+					"t": []string{},
+				},
+			},
+			etc: &ExecuteTestCase{
+				Node:       AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
+				Args:       []string{"t", "grizzly", "other"},
+				WantErr:    fmt.Errorf("alias has empty value"),
+				WantStderr: []string{"alias has empty value"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "t"},
+						{value: "grizzly"},
+						{value: "other"},
+					},
+					remaining: []int{0, 1, 2},
+				},
+			},
+		},
+		{
 			name: "Replaces alias with value",
 			am: map[string]map[string][]string{
 				"pioneer": {
@@ -1364,6 +1386,22 @@ func TestAliasComplete(t *testing.T) {
 						aliasArgName: StringValue(""),
 					},
 				},
+			},
+		},
+		{
+			name: "fails if empty alias",
+			mp: map[string]map[string][]string{
+				"pioneer": {
+					"alpha": nil,
+				},
+			},
+			ctc: &CompleteTestCase{
+				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, &ArgOpt{
+					Completor: &Completor{
+						SuggestionFetcher: &ListFetcher{[]string{"un", "deux", "trois"}},
+					},
+				}))),
+				Args: []string{"alpha", "b", ""},
 			},
 		},
 		{

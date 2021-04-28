@@ -1,5 +1,7 @@
 package command
 
+import "fmt"
+
 const (
 	UnboundedList = -1
 )
@@ -62,7 +64,7 @@ func (i *Input) Peek() (string, bool) {
 	return i.PeekAt(0)
 }
 
-func (i *Input) CheckAliases(upTo int, ac AliasCLI, name string, complete bool) {
+func (i *Input) CheckAliases(upTo int, ac AliasCLI, name string, complete bool) error {
 	k := 0
 	if complete {
 		k = -1
@@ -77,6 +79,9 @@ func (i *Input) CheckAliases(upTo int, ac AliasCLI, name string, complete bool) 
 			continue
 		}
 
+		if len(sl) == 0 {
+			return fmt.Errorf("alias has empty value")
+		}
 		// TODO: Verify this works for empty aliases
 		end := len(sl) - 1
 		// TODO: do these functions need to be public at all anymore?
@@ -84,6 +89,7 @@ func (i *Input) CheckAliases(upTo int, ac AliasCLI, name string, complete bool) 
 		i.PushFrontAt(j, sl[:end]...)
 		j += len(sl)
 	}
+	return nil
 }
 
 func (i *Input) PushFront(sl ...string) {

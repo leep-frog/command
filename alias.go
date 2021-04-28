@@ -183,12 +183,15 @@ type executeAlias struct {
 }
 
 func (ea *executeAlias) Execute(input *Input, output Output, data *Data, eData *ExecuteData) error {
-	input.CheckAliases(1, ea.ac, ea.name, false)
-	return nil
+	return output.Err(input.CheckAliases(1, ea.ac, ea.name, false))
 }
 
 func (ea *executeAlias) Complete(input *Input, data *Data) *CompleteData {
-	input.CheckAliases(1, ea.ac, ea.name, true)
+	if err := input.CheckAliases(1, ea.ac, ea.name, true); err != nil {
+		return &CompleteData{
+			Error: err,
+		}
+	}
 	return nil
 }
 
