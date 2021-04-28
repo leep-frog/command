@@ -3,6 +3,7 @@ package command
 import (
 	"fmt"
 	"io/ioutil"
+	"os"
 	"reflect"
 	"testing"
 
@@ -63,6 +64,7 @@ func ExecuteTest(t *testing.T, etc *ExecuteTestCase, opts *ExecuteTestOptions) {
 		setupFile := setupForTest(t, opts.SetupContents)
 		args = append([]string{setupFile}, args...)
 		wantData.Values[SetupArgName] = StringValue(setupFile)
+		t.Cleanup(func() { os.Remove(setupFile) })
 	}
 
 	input := ParseArgs(args)
