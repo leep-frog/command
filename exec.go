@@ -5,8 +5,33 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os/exec"
+	"strconv"
 	"strings"
 )
+
+func RunInt(contents []string) (int, error) {
+	result, err := RunOne(contents)
+	if err != nil {
+		return 0, err
+	}
+	i, err := strconv.Atoi(result)
+	if err != nil {
+		return 0, fmt.Errorf("failed to convert Run result to int: %v", err)
+	}
+	return i, nil
+}
+
+func RunOne(contents []string) (string, error) {
+	result, err := Run(contents)
+	if err != nil {
+		return "", err
+	}
+	if len(result) != 2 || result[0] != "" {
+		return "", fmt.Errorf("unexpected number of results: %v", result)
+	}
+	// result is [value, "" (because of newline)]
+	return result[0], nil
+}
 
 func Run(contents []string) ([]string, error) {
 	f, err := ioutil.TempFile("", "leepFrogCommandExecution")
