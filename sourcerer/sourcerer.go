@@ -8,7 +8,6 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"os/exec"
 	"runtime"
 	"strconv"
 	"strings"
@@ -47,14 +46,9 @@ const (
 	executeFunction = `
 	function _custom_execute {
 		# tmpFile is the file to which we write ExecuteData.Executable
-		#tmpFile=$(mktemp)
-		#chmod +x $tmpFile
-		#$GOPATH/bin/leep-frog-source execute $tmpFile "$@"
-		#if [[ ! -z $LEEP_FROG_DEBUG ]]; then
-		#	echo Executing: $(cat $tmpFile)
-		#fi
-		#source $tmpFile
-		$GOPATH/bin/leep-frog-source execute "$@"
+		tmpFile=$(mktemp)
+		$GOPATH/bin/leep-frog-source execute $tmpFile "$@"
+		source $tmpFile
 	}
 	`
 
@@ -88,7 +82,11 @@ type CLI interface {
 	Setup() []string
 }
 
-func execute(cli CLI, args []string) {
+func debugMode() bool {
+	return os.Getenv("LEEP_FROG_DEBUG") != ""
+}
+
+func execute(cli CLI, executeFile string, args []string) {
 	output := command.NewOutput()
 	eData, err := command.Execute(cli.Node(), command.ParseExecuteArgs(args), output)
 	output.Close()
@@ -110,21 +108,18 @@ func execute(cli CLI, args []string) {
 		return
 	}
 
-	f, err := ioutil.TempFile("", "leep-frog-executable")
-	defer f.Close()
-	if err != nil {
-		log.Fatalf("failed to create temporary file")
+	if debugMode() {
+		fmt.Printf("Executing contents of file %q\n", executeFile)
 	}
 
+	f, err := os.OpenFile(executeFile, os.O_WRONLY, 0644)
+	if err != nil {
+		log.Fatalf("failed to open file: %v", err)
+	}
 	for _, ex := range eData.Executable {
 		if _, err := f.WriteString(strings.ReplaceAll(strings.Join(ex, " "), "\\", "\\\\")); err != nil {
 			log.Fatalf("failed to write to execute file: %v", err)
 		}
-	}
-
-	cmd := exec.Command("source", f.Name())
-	if err := cmd.Run(); err != nil {
-		log.Fatalf("failed to run executable command: %v", err)
 	}
 }
 
@@ -177,13 +172,7 @@ func Source(clis ...CLI) {
 	}
 
 	opType := os.Args[1]
-	var cliName string
-	switch opType {
-	case "autocomplete":
-		cliName = os.Args[3]
-	case "execute":
-		cliName = os.Args[2]
-	}
+	cliName := os.Args[3]
 
 	var cli CLI
 	for _, c := range clis {
@@ -216,7 +205,7 @@ func Source(clis ...CLI) {
 	case "execute":
 		// TODO: change filename to file writer?
 		// (cli, filename (for ExecuteData.Exectuable), args)
-		execute(cli, os.Args[3:])
+		execute(cli, os.Args[2], os.Args[4:])
 	default:
 		log.Fatalf("unknown process: %v", os.Args)
 	}
