@@ -177,7 +177,13 @@ func Source(clis ...CLI) {
 	}
 
 	opType := os.Args[1]
-	cliName := os.Args[3]
+	var cliName string
+	switch opType {
+	case "autocomplete":
+		cliName = os.Args[3]
+	case "execute":
+		cliName = os.Args[2]
+	}
 
 	var cli CLI
 	for _, c := range clis {
