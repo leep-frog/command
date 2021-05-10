@@ -560,7 +560,6 @@ func TestAliasExecute(t *testing.T) {
 			},
 		},
 		// Arg with alias opt tests
-		// TODO: test only edits up to limit (here and completion).
 		{
 			name: "alias opt works with no aliases",
 			etc: &ExecuteTestCase{

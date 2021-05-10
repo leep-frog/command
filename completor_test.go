@@ -550,7 +550,7 @@ func TestFetchers(t *testing.T) {
 		{
 			name: "file fetcher works with string list arg",
 			f:    &FileFetcher{},
-			args: []string{"exe"},
+			args: []string{"execu"},
 			want: []string{
 				"execute",
 				"execute_",
@@ -562,7 +562,7 @@ func TestFetchers(t *testing.T) {
 			f: &FileFetcher{
 				Distinct: true,
 			},
-			args: []string{"execute.go", "exe"},
+			args: []string{"execute.go", "execu"},
 			want: []string{
 				"execute_test.go",
 			},
@@ -570,7 +570,7 @@ func TestFetchers(t *testing.T) {
 		{
 			name:      "file fetcher works with string arg",
 			f:         &FileFetcher{},
-			args:      []string{"exe"},
+			args:      []string{"execu"},
 			stringArg: true,
 			want: []string{
 				"execute",
