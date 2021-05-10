@@ -49,6 +49,7 @@ const (
 		tmpFile=$(mktemp)
 		$GOPATH/bin/leep-frog-source execute $tmpFile "$@"
 		source $tmpFile
+		rm $tmpFile
 	}
 	`
 
@@ -108,16 +109,20 @@ func execute(cli CLI, executeFile string, args []string) {
 		return
 	}
 
-	if debugMode() {
-		fmt.Printf("Executing contents of file %q\n", executeFile)
-	}
-
 	f, err := os.OpenFile(executeFile, os.O_WRONLY, 0644)
 	if err != nil {
 		log.Fatalf("failed to open file: %v", err)
 	}
+
+	if debugMode() {
+		fmt.Println("# Executable Contents")
+	}
 	for _, ex := range eData.Executable {
-		if _, err := f.WriteString(strings.ReplaceAll(strings.Join(ex, " "), "\\", "\\\\")); err != nil {
+		v := strings.ReplaceAll(strings.Join(ex, " "), "\\", "\\\\")
+		if debugMode() {
+			fmt.Println(v)
+		}
+		if _, err := f.WriteString(v); err != nil {
 			log.Fatalf("failed to write to execute file: %v", err)
 		}
 	}
