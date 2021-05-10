@@ -9,6 +9,7 @@ import (
 	"strings"
 )
 
+// TODO: change this to RunValue(contents []string, vt ValueType) (*Value, error)
 func RunInt(contents []string) (int, error) {
 	result, err := RunOne(contents)
 	if err != nil {
