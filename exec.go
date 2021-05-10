@@ -28,7 +28,7 @@ func RunOne(contents []string) (string, error) {
 		return "", err
 	}
 	if len(result) != 2 || result[0] != "" {
-		return "", fmt.Errorf("unexpected number of results: %v", result)
+		return "", fmt.Errorf("unexpected number of results (%d): %s", len(result), strings.Join(result, "_"))
 	}
 	// result is [value, "" (because of newline)]
 	return result[0], nil
