@@ -118,7 +118,9 @@ func execute(cli CLI, executeFile string, args []string) {
 		fmt.Println("# Executable Contents")
 	}
 	for _, ex := range eData.Executable {
-		v := strings.ReplaceAll(strings.Join(ex, " "), "\\", "\\\\")
+		// TODO: why were we replacing // before?
+		//v := strings.ReplaceAll(strings.Join(ex, " "), "\\", "\\\\")
+		v := strings.Join(ex, " ")
 		if debugMode() {
 			fmt.Println(v)
 		}
