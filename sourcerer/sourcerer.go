@@ -49,7 +49,12 @@ const (
 		tmpFile=$(mktemp)
 		$GOPATH/bin/leep-frog-source execute $tmpFile "$@"
 		source $tmpFile
-		rm $tmpFile
+		if [ -z "$LEEP_FROG_DEBUG" ]
+		then
+		  rm $tmpFile
+		else
+		  echo $tmpFile
+		fi
 	}
 	`
 
