@@ -63,10 +63,10 @@ func TestAliasExecute(t *testing.T) {
 			name: "ignores execute data from children nodes",
 			etc: &ExecuteTestCase{
 				Node: AliasNode("pioneer", ac, SerialNodes(StringNode("s", nil), SimpleProcessor(func(i *Input, o Output, d *Data, ed *ExecuteData) error {
-					ed.Executable = [][]string{
-						{"ab", "cd"},
-						{},
-						{"e"},
+					ed.Executable = []string{
+						"ab cd",
+						"",
+						"e",
 					}
 					ed.Executor = func(o Output, d *Data) error {
 						o.Stdout("here we are")

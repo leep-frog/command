@@ -122,16 +122,13 @@ func execute(cli CLI, executeFile string, args []string) {
 	if debugMode() {
 		fmt.Println("# Executable Contents")
 	}
-	for _, ex := range eData.Executable {
-		// TODO: why were we replacing // before?
-		//v := strings.ReplaceAll(strings.Join(ex, " "), "\\", "\\\\")
-		v := strings.Join(ex, " ") + "\n"
-		if debugMode() {
-			fmt.Println(v)
-		}
-		if _, err := f.WriteString(v); err != nil {
-			log.Fatalf("failed to write to execute file: %v", err)
-		}
+	v := strings.Join(eData.Executable, "\n")
+	if debugMode() {
+		fmt.Println(v)
+	}
+
+	if _, err := f.WriteString(v); err != nil {
+		log.Fatalf("failed to write to execute file: %v", err)
 	}
 }
 
