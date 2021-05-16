@@ -62,16 +62,20 @@ func setAlias(ac AliasCLI, name, alias string, value []string) {
 	m[alias] = value
 }
 
-func AliasNode(name string, ac AliasCLI, n *Node) *Node {
+func aliasMap(name string, ac AliasCLI, n *Node) map[string]*Node {
 	adder := SerialNodes(aliasArg, &addAlias{node: n, ac: ac, name: name})
-	executor := SerialNodesTo(n, &executeAlias{node: n, ac: ac, name: name})
-	return BranchNode(map[string]*Node{
+	return map[string]*Node{
 		"a": adder,
 		"d": aliasDeleter(name, ac, n),
 		"g": aliasGetter(name, ac, n),
 		"l": aliasLister(name, ac, n),
 		"s": aliasSearcher(name, ac, n),
-	}, executor, false)
+	}
+}
+
+func AliasNode(name string, ac AliasCLI, n *Node) *Node {
+	executor := SerialNodesTo(n, &executeAlias{node: n, ac: ac, name: name})
+	return BranchNode(aliasMap(name, ac, n), executor, false)
 }
 
 func aliasCompletor(name string, ac AliasCLI) *Completor {
@@ -202,8 +206,11 @@ type addAlias struct {
 }
 
 func (aa *addAlias) Execute(input *Input, output Output, data *Data, _ *ExecuteData) error {
-
 	alias := data.Values[aliasArgName].String()
+	am := aliasMap(aa.name, aa.ac, aa.node)
+	if _, ok := am[alias]; ok {
+		return output.Stderr("cannot create alias for reserved value")
+	}
 	if _, ok := getAlias(aa.ac, aa.name, alias); ok {
 		return output.Stderr("Alias %q already exists", alias)
 	}

@@ -60,6 +60,51 @@ func TestAliasExecute(t *testing.T) {
 			},
 		},
 		{
+			name: "doesn't override add command",
+			etc: &ExecuteTestCase{
+				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
+				Args: []string{"a", "a", "hello"},
+				WantData: &Data{
+					Values: map[string]*Value{
+						"ALIAS": StringValue("a"),
+					},
+				},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "a"},
+						{value: "a"},
+						{value: "hello"},
+					},
+					remaining: []int{2},
+				},
+				WantErr:    fmt.Errorf("cannot create alias for reserved value"),
+				WantStderr: []string{"cannot create alias for reserved value"},
+			},
+		},
+		{
+			name: "doesn't override delete command",
+			etc: &ExecuteTestCase{
+				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
+				Args: []string{"a", "d"},
+				WantData: &Data{
+					Values: map[string]*Value{
+						"ALIAS": StringValue("d"),
+					},
+				},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "a"},
+						{value: "d"},
+					},
+				},
+				WantErr:    fmt.Errorf("cannot create alias for reserved value"),
+				WantStderr: []string{"cannot create alias for reserved value"},
+			},
+		},
+		// We don't really need to test other overrides (like we do for add and
+		// delete above) since the user can still delete and add if they
+		// accidentally override.
+		{
 			name: "ignores execute data from children nodes",
 			etc: &ExecuteTestCase{
 				Node: AliasNode("pioneer", ac, SerialNodes(StringNode("s", nil), SimpleProcessor(func(i *Input, o Output, d *Data, ed *ExecuteData) error {
