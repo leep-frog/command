@@ -18,11 +18,12 @@ func (p *Prompt) Prompt(output Output) {
 		for {
 			output.Stdout(": ")
 			text, err := reader.ReadString('\n')
-			if err != nil {
-				output.Stderr("failed to read prompt input (%v); trying again", err)
-				continue
+			if err == nil {
+				p.Chan <- text
+				return
 			}
-			p.Chan <- text
+			output.Stderr("failed to read prompt input (%v); trying again", err)
+			continue
 		}
 	}()
 }
