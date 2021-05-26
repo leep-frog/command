@@ -12,6 +12,7 @@ func TestRun(t *testing.T) {
 		contents []string
 		want     []string
 		wantErr  error
+		wantCode int
 	}{
 		{
 			name: "works with empty command",
@@ -32,12 +33,15 @@ func TestRun(t *testing.T) {
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			got, err := Run(test.contents)
+			got, err, gotCode := Run(test.contents)
 			if diff := cmp.Diff(test.wantErr, err); diff != "" {
 				t.Errorf("Run(%v) returned incorrect error (-want, +got):\n%s", test.contents, diff)
 			}
 			if diff := cmp.Diff(test.want, got); diff != "" {
 				t.Errorf("Run(%v) returned incorrect output (-want, +got):\n%s", test.contents, diff)
+			}
+			if test.wantCode != gotCode {
+				t.Errorf("Run(%v) returned exit code %d; want %d", test.contents, gotCode, test.wantCode)
 			}
 		})
 	}
