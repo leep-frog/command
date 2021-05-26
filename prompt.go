@@ -16,7 +16,6 @@ func (p *Prompt) Prompt(output Output) {
 
 	go func() {
 		for {
-			output.Stdout(": ")
 			text, err := reader.ReadString('\n')
 			if err == nil {
 				p.Chan <- text
