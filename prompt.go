@@ -10,7 +10,7 @@ type Prompt struct {
 	Chan     chan string
 }
 
-func (p *Prompt) Prompt(output Output) {
+func (p *Prompt) Prompt(output Output) <-chan string {
 	reader := bufio.NewReader(os.Stdin)
 	output.Stdout(p.Question)
 
@@ -25,4 +25,6 @@ func (p *Prompt) Prompt(output Output) {
 			continue
 		}
 	}()
+
+	return p.Chan
 }
