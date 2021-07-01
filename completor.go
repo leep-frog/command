@@ -54,17 +54,17 @@ type Fetcher interface {
 
 type Completor struct {
 	Distinct          bool
-	CaseInsenstive    bool
+	CaseInsensitive   bool
 	SuggestionFetcher Fetcher
 }
 
 type Completion struct {
 	Suggestions []string
 	// TODO: each of these can just be option types.
-	IgnoreFilter       bool
-	DontComplete       bool
-	CaseInsenstiveSort bool
-	CaseInsenstive     bool
+	IgnoreFilter        bool
+	DontComplete        bool
+	CaseInsensitiveSort bool
+	CaseInsensitive     bool
 }
 
 func BoolCompletor() *Completor {
@@ -114,7 +114,7 @@ func (c *Completor) Complete(rawValue string, value *Value, data *Data) *Complet
 		completion.Suggestions = filtered
 	}
 
-	completion.CaseInsenstive = completion.CaseInsenstive || c.CaseInsenstive
+	completion.CaseInsensitive = completion.CaseInsensitive || c.CaseInsensitive
 
 	return completion
 }
@@ -129,7 +129,7 @@ func (c *Completion) Process(input *Input) []string {
 	// Filter out prefixes.
 	if !c.IgnoreFilter {
 		filterFunc := func(s string) bool { return strings.HasPrefix(s, lastArg) }
-		if c.CaseInsenstive {
+		if c.CaseInsensitive {
 			lowerLastArg := strings.ToLower(lastArg)
 			filterFunc = func(s string) bool { return strings.HasPrefix(strings.ToLower(s), lowerLastArg) }
 		}
@@ -142,7 +142,7 @@ func (c *Completion) Process(input *Input) []string {
 		results = filteredOpts
 	}
 
-	if c.CaseInsenstiveSort {
+	if c.CaseInsensitiveSort {
 		sort.Slice(results, func(i, j int) bool {
 			return strings.ToLower(results[i]) < strings.ToLower(results[j])
 		})
@@ -260,9 +260,9 @@ func (ff *FileFetcher) Fetch(value *Value, data *Data) *Completion {
 	suggestions = relevantSuggestions
 
 	c := &Completion{
-		Suggestions:        suggestions,
-		IgnoreFilter:       true,
-		CaseInsenstiveSort: true,
+		Suggestions:         suggestions,
+		IgnoreFilter:        true,
+		CaseInsensitiveSort: true,
 	}
 
 	// If only 1 suggestion matching, then we want it to autocomplete the whole thing.
