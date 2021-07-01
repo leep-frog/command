@@ -25,6 +25,86 @@ func TestCompletors(t *testing.T) {
 			c:    &Completor{},
 		},
 		{
+			name: "doesn't complete if case mismatch with upper",
+			args: []string{"A"},
+			c: &Completor{
+				SuggestionFetcher: &ListFetcher{
+					Options: []string{"abc", "Abc", "ABC"},
+				},
+			},
+			want: []string{"ABC", "Abc"},
+		},
+		{
+			name: "doesn't complete if case mismatch with lower",
+			args: []string{"a"},
+			c: &Completor{
+				SuggestionFetcher: &ListFetcher{
+					Options: []string{"abc", "Abc", "ABC"},
+				},
+			},
+			want: []string{"abc"},
+		},
+		{
+			name: "completes all cases if completor.CaseInsensitive and upper",
+			args: []string{"A"},
+			c: &Completor{
+				CaseInsenstive: true,
+				SuggestionFetcher: &ListFetcher{
+					Options: []string{"abc", "Abc", "ABC", "def", "Def", "DEF"},
+				},
+			},
+			want: []string{"ABC", "Abc", "abc"},
+		},
+		{
+			name: "completes all cases if completor.CaseInsensitive and lower",
+			args: []string{"a"},
+			c: &Completor{
+				CaseInsenstive: true,
+				SuggestionFetcher: &ListFetcher{
+					Options: []string{"abc", "Abc", "ABC", "def", "Def", "DEF"},
+				},
+			},
+			want: []string{"ABC", "Abc", "abc"},
+		},
+		{
+			name: "completes only matching cases",
+			args: []string{"A"},
+			c: &Completor{
+				SuggestionFetcher: SimpleFetcher(func(*Value, *Data) *Completion {
+					return &Completion{
+						Suggestions: []string{"abc", "Abc", "ABC", "def", "Def", "DEF"},
+					}
+				}),
+			},
+			want: []string{"ABC", "Abc"},
+		},
+		{
+			name: "completes all cases if completor.CaseInsensitive and upper",
+			args: []string{"A"},
+			c: &Completor{
+				SuggestionFetcher: SimpleFetcher(func(*Value, *Data) *Completion {
+					return &Completion{
+						CaseInsenstive: true,
+						Suggestions:    []string{"abc", "Abc", "ABC", "def", "Def", "DEF"},
+					}
+				}),
+			},
+			want: []string{"ABC", "Abc", "abc"},
+		},
+		{
+			name: "completes all cases if completor.CaseInsensitive and lower",
+			args: []string{"a"},
+			c: &Completor{
+				SuggestionFetcher: SimpleFetcher(func(*Value, *Data) *Completion {
+					return &Completion{
+						CaseInsenstive: true,
+						Suggestions:    []string{"abc", "Abc", "ABC", "def", "Def", "DEF"},
+					}
+				}),
+			},
+			want: []string{"ABC", "Abc", "abc"},
+		},
+		{
 			name: "bool completor returns bool values",
 			c:    BoolCompletor(),
 			want: []string{

@@ -54,6 +54,7 @@ type Fetcher interface {
 
 type Completor struct {
 	Distinct          bool
+	CaseInsenstive    bool
 	SuggestionFetcher Fetcher
 }
 
@@ -63,6 +64,7 @@ type Completion struct {
 	IgnoreFilter       bool
 	DontComplete       bool
 	CaseInsenstiveSort bool
+	CaseInsenstive     bool
 }
 
 func BoolCompletor() *Completor {
@@ -111,6 +113,9 @@ func (c *Completor) Complete(rawValue string, value *Value, data *Data) *Complet
 		}
 		completion.Suggestions = filtered
 	}
+
+	completion.CaseInsenstive = completion.CaseInsenstive || c.CaseInsenstive
+
 	return completion
 }
 
@@ -123,9 +128,14 @@ func (c *Completion) Process(input *Input) []string {
 
 	// Filter out prefixes.
 	if !c.IgnoreFilter {
+		filterFunc := func(s string) bool { return strings.HasPrefix(s, lastArg) }
+		if c.CaseInsenstive {
+			lowerLastArg := strings.ToLower(lastArg)
+			filterFunc = func(s string) bool { return strings.HasPrefix(strings.ToLower(s), lowerLastArg) }
+		}
 		var filteredOpts []string
 		for _, o := range results {
-			if strings.HasPrefix(o, lastArg) {
+			if filterFunc(o) {
 				filteredOpts = append(filteredOpts, o)
 			}
 		}
