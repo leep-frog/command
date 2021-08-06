@@ -35,7 +35,7 @@ const (
 	function _custom_autocomplete {
 		tFile=$(mktemp)
 	
-		$GOPATH/bin/leep-frog-source autocomplete $COMP_CWORD.$COMP_POINT "$COMP_LINE" > $tFile
+		$GOPATH/bin/leep-frog-source autocomplete $COMP_CWORD.$COMP_POINT ${COMP_WORDS[0]} "$COMP_LINE" > $tFile
 		local IFS=$'\n'
 		COMPREPLY=( $(cat $tFile) )
 		rm $tFile
