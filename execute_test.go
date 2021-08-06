@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"sort"
+	"strings"
 	"testing"
 )
 
@@ -2164,6 +2165,39 @@ func TestExecute(t *testing.T) {
 	}
 }
 
+func abc() *Node {
+	return BranchNode(map[string]*Node{
+		"t": AliasNode("TEST_ALIAS", nil,
+			CacheNode("TEST_CACHE", nil, SerialNodes(
+				&tt{},
+				StringNode("PATH", &ArgOpt{Completor: SimpleCompletor("clh111", "abcd111")}),
+				StringNode("TARGET", &ArgOpt{Completor: SimpleCompletor("clh222", "abcd222")}),
+				StringNode("FUNC", &ArgOpt{Completor: SimpleCompletor("clh333", "abcd333")}),
+			))),
+	}, nil, false)
+}
+
+type tt struct{}
+
+func (t *tt) Execute(input *Input, output Output, data *Data, e *ExecuteData) error {
+	t.do(input)
+	return nil
+}
+
+func (t *tt) do(input *Input) {
+	if s, ok := input.Peek(); ok && strings.Contains(s, ":") {
+		if ss := strings.Split(s, ":"); len(ss) == 2 {
+			input.Pop()
+			input.PushFront(ss...)
+		}
+	}
+}
+
+func (t *tt) Complete(input *Input, data *Data) *CompleteData {
+	t.do(input)
+	return nil
+}
+
 func TestComplete(t *testing.T) {
 	for _, test := range []struct {
 		name           string
@@ -2171,721 +2205,736 @@ func TestComplete(t *testing.T) {
 		filepathAbs    string
 		filepathAbsErr error
 	}{
-		// Basic tests
 		{
-			name: "empty graph",
+			name: "stuff",
 			ctc: &CompleteTestCase{
-				Node: &Node{},
-			},
-		},
-		{
-			name: "returns suggestions of first node if empty",
-			ctc: &CompleteTestCase{
-				Node: SerialNodes(
-					StringNode("s", NewArgOpt(SimpleCompletor("un", "deux", "trois"), nil)),
-					OptionalIntNode("i", NewArgOpt(SimpleCompletor("2", "1"), nil)),
-					StringListNode("sl", 0, 2, NewArgOpt(SimpleCompletor("uno", "dos"), nil)),
-				),
-				Want: []string{"deux", "trois", "un"},
+				Node: abc(),
+				Args: "t clh:abc",
+				Want: []string{"abcd222"},
 				WantData: &Data{
 					Values: map[string]*Value{
-						"s": StringValue(""),
+						"PATH":   StringValue("clh"),
+						"TARGET": StringValue("abc"),
 					},
 				},
 			},
 		},
-		{
-			name: "returns suggestions of first node if up to first arg",
-			ctc: &CompleteTestCase{
-				Node: SerialNodes(
-					StringNode("s", NewArgOpt(SimpleCompletor("one", "two", "three"), nil)),
-					OptionalIntNode("i", NewArgOpt(SimpleCompletor("2", "1"), nil)),
-					StringListNode("sl", 0, 2, NewArgOpt(SimpleCompletor("uno", "dos"), nil)),
-				),
-				Args: []string{"t"},
-				Want: []string{"three", "two"},
-				WantData: &Data{
-					Values: map[string]*Value{
-						"s": StringValue("t"),
-					},
+		/*
+			// Basic tests
+			{
+				name: "empty graph",
+				ctc: &CompleteTestCase{
+					Node: &Node{},
 				},
 			},
-		},
-		{
-			name: "returns suggestions of middle node if that's where we're at",
-			ctc: &CompleteTestCase{
-				Node: SerialNodes(
-					StringNode("s", NewArgOpt(SimpleCompletor("one", "two", "three"), nil)),
-					StringListNode("sl", 0, 2, NewArgOpt(SimpleCompletor("uno", "dos"), nil)),
-					OptionalIntNode("i", NewArgOpt(SimpleCompletor("2", "1"), nil)),
-				),
-				Args: []string{"three", ""},
-				Want: []string{"dos", "uno"},
-				WantData: &Data{
-					Values: map[string]*Value{
-						"s":  StringValue("three"),
-						"sl": StringListValue(""),
-					},
-				},
-			},
-		},
-		{
-			name: "returns suggestions of middle node if partial",
-			ctc: &CompleteTestCase{
-				Node: SerialNodes(
-					StringNode("s", NewArgOpt(SimpleCompletor("one", "two", "three"), nil)),
-					StringListNode("sl", 0, 2, NewArgOpt(SimpleCompletor("uno", "dos"), nil)),
-					OptionalIntNode("i", NewArgOpt(SimpleCompletor("2", "1"), nil)),
-				),
-				Args: []string{"three", "d"},
-				Want: []string{"dos"},
-				WantData: &Data{
-					Values: map[string]*Value{
-						"s":  StringValue("three"),
-						"sl": StringListValue("d"),
-					},
-				},
-			},
-		},
-		{
-			name: "returns suggestions in list",
-			ctc: &CompleteTestCase{
-				Node: SerialNodes(
-					StringNode("s", NewArgOpt(SimpleCompletor("one", "two", "three"), nil)),
-					StringListNode("sl", 0, 2, NewArgOpt(SimpleCompletor("uno", "dos"), nil)),
-					OptionalIntNode("i", NewArgOpt(SimpleCompletor("2", "1"), nil)),
-				),
-				Args: []string{"three", "dos", ""},
-				Want: []string{"dos", "uno"},
-				WantData: &Data{
-					Values: map[string]*Value{
-						"s":  StringValue("three"),
-						"sl": StringListValue("dos", ""),
-					},
-				},
-			},
-		},
-		{
-			name: "returns suggestions for last arg",
-			ctc: &CompleteTestCase{
-				Node: SerialNodes(
-					StringNode("s", NewArgOpt(SimpleCompletor("one", "two", "three"), nil)),
-					StringListNode("sl", 0, 2, NewArgOpt(SimpleCompletor("uno", "dos"), nil)),
-					OptionalIntNode("i", NewArgOpt(SimpleCompletor("2", "1"), nil)),
-				),
-				Args: []string{"three", "uno", "dos", ""},
-				Want: []string{"1", "2"},
-				WantData: &Data{
-					Values: map[string]*Value{
-						"s":  StringValue("three"),
-						"sl": StringListValue("uno", "dos"),
-					},
-				},
-			},
-		},
-		{
-			name: "returns nothing if iterate through all nodes",
-			ctc: &CompleteTestCase{
-				Node: SerialNodes(
-					StringNode("s", NewArgOpt(SimpleCompletor("one", "two", "three"), nil)),
-					StringListNode("sl", 0, 2, NewArgOpt(SimpleCompletor("uno", "dos"), nil)),
-					OptionalIntNode("i", NewArgOpt(SimpleCompletor("2", "1"), nil)),
-				),
-				Args: []string{"three", "uno", "dos", "1", "what", "now"},
-				WantData: &Data{
-					Values: map[string]*Value{
-						"s":  StringValue("three"),
-						"sl": StringListValue("uno", "dos"),
-						"i":  IntValue(1),
-					},
-				},
-			},
-		},
-		{
-			name: "works if empty and list starts",
-			ctc: &CompleteTestCase{
-				Node: SerialNodes(
-					StringListNode("sl", 1, 2, NewArgOpt(SimpleCompletor("uno", "dos"), nil)),
-				),
-				Want: []string{"dos", "uno"},
-				WantData: &Data{
-					Values: map[string]*Value{
-						"sl": StringListValue(),
-					},
-				},
-			},
-		},
-		{
-			name: "only returns suggestions matching prefix",
-			ctc: &CompleteTestCase{
-				Node: SerialNodes(
-					StringListNode("sl", 1, 2, NewArgOpt(SimpleCompletor("zzz-1", "zzz-2", "yyy-3", "zzz-4"), nil)),
-				),
-				Args: []string{"zz"},
-				Want: []string{"zzz-1", "zzz-2", "zzz-4"},
-				WantData: &Data{
-					Values: map[string]*Value{
-						"sl": StringListValue("zz"),
-					},
-				},
-			},
-		},
-		// Flag completion
-		{
-			name: "flag name gets completed if single hyphen at end",
-			ctc: &CompleteTestCase{
-				Node: SerialNodes(
-					NewFlagNode(
-						StringFlag("greeting", 'h', NewArgOpt(SimpleCompletor("hey", "hi"), nil)),
-						StringListFlag("names", 'n', 1, 2, NewArgOpt(SimpleCompletor("ralph", "johnny", "renee"), nil)),
-						BoolFlag("good", 'g'),
+			{
+				name: "returns suggestions of first node if empty",
+				ctc: &CompleteTestCase{
+					Node: SerialNodes(
+						StringNode("s", NewArgOpt(SimpleCompletor("un", "deux", "trois"), nil)),
+						OptionalIntNode("i", NewArgOpt(SimpleCompletor("2", "1"), nil)),
+						StringListNode("sl", 0, 2, NewArgOpt(SimpleCompletor("uno", "dos"), nil)),
 					),
-					IntNode("i", NewArgOpt(SimpleCompletor("1", "2"), nil)),
-				),
-				Args: []string{"-"},
-				Want: []string{"--good", "--greeting", "--names", "-g", "-h", "-n"},
-			},
-		},
-		{
-			name: "flag name gets completed if double hyphen at end",
-			ctc: &CompleteTestCase{
-				Node: SerialNodes(
-					NewFlagNode(
-						StringFlag("greeting", 'h', NewArgOpt(SimpleCompletor("hey", "hi"), nil)),
-						StringListFlag("names", 'n', 1, 2, NewArgOpt(SimpleCompletor("ralph", "johnny", "renee"), nil)),
-						BoolFlag("good", 'g'),
-					),
-					IntNode("i", NewArgOpt(SimpleCompletor("1", "2"), nil)),
-				),
-				Args: []string{"--"},
-				Want: []string{"--good", "--greeting", "--names"},
-			},
-		},
-		{
-			name: "flag name gets completed if it's the only arg",
-			ctc: &CompleteTestCase{
-				Node: SerialNodes(
-					NewFlagNode(
-						StringFlag("greeting", 'h', NewArgOpt(SimpleCompletor("hey", "hi"), nil)),
-						StringListFlag("names", 'n', 1, 2, NewArgOpt(SimpleCompletor("ralph", "johnny", "renee"), nil)),
-						BoolFlag("good", 'g'),
-					),
-					IntNode("i", NewArgOpt(SimpleCompletor("1", "2"), nil)),
-				),
-				Args: []string{"1", "-"},
-				Want: []string{"--good", "--greeting", "--names", "-g", "-h", "-n"},
-			},
-		},
-		{
-			name: "completes for single flag",
-			ctc: &CompleteTestCase{
-				Node: SerialNodes(
-					NewFlagNode(
-						StringFlag("greeting", 'h', NewArgOpt(SimpleCompletor("hey", "hi"), nil)),
-						StringListFlag("names", 'n', 1, 2, NewArgOpt(SimpleCompletor("ralph", "johnny", "renee"), nil)),
-						BoolFlag("good", 'g'),
-					),
-					IntNode("i", NewArgOpt(SimpleCompletor("1", "2"), nil)),
-				),
-				Args: []string{"1", "--greeting", "h"},
-				Want: []string{"hey", "hi"},
-				WantData: &Data{
-					Values: map[string]*Value{
-						"greeting": StringValue("h"),
-					},
-				},
-			},
-		},
-		{
-			name: "completes for single short flag",
-			ctc: &CompleteTestCase{
-				Node: SerialNodes(
-					NewFlagNode(
-						StringFlag("greeting", 'h', NewArgOpt(SimpleCompletor("hey", "hi"), nil)),
-						StringListFlag("names", 'n', 1, 2, NewArgOpt(SimpleCompletor("ralph", "johnny", "renee"), nil)),
-						BoolFlag("good", 'g'),
-					),
-					IntNode("i", NewArgOpt(SimpleCompletor("1", "2"), nil)),
-				),
-				Args: []string{"1", "-h", "he"},
-				Want: []string{"hey"},
-				WantData: &Data{
-					Values: map[string]*Value{
-						"greeting": StringValue("he"),
-					},
-				},
-			},
-		},
-		{
-			name: "completes for list flag",
-			ctc: &CompleteTestCase{
-				Node: SerialNodes(
-					NewFlagNode(
-						StringFlag("greeting", 'h', NewArgOpt(SimpleCompletor("hey", "hi"), nil)),
-						StringListFlag("names", 'n', 1, 2, NewArgOpt(SimpleCompletor("ralph", "johnny", "renee"), nil)),
-						BoolFlag("good", 'g'),
-					),
-					IntNode("i", NewArgOpt(SimpleCompletor("1", "2"), nil)),
-				),
-				Args: []string{"1", "-h", "hey", "other", "--names", ""},
-				Want: []string{"johnny", "ralph", "renee"},
-				WantData: &Data{
-					Values: map[string]*Value{
-						"greeting": StringValue("hey"),
-						"names":    StringListValue(""),
-					},
-				},
-			},
-		},
-		{
-			name: "completes distinct secondary for list flag",
-			ctc: &CompleteTestCase{
-				Node: SerialNodes(
-					NewFlagNode(
-						StringFlag("greeting", 'h', NewArgOpt(SimpleCompletor("hey", "hi"), nil)),
-						StringListFlag("names", 'n', 1, 2, NewArgOpt(SimpleDistinctCompletor("ralph", "johnny", "renee"), nil)),
-						BoolFlag("good", 'g'),
-					),
-					IntNode("i", NewArgOpt(SimpleCompletor("1", "2"), nil)),
-				),
-				Args: []string{"1", "-h", "hey", "other", "--names", "ralph", ""},
-				Want: []string{"johnny", "renee"},
-				WantData: &Data{
-					Values: map[string]*Value{
-						"greeting": StringValue("hey"),
-						"names":    StringListValue("ralph", ""),
-					},
-				},
-			},
-		},
-		{
-			name: "completes last flag",
-			ctc: &CompleteTestCase{
-				Node: SerialNodes(
-					NewFlagNode(
-						StringFlag("greeting", 'h', NewArgOpt(SimpleCompletor("hey", "hi"), nil)),
-						StringListFlag("names", 'n', 1, 2, NewArgOpt(SimpleDistinctCompletor("ralph", "johnny", "renee"), nil)),
-						BoolFlag("good", 'g'),
-						FloatFlag("float", 'f', NewArgOpt(SimpleCompletor("1.23", "12.3", "123.4"), nil)),
-					),
-					IntNode("i", NewArgOpt(SimpleCompletor("1", "2"), nil)),
-				),
-				Args: []string{"1", "-h", "hey", "other", "--names", "ralph", "renee", "johnny", "-f", ""},
-				Want: []string{"1.23", "12.3", "123.4"},
-				WantData: &Data{
-					Values: map[string]*Value{
-						"greeting": StringValue("hey"),
-						"names":    StringListValue("ralph", "renee", "johnny"),
-					},
-				},
-			},
-		},
-		{
-			name: "completes arg if flag arg isn't at the end",
-			ctc: &CompleteTestCase{
-				Node: SerialNodes(
-					NewFlagNode(
-						StringFlag("greeting", 'h', NewArgOpt(SimpleCompletor("hey", "hi"), nil)),
-						StringListFlag("names", 'n', 1, 2, NewArgOpt(SimpleDistinctCompletor("ralph", "johnny", "renee"), nil)),
-						BoolFlag("good", 'g'),
-					),
-					StringListNode("i", 1, 2, NewArgOpt(SimpleCompletor("hey", "ooo"), nil)),
-				),
-				Args: []string{"1", "-h", "hello", "beta", "--names", "ralph", "renee", "johnny", ""},
-				Want: []string{"hey", "ooo"},
-				WantData: &Data{
-					Values: map[string]*Value{
-						"i":        StringListValue("1", "beta", ""),
-						"greeting": StringValue("hello"),
-						"names":    StringListValue("ralph", "renee", "johnny"),
-					},
-				},
-			},
-		},
-		// Transformer arg tests.
-		{
-			name: "handles nil option",
-			ctc: &CompleteTestCase{
-				Node: &Node{
-					Processor: StringNode("strArg", nil),
-				},
-				Args: []string{"abc"},
-				WantData: &Data{
-					Values: map[string]*Value{
-						"strArg": StringValue("abc"),
-					},
-				},
-			},
-		},
-		{
-			name: "list handles nil option",
-			ctc: &CompleteTestCase{
-				Node: &Node{
-					Processor: StringListNode("slArg", 1, 2, nil),
-				},
-				Args: []string{"abc"},
-				WantData: &Data{
-					Values: map[string]*Value{
-						"slArg": StringListValue("abc"),
-					},
-				},
-			},
-		},
-		{
-			name: "transformer doesn't transform value when ForComplete is false",
-			ctc: &CompleteTestCase{
-				Node: SerialNodes(StringNode("strArg", NewArgOpt(nil, &simpleTransformer{
-					vt: StringType,
-					t: func(v *Value) (*Value, error) {
-						return StringValue("newStuff"), nil
-					},
-					fc: false,
-				}))),
-				Args: []string{"abc"},
-				WantData: &Data{
-					Values: map[string]*Value{
-						"strArg": StringValue("abc"),
-					},
-				},
-			},
-		},
-		{
-			name: "transformer does transform value when ForComplete is true",
-			ctc: &CompleteTestCase{
-				Node: SerialNodes(StringNode("strArg", NewArgOpt(nil, &simpleTransformer{
-					vt: StringType,
-					t: func(v *Value) (*Value, error) {
-						return StringValue("newStuff"), nil
-					},
-					fc: true,
-				}))),
-				Args: []string{"abc"},
-				WantData: &Data{
-					Values: map[string]*Value{
-						"strArg": StringValue("newStuff"),
-					},
-				},
-			},
-		},
-		{
-			name:        "FileTransformer doesn't transform",
-			filepathAbs: filepath.Join("abso", "lutely"),
-			ctc: &CompleteTestCase{
-				Node: &Node{
-					Processor: StringNode("strArg", NewArgOpt(nil, FileTransformer())),
-				},
-				Args: []string{filepath.Join("relative", "path.txt")},
-				WantData: &Data{
-					Values: map[string]*Value{
-						"strArg": StringValue(filepath.Join("relative", "path.txt")),
-					},
-				},
-			},
-		},
-		{
-			name:        "FileTransformer for list doesn't transform",
-			filepathAbs: filepath.Join("abso", "lutely"),
-			ctc: &CompleteTestCase{
-				Node: &Node{
-					Processor: StringListNode("strArg", 1, 2, NewArgOpt(nil, FileListTransformer())),
-				},
-				Args: []string{filepath.Join("relative", "path.txt")},
-				WantData: &Data{
-					Values: map[string]*Value{
-						"strArg": StringListValue(filepath.Join("relative", "path.txt")),
-					},
-				},
-			},
-		},
-		{
-			name:           "handles transform error",
-			filepathAbsErr: fmt.Errorf("bad news bears"),
-			ctc: &CompleteTestCase{
-				Node: &Node{
-					Processor: StringNode("strArg", NewArgOpt(nil, FileTransformer())),
-				},
-				Args: []string{filepath.Join("relative", "path.txt")},
-				WantData: &Data{
-					Values: map[string]*Value{
-						"strArg": StringValue(filepath.Join("relative", "path.txt")),
-					},
-				},
-			},
-		},
-		{
-			name: "handles transformer of incorrect type",
-			ctc: &CompleteTestCase{
-				Node: &Node{
-					Processor: IntNode("IntNode", NewArgOpt(nil, FileTransformer())),
-				},
-				Args: []string{"123"},
-				WantData: &Data{
-					Values: map[string]*Value{
-						"IntNode": IntValue(123),
-					},
-				},
-			},
-		},
-		{
-			name:        "transformer list transforms values",
-			filepathAbs: filepath.Join("abso", "lutely"),
-			ctc: &CompleteTestCase{
-				Node: &Node{
-					Processor: StringListNode("slArg", 1, 2, NewArgOpt(nil, &simpleTransformer{
-						vt: StringListType,
-						fc: true,
-						t: func(v *Value) (*Value, error) {
-							var sl []string
-							for _, s := range v.StringList() {
-								sl = append(sl, fmt.Sprintf("_%s_", s))
-							}
-							return StringListValue(sl...), nil
+					Want: []string{"deux", "trois", "un"},
+					WantData: &Data{
+						Values: map[string]*Value{
+							"s": StringValue(""),
 						},
-					})),
+					},
 				},
-				Args: []string{
-					"uno",
-					"dos",
+			},
+			{
+				name: "returns suggestions of first node if up to first arg",
+				ctc: &CompleteTestCase{
+					Node: SerialNodes(
+						StringNode("s", NewArgOpt(SimpleCompletor("one", "two", "three"), nil)),
+						OptionalIntNode("i", NewArgOpt(SimpleCompletor("2", "1"), nil)),
+						StringListNode("sl", 0, 2, NewArgOpt(SimpleCompletor("uno", "dos"), nil)),
+					),
+					Args: []string{"t"},
+					Want: []string{"three", "two"},
+					WantData: &Data{
+						Values: map[string]*Value{
+							"s": StringValue("t"),
+						},
+					},
 				},
-				WantData: &Data{
-					Values: map[string]*Value{
-						"slArg": StringListValue(
-							"_uno_",
-							"_dos_",
+			},
+			{
+				name: "returns suggestions of middle node if that's where we're at",
+				ctc: &CompleteTestCase{
+					Node: SerialNodes(
+						StringNode("s", NewArgOpt(SimpleCompletor("one", "two", "three"), nil)),
+						StringListNode("sl", 0, 2, NewArgOpt(SimpleCompletor("uno", "dos"), nil)),
+						OptionalIntNode("i", NewArgOpt(SimpleCompletor("2", "1"), nil)),
+					),
+					Args: []string{"three", ""},
+					Want: []string{"dos", "uno"},
+					WantData: &Data{
+						Values: map[string]*Value{
+							"s":  StringValue("three"),
+							"sl": StringListValue(""),
+						},
+					},
+				},
+			},
+			{
+				name: "returns suggestions of middle node if partial",
+				ctc: &CompleteTestCase{
+					Node: SerialNodes(
+						StringNode("s", NewArgOpt(SimpleCompletor("one", "two", "three"), nil)),
+						StringListNode("sl", 0, 2, NewArgOpt(SimpleCompletor("uno", "dos"), nil)),
+						OptionalIntNode("i", NewArgOpt(SimpleCompletor("2", "1"), nil)),
+					),
+					Args: []string{"three", "d"},
+					Want: []string{"dos"},
+					WantData: &Data{
+						Values: map[string]*Value{
+							"s":  StringValue("three"),
+							"sl": StringListValue("d"),
+						},
+					},
+				},
+			},
+			{
+				name: "returns suggestions in list",
+				ctc: &CompleteTestCase{
+					Node: SerialNodes(
+						StringNode("s", NewArgOpt(SimpleCompletor("one", "two", "three"), nil)),
+						StringListNode("sl", 0, 2, NewArgOpt(SimpleCompletor("uno", "dos"), nil)),
+						OptionalIntNode("i", NewArgOpt(SimpleCompletor("2", "1"), nil)),
+					),
+					Args: []string{"three", "dos", ""},
+					Want: []string{"dos", "uno"},
+					WantData: &Data{
+						Values: map[string]*Value{
+							"s":  StringValue("three"),
+							"sl": StringListValue("dos", ""),
+						},
+					},
+				},
+			},
+			{
+				name: "returns suggestions for last arg",
+				ctc: &CompleteTestCase{
+					Node: SerialNodes(
+						StringNode("s", NewArgOpt(SimpleCompletor("one", "two", "three"), nil)),
+						StringListNode("sl", 0, 2, NewArgOpt(SimpleCompletor("uno", "dos"), nil)),
+						OptionalIntNode("i", NewArgOpt(SimpleCompletor("2", "1"), nil)),
+					),
+					Args: []string{"three", "uno", "dos", ""},
+					Want: []string{"1", "2"},
+					WantData: &Data{
+						Values: map[string]*Value{
+							"s":  StringValue("three"),
+							"sl": StringListValue("uno", "dos"),
+						},
+					},
+				},
+			},
+			{
+				name: "returns nothing if iterate through all nodes",
+				ctc: &CompleteTestCase{
+					Node: SerialNodes(
+						StringNode("s", NewArgOpt(SimpleCompletor("one", "two", "three"), nil)),
+						StringListNode("sl", 0, 2, NewArgOpt(SimpleCompletor("uno", "dos"), nil)),
+						OptionalIntNode("i", NewArgOpt(SimpleCompletor("2", "1"), nil)),
+					),
+					Args: []string{"three", "uno", "dos", "1", "what", "now"},
+					WantData: &Data{
+						Values: map[string]*Value{
+							"s":  StringValue("three"),
+							"sl": StringListValue("uno", "dos"),
+							"i":  IntValue(1),
+						},
+					},
+				},
+			},
+			{
+				name: "works if empty and list starts",
+				ctc: &CompleteTestCase{
+					Node: SerialNodes(
+						StringListNode("sl", 1, 2, NewArgOpt(SimpleCompletor("uno", "dos"), nil)),
+					),
+					Want: []string{"dos", "uno"},
+					WantData: &Data{
+						Values: map[string]*Value{
+							"sl": StringListValue(),
+						},
+					},
+				},
+			},
+			{
+				name: "only returns suggestions matching prefix",
+				ctc: &CompleteTestCase{
+					Node: SerialNodes(
+						StringListNode("sl", 1, 2, NewArgOpt(SimpleCompletor("zzz-1", "zzz-2", "yyy-3", "zzz-4"), nil)),
+					),
+					Args: []string{"zz"},
+					Want: []string{"zzz-1", "zzz-2", "zzz-4"},
+					WantData: &Data{
+						Values: map[string]*Value{
+							"sl": StringListValue("zz"),
+						},
+					},
+				},
+			},
+			// Flag completion
+			{
+				name: "flag name gets completed if single hyphen at end",
+				ctc: &CompleteTestCase{
+					Node: SerialNodes(
+						NewFlagNode(
+							StringFlag("greeting", 'h', NewArgOpt(SimpleCompletor("hey", "hi"), nil)),
+							StringListFlag("names", 'n', 1, 2, NewArgOpt(SimpleCompletor("ralph", "johnny", "renee"), nil)),
+							BoolFlag("good", 'g'),
 						),
-					},
+						IntNode("i", NewArgOpt(SimpleCompletor("1", "2"), nil)),
+					),
+					Args: []string{"-"},
+					Want: []string{"--good", "--greeting", "--names", "-g", "-h", "-n"},
 				},
 			},
-		},
-		{
-			name:           "handles transform list error",
-			filepathAbsErr: fmt.Errorf("bad news bears"),
-			ctc: &CompleteTestCase{
-				Node: &Node{
-					Processor: StringListNode("slArg", 1, 2, NewArgOpt(nil, FileListTransformer())),
-				},
-				Args: []string{
-					filepath.Join("relative", "path.txt"),
-					filepath.Join("other.txt"),
-				},
-				WantData: &Data{
-					Values: map[string]*Value{
-						"slArg": StringListValue(
-							filepath.Join("relative", "path.txt"),
-							filepath.Join("other.txt"),
+			{
+				name: "flag name gets completed if double hyphen at end",
+				ctc: &CompleteTestCase{
+					Node: SerialNodes(
+						NewFlagNode(
+							StringFlag("greeting", 'h', NewArgOpt(SimpleCompletor("hey", "hi"), nil)),
+							StringListFlag("names", 'n', 1, 2, NewArgOpt(SimpleCompletor("ralph", "johnny", "renee"), nil)),
+							BoolFlag("good", 'g'),
 						),
+						IntNode("i", NewArgOpt(SimpleCompletor("1", "2"), nil)),
+					),
+					Args: []string{"--"},
+					Want: []string{"--good", "--greeting", "--names"},
+				},
+			},
+			{
+				name: "flag name gets completed if it's the only arg",
+				ctc: &CompleteTestCase{
+					Node: SerialNodes(
+						NewFlagNode(
+							StringFlag("greeting", 'h', NewArgOpt(SimpleCompletor("hey", "hi"), nil)),
+							StringListFlag("names", 'n', 1, 2, NewArgOpt(SimpleCompletor("ralph", "johnny", "renee"), nil)),
+							BoolFlag("good", 'g'),
+						),
+						IntNode("i", NewArgOpt(SimpleCompletor("1", "2"), nil)),
+					),
+					Args: []string{"1", "-"},
+					Want: []string{"--good", "--greeting", "--names", "-g", "-h", "-n"},
+				},
+			},
+			{
+				name: "completes for single flag",
+				ctc: &CompleteTestCase{
+					Node: SerialNodes(
+						NewFlagNode(
+							StringFlag("greeting", 'h', NewArgOpt(SimpleCompletor("hey", "hi"), nil)),
+							StringListFlag("names", 'n', 1, 2, NewArgOpt(SimpleCompletor("ralph", "johnny", "renee"), nil)),
+							BoolFlag("good", 'g'),
+						),
+						IntNode("i", NewArgOpt(SimpleCompletor("1", "2"), nil)),
+					),
+					Args: []string{"1", "--greeting", "h"},
+					Want: []string{"hey", "hi"},
+					WantData: &Data{
+						Values: map[string]*Value{
+							"greeting": StringValue("h"),
+						},
 					},
 				},
 			},
-		},
-		{
-			name: "handles list transformer of incorrect type",
-			ctc: &CompleteTestCase{
-				Node: &Node{
-					Processor: StringListNode("slArg", 1, 2, NewArgOpt(nil, FileTransformer())),
-				},
-				Args: []string{"123"},
-				WantData: &Data{
-					Values: map[string]*Value{
-						"slArg": StringListValue("123"),
+			{
+				name: "completes for single short flag",
+				ctc: &CompleteTestCase{
+					Node: SerialNodes(
+						NewFlagNode(
+							StringFlag("greeting", 'h', NewArgOpt(SimpleCompletor("hey", "hi"), nil)),
+							StringListFlag("names", 'n', 1, 2, NewArgOpt(SimpleCompletor("ralph", "johnny", "renee"), nil)),
+							BoolFlag("good", 'g'),
+						),
+						IntNode("i", NewArgOpt(SimpleCompletor("1", "2"), nil)),
+					),
+					Args: []string{"1", "-h", "he"},
+					Want: []string{"hey"},
+					WantData: &Data{
+						Values: map[string]*Value{
+							"greeting": StringValue("he"),
+						},
 					},
 				},
 			},
-		},
-		// BranchNode completion tests.
-		{
-			name: "completes branch options",
-			ctc: &CompleteTestCase{
-				Node: BranchNode(map[string]*Node{
-					"a":     {},
-					"alpha": SerialNodes(OptionalStringNode("hello", NewArgOpt(SimpleCompletor("other", "stuff"), nil))),
-					"bravo": {},
-				}, SerialNodes(StringListNode("default", 1, 3, NewArgOpt(SimpleCompletor("default", "command", "opts"), nil))), true),
-				Want: []string{"a", "alpha", "bravo", "command", "default", "opts"},
-				WantData: &Data{
-					Values: map[string]*Value{
-						"default": StringListValue(),
+			{
+				name: "completes for list flag",
+				ctc: &CompleteTestCase{
+					Node: SerialNodes(
+						NewFlagNode(
+							StringFlag("greeting", 'h', NewArgOpt(SimpleCompletor("hey", "hi"), nil)),
+							StringListFlag("names", 'n', 1, 2, NewArgOpt(SimpleCompletor("ralph", "johnny", "renee"), nil)),
+							BoolFlag("good", 'g'),
+						),
+						IntNode("i", NewArgOpt(SimpleCompletor("1", "2"), nil)),
+					),
+					Args: []string{"1", "-h", "hey", "other", "--names", ""},
+					Want: []string{"johnny", "ralph", "renee"},
+					WantData: &Data{
+						Values: map[string]*Value{
+							"greeting": StringValue("hey"),
+							"names":    StringListValue(""),
+						},
 					},
 				},
 			},
-		},
-		{
-			name: "doesn't complete branch options if complete arg is false",
-			ctc: &CompleteTestCase{
-				Node: BranchNode(map[string]*Node{
-					"a":     {},
-					"alpha": SerialNodes(OptionalStringNode("hello", NewArgOpt(SimpleCompletor("other", "stuff"), nil))),
-					"bravo": {},
-				}, SerialNodes(StringListNode("default", 1, 3, NewArgOpt(SimpleCompletor("default", "command", "opts"), nil))), false),
-				Want: []string{"command", "default", "opts"},
-				WantData: &Data{
-					Values: map[string]*Value{
-						"default": StringListValue(),
+			{
+				name: "completes distinct secondary for list flag",
+				ctc: &CompleteTestCase{
+					Node: SerialNodes(
+						NewFlagNode(
+							StringFlag("greeting", 'h', NewArgOpt(SimpleCompletor("hey", "hi"), nil)),
+							StringListFlag("names", 'n', 1, 2, NewArgOpt(SimpleDistinctCompletor("ralph", "johnny", "renee"), nil)),
+							BoolFlag("good", 'g'),
+						),
+						IntNode("i", NewArgOpt(SimpleCompletor("1", "2"), nil)),
+					),
+					Args: []string{"1", "-h", "hey", "other", "--names", "ralph", ""},
+					Want: []string{"johnny", "renee"},
+					WantData: &Data{
+						Values: map[string]*Value{
+							"greeting": StringValue("hey"),
+							"names":    StringListValue("ralph", ""),
+						},
 					},
 				},
 			},
-		},
-		{
-			name: "completes for specific branch",
-			ctc: &CompleteTestCase{
-				Node: BranchNode(map[string]*Node{
-					"a":     {},
-					"alpha": SerialNodes(OptionalStringNode("hello", NewArgOpt(SimpleCompletor("other", "stuff"), nil))),
-					"bravo": {},
-				}, SerialNodes(StringListNode("default", 1, 3, NewArgOpt(SimpleCompletor("default", "command", "opts"), nil))), true),
-				Args: []string{"alpha", ""},
-				Want: []string{"other", "stuff"},
-				WantData: &Data{
-					Values: map[string]*Value{
-						"hello": StringValue(""),
+			{
+				name: "completes last flag",
+				ctc: &CompleteTestCase{
+					Node: SerialNodes(
+						NewFlagNode(
+							StringFlag("greeting", 'h', NewArgOpt(SimpleCompletor("hey", "hi"), nil)),
+							StringListFlag("names", 'n', 1, 2, NewArgOpt(SimpleDistinctCompletor("ralph", "johnny", "renee"), nil)),
+							BoolFlag("good", 'g'),
+							FloatFlag("float", 'f', NewArgOpt(SimpleCompletor("1.23", "12.3", "123.4"), nil)),
+						),
+						IntNode("i", NewArgOpt(SimpleCompletor("1", "2"), nil)),
+					),
+					Args: []string{"1", "-h", "hey", "other", "--names", "ralph", "renee", "johnny", "-f", ""},
+					Want: []string{"1.23", "12.3", "123.4"},
+					WantData: &Data{
+						Values: map[string]*Value{
+							"greeting": StringValue("hey"),
+							"names":    StringListValue("ralph", "renee", "johnny"),
+						},
 					},
 				},
 			},
-		},
-		{
-			name: "branch node doesn't complete if no default and no branch match",
-			ctc: &CompleteTestCase{
-				Node: BranchNode(map[string]*Node{
-					"a":     {},
-					"alpha": SerialNodes(OptionalStringNode("hello", NewArgOpt(SimpleCompletor("other", "stuff"), nil))),
-					"bravo": {},
-				}, nil, true),
-				Args: []string{"some", "thing", "else"},
-			},
-		},
-		{
-			name: "completes branch options with partial completion",
-			ctc: &CompleteTestCase{
-				Node: BranchNode(map[string]*Node{
-					"a":     {},
-					"alpha": SerialNodes(OptionalStringNode("hello", NewArgOpt(SimpleCompletor("other", "stuff"), nil))),
-					"bravo": {},
-				}, SerialNodes(StringListNode("default", 1, 3, NewArgOpt(SimpleCompletor("default", "command", "opts", "ahhhh"), nil))), true),
-				Args: []string{"a"},
-				Want: []string{"a", "ahhhh", "alpha"},
-				WantData: &Data{
-					Values: map[string]*Value{
-						"default": StringListValue("a"),
+			{
+				name: "completes arg if flag arg isn't at the end",
+				ctc: &CompleteTestCase{
+					Node: SerialNodes(
+						NewFlagNode(
+							StringFlag("greeting", 'h', NewArgOpt(SimpleCompletor("hey", "hi"), nil)),
+							StringListFlag("names", 'n', 1, 2, NewArgOpt(SimpleDistinctCompletor("ralph", "johnny", "renee"), nil)),
+							BoolFlag("good", 'g'),
+						),
+						StringListNode("i", 1, 2, NewArgOpt(SimpleCompletor("hey", "ooo"), nil)),
+					),
+					Args: []string{"1", "-h", "hello", "beta", "--names", "ralph", "renee", "johnny", ""},
+					Want: []string{"hey", "ooo"},
+					WantData: &Data{
+						Values: map[string]*Value{
+							"i":        StringListValue("1", "beta", ""),
+							"greeting": StringValue("hello"),
+							"names":    StringListValue("ralph", "renee", "johnny"),
+						},
 					},
 				},
 			},
-		},
-		{
-			name: "completes default options",
-			ctc: &CompleteTestCase{
-				Node: BranchNode(map[string]*Node{
-					"a":     {},
-					"alpha": SerialNodes(OptionalStringNode("hello", NewArgOpt(SimpleCompletor("other", "stuff"), nil))),
-					"bravo": {},
-				}, SerialNodes(StringListNode("default", 1, 3, NewArgOpt(SimpleCompletor("default", "command", "opts"), nil))), true),
-				Args: []string{"something", ""},
-				WantData: &Data{
-					Values: map[string]*Value{
-						"default": StringListValue("something", ""),
+			// Transformer arg tests.
+			{
+				name: "handles nil option",
+				ctc: &CompleteTestCase{
+					Node: &Node{
+						Processor: StringNode("strArg", nil),
 					},
-				},
-				Want: []string{"command", "default", "opts"},
-			},
-		},
-		// Commands with different value types.
-		{
-			name: "int arg gets completed",
-			ctc: &CompleteTestCase{
-				Node: SerialNodes(IntNode("iArg", NewArgOpt(SimpleCompletor("12", "45", "456", "468", "7"), nil))),
-				Args: []string{"4"},
-				Want: []string{"45", "456", "468"},
-				WantData: &Data{
-					Values: map[string]*Value{
-						"iArg": IntValue(4),
+					Args: []string{"abc"},
+					WantData: &Data{
+						Values: map[string]*Value{
+							"strArg": StringValue("abc"),
+						},
 					},
 				},
 			},
-		},
-		{
-			name: "optional int arg gets completed",
-			ctc: &CompleteTestCase{
-				Node: SerialNodes(OptionalIntNode("iArg", NewArgOpt(SimpleCompletor("12", "45", "456", "468", "7"), nil))),
-				Args: []string{"4"},
-				Want: []string{"45", "456", "468"},
-				WantData: &Data{
-					Values: map[string]*Value{
-						"iArg": IntValue(4),
+			{
+				name: "list handles nil option",
+				ctc: &CompleteTestCase{
+					Node: &Node{
+						Processor: StringListNode("slArg", 1, 2, nil),
+					},
+					Args: []string{"abc"},
+					WantData: &Data{
+						Values: map[string]*Value{
+							"slArg": StringListValue("abc"),
+						},
 					},
 				},
 			},
-		},
-		{
-			name: "int list arg gets completed",
-			ctc: &CompleteTestCase{
-				Node: SerialNodes(IntListNode("iArg", 2, 3, NewArgOpt(SimpleCompletor("12", "45", "456", "468", "7"), nil))),
-				Args: []string{"1", "4"},
-				Want: []string{"45", "456", "468"},
-				WantData: &Data{
-					Values: map[string]*Value{
-						"iArg": IntListValue(1, 4),
+			{
+				name: "transformer doesn't transform value when ForComplete is false",
+				ctc: &CompleteTestCase{
+					Node: SerialNodes(StringNode("strArg", NewArgOpt(nil, &simpleTransformer{
+						vt: StringType,
+						t: func(v *Value) (*Value, error) {
+							return StringValue("newStuff"), nil
+						},
+						fc: false,
+					}))),
+					Args: []string{"abc"},
+					WantData: &Data{
+						Values: map[string]*Value{
+							"strArg": StringValue("abc"),
+						},
 					},
 				},
 			},
-		},
-		{
-			name: "int list arg gets completed if previous one was invalid",
-			ctc: &CompleteTestCase{
-				Node: SerialNodes(IntListNode("iArg", 2, 3, NewArgOpt(SimpleCompletor("12", "45", "456", "468", "7"), nil))),
-				Args: []string{"one", "4"},
-				Want: []string{"45", "456", "468"},
-			},
-		},
-		{
-			name: "int list arg optional args get completed",
-			ctc: &CompleteTestCase{
-				Node: SerialNodes(IntListNode("iArg", 2, 3, NewArgOpt(SimpleCompletor("12", "45", "456", "468", "7"), nil))),
-				Args: []string{"1", "2", "3", "4"},
-				Want: []string{"45", "456", "468"},
-				WantData: &Data{
-					Values: map[string]*Value{
-						"iArg": IntListValue(1, 2, 3, 4),
+			{
+				name: "transformer does transform value when ForComplete is true",
+				ctc: &CompleteTestCase{
+					Node: SerialNodes(StringNode("strArg", NewArgOpt(nil, &simpleTransformer{
+						vt: StringType,
+						t: func(v *Value) (*Value, error) {
+							return StringValue("newStuff"), nil
+						},
+						fc: true,
+					}))),
+					Args: []string{"abc"},
+					WantData: &Data{
+						Values: map[string]*Value{
+							"strArg": StringValue("newStuff"),
+						},
 					},
 				},
 			},
-		},
-		{
-			name: "float arg gets completed",
-			ctc: &CompleteTestCase{
-				Node: SerialNodes(FloatNode("fArg", NewArgOpt(SimpleCompletor("12", "4.5", "45.6", "468", "7"), nil))),
-				Args: []string{"4"},
-				Want: []string{"4.5", "45.6", "468"},
-				WantData: &Data{
-					Values: map[string]*Value{
-						"fArg": FloatValue(4),
+			{
+				name:        "FileTransformer doesn't transform",
+				filepathAbs: filepath.Join("abso", "lutely"),
+				ctc: &CompleteTestCase{
+					Node: &Node{
+						Processor: StringNode("strArg", NewArgOpt(nil, FileTransformer())),
+					},
+					Args: []string{filepath.Join("relative", "path.txt")},
+					WantData: &Data{
+						Values: map[string]*Value{
+							"strArg": StringValue(filepath.Join("relative", "path.txt")),
+						},
 					},
 				},
 			},
-		},
-		{
-			name: "float list arg gets completed",
-			ctc: &CompleteTestCase{
-				Node: SerialNodes(FloatListNode("fArg", 1, 2, NewArgOpt(SimpleCompletor("12", "4.5", "45.6", "468", "7"), nil))),
-				Want: []string{"12", "4.5", "45.6", "468", "7"},
-				WantData: &Data{
-					Values: map[string]*Value{
-						"fArg": FloatListValue(),
+			{
+				name:        "FileTransformer for list doesn't transform",
+				filepathAbs: filepath.Join("abso", "lutely"),
+				ctc: &CompleteTestCase{
+					Node: &Node{
+						Processor: StringListNode("strArg", 1, 2, NewArgOpt(nil, FileListTransformer())),
+					},
+					Args: []string{filepath.Join("relative", "path.txt")},
+					WantData: &Data{
+						Values: map[string]*Value{
+							"strArg": StringListValue(filepath.Join("relative", "path.txt")),
+						},
 					},
 				},
 			},
-		},
-		{
-			name: "bool arg gets completed",
-			ctc: &CompleteTestCase{
-				Node: SerialNodes(BoolNode("bArg")),
-				Want: []string{"0", "1", "F", "FALSE", "False", "T", "TRUE", "True", "f", "false", "t", "true"},
-				WantData: &Data{
-					Values: map[string]*Value{
-						"bArg": BoolValue(false),
+			{
+				name:           "handles transform error",
+				filepathAbsErr: fmt.Errorf("bad news bears"),
+				ctc: &CompleteTestCase{
+					Node: &Node{
+						Processor: StringNode("strArg", NewArgOpt(nil, FileTransformer())),
+					},
+					Args: []string{filepath.Join("relative", "path.txt")},
+					WantData: &Data{
+						Values: map[string]*Value{
+							"strArg": StringValue(filepath.Join("relative", "path.txt")),
+						},
 					},
 				},
 			},
-		},
-		/* Useful comment for commenting out tests */
+			{
+				name: "handles transformer of incorrect type",
+				ctc: &CompleteTestCase{
+					Node: &Node{
+						Processor: IntNode("IntNode", NewArgOpt(nil, FileTransformer())),
+					},
+					Args: []string{"123"},
+					WantData: &Data{
+						Values: map[string]*Value{
+							"IntNode": IntValue(123),
+						},
+					},
+				},
+			},
+			{
+				name:        "transformer list transforms values",
+				filepathAbs: filepath.Join("abso", "lutely"),
+				ctc: &CompleteTestCase{
+					Node: &Node{
+						Processor: StringListNode("slArg", 1, 2, NewArgOpt(nil, &simpleTransformer{
+							vt: StringListType,
+							fc: true,
+							t: func(v *Value) (*Value, error) {
+								var sl []string
+								for _, s := range v.StringList() {
+									sl = append(sl, fmt.Sprintf("_%s_", s))
+								}
+								return StringListValue(sl...), nil
+							},
+						})),
+					},
+					Args: []string{
+						"uno",
+						"dos",
+					},
+					WantData: &Data{
+						Values: map[string]*Value{
+							"slArg": StringListValue(
+								"_uno_",
+								"_dos_",
+							),
+						},
+					},
+				},
+			},
+			{
+				name:           "handles transform list error",
+				filepathAbsErr: fmt.Errorf("bad news bears"),
+				ctc: &CompleteTestCase{
+					Node: &Node{
+						Processor: StringListNode("slArg", 1, 2, NewArgOpt(nil, FileListTransformer())),
+					},
+					Args: []string{
+						filepath.Join("relative", "path.txt"),
+						filepath.Join("other.txt"),
+					},
+					WantData: &Data{
+						Values: map[string]*Value{
+							"slArg": StringListValue(
+								filepath.Join("relative", "path.txt"),
+								filepath.Join("other.txt"),
+							),
+						},
+					},
+				},
+			},
+			{
+				name: "handles list transformer of incorrect type",
+				ctc: &CompleteTestCase{
+					Node: &Node{
+						Processor: StringListNode("slArg", 1, 2, NewArgOpt(nil, FileTransformer())),
+					},
+					Args: []string{"123"},
+					WantData: &Data{
+						Values: map[string]*Value{
+							"slArg": StringListValue("123"),
+						},
+					},
+				},
+			},
+			// BranchNode completion tests.
+			{
+				name: "completes branch options",
+				ctc: &CompleteTestCase{
+					Node: BranchNode(map[string]*Node{
+						"a":     {},
+						"alpha": SerialNodes(OptionalStringNode("hello", NewArgOpt(SimpleCompletor("other", "stuff"), nil))),
+						"bravo": {},
+					}, SerialNodes(StringListNode("default", 1, 3, NewArgOpt(SimpleCompletor("default", "command", "opts"), nil))), true),
+					Want: []string{"a", "alpha", "bravo", "command", "default", "opts"},
+					WantData: &Data{
+						Values: map[string]*Value{
+							"default": StringListValue(),
+						},
+					},
+				},
+			},
+			{
+				name: "doesn't complete branch options if complete arg is false",
+				ctc: &CompleteTestCase{
+					Node: BranchNode(map[string]*Node{
+						"a":     {},
+						"alpha": SerialNodes(OptionalStringNode("hello", NewArgOpt(SimpleCompletor("other", "stuff"), nil))),
+						"bravo": {},
+					}, SerialNodes(StringListNode("default", 1, 3, NewArgOpt(SimpleCompletor("default", "command", "opts"), nil))), false),
+					Want: []string{"command", "default", "opts"},
+					WantData: &Data{
+						Values: map[string]*Value{
+							"default": StringListValue(),
+						},
+					},
+				},
+			},
+			{
+				name: "completes for specific branch",
+				ctc: &CompleteTestCase{
+					Node: BranchNode(map[string]*Node{
+						"a":     {},
+						"alpha": SerialNodes(OptionalStringNode("hello", NewArgOpt(SimpleCompletor("other", "stuff"), nil))),
+						"bravo": {},
+					}, SerialNodes(StringListNode("default", 1, 3, NewArgOpt(SimpleCompletor("default", "command", "opts"), nil))), true),
+					Args: []string{"alpha", ""},
+					Want: []string{"other", "stuff"},
+					WantData: &Data{
+						Values: map[string]*Value{
+							"hello": StringValue(""),
+						},
+					},
+				},
+			},
+			{
+				name: "branch node doesn't complete if no default and no branch match",
+				ctc: &CompleteTestCase{
+					Node: BranchNode(map[string]*Node{
+						"a":     {},
+						"alpha": SerialNodes(OptionalStringNode("hello", NewArgOpt(SimpleCompletor("other", "stuff"), nil))),
+						"bravo": {},
+					}, nil, true),
+					Args: []string{"some", "thing", "else"},
+				},
+			},
+			{
+				name: "completes branch options with partial completion",
+				ctc: &CompleteTestCase{
+					Node: BranchNode(map[string]*Node{
+						"a":     {},
+						"alpha": SerialNodes(OptionalStringNode("hello", NewArgOpt(SimpleCompletor("other", "stuff"), nil))),
+						"bravo": {},
+					}, SerialNodes(StringListNode("default", 1, 3, NewArgOpt(SimpleCompletor("default", "command", "opts", "ahhhh"), nil))), true),
+					Args: []string{"a"},
+					Want: []string{"a", "ahhhh", "alpha"},
+					WantData: &Data{
+						Values: map[string]*Value{
+							"default": StringListValue("a"),
+						},
+					},
+				},
+			},
+			{
+				name: "completes default options",
+				ctc: &CompleteTestCase{
+					Node: BranchNode(map[string]*Node{
+						"a":     {},
+						"alpha": SerialNodes(OptionalStringNode("hello", NewArgOpt(SimpleCompletor("other", "stuff"), nil))),
+						"bravo": {},
+					}, SerialNodes(StringListNode("default", 1, 3, NewArgOpt(SimpleCompletor("default", "command", "opts"), nil))), true),
+					Args: []string{"something", ""},
+					WantData: &Data{
+						Values: map[string]*Value{
+							"default": StringListValue("something", ""),
+						},
+					},
+					Want: []string{"command", "default", "opts"},
+				},
+			},
+			// Commands with different value types.
+			{
+				name: "int arg gets completed",
+				ctc: &CompleteTestCase{
+					Node: SerialNodes(IntNode("iArg", NewArgOpt(SimpleCompletor("12", "45", "456", "468", "7"), nil))),
+					Args: []string{"4"},
+					Want: []string{"45", "456", "468"},
+					WantData: &Data{
+						Values: map[string]*Value{
+							"iArg": IntValue(4),
+						},
+					},
+				},
+			},
+			{
+				name: "optional int arg gets completed",
+				ctc: &CompleteTestCase{
+					Node: SerialNodes(OptionalIntNode("iArg", NewArgOpt(SimpleCompletor("12", "45", "456", "468", "7"), nil))),
+					Args: []string{"4"},
+					Want: []string{"45", "456", "468"},
+					WantData: &Data{
+						Values: map[string]*Value{
+							"iArg": IntValue(4),
+						},
+					},
+				},
+			},
+			{
+				name: "int list arg gets completed",
+				ctc: &CompleteTestCase{
+					Node: SerialNodes(IntListNode("iArg", 2, 3, NewArgOpt(SimpleCompletor("12", "45", "456", "468", "7"), nil))),
+					Args: []string{"1", "4"},
+					Want: []string{"45", "456", "468"},
+					WantData: &Data{
+						Values: map[string]*Value{
+							"iArg": IntListValue(1, 4),
+						},
+					},
+				},
+			},
+			{
+				name: "int list arg gets completed if previous one was invalid",
+				ctc: &CompleteTestCase{
+					Node: SerialNodes(IntListNode("iArg", 2, 3, NewArgOpt(SimpleCompletor("12", "45", "456", "468", "7"), nil))),
+					Args: []string{"one", "4"},
+					Want: []string{"45", "456", "468"},
+				},
+			},
+			{
+				name: "int list arg optional args get completed",
+				ctc: &CompleteTestCase{
+					Node: SerialNodes(IntListNode("iArg", 2, 3, NewArgOpt(SimpleCompletor("12", "45", "456", "468", "7"), nil))),
+					Args: []string{"1", "2", "3", "4"},
+					Want: []string{"45", "456", "468"},
+					WantData: &Data{
+						Values: map[string]*Value{
+							"iArg": IntListValue(1, 2, 3, 4),
+						},
+					},
+				},
+			},
+			{
+				name: "float arg gets completed",
+				ctc: &CompleteTestCase{
+					Node: SerialNodes(FloatNode("fArg", NewArgOpt(SimpleCompletor("12", "4.5", "45.6", "468", "7"), nil))),
+					Args: []string{"4"},
+					Want: []string{"4.5", "45.6", "468"},
+					WantData: &Data{
+						Values: map[string]*Value{
+							"fArg": FloatValue(4),
+						},
+					},
+				},
+			},
+			{
+				name: "float list arg gets completed",
+				ctc: &CompleteTestCase{
+					Node: SerialNodes(FloatListNode("fArg", 1, 2, NewArgOpt(SimpleCompletor("12", "4.5", "45.6", "468", "7"), nil))),
+					Want: []string{"12", "4.5", "45.6", "468", "7"},
+					WantData: &Data{
+						Values: map[string]*Value{
+							"fArg": FloatListValue(),
+						},
+					},
+				},
+			},
+			{
+				name: "bool arg gets completed",
+				ctc: &CompleteTestCase{
+					Node: SerialNodes(BoolNode("bArg")),
+					Want: []string{"0", "1", "F", "FALSE", "False", "T", "TRUE", "True", "f", "false", "t", "true"},
+					WantData: &Data{
+						Values: map[string]*Value{
+							"bArg": BoolValue(false),
+						},
+					},
+				},
+			},
+			/* Useful comment for commenting out tests */
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			oldAbs := filepathAbs

@@ -6,6 +6,17 @@ const (
 	UnboundedList = -1
 )
 
+var (
+	quotationChars = map[rune]bool{
+		'"':  true,
+		'\'': true,
+	}
+
+	wordBreakChars = map[rune]bool{
+		' ': true,
+	}
+)
+
 type InputSnapshot int
 
 type Input struct {
@@ -172,14 +183,7 @@ func (i *Input) PopN(n, optN int) ([]*string, bool) {
 	return ret, len(ret) >= n
 }
 
-var (
-	// Default is string list
-	quotationChars = map[rune]bool{
-		'"':  true,
-		'\'': true,
-	}
-)
-
+// ParseExecuteArgs converts a list of strings into an Input struct.
 func ParseExecuteArgs(strArgs []string) *Input {
 	r := make([]int, len(strArgs))
 	args := make([]*inputArg, len(strArgs))
@@ -195,10 +199,138 @@ func ParseExecuteArgs(strArgs []string) *Input {
 	}
 }
 
-// TODO: this should just take in a "string" argument so there is
-// absolutely no parsing required by the CLI side of it.
+type words struct {
+	inWord      bool
+	currentWord []rune
+	words       []string
+}
+
+func (w *words) endWord() {
+	w.words = append(w.words, string(w.currentWord))
+	w.currentWord = nil
+	w.inWord = false
+}
+
+func (w *words) startWord() {
+	w.inWord = true
+}
+
+func (w *words) addChar(c rune) {
+	w.currentWord = append(w.currentWord, c)
+}
+
+type parserState interface {
+	// parseChar should return the next parserState
+	parseChar(curChar rune, w *words) parserState
+	// delimiter returns the delimiter for the quote set.
+	delimiter() *rune
+}
+
+type wordState struct{}
+
+func (ws *wordState) parseChar(curChar rune, w *words) parserState {
+	if wordBreakChars[curChar] {
+		w.endWord()
+		return &whitespaceState{}
+	}
+
+	if quotationChars[curChar] {
+		return &quoteState{curChar}
+	}
+	if curChar == '\\' {
+		return &backslashState{ws}
+	}
+	w.addChar(curChar)
+	return ws
+}
+
+func (*wordState) delimiter() *rune {
+	return nil
+}
+
+type backslashState struct {
+	nextState parserState
+}
+
+func (bss *backslashState) parseChar(curChar rune, w *words) parserState {
+	if curChar != ' ' {
+		w.addChar('\\')
+	}
+	w.addChar(curChar)
+	return bss.nextState
+}
+
+func (*backslashState) delimiter() *rune {
+	return nil
+}
+
+type whitespaceState struct{}
+
+func (wss *whitespaceState) parseChar(curChar rune, w *words) parserState {
+	if wordBreakChars[curChar] {
+		// Don't end word because we're already between words.
+		return wss
+	}
+
+	w.startWord()
+	if quotationChars[curChar] {
+		return &quoteState{curChar}
+	}
+	if curChar == '\\' {
+		return &backslashState{&wordState{}}
+	}
+	w.addChar(curChar)
+	return &wordState{}
+}
+
+func (*whitespaceState) delimiter() *rune {
+	return nil
+}
+
+type quoteState struct {
+	quoteChar rune
+}
+
+func (qs *quoteState) parseChar(curChar rune, w *words) parserState {
+	if curChar == qs.quoteChar {
+		return &wordState{}
+	}
+	w.addChar(curChar)
+	return qs
+}
+
+func (qs *quoteState) delimiter() *rune {
+	return &qs.quoteChar
+}
+
+// TODO: add cpoint so we know what word we're completing.
+func ParseCompLine(compLine string) *Input {
+	w := &words{}
+	state := parserState(&whitespaceState{})
+	for _, c := range compLine {
+		state = state.parseChar(c, w)
+	}
+
+	var args []string
+	if w.inWord {
+		w.endWord()
+		args = w.words
+	} else {
+		// Needed for autocomplete.
+		args = append(w.words, "")
+	}
+
+	//return NewInput(args, state.delimiter())
+	return nil
+}
+
+// regular state
+// whitespace state
+// quote state
+
 // TODO: make this a state machine via interfaces.
 // ParseArgs parses raw, unsplit text.
+// ParseArgs parses the COMP_LINE string into an Input struct.
 func ParseArgs(unparsedArgs []string) *Input {
 	if len(unparsedArgs) == 0 {
 		return &Input{}

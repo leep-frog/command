@@ -35,7 +35,7 @@ const (
 	function _custom_autocomplete {
 		tFile=$(mktemp)
 	
-		$GOPATH/bin/leep-frog-source autocomplete $COMP_CWORD.$COMP_POINT $COMP_LINE > $tFile
+		$GOPATH/bin/leep-frog-source autocomplete $COMP_CWORD.$COMP_POINT "$COMP_LINE" > $tFile
 		local IFS=$'\n'
 		COMPREPLY=( $(cat $tFile) )
 		rm $tFile
@@ -132,13 +132,13 @@ func execute(cli CLI, executeFile string, args []string) {
 	}
 }
 
-func autocomplete(cli CLI, cword, cpoint int, args []string) {
+func autocomplete(cli CLI, cword, cpoint int, args string) {
 	// TODO: should cword/cpoint happen here or in command.Autocomplete function?
 	// Probably the latter so it can handle what happens if the cursor info isn't
 	// at the end?
-	if cword > len(args) {
+	/*if cword > len(args) {
 		args = append(args, "")
-	}
+	}*/
 	// TODO: use cpoint to determine if we're completing in the middle of a word.
 	// careful about spaces though.p
 	g := command.Autocomplete(cli.Node(), args)
@@ -149,7 +149,7 @@ func autocomplete(cli CLI, cword, cpoint int, args []string) {
 		if err != nil {
 			log.Fatalf("Unable to create file: %v", err)
 		}
-		if _, err := debugFile.WriteString(fmt.Sprintf("%d %d %d %s\n", len(args), cword, cpoint, strings.Join(args, "_"))); err != nil {
+		if _, err := debugFile.WriteString(fmt.Sprintf("%d %d %d %s\n", len(args), cword, cpoint, strings.ReplaceAll(args, " ", "_"))); err != nil {
 			log.Fatalf("Unable to write to file: %v", err)
 		}
 		if _, err := debugFile.WriteString(fmt.Sprintf("%d %d %d %s\n", len(g), cword, cpoint, strings.Join(g, "_"))); err != nil {
@@ -210,7 +210,7 @@ func Source(clis ...CLI) {
 		if err != nil {
 			log.Fatalf("Failed to convert COMP_POINT: %v", err)
 		}
-		autocomplete(cli, cword, cpoint, os.Args[4:])
+		autocomplete(cli, cword, cpoint, os.Args[4])
 	case "execute":
 		// TODO: change filename to file writer?
 		// (cli, filename (for ExecuteData.Exectuable), args)

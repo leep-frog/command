@@ -1,6 +1,7 @@
 package command
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -10,6 +11,17 @@ import (
 func runePtr(r rune) *rune {
 	return &r
 }
+
+/*func TestIt(t *testing.T) {
+	i := ParseArgs([]string{"clh:abcd"})
+
+	i.Pop()
+	i.PushFront("clh", "abcd")
+	want := ParseArgs([]string{"clh", "abcd"})
+	if diff := cmp.Diff(want, i, cmp.AllowUnexported(Input{}, inputArg{})); diff != "" {
+		t.Errorf("wrong: \n%s", diff)
+	}
+}*/
 
 func TestPushFront(t *testing.T) {
 	for _, test := range []struct {
@@ -594,6 +606,112 @@ func TestParseArgs(t *testing.T) {
 			got := ParseArgs(test.input)
 			if diff := cmp.Diff(test.want, got, cmp.AllowUnexported(Input{}, inputArg{})); diff != "" {
 				t.Fatalf("ParseArgs(%v) created incorrect args (-want, +got):\n%s", test.input, diff)
+			}
+		})
+	}
+}
+
+func TestParseCompLine(t *testing.T) {
+	for _, test := range []struct {
+		name  string
+		input string
+		want  *Input
+	}{
+		{
+			name: "handles empty input",
+			want: &Input{
+				args:      []*inputArg{{}},
+				remaining: []int{0},
+			},
+		},
+		{
+			name:  "converts single argument",
+			input: "one",
+			want: &Input{
+				args:      []*inputArg{{value: "one"}},
+				remaining: []int{0},
+			},
+		},
+		{
+			name:  "converts single argument with quote",
+			input: `"one`,
+			want: &Input{
+				args:      []*inputArg{{value: "one"}},
+				delimiter: runePtr('"'),
+				remaining: []int{0},
+			},
+		},
+		{
+			name:  "converts quoted argument",
+			input: `"one"`,
+			want: &Input{
+				args:      []*inputArg{{value: "one"}},
+				remaining: []int{0},
+			},
+		},
+		{
+			name:  "ignores last argument if quote",
+			input: `one "`,
+			want: &Input{
+				args:      []*inputArg{{value: "one"}, {value: ""}},
+				delimiter: runePtr('"'),
+				remaining: []int{0, 1},
+			},
+		},
+		{
+			name:  "space character",
+			input: "ab cd",
+			want: &Input{
+				args: []*inputArg{
+					{value: "ab"},
+					{value: "cd"},
+				},
+				remaining: []int{0, 1},
+			},
+		},
+		{
+			name:  "multiple space characters",
+			input: "ab cd  ef       gh",
+			want: &Input{
+				args: []*inputArg{
+					{value: "ab"},
+					{value: "cd"},
+					{value: "ef"},
+					{value: "gh"},
+				},
+				remaining: []int{0, 1, 2, 3},
+			},
+		},
+		{
+			name:  "quotation between words",
+			input: "a'b c'd",
+			want: &Input{
+				args:      []*inputArg{{value: "ab cd"}},
+				remaining: []int{0},
+			},
+		},
+		/*TODO escaped characters{{
+			name:  "escaped space character",
+			input: `ab\ cd`,
+			want: &Input{
+				args:      []*inputArg{{value: "ab cd"}},
+				remaining: []int{0},
+			},
+		},
+		{
+			name:  "escaped space character between words",
+			input: "ab\\ cd",
+			want: &Input{
+				args:      []*inputArg{{value: "ab cd"}},
+				remaining: []int{0},
+			},
+		},*/
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			fmt.Println(test.name)
+			got := ParseCompLine(test.input)
+			if diff := cmp.Diff(test.want, got, cmp.AllowUnexported(Input{}, inputArg{})); diff != "" {
+				t.Fatalf("ParseCompLine(%v) created incorrect args (-want, +got):\n%s", test.input, diff)
 			}
 		})
 	}

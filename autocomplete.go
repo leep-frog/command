@@ -1,12 +1,13 @@
 package command
 
-func Autocomplete(n *Node, args []string) []string {
-	return autocomplete(n, args, &Data{})
+func Autocomplete(n *Node, compLine string) []string {
+	return autocomplete(n, compLine, &Data{})
 }
 
 // Separate method for testing purposes.
-func autocomplete(n *Node, args []string, data *Data) []string {
-	input := ParseArgs(args)
+func autocomplete(n *Node, compLine string, data *Data) []string {
+	//input := ParseArgs(args)
+	input := ParseCompLine(compLine)
 	cd := getCompleteData(n, input, data)
 	if cd == nil {
 		return nil

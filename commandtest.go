@@ -145,7 +145,7 @@ func ChangeTest(t *testing.T, want interface{}, original Changeable, opts ...cmp
 
 type CompleteTestCase struct {
 	Node *Node
-	Args []string
+	Args string
 
 	Want     []string
 	WantData *Data
