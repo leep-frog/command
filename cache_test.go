@@ -430,7 +430,7 @@ func TestCacheComplete(t *testing.T) {
 						},
 					}),
 				)),
-				Args: "$ d",
+				Args: "cmd $ d",
 				Want: []string{"dinero", "dollHairs", "dollar"},
 				WantData: &Data{
 					Values: map[string]*Value{

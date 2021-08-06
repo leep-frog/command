@@ -26,7 +26,7 @@ func TestCompletors(t *testing.T) {
 		},
 		{
 			name: "doesn't complete if case mismatch with upper",
-			args: "A",
+			args: "cmd A",
 			c: &Completor{
 				SuggestionFetcher: &ListFetcher{
 					Options: []string{"abc", "Abc", "ABC"},
@@ -36,7 +36,7 @@ func TestCompletors(t *testing.T) {
 		},
 		{
 			name: "doesn't complete if case mismatch with lower",
-			args: "a",
+			args: "cmd a",
 			c: &Completor{
 				SuggestionFetcher: &ListFetcher{
 					Options: []string{"abc", "Abc", "ABC"},
@@ -46,7 +46,7 @@ func TestCompletors(t *testing.T) {
 		},
 		{
 			name: "completes all cases if completor.CaseInsensitive and upper",
-			args: "A",
+			args: "cmd A",
 			c: &Completor{
 				CaseInsensitive: true,
 				SuggestionFetcher: &ListFetcher{
@@ -57,7 +57,7 @@ func TestCompletors(t *testing.T) {
 		},
 		{
 			name: "completes all cases if completor.CaseInsensitive and lower",
-			args: "a",
+			args: "cmd a",
 			c: &Completor{
 				CaseInsensitive: true,
 				SuggestionFetcher: &ListFetcher{
@@ -68,7 +68,7 @@ func TestCompletors(t *testing.T) {
 		},
 		{
 			name: "completes only matching cases",
-			args: "A",
+			args: "cmd A",
 			c: &Completor{
 				SuggestionFetcher: SimpleFetcher(func(*Value, *Data) *Completion {
 					return &Completion{
@@ -80,7 +80,7 @@ func TestCompletors(t *testing.T) {
 		},
 		{
 			name: "completes all cases if completor.CaseInsensitive and upper",
-			args: "A",
+			args: "cmd A",
 			c: &Completor{
 				SuggestionFetcher: SimpleFetcher(func(*Value, *Data) *Completion {
 					return &Completion{
@@ -93,7 +93,7 @@ func TestCompletors(t *testing.T) {
 		},
 		{
 			name: "completes all cases if completor.CaseInsensitive and lower",
-			args: "a",
+			args: "cmd a",
 			c: &Completor{
 				SuggestionFetcher: SimpleFetcher(func(*Value, *Data) *Completion {
 					return &Completion{
@@ -125,13 +125,13 @@ func TestCompletors(t *testing.T) {
 		{
 			name: "non-distinct completor returns duplicates",
 			c:    SimpleCompletor("first", "second", "third"),
-			args: "first second ",
+			args: "cmd first second ",
 			want: []string{"first", "second", "third"},
 		},
 		{
 			name: "distinct completor does not return duplicates",
 			c:    SimpleDistinctCompletor("first", "second", "third"),
-			args: "first second ",
+			args: "cmd first second ",
 			want: []string{"third"},
 		},
 		// Delimiter tests
@@ -625,12 +625,12 @@ func TestFetchers(t *testing.T) {
 		{
 			name: "file fetcher handles empty directory",
 			f:    &FileFetcher{},
-			args: "testing/empty/",
+			args: "cmd testing/empty/",
 		},
 		{
 			name: "file fetcher works with string list arg",
 			f:    &FileFetcher{},
-			args: "execu",
+			args: "cmd execu",
 			want: []string{
 				"execute",
 				"execute_",
@@ -642,7 +642,7 @@ func TestFetchers(t *testing.T) {
 			f: &FileFetcher{
 				Distinct: true,
 			},
-			args: "execute.go execu",
+			args: "cmd execute.go execu",
 			want: []string{
 				"execute_test.go",
 			},
@@ -650,7 +650,7 @@ func TestFetchers(t *testing.T) {
 		{
 			name:      "file fetcher works with string arg",
 			f:         &FileFetcher{},
-			args:      "execu",
+			args:      "cmd execu",
 			stringArg: true,
 			want: []string{
 				"execute",
@@ -716,7 +716,7 @@ func TestFetchers(t *testing.T) {
 			f: &FileFetcher{
 				Directory: "testing/dir3",
 			},
-			args: "th",
+			args: "cmd th",
 			want: []string{
 				"that/",
 				"this.txt",
@@ -751,7 +751,7 @@ func TestFetchers(t *testing.T) {
 		{
 			name: "file fetcher completes to directory",
 			f:    &FileFetcher{},
-			args: "testing/dir1",
+			args: "cmd testing/dir1",
 			want: []string{
 				"testing/dir1/",
 				"testing/dir1/_",
@@ -762,7 +762,7 @@ func TestFetchers(t *testing.T) {
 			f: &FileFetcher{
 				Directory: "testing",
 			},
-			args: "dir1",
+			args: "cmd dir1",
 			want: []string{
 				"dir1/",
 				"dir1/_",
@@ -771,7 +771,7 @@ func TestFetchers(t *testing.T) {
 		{
 			name: "file fetcher shows contents of directory when ending with a separator",
 			f:    &FileFetcher{},
-			args: "testing/dir1/",
+			args: "cmd testing/dir1/",
 			want: []string{
 				"first.txt",
 				"fourth.py",
@@ -785,7 +785,7 @@ func TestFetchers(t *testing.T) {
 			f: &FileFetcher{
 				Directory: "testing",
 			},
-			args: "dir1/",
+			args: "cmd dir1/",
 			want: []string{
 				"first.txt",
 				"fourth.py",
@@ -797,7 +797,7 @@ func TestFetchers(t *testing.T) {
 		{
 			name: "file fetcher only shows basenames when multiple options with different next letter",
 			f:    &FileFetcher{},
-			args: "testing/dir",
+			args: "cmd testing/dir",
 			want: []string{
 				"dir1/",
 				"dir2/",
@@ -809,7 +809,7 @@ func TestFetchers(t *testing.T) {
 		{
 			name: "file fetcher shows full names when multiple options with same next letter",
 			f:    &FileFetcher{},
-			args: "testing/d",
+			args: "cmd testing/d",
 			want: []string{
 				"testing/dir",
 				"testing/dir_",
@@ -820,7 +820,7 @@ func TestFetchers(t *testing.T) {
 			f: &FileFetcher{
 				Directory: "testing/dir1",
 			},
-			args: "f",
+			args: "cmd f",
 			want: []string{
 				"first.txt",
 				"fourth.py",
@@ -830,7 +830,7 @@ func TestFetchers(t *testing.T) {
 		{
 			name: "file fetcher handles directories with spaces",
 			f:    &FileFetcher{},
-			args: `testing/dir4/folder\ wit`,
+			args: `cmd testing/dir4/folder\ wit`,
 			want: []string{
 				`testing/dir4/folder\ with\ spaces/`,
 				`testing/dir4/folder\ with\ spaces/_`,
@@ -839,7 +839,7 @@ func TestFetchers(t *testing.T) {
 		{
 			name: "file fetcher handles directories with spaces when same argument",
 			f:    &FileFetcher{},
-			args: `testing/dir4/folder\ wit`,
+			args: `cmd testing/dir4/folder\ wit`,
 			want: []string{
 				`testing/dir4/folder\ with\ spaces/`,
 				`testing/dir4/folder\ with\ spaces/_`,
@@ -848,7 +848,7 @@ func TestFetchers(t *testing.T) {
 		{
 			name: "file fetcher can dive into folder with spaces",
 			f:    &FileFetcher{},
-			args: `testing/dir4/folder\ with\ spaces/`,
+			args: `cmd testing/dir4/folder\ with\ spaces/`,
 			want: []string{
 				"goodbye.go",
 				"hello.txt",
@@ -858,7 +858,7 @@ func TestFetchers(t *testing.T) {
 		{
 			name: "file fetcher can dive into folder with spaces when combined args",
 			f:    &FileFetcher{},
-			args: `testing/dir4/folder\ with\ spaces/`,
+			args: `cmd testing/dir4/folder\ with\ spaces/`,
 			want: []string{
 				"goodbye.go",
 				"hello.txt",
@@ -868,7 +868,7 @@ func TestFetchers(t *testing.T) {
 		{
 			name: "autocomplete fills in letters that are the same for all options",
 			f:    &FileFetcher{},
-			args: `testing/dir4/fo`,
+			args: `cmd testing/dir4/fo`,
 			want: []string{
 				"testing/dir4/folder",
 				"testing/dir4/folder_",
@@ -878,7 +878,7 @@ func TestFetchers(t *testing.T) {
 			name:          "file fetcher doesn't get filtered out when part of a CommandBranch",
 			f:             &FileFetcher{},
 			commandBranch: true,
-			args:          "testing/dir",
+			args:          "cmd testing/dir",
 			want: []string{
 				"dir1/",
 				"dir2/",
@@ -891,7 +891,7 @@ func TestFetchers(t *testing.T) {
 			name:          "file fetcher handles multiple options in directory",
 			f:             &FileFetcher{},
 			commandBranch: true,
-			args:          "testing/dir1/f",
+			args:          "cmd testing/dir1/f",
 			want: []string{
 				"first.txt",
 				"fourth.py",
@@ -902,7 +902,7 @@ func TestFetchers(t *testing.T) {
 			name:          "case insensitive gets letters autofilled",
 			f:             &FileFetcher{},
 			commandBranch: true,
-			args:          "testing/dI",
+			args:          "cmd testing/dI",
 			want: []string{
 				"testing/dir",
 				"testing/dir_",
@@ -912,7 +912,7 @@ func TestFetchers(t *testing.T) {
 			name:          "case insensitive recommends all without complete",
 			f:             &FileFetcher{},
 			commandBranch: true,
-			args:          "testing/DiR",
+			args:          "cmd testing/DiR",
 			want: []string{
 				"dir1/",
 				"dir2/",
@@ -925,7 +925,7 @@ func TestFetchers(t *testing.T) {
 			name:          "file fetcher ignores case",
 			f:             &FileFetcher{},
 			commandBranch: true,
-			args:          "testing/cases/abc",
+			args:          "cmd testing/cases/abc",
 			want: []string{
 				"testing/cases/abcde",
 				"testing/cases/abcde_",
@@ -935,7 +935,7 @@ func TestFetchers(t *testing.T) {
 			name:          "file fetcher sorting ignores cases when no file",
 			f:             &FileFetcher{},
 			commandBranch: true,
-			args:          "testing/moreCases/",
+			args:          "cmd testing/moreCases/",
 			want: []string{
 				"testing/moreCases/QW_",
 				"testing/moreCases/QW__",
@@ -945,7 +945,7 @@ func TestFetchers(t *testing.T) {
 			name:          "file fetcher sorting ignores cases when autofilling",
 			f:             &FileFetcher{},
 			commandBranch: true,
-			args:          "testing/moreCases/q",
+			args:          "cmd testing/moreCases/q",
 			want: []string{
 				"testing/moreCases/qW_",
 				"testing/moreCases/qW__",
@@ -955,7 +955,7 @@ func TestFetchers(t *testing.T) {
 			name:          "file fetcher sorting ignores cases when not autofilling",
 			f:             &FileFetcher{},
 			commandBranch: true,
-			args:          "testing/moreCases/qW_t",
+			args:          "cmd testing/moreCases/qW_t",
 			want: []string{
 				"qW_three.txt",
 				"qw_TRES.txt",
@@ -966,7 +966,7 @@ func TestFetchers(t *testing.T) {
 		{
 			name: "file fetcher completes to case matched completion",
 			f:    &FileFetcher{},
-			args: "testing/meta",
+			args: "cmd testing/meta",
 			want: []string{
 				"testing/metadata",
 				"testing/metadata_",
@@ -975,7 +975,7 @@ func TestFetchers(t *testing.T) {
 		{
 			name: "file fetcher completes to case matched completion",
 			f:    &FileFetcher{},
-			args: "testing/ME",
+			args: "cmd testing/ME",
 			want: []string{
 				"testing/METADATA",
 				"testing/METADATA_",
@@ -984,7 +984,7 @@ func TestFetchers(t *testing.T) {
 		{
 			name: "file fetcher completes to something when no cases match",
 			f:    &FileFetcher{},
-			args: "testing/MeTa",
+			args: "cmd testing/MeTa",
 			want: []string{
 				"testing/METADATA",
 				"testing/METADATA_",
@@ -995,7 +995,7 @@ func TestFetchers(t *testing.T) {
 			f: &FileFetcher{
 				Directory: "testing",
 			},
-			args: "meta",
+			args: "cmd meta",
 			want: []string{
 				"metadata",
 				"metadata_",
@@ -1006,7 +1006,7 @@ func TestFetchers(t *testing.T) {
 			f: &FileFetcher{
 				Directory: "testing",
 			},
-			args: "MET",
+			args: "cmd MET",
 			want: []string{
 				"METADATA",
 				"METADATA_",
@@ -1017,7 +1017,7 @@ func TestFetchers(t *testing.T) {
 			f: &FileFetcher{
 				Directory: "testing",
 			},
-			args: "meTA",
+			args: "cmd meTA",
 			want: []string{
 				"METADATA",
 				"METADATA_",
@@ -1026,7 +1026,7 @@ func TestFetchers(t *testing.T) {
 		{
 			name: "file fetcher doesn't complete when matches a prefix",
 			f:    &FileFetcher{},
-			args: "testing/METADATA",
+			args: "cmd testing/METADATA",
 			want: []string{
 				"METADATA",
 				"metadata_/",
@@ -1036,7 +1036,7 @@ func TestFetchers(t *testing.T) {
 		{
 			name: "file fetcher doesn't complete when matches a prefix file",
 			f:    &FileFetcher{},
-			args: "testing/metadata_/m",
+			args: "cmd testing/metadata_/m",
 			want: []string{
 				"m1",
 				"m2",
@@ -1047,7 +1047,7 @@ func TestFetchers(t *testing.T) {
 			name:     "file fetcher returns complete match if distinct",
 			f:        &FileFetcher{},
 			distinct: true,
-			args:     "testing/metadata_/m1",
+			args:     "cmd testing/metadata_/m1",
 			want: []string{
 				"testing/metadata_/m1",
 			},
@@ -1056,7 +1056,7 @@ func TestFetchers(t *testing.T) {
 		{
 			name: "file fetcher returns repeats if not distinct",
 			f:    &FileFetcher{},
-			args: "testing/three.txt testing/t",
+			args: "cmd testing/three.txt testing/t",
 			want: []string{"three.txt", "two.txt", " "},
 		},
 		{
@@ -1064,7 +1064,7 @@ func TestFetchers(t *testing.T) {
 			f: &FileFetcher{
 				Distinct: true,
 			},
-			args: "testing/three.txt testing/t",
+			args: "cmd testing/three.txt testing/t",
 			want: []string{"testing/two.txt"},
 		},
 		{
@@ -1072,14 +1072,14 @@ func TestFetchers(t *testing.T) {
 			f: &FileFetcher{
 				Distinct: true,
 			},
-			args: "testing/three.txt testing/two.txt testing/t",
+			args: "cmd testing/three.txt testing/two.txt testing/t",
 		},
 		{
 			name: "file fetcher first level distinct partially completes",
 			f: &FileFetcher{
 				Distinct: true,
 			},
-			args: "comp",
+			args: "cmd comp",
 			want: []string{"completor", "completor_"},
 		},
 		{
@@ -1087,11 +1087,12 @@ func TestFetchers(t *testing.T) {
 			f: &FileFetcher{
 				Distinct: true,
 			},
-			args: "c",
+			args: "cmd c",
 			want: []string{
 				"cache.go",
 				"cache/",
 				"cache_test.go",
+				"cmd/",
 				"color/",
 				"commandtest.go",
 				"completor.go",
@@ -1105,7 +1106,7 @@ func TestFetchers(t *testing.T) {
 			f: &FileFetcher{
 				Distinct: true,
 			},
-			args: "custom_nodes.go comp",
+			args: "cmd custom_nodes.go comp",
 			want: []string{
 				"completor",
 				"completor_",
@@ -1116,11 +1117,12 @@ func TestFetchers(t *testing.T) {
 			f: &FileFetcher{
 				Distinct: true,
 			},
-			args: "completor.go c",
+			args: "cmd completor.go c",
 			want: []string{
 				"cache.go",
 				"cache/",
 				"cache_test.go",
+				"cmd/",
 				"color/",
 				"commandtest.go",
 				"completor_test.go",
@@ -1133,11 +1135,12 @@ func TestFetchers(t *testing.T) {
 			f: &FileFetcher{
 				Distinct: true,
 			},
-			args: "completor.go completor_test.go c",
+			args: "cmd completor.go completor_test.go c",
 			want: []string{
 				"cache.go",
 				"cache/",
 				"cache_test.go",
+				"cmd/",
 				"color/",
 				"commandtest.go",
 				"custom_nodes.go",

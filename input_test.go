@@ -620,13 +620,21 @@ func TestParseCompLine(t *testing.T) {
 		{
 			name: "handles empty input",
 			want: &Input{
-				args:      []*inputArg{{}},
-				remaining: []int{0},
+				args:      []*inputArg{},
+				remaining: []int{},
+			},
+		},
+		{
+			name:  "handles empty command",
+			input: "cmd",
+			want: &Input{
+				args:      []*inputArg{},
+				remaining: []int{},
 			},
 		},
 		{
 			name:  "converts single argument",
-			input: "one",
+			input: "cmd one",
 			want: &Input{
 				args:      []*inputArg{{value: "one"}},
 				remaining: []int{0},
@@ -634,7 +642,7 @@ func TestParseCompLine(t *testing.T) {
 		},
 		{
 			name:  "converts single argument with quote",
-			input: `"one`,
+			input: `cmd "one`,
 			want: &Input{
 				args:      []*inputArg{{value: "one"}},
 				delimiter: runePtr('"'),
@@ -643,7 +651,7 @@ func TestParseCompLine(t *testing.T) {
 		},
 		{
 			name:  "converts quoted argument",
-			input: `"one"`,
+			input: `cmd "one"`,
 			want: &Input{
 				args:      []*inputArg{{value: "one"}},
 				remaining: []int{0},
@@ -651,7 +659,7 @@ func TestParseCompLine(t *testing.T) {
 		},
 		{
 			name:  "ignores last argument if quote",
-			input: `one "`,
+			input: `cmd one "`,
 			want: &Input{
 				args:      []*inputArg{{value: "one"}, {value: ""}},
 				delimiter: runePtr('"'),
@@ -660,7 +668,7 @@ func TestParseCompLine(t *testing.T) {
 		},
 		{
 			name:  "space character",
-			input: "ab cd",
+			input: "cmd ab cd",
 			want: &Input{
 				args: []*inputArg{
 					{value: "ab"},
@@ -671,7 +679,7 @@ func TestParseCompLine(t *testing.T) {
 		},
 		{
 			name:  "multiple space characters",
-			input: "ab cd  ef       gh",
+			input: "cmd ab cd  ef       gh",
 			want: &Input{
 				args: []*inputArg{
 					{value: "ab"},
@@ -684,7 +692,7 @@ func TestParseCompLine(t *testing.T) {
 		},
 		{
 			name:  "quotation between words",
-			input: "a'b c'd",
+			input: "cmd a'b c'd",
 			want: &Input{
 				args:      []*inputArg{{value: "ab cd"}},
 				remaining: []int{0},
@@ -692,7 +700,7 @@ func TestParseCompLine(t *testing.T) {
 		},
 		/*TODO escaped characters{{
 			name:  "escaped space character",
-			input: `ab\ cd`,
+			input: `cmd ab\ cd`,
 			want: &Input{
 				args:      []*inputArg{{value: "ab cd"}},
 				remaining: []int{0},
@@ -700,7 +708,7 @@ func TestParseCompLine(t *testing.T) {
 		},
 		{
 			name:  "escaped space character between words",
-			input: "ab\\ cd",
+			input: "cmd ab\\ cd",
 			want: &Input{
 				args:      []*inputArg{{value: "ab cd"}},
 				remaining: []int{0},

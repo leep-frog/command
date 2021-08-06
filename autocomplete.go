@@ -6,7 +6,6 @@ func Autocomplete(n *Node, compLine string) []string {
 
 // Separate method for testing purposes.
 func autocomplete(n *Node, compLine string, data *Data) []string {
-	//input := ParseArgs(args)
 	input := ParseCompLine(compLine)
 	cd := getCompleteData(n, input, data)
 	if cd == nil {

@@ -1404,7 +1404,7 @@ func TestAliasComplete(t *testing.T) {
 						SuggestionFetcher: &ListFetcher{[]string{"un", "deux", "trois"}},
 					},
 				}))),
-				Args: "",
+				Args: "cmd ",
 				WantData: &Data{
 					Values: map[string]*Value{
 						"sl": StringListValue(""),
@@ -1422,7 +1422,7 @@ func TestAliasComplete(t *testing.T) {
 						SuggestionFetcher: &ListFetcher{[]string{"un", "deux", "trois"}},
 					},
 				}))),
-				Args: "a ",
+				Args: "cmd a ",
 				WantData: &Data{
 					Values: map[string]*Value{
 						aliasArgName: StringValue(""),
@@ -1443,7 +1443,7 @@ func TestAliasComplete(t *testing.T) {
 						SuggestionFetcher: &ListFetcher{[]string{"un", "deux", "trois"}},
 					},
 				}))),
-				Args: "alpha b ",
+				Args: "cmd alpha b ",
 			},
 		},
 		{
@@ -1454,7 +1454,7 @@ func TestAliasComplete(t *testing.T) {
 						SuggestionFetcher: &ListFetcher{[]string{"un", "deux", "trois"}},
 					},
 				}))),
-				Args: "a b ",
+				Args: "cmd a b ",
 				WantData: &Data{
 					Values: map[string]*Value{
 						aliasArgName: StringValue("b"),
@@ -1472,7 +1472,7 @@ func TestAliasComplete(t *testing.T) {
 						SuggestionFetcher: &ListFetcher{[]string{"un", "deux", "trois"}},
 					},
 				}))),
-				Args: "a b ",
+				Args: "cmd a b ",
 				WantData: &Data{
 					Values: map[string]*Value{
 						aliasArgName: StringValue("b"),
@@ -1496,7 +1496,7 @@ func TestAliasComplete(t *testing.T) {
 			},
 			ctc: &CompleteTestCase{
 				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
-				Args: "g ",
+				Args: "cmd g ",
 				WantData: &Data{
 					Values: map[string]*Value{
 						aliasArgName: StringListValue(""),
@@ -1518,7 +1518,7 @@ func TestAliasComplete(t *testing.T) {
 			},
 			ctc: &CompleteTestCase{
 				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
-				Args: "g b",
+				Args: "cmd g b",
 				WantData: &Data{
 					Values: map[string]*Value{
 						aliasArgName: StringListValue("b"),
@@ -1540,7 +1540,7 @@ func TestAliasComplete(t *testing.T) {
 			},
 			ctc: &CompleteTestCase{
 				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
-				Args: "g alright balloon ",
+				Args: "cmd g alright balloon ",
 				WantData: &Data{
 					Values: map[string]*Value{
 						aliasArgName: StringListValue("alright", "balloon", ""),
@@ -1563,7 +1563,7 @@ func TestAliasComplete(t *testing.T) {
 			},
 			ctc: &CompleteTestCase{
 				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
-				Args: "d ",
+				Args: "cmd d ",
 				WantData: &Data{
 					Values: map[string]*Value{
 						aliasArgName: StringListValue(""),
@@ -1585,7 +1585,7 @@ func TestAliasComplete(t *testing.T) {
 			},
 			ctc: &CompleteTestCase{
 				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
-				Args: "d b",
+				Args: "cmd d b",
 				WantData: &Data{
 					Values: map[string]*Value{
 						aliasArgName: StringListValue("b"),
@@ -1607,7 +1607,7 @@ func TestAliasComplete(t *testing.T) {
 			},
 			ctc: &CompleteTestCase{
 				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
-				Args: "d alright balloon ",
+				Args: "cmd d alright balloon ",
 				WantData: &Data{
 					Values: map[string]*Value{
 						aliasArgName: StringListValue("alright", "balloon", ""),
@@ -1625,7 +1625,7 @@ func TestAliasComplete(t *testing.T) {
 						SuggestionFetcher: &ListFetcher{[]string{"un", "deux", "trois"}},
 					},
 				}))),
-				Args: "zero ",
+				Args: "cmd zero ",
 				WantData: &Data{
 					Values: map[string]*Value{
 						"sl": StringListValue("zero", ""),
@@ -1642,7 +1642,7 @@ func TestAliasComplete(t *testing.T) {
 						SuggestionFetcher: &ListFetcher{[]string{"un", "deux", "trois"}},
 					},
 				}))),
-				Args: "dee",
+				Args: "cmd dee",
 				WantData: &Data{
 					Values: map[string]*Value{
 						"sl": StringListValue("dee"),
@@ -1663,7 +1663,7 @@ func TestAliasComplete(t *testing.T) {
 						SuggestionFetcher: &ListFetcher{[]string{"un", "deux", "trois"}},
 					},
 				}))),
-				Args: "dee t",
+				Args: "cmd dee t",
 				WantData: &Data{
 					Values: map[string]*Value{
 						"sl": StringListValue("d", "t"),
@@ -1686,7 +1686,7 @@ func TestAliasComplete(t *testing.T) {
 						SuggestionFetcher: &ListFetcher{[]string{"un", "deux", "trois"}},
 					},
 				}))),
-				Args: "dee ",
+				Args: "cmd dee ",
 				WantData: &Data{
 					Values: map[string]*Value{
 						"sl": StringListValue("deux", ""),
@@ -1708,7 +1708,7 @@ func TestAliasComplete(t *testing.T) {
 						SuggestionFetcher: &ListFetcher{[]string{"un", "deux", "trois"}},
 					},
 				})),
-				Args: "zero ",
+				Args: "cmd zero ",
 				WantData: &Data{
 					Values: map[string]*Value{
 						"sl": StringListValue("zero", ""),
@@ -1734,7 +1734,7 @@ func TestAliasComplete(t *testing.T) {
 						SuggestionFetcher: &ListFetcher{[]string{"un", "deux", "trois"}},
 					},
 				})),
-				Args: "hello dee",
+				Args: "cmd hello dee",
 				WantData: &Data{
 					Values: map[string]*Value{
 						"sl": StringListValue("hello", "dee"),
@@ -1759,7 +1759,7 @@ func TestAliasComplete(t *testing.T) {
 						SuggestionFetcher: &ListFetcher{[]string{"un", "deux", "trois"}},
 					},
 				})),
-				Args: "hello dee t",
+				Args: "cmd hello dee t",
 				WantData: &Data{
 					Values: map[string]*Value{
 						"sl": StringListValue("hello", "d", "t"),
@@ -1786,7 +1786,7 @@ func TestAliasComplete(t *testing.T) {
 						SuggestionFetcher: &ListFetcher{[]string{"un", "deux", "trois"}},
 					},
 				})),
-				Args: "dee ",
+				Args: "cmd dee ",
 				WantData: &Data{
 					Values: map[string]*Value{
 						"sl": StringListValue("deux", ""),
@@ -1814,7 +1814,7 @@ func TestAliasComplete(t *testing.T) {
 						SuggestionFetcher: &ListFetcher{[]string{"un", "deux", "trois"}},
 					},
 				})),
-				Args: "dee t ",
+				Args: "cmd dee t ",
 				WantData: &Data{
 					Values: map[string]*Value{
 						"sl": StringListValue("deux", "trois", ""),
@@ -1843,7 +1843,7 @@ func TestAliasComplete(t *testing.T) {
 						SuggestionFetcher: &ListFetcher{[]string{"un", "deux", "trois"}},
 					},
 				})),
-				Args: "f dee ",
+				Args: "cmd f dee ",
 				WantData: &Data{
 					Values: map[string]*Value{
 						"sl": StringListValue("four", "two", "deux", ""),
@@ -1874,7 +1874,7 @@ func TestAliasComplete(t *testing.T) {
 						SuggestionFetcher: &ListFetcher{[]string{"un", "deux", "trois", "five", "six"}},
 					},
 				})),
-				Args: "f zero zero n1 dee n2 n3 t u n4 n5 ",
+				Args: "cmd f zero zero n1 dee n2 n3 t u n4 n5 ",
 				WantData: &Data{
 					Values: map[string]*Value{
 						"sl": StringListValue("four", "0", "0", "n1", "two", "deux", "n2", "n3", "three", "trois", "tres", "un", "n4", "n5", ""),
@@ -1905,7 +1905,7 @@ func TestAliasComplete(t *testing.T) {
 						SuggestionFetcher: &ListFetcher{[]string{"un", "deux", "trois", "five", "six"}},
 					},
 				})),
-				Args: "f zero n1 t",
+				Args: "cmd f zero n1 t",
 				WantData: &Data{
 					Values: map[string]*Value{
 						"sl": StringListValue("four", "0", "n1", "t"),
@@ -1928,7 +1928,7 @@ func TestAliasComplete(t *testing.T) {
 						AliasCLI:  ac,
 					},
 				}), StringNode("s", nil), StringNode("i", &ArgOpt{Completor: SimpleCompletor("alpha", "beta")})),
-				Args: "t ",
+				Args: "cmd t ",
 				WantData: &Data{
 					Values: map[string]*Value{
 						"sl": StringListValue("three", "trois", "tres"),
@@ -1953,7 +1953,7 @@ func TestAliasComplete(t *testing.T) {
 						AliasCLI:  ac,
 					},
 				}), StringNode("s", nil), StringNode("i", &ArgOpt{Completor: SimpleCompletor("alpha", "beta")})),
-				Args: "I II III t ",
+				Args: "cmd I II III t ",
 				WantData: &Data{
 					Values: map[string]*Value{
 						"sl": StringListValue("I", "II", "III"),

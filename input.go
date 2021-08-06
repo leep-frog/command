@@ -320,7 +320,8 @@ func ParseCompLine(compLine string) *Input {
 		args = append(w.words, "")
 	}
 
-	return NewInput(args, state.delimiter())
+	// The first argument is the command so we can ignore that.
+	return NewInput(args[1:], state.delimiter())
 }
 
 // regular state
