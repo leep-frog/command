@@ -67,7 +67,7 @@ func ExecuteTest(t *testing.T, etc *ExecuteTestCase, opts *ExecuteTestOptions) {
 		t.Cleanup(func() { os.Remove(setupFile) })
 	}
 
-	input := ParseArgs(args)
+	input := NewInput(args, nil)
 
 	fo := NewFakeOutput()
 	data := &Data{}

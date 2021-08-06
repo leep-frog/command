@@ -138,7 +138,7 @@ func TestCompletors(t *testing.T) {
 		/*{
 			name: "completor works with ",
 			c:    SimpleDistinctCompletor("first", "sec ond", "sec over"),
-			args: []string{"first", "sec"},
+			args: "first", "sec",
 			want: []string{"third"},
 		},*/
 	} {
@@ -155,7 +155,7 @@ func TestCompletors(t *testing.T) {
 func TestParseAndComplete(t *testing.T) {
 	for _, test := range []struct {
 		name        string
-		args        []string
+		args        string
 		cursorIdx   int
 		suggestions []string
 		wantData    *Data
@@ -193,7 +193,7 @@ func TestParseAndComplete(t *testing.T) {
 		},
 		{
 			name: "last argument matches a multi-word option",
-			args: []string{"Fo"},
+			args: "cmd Fo",
 			suggestions: []string{
 				"First Choice",
 				"Second Thing",
@@ -212,7 +212,7 @@ func TestParseAndComplete(t *testing.T) {
 		},
 		{
 			name: "last argument matches multiple multi-word options",
-			args: []string{"F"},
+			args: "cmd F",
 			suggestions: []string{
 				"First Choice",
 				"Fourth Option",
@@ -231,7 +231,7 @@ func TestParseAndComplete(t *testing.T) {
 		},
 		{
 			name: "args with double quotes count as single option and ignore single quote",
-			args: []string{`"Greg's`, `One"`, ""},
+			args: `cmd "Greg's One" `,
 			suggestions: []string{
 				"Greg's One",
 				"Greg's Two",
@@ -252,7 +252,7 @@ func TestParseAndComplete(t *testing.T) {
 		},
 		{
 			name: "args with single quotes count as single option and ignore double quote",
-			args: []string{`'Greg"s`, `Other"s'`, ""},
+			args: `cmd 'Greg"s Other"s' `,
 			suggestions: []string{
 				`Greg"s One`,
 				`Greg"s Two`,
@@ -273,7 +273,7 @@ func TestParseAndComplete(t *testing.T) {
 		},
 		{
 			name: "completes properly if ending on double quote",
-			args: []string{`"`},
+			args: `cmd "`,
 			suggestions: []string{
 				"First Choice",
 				"Second Thing",
@@ -297,7 +297,7 @@ func TestParseAndComplete(t *testing.T) {
 		{
 			name: "completes properly if ending on double quote with previous option",
 			// TODO: Should autocomplete just accept a string and it can parse the whole thing itself?
-			args: []string{"hello", `"`},
+			args: `cmd hello "`,
 			suggestions: []string{
 				"First Choice",
 				"Second Thing",
@@ -320,7 +320,7 @@ func TestParseAndComplete(t *testing.T) {
 		},
 		{
 			name: "completes properly if ending on single quote",
-			args: []string{`"First`, `Choice"`, `'`},
+			args: `cmd "First Choice" '`,
 			suggestions: []string{
 				"First Choice",
 				"Second Thing",
@@ -342,7 +342,7 @@ func TestParseAndComplete(t *testing.T) {
 		},
 		{
 			name: "completes with single quotes if unclosed single quote",
-			args: []string{`"First`, `Choice"`, `'F`},
+			args: `cmd "First Choice" 'F`,
 			suggestions: []string{
 				"First Choice",
 				"Second Thing",
@@ -362,7 +362,7 @@ func TestParseAndComplete(t *testing.T) {
 		},
 		{
 			name: "last argument is just a double quote",
-			args: []string{`"`},
+			args: `cmd "`,
 			suggestions: []string{
 				"First Choice",
 				"Second Thing",
@@ -384,7 +384,7 @@ func TestParseAndComplete(t *testing.T) {
 		},
 		{
 			name: "last argument is a double quote with words",
-			args: []string{`"F`},
+			args: `cmd "F`,
 			suggestions: []string{
 				"First Choice",
 				"Second Thing",
@@ -404,7 +404,7 @@ func TestParseAndComplete(t *testing.T) {
 		},
 		{
 			name: "double quote with single quote",
-			args: []string{`"Greg's T`},
+			args: `cmd "Greg's T`,
 			suggestions: []string{
 				"Greg's One",
 				"Greg's Two",
@@ -422,7 +422,7 @@ func TestParseAndComplete(t *testing.T) {
 		},
 		{
 			name: "last argument is just a single quote",
-			args: []string{"'"},
+			args: "cmd '",
 			suggestions: []string{
 				"First Choice",
 				"Second Thing",
@@ -444,7 +444,7 @@ func TestParseAndComplete(t *testing.T) {
 		},
 		{
 			name: "last argument is a single quote with words",
-			args: []string{"'F"},
+			args: "cmd 'F",
 			suggestions: []string{
 				"First Choice",
 				"Second Thing",
@@ -464,7 +464,7 @@ func TestParseAndComplete(t *testing.T) {
 		},
 		{
 			name: "single quote with double quote",
-			args: []string{`'Greg"s T`},
+			args: `cmd 'Greg"s T`,
 			suggestions: []string{
 				`Greg"s One`,
 				`Greg"s Two`,
@@ -484,7 +484,7 @@ func TestParseAndComplete(t *testing.T) {
 		},
 		{
 			name: "end with space",
-			args: []string{"Attempt One "},
+			args: "cmd Attempt\\ One\\ ",
 			suggestions: []string{
 				"Attempt One Two",
 				"Attempt OneTwo",
@@ -502,7 +502,7 @@ func TestParseAndComplete(t *testing.T) {
 		},
 		{
 			name: "single and double words",
-			args: []string{"Three"},
+			args: "cmd Three",
 			suggestions: []string{
 				"Attempt One Two",
 				"Attempt OneTwo",
@@ -522,7 +522,7 @@ func TestParseAndComplete(t *testing.T) {
 		},
 		{
 			name: "handles backslashes before spaces",
-			args: []string{"First\\ O"},
+			args: "cmd First\\ O",
 			suggestions: []string{
 				"First Of",
 				"First One",
@@ -548,20 +548,18 @@ func TestParseAndComplete(t *testing.T) {
 			}
 			n := SerialNodes(StringListNode("sl", 0, UnboundedList, NewArgOpt(c, nil)))
 
-			// TODO: change other tests to use genericAutocomplete (instead of n.complete).
 			data := &Data{}
-			input := ParseArgs(test.args)
-			got := getCompleteData(n, input, data)
-			var results []string
-			if got != nil && got.Completion != nil {
-				results = got.Completion.Process(input)
-			}
-			if diff := cmp.Diff(test.wantData, data, cmpopts.EquateEmpty()); diff != "" {
-				t.Errorf("getCompleteData(%s) improperly parsed args (-want, +got)\n:%s", test.args, diff)
+			got := autocomplete(n, test.args, data)
+			if diff := cmp.Diff(test.want, got, cmpopts.EquateEmpty()); diff != "" {
+				t.Errorf("Autocomplete(%s) produced incorrect completions (-want, +got):\n%s", test.args, diff)
 			}
 
-			if diff := cmp.Diff(test.want, results); diff != "" {
-				t.Errorf("getCompleteData(%s) returned incorrect suggestions (-want, +got):\n%s", test.args, diff)
+			wantData := test.wantData
+			if wantData == nil {
+				wantData = &Data{}
+			}
+			if diff := cmp.Diff(wantData, data, cmpopts.EquateEmpty()); diff != "" {
+				t.Errorf("getCompleteData(%s) improperly parsed args (-want, +got)\n:%s", test.args, diff)
 			}
 		})
 	}

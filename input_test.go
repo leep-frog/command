@@ -12,17 +12,6 @@ func runePtr(r rune) *rune {
 	return &r
 }
 
-/*func TestIt(t *testing.T) {
-	i := ParseArgs([]string{"clh:abcd"})
-
-	i.Pop()
-	i.PushFront("clh", "abcd")
-	want := ParseArgs([]string{"clh", "abcd"})
-	if diff := cmp.Diff(want, i, cmp.AllowUnexported(Input{}, inputArg{})); diff != "" {
-		t.Errorf("wrong: \n%s", diff)
-	}
-}*/
-
 func TestPushFront(t *testing.T) {
 	for _, test := range []struct {
 		name string
@@ -533,84 +522,6 @@ func TestPopNOffset(t *testing.T) {
 	}
 }
 
-func TestParseArgs(t *testing.T) {
-	for _, test := range []struct {
-		name  string
-		input []string
-		want  *Input
-	}{
-		{
-			name: "handles empty input",
-			want: &Input{},
-		},
-		{
-			name:  "converts single argument",
-			input: []string{"one"},
-			want: &Input{
-				args:      []*inputArg{{value: "one"}},
-				remaining: []int{0},
-			},
-		},
-		{
-			name:  "converts single argument with quote",
-			input: []string{`"one`},
-			want: &Input{
-				args:      []*inputArg{{value: "one"}},
-				delimiter: runePtr('"'),
-				remaining: []int{0},
-			},
-		},
-		{
-			name:  "converts quoted argument",
-			input: []string{`"one"`},
-			want: &Input{
-				args:      []*inputArg{{value: "one"}},
-				remaining: []int{0},
-			},
-		},
-		{
-			name:  "ignores last argument if quote",
-			input: []string{`one`, `"`},
-			want: &Input{
-				args:      []*inputArg{{value: "one"}, {value: ""}},
-				delimiter: runePtr('"'),
-				remaining: []int{0, 1},
-			},
-		},
-		{
-			name:  "escaped space character",
-			input: []string{`ab\ cd`},
-			want: &Input{
-				args:      []*inputArg{{value: "ab cd"}},
-				remaining: []int{0},
-			},
-		},
-		{
-			name:  "escaped space character between words",
-			input: []string{"ab\\", "cd"},
-			want: &Input{
-				args:      []*inputArg{{value: "ab cd"}},
-				remaining: []int{0},
-			},
-		},
-		{
-			name:  "quotation between words",
-			input: []string{"a'b", "c'd"},
-			want: &Input{
-				args:      []*inputArg{{value: "ab cd"}},
-				remaining: []int{0},
-			},
-		},
-	} {
-		t.Run(test.name, func(t *testing.T) {
-			got := ParseArgs(test.input)
-			if diff := cmp.Diff(test.want, got, cmp.AllowUnexported(Input{}, inputArg{})); diff != "" {
-				t.Fatalf("ParseArgs(%v) created incorrect args (-want, +got):\n%s", test.input, diff)
-			}
-		})
-	}
-}
-
 func TestParseCompLine(t *testing.T) {
 	for _, test := range []struct {
 		name  string
@@ -698,7 +609,7 @@ func TestParseCompLine(t *testing.T) {
 				remaining: []int{0},
 			},
 		},
-		/*TODO escaped characters{{
+		{
 			name:  "escaped space character",
 			input: `cmd ab\ cd`,
 			want: &Input{
@@ -713,7 +624,8 @@ func TestParseCompLine(t *testing.T) {
 				args:      []*inputArg{{value: "ab cd"}},
 				remaining: []int{0},
 			},
-		},*/
+		},
+		/* Useful for commenting out tests. */
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			fmt.Println(test.name)
