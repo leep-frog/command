@@ -133,14 +133,6 @@ func execute(cli CLI, executeFile string, args []string) {
 }
 
 func autocomplete(cli CLI, args string) {
-	// TODO: should cword/cpoint happen here or in command.Autocomplete function?
-	// Probably the latter so it can handle what happens if the cursor info isn't
-	// at the end?
-	/*if cword > len(args) {
-		args = append(args, "")
-	}*/
-	// TODO: use cpoint to determine if we're completing in the middle of a word.
-	// careful about spaces though.p
 	g := command.Autocomplete(cli.Node(), args)
 	fmt.Printf("%s\n", strings.Join(g, "\n"))
 
