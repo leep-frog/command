@@ -35,7 +35,7 @@ const (
 	function _custom_autocomplete {
 		tFile=$(mktemp)
 	
-		$GOPATH/bin/leep-frog-source autocomplete $COMP_CWORD.$COMP_POINT ${COMP_WORDS[0]} "$COMP_LINE" > $tFile
+		$GOPATH/bin/leep-frog-source autocomplete $COMP_POINT ${COMP_WORDS[0]} "$COMP_LINE" > $tFile
 		local IFS=$'\n'
 		COMPREPLY=( $(cat $tFile) )
 		rm $tFile
@@ -132,7 +132,7 @@ func execute(cli CLI, executeFile string, args []string) {
 	}
 }
 
-func autocomplete(cli CLI, cword, cpoint int, args string) {
+func autocomplete(cli CLI, args string) {
 	// TODO: should cword/cpoint happen here or in command.Autocomplete function?
 	// Probably the latter so it can handle what happens if the cursor info isn't
 	// at the end?
@@ -149,10 +149,10 @@ func autocomplete(cli CLI, cword, cpoint int, args string) {
 		if err != nil {
 			log.Fatalf("Unable to create file: %v", err)
 		}
-		if _, err := debugFile.WriteString(fmt.Sprintf("%d %d %d %s\n", len(args), cword, cpoint, strings.ReplaceAll(args, " ", "_"))); err != nil {
+		if _, err := debugFile.WriteString(fmt.Sprintf("%d %s\n", len(args), strings.ReplaceAll(args, " ", "_"))); err != nil {
 			log.Fatalf("Unable to write to file: %v", err)
 		}
-		if _, err := debugFile.WriteString(fmt.Sprintf("%d %d %d %s\n", len(g), cword, cpoint, strings.Join(g, "_"))); err != nil {
+		if _, err := debugFile.WriteString(fmt.Sprintf("%d %s\n", len(g), strings.Join(g, "_"))); err != nil {
 			log.Fatalf("Unable to write to file: %v", err)
 		}
 		debugFile.Close()
@@ -201,16 +201,12 @@ func Source(clis ...CLI) {
 
 	switch opType {
 	case "autocomplete":
-		cursorInfo := strings.Split(os.Args[2], ".")
-		cword, err := strconv.Atoi(cursorInfo[0])
-		if err != nil {
-			log.Fatalf("Failed to convert COMP_CWORD: %v", err)
-		}
-		cpoint, err := strconv.Atoi(cursorInfo[1])
+		cpoint, err := strconv.Atoi(os.Args[2])
 		if err != nil {
 			log.Fatalf("Failed to convert COMP_POINT: %v", err)
 		}
-		autocomplete(cli, cword, cpoint, os.Args[4])
+
+		autocomplete(cli, os.Args[4][:cpoint])
 	case "execute":
 		// TODO: change filename to file writer?
 		// (cli, filename (for ExecuteData.Exectuable), args)
