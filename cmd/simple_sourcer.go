@@ -78,7 +78,7 @@ func (tl *Todo) AddItem(output command.Output, data *command.Data) error {
 		tl.changed = true
 	}
 
-	if data.Provided(secondaryArg) {
+	if data.HasArg(secondaryArg) {
 		s := data.String(secondaryArg)
 		if tl.Items[p][s] {
 			return output.Stderr("item %q, %q already exists", p, s)
@@ -102,7 +102,7 @@ func (tl *Todo) DeleteItem(output command.Output, data *command.Data) error {
 	}
 
 	// Delete secondary if provided
-	if data.Provided(secondaryArg) {
+	if data.HasArg(secondaryArg) {
 		s := data.String(secondaryArg)
 		if tl.Items[p][s] {
 			delete(tl.Items[p], s)
@@ -156,18 +156,14 @@ func (f *fetcher) Fetch(value *command.Value, data *command.Data) *command.Compl
 }
 
 func (tl *Todo) Node() *command.Node {
-	pf := &command.ArgOpt{
-		Completor: &command.Completor{
-			SuggestionFetcher: &fetcher{
-				List:    tl,
-				Primary: true,
-			},
+	pf := &command.Completor{
+		SuggestionFetcher: &fetcher{
+			List:    tl,
+			Primary: true,
 		},
 	}
-	sf := &command.ArgOpt{
-		Completor: &command.Completor{
-			SuggestionFetcher: &fetcher{List: tl},
-		},
+	sf := &command.Completor{
+		SuggestionFetcher: &fetcher{List: tl},
 	}
 	return command.BranchNode(
 		map[string]*command.Node{

@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-type ArgOptt interface {
+type ArgOpt interface {
 	modifyArgOpt(*argOpt)
 }
 
@@ -27,14 +27,6 @@ type AliasOpt struct {
 func (ao *AliasOpt) modifyArgOpt(argO *argOpt) {
 	argO.alias = ao
 }
-
-/*func NewArgOpt(c *Completor, t ArgTransformer, v ...ArgValidator) *ArgOpt {
-	return &ArgOpt{
-		Completor:   c,
-		Validators:  v,
-		Transformer: t,
-	}
-}*/
 
 func SimpleTransformer(vt ValueType, f func(v *Value) (*Value, error)) ArgTransformer {
 	return &simpleTransformer{
@@ -72,12 +64,12 @@ type ArgTransformer interface {
 	// specifically around file [list] transformers.
 	ForComplete() bool
 
-	ArgOptt
+	ArgOpt
 }
 
 type ArgValidator interface {
 	Validate(*Value) error
-	ArgOptt
+	ArgOpt
 }
 
 type validatorOption struct {

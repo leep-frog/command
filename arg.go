@@ -170,7 +170,7 @@ func (an *argNode) Complete(input *Input, data *Data) *CompleteData {
 	}
 }
 
-func StringListNode(name string, minN, optionalN int, opts ...ArgOptt) Processor {
+func StringListNode(name string, minN, optionalN int, opts ...ArgOpt) Processor {
 	return listNode(name, minN, optionalN, StringListType, stringListTransform, opts...)
 }
 
@@ -182,7 +182,7 @@ func stringListTransform(sl []*string) (*Value, error) {
 	return StringListValue(r...), nil
 }
 
-func IntListNode(name string, minN, optionalN int, opts ...ArgOptt) Processor {
+func IntListNode(name string, minN, optionalN int, opts ...ArgOpt) Processor {
 	return listNode(name, minN, optionalN, IntListType, intListTransform, opts...)
 }
 
@@ -201,7 +201,7 @@ func intListTransform(sl []*string) (*Value, error) {
 	return IntListValue(is...), err
 }
 
-func FloatListNode(name string, minN, optionalN int, opts ...ArgOptt) Processor {
+func FloatListNode(name string, minN, optionalN int, opts ...ArgOpt) Processor {
 	return listNode(name, minN, optionalN, FloatListType, floatListTransform, opts...)
 }
 
@@ -218,11 +218,11 @@ func floatListTransform(sl []*string) (*Value, error) {
 	return FloatListValue(fs...), err
 }
 
-func StringNode(name string, opts ...ArgOptt) Processor {
+func StringNode(name string, opts ...ArgOpt) Processor {
 	return listNode(name, 1, 0, StringType, stringTransform, opts...)
 }
 
-func OptionalStringNode(name string, opts ...ArgOptt) Processor {
+func OptionalStringNode(name string, opts ...ArgOpt) Processor {
 	return listNode(name, 0, 1, StringType, stringTransform, opts...)
 }
 
@@ -233,11 +233,11 @@ func stringTransform(sl []*string) (*Value, error) {
 	return StringValue(*sl[0]), nil
 }
 
-func IntNode(name string, opts ...ArgOptt) Processor {
+func IntNode(name string, opts ...ArgOpt) Processor {
 	return listNode(name, 1, 0, IntType, intTransform, opts...)
 }
 
-func OptionalIntNode(name string, opts ...ArgOptt) Processor {
+func OptionalIntNode(name string, opts ...ArgOpt) Processor {
 	return listNode(name, 0, 1, IntType, intTransform, opts...)
 }
 
@@ -249,11 +249,11 @@ func intTransform(sl []*string) (*Value, error) {
 	return IntValue(i), err
 }
 
-func FloatNode(name string, opts ...ArgOptt) Processor {
+func FloatNode(name string, opts ...ArgOpt) Processor {
 	return listNode(name, 1, 0, FloatType, floatTransform, opts...)
 }
 
-func OptionalFloatNode(name string, opts ...ArgOptt) Processor {
+func OptionalFloatNode(name string, opts ...ArgOpt) Processor {
 	return listNode(name, 0, 1, FloatType, floatTransform, opts...)
 }
 
@@ -277,7 +277,7 @@ func boolTransform(sl []*string) (*Value, error) {
 	return BoolValue(b), err
 }
 
-func listNode(name string, minN, optionalN int, vt ValueType, transformer func([]*string) (*Value, error), opts ...ArgOptt) Processor {
+func listNode(name string, minN, optionalN int, vt ValueType, transformer func([]*string) (*Value, error), opts ...ArgOpt) Processor {
 	ao := &argOpt{}
 	for _, opt := range opts {
 		opt.modifyArgOpt(ao)
