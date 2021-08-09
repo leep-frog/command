@@ -13,18 +13,23 @@ type argOpt struct {
 	validators  []ArgValidator
 	completor   *Completor
 	transformer ArgTransformer
-	alias       *AliasOpt
+	alias       *aliasOpt
 	customSet   func(*Value, *Data)
 }
 
-// TODO: Change the name of this. Make public function AliasOpt
-// and hide this type.
-type AliasOpt struct {
+func AliasOpt(name string, ac AliasCLI) ArgOpt {
+	return &aliasOpt{
+		AliasName: name,
+		AliasCLI:  ac,
+	}
+}
+
+type aliasOpt struct {
 	AliasName string
 	AliasCLI  AliasCLI
 }
 
-func (ao *AliasOpt) modifyArgOpt(argO *argOpt) {
+func (ao *aliasOpt) modifyArgOpt(argO *argOpt) {
 	argO.alias = ao
 }
 
@@ -89,7 +94,7 @@ func (vo *validatorOption) Validate(v *Value) error {
 }
 
 // String options
-func StringOption(f func(string) bool, err error) ArgValidator {
+func StringOption(f func(string) bool, err error) ArgOpt {
 	validator := func(v *Value) error {
 		if !f(v.String()) {
 			return err
@@ -102,14 +107,14 @@ func StringOption(f func(string) bool, err error) ArgValidator {
 	}
 }
 
-func Contains(s string) ArgValidator {
+func Contains(s string) ArgOpt {
 	return StringOption(
 		func(vs string) bool { return strings.Contains(vs, s) },
 		fmt.Errorf("[Contains] value doesn't contain substring %q", s),
 	)
 }
 
-func MinLength(length int) ArgValidator {
+func MinLength(length int) ArgOpt {
 	var plural string
 	if length != 1 {
 		plural = "s"
@@ -121,7 +126,7 @@ func MinLength(length int) ArgValidator {
 }
 
 // Int options
-func IntOption(f func(int) bool, err error) ArgValidator {
+func IntOption(f func(int) bool, err error) ArgOpt {
 	validator := func(v *Value) error {
 		if !f(v.Int()) {
 			return err
@@ -134,63 +139,63 @@ func IntOption(f func(int) bool, err error) ArgValidator {
 	}
 }
 
-func IntEQ(i int) ArgValidator {
+func IntEQ(i int) ArgOpt {
 	return IntOption(
 		func(vi int) bool { return vi == i },
 		fmt.Errorf("[IntEQ] value isn't equal to %d", i),
 	)
 }
 
-func IntNE(i int) ArgValidator {
+func IntNE(i int) ArgOpt {
 	return IntOption(
 		func(vi int) bool { return vi != i },
 		fmt.Errorf("[IntNE] value isn't not equal to %d", i),
 	)
 }
 
-func IntLT(i int) ArgValidator {
+func IntLT(i int) ArgOpt {
 	return IntOption(
 		func(vi int) bool { return vi < i },
 		fmt.Errorf("[IntLT] value isn't less than %d", i),
 	)
 }
 
-func IntLTE(i int) ArgValidator {
+func IntLTE(i int) ArgOpt {
 	return IntOption(
 		func(vi int) bool { return vi <= i },
 		fmt.Errorf("[IntLTE] value isn't less than or equal to %d", i),
 	)
 }
 
-func IntGT(i int) ArgValidator {
+func IntGT(i int) ArgOpt {
 	return IntOption(
 		func(vi int) bool { return vi > i },
 		fmt.Errorf("[IntGT] value isn't greater than %d", i),
 	)
 }
 
-func IntGTE(i int) ArgValidator {
+func IntGTE(i int) ArgOpt {
 	return IntOption(
 		func(vi int) bool { return vi >= i },
 		fmt.Errorf("[IntGTE] value isn't greater than or equal to %d", i),
 	)
 }
 
-func IntPositive() ArgValidator {
+func IntPositive() ArgOpt {
 	return IntOption(
 		func(vi int) bool { return vi > 0 },
 		fmt.Errorf("[IntPositive] value isn't positive"),
 	)
 }
 
-func IntNonNegative() ArgValidator {
+func IntNonNegative() ArgOpt {
 	return IntOption(
 		func(vi int) bool { return vi >= 0 },
 		fmt.Errorf("[IntNonNegative] value isn't non-negative"),
 	)
 }
 
-func IntNegative() ArgValidator {
+func IntNegative() ArgOpt {
 	return IntOption(
 		func(vi int) bool { return vi < 0 },
 		fmt.Errorf("[IntNegative] value isn't negative"),
@@ -198,7 +203,7 @@ func IntNegative() ArgValidator {
 }
 
 // Float options
-func FloatOption(f func(float64) bool, err error) ArgValidator {
+func FloatOption(f func(float64) bool, err error) ArgOpt {
 	validator := func(v *Value) error {
 		if !f(v.Float()) {
 			return err
@@ -211,63 +216,63 @@ func FloatOption(f func(float64) bool, err error) ArgValidator {
 	}
 }
 
-func FloatEQ(f float64) ArgValidator {
+func FloatEQ(f float64) ArgOpt {
 	return FloatOption(
 		func(vf float64) bool { return vf == f },
 		fmt.Errorf("[FloatEQ] value isn't equal to %0.2f", f),
 	)
 }
 
-func FloatNE(f float64) ArgValidator {
+func FloatNE(f float64) ArgOpt {
 	return FloatOption(
 		func(vf float64) bool { return vf != f },
 		fmt.Errorf("[FloatNE] value isn't not equal to %0.2f", f),
 	)
 }
 
-func FloatLT(f float64) ArgValidator {
+func FloatLT(f float64) ArgOpt {
 	return FloatOption(
 		func(vf float64) bool { return vf < f },
 		fmt.Errorf("[FloatLT] value isn't less than %0.2f", f),
 	)
 }
 
-func FloatLTE(f float64) ArgValidator {
+func FloatLTE(f float64) ArgOpt {
 	return FloatOption(
 		func(vf float64) bool { return vf <= f },
 		fmt.Errorf("[FloatLTE] value isn't less than or equal to %0.2f", f),
 	)
 }
 
-func FloatGT(f float64) ArgValidator {
+func FloatGT(f float64) ArgOpt {
 	return FloatOption(
 		func(vf float64) bool { return vf > f },
 		fmt.Errorf("[FloatGT] value isn't greater than %0.2f", f),
 	)
 }
 
-func FloatGTE(f float64) ArgValidator {
+func FloatGTE(f float64) ArgOpt {
 	return FloatOption(
 		func(vf float64) bool { return vf >= f },
 		fmt.Errorf("[FloatGTE] value isn't greater than or equal to %0.2f", f),
 	)
 }
 
-func FloatPositive() ArgValidator {
+func FloatPositive() ArgOpt {
 	return FloatOption(
 		func(vi float64) bool { return vi > 0 },
 		fmt.Errorf("[FloatPositive] value isn't positive"),
 	)
 }
 
-func FloatNonNegative() ArgValidator {
+func FloatNonNegative() ArgOpt {
 	return FloatOption(
 		func(vi float64) bool { return vi >= 0 },
 		fmt.Errorf("[FloatNonNegative] value isn't non-negative"),
 	)
 }
 
-func FloatNegative() ArgValidator {
+func FloatNegative() ArgOpt {
 	return FloatOption(
 		func(vi float64) bool { return vi < 0 },
 		fmt.Errorf("[FloatNegative] value isn't negative"),

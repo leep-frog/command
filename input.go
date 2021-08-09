@@ -303,7 +303,6 @@ func (qs *quoteState) delimiter() *rune {
 	return &qs.quoteChar
 }
 
-// TODO: add cpoint so we know what word we're completing.
 func ParseCompLine(compLine string) *Input {
 	w := &words{}
 	state := parserState(&whitespaceState{})
