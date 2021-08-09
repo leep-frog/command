@@ -21,7 +21,7 @@ func Completor() *command.Completor {
 
 var (
 	ArgName = "format"
-	Arg     = command.StringListNode(ArgName, 1, command.UnboundedList, &command.ArgOpt{Completor: Completor()})
+	Arg     = command.StringListNode(ArgName, 1, command.UnboundedList, Completor())
 )
 
 func ApplyCodes(f *Format, output command.Output, data *command.Data) (*Format, error) {
