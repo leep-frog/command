@@ -169,7 +169,8 @@ func TestValueCommands(t *testing.T) {
 				test.etc = &ExecuteTestCase{}
 			}
 			test.etc.Node = SerialNodesTo(test.etc.Node, ExecutorNode(func(output Output, data *Data) error {
-				v := data.Values["argName"]
+				name := "argName"
+				v := data.Values[name]
 
 				if v.Provided() != test.wantProvided {
 					t.Errorf("Provided() returned incorrect value, got %v, want %v", v.Provided(), test.wantProvided)
@@ -179,29 +180,50 @@ func TestValueCommands(t *testing.T) {
 				if diff := cmp.Diff(test.wantString, v.String()); diff != "" {
 					t.Errorf("String() produced diff (-want, +got):\n%s", diff)
 				}
+				if diff := cmp.Diff(test.wantString, data.String(name)); diff != "" {
+					t.Errorf("data.String() produced diff (-want, +got):\n%s", diff)
+				}
 				if diff := cmp.Diff(test.wantStringList, v.StringList()); diff != "" {
 					t.Errorf("StringList() produced diff (-want, +got):\n%s", diff)
+				}
+				if diff := cmp.Diff(test.wantStringList, data.StringList(name)); diff != "" {
+					t.Errorf("data.StringList() produced diff (-want, +got):\n%s", diff)
 				}
 
 				// ints
 				if diff := cmp.Diff(test.wantInt, v.Int()); diff != "" {
 					t.Errorf("Int() produced diff (-want, +got):\n%s", diff)
 				}
+				if diff := cmp.Diff(test.wantInt, data.Int(name)); diff != "" {
+					t.Errorf("data.Int() produced diff (-want, +got):\n%s", diff)
+				}
 				if diff := cmp.Diff(test.wantIntList, v.IntList()); diff != "" {
 					t.Errorf("IntList() produced diff (-want, +got):\n%s", diff)
+				}
+				if diff := cmp.Diff(test.wantIntList, data.IntList(name)); diff != "" {
+					t.Errorf("data.IntList() produced diff (-want, +got):\n%s", diff)
 				}
 
 				// floats
 				if diff := cmp.Diff(test.wantFloat, v.Float()); diff != "" {
 					t.Errorf("Float() produced diff (-want, +got):\n%s", diff)
 				}
+				if diff := cmp.Diff(test.wantFloat, data.Float(name)); diff != "" {
+					t.Errorf("data.Float() produced diff (-want, +got):\n%s", diff)
+				}
 				if diff := cmp.Diff(test.wantFloatList, v.FloatList()); diff != "" {
 					t.Errorf("FloatList() produced diff (-want, +got):\n%s", diff)
+				}
+				if diff := cmp.Diff(test.wantFloatList, data.FloatList(name)); diff != "" {
+					t.Errorf("data.FloatList() produced diff (-want, +got):\n%s", diff)
 				}
 
 				// bool
 				if diff := cmp.Diff(test.wantBool, v.Bool()); diff != "" {
 					t.Errorf("Bool() produced diff (-want, +got):\n%s", diff)
+				}
+				if diff := cmp.Diff(test.wantBool, data.Bool(name)); diff != "" {
+					t.Errorf("data.Bool() produced diff (-want, +got):\n%s", diff)
 				}
 
 				return nil

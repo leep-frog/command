@@ -11,6 +11,34 @@ func (d *Data) Set(s string, v *Value) {
 	d.Values[s] = v
 }
 
+func (d *Data) String(s string) string {
+	return d.Values[s].String()
+}
+
+func (d *Data) StringList(s string) []string {
+	return d.Values[s].StringList()
+}
+
+func (d *Data) Int(s string) int {
+	return d.Values[s].Int()
+}
+
+func (d *Data) IntList(s string) []int {
+	return d.Values[s].IntList()
+}
+
+func (d *Data) Float(s string) float64 {
+	return d.Values[s].Float()
+}
+
+func (d *Data) FloatList(s string) []float64 {
+	return d.Values[s].FloatList()
+}
+
+func (d *Data) Bool(s string) bool {
+	return d.Values[s].Bool()
+}
+
 type ExecuteData struct {
 	// Executable is a list of commands to run after execution in the commands package.
 	Executable []string
