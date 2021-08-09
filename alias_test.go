@@ -45,9 +45,7 @@ func TestAliasExecute(t *testing.T) {
 				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
 				Args: []string{"a", ""},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"ALIAS": StringValue(""),
-					},
+					"ALIAS": StringValue(""),
 				},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -65,9 +63,7 @@ func TestAliasExecute(t *testing.T) {
 				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
 				Args: []string{"a", "a", "hello"},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"ALIAS": StringValue("a"),
-					},
+					"ALIAS": StringValue("a"),
 				},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -87,9 +83,7 @@ func TestAliasExecute(t *testing.T) {
 				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
 				Args: []string{"a", "d"},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"ALIAS": StringValue("d"),
-					},
+					"ALIAS": StringValue("d"),
 				},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -121,10 +115,8 @@ func TestAliasExecute(t *testing.T) {
 				}, nil), nil)),
 				Args: []string{"a", "b", "c"},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"ALIAS": StringValue("b"),
-						"s":     StringValue("c"),
-					},
+					"ALIAS": StringValue("b"),
+					"s":     StringValue("c"),
 				},
 				wantInput: &Input{
 					snapshotCount: 1,
@@ -150,9 +142,7 @@ func TestAliasExecute(t *testing.T) {
 				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
 				Args: []string{"a", ""},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"ALIAS": StringValue(""),
-					},
+					"ALIAS": StringValue(""),
 				},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -170,10 +160,8 @@ func TestAliasExecute(t *testing.T) {
 				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
 				Args: []string{"a", "overload", "five", "four", "three", "two", "one"},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"ALIAS": StringValue("overload"),
-						"sl":    StringListValue("five", "four", "three"),
-					},
+					"ALIAS": StringValue("overload"),
+					"sl":    StringListValue("five", "four", "three"),
 				},
 				wantInput: &Input{
 					snapshotCount: 1,
@@ -198,9 +186,7 @@ func TestAliasExecute(t *testing.T) {
 				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
 				Args: []string{"a", "empty"},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"ALIAS": StringValue("empty"),
-					},
+					"ALIAS": StringValue("empty"),
 				},
 				WantErr:    fmt.Errorf("not enough arguments"),
 				WantStderr: []string{"not enough arguments"},
@@ -219,10 +205,8 @@ func TestAliasExecute(t *testing.T) {
 				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
 				Args: []string{"a", "bearMinimum", "grizzly"},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"ALIAS": StringValue("bearMinimum"),
-						"sl":    StringListValue("grizzly"),
-					},
+					"ALIAS": StringValue("bearMinimum"),
+					"sl":    StringListValue("grizzly"),
 				},
 				wantInput: &Input{
 					snapshotCount: 1,
@@ -253,9 +237,7 @@ func TestAliasExecute(t *testing.T) {
 				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
 				Args: []string{"a", "bearMinimum", "grizzly"},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"ALIAS": StringValue("bearMinimum"),
-					},
+					"ALIAS": StringValue("bearMinimum"),
 				},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -275,10 +257,8 @@ func TestAliasExecute(t *testing.T) {
 				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
 				Args: []string{"a", "bearMinimum", "grizzly", "teddy", "brown"},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"ALIAS": StringValue("bearMinimum"),
-						"sl":    StringListValue("grizzly", "teddy", "brown"),
-					},
+					"ALIAS": StringValue("bearMinimum"),
+					"sl":    StringListValue("grizzly", "teddy", "brown"),
 				},
 				wantInput: &Input{
 					snapshotCount: 1,
@@ -306,12 +286,10 @@ func TestAliasExecute(t *testing.T) {
 				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil), IntNode("i", nil), FloatListNode("fl", 10, 0, nil))),
 				Args: []string{"a", "bearMinimum", "grizzly", "teddy", "brown", "3", "2.2", "-1.1"},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"ALIAS": StringValue("bearMinimum"),
-						"sl":    StringListValue("grizzly", "teddy", "brown"),
-						"i":     IntValue(3),
-						"fl":    FloatListValue(2.2, -1.1),
-					},
+					"ALIAS": StringValue("bearMinimum"),
+					"sl":    StringListValue("grizzly", "teddy", "brown"),
+					"i":     IntValue(3),
+					"fl":    FloatListValue(2.2, -1.1),
 				},
 				wantInput: &Input{
 					snapshotCount: 1,
@@ -342,10 +320,8 @@ func TestAliasExecute(t *testing.T) {
 				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil), IntNode("i", nil), FloatListNode("fl", 10, 0, nil))),
 				Args: []string{"a", "bearMinimum", "grizzly"},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"ALIAS": StringValue("bearMinimum"),
-						"sl":    StringListValue("grizzly"),
-					},
+					"ALIAS": StringValue("bearMinimum"),
+					"sl":    StringListValue("grizzly"),
 				},
 				wantInput: &Input{
 					snapshotCount: 1,
@@ -371,10 +347,8 @@ func TestAliasExecute(t *testing.T) {
 				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, UnboundedList, nil), IntNode("i", nil), FloatListNode("fl", 10, 0, nil))),
 				Args: []string{"a", "bearMinimum", "grizzly", "teddy", "brown", "3", "2.2", "-1.1"},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"ALIAS": StringValue("bearMinimum"),
-						"sl":    StringListValue("grizzly", "teddy", "brown", "3", "2.2", "-1.1"),
-					},
+					"ALIAS": StringValue("bearMinimum"),
+					"sl":    StringListValue("grizzly", "teddy", "brown", "3", "2.2", "-1.1"),
 				},
 				wantInput: &Input{
 					snapshotCount: 1,
@@ -410,10 +384,8 @@ func TestAliasExecute(t *testing.T) {
 				}))),
 				Args: []string{"a", "bearMinimum", "grizzly", "teddy", "brown"},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"ALIAS": StringValue("bearMinimum"),
-						"sl":    StringListValue("papa", "mama", "baby"),
-					},
+					"ALIAS": StringValue("bearMinimum"),
+					"sl":    StringListValue("papa", "mama", "baby"),
 				},
 				wantInput: &Input{
 					snapshotCount: 1,
@@ -445,9 +417,7 @@ func TestAliasExecute(t *testing.T) {
 				}))),
 				Args: []string{"a", "bearMinimum", "grizzly", "teddy", "brown"},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"ALIAS": StringValue("bearMinimum"),
-					},
+					"ALIAS": StringValue("bearMinimum"),
 				},
 				wantInput: &Input{
 					snapshotCount: 1,
@@ -498,9 +468,7 @@ func TestAliasExecute(t *testing.T) {
 				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
 				Args: []string{"t"},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"sl": StringListValue("teddy"),
-					},
+					"sl": StringListValue("teddy"),
 				},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -520,9 +488,7 @@ func TestAliasExecute(t *testing.T) {
 				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
 				Args: []string{"tee"},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"sl": StringListValue("tee"),
-					},
+					"sl": StringListValue("tee"),
 				},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -542,9 +508,7 @@ func TestAliasExecute(t *testing.T) {
 				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
 				Args: []string{"t", "grizzly"},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"sl": StringListValue("teddy", "grizzly"),
-					},
+					"sl": StringListValue("teddy", "grizzly"),
 				},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -565,9 +529,7 @@ func TestAliasExecute(t *testing.T) {
 				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
 				Args: []string{"t", "grizzly"},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"sl": StringListValue("teddy", "brown", "grizzly"),
-					},
+					"sl": StringListValue("teddy", "brown", "grizzly"),
 				},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -591,9 +553,7 @@ func TestAliasExecute(t *testing.T) {
 				}))),
 				Args: []string{"t", "grizzly"},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"sl": StringListValue("TEDDY", "BROWN", "GRIZZLY"),
-					},
+					"sl": StringListValue("TEDDY", "BROWN", "GRIZZLY"),
 				},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -616,9 +576,7 @@ func TestAliasExecute(t *testing.T) {
 				})),
 				Args: []string{"zero"},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"sl": StringListValue("zero"),
-					},
+					"sl": StringListValue("zero"),
 				},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -643,9 +601,7 @@ func TestAliasExecute(t *testing.T) {
 				})),
 				Args: []string{"hello", "dee"},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"sl": StringListValue("hello", "d"),
-					},
+					"sl": StringListValue("hello", "d"),
 				},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -675,9 +631,7 @@ func TestAliasExecute(t *testing.T) {
 				})),
 				Args: []string{"hello", "dee", "trois"},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"sl": StringListValue("hello", "d", "trois"),
-					},
+					"sl": StringListValue("hello", "d", "trois"),
 				},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -710,9 +664,7 @@ func TestAliasExecute(t *testing.T) {
 				})),
 				Args: []string{"f", "dee"},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"sl": StringListValue("four", "two", "deux"),
-					},
+					"sl": StringListValue("four", "two", "deux"),
 				},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -756,11 +708,9 @@ func TestAliasExecute(t *testing.T) {
 				),
 				Args: []string{"un", "dee", "z", "f"},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"sl": StringListValue("un", "two", "deux"),
-						"s":  StringValue("zero"),
-						"o":  StringValue("four"),
-					},
+					"sl": StringListValue("un", "two", "deux"),
+					"s":  StringValue("zero"),
+					"o":  StringValue("four"),
 				},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -797,9 +747,7 @@ func TestAliasExecute(t *testing.T) {
 				})),
 				Args: []string{"f", "zero", "zero", "n1", "dee", "n2", "n3", "t", "u", "n4", "n5", ""},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"sl": StringListValue("four", "0", "0", "n1", "two", "deux", "n2", "n3", "three", "trois", "tres", "un", "n4", "n5", ""),
-					},
+					"sl": StringListValue("four", "0", "0", "n1", "two", "deux", "n2", "n3", "three", "trois", "tres", "un", "n4", "n5", ""),
 				},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -842,9 +790,7 @@ func TestAliasExecute(t *testing.T) {
 				})),
 				Args: []string{"f", "zero", "n1", "t"},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"sl": StringListValue("four", "0", "n1", "three", "trois", "tres"),
-					},
+					"sl": StringListValue("four", "0", "n1", "three", "trois", "tres"),
 				},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -879,9 +825,7 @@ func TestAliasExecute(t *testing.T) {
 				})),
 				Args: []string{"f", "zero", "n1", "t"},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"sl": StringListValue("FOUR", "0", "N1", "THREE", "TROIS", "TRES"),
-					},
+					"sl": StringListValue("FOUR", "0", "N1", "THREE", "TROIS", "TRES"),
 				},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -911,9 +855,7 @@ func TestAliasExecute(t *testing.T) {
 				})),
 				Args: []string{"dee"},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"sl": StringListValue("two", "deux"),
-					},
+					"sl": StringListValue("two", "deux"),
 				},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -941,9 +883,7 @@ func TestAliasExecute(t *testing.T) {
 				})),
 				Args: []string{"t"},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"sl": StringListValue("three", "trois", "tres"),
-					},
+					"sl": StringListValue("three", "trois", "tres"),
 				},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -970,11 +910,9 @@ func TestAliasExecute(t *testing.T) {
 				}), StringNode("s", nil), OptionalIntNode("i", nil)),
 				Args: []string{"t"},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"sl": StringListValue("three", "trois", "tres"),
-						"s":  StringValue("III"),
-						"i":  IntValue(3),
-					},
+					"sl": StringListValue("three", "trois", "tres"),
+					"s":  StringValue("III"),
+					"i":  IntValue(3),
 				},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -1003,10 +941,8 @@ func TestAliasExecute(t *testing.T) {
 				}), StringNode("s", nil), OptionalIntNode("i", nil)),
 				Args: []string{"I", "II", "III", "t"},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"sl": StringListValue("I", "II", "III"),
-						"s":  StringValue("t"),
-					},
+					"sl": StringListValue("I", "II", "III"),
+					"s":  StringValue("t"),
 				},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -1039,9 +975,7 @@ func TestAliasExecute(t *testing.T) {
 				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
 				Args: []string{"g", "h"},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"ALIAS": StringListValue("h"),
-					},
+					"ALIAS": StringListValue("h"),
 				},
 				WantErr:    fmt.Errorf(`No aliases exist for alias type "pioneer"`),
 				WantStderr: []string{`No aliases exist for alias type "pioneer"`},
@@ -1068,9 +1002,7 @@ func TestAliasExecute(t *testing.T) {
 				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
 				Args: []string{"g", "h", "i", "j", "k", "l", "m"},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"ALIAS": StringListValue("h", "i", "j", "k", "l", "m"),
-					},
+					"ALIAS": StringListValue("h", "i", "j", "k", "l", "m"),
 				},
 				WantStderr: []string{
 					`Alias "j" does not exist`,
@@ -1159,9 +1091,7 @@ func TestAliasExecute(t *testing.T) {
 				WantStderr: []string{"Invalid regexp: error parsing regexp: unexpected ): `:)`"},
 				WantErr:    fmt.Errorf("Invalid regexp: error parsing regexp: unexpected ): `:)`"),
 				WantData: &Data{
-					Values: map[string]*Value{
-						"regexp": StringListValue(":)"),
-					},
+					"regexp": StringListValue(":)"),
 				},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -1189,9 +1119,7 @@ func TestAliasExecute(t *testing.T) {
 				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
 				Args: []string{"s", "ga$"},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"regexp": StringListValue("ga$"),
-					},
+					"regexp": StringListValue("ga$"),
 				},
 				WantStdout: []string{
 					"j: bazzinga",
@@ -1223,9 +1151,7 @@ func TestAliasExecute(t *testing.T) {
 				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
 				Args: []string{"s", "a$", "^.: [aeiou]"},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"regexp": StringListValue("a$", "^.: [aeiou]"),
-					},
+					"regexp": StringListValue("a$", "^.: [aeiou]"),
 				},
 				WantStdout: []string{
 					"k: alpha",
@@ -1261,9 +1187,7 @@ func TestAliasExecute(t *testing.T) {
 				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
 				Args: []string{"d", "e"},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"ALIAS": StringListValue("e"),
-					},
+					"ALIAS": StringListValue("e"),
 				},
 				WantErr:    fmt.Errorf("Alias group has no aliases yet."),
 				WantStderr: []string{"Alias group has no aliases yet."},
@@ -1286,9 +1210,7 @@ func TestAliasExecute(t *testing.T) {
 				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
 				Args: []string{"d", "tee"},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"ALIAS": StringListValue("tee"),
-					},
+					"ALIAS": StringListValue("tee"),
 				},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -1310,9 +1232,7 @@ func TestAliasExecute(t *testing.T) {
 				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
 				Args: []string{"d", "t"},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"ALIAS": StringListValue("t"),
-					},
+					"ALIAS": StringListValue("t"),
 				},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -1342,9 +1262,7 @@ func TestAliasExecute(t *testing.T) {
 				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
 				Args: []string{"d", "t", "penguin", "colors", "bare"},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"ALIAS": StringListValue("t", "penguin", "colors", "bare"),
-					},
+					"ALIAS": StringListValue("t", "penguin", "colors", "bare"),
 				},
 				WantStderr: []string{
 					`Alias "penguin" does not exist`,
@@ -1406,9 +1324,7 @@ func TestAliasComplete(t *testing.T) {
 				}))),
 				Args: "cmd ",
 				WantData: &Data{
-					Values: map[string]*Value{
-						"sl": StringListValue(""),
-					},
+					"sl": StringListValue(""),
 				},
 				Want: []string{"deux", "trois", "un"},
 			},
@@ -1424,9 +1340,7 @@ func TestAliasComplete(t *testing.T) {
 				}))),
 				Args: "cmd a ",
 				WantData: &Data{
-					Values: map[string]*Value{
-						aliasArgName: StringValue(""),
-					},
+					aliasArgName: StringValue(""),
 				},
 			},
 		},
@@ -1456,10 +1370,8 @@ func TestAliasComplete(t *testing.T) {
 				}))),
 				Args: "cmd a b ",
 				WantData: &Data{
-					Values: map[string]*Value{
-						aliasArgName: StringValue("b"),
-						"sl":         StringListValue(""),
-					},
+					aliasArgName: StringValue("b"),
+					"sl":         StringListValue(""),
 				},
 				Want: []string{"deux", "trois", "un"},
 			},
@@ -1474,10 +1386,8 @@ func TestAliasComplete(t *testing.T) {
 				}))),
 				Args: "cmd a b ",
 				WantData: &Data{
-					Values: map[string]*Value{
-						aliasArgName: StringValue("b"),
-						"sl":         StringListValue(""),
-					},
+					aliasArgName: StringValue("b"),
+					"sl":         StringListValue(""),
 				},
 				Want: []string{"deux", "trois", "un"},
 			},
@@ -1498,9 +1408,7 @@ func TestAliasComplete(t *testing.T) {
 				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
 				Args: "cmd g ",
 				WantData: &Data{
-					Values: map[string]*Value{
-						aliasArgName: StringListValue(""),
-					},
+					aliasArgName: StringListValue(""),
 				},
 				Want: []string{"alpha", "alright", "any", "balloon", "bear"},
 			},
@@ -1520,9 +1428,7 @@ func TestAliasComplete(t *testing.T) {
 				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
 				Args: "cmd g b",
 				WantData: &Data{
-					Values: map[string]*Value{
-						aliasArgName: StringListValue("b"),
-					},
+					aliasArgName: StringListValue("b"),
 				},
 				Want: []string{"balloon", "bear"},
 			},
@@ -1542,9 +1448,7 @@ func TestAliasComplete(t *testing.T) {
 				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
 				Args: "cmd g alright balloon ",
 				WantData: &Data{
-					Values: map[string]*Value{
-						aliasArgName: StringListValue("alright", "balloon", ""),
-					},
+					aliasArgName: StringListValue("alright", "balloon", ""),
 				},
 				Want: []string{"alpha", "any", "bear"},
 			},
@@ -1565,9 +1469,7 @@ func TestAliasComplete(t *testing.T) {
 				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
 				Args: "cmd d ",
 				WantData: &Data{
-					Values: map[string]*Value{
-						aliasArgName: StringListValue(""),
-					},
+					aliasArgName: StringListValue(""),
 				},
 				Want: []string{"alpha", "alright", "any", "balloon", "bear"},
 			},
@@ -1587,9 +1489,7 @@ func TestAliasComplete(t *testing.T) {
 				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
 				Args: "cmd d b",
 				WantData: &Data{
-					Values: map[string]*Value{
-						aliasArgName: StringListValue("b"),
-					},
+					aliasArgName: StringListValue("b"),
 				},
 				Want: []string{"balloon", "bear"},
 			},
@@ -1609,9 +1509,7 @@ func TestAliasComplete(t *testing.T) {
 				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
 				Args: "cmd d alright balloon ",
 				WantData: &Data{
-					Values: map[string]*Value{
-						aliasArgName: StringListValue("alright", "balloon", ""),
-					},
+					aliasArgName: StringListValue("alright", "balloon", ""),
 				},
 				Want: []string{"alpha", "any", "bear"},
 			},
@@ -1627,9 +1525,7 @@ func TestAliasComplete(t *testing.T) {
 				}))),
 				Args: "cmd zero ",
 				WantData: &Data{
-					Values: map[string]*Value{
-						"sl": StringListValue("zero", ""),
-					},
+					"sl": StringListValue("zero", ""),
 				},
 				Want: []string{"deux", "trois", "un"},
 			},
@@ -1644,9 +1540,7 @@ func TestAliasComplete(t *testing.T) {
 				}))),
 				Args: "cmd dee",
 				WantData: &Data{
-					Values: map[string]*Value{
-						"sl": StringListValue("dee"),
-					},
+					"sl": StringListValue("dee"),
 				},
 			},
 		},
@@ -1665,9 +1559,7 @@ func TestAliasComplete(t *testing.T) {
 				}))),
 				Args: "cmd dee t",
 				WantData: &Data{
-					Values: map[string]*Value{
-						"sl": StringListValue("d", "t"),
-					},
+					"sl": StringListValue("d", "t"),
 				},
 				Want: []string{"trois"},
 			},
@@ -1688,9 +1580,7 @@ func TestAliasComplete(t *testing.T) {
 				}))),
 				Args: "cmd dee ",
 				WantData: &Data{
-					Values: map[string]*Value{
-						"sl": StringListValue("deux", ""),
-					},
+					"sl": StringListValue("deux", ""),
 				},
 				Want: []string{"trois", "un"},
 			},
@@ -1710,9 +1600,7 @@ func TestAliasComplete(t *testing.T) {
 				})),
 				Args: "cmd zero ",
 				WantData: &Data{
-					Values: map[string]*Value{
-						"sl": StringListValue("zero", ""),
-					},
+					"sl": StringListValue("zero", ""),
 				},
 				Want: []string{"deux", "trois", "un"},
 			},
@@ -1736,9 +1624,7 @@ func TestAliasComplete(t *testing.T) {
 				})),
 				Args: "cmd hello dee",
 				WantData: &Data{
-					Values: map[string]*Value{
-						"sl": StringListValue("hello", "dee"),
-					},
+					"sl": StringListValue("hello", "dee"),
 				},
 			},
 		},
@@ -1761,9 +1647,7 @@ func TestAliasComplete(t *testing.T) {
 				})),
 				Args: "cmd hello dee t",
 				WantData: &Data{
-					Values: map[string]*Value{
-						"sl": StringListValue("hello", "d", "t"),
-					},
+					"sl": StringListValue("hello", "d", "t"),
 				},
 				Want: []string{"trois"},
 			},
@@ -1788,9 +1672,7 @@ func TestAliasComplete(t *testing.T) {
 				})),
 				Args: "cmd dee ",
 				WantData: &Data{
-					Values: map[string]*Value{
-						"sl": StringListValue("deux", ""),
-					},
+					"sl": StringListValue("deux", ""),
 				},
 				Want: []string{"trois", "un"},
 			},
@@ -1816,9 +1698,7 @@ func TestAliasComplete(t *testing.T) {
 				})),
 				Args: "cmd dee t ",
 				WantData: &Data{
-					Values: map[string]*Value{
-						"sl": StringListValue("deux", "trois", ""),
-					},
+					"sl": StringListValue("deux", "trois", ""),
 				},
 				Want: []string{"un"},
 			},
@@ -1845,9 +1725,7 @@ func TestAliasComplete(t *testing.T) {
 				})),
 				Args: "cmd f dee ",
 				WantData: &Data{
-					Values: map[string]*Value{
-						"sl": StringListValue("four", "two", "deux", ""),
-					},
+					"sl": StringListValue("four", "two", "deux", ""),
 				},
 				Want: []string{"trois", "un"},
 			},
@@ -1876,9 +1754,7 @@ func TestAliasComplete(t *testing.T) {
 				})),
 				Args: "cmd f zero zero n1 dee n2 n3 t u n4 n5 ",
 				WantData: &Data{
-					Values: map[string]*Value{
-						"sl": StringListValue("four", "0", "0", "n1", "two", "deux", "n2", "n3", "three", "trois", "tres", "un", "n4", "n5", ""),
-					},
+					"sl": StringListValue("four", "0", "0", "n1", "two", "deux", "n2", "n3", "three", "trois", "tres", "un", "n4", "n5", ""),
 				},
 				Want: []string{"five", "six"},
 			},
@@ -1907,9 +1783,7 @@ func TestAliasComplete(t *testing.T) {
 				})),
 				Args: "cmd f zero n1 t",
 				WantData: &Data{
-					Values: map[string]*Value{
-						"sl": StringListValue("four", "0", "n1", "t"),
-					},
+					"sl": StringListValue("four", "0", "n1", "t"),
 				},
 				Want: []string{"trois"},
 			},
@@ -1930,11 +1804,9 @@ func TestAliasComplete(t *testing.T) {
 				}), StringNode("s", nil), StringNode("i", &ArgOpt{Completor: SimpleCompletor("alpha", "beta")})),
 				Args: "cmd t ",
 				WantData: &Data{
-					Values: map[string]*Value{
-						"sl": StringListValue("three", "trois", "tres"),
-						"s":  StringValue("III"),
-						"i":  StringValue(""),
-					},
+					"sl": StringListValue("three", "trois", "tres"),
+					"s":  StringValue("III"),
+					"i":  StringValue(""),
 				},
 				Want: []string{"alpha", "beta"},
 			},
@@ -1955,11 +1827,9 @@ func TestAliasComplete(t *testing.T) {
 				}), StringNode("s", nil), StringNode("i", &ArgOpt{Completor: SimpleCompletor("alpha", "beta")})),
 				Args: "cmd I II III t ",
 				WantData: &Data{
-					Values: map[string]*Value{
-						"sl": StringListValue("I", "II", "III"),
-						"s":  StringValue("t"),
-						"i":  StringValue(""),
-					},
+					"sl": StringListValue("I", "II", "III"),
+					"s":  StringValue("t"),
+					"i":  StringValue(""),
 				},
 				Want: []string{"alpha", "beta"},
 			},

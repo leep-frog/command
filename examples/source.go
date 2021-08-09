@@ -46,8 +46,8 @@ func (ss *SimpleCLI) Node() *command.Node {
 		}),
 		command.OptionalStringNode("lastName", nil),
 		command.ExecutorNode(func(output command.Output, data *command.Data) error {
-			output.Stdout("Hello, %s", data.Values["firstName"].String())
-			if ln := data.Values["lastName"]; ln.Provided() {
+			output.Stdout("Hello, %s", data["firstName"].String())
+			if ln := data["lastName"]; ln.Provided() {
 				return output.Stderr("or should I say, Professor %s!!", ln.String())
 			}
 			return nil

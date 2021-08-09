@@ -18,7 +18,7 @@ type aliasedArg struct {
 }
 
 type AliasCLI interface {
-	// AliasMap returns a map from "alias type" to "alias name" to an array of "aliased values".
+	// AliasMap returns a map from "alias type" to "alias name" to an array of "aliased".
 	// This structure easily allows for one CLI to have multiple alias types.
 	AliasMap() map[string]map[string][]string
 	// MarkChanged is called when a change has been made to the alias map.
@@ -102,7 +102,7 @@ func aliasSearcher(name string, ac AliasCLI, n *Node) *Node {
 	regexArg := StringListNode("regexp", 1, UnboundedList, nil)
 	return SerialNodes(regexArg, ExecutorNode(func(output Output, data *Data) error {
 		rs := []*regexp.Regexp{}
-		for _, r := range data.Values["regexp"].StringList() {
+		for _, r := range data.StringList("regexp") {
 			rx, err := regexp.Compile(r)
 			if err != nil {
 				return output.Stderr("Invalid regexp: %v", err)

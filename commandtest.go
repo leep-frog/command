@@ -56,14 +56,12 @@ func ExecuteTest(t *testing.T, etc *ExecuteTestCase, opts *ExecuteTestOptions) {
 	args := etc.Args
 	wantData := etc.WantData
 	if wantData == nil {
-		wantData = &Data{
-			Values: map[string]*Value{},
-		}
+		wantData = &Data{}
 	}
 	if opts != nil && opts.RequiresSetup {
 		setupFile := setupForTest(t, opts.SetupContents)
 		args = append([]string{setupFile}, args...)
-		wantData.Values[SetupArgName] = StringValue(setupFile)
+		wantData.Set(SetupArgName, StringValue(setupFile))
 		t.Cleanup(func() { os.Remove(setupFile) })
 	}
 

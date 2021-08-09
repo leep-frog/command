@@ -30,9 +30,7 @@ func TestValueCommands(t *testing.T) {
 				Node: SerialNodes(StringNode("argName", nil)),
 				Args: []string{"string-val"},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"argName": StringValue("string-val"),
-					},
+					"argName": StringValue("string-val"),
 				},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -49,9 +47,7 @@ func TestValueCommands(t *testing.T) {
 				Node: SerialNodes(StringListNode("argName", 2, 3, nil)),
 				Args: []string{"string", "list", "val"},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"argName": StringListValue("string", "list", "val"),
-					},
+					"argName": StringListValue("string", "list", "val"),
 				},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -70,9 +66,7 @@ func TestValueCommands(t *testing.T) {
 				Node: SerialNodes(IntNode("argName", nil)),
 				Args: []string{"123"},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"argName": IntValue(123),
-					},
+					"argName": IntValue(123),
 				},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -89,9 +83,7 @@ func TestValueCommands(t *testing.T) {
 				Node: SerialNodes(IntListNode("argName", 2, 3, nil)),
 				Args: []string{"12", "345", "6"},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"argName": IntListValue(12, 345, 6),
-					},
+					"argName": IntListValue(12, 345, 6),
 				},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -110,9 +102,7 @@ func TestValueCommands(t *testing.T) {
 				Node: SerialNodes(FloatNode("argName", nil)),
 				Args: []string{"12.3"},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"argName": FloatValue(12.3),
-					},
+					"argName": FloatValue(12.3),
 				},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -129,9 +119,7 @@ func TestValueCommands(t *testing.T) {
 				Node: SerialNodes(FloatListNode("argName", 2, 3, nil)),
 				Args: []string{"1.2", "-345", ".6"},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"argName": FloatListValue(1.2, -345, 0.6),
-					},
+					"argName": FloatListValue(1.2, -345, 0.6),
 				},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -150,9 +138,7 @@ func TestValueCommands(t *testing.T) {
 				Node: SerialNodes(BoolNode("argName")),
 				Args: []string{"true"},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"argName": BoolValue(true),
-					},
+					"argName": BoolValue(true),
 				},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -170,7 +156,7 @@ func TestValueCommands(t *testing.T) {
 			}
 			test.etc.Node = SerialNodesTo(test.etc.Node, ExecutorNode(func(output Output, data *Data) error {
 				name := "argName"
-				v := data.Values[name]
+				v := data.get(name)
 
 				if v.Provided() != test.wantProvided {
 					t.Errorf("Provided() returned incorrect value, got %v, want %v", v.Provided(), test.wantProvided)

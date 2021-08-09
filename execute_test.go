@@ -64,9 +64,7 @@ func TestExecute(t *testing.T) {
 				},
 				WantErr: fmt.Errorf("bad news bears"),
 				WantData: &Data{
-					Values: map[string]*Value{
-						"s": StringValue("hello"),
-					},
+					"s": StringValue("hello"),
 				},
 			},
 		},
@@ -97,9 +95,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"s": StringValue("hello"),
-					},
+					"s": StringValue("hello"),
 				},
 			},
 		},
@@ -114,9 +110,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"i": IntValue(123),
-					},
+					"i": IntValue(123),
 				},
 			},
 		},
@@ -145,9 +139,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"f": FloatValue(-12.3),
-					},
+					"f": FloatValue(-12.3),
 				},
 			},
 		},
@@ -180,9 +172,7 @@ func TestExecute(t *testing.T) {
 					remaining: []int{2},
 				},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"sl": StringListValue("hello", "there"),
-					},
+					"sl": StringListValue("hello", "there"),
 				},
 				WantErr:    fmt.Errorf("Unprocessed extra args: [sir]"),
 				WantStderr: []string{"Unprocessed extra args: [sir]"},
@@ -199,9 +189,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"sl": StringListValue("hello"),
-					},
+					"sl": StringListValue("hello"),
 				},
 			},
 		},
@@ -217,9 +205,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"sl": StringListValue("hello", "there"),
-					},
+					"sl": StringListValue("hello", "there"),
 				},
 			},
 		},
@@ -236,9 +222,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"sl": StringListValue("hello", "there", "maam"),
-					},
+					"sl": StringListValue("hello", "there", "maam"),
 				},
 			},
 		},
@@ -255,9 +239,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"sl": StringListValue("hello", "there", "kenobi"),
-					},
+					"sl": StringListValue("hello", "there", "kenobi"),
 				},
 				WantErr:    fmt.Errorf("not enough arguments"),
 				WantStderr: []string{"not enough arguments"},
@@ -274,9 +256,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"sl": StringListValue("hello"),
-					},
+					"sl": StringListValue("hello"),
 				},
 			},
 		},
@@ -293,9 +273,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"sl": StringListValue("hello", "there", "kenobi"),
-					},
+					"sl": StringListValue("hello", "there", "kenobi"),
 				},
 			},
 		},
@@ -311,9 +289,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"il": IntListValue(1, -23),
-					},
+					"il": IntListValue(1, -23),
 				},
 			},
 		},
@@ -345,9 +321,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"fl": FloatListValue(0.1, -2.3),
-					},
+					"fl": FloatListValue(0.1, -2.3),
 				},
 			},
 		},
@@ -383,11 +357,9 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"il": IntListValue(0, 1),
-						"s":  StringValue("two"),
-						"fl": FloatListValue(0.3, -4),
-					},
+					"il": IntListValue(0, 1),
+					"s":  StringValue("two"),
+					"fl": FloatListValue(0.3, -4),
 				},
 			},
 		},
@@ -409,11 +381,9 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"il": IntListValue(0, 1),
-						"s":  StringValue("two"),
-						"fl": FloatListValue(0.3, -4, 0.5),
-					},
+					"il": IntListValue(0, 1),
+					"s":  StringValue("two"),
+					"fl": FloatListValue(0.3, -4, 0.5),
 				},
 				WantErr:    fmt.Errorf("Unprocessed extra args: [6]"),
 				WantStderr: []string{"Unprocessed extra args: [6]"},
@@ -424,10 +394,7 @@ func TestExecute(t *testing.T) {
 			name: "executes with proper data",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(IntListNode("il", 2, 0, nil), StringNode("s", nil), FloatListNode("fl", 1, 2, nil), ExecutorNode(func(o Output, d *Data) error {
-					var keys []string
-					for k := range d.Values {
-						keys = append(keys, k)
-					}
+					keys := d.Keys()
 					sort.Strings(keys)
 					for _, k := range keys {
 						o.Stdout("%s: %s", k, d.Str(k))
@@ -445,11 +412,9 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"il": IntListValue(0, 1),
-						"s":  StringValue("two"),
-						"fl": FloatListValue(0.3, -4),
-					},
+					"il": IntListValue(0, 1),
+					"s":  StringValue("two"),
+					"fl": FloatListValue(0.3, -4),
 				},
 				WantStdout: []string{
 					"fl: 0.30, -4.00",
@@ -475,11 +440,9 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"il": IntListValue(0, 1),
-						"s":  StringValue("two"),
-						"fl": FloatListValue(0.3, -4),
-					},
+					"il": IntListValue(0, 1),
+					"s":  StringValue("two"),
+					"fl": FloatListValue(0.3, -4),
 				},
 				WantStderr: []string{"bad news bears"},
 				WantErr:    fmt.Errorf("bad news bears"),
@@ -499,9 +462,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"strArg": StringValue("123"),
-					},
+					"strArg": StringValue("123"),
 				},
 				WantStderr: []string{"validation failed: option can only be bound to arguments with type 3"},
 				WantErr:    fmt.Errorf("validation failed: option can only be bound to arguments with type 3"),
@@ -521,9 +482,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"strArg": StringValue("goodbye"),
-					},
+					"strArg": StringValue("goodbye"),
 				},
 			},
 		},
@@ -540,9 +499,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"strArg": StringValue("hello"),
-					},
+					"strArg": StringValue("hello"),
 				},
 				WantStderr: []string{`validation failed: [Contains] value doesn't contain substring "good"`},
 				WantErr:    fmt.Errorf(`validation failed: [Contains] value doesn't contain substring "good"`),
@@ -562,9 +519,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"strArg": StringValue("hello"),
-					},
+					"strArg": StringValue("hello"),
 				},
 			},
 		},
@@ -581,9 +536,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"strArg": StringValue("hey"),
-					},
+					"strArg": StringValue("hey"),
 				},
 			},
 		},
@@ -600,9 +553,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"strArg": StringValue("hi"),
-					},
+					"strArg": StringValue("hi"),
 				},
 				WantStderr: []string{`validation failed: [MinLength] value must be at least 3 characters`},
 				WantErr:    fmt.Errorf(`validation failed: [MinLength] value must be at least 3 characters`),
@@ -622,9 +573,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"IntNode": IntValue(24),
-					},
+					"IntNode": IntValue(24),
 				},
 			},
 		},
@@ -641,9 +590,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"IntNode": IntValue(25),
-					},
+					"IntNode": IntValue(25),
 				},
 				WantStderr: []string{`validation failed: [IntEQ] value isn't equal to 24`},
 				WantErr:    fmt.Errorf(`validation failed: [IntEQ] value isn't equal to 24`),
@@ -663,9 +610,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"IntNode": IntValue(25),
-					},
+					"IntNode": IntValue(25),
 				},
 			},
 		},
@@ -682,9 +627,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"IntNode": IntValue(24),
-					},
+					"IntNode": IntValue(24),
 				},
 				WantStderr: []string{`validation failed: [IntNE] value isn't not equal to 24`},
 				WantErr:    fmt.Errorf(`validation failed: [IntNE] value isn't not equal to 24`),
@@ -704,9 +647,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"IntNode": IntValue(24),
-					},
+					"IntNode": IntValue(24),
 				},
 			},
 		},
@@ -723,9 +664,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"IntNode": IntValue(25),
-					},
+					"IntNode": IntValue(25),
 				},
 				WantStderr: []string{`validation failed: [IntLT] value isn't less than 25`},
 				WantErr:    fmt.Errorf(`validation failed: [IntLT] value isn't less than 25`),
@@ -744,9 +683,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"IntNode": IntValue(26),
-					},
+					"IntNode": IntValue(26),
 				},
 				WantStderr: []string{`validation failed: [IntLT] value isn't less than 25`},
 				WantErr:    fmt.Errorf(`validation failed: [IntLT] value isn't less than 25`),
@@ -766,9 +703,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"IntNode": IntValue(24),
-					},
+					"IntNode": IntValue(24),
 				},
 			},
 		},
@@ -785,9 +720,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"IntNode": IntValue(25),
-					},
+					"IntNode": IntValue(25),
 				},
 			},
 		},
@@ -804,9 +737,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"IntNode": IntValue(26),
-					},
+					"IntNode": IntValue(26),
 				},
 				WantStderr: []string{`validation failed: [IntLTE] value isn't less than or equal to 25`},
 				WantErr:    fmt.Errorf(`validation failed: [IntLTE] value isn't less than or equal to 25`),
@@ -826,9 +757,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"IntNode": IntValue(24),
-					},
+					"IntNode": IntValue(24),
 				},
 				WantStderr: []string{`validation failed: [IntGT] value isn't greater than 25`},
 				WantErr:    fmt.Errorf(`validation failed: [IntGT] value isn't greater than 25`),
@@ -847,9 +776,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"IntNode": IntValue(25),
-					},
+					"IntNode": IntValue(25),
 				},
 				WantStderr: []string{`validation failed: [IntGT] value isn't greater than 25`},
 				WantErr:    fmt.Errorf(`validation failed: [IntGT] value isn't greater than 25`),
@@ -868,9 +795,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"IntNode": IntValue(26),
-					},
+					"IntNode": IntValue(26),
 				},
 			},
 		},
@@ -888,9 +813,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"IntNode": IntValue(24),
-					},
+					"IntNode": IntValue(24),
 				},
 				WantStderr: []string{`validation failed: [IntGTE] value isn't greater than or equal to 25`},
 				WantErr:    fmt.Errorf(`validation failed: [IntGTE] value isn't greater than or equal to 25`),
@@ -909,9 +832,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"IntNode": IntValue(25),
-					},
+					"IntNode": IntValue(25),
 				},
 			},
 		},
@@ -928,9 +849,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"IntNode": IntValue(26),
-					},
+					"IntNode": IntValue(26),
 				},
 			},
 		},
@@ -948,9 +867,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"IntNode": IntValue(-1),
-					},
+					"IntNode": IntValue(-1),
 				},
 				WantStderr: []string{`validation failed: [IntPositive] value isn't positive`},
 				WantErr:    fmt.Errorf(`validation failed: [IntPositive] value isn't positive`),
@@ -969,9 +886,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"IntNode": IntValue(0),
-					},
+					"IntNode": IntValue(0),
 				},
 				WantStderr: []string{`validation failed: [IntPositive] value isn't positive`},
 				WantErr:    fmt.Errorf(`validation failed: [IntPositive] value isn't positive`),
@@ -990,9 +905,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"IntNode": IntValue(1),
-					},
+					"IntNode": IntValue(1),
 				},
 			},
 		},
@@ -1010,9 +923,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"IntNode": IntValue(-1),
-					},
+					"IntNode": IntValue(-1),
 				},
 			},
 		},
@@ -1029,9 +940,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"IntNode": IntValue(0),
-					},
+					"IntNode": IntValue(0),
 				},
 				WantStderr: []string{`validation failed: [IntNegative] value isn't negative`},
 				WantErr:    fmt.Errorf(`validation failed: [IntNegative] value isn't negative`),
@@ -1050,9 +959,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"IntNode": IntValue(1),
-					},
+					"IntNode": IntValue(1),
 				},
 				WantStderr: []string{`validation failed: [IntNegative] value isn't negative`},
 				WantErr:    fmt.Errorf(`validation failed: [IntNegative] value isn't negative`),
@@ -1072,9 +979,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"IntNode": IntValue(-1),
-					},
+					"IntNode": IntValue(-1),
 				},
 				WantStderr: []string{`validation failed: [IntNonNegative] value isn't non-negative`},
 				WantErr:    fmt.Errorf(`validation failed: [IntNonNegative] value isn't non-negative`),
@@ -1093,9 +998,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"IntNode": IntValue(0),
-					},
+					"IntNode": IntValue(0),
 				},
 			},
 		},
@@ -1112,9 +1015,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"IntNode": IntValue(1),
-					},
+					"IntNode": IntValue(1),
 				},
 			},
 		},
@@ -1132,9 +1033,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"flArg": FloatValue(2.4),
-					},
+					"flArg": FloatValue(2.4),
 				},
 			},
 		},
@@ -1151,9 +1050,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"flArg": FloatValue(2.5),
-					},
+					"flArg": FloatValue(2.5),
 				},
 				WantStderr: []string{`validation failed: [FloatEQ] value isn't equal to 2.40`},
 				WantErr:    fmt.Errorf(`validation failed: [FloatEQ] value isn't equal to 2.40`),
@@ -1173,9 +1070,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"flArg": FloatValue(2.5),
-					},
+					"flArg": FloatValue(2.5),
 				},
 			},
 		},
@@ -1192,9 +1087,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"flArg": FloatValue(2.4),
-					},
+					"flArg": FloatValue(2.4),
 				},
 				WantStderr: []string{`validation failed: [FloatNE] value isn't not equal to 2.40`},
 				WantErr:    fmt.Errorf(`validation failed: [FloatNE] value isn't not equal to 2.40`),
@@ -1214,9 +1107,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"flArg": FloatValue(2.4),
-					},
+					"flArg": FloatValue(2.4),
 				},
 			},
 		},
@@ -1233,9 +1124,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"flArg": FloatValue(2.5),
-					},
+					"flArg": FloatValue(2.5),
 				},
 				WantStderr: []string{`validation failed: [FloatLT] value isn't less than 2.50`},
 				WantErr:    fmt.Errorf(`validation failed: [FloatLT] value isn't less than 2.50`),
@@ -1254,9 +1143,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"flArg": FloatValue(2.6),
-					},
+					"flArg": FloatValue(2.6),
 				},
 				WantStderr: []string{`validation failed: [FloatLT] value isn't less than 2.50`},
 				WantErr:    fmt.Errorf(`validation failed: [FloatLT] value isn't less than 2.50`),
@@ -1276,9 +1163,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"flArg": FloatValue(2.4),
-					},
+					"flArg": FloatValue(2.4),
 				},
 			},
 		},
@@ -1295,9 +1180,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"flArg": FloatValue(2.5),
-					},
+					"flArg": FloatValue(2.5),
 				},
 			},
 		},
@@ -1314,9 +1197,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"flArg": FloatValue(2.6),
-					},
+					"flArg": FloatValue(2.6),
 				},
 				WantStderr: []string{`validation failed: [FloatLTE] value isn't less than or equal to 2.50`},
 				WantErr:    fmt.Errorf(`validation failed: [FloatLTE] value isn't less than or equal to 2.50`),
@@ -1336,9 +1217,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"flArg": FloatValue(2.4),
-					},
+					"flArg": FloatValue(2.4),
 				},
 				WantStderr: []string{`validation failed: [FloatGT] value isn't greater than 2.50`},
 				WantErr:    fmt.Errorf(`validation failed: [FloatGT] value isn't greater than 2.50`),
@@ -1357,9 +1236,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"flArg": FloatValue(2.5),
-					},
+					"flArg": FloatValue(2.5),
 				},
 				WantStderr: []string{`validation failed: [FloatGT] value isn't greater than 2.50`},
 				WantErr:    fmt.Errorf(`validation failed: [FloatGT] value isn't greater than 2.50`),
@@ -1378,9 +1255,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"flArg": FloatValue(2.6),
-					},
+					"flArg": FloatValue(2.6),
 				},
 			},
 		},
@@ -1398,9 +1273,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"flArg": FloatValue(2.4),
-					},
+					"flArg": FloatValue(2.4),
 				},
 				WantStderr: []string{`validation failed: [FloatGTE] value isn't greater than or equal to 2.50`},
 				WantErr:    fmt.Errorf(`validation failed: [FloatGTE] value isn't greater than or equal to 2.50`),
@@ -1419,9 +1292,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"flArg": FloatValue(2.5),
-					},
+					"flArg": FloatValue(2.5),
 				},
 			},
 		},
@@ -1438,9 +1309,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"flArg": FloatValue(2.6),
-					},
+					"flArg": FloatValue(2.6),
 				},
 			},
 		},
@@ -1458,9 +1327,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"flArg": FloatValue(-0.1),
-					},
+					"flArg": FloatValue(-0.1),
 				},
 				WantStderr: []string{`validation failed: [FloatPositive] value isn't positive`},
 				WantErr:    fmt.Errorf(`validation failed: [FloatPositive] value isn't positive`),
@@ -1479,9 +1346,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"flArg": FloatValue(0),
-					},
+					"flArg": FloatValue(0),
 				},
 				WantStderr: []string{`validation failed: [FloatPositive] value isn't positive`},
 				WantErr:    fmt.Errorf(`validation failed: [FloatPositive] value isn't positive`),
@@ -1500,9 +1365,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"flArg": FloatValue(0.1),
-					},
+					"flArg": FloatValue(0.1),
 				},
 			},
 		},
@@ -1520,9 +1383,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"flArg": FloatValue(-0.1),
-					},
+					"flArg": FloatValue(-0.1),
 				},
 			},
 		},
@@ -1539,9 +1400,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"flArg": FloatValue(0),
-					},
+					"flArg": FloatValue(0),
 				},
 				WantStderr: []string{`validation failed: [FloatNegative] value isn't negative`},
 				WantErr:    fmt.Errorf(`validation failed: [FloatNegative] value isn't negative`),
@@ -1560,9 +1419,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"flArg": FloatValue(0.1),
-					},
+					"flArg": FloatValue(0.1),
 				},
 				WantStderr: []string{`validation failed: [FloatNegative] value isn't negative`},
 				WantErr:    fmt.Errorf(`validation failed: [FloatNegative] value isn't negative`),
@@ -1582,9 +1439,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"flArg": FloatValue(-0.1),
-					},
+					"flArg": FloatValue(-0.1),
 				},
 				WantStderr: []string{`validation failed: [FloatNonNegative] value isn't non-negative`},
 				WantErr:    fmt.Errorf(`validation failed: [FloatNonNegative] value isn't non-negative`),
@@ -1603,9 +1458,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"flArg": FloatValue(0),
-					},
+					"flArg": FloatValue(0),
 				},
 			},
 		},
@@ -1622,9 +1475,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"flArg": FloatValue(0.1),
-					},
+					"flArg": FloatValue(0.1),
 				},
 			},
 		},
@@ -1661,9 +1512,7 @@ func TestExecute(t *testing.T) {
 				Node: &Node{Processor: NewFlagNode(StringFlag("strFlag", 'f', nil))},
 				Args: []string{"--strFlag", "hello"},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"strFlag": StringValue("hello"),
-					},
+					"strFlag": StringValue("hello"),
 				},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -1679,9 +1528,7 @@ func TestExecute(t *testing.T) {
 				Node: &Node{Processor: NewFlagNode(StringFlag("strFlag", 'f', nil))},
 				Args: []string{"-f", "hello"},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"strFlag": StringValue("hello"),
-					},
+					"strFlag": StringValue("hello"),
 				},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -1700,10 +1547,8 @@ func TestExecute(t *testing.T) {
 				),
 				Args: []string{"un", "--strFlag", "hello", "deux"},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"strFlag": StringValue("hello"),
-						"filler":  StringListValue("un", "deux"),
-					},
+					"strFlag": StringValue("hello"),
+					"filler":  StringListValue("un", "deux"),
 				},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -1724,10 +1569,8 @@ func TestExecute(t *testing.T) {
 				),
 				Args: []string{"uno", "dos", "-f", "hello"},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"filler":  StringListValue("uno", "dos"),
-						"strFlag": StringValue("hello"),
-					},
+					"filler":  StringListValue("uno", "dos"),
+					"strFlag": StringValue("hello"),
 				},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -1758,10 +1601,8 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"filler":  StringListValue("un", "deux", "quatre"),
-						"intFlag": IntValue(3),
-					},
+					"filler":  StringListValue("un", "deux", "quatre"),
+					"intFlag": IntValue(3),
 				},
 			},
 		},
@@ -1804,10 +1645,8 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"filler":    StringListValue("three"),
-						"floatFlag": FloatValue(-1.2),
-					},
+					"filler":    StringListValue("three"),
+					"floatFlag": FloatValue(-1.2),
 				},
 			},
 		},
@@ -1848,10 +1687,8 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"filler":   StringListValue("okay", "then"),
-						"boolFlag": BoolValue(true),
-					},
+					"filler":   StringListValue("okay", "then"),
+					"boolFlag": BoolValue(true),
 				},
 			},
 		},
@@ -1871,10 +1708,8 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"filler":   StringListValue("okay", "then"),
-						"boolFlag": BoolValue(true),
-					},
+					"filler":   StringListValue("okay", "then"),
+					"boolFlag": BoolValue(true),
 				},
 			},
 		},
@@ -1896,10 +1731,8 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"filler": StringListValue("un"),
-						"slFlag": StringListValue("hello", "there"),
-					},
+					"filler": StringListValue("un"),
+					"slFlag": StringListValue("hello", "there"),
 				},
 			},
 		},
@@ -1922,9 +1755,7 @@ func TestExecute(t *testing.T) {
 				WantStderr: []string{"not enough arguments"},
 				WantErr:    fmt.Errorf("not enough arguments"),
 				WantData: &Data{
-					Values: map[string]*Value{
-						"slFlag": StringListValue("hello"),
-					},
+					"slFlag": StringListValue("hello"),
 				},
 			},
 		},
@@ -1950,10 +1781,8 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"filler": StringListValue("un", "64"),
-						"ilFlag": IntListValue(2, 4, 8, 16, 32),
-					},
+					"filler": StringListValue("un", "64"),
+					"ilFlag": IntListValue(2, 4, 8, 16, 32),
 				},
 			},
 		},
@@ -2004,10 +1833,8 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"filler": StringListValue("un", "16.16", "-32", "64"),
-						"flFlag": FloatListValue(2, -4.4, 0.8),
-					},
+					"filler": StringListValue("un", "16.16", "-32", "64"),
+					"flFlag": FloatListValue(2, -4.4, 0.8),
 				},
 			},
 		},
@@ -2069,13 +1896,11 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"boo":         BoolValue(true),
-						"extra":       StringListValue("its", "a", "secret", "message."),
-						"names":       StringListValue("greggar", "groog", "beggars"),
-						"coordinates": FloatListValue(2.2, 4.4),
-						"rating":      IntValue(9),
-					},
+					"boo":         BoolValue(true),
+					"extra":       StringListValue("its", "a", "secret", "message."),
+					"names":       StringListValue("greggar", "groog", "beggars"),
+					"coordinates": FloatListValue(2.2, 4.4),
+					"rating":      IntValue(9),
 				},
 			},
 		},
@@ -2145,9 +1970,7 @@ func TestExecute(t *testing.T) {
 				Args:       []string{"good", "morning"},
 				WantStdout: []string{"sl: good, morning"},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"sl": StringListValue("good", "morning"),
-					},
+					"sl": StringListValue("good", "morning"),
 				},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -2212,10 +2035,8 @@ func TestComplete(t *testing.T) {
 				Args: "cmd t clh:abc",
 				Want: []string{"abcd222"},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"PATH":   StringValue("clh"),
-						"TARGET": StringValue("abc"),
-					},
+					"PATH":   StringValue("clh"),
+					"TARGET": StringValue("abc"),
 				},
 			},
 		},
@@ -2237,9 +2058,7 @@ func TestComplete(t *testing.T) {
 				),
 				Want: []string{"deux", "trois", "un"},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"s": StringValue(""),
-					},
+					"s": StringValue(""),
 				},
 			},
 		},
@@ -2254,9 +2073,7 @@ func TestComplete(t *testing.T) {
 				Args: "cmd t",
 				Want: []string{"three", "two"},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"s": StringValue("t"),
-					},
+					"s": StringValue("t"),
 				},
 			},
 		},
@@ -2271,10 +2088,8 @@ func TestComplete(t *testing.T) {
 				Args: "cmd three ",
 				Want: []string{"dos", "uno"},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"s":  StringValue("three"),
-						"sl": StringListValue(""),
-					},
+					"s":  StringValue("three"),
+					"sl": StringListValue(""),
 				},
 			},
 		},
@@ -2289,10 +2104,8 @@ func TestComplete(t *testing.T) {
 				Args: "cmd three d",
 				Want: []string{"dos"},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"s":  StringValue("three"),
-						"sl": StringListValue("d"),
-					},
+					"s":  StringValue("three"),
+					"sl": StringListValue("d"),
 				},
 			},
 		},
@@ -2307,10 +2120,8 @@ func TestComplete(t *testing.T) {
 				Args: "cmd three dos ",
 				Want: []string{"dos", "uno"},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"s":  StringValue("three"),
-						"sl": StringListValue("dos", ""),
-					},
+					"s":  StringValue("three"),
+					"sl": StringListValue("dos", ""),
 				},
 			},
 		},
@@ -2325,10 +2136,8 @@ func TestComplete(t *testing.T) {
 				Args: "cmd three uno dos ",
 				Want: []string{"1", "2"},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"s":  StringValue("three"),
-						"sl": StringListValue("uno", "dos"),
-					},
+					"s":  StringValue("three"),
+					"sl": StringListValue("uno", "dos"),
 				},
 			},
 		},
@@ -2342,11 +2151,9 @@ func TestComplete(t *testing.T) {
 				),
 				Args: "cmd three uno dos 1 what now",
 				WantData: &Data{
-					Values: map[string]*Value{
-						"s":  StringValue("three"),
-						"sl": StringListValue("uno", "dos"),
-						"i":  IntValue(1),
-					},
+					"s":  StringValue("three"),
+					"sl": StringListValue("uno", "dos"),
+					"i":  IntValue(1),
 				},
 			},
 		},
@@ -2358,9 +2165,7 @@ func TestComplete(t *testing.T) {
 				),
 				Want: []string{"dos", "uno"},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"sl": StringListValue(),
-					},
+					"sl": StringListValue(),
 				},
 			},
 		},
@@ -2373,9 +2178,7 @@ func TestComplete(t *testing.T) {
 				Args: "cmd zz",
 				Want: []string{"zzz-1", "zzz-2", "zzz-4"},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"sl": StringListValue("zz"),
-					},
+					"sl": StringListValue("zz"),
 				},
 			},
 		},
@@ -2439,9 +2242,7 @@ func TestComplete(t *testing.T) {
 				Args: "cmd 1 --greeting h",
 				Want: []string{"hey", "hi"},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"greeting": StringValue("h"),
-					},
+					"greeting": StringValue("h"),
 				},
 			},
 		},
@@ -2459,9 +2260,7 @@ func TestComplete(t *testing.T) {
 				Args: "cmd 1 -h he",
 				Want: []string{"hey"},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"greeting": StringValue("he"),
-					},
+					"greeting": StringValue("he"),
 				},
 			},
 		},
@@ -2479,10 +2278,8 @@ func TestComplete(t *testing.T) {
 				Args: "cmd 1 -h hey other --names ",
 				Want: []string{"johnny", "ralph", "renee"},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"greeting": StringValue("hey"),
-						"names":    StringListValue(""),
-					},
+					"greeting": StringValue("hey"),
+					"names":    StringListValue(""),
 				},
 			},
 		},
@@ -2500,10 +2297,8 @@ func TestComplete(t *testing.T) {
 				Args: "cmd 1 -h hey other --names ralph ",
 				Want: []string{"johnny", "renee"},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"greeting": StringValue("hey"),
-						"names":    StringListValue("ralph", ""),
-					},
+					"greeting": StringValue("hey"),
+					"names":    StringListValue("ralph", ""),
 				},
 			},
 		},
@@ -2522,10 +2317,8 @@ func TestComplete(t *testing.T) {
 				Args: "cmd 1 -h hey other --names ralph renee johnny -f ",
 				Want: []string{"1.23", "12.3", "123.4"},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"greeting": StringValue("hey"),
-						"names":    StringListValue("ralph", "renee", "johnny"),
-					},
+					"greeting": StringValue("hey"),
+					"names":    StringListValue("ralph", "renee", "johnny"),
 				},
 			},
 		},
@@ -2543,11 +2336,9 @@ func TestComplete(t *testing.T) {
 				Args: "cmd 1 -h hello beta --names ralph renee johnny ",
 				Want: []string{"hey", "ooo"},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"i":        StringListValue("1", "beta", ""),
-						"greeting": StringValue("hello"),
-						"names":    StringListValue("ralph", "renee", "johnny"),
-					},
+					"i":        StringListValue("1", "beta", ""),
+					"greeting": StringValue("hello"),
+					"names":    StringListValue("ralph", "renee", "johnny"),
 				},
 			},
 		},
@@ -2560,9 +2351,7 @@ func TestComplete(t *testing.T) {
 				},
 				Args: "cmd abc",
 				WantData: &Data{
-					Values: map[string]*Value{
-						"strArg": StringValue("abc"),
-					},
+					"strArg": StringValue("abc"),
 				},
 			},
 		},
@@ -2574,9 +2363,7 @@ func TestComplete(t *testing.T) {
 				},
 				Args: "cmd abc",
 				WantData: &Data{
-					Values: map[string]*Value{
-						"slArg": StringListValue("abc"),
-					},
+					"slArg": StringListValue("abc"),
 				},
 			},
 		},
@@ -2592,9 +2379,7 @@ func TestComplete(t *testing.T) {
 				}))),
 				Args: "cmd abc",
 				WantData: &Data{
-					Values: map[string]*Value{
-						"strArg": StringValue("abc"),
-					},
+					"strArg": StringValue("abc"),
 				},
 			},
 		},
@@ -2610,9 +2395,7 @@ func TestComplete(t *testing.T) {
 				}))),
 				Args: "cmd abc",
 				WantData: &Data{
-					Values: map[string]*Value{
-						"strArg": StringValue("newStuff"),
-					},
+					"strArg": StringValue("newStuff"),
 				},
 			},
 		},
@@ -2625,9 +2408,7 @@ func TestComplete(t *testing.T) {
 				},
 				Args: fmt.Sprintf("cmd %s", filepath.Join("relative", "path.txt")),
 				WantData: &Data{
-					Values: map[string]*Value{
-						"strArg": StringValue(filepath.Join("relative", "path.txt")),
-					},
+					"strArg": StringValue(filepath.Join("relative", "path.txt")),
 				},
 			},
 		},
@@ -2640,9 +2421,7 @@ func TestComplete(t *testing.T) {
 				},
 				Args: fmt.Sprintf("cmd %s", filepath.Join("relative", "path.txt")),
 				WantData: &Data{
-					Values: map[string]*Value{
-						"strArg": StringListValue(filepath.Join("relative", "path.txt")),
-					},
+					"strArg": StringListValue(filepath.Join("relative", "path.txt")),
 				},
 			},
 		},
@@ -2655,9 +2434,7 @@ func TestComplete(t *testing.T) {
 				},
 				Args: fmt.Sprintf("cmd %s", filepath.Join("relative", "path.txt")),
 				WantData: &Data{
-					Values: map[string]*Value{
-						"strArg": StringValue(filepath.Join("relative", "path.txt")),
-					},
+					"strArg": StringValue(filepath.Join("relative", "path.txt")),
 				},
 			},
 		},
@@ -2669,9 +2446,7 @@ func TestComplete(t *testing.T) {
 				},
 				Args: "cmd 123",
 				WantData: &Data{
-					Values: map[string]*Value{
-						"IntNode": IntValue(123),
-					},
+					"IntNode": IntValue(123),
 				},
 			},
 		},
@@ -2694,12 +2469,10 @@ func TestComplete(t *testing.T) {
 				},
 				Args: "cmd uno dos",
 				WantData: &Data{
-					Values: map[string]*Value{
-						"slArg": StringListValue(
-							"_uno_",
-							"_dos_",
-						),
-					},
+					"slArg": StringListValue(
+						"_uno_",
+						"_dos_",
+					),
 				},
 			},
 		},
@@ -2712,12 +2485,10 @@ func TestComplete(t *testing.T) {
 				},
 				Args: fmt.Sprintf("cmd %s %s", filepath.Join("relative", "path.txt"), filepath.Join("other.txt")),
 				WantData: &Data{
-					Values: map[string]*Value{
-						"slArg": StringListValue(
-							filepath.Join("relative", "path.txt"),
-							filepath.Join("other.txt"),
-						),
-					},
+					"slArg": StringListValue(
+						filepath.Join("relative", "path.txt"),
+						filepath.Join("other.txt"),
+					),
 				},
 			},
 		},
@@ -2729,9 +2500,7 @@ func TestComplete(t *testing.T) {
 				},
 				Args: "cmd 123",
 				WantData: &Data{
-					Values: map[string]*Value{
-						"slArg": StringListValue("123"),
-					},
+					"slArg": StringListValue("123"),
 				},
 			},
 		},
@@ -2746,9 +2515,7 @@ func TestComplete(t *testing.T) {
 				}, SerialNodes(StringListNode("default", 1, 3, NewArgOpt(SimpleCompletor("default", "command", "opts"), nil))), true),
 				Want: []string{"a", "alpha", "bravo", "command", "default", "opts"},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"default": StringListValue(),
-					},
+					"default": StringListValue(),
 				},
 			},
 		},
@@ -2762,9 +2529,7 @@ func TestComplete(t *testing.T) {
 				}, SerialNodes(StringListNode("default", 1, 3, NewArgOpt(SimpleCompletor("default", "command", "opts"), nil))), false),
 				Want: []string{"command", "default", "opts"},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"default": StringListValue(),
-					},
+					"default": StringListValue(),
 				},
 			},
 		},
@@ -2779,9 +2544,7 @@ func TestComplete(t *testing.T) {
 				Args: "cmd alpha ",
 				Want: []string{"other", "stuff"},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"hello": StringValue(""),
-					},
+					"hello": StringValue(""),
 				},
 			},
 		},
@@ -2807,9 +2570,7 @@ func TestComplete(t *testing.T) {
 				Args: "cmd a",
 				Want: []string{"a", "ahhhh", "alpha"},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"default": StringListValue("a"),
-					},
+					"default": StringListValue("a"),
 				},
 			},
 		},
@@ -2823,9 +2584,7 @@ func TestComplete(t *testing.T) {
 				}, SerialNodes(StringListNode("default", 1, 3, NewArgOpt(SimpleCompletor("default", "command", "opts"), nil))), true),
 				Args: "cmd something ",
 				WantData: &Data{
-					Values: map[string]*Value{
-						"default": StringListValue("something", ""),
-					},
+					"default": StringListValue("something", ""),
 				},
 				Want: []string{"command", "default", "opts"},
 			},
@@ -2838,9 +2597,7 @@ func TestComplete(t *testing.T) {
 				Args: "cmd 4",
 				Want: []string{"45", "456", "468"},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"iArg": IntValue(4),
-					},
+					"iArg": IntValue(4),
 				},
 			},
 		},
@@ -2851,9 +2608,7 @@ func TestComplete(t *testing.T) {
 				Args: "cmd 4",
 				Want: []string{"45", "456", "468"},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"iArg": IntValue(4),
-					},
+					"iArg": IntValue(4),
 				},
 			},
 		},
@@ -2864,9 +2619,7 @@ func TestComplete(t *testing.T) {
 				Args: "cmd 1 4",
 				Want: []string{"45", "456", "468"},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"iArg": IntListValue(1, 4),
-					},
+					"iArg": IntListValue(1, 4),
 				},
 			},
 		},
@@ -2885,9 +2638,7 @@ func TestComplete(t *testing.T) {
 				Args: "cmd 1 2 3 4",
 				Want: []string{"45", "456", "468"},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"iArg": IntListValue(1, 2, 3, 4),
-					},
+					"iArg": IntListValue(1, 2, 3, 4),
 				},
 			},
 		},
@@ -2898,9 +2649,7 @@ func TestComplete(t *testing.T) {
 				Args: "cmd 4",
 				Want: []string{"4.5", "45.6", "468"},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"fArg": FloatValue(4),
-					},
+					"fArg": FloatValue(4),
 				},
 			},
 		},
@@ -2910,9 +2659,7 @@ func TestComplete(t *testing.T) {
 				Node: SerialNodes(FloatListNode("fArg", 1, 2, NewArgOpt(SimpleCompletor("12", "4.5", "45.6", "468", "7"), nil))),
 				Want: []string{"12", "4.5", "45.6", "468", "7"},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"fArg": FloatListValue(),
-					},
+					"fArg": FloatListValue(),
 				},
 			},
 		},
@@ -2922,9 +2669,7 @@ func TestComplete(t *testing.T) {
 				Node: SerialNodes(BoolNode("bArg")),
 				Want: []string{"0", "1", "F", "FALSE", "False", "T", "TRUE", "True", "f", "false", "t", "true"},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"bArg": BoolValue(false),
-					},
+					"bArg": BoolValue(false),
 				},
 			},
 		},
@@ -2954,7 +2699,7 @@ func printNode(s string) *Node {
 func printArgsNode() *Node {
 	return &Node{
 		Processor: ExecutorNode(func(output Output, data *Data) error {
-			for k, v := range data.Values {
+			for k, v := range *data {
 				output.Stdout("%s: %s", k, v.Str())
 			}
 			return nil

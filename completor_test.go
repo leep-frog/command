@@ -164,9 +164,7 @@ func TestParseAndComplete(t *testing.T) {
 		{
 			name: "handles empty array",
 			wantData: &Data{
-				Values: map[string]*Value{
-					"sl": StringListValue(),
-				},
+				"sl": StringListValue(),
 			},
 		},
 		{
@@ -179,9 +177,7 @@ func TestParseAndComplete(t *testing.T) {
 				"Fifth",
 			},
 			wantData: &Data{
-				Values: map[string]*Value{
-					"sl": StringListValue(),
-				},
+				"sl": StringListValue(),
 			},
 			want: []string{
 				"Fifth",
@@ -202,9 +198,7 @@ func TestParseAndComplete(t *testing.T) {
 				"Fifth",
 			},
 			wantData: &Data{
-				Values: map[string]*Value{
-					"sl": StringListValue("Fo"),
-				},
+				"sl": StringListValue("Fo"),
 			},
 			want: []string{
 				`Fourth\ Option`,
@@ -219,9 +213,7 @@ func TestParseAndComplete(t *testing.T) {
 				"Fifth",
 			},
 			wantData: &Data{
-				Values: map[string]*Value{
-					"sl": StringListValue("F"),
-				},
+				"sl": StringListValue("F"),
 			},
 			want: []string{
 				"Fifth",
@@ -239,9 +231,7 @@ func TestParseAndComplete(t *testing.T) {
 				"Greg's Four",
 			},
 			wantData: &Data{
-				Values: map[string]*Value{
-					"sl": StringListValue("Greg's One", ""),
-				},
+				"sl": StringListValue("Greg's One", ""),
 			},
 			want: []string{
 				`Greg's\ Four`,
@@ -266,9 +256,7 @@ func TestParseAndComplete(t *testing.T) {
 				`Greg"s\ Two`,
 			},
 			wantData: &Data{
-				Values: map[string]*Value{
-					"sl": StringListValue(`Greg"s Other"s`, ""),
-				},
+				"sl": StringListValue(`Greg"s Other"s`, ""),
 			},
 		},
 		{
@@ -289,9 +277,7 @@ func TestParseAndComplete(t *testing.T) {
 				`"Third One"`,
 			},
 			wantData: &Data{
-				Values: map[string]*Value{
-					"sl": StringListValue(""),
-				},
+				"sl": StringListValue(""),
 			},
 		},
 		{
@@ -313,9 +299,7 @@ func TestParseAndComplete(t *testing.T) {
 				`"Third One"`,
 			},
 			wantData: &Data{
-				Values: map[string]*Value{
-					"sl": StringListValue("hello", ""),
-				},
+				"sl": StringListValue("hello", ""),
 			},
 		},
 		{
@@ -335,9 +319,8 @@ func TestParseAndComplete(t *testing.T) {
 				"'Second Thing'",
 				"'Third One'",
 			},
-			wantData: &Data{Values: map[string]*Value{
+			wantData: &Data{
 				"sl": StringListValue("First Choice", ""),
-			},
 			},
 		},
 		{
@@ -355,9 +338,8 @@ func TestParseAndComplete(t *testing.T) {
 				"'First Choice'",
 				"'Fourth Option'",
 			},
-			wantData: &Data{Values: map[string]*Value{
+			wantData: &Data{
 				"sl": StringListValue("First Choice", "F"),
-			},
 			},
 		},
 		{
@@ -377,9 +359,8 @@ func TestParseAndComplete(t *testing.T) {
 				`"Second Thing"`,
 				`"Third One"`,
 			},
-			wantData: &Data{Values: map[string]*Value{
+			wantData: &Data{
 				"sl": StringListValue(""),
-			},
 			},
 		},
 		{
@@ -397,9 +378,8 @@ func TestParseAndComplete(t *testing.T) {
 				`"First Choice"`,
 				`"Fourth Option"`,
 			},
-			wantData: &Data{Values: map[string]*Value{
+			wantData: &Data{
 				"sl": StringListValue("F"),
-			},
 			},
 		},
 		{
@@ -415,9 +395,8 @@ func TestParseAndComplete(t *testing.T) {
 				`"Greg's Three"`,
 				`"Greg's Two"`,
 			},
-			wantData: &Data{Values: map[string]*Value{
+			wantData: &Data{
 				"sl": StringListValue("Greg's T"),
-			},
 			},
 		},
 		{
@@ -437,9 +416,8 @@ func TestParseAndComplete(t *testing.T) {
 				"'Second Thing'",
 				"'Third One'",
 			},
-			wantData: &Data{Values: map[string]*Value{
+			wantData: &Data{
 				"sl": StringListValue(""),
-			},
 			},
 		},
 		{
@@ -457,9 +435,8 @@ func TestParseAndComplete(t *testing.T) {
 				"'First Choice'",
 				"'Fourth Option'",
 			},
-			wantData: &Data{Values: map[string]*Value{
+			wantData: &Data{
 				"sl": StringListValue("F"),
-			},
 			},
 		},
 		{
@@ -477,9 +454,8 @@ func TestParseAndComplete(t *testing.T) {
 				`'Greg"s Three'`,
 				`'Greg"s Two'`,
 			},
-			wantData: &Data{Values: map[string]*Value{
+			wantData: &Data{
 				"sl": StringListValue(`Greg"s T`),
-			},
 			},
 		},
 		{
@@ -495,9 +471,8 @@ func TestParseAndComplete(t *testing.T) {
 			want: []string{
 				`Attempt\ One\ Two`,
 			},
-			wantData: &Data{Values: map[string]*Value{
+			wantData: &Data{
 				"sl": StringListValue("Attempt One "),
-			},
 			},
 		},
 		{
@@ -515,9 +490,8 @@ func TestParseAndComplete(t *testing.T) {
 				`Three\ Four`,
 				"ThreeFour",
 			},
-			wantData: &Data{Values: map[string]*Value{
+			wantData: &Data{
 				"sl": StringListValue("Three"),
-			},
 			},
 		},
 		{
@@ -533,9 +507,8 @@ func TestParseAndComplete(t *testing.T) {
 				`First\ Of`,
 				`First\ One`,
 			},
-			wantData: &Data{Values: map[string]*Value{
+			wantData: &Data{
 				"sl": StringListValue("First O"),
-			},
 			},
 		},
 		/* Useful for commenting out tests */

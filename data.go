@@ -1,53 +1,60 @@
 package command
 
-type Data struct {
-	Values map[string]*Value
-}
+type Data map[string]*Value
 
 func (d *Data) Set(s string, v *Value) {
-	if d.Values == nil {
-		d.Values = map[string]*Value{}
+	(*d)[s] = v
+}
+
+func (d *Data) Keys() []string {
+	var keys []string
+	for k := range *d {
+		keys = append(keys, k)
 	}
-	d.Values[s] = v
+	return keys
+}
+
+func (d *Data) get(s string) *Value {
+	return (*d)[s]
+}
+
+func (d *Data) HasArg(s string) bool {
+	_, ok := (*d)[s]
+	return ok
 }
 
 // Str returns a string representation of the arg's value
 // regardless if the arg is actually a string or not.
 func (d *Data) Str(s string) string {
-	return d.Values[s].Str()
-}
-
-func (d *Data) HasArg(s string) bool {
-	_, ok := d.Values[s]
-	return ok
+	return d.get(s).Str()
 }
 
 func (d *Data) String(s string) string {
-	return d.Values[s].String()
+	return d.get(s).String()
 }
 
 func (d *Data) StringList(s string) []string {
-	return d.Values[s].StringList()
+	return d.get(s).StringList()
 }
 
 func (d *Data) Int(s string) int {
-	return d.Values[s].Int()
+	return d.get(s).Int()
 }
 
 func (d *Data) IntList(s string) []int {
-	return d.Values[s].IntList()
+	return d.get(s).IntList()
 }
 
 func (d *Data) Float(s string) float64 {
-	return d.Values[s].Float()
+	return d.get(s).Float()
 }
 
 func (d *Data) FloatList(s string) []float64 {
-	return d.Values[s].FloatList()
+	return d.get(s).FloatList()
 }
 
 func (d *Data) Bool(s string) bool {
-	return d.Values[s].Bool()
+	return d.get(s).Bool()
 }
 
 type ExecuteData struct {

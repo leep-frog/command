@@ -56,9 +56,7 @@ func TestCacheExecution(t *testing.T) {
 				WantErr:    fmt.Errorf("Unprocessed extra args: [bills]"),
 				WantStderr: []string{"Unprocessed extra args: [bills]"},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"s": StringValue("dollar"),
-					},
+					"s": StringValue("dollar"),
 				},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -80,9 +78,7 @@ func TestCacheExecution(t *testing.T) {
 				WantErr:    fmt.Errorf("not enough arguments"),
 				WantStderr: []string{"not enough arguments"},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"sl": StringListValue("dollar", "bills"),
-					},
+					"sl": StringListValue("dollar", "bills"),
 				},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -103,9 +99,7 @@ func TestCacheExecution(t *testing.T) {
 				WantErr:    fmt.Errorf("validation failed: [MinLength] value must be at least 100 characters"),
 				WantStderr: []string{"validation failed: [MinLength] value must be at least 100 characters"},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"s": StringValue("dollar"),
-					},
+					"s": StringValue("dollar"),
 				},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -132,9 +126,7 @@ func TestCacheExecution(t *testing.T) {
 				)),
 				Args: []string{"dollar"},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"s": StringValue("dollar"),
-					},
+					"s": StringValue("dollar"),
 				},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -159,9 +151,7 @@ func TestCacheExecution(t *testing.T) {
 				)),
 				Args: []string{"dollar"},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"s": StringValue("usd"),
-					},
+					"s": StringValue("usd"),
 				},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -179,9 +169,7 @@ func TestCacheExecution(t *testing.T) {
 				)),
 				Args: []string{"dollar"},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"s": StringValue("dollar"),
-					},
+					"s": StringValue("dollar"),
 				},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -209,9 +197,7 @@ func TestCacheExecution(t *testing.T) {
 				)),
 				Args: []string{"dollar"},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"s": StringValue("dollar"),
-					},
+					"s": StringValue("dollar"),
 				},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -240,9 +226,7 @@ func TestCacheExecution(t *testing.T) {
 				)),
 				Args: []string{"dollar"},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"s": StringValue("usd"),
-					},
+					"s": StringValue("usd"),
 				},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -281,12 +265,10 @@ func TestCacheExecution(t *testing.T) {
 				)),
 				Args: []string{"123", "dollar", "3.4", "4.5", "six", "7"},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"s":  StringValue("usd"),
-						"i":  IntValue(123),
-						"fl": FloatListValue(3.4, 4.5),
-						"sl": StringListValue("$six", "$7"),
-					},
+					"s":  StringValue("usd"),
+					"i":  IntValue(123),
+					"fl": FloatListValue(3.4, 4.5),
+					"sl": StringListValue("$six", "$7"),
 				},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -319,9 +301,7 @@ func TestCacheExecution(t *testing.T) {
 				)),
 				Args: []string{"dollar"},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"s": StringValue("dollar"),
-					},
+					"s": StringValue("dollar"),
 				},
 				WantStdout: []string{"We made it!"},
 				wantInput: &Input{
@@ -355,9 +335,7 @@ func TestCacheExecution(t *testing.T) {
 					args: []*inputArg{{value: "usd"}},
 				},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"s": StringValue("usd"),
-					},
+					"s": StringValue("usd"),
 				},
 			},
 		},
@@ -381,11 +359,9 @@ func TestCacheExecution(t *testing.T) {
 					},
 				},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"s":  StringValue("usd"),
-						"il": IntListValue(1, 2),
-						"fl": FloatListValue(4),
-					},
+					"s":  StringValue("usd"),
+					"il": IntListValue(1, 2),
+					"fl": FloatListValue(4),
 				},
 			},
 		},
@@ -433,9 +409,7 @@ func TestCacheComplete(t *testing.T) {
 				Args: "cmd $ d",
 				Want: []string{"dinero", "dollHairs", "dollar"},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"sl": StringListValue("$", "d"),
-					},
+					"sl": StringListValue("$", "d"),
 				},
 			},
 		},

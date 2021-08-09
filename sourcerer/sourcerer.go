@@ -84,7 +84,7 @@ type CLI interface {
 	Changed() bool
 	// Setup describes a set of commands that will be run in bash prior to the CLI.
 	// The output from the commands will be stored in a file whose name will be
-	// passed in as data.Values[command.SetupArgName]
+	// passed in as data[command.SetupArgName]
 	Setup() []string
 }
 
