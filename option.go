@@ -14,7 +14,7 @@ type argOpt struct {
 	completor   *Completor
 	transformer ArgTransformer
 	alias       *aliasOpt
-	customSet   func(*Value, *Data)
+	customSet   customSetter
 }
 
 func AliasOpt(name string, ac AliasCLI) ArgOpt {
@@ -22,6 +22,17 @@ func AliasOpt(name string, ac AliasCLI) ArgOpt {
 		AliasName: name,
 		AliasCLI:  ac,
 	}
+}
+
+func CustomSetter(f func(*Value, *Data)) ArgOpt {
+	cs := customSetter(f)
+	return &cs
+}
+
+type customSetter func(*Value, *Data)
+
+func (cs *customSetter) modifyArgOpt(ao *argOpt) {
+	ao.customSet = *cs
 }
 
 type aliasOpt struct {
