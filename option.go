@@ -5,26 +5,36 @@ import (
 	"strings"
 )
 
-type ArgOpt struct {
-	Validators  []ArgValidator
-	Completor   *Completor
-	Transformer ArgTransformer
-	Alias       *AliasOpt
-	CustomSet   func(*Value, *Data)
+type ArgOptt interface {
+	modifyArgOpt(*argOpt)
 }
 
+type argOpt struct {
+	validators  []ArgValidator
+	completor   *Completor
+	transformer ArgTransformer
+	alias       *AliasOpt
+	customSet   func(*Value, *Data)
+}
+
+// TODO: Change the name of this. Make public function AliasOpt
+// and hide this type.
 type AliasOpt struct {
 	AliasName string
 	AliasCLI  AliasCLI
 }
 
-func NewArgOpt(c *Completor, t ArgTransformer, v ...ArgValidator) *ArgOpt {
+func (ao *AliasOpt) modifyArgOpt(argO *argOpt) {
+	argO.alias = ao
+}
+
+/*func NewArgOpt(c *Completor, t ArgTransformer, v ...ArgValidator) *ArgOpt {
 	return &ArgOpt{
 		Completor:   c,
 		Validators:  v,
 		Transformer: t,
 	}
-}
+}*/
 
 func SimpleTransformer(vt ValueType, f func(v *Value) (*Value, error)) ArgTransformer {
 	return &simpleTransformer{
@@ -37,6 +47,10 @@ type simpleTransformer struct {
 	vt ValueType
 	t  func(v *Value) (*Value, error)
 	fc bool
+}
+
+func (st *simpleTransformer) modifyArgOpt(ao *argOpt) {
+	ao.transformer = st
 }
 
 func (st *simpleTransformer) ForComplete() bool {
@@ -57,15 +71,22 @@ type ArgTransformer interface {
 	// TODO: test this functionality (see arg.go)
 	// specifically around file [list] transformers.
 	ForComplete() bool
+
+	ArgOptt
 }
 
 type ArgValidator interface {
 	Validate(*Value) error
+	ArgOptt
 }
 
 type validatorOption struct {
 	vt       ValueType
 	validate func(*Value) error
+}
+
+func (vo *validatorOption) modifyArgOpt(ao *argOpt) {
+	ao.validators = append(ao.validators, vo)
 }
 
 func (vo *validatorOption) Validate(v *Value) error {
@@ -263,6 +284,10 @@ func FloatNegative() ArgValidator {
 
 type fileListTransformer struct{}
 
+func (flt *fileListTransformer) modifyArgOpt(ao *argOpt) {
+	ao.transformer = flt
+}
+
 func (flt *fileListTransformer) ValueType() ValueType {
 	return StringListType
 }
@@ -284,6 +309,10 @@ func (flt *fileListTransformer) ForComplete() bool {
 }
 
 type fileTransformer struct{}
+
+func (ft *fileTransformer) modifyArgOpt(ao *argOpt) {
+	ao.transformer = ft
+}
 
 func (ft *fileTransformer) ValueType() ValueType {
 	return StringType

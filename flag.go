@@ -107,16 +107,16 @@ func (f *flag) ShortName() rune {
 	return f.shortName
 }
 
-func StringFlag(name string, shortName rune, opt *ArgOpt) Flag {
-	return listFlag(name, shortName, 1, 0, stringTransform, opt)
+func StringFlag(name string, shortName rune, opts ...ArgOptt) Flag {
+	return listFlag(name, shortName, 1, 0, stringTransform, opts...)
 }
 
-func IntFlag(name string, shortName rune, opt *ArgOpt) Flag {
-	return listFlag(name, shortName, 1, 0, intTransform, opt)
+func IntFlag(name string, shortName rune, opts ...ArgOptt) Flag {
+	return listFlag(name, shortName, 1, 0, intTransform, opts...)
 }
 
-func FloatFlag(name string, shortName rune, opt *ArgOpt) Flag {
-	return listFlag(name, shortName, 1, 0, floatTransform, opt)
+func FloatFlag(name string, shortName rune, opts ...ArgOptt) Flag {
+	return listFlag(name, shortName, 1, 0, floatTransform, opts...)
 }
 
 func BoolFlag(name string, shortName rune, opts ...ArgValidator) Flag {
@@ -142,19 +142,23 @@ func (bf *boolFlag) Execute(_ *Input, _ Output, data *Data, _ *ExecuteData) erro
 	return nil
 }
 
-func StringListFlag(name string, shortName rune, minN, optionalN int, opt *ArgOpt) Flag {
-	return listFlag(name, shortName, minN, optionalN, stringListTransform, opt)
+func StringListFlag(name string, shortName rune, minN, optionalN int, opts ...ArgOptt) Flag {
+	return listFlag(name, shortName, minN, optionalN, stringListTransform, opts...)
 }
 
-func IntListFlag(name string, shortName rune, minN, optionalN int, opt *ArgOpt) Flag {
-	return listFlag(name, shortName, minN, optionalN, intListTransform, opt)
+func IntListFlag(name string, shortName rune, minN, optionalN int, opts ...ArgOptt) Flag {
+	return listFlag(name, shortName, minN, optionalN, intListTransform, opts...)
 }
 
-func FloatListFlag(name string, shortName rune, minN, optionalN int, opt *ArgOpt) Flag {
-	return listFlag(name, shortName, minN, optionalN, floatListTransform, opt)
+func FloatListFlag(name string, shortName rune, minN, optionalN int, opts ...ArgOptt) Flag {
+	return listFlag(name, shortName, minN, optionalN, floatListTransform, opts...)
 }
 
-func listFlag(name string, shortName rune, minN, optionalN int, transform func(s []*string) (*Value, error), opt *ArgOpt) Flag {
+func listFlag(name string, shortName rune, minN, optionalN int, transform func(s []*string) (*Value, error), opts ...ArgOptt) Flag {
+	ao := &argOpt{}
+	for _, opt := range opts {
+		opt.modifyArgOpt(ao)
+	}
 	return &flag{
 		name:      name,
 		shortName: shortName,
@@ -163,7 +167,7 @@ func listFlag(name string, shortName rune, minN, optionalN int, transform func(s
 			name:      name,
 			minN:      minN,
 			optionalN: optionalN,
-			opt:       opt,
+			opt:       ao,
 			transform: transform,
 		},
 	}

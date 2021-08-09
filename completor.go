@@ -58,6 +58,10 @@ type Completor struct {
 	SuggestionFetcher Fetcher
 }
 
+func (c *Completor) modifyArgOpt(ao *argOpt) {
+	ao.completor = c
+}
+
 type Completion struct {
 	Suggestions []string
 	// TODO: each of these can just be option types.

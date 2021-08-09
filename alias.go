@@ -9,8 +9,8 @@ import (
 
 var (
 	aliasArgName = "ALIAS"
-	aliasArg     = StringNode(aliasArgName, &ArgOpt{Validators: []ArgValidator{MinLength(1)}})
-	aliasesArg   = StringListNode(aliasArgName, 1, UnboundedList, nil)
+	aliasArg     = StringNode(aliasArgName, MinLength(1))
+	aliasesArg   = StringListNode(aliasArgName, 1, UnboundedList)
 )
 
 type aliasedArg struct {
@@ -94,12 +94,12 @@ func aliasCompletor(name string, ac AliasCLI) *Completor {
 }
 
 func aliasListArg(name string, ac AliasCLI) Processor {
-	return StringListNode(aliasArgName, 1, UnboundedList, &ArgOpt{Completor: aliasCompletor(name, ac)})
+	return StringListNode(aliasArgName, 1, UnboundedList, aliasCompletor(name, ac))
 }
 
 func aliasSearcher(name string, ac AliasCLI, n *Node) *Node {
 	// TODO: make regexp arg type (maybe after Go implements type parameters).
-	regexArg := StringListNode("regexp", 1, UnboundedList, nil)
+	regexArg := StringListNode("regexp", 1, UnboundedList)
 	return SerialNodes(regexArg, ExecutorNode(func(output Output, data *Data) error {
 		rs := []*regexp.Regexp{}
 		for _, r := range data.StringList("regexp") {

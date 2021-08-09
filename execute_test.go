@@ -42,7 +42,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "Fails if arg and no argument",
 			etc: &ExecuteTestCase{
-				Node:       SerialNodes(StringNode("s", nil)),
+				Node:       SerialNodes(StringNode("s")),
 				WantErr:    fmt.Errorf("not enough arguments"),
 				WantStderr: []string{"not enough arguments"},
 			},
@@ -52,7 +52,7 @@ func TestExecute(t *testing.T) {
 			etc: &ExecuteTestCase{
 				Args: []string{"hello"},
 				Node: &Node{
-					Processor: StringNode("s", nil),
+					Processor: StringNode("s"),
 					Edge: &errorEdge{
 						e: fmt.Errorf("bad news bears"),
 					},
@@ -71,7 +71,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "Fails if int arg and no argument",
 			etc: &ExecuteTestCase{
-				Node:       SerialNodes(IntNode("i", nil)),
+				Node:       SerialNodes(IntNode("i")),
 				WantErr:    fmt.Errorf("not enough arguments"),
 				WantStderr: []string{"not enough arguments"},
 			},
@@ -79,7 +79,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "Fails if float arg and no argument",
 			etc: &ExecuteTestCase{
-				Node:       SerialNodes(FloatNode("f", nil)),
+				Node:       SerialNodes(FloatNode("f")),
 				WantErr:    fmt.Errorf("not enough arguments"),
 				WantStderr: []string{"not enough arguments"},
 			},
@@ -87,7 +87,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "Processes single string arg",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(StringNode("s", nil)),
+				Node: SerialNodes(StringNode("s")),
 				Args: []string{"hello"},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -102,7 +102,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "Processes single int arg",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(IntNode("i", nil)),
+				Node: SerialNodes(IntNode("i")),
 				Args: []string{"123"},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -117,7 +117,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "Int arg fails if not an int",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(IntNode("i", nil)),
+				Node: SerialNodes(IntNode("i")),
 				Args: []string{"12.3"},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -131,7 +131,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "Processes single float arg",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(FloatNode("f", nil)),
+				Node: SerialNodes(FloatNode("f")),
 				Args: []string{"-12.3"},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -146,7 +146,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "Float arg fails if not a float",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(FloatNode("f", nil)),
+				Node: SerialNodes(FloatNode("f")),
 				Args: []string{"twelve"},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -161,7 +161,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "List fails if not enough args",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(StringListNode("sl", 1, 1, nil)),
+				Node: SerialNodes(StringListNode("sl", 1, 1)),
 				Args: []string{"hello", "there", "sir"},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -181,7 +181,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "Processes string list if minimum provided",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(StringListNode("sl", 1, 2, nil)),
+				Node: SerialNodes(StringListNode("sl", 1, 2)),
 				Args: []string{"hello"},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -196,7 +196,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "Processes string list if some optional provided",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(StringListNode("sl", 1, 2, nil)),
+				Node: SerialNodes(StringListNode("sl", 1, 2)),
 				Args: []string{"hello", "there"},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -212,7 +212,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "Processes string list if max args provided",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(StringListNode("sl", 1, 2, nil)),
+				Node: SerialNodes(StringListNode("sl", 1, 2)),
 				Args: []string{"hello", "there", "maam"},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -229,7 +229,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "Unbounded string list fails if less than min provided",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(StringListNode("sl", 4, UnboundedList, nil)),
+				Node: SerialNodes(StringListNode("sl", 4, UnboundedList)),
 				Args: []string{"hello", "there", "kenobi"},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -248,7 +248,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "Processes unbounded string list if min provided",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(StringListNode("sl", 1, UnboundedList, nil)),
+				Node: SerialNodes(StringListNode("sl", 1, UnboundedList)),
 				Args: []string{"hello"},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -263,7 +263,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "Processes unbounded string list if more than min provided",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(StringListNode("sl", 1, UnboundedList, nil)),
+				Node: SerialNodes(StringListNode("sl", 1, UnboundedList)),
 				Args: []string{"hello", "there", "kenobi"},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -280,7 +280,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "Processes int list",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(IntListNode("il", 1, 2, nil)),
+				Node: SerialNodes(IntListNode("il", 1, 2)),
 				Args: []string{"1", "-23"},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -296,7 +296,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "Int list fails if an arg isn't an int",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(IntListNode("il", 1, 2, nil)),
+				Node: SerialNodes(IntListNode("il", 1, 2)),
 				Args: []string{"1", "four", "-23"},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -312,7 +312,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "Processes float list",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(FloatListNode("fl", 1, 2, nil)),
+				Node: SerialNodes(FloatListNode("fl", 1, 2)),
 				Args: []string{"0.1", "-2.3"},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -328,7 +328,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "Float list fails if an arg isn't an float",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(FloatListNode("fl", 1, 2, nil)),
+				Node: SerialNodes(FloatListNode("fl", 1, 2)),
 				Args: []string{"0.1", "four", "-23"},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -345,7 +345,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "Processes multiple args",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(IntListNode("il", 2, 0, nil), StringNode("s", nil), FloatListNode("fl", 1, 2, nil)),
+				Node: SerialNodes(IntListNode("il", 2, 0), StringNode("s"), FloatListNode("fl", 1, 2)),
 				Args: []string{"0", "1", "two", "0.3", "-4"},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -366,7 +366,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "Fails if extra args when multiple",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(IntListNode("il", 2, 0, nil), StringNode("s", nil), FloatListNode("fl", 1, 2, nil)),
+				Node: SerialNodes(IntListNode("il", 2, 0), StringNode("s"), FloatListNode("fl", 1, 2)),
 				Args: []string{"0", "1", "two", "0.3", "-4", "0.5", "6"},
 				wantInput: &Input{
 					remaining: []int{6},
@@ -393,7 +393,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "executes with proper data",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(IntListNode("il", 2, 0, nil), StringNode("s", nil), FloatListNode("fl", 1, 2, nil), ExecutorNode(func(o Output, d *Data) error {
+				Node: SerialNodes(IntListNode("il", 2, 0), StringNode("s"), FloatListNode("fl", 1, 2), ExecutorNode(func(o Output, d *Data) error {
 					keys := d.Keys()
 					sort.Strings(keys)
 					for _, k := range keys {
@@ -426,7 +426,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "executor error is returned",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(IntListNode("il", 2, 0, nil), StringNode("s", nil), FloatListNode("fl", 1, 2, nil), ExecutorNode(func(o Output, d *Data) error {
+				Node: SerialNodes(IntListNode("il", 2, 0), StringNode("s"), FloatListNode("fl", 1, 2), ExecutorNode(func(o Output, d *Data) error {
 					return o.Stderr("bad news bears")
 				})),
 				Args: []string{"0", "1", "two", "0.3", "-4"},
@@ -453,7 +453,7 @@ func TestExecute(t *testing.T) {
 			name: "breaks when arg option is for invalid type",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: StringNode("strArg", NewArgOpt(nil, nil, IntEQ(123))),
+					Processor: StringNode("strArg", IntEQ(123)),
 				},
 				Args: []string{"123"},
 				wantInput: &Input{
@@ -473,7 +473,7 @@ func TestExecute(t *testing.T) {
 			name: "contains works",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: StringNode("strArg", NewArgOpt(nil, nil, Contains("good"))),
+					Processor: StringNode("strArg", Contains("good")),
 				},
 				Args: []string{"goodbye"},
 				wantInput: &Input{
@@ -490,7 +490,7 @@ func TestExecute(t *testing.T) {
 			name: "contains fails",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: StringNode("strArg", NewArgOpt(nil, nil, Contains("good"))),
+					Processor: StringNode("strArg", Contains("good")),
 				},
 				Args: []string{"hello"},
 				wantInput: &Input{
@@ -510,7 +510,7 @@ func TestExecute(t *testing.T) {
 			name: "MinLength works",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: StringNode("strArg", NewArgOpt(nil, nil, MinLength(3))),
+					Processor: StringNode("strArg", MinLength(3)),
 				},
 				Args: []string{"hello"},
 				wantInput: &Input{
@@ -527,7 +527,7 @@ func TestExecute(t *testing.T) {
 			name: "MinLength works for exact count match",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: StringNode("strArg", NewArgOpt(nil, nil, MinLength(3))),
+					Processor: StringNode("strArg", MinLength(3)),
 				},
 				Args: []string{"hey"},
 				wantInput: &Input{
@@ -544,7 +544,7 @@ func TestExecute(t *testing.T) {
 			name: "MinLength fails",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: StringNode("strArg", NewArgOpt(nil, nil, MinLength(3))),
+					Processor: StringNode("strArg", MinLength(3)),
 				},
 				Args: []string{"hi"},
 				wantInput: &Input{
@@ -564,7 +564,7 @@ func TestExecute(t *testing.T) {
 			name: "IntEQ works",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: IntNode("IntNode", NewArgOpt(nil, nil, IntEQ(24))),
+					Processor: IntNode("IntNode", IntEQ(24)),
 				},
 				Args: []string{"24"},
 				wantInput: &Input{
@@ -581,7 +581,7 @@ func TestExecute(t *testing.T) {
 			name: "IntEQ fails",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: IntNode("IntNode", NewArgOpt(nil, nil, IntEQ(24))),
+					Processor: IntNode("IntNode", IntEQ(24)),
 				},
 				Args: []string{"25"},
 				wantInput: &Input{
@@ -601,7 +601,7 @@ func TestExecute(t *testing.T) {
 			name: "IntNE works",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: IntNode("IntNode", NewArgOpt(nil, nil, IntNE(24))),
+					Processor: IntNode("IntNode", IntNE(24)),
 				},
 				Args: []string{"25"},
 				wantInput: &Input{
@@ -618,7 +618,7 @@ func TestExecute(t *testing.T) {
 			name: "IntNE fails",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: IntNode("IntNode", NewArgOpt(nil, nil, IntNE(24))),
+					Processor: IntNode("IntNode", IntNE(24)),
 				},
 				Args: []string{"24"},
 				wantInput: &Input{
@@ -638,7 +638,7 @@ func TestExecute(t *testing.T) {
 			name: "IntLT works when less than",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: IntNode("IntNode", NewArgOpt(nil, nil, IntLT(25))),
+					Processor: IntNode("IntNode", IntLT(25)),
 				},
 				Args: []string{"24"},
 				wantInput: &Input{
@@ -655,7 +655,7 @@ func TestExecute(t *testing.T) {
 			name: "IntLT fails when equal to",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: IntNode("IntNode", NewArgOpt(nil, nil, IntLT(25))),
+					Processor: IntNode("IntNode", IntLT(25)),
 				},
 				Args: []string{"25"},
 				wantInput: &Input{
@@ -674,7 +674,7 @@ func TestExecute(t *testing.T) {
 			name: "IntLT fails when greater than",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: IntNode("IntNode", NewArgOpt(nil, nil, IntLT(25))),
+					Processor: IntNode("IntNode", IntLT(25)),
 				},
 				Args: []string{"26"},
 				wantInput: &Input{
@@ -694,7 +694,7 @@ func TestExecute(t *testing.T) {
 			name: "IntLTE works when less than",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: IntNode("IntNode", NewArgOpt(nil, nil, IntLTE(25))),
+					Processor: IntNode("IntNode", IntLTE(25)),
 				},
 				Args: []string{"24"},
 				wantInput: &Input{
@@ -711,7 +711,7 @@ func TestExecute(t *testing.T) {
 			name: "IntLTE works when equal to",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: IntNode("IntNode", NewArgOpt(nil, nil, IntLTE(25))),
+					Processor: IntNode("IntNode", IntLTE(25)),
 				},
 				Args: []string{"25"},
 				wantInput: &Input{
@@ -728,7 +728,7 @@ func TestExecute(t *testing.T) {
 			name: "IntLTE fails when greater than",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: IntNode("IntNode", NewArgOpt(nil, nil, IntLTE(25))),
+					Processor: IntNode("IntNode", IntLTE(25)),
 				},
 				Args: []string{"26"},
 				wantInput: &Input{
@@ -748,7 +748,7 @@ func TestExecute(t *testing.T) {
 			name: "IntGT fails when less than",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: IntNode("IntNode", NewArgOpt(nil, nil, IntGT(25))),
+					Processor: IntNode("IntNode", IntGT(25)),
 				},
 				Args: []string{"24"},
 				wantInput: &Input{
@@ -767,7 +767,7 @@ func TestExecute(t *testing.T) {
 			name: "IntGT fails when equal to",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: IntNode("IntNode", NewArgOpt(nil, nil, IntGT(25))),
+					Processor: IntNode("IntNode", IntGT(25)),
 				},
 				Args: []string{"25"},
 				wantInput: &Input{
@@ -786,7 +786,7 @@ func TestExecute(t *testing.T) {
 			name: "IntGT works when greater than",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: IntNode("IntNode", NewArgOpt(nil, nil, IntGT(25))),
+					Processor: IntNode("IntNode", IntGT(25)),
 				},
 				Args: []string{"26"},
 				wantInput: &Input{
@@ -804,7 +804,7 @@ func TestExecute(t *testing.T) {
 			name: "IntGTE fails when less than",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: IntNode("IntNode", NewArgOpt(nil, nil, IntGTE(25))),
+					Processor: IntNode("IntNode", IntGTE(25)),
 				},
 				Args: []string{"24"},
 				wantInput: &Input{
@@ -823,7 +823,7 @@ func TestExecute(t *testing.T) {
 			name: "IntGTE works when equal to",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: IntNode("IntNode", NewArgOpt(nil, nil, IntGTE(25))),
+					Processor: IntNode("IntNode", IntGTE(25)),
 				},
 				Args: []string{"25"},
 				wantInput: &Input{
@@ -840,7 +840,7 @@ func TestExecute(t *testing.T) {
 			name: "IntGTE works when greater than",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: IntNode("IntNode", NewArgOpt(nil, nil, IntGTE(25))),
+					Processor: IntNode("IntNode", IntGTE(25)),
 				},
 				Args: []string{"26"},
 				wantInput: &Input{
@@ -858,7 +858,7 @@ func TestExecute(t *testing.T) {
 			name: "IntPositive fails when negative",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: IntNode("IntNode", NewArgOpt(nil, nil, IntPositive())),
+					Processor: IntNode("IntNode", IntPositive()),
 				},
 				Args: []string{"-1"},
 				wantInput: &Input{
@@ -877,7 +877,7 @@ func TestExecute(t *testing.T) {
 			name: "IntPositive fails when zero",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: IntNode("IntNode", NewArgOpt(nil, nil, IntPositive())),
+					Processor: IntNode("IntNode", IntPositive()),
 				},
 				Args: []string{"0"},
 				wantInput: &Input{
@@ -896,7 +896,7 @@ func TestExecute(t *testing.T) {
 			name: "IntPositive works when positive",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: IntNode("IntNode", NewArgOpt(nil, nil, IntPositive())),
+					Processor: IntNode("IntNode", IntPositive()),
 				},
 				Args: []string{"1"},
 				wantInput: &Input{
@@ -914,7 +914,7 @@ func TestExecute(t *testing.T) {
 			name: "IntNegative works when negative",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: IntNode("IntNode", NewArgOpt(nil, nil, IntNegative())),
+					Processor: IntNode("IntNode", IntNegative()),
 				},
 				Args: []string{"-1"},
 				wantInput: &Input{
@@ -931,7 +931,7 @@ func TestExecute(t *testing.T) {
 			name: "IntNegative fails when zero",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: IntNode("IntNode", NewArgOpt(nil, nil, IntNegative())),
+					Processor: IntNode("IntNode", IntNegative()),
 				},
 				Args: []string{"0"},
 				wantInput: &Input{
@@ -950,7 +950,7 @@ func TestExecute(t *testing.T) {
 			name: "IntNegative fails when positive",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: IntNode("IntNode", NewArgOpt(nil, nil, IntNegative())),
+					Processor: IntNode("IntNode", IntNegative()),
 				},
 				Args: []string{"1"},
 				wantInput: &Input{
@@ -970,7 +970,7 @@ func TestExecute(t *testing.T) {
 			name: "IntNonNegative fails when negative",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: IntNode("IntNode", NewArgOpt(nil, nil, IntNonNegative())),
+					Processor: IntNode("IntNode", IntNonNegative()),
 				},
 				Args: []string{"-1"},
 				wantInput: &Input{
@@ -989,7 +989,7 @@ func TestExecute(t *testing.T) {
 			name: "IntNonNegative works when zero",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: IntNode("IntNode", NewArgOpt(nil, nil, IntNonNegative())),
+					Processor: IntNode("IntNode", IntNonNegative()),
 				},
 				Args: []string{"0"},
 				wantInput: &Input{
@@ -1006,7 +1006,7 @@ func TestExecute(t *testing.T) {
 			name: "IntNonNegative works when positive",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: IntNode("IntNode", NewArgOpt(nil, nil, IntNonNegative())),
+					Processor: IntNode("IntNode", IntNonNegative()),
 				},
 				Args: []string{"1"},
 				wantInput: &Input{
@@ -1024,7 +1024,7 @@ func TestExecute(t *testing.T) {
 			name: "FloatEQ works",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: FloatNode("flArg", NewArgOpt(nil, nil, FloatEQ(2.4))),
+					Processor: FloatNode("flArg", FloatEQ(2.4)),
 				},
 				Args: []string{"2.4"},
 				wantInput: &Input{
@@ -1041,7 +1041,7 @@ func TestExecute(t *testing.T) {
 			name: "FloatEQ fails",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: FloatNode("flArg", NewArgOpt(nil, nil, FloatEQ(2.4))),
+					Processor: FloatNode("flArg", FloatEQ(2.4)),
 				},
 				Args: []string{"2.5"},
 				wantInput: &Input{
@@ -1061,7 +1061,7 @@ func TestExecute(t *testing.T) {
 			name: "FloatNE works",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: FloatNode("flArg", NewArgOpt(nil, nil, FloatNE(2.4))),
+					Processor: FloatNode("flArg", FloatNE(2.4)),
 				},
 				Args: []string{"2.5"},
 				wantInput: &Input{
@@ -1078,7 +1078,7 @@ func TestExecute(t *testing.T) {
 			name: "FloatNE fails",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: FloatNode("flArg", NewArgOpt(nil, nil, FloatNE(2.4))),
+					Processor: FloatNode("flArg", FloatNE(2.4)),
 				},
 				Args: []string{"2.4"},
 				wantInput: &Input{
@@ -1098,7 +1098,7 @@ func TestExecute(t *testing.T) {
 			name: "FloatLT works when less than",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: FloatNode("flArg", NewArgOpt(nil, nil, FloatLT(2.5))),
+					Processor: FloatNode("flArg", FloatLT(2.5)),
 				},
 				Args: []string{"2.4"},
 				wantInput: &Input{
@@ -1115,7 +1115,7 @@ func TestExecute(t *testing.T) {
 			name: "FloatLT fails when equal to",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: FloatNode("flArg", NewArgOpt(nil, nil, FloatLT(2.5))),
+					Processor: FloatNode("flArg", FloatLT(2.5)),
 				},
 				Args: []string{"2.5"},
 				wantInput: &Input{
@@ -1134,7 +1134,7 @@ func TestExecute(t *testing.T) {
 			name: "FloatLT fails when greater than",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: FloatNode("flArg", NewArgOpt(nil, nil, FloatLT(2.5))),
+					Processor: FloatNode("flArg", FloatLT(2.5)),
 				},
 				Args: []string{"2.6"},
 				wantInput: &Input{
@@ -1154,7 +1154,7 @@ func TestExecute(t *testing.T) {
 			name: "FloatLTE works when less than",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: FloatNode("flArg", NewArgOpt(nil, nil, FloatLTE(2.5))),
+					Processor: FloatNode("flArg", FloatLTE(2.5)),
 				},
 				Args: []string{"2.4"},
 				wantInput: &Input{
@@ -1171,7 +1171,7 @@ func TestExecute(t *testing.T) {
 			name: "FloatLTE works when equal to",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: FloatNode("flArg", NewArgOpt(nil, nil, FloatLTE(2.5))),
+					Processor: FloatNode("flArg", FloatLTE(2.5)),
 				},
 				Args: []string{"2.5"},
 				wantInput: &Input{
@@ -1188,7 +1188,7 @@ func TestExecute(t *testing.T) {
 			name: "FloatLTE fails when greater than",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: FloatNode("flArg", NewArgOpt(nil, nil, FloatLTE(2.5))),
+					Processor: FloatNode("flArg", FloatLTE(2.5)),
 				},
 				Args: []string{"2.6"},
 				wantInput: &Input{
@@ -1208,7 +1208,7 @@ func TestExecute(t *testing.T) {
 			name: "FloatGT fails when less than",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: FloatNode("flArg", NewArgOpt(nil, nil, FloatGT(2.5))),
+					Processor: FloatNode("flArg", FloatGT(2.5)),
 				},
 				Args: []string{"2.4"},
 				wantInput: &Input{
@@ -1227,7 +1227,7 @@ func TestExecute(t *testing.T) {
 			name: "FloatGT fails when equal to",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: FloatNode("flArg", NewArgOpt(nil, nil, FloatGT(2.5))),
+					Processor: FloatNode("flArg", FloatGT(2.5)),
 				},
 				Args: []string{"2.5"},
 				wantInput: &Input{
@@ -1246,7 +1246,7 @@ func TestExecute(t *testing.T) {
 			name: "FloatGT works when greater than",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: FloatNode("flArg", NewArgOpt(nil, nil, FloatGT(2.5))),
+					Processor: FloatNode("flArg", FloatGT(2.5)),
 				},
 				Args: []string{"2.6"},
 				wantInput: &Input{
@@ -1264,7 +1264,7 @@ func TestExecute(t *testing.T) {
 			name: "FloatGTE fails when less than",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: FloatNode("flArg", NewArgOpt(nil, nil, FloatGTE(2.5))),
+					Processor: FloatNode("flArg", FloatGTE(2.5)),
 				},
 				Args: []string{"2.4"},
 				wantInput: &Input{
@@ -1283,7 +1283,7 @@ func TestExecute(t *testing.T) {
 			name: "FloatGTE works when equal to",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: FloatNode("flArg", NewArgOpt(nil, nil, FloatGTE(2.5))),
+					Processor: FloatNode("flArg", FloatGTE(2.5)),
 				},
 				Args: []string{"2.5"},
 				wantInput: &Input{
@@ -1300,7 +1300,7 @@ func TestExecute(t *testing.T) {
 			name: "FloatGTE works when greater than",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: FloatNode("flArg", NewArgOpt(nil, nil, FloatGTE(2.5))),
+					Processor: FloatNode("flArg", FloatGTE(2.5)),
 				},
 				Args: []string{"2.6"},
 				wantInput: &Input{
@@ -1318,7 +1318,7 @@ func TestExecute(t *testing.T) {
 			name: "FloatPositive fails when negative",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: FloatNode("flArg", NewArgOpt(nil, nil, FloatPositive())),
+					Processor: FloatNode("flArg", FloatPositive()),
 				},
 				Args: []string{"-0.1"},
 				wantInput: &Input{
@@ -1337,7 +1337,7 @@ func TestExecute(t *testing.T) {
 			name: "FloatPositive fails when zero",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: FloatNode("flArg", NewArgOpt(nil, nil, FloatPositive())),
+					Processor: FloatNode("flArg", FloatPositive()),
 				},
 				Args: []string{"0"},
 				wantInput: &Input{
@@ -1356,7 +1356,7 @@ func TestExecute(t *testing.T) {
 			name: "FloatPositive works when positive",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: FloatNode("flArg", NewArgOpt(nil, nil, FloatPositive())),
+					Processor: FloatNode("flArg", FloatPositive()),
 				},
 				Args: []string{"0.1"},
 				wantInput: &Input{
@@ -1374,7 +1374,7 @@ func TestExecute(t *testing.T) {
 			name: "FloatNegative works when negative",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: FloatNode("flArg", NewArgOpt(nil, nil, FloatNegative())),
+					Processor: FloatNode("flArg", FloatNegative()),
 				},
 				Args: []string{"-0.1"},
 				wantInput: &Input{
@@ -1391,7 +1391,7 @@ func TestExecute(t *testing.T) {
 			name: "FloatNegative fails when zero",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: FloatNode("flArg", NewArgOpt(nil, nil, FloatNegative())),
+					Processor: FloatNode("flArg", FloatNegative()),
 				},
 				Args: []string{"0"},
 				wantInput: &Input{
@@ -1410,7 +1410,7 @@ func TestExecute(t *testing.T) {
 			name: "FloatNegative fails when positive",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: FloatNode("flArg", NewArgOpt(nil, nil, FloatNegative())),
+					Processor: FloatNode("flArg", FloatNegative()),
 				},
 				Args: []string{"0.1"},
 				wantInput: &Input{
@@ -1430,7 +1430,7 @@ func TestExecute(t *testing.T) {
 			name: "FloatNonNegative fails when negative",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: FloatNode("flArg", NewArgOpt(nil, nil, FloatNonNegative())),
+					Processor: FloatNode("flArg", FloatNonNegative()),
 				},
 				Args: []string{"-0.1"},
 				wantInput: &Input{
@@ -1449,7 +1449,7 @@ func TestExecute(t *testing.T) {
 			name: "FloatNonNegative works when zero",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: FloatNode("flArg", NewArgOpt(nil, nil, FloatNonNegative())),
+					Processor: FloatNode("flArg", FloatNonNegative()),
 				},
 				Args: []string{"0"},
 				wantInput: &Input{
@@ -1466,7 +1466,7 @@ func TestExecute(t *testing.T) {
 			name: "FloatNonNegative works when positive",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: FloatNode("flArg", NewArgOpt(nil, nil, FloatNonNegative())),
+					Processor: FloatNode("flArg", FloatNonNegative()),
 				},
 				Args: []string{"0.1"},
 				wantInput: &Input{
@@ -1489,13 +1489,13 @@ func TestExecute(t *testing.T) {
 		{
 			name: "flag node allows empty",
 			etc: &ExecuteTestCase{
-				Node: &Node{Processor: NewFlagNode(StringFlag("strFlag", 'f', nil))},
+				Node: &Node{Processor: NewFlagNode(StringFlag("strFlag", 'f'))},
 			},
 		},
 		{
 			name: "flag node fails if no argument",
 			etc: &ExecuteTestCase{
-				Node:       &Node{Processor: NewFlagNode(StringFlag("strFlag", 'f', nil))},
+				Node:       &Node{Processor: NewFlagNode(StringFlag("strFlag", 'f'))},
 				Args:       []string{"--strFlag"},
 				WantStderr: []string{"not enough arguments"},
 				WantErr:    fmt.Errorf("not enough arguments"),
@@ -1509,7 +1509,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "flag node parses flag",
 			etc: &ExecuteTestCase{
-				Node: &Node{Processor: NewFlagNode(StringFlag("strFlag", 'f', nil))},
+				Node: &Node{Processor: NewFlagNode(StringFlag("strFlag", 'f'))},
 				Args: []string{"--strFlag", "hello"},
 				WantData: &Data{
 					"strFlag": StringValue("hello"),
@@ -1525,7 +1525,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "flag node parses short name flag",
 			etc: &ExecuteTestCase{
-				Node: &Node{Processor: NewFlagNode(StringFlag("strFlag", 'f', nil))},
+				Node: &Node{Processor: NewFlagNode(StringFlag("strFlag", 'f'))},
 				Args: []string{"-f", "hello"},
 				WantData: &Data{
 					"strFlag": StringValue("hello"),
@@ -1542,8 +1542,8 @@ func TestExecute(t *testing.T) {
 			name: "flag node parses flag in the middle",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					NewFlagNode(StringFlag("strFlag", 'f', nil)),
-					StringListNode("filler", 1, 2, nil),
+					NewFlagNode(StringFlag("strFlag", 'f')),
+					StringListNode("filler", 1, 2),
 				),
 				Args: []string{"un", "--strFlag", "hello", "deux"},
 				WantData: &Data{
@@ -1564,8 +1564,8 @@ func TestExecute(t *testing.T) {
 			name: "flag node parses short name flag",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					NewFlagNode(StringFlag("strFlag", 'f', nil)),
-					StringListNode("filler", 1, 2, nil),
+					NewFlagNode(StringFlag("strFlag", 'f')),
+					StringListNode("filler", 1, 2),
 				),
 				Args: []string{"uno", "dos", "-f", "hello"},
 				WantData: &Data{
@@ -1587,8 +1587,8 @@ func TestExecute(t *testing.T) {
 			name: "parses int flag",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					NewFlagNode(IntFlag("intFlag", 'f', nil)),
-					StringListNode("filler", 1, 2, nil),
+					NewFlagNode(IntFlag("intFlag", 'f')),
+					StringListNode("filler", 1, 2),
 				),
 				Args: []string{"un", "deux", "-f", "3", "quatre"},
 				wantInput: &Input{
@@ -1610,8 +1610,8 @@ func TestExecute(t *testing.T) {
 			name: "handles invalid int flag value",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					NewFlagNode(IntFlag("intFlag", 'f', nil)),
-					StringListNode("filler", 1, 2, nil),
+					NewFlagNode(IntFlag("intFlag", 'f')),
+					StringListNode("filler", 1, 2),
 				),
 				Args: []string{"un", "deux", "-f", "trois", "quatre"},
 				wantInput: &Input{
@@ -1633,8 +1633,8 @@ func TestExecute(t *testing.T) {
 			name: "parses float flag",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					NewFlagNode(FloatFlag("floatFlag", 'f', nil)),
-					StringListNode("filler", 1, 2, nil),
+					NewFlagNode(FloatFlag("floatFlag", 'f')),
+					StringListNode("filler", 1, 2),
 				),
 				Args: []string{"--floatFlag", "-1.2", "three"},
 				wantInput: &Input{
@@ -1654,8 +1654,8 @@ func TestExecute(t *testing.T) {
 			name: "handles invalid float flag value",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					NewFlagNode(FloatFlag("floatFlag", 'f', nil)),
-					StringListNode("filler", 1, 2, nil),
+					NewFlagNode(FloatFlag("floatFlag", 'f')),
+					StringListNode("filler", 1, 2),
 				),
 				Args: []string{"--floatFlag", "twelve", "eleven"},
 				wantInput: &Input{
@@ -1676,7 +1676,7 @@ func TestExecute(t *testing.T) {
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
 					NewFlagNode(BoolFlag("boolFlag", 'b')),
-					StringListNode("filler", 1, 2, nil),
+					StringListNode("filler", 1, 2),
 				),
 				Args: []string{"okay", "--boolFlag", "then"},
 				wantInput: &Input{
@@ -1697,7 +1697,7 @@ func TestExecute(t *testing.T) {
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
 					NewFlagNode(BoolFlag("boolFlag", 'b')),
-					StringListNode("filler", 1, 2, nil),
+					StringListNode("filler", 1, 2),
 				),
 				Args: []string{"okay", "-b", "then"},
 				wantInput: &Input{
@@ -1718,8 +1718,8 @@ func TestExecute(t *testing.T) {
 			name: "flag list works",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					NewFlagNode(StringListFlag("slFlag", 's', 2, 3, nil)),
-					StringListNode("filler", 1, 2, nil),
+					NewFlagNode(StringListFlag("slFlag", 's', 2, 3)),
+					StringListNode("filler", 1, 2),
 				),
 				Args: []string{"un", "--slFlag", "hello", "there"},
 				wantInput: &Input{
@@ -1740,8 +1740,8 @@ func TestExecute(t *testing.T) {
 			name: "flag list fails if not enough",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					NewFlagNode(StringListFlag("slFlag", 's', 2, 3, nil)),
-					StringListNode("filler", 1, 2, nil),
+					NewFlagNode(StringListFlag("slFlag", 's', 2, 3)),
+					StringListNode("filler", 1, 2),
 				),
 				Args: []string{"un", "--slFlag", "hello"},
 				wantInput: &Input{
@@ -1764,8 +1764,8 @@ func TestExecute(t *testing.T) {
 			name: "int list works",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					NewFlagNode(IntListFlag("ilFlag", 'i', 2, 3, nil)),
-					StringListNode("filler", 1, 2, nil),
+					NewFlagNode(IntListFlag("ilFlag", 'i', 2, 3)),
+					StringListNode("filler", 1, 2),
 				),
 				Args: []string{"un", "-i", "2", "4", "8", "16", "32", "64"},
 				wantInput: &Input{
@@ -1790,8 +1790,8 @@ func TestExecute(t *testing.T) {
 			name: "int list transform failure",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					NewFlagNode(IntListFlag("ilFlag", 'i', 2, 3, nil)),
-					StringListNode("filler", 1, 2, nil),
+					NewFlagNode(IntListFlag("ilFlag", 'i', 2, 3)),
+					StringListNode("filler", 1, 2),
 				),
 				Args: []string{"un", "-i", "2", "4", "8", "16.0", "32", "64"},
 				wantInput: &Input{
@@ -1816,8 +1816,8 @@ func TestExecute(t *testing.T) {
 			name: "float list works",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					NewFlagNode(FloatListFlag("flFlag", 'f', 0, 3, nil)),
-					StringListNode("filler", 1, 3, nil),
+					NewFlagNode(FloatListFlag("flFlag", 'f', 0, 3)),
+					StringListNode("filler", 1, 3),
 				),
 				Args: []string{"un", "-f", "2", "-4.4", "0.8", "16.16", "-32", "64"},
 				wantInput: &Input{
@@ -1842,8 +1842,8 @@ func TestExecute(t *testing.T) {
 			name: "float list transform failure",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					NewFlagNode(FloatListFlag("flFlag", 'f', 0, 3, nil)),
-					StringListNode("filler", 1, 2, nil),
+					NewFlagNode(FloatListFlag("flFlag", 'f', 0, 3)),
+					StringListNode("filler", 1, 2),
 				),
 				Args: []string{"un", "--flFlag", "2", "4", "eight", "16.0", "32", "64"},
 				wantInput: &Input{
@@ -1869,12 +1869,12 @@ func TestExecute(t *testing.T) {
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
 					NewFlagNode(
-						FloatListFlag("coordinates", 'c', 2, 0, nil),
+						FloatListFlag("coordinates", 'c', 2, 0),
 						BoolFlag("boo", 'o'),
-						StringListFlag("names", 'n', 1, 2, nil),
-						IntFlag("rating", 'r', nil),
+						StringListFlag("names", 'n', 1, 2),
+						IntFlag("rating", 'r'),
 					),
-					StringListNode("extra", 0, 10, nil),
+					StringListNode("extra", 0, 10),
 				),
 				Args: []string{"its", "--boo", "a", "-r", "9", "secret", "-n", "greggar", "groog", "beggars", "--coordinates", "2.2", "4.4", "message."},
 				wantInput: &Input{
@@ -1966,7 +1966,7 @@ func TestExecute(t *testing.T) {
 				Node: BranchNode(map[string]*Node{
 					"h": printNode("hello"),
 					"b": printNode("goodbye"),
-				}, SerialNodes(StringListNode("sl", 0, UnboundedList, nil), printArgsNode().Processor), true),
+				}, SerialNodes(StringListNode("sl", 0, UnboundedList), printArgsNode().Processor), true),
 				Args:       []string{"good", "morning"},
 				WantStdout: []string{"sl: good, morning"},
 				WantData: &Data{
@@ -1993,9 +1993,9 @@ func abc() *Node {
 		"t": AliasNode("TEST_ALIAS", nil,
 			CacheNode("TEST_CACHE", nil, SerialNodes(
 				&tt{},
-				StringNode("PATH", &ArgOpt{Completor: SimpleCompletor("clh111", "abcd111")}),
-				StringNode("TARGET", &ArgOpt{Completor: SimpleCompletor("clh222", "abcd222")}),
-				StringNode("FUNC", &ArgOpt{Completor: SimpleCompletor("clh333", "abcd333")}),
+				StringNode("PATH", SimpleCompletor("clh111", "abcd111")),
+				StringNode("TARGET", SimpleCompletor("clh222", "abcd222")),
+				StringNode("FUNC", SimpleCompletor("clh333", "abcd333")),
 			))),
 	}, nil, false)
 }
@@ -2052,9 +2052,9 @@ func TestComplete(t *testing.T) {
 			name: "returns suggestions of first node if empty",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					StringNode("s", NewArgOpt(SimpleCompletor("un", "deux", "trois"), nil)),
-					OptionalIntNode("i", NewArgOpt(SimpleCompletor("2", "1"), nil)),
-					StringListNode("sl", 0, 2, NewArgOpt(SimpleCompletor("uno", "dos"), nil)),
+					StringNode("s", SimpleCompletor("un", "deux", "trois")),
+					OptionalIntNode("i", SimpleCompletor("2", "1")),
+					StringListNode("sl", 0, 2, SimpleCompletor("uno", "dos")),
 				),
 				Want: []string{"deux", "trois", "un"},
 				WantData: &Data{
@@ -2066,9 +2066,9 @@ func TestComplete(t *testing.T) {
 			name: "returns suggestions of first node if up to first arg",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					StringNode("s", NewArgOpt(SimpleCompletor("one", "two", "three"), nil)),
-					OptionalIntNode("i", NewArgOpt(SimpleCompletor("2", "1"), nil)),
-					StringListNode("sl", 0, 2, NewArgOpt(SimpleCompletor("uno", "dos"), nil)),
+					StringNode("s", SimpleCompletor("one", "two", "three")),
+					OptionalIntNode("i", SimpleCompletor("2", "1")),
+					StringListNode("sl", 0, 2, SimpleCompletor("uno", "dos")),
 				),
 				Args: "cmd t",
 				Want: []string{"three", "two"},
@@ -2081,9 +2081,9 @@ func TestComplete(t *testing.T) {
 			name: "returns suggestions of middle node if that's where we're at",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					StringNode("s", NewArgOpt(SimpleCompletor("one", "two", "three"), nil)),
-					StringListNode("sl", 0, 2, NewArgOpt(SimpleCompletor("uno", "dos"), nil)),
-					OptionalIntNode("i", NewArgOpt(SimpleCompletor("2", "1"), nil)),
+					StringNode("s", SimpleCompletor("one", "two", "three")),
+					StringListNode("sl", 0, 2, SimpleCompletor("uno", "dos")),
+					OptionalIntNode("i", SimpleCompletor("2", "1")),
 				),
 				Args: "cmd three ",
 				Want: []string{"dos", "uno"},
@@ -2097,9 +2097,9 @@ func TestComplete(t *testing.T) {
 			name: "returns suggestions of middle node if partial",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					StringNode("s", NewArgOpt(SimpleCompletor("one", "two", "three"), nil)),
-					StringListNode("sl", 0, 2, NewArgOpt(SimpleCompletor("uno", "dos"), nil)),
-					OptionalIntNode("i", NewArgOpt(SimpleCompletor("2", "1"), nil)),
+					StringNode("s", SimpleCompletor("one", "two", "three")),
+					StringListNode("sl", 0, 2, SimpleCompletor("uno", "dos")),
+					OptionalIntNode("i", SimpleCompletor("2", "1")),
 				),
 				Args: "cmd three d",
 				Want: []string{"dos"},
@@ -2113,9 +2113,9 @@ func TestComplete(t *testing.T) {
 			name: "returns suggestions in list",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					StringNode("s", NewArgOpt(SimpleCompletor("one", "two", "three"), nil)),
-					StringListNode("sl", 0, 2, NewArgOpt(SimpleCompletor("uno", "dos"), nil)),
-					OptionalIntNode("i", NewArgOpt(SimpleCompletor("2", "1"), nil)),
+					StringNode("s", SimpleCompletor("one", "two", "three")),
+					StringListNode("sl", 0, 2, SimpleCompletor("uno", "dos")),
+					OptionalIntNode("i", SimpleCompletor("2", "1")),
 				),
 				Args: "cmd three dos ",
 				Want: []string{"dos", "uno"},
@@ -2129,9 +2129,9 @@ func TestComplete(t *testing.T) {
 			name: "returns suggestions for last arg",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					StringNode("s", NewArgOpt(SimpleCompletor("one", "two", "three"), nil)),
-					StringListNode("sl", 0, 2, NewArgOpt(SimpleCompletor("uno", "dos"), nil)),
-					OptionalIntNode("i", NewArgOpt(SimpleCompletor("2", "1"), nil)),
+					StringNode("s", SimpleCompletor("one", "two", "three")),
+					StringListNode("sl", 0, 2, SimpleCompletor("uno", "dos")),
+					OptionalIntNode("i", SimpleCompletor("2", "1")),
 				),
 				Args: "cmd three uno dos ",
 				Want: []string{"1", "2"},
@@ -2145,9 +2145,9 @@ func TestComplete(t *testing.T) {
 			name: "returns nothing if iterate through all nodes",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					StringNode("s", NewArgOpt(SimpleCompletor("one", "two", "three"), nil)),
-					StringListNode("sl", 0, 2, NewArgOpt(SimpleCompletor("uno", "dos"), nil)),
-					OptionalIntNode("i", NewArgOpt(SimpleCompletor("2", "1"), nil)),
+					StringNode("s", SimpleCompletor("one", "two", "three")),
+					StringListNode("sl", 0, 2, SimpleCompletor("uno", "dos")),
+					OptionalIntNode("i", SimpleCompletor("2", "1")),
 				),
 				Args: "cmd three uno dos 1 what now",
 				WantData: &Data{
@@ -2161,7 +2161,7 @@ func TestComplete(t *testing.T) {
 			name: "works if empty and list starts",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					StringListNode("sl", 1, 2, NewArgOpt(SimpleCompletor("uno", "dos"), nil)),
+					StringListNode("sl", 1, 2, SimpleCompletor("uno", "dos")),
 				),
 				Want: []string{"dos", "uno"},
 				WantData: &Data{
@@ -2173,7 +2173,7 @@ func TestComplete(t *testing.T) {
 			name: "only returns suggestions matching prefix",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					StringListNode("sl", 1, 2, NewArgOpt(SimpleCompletor("zzz-1", "zzz-2", "yyy-3", "zzz-4"), nil)),
+					StringListNode("sl", 1, 2, SimpleCompletor("zzz-1", "zzz-2", "yyy-3", "zzz-4")),
 				),
 				Args: "cmd zz",
 				Want: []string{"zzz-1", "zzz-2", "zzz-4"},
@@ -2188,11 +2188,11 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
 					NewFlagNode(
-						StringFlag("greeting", 'h', NewArgOpt(SimpleCompletor("hey", "hi"), nil)),
-						StringListFlag("names", 'n', 1, 2, NewArgOpt(SimpleCompletor("ralph", "johnny", "renee"), nil)),
+						StringFlag("greeting", 'h', SimpleCompletor("hey", "hi")),
+						StringListFlag("names", 'n', 1, 2, SimpleCompletor("ralph", "johnny", "renee")),
 						BoolFlag("good", 'g'),
 					),
-					IntNode("i", NewArgOpt(SimpleCompletor("1", "2"), nil)),
+					IntNode("i", SimpleCompletor("1", "2")),
 				),
 				Args: "cmd -",
 				Want: []string{"--good", "--greeting", "--names", "-g", "-h", "-n"},
@@ -2203,11 +2203,11 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
 					NewFlagNode(
-						StringFlag("greeting", 'h', NewArgOpt(SimpleCompletor("hey", "hi"), nil)),
-						StringListFlag("names", 'n', 1, 2, NewArgOpt(SimpleCompletor("ralph", "johnny", "renee"), nil)),
+						StringFlag("greeting", 'h', SimpleCompletor("hey", "hi")),
+						StringListFlag("names", 'n', 1, 2, SimpleCompletor("ralph", "johnny", "renee")),
 						BoolFlag("good", 'g'),
 					),
-					IntNode("i", NewArgOpt(SimpleCompletor("1", "2"), nil)),
+					IntNode("i", SimpleCompletor("1", "2")),
 				),
 				Args: "cmd --",
 				Want: []string{"--good", "--greeting", "--names"},
@@ -2218,11 +2218,11 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
 					NewFlagNode(
-						StringFlag("greeting", 'h', NewArgOpt(SimpleCompletor("hey", "hi"), nil)),
-						StringListFlag("names", 'n', 1, 2, NewArgOpt(SimpleCompletor("ralph", "johnny", "renee"), nil)),
+						StringFlag("greeting", 'h', SimpleCompletor("hey", "hi")),
+						StringListFlag("names", 'n', 1, 2, SimpleCompletor("ralph", "johnny", "renee")),
 						BoolFlag("good", 'g'),
 					),
-					IntNode("i", NewArgOpt(SimpleCompletor("1", "2"), nil)),
+					IntNode("i", SimpleCompletor("1", "2")),
 				),
 				Args: "cmd 1 -",
 				Want: []string{"--good", "--greeting", "--names", "-g", "-h", "-n"},
@@ -2233,11 +2233,11 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
 					NewFlagNode(
-						StringFlag("greeting", 'h', NewArgOpt(SimpleCompletor("hey", "hi"), nil)),
-						StringListFlag("names", 'n', 1, 2, NewArgOpt(SimpleCompletor("ralph", "johnny", "renee"), nil)),
+						StringFlag("greeting", 'h', SimpleCompletor("hey", "hi")),
+						StringListFlag("names", 'n', 1, 2, SimpleCompletor("ralph", "johnny", "renee")),
 						BoolFlag("good", 'g'),
 					),
-					IntNode("i", NewArgOpt(SimpleCompletor("1", "2"), nil)),
+					IntNode("i", SimpleCompletor("1", "2")),
 				),
 				Args: "cmd 1 --greeting h",
 				Want: []string{"hey", "hi"},
@@ -2251,11 +2251,11 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
 					NewFlagNode(
-						StringFlag("greeting", 'h', NewArgOpt(SimpleCompletor("hey", "hi"), nil)),
-						StringListFlag("names", 'n', 1, 2, NewArgOpt(SimpleCompletor("ralph", "johnny", "renee"), nil)),
+						StringFlag("greeting", 'h', SimpleCompletor("hey", "hi")),
+						StringListFlag("names", 'n', 1, 2, SimpleCompletor("ralph", "johnny", "renee")),
 						BoolFlag("good", 'g'),
 					),
-					IntNode("i", NewArgOpt(SimpleCompletor("1", "2"), nil)),
+					IntNode("i", SimpleCompletor("1", "2")),
 				),
 				Args: "cmd 1 -h he",
 				Want: []string{"hey"},
@@ -2269,11 +2269,11 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
 					NewFlagNode(
-						StringFlag("greeting", 'h', NewArgOpt(SimpleCompletor("hey", "hi"), nil)),
-						StringListFlag("names", 'n', 1, 2, NewArgOpt(SimpleCompletor("ralph", "johnny", "renee"), nil)),
+						StringFlag("greeting", 'h', SimpleCompletor("hey", "hi")),
+						StringListFlag("names", 'n', 1, 2, SimpleCompletor("ralph", "johnny", "renee")),
 						BoolFlag("good", 'g'),
 					),
-					IntNode("i", NewArgOpt(SimpleCompletor("1", "2"), nil)),
+					IntNode("i", SimpleCompletor("1", "2")),
 				),
 				Args: "cmd 1 -h hey other --names ",
 				Want: []string{"johnny", "ralph", "renee"},
@@ -2288,11 +2288,11 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
 					NewFlagNode(
-						StringFlag("greeting", 'h', NewArgOpt(SimpleCompletor("hey", "hi"), nil)),
-						StringListFlag("names", 'n', 1, 2, NewArgOpt(SimpleDistinctCompletor("ralph", "johnny", "renee"), nil)),
+						StringFlag("greeting", 'h', SimpleCompletor("hey", "hi")),
+						StringListFlag("names", 'n', 1, 2, SimpleDistinctCompletor("ralph", "johnny", "renee")),
 						BoolFlag("good", 'g'),
 					),
-					IntNode("i", NewArgOpt(SimpleCompletor("1", "2"), nil)),
+					IntNode("i", SimpleCompletor("1", "2")),
 				),
 				Args: "cmd 1 -h hey other --names ralph ",
 				Want: []string{"johnny", "renee"},
@@ -2307,12 +2307,12 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
 					NewFlagNode(
-						StringFlag("greeting", 'h', NewArgOpt(SimpleCompletor("hey", "hi"), nil)),
-						StringListFlag("names", 'n', 1, 2, NewArgOpt(SimpleDistinctCompletor("ralph", "johnny", "renee"), nil)),
+						StringFlag("greeting", 'h', SimpleCompletor("hey", "hi")),
+						StringListFlag("names", 'n', 1, 2, SimpleDistinctCompletor("ralph", "johnny", "renee")),
 						BoolFlag("good", 'g'),
-						FloatFlag("float", 'f', NewArgOpt(SimpleCompletor("1.23", "12.3", "123.4"), nil)),
+						FloatFlag("float", 'f', SimpleCompletor("1.23", "12.3", "123.4")),
 					),
-					IntNode("i", NewArgOpt(SimpleCompletor("1", "2"), nil)),
+					IntNode("i", SimpleCompletor("1", "2")),
 				),
 				Args: "cmd 1 -h hey other --names ralph renee johnny -f ",
 				Want: []string{"1.23", "12.3", "123.4"},
@@ -2327,11 +2327,11 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
 					NewFlagNode(
-						StringFlag("greeting", 'h', NewArgOpt(SimpleCompletor("hey", "hi"), nil)),
-						StringListFlag("names", 'n', 1, 2, NewArgOpt(SimpleDistinctCompletor("ralph", "johnny", "renee"), nil)),
+						StringFlag("greeting", 'h', SimpleCompletor("hey", "hi")),
+						StringListFlag("names", 'n', 1, 2, SimpleDistinctCompletor("ralph", "johnny", "renee")),
 						BoolFlag("good", 'g'),
 					),
-					StringListNode("i", 1, 2, NewArgOpt(SimpleCompletor("hey", "ooo"), nil)),
+					StringListNode("i", 1, 2, SimpleCompletor("hey", "ooo")),
 				),
 				Args: "cmd 1 -h hello beta --names ralph renee johnny ",
 				Want: []string{"hey", "ooo"},
@@ -2347,7 +2347,7 @@ func TestComplete(t *testing.T) {
 			name: "handles nil option",
 			ctc: &CompleteTestCase{
 				Node: &Node{
-					Processor: StringNode("strArg", nil),
+					Processor: StringNode("strArg"),
 				},
 				Args: "cmd abc",
 				WantData: &Data{
@@ -2359,7 +2359,7 @@ func TestComplete(t *testing.T) {
 			name: "list handles nil option",
 			ctc: &CompleteTestCase{
 				Node: &Node{
-					Processor: StringListNode("slArg", 1, 2, nil),
+					Processor: StringListNode("slArg", 1, 2),
 				},
 				Args: "cmd abc",
 				WantData: &Data{
@@ -2370,13 +2370,13 @@ func TestComplete(t *testing.T) {
 		{
 			name: "transformer doesn't transform value when ForComplete is false",
 			ctc: &CompleteTestCase{
-				Node: SerialNodes(StringNode("strArg", NewArgOpt(nil, &simpleTransformer{
+				Node: SerialNodes(StringNode("strArg", &simpleTransformer{
 					vt: StringType,
 					t: func(v *Value) (*Value, error) {
 						return StringValue("newStuff"), nil
 					},
 					fc: false,
-				}))),
+				})),
 				Args: "cmd abc",
 				WantData: &Data{
 					"strArg": StringValue("abc"),
@@ -2386,13 +2386,13 @@ func TestComplete(t *testing.T) {
 		{
 			name: "transformer does transform value when ForComplete is true",
 			ctc: &CompleteTestCase{
-				Node: SerialNodes(StringNode("strArg", NewArgOpt(nil, &simpleTransformer{
+				Node: SerialNodes(StringNode("strArg", &simpleTransformer{
 					vt: StringType,
 					t: func(v *Value) (*Value, error) {
 						return StringValue("newStuff"), nil
 					},
 					fc: true,
-				}))),
+				})),
 				Args: "cmd abc",
 				WantData: &Data{
 					"strArg": StringValue("newStuff"),
@@ -2404,7 +2404,7 @@ func TestComplete(t *testing.T) {
 			filepathAbs: filepath.Join("abso", "lutely"),
 			ctc: &CompleteTestCase{
 				Node: &Node{
-					Processor: StringNode("strArg", NewArgOpt(nil, FileTransformer())),
+					Processor: StringNode("strArg", FileTransformer()),
 				},
 				Args: fmt.Sprintf("cmd %s", filepath.Join("relative", "path.txt")),
 				WantData: &Data{
@@ -2417,7 +2417,7 @@ func TestComplete(t *testing.T) {
 			filepathAbs: filepath.Join("abso", "lutely"),
 			ctc: &CompleteTestCase{
 				Node: &Node{
-					Processor: StringListNode("strArg", 1, 2, NewArgOpt(nil, FileListTransformer())),
+					Processor: StringListNode("strArg", 1, 2, FileListTransformer()),
 				},
 				Args: fmt.Sprintf("cmd %s", filepath.Join("relative", "path.txt")),
 				WantData: &Data{
@@ -2430,7 +2430,7 @@ func TestComplete(t *testing.T) {
 			filepathAbsErr: fmt.Errorf("bad news bears"),
 			ctc: &CompleteTestCase{
 				Node: &Node{
-					Processor: StringNode("strArg", NewArgOpt(nil, FileTransformer())),
+					Processor: StringNode("strArg", FileTransformer()),
 				},
 				Args: fmt.Sprintf("cmd %s", filepath.Join("relative", "path.txt")),
 				WantData: &Data{
@@ -2442,7 +2442,7 @@ func TestComplete(t *testing.T) {
 			name: "handles transformer of incorrect type",
 			ctc: &CompleteTestCase{
 				Node: &Node{
-					Processor: IntNode("IntNode", NewArgOpt(nil, FileTransformer())),
+					Processor: IntNode("IntNode", FileTransformer()),
 				},
 				Args: "cmd 123",
 				WantData: &Data{
@@ -2455,7 +2455,7 @@ func TestComplete(t *testing.T) {
 			filepathAbs: filepath.Join("abso", "lutely"),
 			ctc: &CompleteTestCase{
 				Node: &Node{
-					Processor: StringListNode("slArg", 1, 2, NewArgOpt(nil, &simpleTransformer{
+					Processor: StringListNode("slArg", 1, 2, &simpleTransformer{
 						vt: StringListType,
 						fc: true,
 						t: func(v *Value) (*Value, error) {
@@ -2465,7 +2465,7 @@ func TestComplete(t *testing.T) {
 							}
 							return StringListValue(sl...), nil
 						},
-					})),
+					}),
 				},
 				Args: "cmd uno dos",
 				WantData: &Data{
@@ -2481,7 +2481,7 @@ func TestComplete(t *testing.T) {
 			filepathAbsErr: fmt.Errorf("bad news bears"),
 			ctc: &CompleteTestCase{
 				Node: &Node{
-					Processor: StringListNode("slArg", 1, 2, NewArgOpt(nil, FileListTransformer())),
+					Processor: StringListNode("slArg", 1, 2, FileListTransformer()),
 				},
 				Args: fmt.Sprintf("cmd %s %s", filepath.Join("relative", "path.txt"), filepath.Join("other.txt")),
 				WantData: &Data{
@@ -2496,7 +2496,7 @@ func TestComplete(t *testing.T) {
 			name: "handles list transformer of incorrect type",
 			ctc: &CompleteTestCase{
 				Node: &Node{
-					Processor: StringListNode("slArg", 1, 2, NewArgOpt(nil, FileTransformer())),
+					Processor: StringListNode("slArg", 1, 2, FileTransformer()),
 				},
 				Args: "cmd 123",
 				WantData: &Data{
@@ -2510,9 +2510,9 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: BranchNode(map[string]*Node{
 					"a":     {},
-					"alpha": SerialNodes(OptionalStringNode("hello", NewArgOpt(SimpleCompletor("other", "stuff"), nil))),
+					"alpha": SerialNodes(OptionalStringNode("hello", SimpleCompletor("other", "stuff"))),
 					"bravo": {},
-				}, SerialNodes(StringListNode("default", 1, 3, NewArgOpt(SimpleCompletor("default", "command", "opts"), nil))), true),
+				}, SerialNodes(StringListNode("default", 1, 3, SimpleCompletor("default", "command", "opts"))), true),
 				Want: []string{"a", "alpha", "bravo", "command", "default", "opts"},
 				WantData: &Data{
 					"default": StringListValue(),
@@ -2524,9 +2524,9 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: BranchNode(map[string]*Node{
 					"a":     {},
-					"alpha": SerialNodes(OptionalStringNode("hello", NewArgOpt(SimpleCompletor("other", "stuff"), nil))),
+					"alpha": SerialNodes(OptionalStringNode("hello", SimpleCompletor("other", "stuff"))),
 					"bravo": {},
-				}, SerialNodes(StringListNode("default", 1, 3, NewArgOpt(SimpleCompletor("default", "command", "opts"), nil))), false),
+				}, SerialNodes(StringListNode("default", 1, 3, SimpleCompletor("default", "command", "opts"))), false),
 				Want: []string{"command", "default", "opts"},
 				WantData: &Data{
 					"default": StringListValue(),
@@ -2538,9 +2538,9 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: BranchNode(map[string]*Node{
 					"a":     {},
-					"alpha": SerialNodes(OptionalStringNode("hello", NewArgOpt(SimpleCompletor("other", "stuff"), nil))),
+					"alpha": SerialNodes(OptionalStringNode("hello", SimpleCompletor("other", "stuff"))),
 					"bravo": {},
-				}, SerialNodes(StringListNode("default", 1, 3, NewArgOpt(SimpleCompletor("default", "command", "opts"), nil))), true),
+				}, SerialNodes(StringListNode("default", 1, 3, SimpleCompletor("default", "command", "opts"))), true),
 				Args: "cmd alpha ",
 				Want: []string{"other", "stuff"},
 				WantData: &Data{
@@ -2553,7 +2553,7 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: BranchNode(map[string]*Node{
 					"a":     {},
-					"alpha": SerialNodes(OptionalStringNode("hello", NewArgOpt(SimpleCompletor("other", "stuff"), nil))),
+					"alpha": SerialNodes(OptionalStringNode("hello", SimpleCompletor("other", "stuff"))),
 					"bravo": {},
 				}, nil, true),
 				Args: "cmd some thing else",
@@ -2564,9 +2564,9 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: BranchNode(map[string]*Node{
 					"a":     {},
-					"alpha": SerialNodes(OptionalStringNode("hello", NewArgOpt(SimpleCompletor("other", "stuff"), nil))),
+					"alpha": SerialNodes(OptionalStringNode("hello", SimpleCompletor("other", "stuff"))),
 					"bravo": {},
-				}, SerialNodes(StringListNode("default", 1, 3, NewArgOpt(SimpleCompletor("default", "command", "opts", "ahhhh"), nil))), true),
+				}, SerialNodes(StringListNode("default", 1, 3, SimpleCompletor("default", "command", "opts", "ahhhh"))), true),
 				Args: "cmd a",
 				Want: []string{"a", "ahhhh", "alpha"},
 				WantData: &Data{
@@ -2579,9 +2579,9 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: BranchNode(map[string]*Node{
 					"a":     {},
-					"alpha": SerialNodes(OptionalStringNode("hello", NewArgOpt(SimpleCompletor("other", "stuff"), nil))),
+					"alpha": SerialNodes(OptionalStringNode("hello", SimpleCompletor("other", "stuff"))),
 					"bravo": {},
-				}, SerialNodes(StringListNode("default", 1, 3, NewArgOpt(SimpleCompletor("default", "command", "opts"), nil))), true),
+				}, SerialNodes(StringListNode("default", 1, 3, SimpleCompletor("default", "command", "opts"))), true),
 				Args: "cmd something ",
 				WantData: &Data{
 					"default": StringListValue("something", ""),
@@ -2593,7 +2593,7 @@ func TestComplete(t *testing.T) {
 		{
 			name: "int arg gets completed",
 			ctc: &CompleteTestCase{
-				Node: SerialNodes(IntNode("iArg", NewArgOpt(SimpleCompletor("12", "45", "456", "468", "7"), nil))),
+				Node: SerialNodes(IntNode("iArg", SimpleCompletor("12", "45", "456", "468", "7"))),
 				Args: "cmd 4",
 				Want: []string{"45", "456", "468"},
 				WantData: &Data{
@@ -2604,7 +2604,7 @@ func TestComplete(t *testing.T) {
 		{
 			name: "optional int arg gets completed",
 			ctc: &CompleteTestCase{
-				Node: SerialNodes(OptionalIntNode("iArg", NewArgOpt(SimpleCompletor("12", "45", "456", "468", "7"), nil))),
+				Node: SerialNodes(OptionalIntNode("iArg", SimpleCompletor("12", "45", "456", "468", "7"))),
 				Args: "cmd 4",
 				Want: []string{"45", "456", "468"},
 				WantData: &Data{
@@ -2615,7 +2615,7 @@ func TestComplete(t *testing.T) {
 		{
 			name: "int list arg gets completed",
 			ctc: &CompleteTestCase{
-				Node: SerialNodes(IntListNode("iArg", 2, 3, NewArgOpt(SimpleCompletor("12", "45", "456", "468", "7"), nil))),
+				Node: SerialNodes(IntListNode("iArg", 2, 3, SimpleCompletor("12", "45", "456", "468", "7"))),
 				Args: "cmd 1 4",
 				Want: []string{"45", "456", "468"},
 				WantData: &Data{
@@ -2626,7 +2626,7 @@ func TestComplete(t *testing.T) {
 		{
 			name: "int list arg gets completed if previous one was invalid",
 			ctc: &CompleteTestCase{
-				Node: SerialNodes(IntListNode("iArg", 2, 3, NewArgOpt(SimpleCompletor("12", "45", "456", "468", "7"), nil))),
+				Node: SerialNodes(IntListNode("iArg", 2, 3, SimpleCompletor("12", "45", "456", "468", "7"))),
 				Args: "cmd one 4",
 				Want: []string{"45", "456", "468"},
 			},
@@ -2634,7 +2634,7 @@ func TestComplete(t *testing.T) {
 		{
 			name: "int list arg optional args get completed",
 			ctc: &CompleteTestCase{
-				Node: SerialNodes(IntListNode("iArg", 2, 3, NewArgOpt(SimpleCompletor("12", "45", "456", "468", "7"), nil))),
+				Node: SerialNodes(IntListNode("iArg", 2, 3, SimpleCompletor("12", "45", "456", "468", "7"))),
 				Args: "cmd 1 2 3 4",
 				Want: []string{"45", "456", "468"},
 				WantData: &Data{
@@ -2645,7 +2645,7 @@ func TestComplete(t *testing.T) {
 		{
 			name: "float arg gets completed",
 			ctc: &CompleteTestCase{
-				Node: SerialNodes(FloatNode("fArg", NewArgOpt(SimpleCompletor("12", "4.5", "45.6", "468", "7"), nil))),
+				Node: SerialNodes(FloatNode("fArg", SimpleCompletor("12", "4.5", "45.6", "468", "7"))),
 				Args: "cmd 4",
 				Want: []string{"4.5", "45.6", "468"},
 				WantData: &Data{
@@ -2656,7 +2656,7 @@ func TestComplete(t *testing.T) {
 		{
 			name: "float list arg gets completed",
 			ctc: &CompleteTestCase{
-				Node: SerialNodes(FloatListNode("fArg", 1, 2, NewArgOpt(SimpleCompletor("12", "4.5", "45.6", "468", "7"), nil))),
+				Node: SerialNodes(FloatListNode("fArg", 1, 2, SimpleCompletor("12", "4.5", "45.6", "468", "7"))),
 				Want: []string{"12", "4.5", "45.6", "468", "7"},
 				WantData: &Data{
 					"fArg": FloatListValue(),

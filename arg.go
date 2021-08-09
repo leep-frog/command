@@ -6,7 +6,7 @@ import (
 
 type argNode struct {
 	name      string
-	opt       *ArgOpt
+	opt       *argOpt
 	minN      int
 	optionalN int
 	transform func([]*string) (*Value, error)
@@ -16,8 +16,8 @@ type argNode struct {
 }
 
 func (an *argNode) Set(v *Value, data *Data) {
-	if an.opt != nil && an.opt.CustomSet != nil {
-		an.opt.CustomSet(v, data)
+	if an.opt != nil && an.opt.customSet != nil {
+		an.opt.customSet(v, data)
 	} else {
 		data.Set(an.name, v)
 	}
@@ -44,12 +44,12 @@ func (an *argNode) Execute(i *Input, o Output, data *Data, eData *ExecuteData) e
 	}
 
 	// Run custom transformer.
-	if an.opt != nil && an.opt.Transformer != nil {
-		if !v.IsType(an.opt.Transformer.ValueType()) {
-			return o.Stderr("Transformer of type %v cannot be applied to a value with type %v", an.opt.Transformer.ValueType(), v.Type())
+	if an.opt != nil && an.opt.transformer != nil {
+		if !v.IsType(an.opt.transformer.ValueType()) {
+			return o.Stderr("Transformer of type %v cannot be applied to a value with type %v", an.opt.transformer.ValueType(), v.Type())
 		}
 
-		newV, err := an.opt.Transformer.Transform(v)
+		newV, err := an.opt.transformer.Transform(v)
 		if err != nil {
 			return o.Stderr("Custom transformer failed: %v", err)
 		}
@@ -66,7 +66,7 @@ func (an *argNode) Execute(i *Input, o Output, data *Data, eData *ExecuteData) e
 	an.Set(v, data)
 
 	if an.opt != nil {
-		for _, validator := range an.opt.Validators {
+		for _, validator := range an.opt.validators {
 			if err := validator.Validate(v); err != nil {
 				return o.Stderr("validation failed: %v", err)
 			}
@@ -95,11 +95,11 @@ func (ne *notEnoughArgs) Error() string {
 }
 
 func (an *argNode) aliasCheck(input *Input, complete bool) {
-	if an.opt != nil && an.opt.Alias != nil {
+	if an.opt != nil && an.opt.alias != nil {
 		if an.optionalN == UnboundedList {
-			input.CheckAliases(len(input.remaining), an.opt.Alias.AliasCLI, an.opt.Alias.AliasName, complete)
+			input.CheckAliases(len(input.remaining), an.opt.alias.AliasCLI, an.opt.alias.AliasName, complete)
 		} else {
-			input.CheckAliases(an.minN+an.optionalN, an.opt.Alias.AliasCLI, an.opt.Alias.AliasName, complete)
+			input.CheckAliases(an.minN+an.optionalN, an.opt.alias.AliasCLI, an.opt.alias.AliasName, complete)
 		}
 	}
 }
@@ -119,7 +119,7 @@ func (an *argNode) Complete(input *Input, data *Data) *CompleteData {
 				lastArg = *sl[len(sl)-1]
 			}
 			return &CompleteData{
-				Completion: an.opt.Completor.Complete(lastArg, v, data),
+				Completion: an.opt.completor.Complete(lastArg, v, data),
 			}
 		}
 
@@ -130,10 +130,10 @@ func (an *argNode) Complete(input *Input, data *Data) *CompleteData {
 
 	// Run custom transformer on a best effor basis (i.e. if the transformer fails,
 	// then we just continue with the original value).
-	if an.opt != nil && an.opt.Transformer != nil && an.opt.Transformer.ForComplete() {
+	if an.opt != nil && an.opt.transformer != nil && an.opt.transformer.ForComplete() {
 		// Don't return an error because this may not be the last one.
-		if v.IsType(an.opt.Transformer.ValueType()) {
-			newV, err := an.opt.Transformer.Transform(v)
+		if v.IsType(an.opt.transformer.ValueType()) {
+			newV, err := an.opt.transformer.Transform(v)
 			if err == nil {
 				v = newV
 			}
@@ -155,7 +155,7 @@ func (an *argNode) Complete(input *Input, data *Data) *CompleteData {
 		return nil
 	}
 
-	if an.opt == nil || an.opt.Completor == nil {
+	if an.opt == nil || an.opt.completor == nil {
 		// We are completing for this arg so we should return.
 		return &CompleteData{}
 	}
@@ -166,12 +166,12 @@ func (an *argNode) Complete(input *Input, data *Data) *CompleteData {
 		lastArg = ta[len(ta)-1]
 	}
 	return &CompleteData{
-		Completion: an.opt.Completor.Complete(lastArg, v, data),
+		Completion: an.opt.completor.Complete(lastArg, v, data),
 	}
 }
 
-func StringListNode(name string, minN, optionalN int, opt *ArgOpt) Processor {
-	return listNode(name, minN, optionalN, StringListType, stringListTransform, opt)
+func StringListNode(name string, minN, optionalN int, opts ...ArgOptt) Processor {
+	return listNode(name, minN, optionalN, StringListType, stringListTransform, opts...)
 }
 
 func stringListTransform(sl []*string) (*Value, error) {
@@ -182,8 +182,8 @@ func stringListTransform(sl []*string) (*Value, error) {
 	return StringListValue(r...), nil
 }
 
-func IntListNode(name string, minN, optionalN int, opt *ArgOpt) Processor {
-	return listNode(name, minN, optionalN, IntListType, intListTransform, opt)
+func IntListNode(name string, minN, optionalN int, opts ...ArgOptt) Processor {
+	return listNode(name, minN, optionalN, IntListType, intListTransform, opts...)
 }
 
 func intListTransform(sl []*string) (*Value, error) {
@@ -201,8 +201,8 @@ func intListTransform(sl []*string) (*Value, error) {
 	return IntListValue(is...), err
 }
 
-func FloatListNode(name string, minN, optionalN int, opt *ArgOpt) Processor {
-	return listNode(name, minN, optionalN, FloatListType, floatListTransform, opt)
+func FloatListNode(name string, minN, optionalN int, opts ...ArgOptt) Processor {
+	return listNode(name, minN, optionalN, FloatListType, floatListTransform, opts...)
 }
 
 func floatListTransform(sl []*string) (*Value, error) {
@@ -218,12 +218,12 @@ func floatListTransform(sl []*string) (*Value, error) {
 	return FloatListValue(fs...), err
 }
 
-func StringNode(name string, opt *ArgOpt) Processor {
-	return listNode(name, 1, 0, StringType, stringTransform, opt)
+func StringNode(name string, opts ...ArgOptt) Processor {
+	return listNode(name, 1, 0, StringType, stringTransform, opts...)
 }
 
-func OptionalStringNode(name string, opt *ArgOpt) Processor {
-	return listNode(name, 0, 1, StringType, stringTransform, opt)
+func OptionalStringNode(name string, opts ...ArgOptt) Processor {
+	return listNode(name, 0, 1, StringType, stringTransform, opts...)
 }
 
 func stringTransform(sl []*string) (*Value, error) {
@@ -233,12 +233,12 @@ func stringTransform(sl []*string) (*Value, error) {
 	return StringValue(*sl[0]), nil
 }
 
-func IntNode(name string, opt *ArgOpt) Processor {
-	return listNode(name, 1, 0, IntType, intTransform, opt)
+func IntNode(name string, opts ...ArgOptt) Processor {
+	return listNode(name, 1, 0, IntType, intTransform, opts...)
 }
 
-func OptionalIntNode(name string, opt *ArgOpt) Processor {
-	return listNode(name, 0, 1, IntType, intTransform, opt)
+func OptionalIntNode(name string, opts ...ArgOptt) Processor {
+	return listNode(name, 0, 1, IntType, intTransform, opts...)
 }
 
 func intTransform(sl []*string) (*Value, error) {
@@ -249,12 +249,12 @@ func intTransform(sl []*string) (*Value, error) {
 	return IntValue(i), err
 }
 
-func FloatNode(name string, opt *ArgOpt) Processor {
-	return listNode(name, 1, 0, FloatType, floatTransform, opt)
+func FloatNode(name string, opts ...ArgOptt) Processor {
+	return listNode(name, 1, 0, FloatType, floatTransform, opts...)
 }
 
-func OptionalFloatNode(name string, opt *ArgOpt) Processor {
-	return listNode(name, 0, 1, FloatType, floatTransform, opt)
+func OptionalFloatNode(name string, opts ...ArgOptt) Processor {
+	return listNode(name, 0, 1, FloatType, floatTransform, opts...)
 }
 
 func floatTransform(sl []*string) (*Value, error) {
@@ -266,9 +266,7 @@ func floatTransform(sl []*string) (*Value, error) {
 }
 
 func BoolNode(name string) Processor {
-	return listNode(name, 1, 0, BoolType, boolTransform, &ArgOpt{
-		Completor: BoolCompletor(),
-	})
+	return listNode(name, 1, 0, BoolType, boolTransform, BoolCompletor())
 }
 
 func boolTransform(sl []*string) (*Value, error) {
@@ -279,12 +277,16 @@ func boolTransform(sl []*string) (*Value, error) {
 	return BoolValue(b), err
 }
 
-func listNode(name string, minN, optionalN int, vt ValueType, transformer func([]*string) (*Value, error), opt *ArgOpt) Processor {
+func listNode(name string, minN, optionalN int, vt ValueType, transformer func([]*string) (*Value, error), opts ...ArgOptt) Processor {
+	ao := &argOpt{}
+	for _, opt := range opts {
+		opt.modifyArgOpt(ao)
+	}
 	return &argNode{
 		name:      name,
 		minN:      minN,
 		optionalN: optionalN,
-		opt:       opt,
+		opt:       ao,
 		vt:        vt,
 		transform: transformer,
 	}

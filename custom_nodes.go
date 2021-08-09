@@ -11,7 +11,7 @@ const (
 
 var (
 	// TODO: file validator
-	SetupArg = StringNode(SetupArgName, nil)
+	SetupArg = StringNode(SetupArgName)
 )
 
 type simpleEdge struct {

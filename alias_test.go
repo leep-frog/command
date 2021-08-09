@@ -19,7 +19,7 @@ func TestAliasExecute(t *testing.T) {
 		{
 			name: "alias requires arg",
 			etc: &ExecuteTestCase{
-				Node:       AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
+				Node:       AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2))),
 				WantErr:    fmt.Errorf("not enough arguments"),
 				WantStderr: []string{"not enough arguments"},
 			},
@@ -28,7 +28,7 @@ func TestAliasExecute(t *testing.T) {
 		{
 			name: "requires an alias value",
 			etc: &ExecuteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
+				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2))),
 				Args: []string{"a"},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -42,7 +42,7 @@ func TestAliasExecute(t *testing.T) {
 		{
 			name: "requires a non-empty alias value",
 			etc: &ExecuteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
+				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2))),
 				Args: []string{"a", ""},
 				WantData: &Data{
 					"ALIAS": StringValue(""),
@@ -60,7 +60,7 @@ func TestAliasExecute(t *testing.T) {
 		{
 			name: "doesn't override add command",
 			etc: &ExecuteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
+				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2))),
 				Args: []string{"a", "a", "hello"},
 				WantData: &Data{
 					"ALIAS": StringValue("a"),
@@ -80,7 +80,7 @@ func TestAliasExecute(t *testing.T) {
 		{
 			name: "doesn't override delete command",
 			etc: &ExecuteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
+				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2))),
 				Args: []string{"a", "d"},
 				WantData: &Data{
 					"ALIAS": StringValue("d"),
@@ -101,7 +101,7 @@ func TestAliasExecute(t *testing.T) {
 		{
 			name: "ignores execute data from children nodes",
 			etc: &ExecuteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(StringNode("s", nil), SimpleProcessor(func(i *Input, o Output, d *Data, ed *ExecuteData) error {
+				Node: AliasNode("pioneer", ac, SerialNodes(StringNode("s"), SimpleProcessor(func(i *Input, o Output, d *Data, ed *ExecuteData) error {
 					ed.Executable = []string{
 						"ab cd",
 						"",
@@ -139,7 +139,7 @@ func TestAliasExecute(t *testing.T) {
 		{
 			name: "errors on empty alias",
 			etc: &ExecuteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
+				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2))),
 				Args: []string{"a", ""},
 				WantData: &Data{
 					"ALIAS": StringValue(""),
@@ -157,7 +157,7 @@ func TestAliasExecute(t *testing.T) {
 		{
 			name: "errors on too many values",
 			etc: &ExecuteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
+				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2))),
 				Args: []string{"a", "overload", "five", "four", "three", "two", "one"},
 				WantData: &Data{
 					"ALIAS": StringValue("overload"),
@@ -183,7 +183,7 @@ func TestAliasExecute(t *testing.T) {
 		{
 			name: "fails to add empty alias list",
 			etc: &ExecuteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
+				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2))),
 				Args: []string{"a", "empty"},
 				WantData: &Data{
 					"ALIAS": StringValue("empty"),
@@ -202,7 +202,7 @@ func TestAliasExecute(t *testing.T) {
 		{
 			name: "adds alias list when just enough",
 			etc: &ExecuteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
+				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2))),
 				Args: []string{"a", "bearMinimum", "grizzly"},
 				WantData: &Data{
 					"ALIAS": StringValue("bearMinimum"),
@@ -234,7 +234,7 @@ func TestAliasExecute(t *testing.T) {
 				},
 			},
 			etc: &ExecuteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
+				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2))),
 				Args: []string{"a", "bearMinimum", "grizzly"},
 				WantData: &Data{
 					"ALIAS": StringValue("bearMinimum"),
@@ -254,7 +254,7 @@ func TestAliasExecute(t *testing.T) {
 		{
 			name: "adds alias list when maximum amount",
 			etc: &ExecuteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
+				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2))),
 				Args: []string{"a", "bearMinimum", "grizzly", "teddy", "brown"},
 				WantData: &Data{
 					"ALIAS": StringValue("bearMinimum"),
@@ -283,7 +283,7 @@ func TestAliasExecute(t *testing.T) {
 		{
 			name: "adds alias for multiple nodes",
 			etc: &ExecuteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil), IntNode("i", nil), FloatListNode("fl", 10, 0, nil))),
+				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2), IntNode("i"), FloatListNode("fl", 10, 0))),
 				Args: []string{"a", "bearMinimum", "grizzly", "teddy", "brown", "3", "2.2", "-1.1"},
 				WantData: &Data{
 					"ALIAS": StringValue("bearMinimum"),
@@ -317,7 +317,7 @@ func TestAliasExecute(t *testing.T) {
 		{
 			name: "adds alias when doesn't reach nodes",
 			etc: &ExecuteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil), IntNode("i", nil), FloatListNode("fl", 10, 0, nil))),
+				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2), IntNode("i"), FloatListNode("fl", 10, 0))),
 				Args: []string{"a", "bearMinimum", "grizzly"},
 				WantData: &Data{
 					"ALIAS": StringValue("bearMinimum"),
@@ -344,7 +344,7 @@ func TestAliasExecute(t *testing.T) {
 		{
 			name: "adds alias for unbounded list",
 			etc: &ExecuteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, UnboundedList, nil), IntNode("i", nil), FloatListNode("fl", 10, 0, nil))),
+				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, UnboundedList), IntNode("i"), FloatListNode("fl", 10, 0))),
 				Args: []string{"a", "bearMinimum", "grizzly", "teddy", "brown", "3", "2.2", "-1.1"},
 				WantData: &Data{
 					"ALIAS": StringValue("bearMinimum"),
@@ -377,11 +377,10 @@ func TestAliasExecute(t *testing.T) {
 		{
 			name: "adds transformed arguments",
 			etc: &ExecuteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, &ArgOpt{
-					Transformer: SimpleTransformer(StringListType, func(v *Value) (*Value, error) {
+				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2,
+					SimpleTransformer(StringListType, func(v *Value) (*Value, error) {
 						return StringListValue("papa", "mama", "baby"), nil
-					}),
-				}))),
+					})))),
 				Args: []string{"a", "bearMinimum", "grizzly", "teddy", "brown"},
 				WantData: &Data{
 					"ALIAS": StringValue("bearMinimum"),
@@ -410,11 +409,10 @@ func TestAliasExecute(t *testing.T) {
 		{
 			name: "fails if transform error",
 			etc: &ExecuteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, &ArgOpt{
-					Transformer: SimpleTransformer(StringListType, func(v *Value) (*Value, error) {
+				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2,
+					SimpleTransformer(StringListType, func(v *Value) (*Value, error) {
 						return nil, fmt.Errorf("bad news bears")
-					}),
-				}))),
+					})))),
 				Args: []string{"a", "bearMinimum", "grizzly", "teddy", "brown"},
 				WantData: &Data{
 					"ALIAS": StringValue("bearMinimum"),
@@ -443,7 +441,7 @@ func TestAliasExecute(t *testing.T) {
 				},
 			},
 			etc: &ExecuteTestCase{
-				Node:       AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
+				Node:       AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2))),
 				Args:       []string{"t", "grizzly", "other"},
 				WantErr:    fmt.Errorf("alias has empty value"),
 				WantStderr: []string{"alias has empty value"},
@@ -465,7 +463,7 @@ func TestAliasExecute(t *testing.T) {
 				},
 			},
 			etc: &ExecuteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
+				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2))),
 				Args: []string{"t"},
 				WantData: &Data{
 					"sl": StringListValue("teddy"),
@@ -485,7 +483,7 @@ func TestAliasExecute(t *testing.T) {
 				},
 			},
 			etc: &ExecuteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
+				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2))),
 				Args: []string{"tee"},
 				WantData: &Data{
 					"sl": StringListValue("tee"),
@@ -505,7 +503,7 @@ func TestAliasExecute(t *testing.T) {
 				},
 			},
 			etc: &ExecuteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
+				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2))),
 				Args: []string{"t", "grizzly"},
 				WantData: &Data{
 					"sl": StringListValue("teddy", "grizzly"),
@@ -526,7 +524,7 @@ func TestAliasExecute(t *testing.T) {
 				},
 			},
 			etc: &ExecuteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
+				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2))),
 				Args: []string{"t", "grizzly"},
 				WantData: &Data{
 					"sl": StringListValue("teddy", "brown", "grizzly"),
@@ -548,9 +546,7 @@ func TestAliasExecute(t *testing.T) {
 				},
 			},
 			etc: &ExecuteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, &ArgOpt{
-					Transformer: UpperCaseTransformer(),
-				}))),
+				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, UpperCaseTransformer()))),
 				Args: []string{"t", "grizzly"},
 				WantData: &Data{
 					"sl": StringListValue("TEDDY", "BROWN", "GRIZZLY"),
@@ -568,12 +564,11 @@ func TestAliasExecute(t *testing.T) {
 		{
 			name: "alias opt works with no aliases",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(StringListNode("sl", 1, 2, &ArgOpt{
-					Alias: &AliasOpt{
+				Node: SerialNodes(StringListNode("sl", 1, 2,
+					&AliasOpt{
 						AliasName: "pioneer",
 						AliasCLI:  ac,
-					},
-				})),
+					})),
 				Args: []string{"zero"},
 				WantData: &Data{
 					"sl": StringListValue("zero"),
@@ -593,12 +588,11 @@ func TestAliasExecute(t *testing.T) {
 				},
 			},
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(StringListNode("sl", 1, 2, &ArgOpt{
-					Alias: &AliasOpt{
+				Node: SerialNodes(StringListNode("sl", 1, 2,
+					&AliasOpt{
 						AliasName: "pioneer",
 						AliasCLI:  ac,
-					},
-				})),
+					})),
 				Args: []string{"hello", "dee"},
 				WantData: &Data{
 					"sl": StringListValue("hello", "d"),
@@ -620,15 +614,14 @@ func TestAliasExecute(t *testing.T) {
 				},
 			},
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(StringListNode("sl", 1, 2, &ArgOpt{
-					Alias: &AliasOpt{
+				Node: SerialNodes(StringListNode("sl", 1, 2,
+					&AliasOpt{
 						AliasName: "pioneer",
 						AliasCLI:  ac,
 					},
-					Completor: &Completor{
+					&Completor{
 						SuggestionFetcher: &ListFetcher{[]string{"un", "deux", "trois"}},
-					},
-				})),
+					})),
 				Args: []string{"hello", "dee", "trois"},
 				WantData: &Data{
 					"sl": StringListValue("hello", "d", "trois"),
@@ -652,16 +645,15 @@ func TestAliasExecute(t *testing.T) {
 				},
 			},
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(StringListNode("sl", 1, UnboundedList, &ArgOpt{
-					Alias: &AliasOpt{
+				Node: SerialNodes(StringListNode("sl", 1, UnboundedList,
+					&AliasOpt{
 						AliasName: "pioneer",
 						AliasCLI:  ac,
 					},
-					Completor: &Completor{
+					&Completor{
 						Distinct:          true,
 						SuggestionFetcher: &ListFetcher{[]string{"un", "deux", "trois"}},
-					},
-				})),
+					})),
 				Args: []string{"f", "dee"},
 				WantData: &Data{
 					"sl": StringListValue("four", "two", "deux"),
@@ -687,24 +679,21 @@ func TestAliasExecute(t *testing.T) {
 			},
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					StringListNode("sl", 1, 2, &ArgOpt{
-						Alias: &AliasOpt{
+					StringListNode("sl", 1, 2,
+						&AliasOpt{
 							AliasName: "pioneer",
 							AliasCLI:  ac,
-						},
-					}),
-					StringNode("s", &ArgOpt{
-						Alias: &AliasOpt{
+						}),
+					StringNode("s",
+						&AliasOpt{
 							AliasName: "pioneer",
 							AliasCLI:  ac,
-						},
-					}),
-					OptionalStringNode("o", &ArgOpt{
-						Alias: &AliasOpt{
+						}),
+					OptionalStringNode("o",
+						&AliasOpt{
 							AliasName: "pioneer",
 							AliasCLI:  ac,
-						},
-					}),
+						}),
 				),
 				Args: []string{"un", "dee", "z", "f"},
 				WantData: &Data{
@@ -735,16 +724,15 @@ func TestAliasExecute(t *testing.T) {
 				},
 			},
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(StringListNode("sl", 1, UnboundedList, &ArgOpt{
-					Alias: &AliasOpt{
+				Node: SerialNodes(StringListNode("sl", 1, UnboundedList,
+					&AliasOpt{
 						AliasName: "pioneer",
 						AliasCLI:  ac,
 					},
-					Completor: &Completor{
+					&Completor{
 						Distinct:          true,
 						SuggestionFetcher: &ListFetcher{[]string{"un", "deux", "trois", "five", "six"}},
-					},
-				})),
+					})),
 				Args: []string{"f", "zero", "zero", "n1", "dee", "n2", "n3", "t", "u", "n4", "n5", ""},
 				WantData: &Data{
 					"sl": StringListValue("four", "0", "0", "n1", "two", "deux", "n2", "n3", "three", "trois", "tres", "un", "n4", "n5", ""),
@@ -782,12 +770,11 @@ func TestAliasExecute(t *testing.T) {
 				},
 			},
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(StringListNode("sl", 1, UnboundedList, &ArgOpt{
-					Alias: &AliasOpt{
+				Node: SerialNodes(StringListNode("sl", 1, UnboundedList,
+					&AliasOpt{
 						AliasName: "pioneer",
 						AliasCLI:  ac,
-					},
-				})),
+					})),
 				Args: []string{"f", "zero", "n1", "t"},
 				WantData: &Data{
 					"sl": StringListValue("four", "0", "n1", "three", "trois", "tres"),
@@ -816,13 +803,13 @@ func TestAliasExecute(t *testing.T) {
 				},
 			},
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(StringListNode("sl", 1, UnboundedList, &ArgOpt{
-					Alias: &AliasOpt{
+				Node: SerialNodes(StringListNode("sl", 1, UnboundedList,
+					&AliasOpt{
 						AliasName: "pioneer",
 						AliasCLI:  ac,
 					},
-					Transformer: UpperCaseTransformer(),
-				})),
+					UpperCaseTransformer(),
+				)),
 				Args: []string{"f", "zero", "n1", "t"},
 				WantData: &Data{
 					"sl": StringListValue("FOUR", "0", "N1", "THREE", "TROIS", "TRES"),
@@ -847,12 +834,11 @@ func TestAliasExecute(t *testing.T) {
 				},
 			},
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(StringListNode("sl", 3, UnboundedList, &ArgOpt{
-					Alias: &AliasOpt{
+				Node: SerialNodes(StringListNode("sl", 3, UnboundedList,
+					&AliasOpt{
 						AliasName: "pioneer",
 						AliasCLI:  ac,
-					},
-				})),
+					})),
 				Args: []string{"dee"},
 				WantData: &Data{
 					"sl": StringListValue("two", "deux"),
@@ -875,12 +861,11 @@ func TestAliasExecute(t *testing.T) {
 				},
 			},
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(StringListNode("sl", 3, UnboundedList, &ArgOpt{
-					Alias: &AliasOpt{
+				Node: SerialNodes(StringListNode("sl", 3, UnboundedList,
+					&AliasOpt{
 						AliasName: "pioneer",
 						AliasCLI:  ac,
-					},
-				})),
+					})),
 				Args: []string{"t"},
 				WantData: &Data{
 					"sl": StringListValue("three", "trois", "tres"),
@@ -902,12 +887,11 @@ func TestAliasExecute(t *testing.T) {
 				},
 			},
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(StringListNode("sl", 3, 0, &ArgOpt{
-					Alias: &AliasOpt{
+				Node: SerialNodes(StringListNode("sl", 3, 0,
+					&AliasOpt{
 						AliasName: "pioneer",
 						AliasCLI:  ac,
-					},
-				}), StringNode("s", nil), OptionalIntNode("i", nil)),
+					}), StringNode("s"), OptionalIntNode("i")),
 				Args: []string{"t"},
 				WantData: &Data{
 					"sl": StringListValue("three", "trois", "tres"),
@@ -933,12 +917,11 @@ func TestAliasExecute(t *testing.T) {
 				},
 			},
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(StringListNode("sl", 3, 0, &ArgOpt{
-					Alias: &AliasOpt{
+				Node: SerialNodes(StringListNode("sl", 3, 0,
+					&AliasOpt{
 						AliasName: "pioneer",
 						AliasCLI:  ac,
-					},
-				}), StringNode("s", nil), OptionalIntNode("i", nil)),
+					}), StringNode("s"), OptionalIntNode("i")),
 				Args: []string{"I", "II", "III", "t"},
 				WantData: &Data{
 					"sl": StringListValue("I", "II", "III"),
@@ -958,7 +941,7 @@ func TestAliasExecute(t *testing.T) {
 		{
 			name: "Get alias requires argument",
 			etc: &ExecuteTestCase{
-				Node:       AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
+				Node:       AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2))),
 				Args:       []string{"g"},
 				WantErr:    fmt.Errorf("not enough arguments"),
 				WantStderr: []string{"not enough arguments"},
@@ -972,7 +955,7 @@ func TestAliasExecute(t *testing.T) {
 		{
 			name: "Get alias handles missing alias type",
 			etc: &ExecuteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
+				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2))),
 				Args: []string{"g", "h"},
 				WantData: &Data{
 					"ALIAS": StringListValue("h"),
@@ -999,7 +982,7 @@ func TestAliasExecute(t *testing.T) {
 				},
 			},
 			etc: &ExecuteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
+				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2))),
 				Args: []string{"g", "h", "i", "j", "k", "l", "m"},
 				WantData: &Data{
 					"ALIAS": StringListValue("h", "i", "j", "k", "l", "m"),
@@ -1031,7 +1014,7 @@ func TestAliasExecute(t *testing.T) {
 		{
 			name: "lists alias handles unset map",
 			etc: &ExecuteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
+				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2))),
 				Args: []string{"l"},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -1052,7 +1035,7 @@ func TestAliasExecute(t *testing.T) {
 				},
 			},
 			etc: &ExecuteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
+				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2))),
 				Args: []string{"l"},
 				WantStdout: []string{
 					"h: ",
@@ -1072,7 +1055,7 @@ func TestAliasExecute(t *testing.T) {
 		{
 			name: "search alias requires argument",
 			etc: &ExecuteTestCase{
-				Node:       AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
+				Node:       AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2))),
 				Args:       []string{"s"},
 				WantStderr: []string{"not enough arguments"},
 				WantErr:    fmt.Errorf("not enough arguments"),
@@ -1086,7 +1069,7 @@ func TestAliasExecute(t *testing.T) {
 		{
 			name: "search alias fails on invalid regexp",
 			etc: &ExecuteTestCase{
-				Node:       AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
+				Node:       AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2))),
 				Args:       []string{"s", ":)"},
 				WantStderr: []string{"Invalid regexp: error parsing regexp: unexpected ): `:)`"},
 				WantErr:    fmt.Errorf("Invalid regexp: error parsing regexp: unexpected ): `:)`"),
@@ -1116,7 +1099,7 @@ func TestAliasExecute(t *testing.T) {
 				},
 			},
 			etc: &ExecuteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
+				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2))),
 				Args: []string{"s", "ga$"},
 				WantData: &Data{
 					"regexp": StringListValue("ga$"),
@@ -1148,7 +1131,7 @@ func TestAliasExecute(t *testing.T) {
 				},
 			},
 			etc: &ExecuteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
+				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2))),
 				Args: []string{"s", "a$", "^.: [aeiou]"},
 				WantData: &Data{
 					"regexp": StringListValue("a$", "^.: [aeiou]"),
@@ -1170,7 +1153,7 @@ func TestAliasExecute(t *testing.T) {
 		{
 			name: "Delete requires argument",
 			etc: &ExecuteTestCase{
-				Node:       AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
+				Node:       AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2))),
 				Args:       []string{"d"},
 				WantErr:    fmt.Errorf("not enough arguments"),
 				WantStderr: []string{"not enough arguments"},
@@ -1184,7 +1167,7 @@ func TestAliasExecute(t *testing.T) {
 		{
 			name: "Delete returns error if alias group does not exist",
 			etc: &ExecuteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
+				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2))),
 				Args: []string{"d", "e"},
 				WantData: &Data{
 					"ALIAS": StringListValue("e"),
@@ -1207,7 +1190,7 @@ func TestAliasExecute(t *testing.T) {
 				},
 			},
 			etc: &ExecuteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
+				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2))),
 				Args: []string{"d", "tee"},
 				WantData: &Data{
 					"ALIAS": StringListValue("tee"),
@@ -1229,7 +1212,7 @@ func TestAliasExecute(t *testing.T) {
 				},
 			},
 			etc: &ExecuteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
+				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2))),
 				Args: []string{"d", "t"},
 				WantData: &Data{
 					"ALIAS": StringListValue("t"),
@@ -1259,7 +1242,7 @@ func TestAliasExecute(t *testing.T) {
 				},
 			},
 			etc: &ExecuteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
+				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2))),
 				Args: []string{"d", "t", "penguin", "colors", "bare"},
 				WantData: &Data{
 					"ALIAS": StringListValue("t", "penguin", "colors", "bare"),
@@ -1317,11 +1300,10 @@ func TestAliasComplete(t *testing.T) {
 		{
 			name: "suggests arg suggestions, but not command names",
 			ctc: &CompleteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, &ArgOpt{
-					Completor: &Completor{
+				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2,
+					&Completor{
 						SuggestionFetcher: &ListFetcher{[]string{"un", "deux", "trois"}},
-					},
-				}))),
+					}))),
 				Args: "cmd ",
 				WantData: &Data{
 					"sl": StringListValue(""),
@@ -1333,11 +1315,10 @@ func TestAliasComplete(t *testing.T) {
 		{
 			name: "suggests nothing for alias",
 			ctc: &CompleteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, &ArgOpt{
-					Completor: &Completor{
+				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2,
+					&Completor{
 						SuggestionFetcher: &ListFetcher{[]string{"un", "deux", "trois"}},
-					},
-				}))),
+					}))),
 				Args: "cmd a ",
 				WantData: &Data{
 					aliasArgName: StringValue(""),
@@ -1352,22 +1333,20 @@ func TestAliasComplete(t *testing.T) {
 				},
 			},
 			ctc: &CompleteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, &ArgOpt{
-					Completor: &Completor{
+				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2,
+					&Completor{
 						SuggestionFetcher: &ListFetcher{[]string{"un", "deux", "trois"}},
-					},
-				}))),
+					}))),
 				Args: "cmd alpha b ",
 			},
 		},
 		{
 			name: "suggests regular things after alias",
 			ctc: &CompleteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, &ArgOpt{
-					Completor: &Completor{
+				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2,
+					&Completor{
 						SuggestionFetcher: &ListFetcher{[]string{"un", "deux", "trois"}},
-					},
-				}))),
+					}))),
 				Args: "cmd a b ",
 				WantData: &Data{
 					aliasArgName: StringValue("b"),
@@ -1379,11 +1358,10 @@ func TestAliasComplete(t *testing.T) {
 		{
 			name: "suggests regular things after alias",
 			ctc: &CompleteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, &ArgOpt{
-					Completor: &Completor{
+				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2,
+					&Completor{
 						SuggestionFetcher: &ListFetcher{[]string{"un", "deux", "trois"}},
-					},
-				}))),
+					}))),
 				Args: "cmd a b ",
 				WantData: &Data{
 					aliasArgName: StringValue("b"),
@@ -1405,7 +1383,7 @@ func TestAliasComplete(t *testing.T) {
 				},
 			},
 			ctc: &CompleteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
+				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2))),
 				Args: "cmd g ",
 				WantData: &Data{
 					aliasArgName: StringListValue(""),
@@ -1425,7 +1403,7 @@ func TestAliasComplete(t *testing.T) {
 				},
 			},
 			ctc: &CompleteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
+				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2))),
 				Args: "cmd g b",
 				WantData: &Data{
 					aliasArgName: StringListValue("b"),
@@ -1445,7 +1423,7 @@ func TestAliasComplete(t *testing.T) {
 				},
 			},
 			ctc: &CompleteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
+				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2))),
 				Args: "cmd g alright balloon ",
 				WantData: &Data{
 					aliasArgName: StringListValue("alright", "balloon", ""),
@@ -1466,7 +1444,7 @@ func TestAliasComplete(t *testing.T) {
 				},
 			},
 			ctc: &CompleteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
+				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2))),
 				Args: "cmd d ",
 				WantData: &Data{
 					aliasArgName: StringListValue(""),
@@ -1486,7 +1464,7 @@ func TestAliasComplete(t *testing.T) {
 				},
 			},
 			ctc: &CompleteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
+				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2))),
 				Args: "cmd d b",
 				WantData: &Data{
 					aliasArgName: StringListValue("b"),
@@ -1506,7 +1484,7 @@ func TestAliasComplete(t *testing.T) {
 				},
 			},
 			ctc: &CompleteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, nil))),
+				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2))),
 				Args: "cmd d alright balloon ",
 				WantData: &Data{
 					aliasArgName: StringListValue("alright", "balloon", ""),
@@ -1518,11 +1496,10 @@ func TestAliasComplete(t *testing.T) {
 		{
 			name: "suggests regular things for regular command",
 			ctc: &CompleteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, &ArgOpt{
-					Completor: &Completor{
+				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2,
+					&Completor{
 						SuggestionFetcher: &ListFetcher{[]string{"un", "deux", "trois"}},
-					},
-				}))),
+					}))),
 				Args: "cmd zero ",
 				WantData: &Data{
 					"sl": StringListValue("zero", ""),
@@ -1533,11 +1510,10 @@ func TestAliasComplete(t *testing.T) {
 		{
 			name: "doesn't replace last argument if it's one",
 			ctc: &CompleteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, &ArgOpt{
-					Completor: &Completor{
+				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2,
+					&Completor{
 						SuggestionFetcher: &ListFetcher{[]string{"un", "deux", "trois"}},
-					},
-				}))),
+					}))),
 				Args: "cmd dee",
 				WantData: &Data{
 					"sl": StringListValue("dee"),
@@ -1552,11 +1528,10 @@ func TestAliasComplete(t *testing.T) {
 				},
 			},
 			ctc: &CompleteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, &ArgOpt{
-					Completor: &Completor{
+				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2,
+					&Completor{
 						SuggestionFetcher: &ListFetcher{[]string{"un", "deux", "trois"}},
-					},
-				}))),
+					}))),
 				Args: "cmd dee t",
 				WantData: &Data{
 					"sl": StringListValue("d", "t"),
@@ -1572,12 +1547,11 @@ func TestAliasComplete(t *testing.T) {
 				},
 			},
 			ctc: &CompleteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2, &ArgOpt{
-					Completor: &Completor{
+				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2,
+					&Completor{
 						Distinct:          true,
 						SuggestionFetcher: &ListFetcher{[]string{"un", "deux", "trois"}},
-					},
-				}))),
+					}))),
 				Args: "cmd dee ",
 				WantData: &Data{
 					"sl": StringListValue("deux", ""),
@@ -1589,15 +1563,14 @@ func TestAliasComplete(t *testing.T) {
 		{
 			name: "alias opt suggests regular things for regular command",
 			ctc: &CompleteTestCase{
-				Node: SerialNodes(StringListNode("sl", 1, 2, &ArgOpt{
-					Alias: &AliasOpt{
+				Node: SerialNodes(StringListNode("sl", 1, 2,
+					&AliasOpt{
 						AliasName: "pioneer",
 						AliasCLI:  ac,
 					},
-					Completor: &Completor{
+					&Completor{
 						SuggestionFetcher: &ListFetcher{[]string{"un", "deux", "trois"}},
-					},
-				})),
+					})),
 				Args: "cmd zero ",
 				WantData: &Data{
 					"sl": StringListValue("zero", ""),
@@ -1613,15 +1586,14 @@ func TestAliasComplete(t *testing.T) {
 				},
 			},
 			ctc: &CompleteTestCase{
-				Node: SerialNodes(StringListNode("sl", 1, 2, &ArgOpt{
-					Alias: &AliasOpt{
+				Node: SerialNodes(StringListNode("sl", 1, 2,
+					&AliasOpt{
 						AliasName: "pioneer",
 						AliasCLI:  ac,
 					},
-					Completor: &Completor{
+					&Completor{
 						SuggestionFetcher: &ListFetcher{[]string{"un", "deux", "trois"}},
-					},
-				})),
+					})),
 				Args: "cmd hello dee",
 				WantData: &Data{
 					"sl": StringListValue("hello", "dee"),
@@ -1636,15 +1608,14 @@ func TestAliasComplete(t *testing.T) {
 				},
 			},
 			ctc: &CompleteTestCase{
-				Node: SerialNodes(StringListNode("sl", 1, 2, &ArgOpt{
-					Alias: &AliasOpt{
+				Node: SerialNodes(StringListNode("sl", 1, 2,
+					&AliasOpt{
 						AliasName: "pioneer",
 						AliasCLI:  ac,
 					},
-					Completor: &Completor{
+					&Completor{
 						SuggestionFetcher: &ListFetcher{[]string{"un", "deux", "trois"}},
-					},
-				})),
+					})),
 				Args: "cmd hello dee t",
 				WantData: &Data{
 					"sl": StringListValue("hello", "d", "t"),
@@ -1660,16 +1631,15 @@ func TestAliasComplete(t *testing.T) {
 				},
 			},
 			ctc: &CompleteTestCase{
-				Node: SerialNodes(StringListNode("sl", 1, 2, &ArgOpt{
-					Alias: &AliasOpt{
+				Node: SerialNodes(StringListNode("sl", 1, 2,
+					&AliasOpt{
 						AliasName: "pioneer",
 						AliasCLI:  ac,
 					},
-					Completor: &Completor{
+					&Completor{
 						Distinct:          true,
 						SuggestionFetcher: &ListFetcher{[]string{"un", "deux", "trois"}},
-					},
-				})),
+					})),
 				Args: "cmd dee ",
 				WantData: &Data{
 					"sl": StringListValue("deux", ""),
@@ -1686,16 +1656,15 @@ func TestAliasComplete(t *testing.T) {
 				},
 			},
 			ctc: &CompleteTestCase{
-				Node: SerialNodes(StringListNode("sl", 1, 2, &ArgOpt{
-					Alias: &AliasOpt{
+				Node: SerialNodes(StringListNode("sl", 1, 2,
+					&AliasOpt{
 						AliasName: "pioneer",
 						AliasCLI:  ac,
 					},
-					Completor: &Completor{
+					&Completor{
 						Distinct:          true,
 						SuggestionFetcher: &ListFetcher{[]string{"un", "deux", "trois"}},
-					},
-				})),
+					})),
 				Args: "cmd dee t ",
 				WantData: &Data{
 					"sl": StringListValue("deux", "trois", ""),
@@ -1713,16 +1682,15 @@ func TestAliasComplete(t *testing.T) {
 				},
 			},
 			ctc: &CompleteTestCase{
-				Node: SerialNodes(StringListNode("sl", 1, UnboundedList, &ArgOpt{
-					Alias: &AliasOpt{
+				Node: SerialNodes(StringListNode("sl", 1, UnboundedList,
+					&AliasOpt{
 						AliasName: "pioneer",
 						AliasCLI:  ac,
 					},
-					Completor: &Completor{
+					&Completor{
 						Distinct:          true,
 						SuggestionFetcher: &ListFetcher{[]string{"un", "deux", "trois"}},
-					},
-				})),
+					})),
 				Args: "cmd f dee ",
 				WantData: &Data{
 					"sl": StringListValue("four", "two", "deux", ""),
@@ -1742,16 +1710,15 @@ func TestAliasComplete(t *testing.T) {
 				},
 			},
 			ctc: &CompleteTestCase{
-				Node: SerialNodes(StringListNode("sl", 1, UnboundedList, &ArgOpt{
-					Alias: &AliasOpt{
+				Node: SerialNodes(StringListNode("sl", 1, UnboundedList,
+					&AliasOpt{
 						AliasName: "pioneer",
 						AliasCLI:  ac,
 					},
-					Completor: &Completor{
+					&Completor{
 						Distinct:          true,
 						SuggestionFetcher: &ListFetcher{[]string{"un", "deux", "trois", "five", "six"}},
-					},
-				})),
+					})),
 				Args: "cmd f zero zero n1 dee n2 n3 t u n4 n5 ",
 				WantData: &Data{
 					"sl": StringListValue("four", "0", "0", "n1", "two", "deux", "n2", "n3", "three", "trois", "tres", "un", "n4", "n5", ""),
@@ -1771,16 +1738,15 @@ func TestAliasComplete(t *testing.T) {
 				},
 			},
 			ctc: &CompleteTestCase{
-				Node: SerialNodes(StringListNode("sl", 1, UnboundedList, &ArgOpt{
-					Alias: &AliasOpt{
+				Node: SerialNodes(StringListNode("sl", 1, UnboundedList,
+					&AliasOpt{
 						AliasName: "pioneer",
 						AliasCLI:  ac,
 					},
-					Completor: &Completor{
+					&Completor{
 						Distinct:          true,
 						SuggestionFetcher: &ListFetcher{[]string{"un", "deux", "trois", "five", "six"}},
-					},
-				})),
+					})),
 				Args: "cmd f zero n1 t",
 				WantData: &Data{
 					"sl": StringListValue("four", "0", "n1", "t"),
@@ -1796,12 +1762,11 @@ func TestAliasComplete(t *testing.T) {
 				},
 			},
 			ctc: &CompleteTestCase{
-				Node: SerialNodes(StringListNode("sl", 3, 0, &ArgOpt{
-					Alias: &AliasOpt{
+				Node: SerialNodes(StringListNode("sl", 3, 0,
+					&AliasOpt{
 						AliasName: "pioneer",
 						AliasCLI:  ac,
-					},
-				}), StringNode("s", nil), StringNode("i", &ArgOpt{Completor: SimpleCompletor("alpha", "beta")})),
+					}), StringNode("s"), StringNode("i", SimpleCompletor("alpha", "beta"))),
 				Args: "cmd t ",
 				WantData: &Data{
 					"sl": StringListValue("three", "trois", "tres"),
@@ -1819,12 +1784,11 @@ func TestAliasComplete(t *testing.T) {
 				},
 			},
 			ctc: &CompleteTestCase{
-				Node: SerialNodes(StringListNode("sl", 3, 0, &ArgOpt{
-					Alias: &AliasOpt{
+				Node: SerialNodes(StringListNode("sl", 3, 0,
+					&AliasOpt{
 						AliasName: "pioneer",
 						AliasCLI:  ac,
-					},
-				}), StringNode("s", nil), StringNode("i", &ArgOpt{Completor: SimpleCompletor("alpha", "beta")})),
+					}), StringNode("s"), StringNode("i", SimpleCompletor("alpha", "beta"))),
 				Args: "cmd I II III t ",
 				WantData: &Data{
 					"sl": StringListValue("I", "II", "III"),
