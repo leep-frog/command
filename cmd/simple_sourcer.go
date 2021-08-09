@@ -72,14 +72,14 @@ func (tl *Todo) AddItem(output command.Output, data *command.Data) error {
 		tl.changed = true
 	}
 
-	p := data.Values[primaryArg].String()
+	p := data.String(primaryArg)
 	if _, ok := tl.Items[p]; !ok {
 		tl.Items[p] = map[string]bool{}
 		tl.changed = true
 	}
 
-	if data.Values[secondaryArg].Provided() {
-		s := data.Values[secondaryArg].String()
+	if data.Provided(secondaryArg) {
+		s := data.String(secondaryArg)
 		if tl.Items[p][s] {
 			return output.Stderr("item %q, %q already exists", p, s)
 		}
@@ -96,14 +96,14 @@ func (tl *Todo) DeleteItem(output command.Output, data *command.Data) error {
 		return output.Stderr("can't delete from empty list")
 	}
 
-	p := data.Values[primaryArg].String()
+	p := data.String(primaryArg)
 	if _, ok := tl.Items[p]; !ok {
 		return output.Stderr("Primary item %q does not exist", p)
 	}
 
 	// Delete secondary if provided
-	if data.Values[secondaryArg].Provided() {
-		s := data.Values[secondaryArg].String()
+	if data.Provided(secondaryArg) {
+		s := data.String(secondaryArg)
 		if tl.Items[p][s] {
 			delete(tl.Items[p], s)
 			tl.changed = true
@@ -144,7 +144,7 @@ func (f *fetcher) Fetch(value *command.Value, data *command.Data) *command.Compl
 		}
 	}
 
-	p := data.Values[primaryArg].String()
+	p := data.String(primaryArg)
 	sMap := f.List.Items[p]
 	secondaries := make([]string, 0, len(sMap))
 	for s := range sMap {

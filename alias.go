@@ -150,7 +150,7 @@ func aliasDeleter(name string, ac AliasCLI, n *Node) *Node {
 		if len(getAliasMap(ac, name)) == 0 {
 			return output.Stderr("Alias group has no aliases yet.")
 		}
-		for _, a := range data.Values[aliasArgName].StringList() {
+		for _, a := range data.StringList(aliasArgName) {
 			if err := deleteAlias(ac, name, a); err != nil {
 				output.Err(err)
 			}
@@ -169,7 +169,7 @@ func aliasGetter(name string, ac AliasCLI, n *Node) *Node {
 			return output.Stderr("No aliases exist for alias type %q", name)
 		}
 
-		for _, alias := range data.Values[aliasArgName].StringList() {
+		for _, alias := range data.StringList(aliasArgName) {
 			if v, ok := getAlias(ac, name, alias); ok {
 				output.Stdout(aliasStr(alias, v))
 			} else {
@@ -206,7 +206,7 @@ type addAlias struct {
 }
 
 func (aa *addAlias) Execute(input *Input, output Output, data *Data, _ *ExecuteData) error {
-	alias := data.Values[aliasArgName].String()
+	alias := data.String(aliasArgName)
 	am := aliasMap(aa.name, aa.ac, aa.node)
 	if _, ok := am[alias]; ok {
 		return output.Stderr("cannot create alias for reserved value")

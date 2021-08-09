@@ -430,7 +430,7 @@ func TestExecute(t *testing.T) {
 					}
 					sort.Strings(keys)
 					for _, k := range keys {
-						o.Stdout("%s: %s", k, d.Values[k].Str())
+						o.Stdout("%s: %s", k, d.Str(k))
 					}
 					return nil
 				})),

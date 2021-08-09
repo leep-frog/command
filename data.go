@@ -11,6 +11,17 @@ func (d *Data) Set(s string, v *Value) {
 	d.Values[s] = v
 }
 
+// Str returns a string representation of the arg's value
+// regardless if the arg is actually a string or not.
+func (d *Data) Str(s string) string {
+	return d.Values[s].Str()
+}
+
+func (d *Data) HasArg(s string) bool {
+	_, ok := d.Values[s]
+	return ok
+}
+
 func (d *Data) String(s string) string {
 	return d.Values[s].String()
 }

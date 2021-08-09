@@ -28,7 +28,7 @@ func ApplyCodes(f *Format, output command.Output, data *command.Data) (*Format, 
 	if f == nil {
 		f = &Format{}
 	}
-	codes := data.Values[ArgName].StringList()
+	codes := data.StringList(ArgName)
 	for _, c := range codes {
 		if err := f.AddAttribute(c); err != nil {
 			return nil, output.Err(err)

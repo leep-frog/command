@@ -725,3 +725,16 @@ func TestNilValueReturnsAllNil(t *testing.T) {
 		t.Errorf(`Value(nil).FloatList() returned %v; want false`, v.FloatList())
 	}
 }
+
+func TestHasArg(t *testing.T) {
+	d := &Data{}
+	d.Set("yes", StringValue("hello"))
+
+	if !d.HasArg("yes") {
+		t.Errorf("data.HasArg('yes') returned false; want true")
+	}
+
+	if d.HasArg("no") {
+		t.Errorf("data.HasArg('no') returned true; want false")
+	}
+}
