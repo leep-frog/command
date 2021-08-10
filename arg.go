@@ -278,15 +278,11 @@ func boolTransform(sl []*string) (*Value, error) {
 }
 
 func listNode(name string, minN, optionalN int, vt ValueType, transformer func([]*string) (*Value, error), opts ...ArgOpt) Processor {
-	ao := &argOpt{}
-	for _, opt := range opts {
-		opt.modifyArgOpt(ao)
-	}
 	return &argNode{
 		name:      name,
 		minN:      minN,
 		optionalN: optionalN,
-		opt:       ao,
+		opt:       newArgOpt(opts...),
 		vt:        vt,
 		transform: transformer,
 	}

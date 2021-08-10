@@ -119,7 +119,7 @@ func FloatFlag(name string, shortName rune, opts ...ArgOpt) Flag {
 	return listFlag(name, shortName, 1, 0, floatTransform, opts...)
 }
 
-func BoolFlag(name string, shortName rune, opts ...ArgValidator) Flag {
+func BoolFlag(name string, shortName rune) Flag {
 	return &flag{
 		name:      name,
 		shortName: shortName,
@@ -155,10 +155,6 @@ func FloatListFlag(name string, shortName rune, minN, optionalN int, opts ...Arg
 }
 
 func listFlag(name string, shortName rune, minN, optionalN int, transform func(s []*string) (*Value, error), opts ...ArgOpt) Flag {
-	ao := &argOpt{}
-	for _, opt := range opts {
-		opt.modifyArgOpt(ao)
-	}
 	return &flag{
 		name:      name,
 		shortName: shortName,
@@ -167,7 +163,7 @@ func listFlag(name string, shortName rune, minN, optionalN int, transform func(s
 			name:      name,
 			minN:      minN,
 			optionalN: optionalN,
-			opt:       ao,
+			opt:       newArgOpt(opts...),
 			transform: transform,
 		},
 	}
