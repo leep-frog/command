@@ -2375,7 +2375,6 @@ func TestComplete(t *testing.T) {
 					t: func(v *Value) (*Value, error) {
 						return StringValue("newStuff"), nil
 					},
-					fc: false,
 				})),
 				Args: "cmd abc",
 				WantData: &Data{
@@ -2386,13 +2385,7 @@ func TestComplete(t *testing.T) {
 		{
 			name: "transformer does transform value when ForComplete is true",
 			ctc: &CompleteTestCase{
-				Node: SerialNodes(StringNode("strArg", &simpleTransformer{
-					vt: StringType,
-					t: func(v *Value) (*Value, error) {
-						return StringValue("newStuff"), nil
-					},
-					fc: true,
-				})),
+				Node: SerialNodes(StringNode("strArg", Transformer(StringType, func(v *Value) (*Value, error) { return StringValue("newStuff"), nil }, true))),
 				Args: "cmd abc",
 				WantData: &Data{
 					"strArg": StringValue("newStuff"),
@@ -2455,17 +2448,13 @@ func TestComplete(t *testing.T) {
 			filepathAbs: filepath.Join("abso", "lutely"),
 			ctc: &CompleteTestCase{
 				Node: &Node{
-					Processor: StringListNode("slArg", 1, 2, &simpleTransformer{
-						vt: StringListType,
-						fc: true,
-						t: func(v *Value) (*Value, error) {
-							var sl []string
-							for _, s := range v.StringList() {
-								sl = append(sl, fmt.Sprintf("_%s_", s))
-							}
-							return StringListValue(sl...), nil
-						},
-					}),
+					Processor: StringListNode("slArg", 1, 2, Transformer(StringListType, func(v *Value) (*Value, error) {
+						var sl []string
+						for _, s := range v.StringList() {
+							sl = append(sl, fmt.Sprintf("_%s_", s))
+						}
+						return StringListValue(sl...), nil
+					}, true)),
 				},
 				Args: "cmd uno dos",
 				WantData: &Data{

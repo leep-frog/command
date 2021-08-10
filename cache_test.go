@@ -144,9 +144,9 @@ func TestCacheExecution(t *testing.T) {
 			etc: &ExecuteTestCase{
 				Node: CacheNode("money", cc, SerialNodes(
 					StringNode("s",
-						SimpleTransformer(StringType, func(v *Value) (*Value, error) {
+						Transformer(StringType, func(v *Value) (*Value, error) {
 							return StringValue("usd"), nil
-						}),
+						}, false),
 					))),
 				Args: []string{"dollar"},
 				WantData: &Data{
@@ -218,9 +218,9 @@ func TestCacheExecution(t *testing.T) {
 			etc: &ExecuteTestCase{
 				Node: CacheNode("money", cc, SerialNodes(
 					StringNode("s",
-						SimpleTransformer(StringType, func(v *Value) (*Value, error) {
+						Transformer(StringType, func(v *Value) (*Value, error) {
 							return StringValue("usd"), nil
-						}),
+						}, false),
 					),
 				)),
 				Args: []string{"dollar"},
@@ -247,19 +247,19 @@ func TestCacheExecution(t *testing.T) {
 				Node: CacheNode("money", cc, SerialNodes(
 					IntNode("i"),
 					StringNode("s",
-						SimpleTransformer(StringType, func(v *Value) (*Value, error) {
+						Transformer(StringType, func(v *Value) (*Value, error) {
 							return StringValue("usd"), nil
-						}),
+						}, false),
 					),
 					FloatListNode("fl", 2, 0),
 					StringListNode("sl", 1, 2,
-						SimpleTransformer(StringListType, func(v *Value) (*Value, error) {
+						Transformer(StringListType, func(v *Value) (*Value, error) {
 							var newSL []string
 							for _, s := range v.StringList() {
 								newSL = append(newSL, fmt.Sprintf("$%s", s))
 							}
 							return StringListValue(newSL...), nil
-						}),
+						}, false),
 					),
 				)),
 				Args: []string{"123", "dollar", "3.4", "4.5", "six", "7"},

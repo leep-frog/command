@@ -45,11 +45,11 @@ func (an *argNode) Execute(i *Input, o Output, data *Data, eData *ExecuteData) e
 
 	// Run custom transformer.
 	if an.opt != nil && an.opt.transformer != nil {
-		if !v.IsType(an.opt.transformer.ValueType()) {
-			return o.Stderr("Transformer of type %v cannot be applied to a value with type %v", an.opt.transformer.ValueType(), v.Type())
+		if !v.IsType(an.opt.transformer.vt) {
+			return o.Stderr("Transformer of type %v cannot be applied to a value with type %v", an.opt.transformer.vt, v.Type())
 		}
 
-		newV, err := an.opt.transformer.Transform(v)
+		newV, err := an.opt.transformer.t(v)
 		if err != nil {
 			return o.Stderr("Custom transformer failed: %v", err)
 		}
@@ -130,10 +130,10 @@ func (an *argNode) Complete(input *Input, data *Data) *CompleteData {
 
 	// Run custom transformer on a best effor basis (i.e. if the transformer fails,
 	// then we just continue with the original value).
-	if an.opt != nil && an.opt.transformer != nil && an.opt.transformer.ForComplete() {
+	if an.opt != nil && an.opt.transformer != nil && an.opt.transformer.forComplete {
 		// Don't return an error because this may not be the last one.
-		if v.IsType(an.opt.transformer.ValueType()) {
-			newV, err := an.opt.transformer.Transform(v)
+		if v.IsType(an.opt.transformer.vt) {
+			newV, err := an.opt.transformer.t(v)
 			if err == nil {
 				v = newV
 			}

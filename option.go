@@ -24,6 +24,15 @@ func AliasOpt(name string, ac AliasCLI) ArgOpt {
 	}
 }
 
+type aliasOpt struct {
+	AliasName string
+	AliasCLI  AliasCLI
+}
+
+func (ao *aliasOpt) modifyArgOpt(argO *argOpt) {
+	argO.alias = ao
+}
+
 func CustomSetter(f func(*Value, *Data)) ArgOpt {
 	cs := customSetter(f)
 	return &cs
@@ -35,51 +44,23 @@ func (cs *customSetter) modifyArgOpt(ao *argOpt) {
 	ao.customSet = *cs
 }
 
-type aliasOpt struct {
-	AliasName string
-	AliasCLI  AliasCLI
-}
-
-func (ao *aliasOpt) modifyArgOpt(argO *argOpt) {
-	argO.alias = ao
-}
-
-func SimpleTransformer(vt ValueType, f func(v *Value) (*Value, error)) ArgOpt {
-	return &simpleTransformer{
-		vt: vt,
-		t:  f,
-	}
-}
-
 type simpleTransformer struct {
 	vt ValueType
 	t  func(v *Value) (*Value, error)
-	// fc (forComplete) is whether or not the value
+	// forComplete is whether or not the value
 	// should be transformed during completions.
-	fc bool
+	forComplete bool
 }
 
 func (st *simpleTransformer) modifyArgOpt(ao *argOpt) {
 	ao.transformer = st
 }
 
-func (st *simpleTransformer) ForComplete() bool {
-	return st.fc
-}
-
-func (st *simpleTransformer) ValueType() ValueType {
-	return st.vt
-}
-
-func (st *simpleTransformer) Transform(v *Value) (*Value, error) {
-	return st.t(v)
-}
-
 func Transformer(vt ValueType, f func(*Value) (*Value, error), forComplete bool) ArgOpt {
 	return &simpleTransformer{
-		vt: vt,
-		t:  f,
-		fc: forComplete,
+		vt:          vt,
+		t:           f,
+		forComplete: forComplete,
 	}
 }
 
@@ -310,7 +291,6 @@ func FileListTransformer() ArgOpt {
 func FileTransformer() ArgOpt {
 	return &simpleTransformer{
 		vt: StringType,
-		fc: false,
 		t: func(v *Value) (*Value, error) {
 			absStr, err := filepathAbs(v.String())
 			return StringValue(absStr), err

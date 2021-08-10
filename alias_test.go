@@ -378,9 +378,9 @@ func TestAliasExecute(t *testing.T) {
 			name: "adds transformed arguments",
 			etc: &ExecuteTestCase{
 				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2,
-					SimpleTransformer(StringListType, func(v *Value) (*Value, error) {
+					Transformer(StringListType, func(v *Value) (*Value, error) {
 						return StringListValue("papa", "mama", "baby"), nil
-					})))),
+					}, false)))),
 				Args: []string{"a", "bearMinimum", "grizzly", "teddy", "brown"},
 				WantData: &Data{
 					"ALIAS": StringValue("bearMinimum"),
@@ -410,9 +410,9 @@ func TestAliasExecute(t *testing.T) {
 			name: "fails if transform error",
 			etc: &ExecuteTestCase{
 				Node: AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", 1, 2,
-					SimpleTransformer(StringListType, func(v *Value) (*Value, error) {
+					Transformer(StringListType, func(v *Value) (*Value, error) {
 						return nil, fmt.Errorf("bad news bears")
-					})))),
+					}, false)))),
 				Args: []string{"a", "bearMinimum", "grizzly", "teddy", "brown"},
 				WantData: &Data{
 					"ALIAS": StringValue("bearMinimum"),
@@ -1739,14 +1739,12 @@ func newSimpleAlias(existing map[string]map[string][]string) AliasCLI {
 }
 
 func UpperCaseTransformer() ArgOpt {
-	return &simpleTransformer{
-		vt: StringListType,
-		t: func(v *Value) (*Value, error) {
-			r := make([]string, 0, len(v.StringList()))
-			for _, v := range v.StringList() {
-				r = append(r, strings.ToUpper(v))
-			}
-			return StringListValue(r...), nil
-		},
+	f := func(v *Value) (*Value, error) {
+		r := make([]string, 0, len(v.StringList()))
+		for _, v := range v.StringList() {
+			r = append(r, strings.ToUpper(v))
+		}
+		return StringListValue(r...), nil
 	}
+	return Transformer(StringListType, f, false)
 }
