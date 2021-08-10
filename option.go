@@ -12,7 +12,7 @@ type ArgOpt interface {
 type argOpt struct {
 	validators  []ArgValidator
 	completor   *Completor
-	transformer ArgTransformer
+	transformer *simpleTransformer
 	alias       *aliasOpt
 	customSet   customSetter
 }
@@ -44,7 +44,7 @@ func (ao *aliasOpt) modifyArgOpt(argO *argOpt) {
 	argO.alias = ao
 }
 
-func SimpleTransformer(vt ValueType, f func(v *Value) (*Value, error)) ArgTransformer {
+func SimpleTransformer(vt ValueType, f func(v *Value) (*Value, error)) ArgOpt {
 	return &simpleTransformer{
 		vt: vt,
 		t:  f,
@@ -54,6 +54,8 @@ func SimpleTransformer(vt ValueType, f func(v *Value) (*Value, error)) ArgTransf
 type simpleTransformer struct {
 	vt ValueType
 	t  func(v *Value) (*Value, error)
+	// fc (forComplete) is whether or not the value
+	// should be transformed during completions.
 	fc bool
 }
 
@@ -73,14 +75,12 @@ func (st *simpleTransformer) Transform(v *Value) (*Value, error) {
 	return st.t(v)
 }
 
-type ArgTransformer interface {
-	ValueType() ValueType
-	Transform(v *Value) (*Value, error)
-	// TODO: test this functionality (see arg.go)
-	// specifically around file [list] transformers.
-	ForComplete() bool
-
-	ArgOpt
+func Transformer(vt ValueType, f func(*Value) (*Value, error), forComplete bool) ArgOpt {
+	return &simpleTransformer{
+		vt: vt,
+		t:  f,
+		fc: forComplete,
+	}
 }
 
 type ArgValidator interface {
@@ -290,55 +290,30 @@ func FloatNegative() ArgOpt {
 	)
 }
 
-type fileListTransformer struct{}
-
-func (flt *fileListTransformer) modifyArgOpt(ao *argOpt) {
-	ao.transformer = flt
-}
-
-func (flt *fileListTransformer) ValueType() ValueType {
-	return StringListType
-}
-
-func (flt *fileListTransformer) Transform(v *Value) (*Value, error) {
-	l := make([]string, 0, len(v.StringList()))
-	for i, s := range v.StringList() {
-		absStr, err := filepathAbs(s)
-		if err != nil {
-			return StringListValue(append(l, (v.StringList())[i:]...)...), err
-		}
-		l = append(l, absStr)
+func FileListTransformer() ArgOpt {
+	return &simpleTransformer{
+		vt: StringListType,
+		t: func(v *Value) (*Value, error) {
+			l := make([]string, 0, len(v.StringList()))
+			for i, s := range v.StringList() {
+				absStr, err := filepathAbs(s)
+				if err != nil {
+					return StringListValue(append(l, (v.StringList())[i:]...)...), err
+				}
+				l = append(l, absStr)
+			}
+			return StringListValue(l...), nil
+		},
 	}
-	return StringListValue(l...), nil
 }
 
-func (flt *fileListTransformer) ForComplete() bool {
-	return false
-}
-
-type fileTransformer struct{}
-
-func (ft *fileTransformer) modifyArgOpt(ao *argOpt) {
-	ao.transformer = ft
-}
-
-func (ft *fileTransformer) ValueType() ValueType {
-	return StringType
-}
-
-func (ft *fileTransformer) Transform(v *Value) (*Value, error) {
-	absStr, err := filepathAbs(v.String())
-	return StringValue(absStr), err
-}
-
-func (ft *fileTransformer) ForComplete() bool {
-	return false
-}
-
-func FileTransformer() ArgTransformer {
-	return &fileTransformer{}
-}
-
-func FileListTransformer() ArgTransformer {
-	return &fileListTransformer{}
+func FileTransformer() ArgOpt {
+	return &simpleTransformer{
+		vt: StringType,
+		fc: false,
+		t: func(v *Value) (*Value, error) {
+			absStr, err := filepathAbs(v.String())
+			return StringValue(absStr), err
+		},
+	}
 }

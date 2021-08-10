@@ -1738,12 +1738,15 @@ func newSimpleAlias(existing map[string]map[string][]string) AliasCLI {
 	}
 }
 
-func UpperCaseTransformer() ArgTransformer {
-	return SimpleTransformer(StringListType, func(v *Value) (*Value, error) {
-		r := make([]string, 0, len(v.StringList()))
-		for _, v := range v.StringList() {
-			r = append(r, strings.ToUpper(v))
-		}
-		return StringListValue(r...), nil
-	})
+func UpperCaseTransformer() ArgOpt {
+	return &simpleTransformer{
+		vt: StringListType,
+		t: func(v *Value) (*Value, error) {
+			r := make([]string, 0, len(v.StringList()))
+			for _, v := range v.StringList() {
+				r = append(r, strings.ToUpper(v))
+			}
+			return StringListValue(r...), nil
+		},
+	}
 }
