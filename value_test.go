@@ -19,7 +19,6 @@ func TestValueCommands(t *testing.T) {
 		wantFloat      float64
 		wantFloatList  []float64
 		wantBool       bool
-		wantProvided   bool
 	}{
 		{
 			name: "empty value",
@@ -38,8 +37,7 @@ func TestValueCommands(t *testing.T) {
 					},
 				},
 			},
-			wantString:   "string-val",
-			wantProvided: true,
+			wantString: "string-val",
 		},
 		{
 			name: "string list is populated",
@@ -58,7 +56,6 @@ func TestValueCommands(t *testing.T) {
 				},
 			},
 			wantStringList: []string{"string", "list", "val"},
-			wantProvided:   true,
 		},
 		{
 			name: "int is populated",
@@ -74,8 +71,7 @@ func TestValueCommands(t *testing.T) {
 					},
 				},
 			},
-			wantInt:      123,
-			wantProvided: true,
+			wantInt: 123,
 		},
 		{
 			name: "int list is populated",
@@ -93,8 +89,7 @@ func TestValueCommands(t *testing.T) {
 					},
 				},
 			},
-			wantProvided: true,
-			wantIntList:  []int{12, 345, 6},
+			wantIntList: []int{12, 345, 6},
 		},
 		{
 			name: "flaot is populated",
@@ -110,8 +105,7 @@ func TestValueCommands(t *testing.T) {
 					},
 				},
 			},
-			wantFloat:    12.3,
-			wantProvided: true,
+			wantFloat: 12.3,
 		},
 		{
 			name: "float list is populated",
@@ -130,7 +124,6 @@ func TestValueCommands(t *testing.T) {
 				},
 			},
 			wantFloatList: []float64{1.2, -345, .6},
-			wantProvided:  true,
 		},
 		{
 			name: "bool is populated",
@@ -146,8 +139,7 @@ func TestValueCommands(t *testing.T) {
 					},
 				},
 			},
-			wantBool:     true,
-			wantProvided: true,
+			wantBool: true,
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
@@ -157,10 +149,6 @@ func TestValueCommands(t *testing.T) {
 			test.etc.Node = SerialNodesTo(test.etc.Node, ExecutorNode(func(output Output, data *Data) error {
 				name := "argName"
 				v := data.get(name)
-
-				if v.Provided() != test.wantProvided {
-					t.Errorf("Provided() returned incorrect value, got %v, want %v", v.Provided(), test.wantProvided)
-				}
 
 				// strings
 				if diff := cmp.Diff(test.wantString, v.String()); diff != "" {

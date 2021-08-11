@@ -220,10 +220,6 @@ func (v *Value) UnmarshalJSON(b []byte) error {
 	return err
 }
 
-func (v *Value) Provided() bool {
-	return v != nil
-}
-
 func (v *Value) String() string {
 	if v == nil || v.string == nil {
 		return ""
