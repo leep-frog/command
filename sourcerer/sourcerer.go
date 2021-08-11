@@ -43,6 +43,12 @@ const (
 	`
 
 	// executeFunction defines a bash function for CLI execution.
+	// TODO: write this to file, so if a user wants to use this without
+	// sourcing, they can just run the file. At least for generic stuff
+	// like temp file creation and debug checking.
+	// Some way for a user to simply run things like:
+	// $GOPATH/bin/leep-frog-execute rp|e|...
+	// $GOPATH/bin/leep-frog-ls
 	executeFunction = `
 	function _custom_execute {
 		# tmpFile is the file to which we write ExecuteData.Executable
