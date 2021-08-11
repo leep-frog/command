@@ -62,7 +62,6 @@ func (an *argNode) Execute(i *Input, o Output, data *Data, eData *ExecuteData) e
 		*sl[i] = newSl[i]
 	}
 
-	// TODO: move this after validators
 	an.Set(v, data)
 
 	if an.opt != nil {
