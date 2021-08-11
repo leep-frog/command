@@ -1904,6 +1904,45 @@ func TestExecute(t *testing.T) {
 				},
 			},
 		},
+		// Transformer tests.
+
+		{
+			name: "args get transformed",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					StringNode("strArg", Transformer(StringType, func(v *Value) (*Value, error) {
+						return StringValue(strings.ToUpper(v.String())), nil
+					}, false)),
+					IntNode("intArg", Transformer(IntType, func(v *Value) (*Value, error) {
+						return IntValue(10 * v.Int()), nil
+					}, false)),
+				),
+				Args: []string{"hello", "12"},
+				WantData: &Data{
+					"strArg": StringValue("HELLO"),
+					"intArg": IntValue(120),
+				},
+				wantInput: &Input{
+					args: []*inputArg{{value: "HELLO"}, {value: "120"}},
+				},
+			},
+		},
+		{
+			name: "failure if transformer is for the wrong type",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					StringNode("strArg", Transformer(IntType, func(v *Value) (*Value, error) {
+						return StringValue(strings.ToUpper(v.String())), nil
+					}, false)),
+				),
+				Args: []string{"hello"},
+				wantInput: &Input{
+					args: []*inputArg{{value: "hello"}},
+				},
+				WantErr:    fmt.Errorf("Transformer of type 3 cannot be applied to a value with type 2"),
+				WantStderr: []string{"Transformer of type 3 cannot be applied to a value with type 2"},
+			},
+		},
 		// BranchNode tests
 		{
 			name: "branch node requires branch argument",
@@ -2364,21 +2403,6 @@ func TestComplete(t *testing.T) {
 				Args: "cmd abc",
 				WantData: &Data{
 					"slArg": StringListValue("abc"),
-				},
-			},
-		},
-		{
-			name: "transformer doesn't transform value when ForComplete is false",
-			ctc: &CompleteTestCase{
-				Node: SerialNodes(StringNode("strArg", &simpleTransformer{
-					vt: StringType,
-					t: func(v *Value) (*Value, error) {
-						return StringValue("newStuff"), nil
-					},
-				})),
-				Args: "cmd abc",
-				WantData: &Data{
-					"strArg": StringValue("abc"),
 				},
 			},
 		},
