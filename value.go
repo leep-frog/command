@@ -28,6 +28,14 @@ func FloatListValue(l ...float64) *Value {
 	}
 }
 
+func TrueValue() *Value {
+	return BoolValue(true)
+}
+
+func FalseValue() *Value {
+	return BoolValue(false)
+}
+
 func BoolValue(b bool) *Value {
 	return &Value{
 		type_: BoolType,

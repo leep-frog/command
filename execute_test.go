@@ -1688,7 +1688,7 @@ func TestExecute(t *testing.T) {
 				},
 				WantData: &Data{
 					"filler":   StringListValue("okay", "then"),
-					"boolFlag": BoolValue(true),
+					"boolFlag": TrueValue(),
 				},
 			},
 		},
@@ -1709,7 +1709,7 @@ func TestExecute(t *testing.T) {
 				},
 				WantData: &Data{
 					"filler":   StringListValue("okay", "then"),
-					"boolFlag": BoolValue(true),
+					"boolFlag": TrueValue(),
 				},
 			},
 		},
@@ -1896,7 +1896,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{
-					"boo":         BoolValue(true),
+					"boo":         TrueValue(),
 					"extra":       StringListValue("its", "a", "secret", "message."),
 					"names":       StringListValue("greggar", "groog", "beggars"),
 					"coordinates": FloatListValue(2.2, 4.4),
@@ -2682,7 +2682,7 @@ func TestComplete(t *testing.T) {
 				Node: SerialNodes(BoolNode("bArg")),
 				Want: []string{"0", "1", "F", "FALSE", "False", "T", "TRUE", "True", "f", "false", "t", "true"},
 				WantData: &Data{
-					"bArg": BoolValue(false),
+					"bArg": FalseValue(),
 				},
 			},
 		},

@@ -270,7 +270,7 @@ func BoolNode(name string) Processor {
 
 func boolTransform(sl []*string) (*Value, error) {
 	if len(sl) == 0 {
-		return BoolValue(false), nil
+		return FalseValue(), nil
 	}
 	b, err := strconv.ParseBool(*sl[0])
 	return BoolValue(b), err

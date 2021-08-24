@@ -131,7 +131,7 @@ func TestValueCommands(t *testing.T) {
 				Node: SerialNodes(BoolNode("argName")),
 				Args: []string{"true"},
 				WantData: &Data{
-					"argName": BoolValue(true),
+					"argName": TrueValue(),
 				},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -241,13 +241,13 @@ func TestValueStrAndListAndJson(t *testing.T) {
 		},
 		{
 			name:        "bool true value",
-			v:           BoolValue(true),
+			v:           TrueValue(),
 			wantStr:     "true",
 			wantStrList: []string{"true"},
 		},
 		{
 			name:        "bool false value",
-			v:           BoolValue(false),
+			v:           FalseValue(),
 			wantStr:     "false",
 			wantStrList: []string{"false"},
 		},
@@ -388,16 +388,16 @@ func TestValueEqualAndJSONMarshaling(t *testing.T) {
 		},
 		{
 			name:         "equal bool values",
-			this:         BoolValue(true),
-			that:         BoolValue(true),
+			this:         TrueValue(),
+			that:         TrueValue(),
 			want:         true,
 			wantThisJSON: `{"Type":"Bool","Bool":true}`,
 			wantThatJSON: `{"Type":"Bool","Bool":true}`,
 		},
 		{
 			name:         "unequal bool values",
-			this:         BoolValue(true),
-			that:         BoolValue(false),
+			this:         TrueValue(),
+			that:         FalseValue(),
 			wantThisJSON: `{"Type":"Bool","Bool":true}`,
 			wantThatJSON: `{"Type":"Bool","Bool":false}`,
 		},

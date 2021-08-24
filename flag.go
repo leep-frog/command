@@ -138,7 +138,7 @@ func (bf *boolFlag) Complete(*Input, *Data) *CompleteData {
 }
 
 func (bf *boolFlag) Execute(_ *Input, _ Output, data *Data, _ *ExecuteData) error {
-	data.Set(bf.name, BoolValue(true))
+	data.Set(bf.name, TrueValue())
 	return nil
 }
 
