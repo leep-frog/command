@@ -155,6 +155,7 @@ func (v *Value) Type() ValueType {
 }
 
 func (v *Value) ToArgs() []string {
+	// TODO: use interface map instead of a bunch of switch statements.
 	switch v.type_ {
 	case StringType, IntType, BoolType:
 		return []string{v.Str()}

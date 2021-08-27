@@ -42,7 +42,7 @@ func (ss *SimpleCLI) Setup() []string {
 func (ss *SimpleCLI) Node() *command.Node {
 	return command.SerialNodes(
 		command.StringNode("firstName", command.SimpleCompletor("Greg", "Groog", "Gregory", "Groooooooooooooooooog")),
-		command.OptionalStringNode("lastName", nil),
+		command.OptionalStringNode("lastName"),
 		command.ExecutorNode(func(output command.Output, data *command.Data) error {
 			output.Stdout("Hello, %s", data.String("firstName"))
 			if data.HasArg("lastName") {
