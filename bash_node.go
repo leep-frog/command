@@ -12,7 +12,7 @@ import (
 
 // BashCommand runs the provided command in bash and stores the response as
 // a value in data as a value with the provided type and argument name.
-func BashCommand(vt ValueType, argName string, command ...string) Processor {
+func BashCommand(vt ValueType, argName string, command ...string) *bashCommand {
 	return &bashCommand{
 		vt:       vt,
 		argName:  argName,
@@ -24,6 +24,10 @@ type bashCommand struct {
 	vt       ValueType
 	argName  string
 	contents []string
+}
+
+func (bn *bashCommand) Get(d *Data) *Value {
+	return (*d)[bn.argName]
 }
 
 func (bn *bashCommand) Complete(input *Input, data *Data) *CompleteData {
