@@ -6,24 +6,40 @@ import (
 	"io"
 	"io/ioutil"
 	"os/exec"
-	"strconv"
 	"strings"
+)
+
+var (
+	// Used to stub out tests.
+	run = func(cmd *exec.Cmd) error {
+		return cmd.Run()
+	}
 )
 
 // BashCommand runs the provided command in bash and stores the response as
 // a value in data as a value with the provided type and argument name.
-func BashCommand(vt ValueType, argName string, command ...string) *bashCommand {
-	return &bashCommand{
+func BashCommand(vt ValueType, argName string, command []string, opts ...BashOption) *bashCommand {
+	bc := &bashCommand{
 		vt:       vt,
 		argName:  argName,
 		contents: command,
 	}
+	for _, o := range opts {
+		o.modifyBashNode(bc)
+	}
+	return bc
 }
 
 type bashCommand struct {
 	vt       ValueType
 	argName  string
 	contents []string
+
+	validators []*validatorOption
+}
+
+type BashOption interface {
+	modifyBashNode(*bashCommand)
 }
 
 func (bn *bashCommand) Get(d *Data) *Value {
@@ -39,18 +55,34 @@ func (bn *bashCommand) set(v *Value, d *Data) {
 }
 
 func (bn *bashCommand) Execute(input *Input, output Output, data *Data, eData *ExecuteData) error {
+	v, err := bn.getValue(data)
+	if err != nil {
+		return output.Err(err)
+	}
+
+	for _, validator := range bn.validators {
+		if err := validator.Validate(v); err != nil {
+			return output.Stderr("validation failed: %v", err)
+		}
+	}
+
+	bn.set(v, data)
+	return nil
+}
+
+func (bn *bashCommand) getValue(data *Data) (*Value, error) {
 	// Create temp file.
 	f, err := ioutil.TempFile("", "leepFrogCommandExecution")
 	if err != nil {
-		return fmt.Errorf("failed to create file for execution: %v", err)
+		return nil, fmt.Errorf("failed to create file for execution: %v", err)
 	}
 
 	// Write contents to temp file.
 	if _, err := f.WriteString(strings.Join(bn.contents, "\n")); err != nil {
-		return fmt.Errorf("failed to write contents to execution file: %v", err)
+		return nil, fmt.Errorf("failed to write contents to execution file: %v", err)
 	}
 	if err := f.Close(); err != nil {
-		return fmt.Errorf("failed to cleanup temporary execution file: %v", err)
+		return nil, fmt.Errorf("failed to cleanup temporary execution file: %v", err)
 	}
 
 	// Execute the contents of the file.
@@ -60,64 +92,46 @@ func (bn *bashCommand) Execute(input *Input, output Output, data *Data, eData *E
 	cmd.Stdout = &rawOut
 	cmd.Stderr = &rawErr
 
-	if err := cmd.Run(); err != nil {
-		return err
+	if err := run(cmd); err != nil {
+		return nil, err
+	}
+
+	sl, err := outToSlice(rawOut)
+	if err != nil {
+		return nil, err
 	}
 
 	switch bn.vt {
 	case StringType:
-		bn.set(StringValue(rawOut.String()), data)
-		return nil
+		return StringValue(rawOut.String()), nil
 	case IntType:
-		i, err := strconv.Atoi(strings.TrimSpace(rawOut.String()))
-		bn.set(IntValue(i), data)
-		return err
+		return intTransform(sl)
 	case FloatType:
-		f, err := strconv.ParseFloat(strings.TrimSpace(rawOut.String()), 64)
-		bn.set(FloatValue(f), data)
-		return err
+		return floatTransform(sl)
 	case BoolType:
-		f, err := strconv.ParseBool(strings.TrimSpace(rawOut.String()))
-		bn.set(BoolValue(f), data)
-		return err
+		return boolTransform(sl)
 	case StringListType:
-		var sl []string
-		for s, err := rawOut.ReadString('\n'); err != nil; s, err = rawOut.ReadString('\n') {
-			sl = append(sl, s)
-		}
-		if err != io.EOF {
-			return fmt.Errorf("failed to read output: %v", err)
-		}
-		bn.set(StringListValue(sl...), data)
-		return nil
+		return stringListTransform(sl)
 	case IntListType:
-		var il []int
-		for s, err := rawOut.ReadString('\n'); err != nil; s, err = rawOut.ReadString('\n') {
-			i, err := strconv.Atoi(strings.TrimSpace(s))
-			if err != nil {
-				return err
-			}
-			il = append(il, i)
-		}
-		if err != io.EOF {
-			return fmt.Errorf("failed to read output: %v", err)
-		}
-		bn.set(IntListValue(il...), data)
-		return nil
+		return intListTransform(sl)
 	case FloatListType:
-		var fl []float64
-		for s, err := rawOut.ReadString('\n'); err != nil; s, err = rawOut.ReadString('\n') {
-			f, err := strconv.ParseFloat(strings.TrimSpace(s), 64)
-			if err != nil {
-				return err
-			}
-			fl = append(fl, f)
-		}
-		if err != io.EOF {
-			return fmt.Errorf("failed to read output: %v", err)
-		}
-		bn.set(FloatListValue(fl...), data)
-		return nil
+		return floatListTransform(sl)
 	}
-	return fmt.Errorf("unknown value type for bash execution: %v", bn.vt)
+	return nil, fmt.Errorf("unknown value type for bash execution: %v", bn.vt)
+}
+
+func outToSlice(rawOut bytes.Buffer) ([]*string, error) {
+	var err error
+	var sl []*string
+	var s string
+	for s, err = rawOut.ReadString('\n'); err != io.EOF; s, err = rawOut.ReadString('\n') {
+		k := strings.TrimSpace(s)
+		sl = append(sl, &k)
+	}
+	if err != io.EOF {
+		return nil, fmt.Errorf("failed to read output: %v", err)
+	}
+	s = strings.TrimSpace(s)
+	sl = append(sl, &s)
+	return sl, nil
 }

@@ -7,6 +7,10 @@ import (
 	"strings"
 )
 
+/*type valueType interface {
+  TODO
+}*/
+
 func StringListValue(s ...string) *Value {
 	return &Value{
 		type_:      StringListType,

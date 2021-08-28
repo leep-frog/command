@@ -1,10 +1,14 @@
 package command
 
 import (
+	"bytes"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -23,13 +27,27 @@ type ExecuteTestCase struct {
 
 	// Arguments only used for internal testing.
 	wantInput *Input
+
+	// WantRunContents are the set of commands that should have been run in bash.
+	WantRunContents [][]string
+	gotRunContents  [][]string
 }
 
 type ExecuteTestOptions struct {
+	// TODO: just move these into ExecuteTestCase
 	testInput bool
 
 	RequiresSetup bool
 	SetupContents []string
+
+	RunResponses    []*FakeRun
+	WantRunCommands [][]string
+}
+
+type FakeRun struct {
+	Stdout []string
+	Stderr []string
+	Err    error
 }
 
 func setupForTest(t *testing.T, contents []string) string {
@@ -64,6 +82,38 @@ func ExecuteTest(t *testing.T, etc *ExecuteTestCase, opts *ExecuteTestOptions) {
 		wantData.Set(SetupArgName, StringValue(setupFile))
 		t.Cleanup(func() { os.Remove(setupFile) })
 	}
+
+	runResponses := []*FakeRun{}
+	if opts != nil {
+		runResponses = opts.RunResponses
+	}
+
+	oldRun := run
+	run = func(cmd *exec.Cmd) error {
+		if cmd.Path != "bash" {
+			t.Fatalf(`expected cmd path to be "bash"; got %q`, cmd.Path)
+		}
+		if len(cmd.Args) != 2 {
+			t.Fatalf("expected two args ('bash filename'), but got %v", cmd.Args)
+		}
+		if len(runResponses) == 0 {
+			t.Fatalf("ran out of stubbed run responses")
+		}
+
+		content, err := ioutil.ReadFile(cmd.Args[1])
+		if err != nil {
+			t.Fatalf("unable to read file: %v", err)
+		}
+		lines := strings.Split(string(content), "\n")
+		etc.gotRunContents = append(etc.gotRunContents, lines)
+
+		r := runResponses[0]
+		runResponses = runResponses[1:]
+		write(t, cmd.Stdout, r.Stdout)
+		write(t, cmd.Stderr, r.Stderr)
+		return r.Err
+	}
+	defer func() { run = oldRun }()
 
 	input := NewInput(args, nil)
 
@@ -116,6 +166,22 @@ func ExecuteTest(t *testing.T, etc *ExecuteTestCase, opts *ExecuteTestOptions) {
 		if diff := cmp.Diff(wantInput, input, cmpopts.EquateEmpty(), cmp.AllowUnexported(Input{}, inputArg{})); diff != "" {
 			t.Errorf("execute(%v) incorrectly modified input (-want, +got):\n%s", etc.Args, diff)
 		}
+	}
+
+	// Check all run responses were used.
+	if opts != nil && len(runResponses) > 0 {
+		t.Errorf("unused run responses: %v", opts.RunResponses)
+	}
+
+	// Check proper commands were run.
+	if diff := cmp.Diff(etc.WantRunContents, etc.gotRunContents); diff != "" {
+		t.Errorf("execute(%v) produced unexpected bash commands:\n%s", etc.Args, diff)
+	}
+}
+
+func write(t *testing.T, iow io.Writer, contents []string) {
+	if _, err := bytes.NewBufferString(strings.Join(contents, "\n")).WriteTo(iow); err != nil {
+		t.Fatalf("failed to write buffer to io.Writer: %v", err)
 	}
 }
 
