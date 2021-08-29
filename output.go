@@ -3,6 +3,7 @@ package command
 import (
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"sync"
@@ -22,6 +23,28 @@ type Output interface {
 	Err(err error) error
 	// Close informs the os that no more data will be written.
 	Close()
+}
+
+type outputWriter struct {
+	stdout bool
+	output Output
+}
+
+func (ow *outputWriter) Write(b []byte) (int, error) {
+	if ow.stdout {
+		ow.output.Stdout(string(b))
+	} else {
+		ow.output.Stderr(string(b))
+	}
+	return len(b), nil
+}
+
+func StdoutWriter(o Output) io.Writer {
+	return &outputWriter{true, o}
+}
+
+func StderrWriter(o Output) io.Writer {
+	return &outputWriter{false, o}
 }
 
 type output struct {
