@@ -30,6 +30,31 @@ func TestBashNode(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "bash command prints stderr on error",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(BashCommand(StringType, "s", []string{"echo hello"})),
+				WantRunContents: [][]string{{
+					"set -e",
+					"set -o pipefail",
+					"echo hello",
+				}},
+				WantErr: fmt.Errorf("failed to execute bash command: oops"),
+				WantStderr: []string{
+					"un",
+					"deux",
+					"trois",
+					"failed to execute bash command: oops",
+				},
+			},
+			frs: []*FakeRun{
+				{
+					Stdout: []string{"one", "two", "three"},
+					Stderr: []string{"un", "deux", "trois"},
+					Err:    fmt.Errorf("oops"),
+				},
+			},
+		},
 		// String
 		{
 			name: "bash node for string",
@@ -47,6 +72,41 @@ func TestBashNode(t *testing.T) {
 			frs: []*FakeRun{
 				{
 					Stdout: []string{"aloha"},
+				},
+			},
+		},
+		{
+			name: "bash node for string works with empty output",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(BashCommand(StringType, "s", []string{"don't echo hello"})),
+				WantRunContents: [][]string{{
+					"set -e",
+					"set -o pipefail",
+					"don't echo hello",
+				}},
+				WantData: &Data{
+					"s": StringValue(""),
+				},
+			},
+			frs: []*FakeRun{{}},
+		},
+		{
+			name: "successful command hides stderr",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(BashCommand(StringType, "s", []string{"echo hello"})),
+				WantRunContents: [][]string{{
+					"set -e",
+					"set -o pipefail",
+					"echo hello",
+				}},
+				WantData: &Data{
+					"s": StringValue("aloha"),
+				},
+			},
+			frs: []*FakeRun{
+				{
+					Stdout: []string{"aloha"},
+					Stderr: []string{"ahola"},
 				},
 			},
 		},
@@ -70,6 +130,25 @@ func TestBashNode(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "bash node for string list gets empty new lines at end",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(BashCommand(StringListType, "s", []string{"echo hello"})),
+				WantRunContents: [][]string{{
+					"set -e",
+					"set -o pipefail",
+					"echo hello",
+				}},
+				WantData: &Data{
+					"s": StringListValue("aloha", "hello there", "howdy", "", ""),
+				},
+			},
+			frs: []*FakeRun{
+				{
+					Stdout: []string{"aloha", "hello there", "howdy", "", ""},
+				},
+			},
+		},
 		// Int
 		{
 			name: "bash node for int",
@@ -89,6 +168,21 @@ func TestBashNode(t *testing.T) {
 					Stdout: []string{"1248"},
 				},
 			},
+		},
+		{
+			name: "bash node for int works with empty output",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(BashCommand(IntType, "i", []string{"don't echo 1248"})),
+				WantRunContents: [][]string{{
+					"set -e",
+					"set -o pipefail",
+					"don't echo 1248",
+				}},
+				WantData: &Data{
+					"i": IntValue(0),
+				},
+			},
+			frs: []*FakeRun{{}},
 		},
 		{
 			name: "error when not an int",
@@ -263,8 +357,11 @@ func TestBashNode(t *testing.T) {
 				},
 			},
 		},
+		/* Useful for commenting out tests. */
 	} {
 		t.Run(test.name, func(t *testing.T) {
+			fmt.Println("=======")
+			fmt.Println(test.name)
 			ExecuteTest(t, test.etc, &ExecuteTestOptions{RunResponses: test.frs})
 		})
 	}

@@ -56,7 +56,7 @@ func (bn *bashCommand) set(v *Value, d *Data) {
 }
 
 func (bn *bashCommand) Execute(input *Input, output Output, data *Data, eData *ExecuteData) error {
-	v, err := bn.getValue(data)
+	v, err := bn.getValue(data, output)
 	if err != nil {
 		return output.Err(err)
 	}
@@ -75,7 +75,7 @@ func DebugMode() bool {
 	return os.Getenv("LEEP_FROG_DEBUG") != ""
 }
 
-func (bn *bashCommand) getValue(data *Data) (*Value, error) {
+func (bn *bashCommand) getValue(data *Data, output Output) (*Value, error) {
 	// Create temp file.
 	f, err := ioutil.TempFile("", "leepFrogCommandExecution")
 	if err != nil {
@@ -100,7 +100,7 @@ func (bn *bashCommand) getValue(data *Data) (*Value, error) {
 	}
 
 	if DebugMode() {
-		fmt.Printf("Bash execution file: %s\n", f.Name())
+		output.Stdout("Bash execution file: %s\n", f.Name())
 	}
 
 	// Execute the contents of the file.
@@ -111,7 +111,24 @@ func (bn *bashCommand) getValue(data *Data) (*Value, error) {
 	cmd.Stderr = &rawErr
 
 	if err := run(cmd); err != nil {
-		return nil, fmt.Errorf("failed to execute bash command: %v", err)
+		fmt.Println("yup")
+		retErr := fmt.Errorf("failed to execute bash command: %v", err)
+
+		sl, sliceErr := outToSlice(rawErr)
+		if sliceErr != nil {
+			output.Stderr("failed to read stderr: %v", sliceErr)
+			return nil, retErr
+		}
+
+		v, tErr := vtMap.transform(StringListType, sl, "ugh")
+		if tErr != nil {
+			output.Stderr("failed to convert stderr to string slice: %v", tErr)
+		}
+
+		for _, s := range v.StringList() {
+			output.Stderr(s)
+		}
+		return nil, retErr
 	}
 
 	sl, err := outToSlice(rawOut)
@@ -126,14 +143,18 @@ func outToSlice(rawOut bytes.Buffer) ([]*string, error) {
 	var err error
 	var sl []*string
 	var s string
+	var atLeastOnce bool
 	for s, err = rawOut.ReadString('\n'); err != io.EOF; s, err = rawOut.ReadString('\n') {
+		atLeastOnce = true
 		k := strings.TrimSpace(s)
 		sl = append(sl, &k)
 	}
 	if err != io.EOF {
 		return nil, fmt.Errorf("failed to read output: %v", err)
 	}
-	s = strings.TrimSpace(s)
-	sl = append(sl, &s)
+	if atLeastOnce || s != "" {
+		s = strings.TrimSpace(s)
+		sl = append(sl, &s)
+	}
 	return sl, nil
 }

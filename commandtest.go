@@ -110,6 +110,7 @@ func ExecuteTest(t *testing.T, etc *ExecuteTestCase, opts *ExecuteTestOptions) {
 		r := runResponses[0]
 		runResponses = runResponses[1:]
 		write(t, cmd.Stdout, r.Stdout)
+		fmt.Println("adding stderr", r.Stderr)
 		write(t, cmd.Stderr, r.Stderr)
 		return r.Err
 	}
