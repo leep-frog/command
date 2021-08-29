@@ -1,6 +1,10 @@
 package command
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/google/go-cmp/cmp"
+)
 
 func TestOutput(t *testing.T) {
 	for _, test := range []struct {
@@ -36,5 +40,27 @@ func TestOutput(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			ExecuteTest(t, test.etc)
 		})
+	}
+}
+
+func TestOutputWriters(t *testing.T) {
+	fo := NewFakeOutput()
+	outW := StdoutWriter(fo)
+	errW := StderrWriter(fo)
+
+	if _, err := outW.Write([]byte("output")); err != nil {
+		t.Errorf("failed to write to stdout: %v", err)
+	}
+	if _, err := errW.Write([]byte("errput")); err != nil {
+		t.Errorf("failed to write to stderr: %v", err)
+	}
+
+	wantStdout := []string{"output"}
+	wantStderr := []string{"errput"}
+	if diff := cmp.Diff(wantStdout, fo.GetStdout()); diff != "" {
+		t.Errorf("Incorrect output sent to stdout writer:\n%s", diff)
+	}
+	if diff := cmp.Diff(wantStderr, fo.GetStderr()); diff != "" {
+		t.Errorf("Incorrect output sent to stderr writer:\n%s", diff)
 	}
 }
