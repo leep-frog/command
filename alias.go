@@ -105,7 +105,7 @@ func aliasSearcher(name string, ac AliasCLI, n *Node) *Node {
 		for _, r := range data.StringList("regexp") {
 			rx, err := regexp.Compile(r)
 			if err != nil {
-				return output.Stderr("Invalid regexp: %v", err)
+				return output.Stderrf("Invalid regexp: %v", err)
 			}
 			rs = append(rs, rx)
 		}
@@ -166,14 +166,14 @@ func aliasStr(alias string, values []string) string {
 func aliasGetter(name string, ac AliasCLI, n *Node) *Node {
 	return SerialNodes(aliasListArg(name, ac), ExecutorNode(func(output Output, data *Data) error {
 		if getAliasMap(ac, name) == nil {
-			return output.Stderr("No aliases exist for alias type %q", name)
+			return output.Stderrf("No aliases exist for alias type %q", name)
 		}
 
 		for _, alias := range data.StringList(aliasArgName) {
 			if v, ok := getAlias(ac, name, alias); ok {
 				output.Stdout(aliasStr(alias, v))
 			} else {
-				output.Stderr("Alias %q does not exist", alias)
+				output.Stderrf("Alias %q does not exist", alias)
 			}
 		}
 		return nil
@@ -212,7 +212,7 @@ func (aa *addAlias) Execute(input *Input, output Output, data *Data, _ *ExecuteD
 		return output.Stderr("cannot create alias for reserved value")
 	}
 	if _, ok := getAlias(aa.ac, aa.name, alias); ok {
-		return output.Stderr("Alias %q already exists", alias)
+		return output.Stderrf("Alias %q already exists", alias)
 	}
 
 	snapshot := input.Snapshot()

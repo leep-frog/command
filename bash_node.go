@@ -63,7 +63,7 @@ func (bn *bashCommand) Execute(input *Input, output Output, data *Data, eData *E
 
 	for _, validator := range bn.validators {
 		if err := validator.Validate(v); err != nil {
-			return output.Stderr("validation failed: %v", err)
+			return output.Stderrf("validation failed: %v", err)
 		}
 	}
 
@@ -100,7 +100,7 @@ func (bn *bashCommand) getValue(data *Data, output Output) (*Value, error) {
 	}
 
 	if DebugMode() {
-		output.Stdout("Bash execution file: %s\n", f.Name())
+		output.Stdoutf("Bash execution file: %s\n", f.Name())
 	}
 
 	// Execute the contents of the file.
@@ -116,13 +116,13 @@ func (bn *bashCommand) getValue(data *Data, output Output) (*Value, error) {
 
 		sl, sliceErr := outToSlice(rawErr)
 		if sliceErr != nil {
-			output.Stderr("failed to read stderr: %v", sliceErr)
+			output.Stderrf("failed to read stderr: %v", sliceErr)
 			return nil, retErr
 		}
 
 		v, tErr := vtMap.transform(StringListType, sl, "ugh")
 		if tErr != nil {
-			output.Stderr("failed to convert stderr to string slice: %v", tErr)
+			output.Stderrf("failed to convert stderr to string slice: %v", tErr)
 		}
 
 		for _, s := range v.StringList() {

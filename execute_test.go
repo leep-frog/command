@@ -397,7 +397,7 @@ func TestExecute(t *testing.T) {
 					keys := d.Keys()
 					sort.Strings(keys)
 					for _, k := range keys {
-						o.Stdout("%s: %s", k, d.Str(k))
+						o.Stdoutf("%s: %s", k, d.Str(k))
 					}
 					return nil
 				})),
@@ -2713,7 +2713,7 @@ func printArgsNode() *Node {
 	return &Node{
 		Processor: ExecutorNode(func(output Output, data *Data) error {
 			for k, v := range *data {
-				output.Stdout("%s: %s", k, v.Str())
+				output.Stdoutf("%s: %s", k, v.Str())
 			}
 			return nil
 		}),

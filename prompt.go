@@ -17,7 +17,7 @@ func Prompt(output Output, question string) chan string {
 				c <- text
 				return
 			}
-			output.Stderr("failed to read prompt input (%v); trying again", err)
+			output.Stderrf("failed to read prompt input (%v); trying again", err)
 		}
 	}()
 

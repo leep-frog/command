@@ -42,12 +42,12 @@ func (an *argNode) Execute(i *Input, o Output, data *Data, eData *ExecuteData) e
 	// Run custom transformer.
 	if an.opt != nil && an.opt.transformer != nil {
 		if !v.IsType(an.opt.transformer.vt) {
-			return o.Stderr("Transformer of type %v cannot be applied to a value with type %v", an.opt.transformer.vt, v.Type())
+			return o.Stderrf("Transformer of type %v cannot be applied to a value with type %v", an.opt.transformer.vt, v.Type())
 		}
 
 		newV, err := an.opt.transformer.t(v)
 		if err != nil {
-			return o.Stderr("Custom transformer failed: %v", err)
+			return o.Stderrf("Custom transformer failed: %v", err)
 		}
 		v = newV
 	}
@@ -63,7 +63,7 @@ func (an *argNode) Execute(i *Input, o Output, data *Data, eData *ExecuteData) e
 	if an.opt != nil {
 		for _, validator := range an.opt.validators {
 			if err := validator.Validate(v); err != nil {
-				return o.Stderr("validation failed: %v", err)
+				return o.Stderrf("validation failed: %v", err)
 			}
 		}
 	}

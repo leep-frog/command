@@ -13,11 +13,11 @@ func TestOutput(t *testing.T) {
 				Node: SerialNodes(ExecutorNode(func(o Output, d *Data) error {
 					t := "there"
 					o.Stdout("hello %s")
-					o.Stdout("hello %s", t)
+					o.Stdoutf("hello %s", t)
 
 					k := "kenobi"
 					o.Stderr("general %s")
-					o.Stderr("general %s", k)
+					o.Stderrf("general %s", k)
 
 					return nil
 				})),
