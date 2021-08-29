@@ -16,9 +16,11 @@ func TestBashNode(t *testing.T) {
 			name: "bash command returns an error",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(BashCommand(StringType, "s", []string{"echo hello"})),
-				WantRunContents: [][]string{
-					{"echo hello"},
-				},
+				WantRunContents: [][]string{{
+					"set -e",
+					"set -o pipefail",
+					"echo hello",
+				}},
 				WantErr:    fmt.Errorf("failed to execute bash command: oops"),
 				WantStderr: []string{"failed to execute bash command: oops"},
 			},
@@ -33,9 +35,11 @@ func TestBashNode(t *testing.T) {
 			name: "bash node for string",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(BashCommand(StringType, "s", []string{"echo hello"})),
-				WantRunContents: [][]string{
-					{"echo hello"},
-				},
+				WantRunContents: [][]string{{
+					"set -e",
+					"set -o pipefail",
+					"echo hello",
+				}},
 				WantData: &Data{
 					"s": StringValue("aloha"),
 				},
@@ -51,9 +55,11 @@ func TestBashNode(t *testing.T) {
 			name: "bash node for string list",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(BashCommand(StringListType, "s", []string{"echo hello"})),
-				WantRunContents: [][]string{
-					{"echo hello"},
-				},
+				WantRunContents: [][]string{{
+					"set -e",
+					"set -o pipefail",
+					"echo hello",
+				}},
 				WantData: &Data{
 					"s": StringListValue("aloha", "hello there", "howdy"),
 				},
@@ -69,9 +75,11 @@ func TestBashNode(t *testing.T) {
 			name: "bash node for int",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(BashCommand(IntType, "i", []string{"echo 1248"})),
-				WantRunContents: [][]string{
-					{"echo 1248"},
-				},
+				WantRunContents: [][]string{{
+					"set -e",
+					"set -o pipefail",
+					"echo 1248",
+				}},
 				WantData: &Data{
 					"i": IntValue(1248),
 				},
@@ -86,9 +94,11 @@ func TestBashNode(t *testing.T) {
 			name: "error when not an int",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(BashCommand(IntType, "i", []string{"echo two"})),
-				WantRunContents: [][]string{
-					{"echo two"},
-				},
+				WantRunContents: [][]string{{
+					"set -e",
+					"set -o pipefail",
+					"echo two",
+				}},
 				WantErr:    fmt.Errorf(`strconv.Atoi: parsing "two": invalid syntax`),
 				WantStderr: []string{`strconv.Atoi: parsing "two": invalid syntax`},
 			},
@@ -103,9 +113,11 @@ func TestBashNode(t *testing.T) {
 			name: "bash node for int list",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(BashCommand(IntListType, "i", []string{"echo primes"})),
-				WantRunContents: [][]string{
-					{"echo primes"},
-				},
+				WantRunContents: [][]string{{
+					"set -e",
+					"set -o pipefail",
+					"echo primes",
+				}},
 				WantData: &Data{
 					"i": IntListValue(2, 3, 5, 7),
 				},
@@ -120,9 +132,11 @@ func TestBashNode(t *testing.T) {
 			name: "error when not an int in list",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(BashCommand(IntListType, "i", []string{"echo two"})),
-				WantRunContents: [][]string{
-					{"echo two"},
-				},
+				WantRunContents: [][]string{{
+					"set -e",
+					"set -o pipefail",
+					"echo two",
+				}},
 				WantErr:    fmt.Errorf(`strconv.Atoi: parsing "two": invalid syntax`),
 				WantStderr: []string{`strconv.Atoi: parsing "two": invalid syntax`},
 			},
@@ -137,9 +151,11 @@ func TestBashNode(t *testing.T) {
 			name: "bash node for int",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(BashCommand(IntType, "i", []string{"echo 1248"})),
-				WantRunContents: [][]string{
-					{"echo 1248"},
-				},
+				WantRunContents: [][]string{{
+					"set -e",
+					"set -o pipefail",
+					"echo 1248",
+				}},
 				WantData: &Data{
 					"i": IntValue(1248),
 				},
@@ -154,9 +170,11 @@ func TestBashNode(t *testing.T) {
 			name: "error when not an int",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(BashCommand(IntType, "i", []string{"echo two"})),
-				WantRunContents: [][]string{
-					{"echo two"},
-				},
+				WantRunContents: [][]string{{
+					"set -e",
+					"set -o pipefail",
+					"echo two",
+				}},
 				WantErr:    fmt.Errorf(`strconv.Atoi: parsing "two": invalid syntax`),
 				WantStderr: []string{`strconv.Atoi: parsing "two": invalid syntax`},
 			},
@@ -171,9 +189,11 @@ func TestBashNode(t *testing.T) {
 			name: "bash node for int list",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(BashCommand(IntListType, "i", []string{"echo primes"})),
-				WantRunContents: [][]string{
-					{"echo primes"},
-				},
+				WantRunContents: [][]string{{
+					"set -e",
+					"set -o pipefail",
+					"echo primes",
+				}},
 				WantData: &Data{
 					"i": IntListValue(2, 3, 5, 7),
 				},
@@ -188,9 +208,11 @@ func TestBashNode(t *testing.T) {
 			name: "error when not an int in list",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(BashCommand(IntListType, "i", []string{"echo two"})),
-				WantRunContents: [][]string{
-					{"echo two"},
-				},
+				WantRunContents: [][]string{{
+					"set -e",
+					"set -o pipefail",
+					"echo two",
+				}},
 				WantErr:    fmt.Errorf(`strconv.Atoi: parsing "two": invalid syntax`),
 				WantStderr: []string{`strconv.Atoi: parsing "two": invalid syntax`},
 			},
@@ -200,14 +222,19 @@ func TestBashNode(t *testing.T) {
 				},
 			},
 		},
+		// We don't need to test every value type, because we just use the
+		// valueHandler interface.
+
 		// Validators
 		{
 			name: "bash node with validators",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(BashCommand(IntType, "i", []string{"echo 1248"}, IntNonNegative())),
-				WantRunContents: [][]string{
-					{"echo 1248"},
-				},
+				WantRunContents: [][]string{{
+					"set -e",
+					"set -o pipefail",
+					"echo 1248",
+				}},
 				WantData: &Data{
 					"i": IntValue(1248),
 				},
@@ -222,9 +249,11 @@ func TestBashNode(t *testing.T) {
 			name: "bash node with failing validators",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(BashCommand(IntType, "i", []string{"echo -1248"}, IntNonNegative())),
-				WantRunContents: [][]string{
-					{"echo -1248"},
-				},
+				WantRunContents: [][]string{{
+					"set -e",
+					"set -o pipefail",
+					"echo -1248",
+				}},
 				WantStderr: []string{"validation failed: [IntNonNegative] value isn't non-negative"},
 				WantErr:    fmt.Errorf("validation failed: [IntNonNegative] value isn't non-negative"),
 			},

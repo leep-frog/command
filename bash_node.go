@@ -82,8 +82,17 @@ func (bn *bashCommand) getValue(data *Data) (*Value, error) {
 		return nil, fmt.Errorf("failed to create file for execution: %v", err)
 	}
 
+	contents := []string{
+		// Exit when any command fails.
+		"set -e",
+		// Exit if any command in a pipeline fails.
+		// https://stackoverflow.com/questions/32684119/exit-when-one-process-in-pipe-fails
+		"set -o pipefail",
+	}
+	contents = append(contents, bn.contents...)
+
 	// Write contents to temp file.
-	if _, err := f.WriteString(strings.Join(bn.contents, "\n")); err != nil {
+	if _, err := f.WriteString(strings.Join(contents, "\n")); err != nil {
 		return nil, fmt.Errorf("failed to write contents to execution file: %v", err)
 	}
 	if err := f.Close(); err != nil {
