@@ -19,8 +19,8 @@ func TestBashNode(t *testing.T) {
 				WantRunContents: [][]string{
 					{"echo hello"},
 				},
-				WantErr:    fmt.Errorf("oops"),
-				WantStderr: []string{"oops"},
+				WantErr:    fmt.Errorf("failed to execute bash command: oops"),
+				WantStderr: []string{"failed to execute bash command: oops"},
 			},
 			frs: []*FakeRun{
 				{
