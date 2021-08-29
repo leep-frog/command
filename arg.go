@@ -1,15 +1,11 @@
 package command
 
-import (
-	"strconv"
-)
-
 type argNode struct {
 	name      string
 	opt       *argOpt
 	minN      int
 	optionalN int
-	transform func([]*string) (*Value, error)
+	//transform func([]*string) (*Value, error)
 	vt        ValueType
 	shortName rune
 	flag      bool
@@ -37,7 +33,7 @@ func (an *argNode) Execute(i *Input, o Output, data *Data, eData *ExecuteData) e
 	}
 
 	// Transform from string to value.
-	v, err := an.transform(sl)
+	v, err := vtMap.transform(an.vt, sl, "1")
 	if err != nil {
 		o.Stderr(err.Error())
 		return err
@@ -109,7 +105,7 @@ func (an *argNode) Complete(input *Input, data *Data) *CompleteData {
 	sl, enough := input.PopN(an.minN, an.optionalN)
 
 	// Try to transform from string to value.
-	v, err := an.transform(sl)
+	v, err := vtMap.transform(an.vt, sl, "2")
 	if err != nil {
 		// If we're on the last one, then complete it.
 		if !enough || input.FullyProcessed() {
@@ -170,119 +166,52 @@ func (an *argNode) Complete(input *Input, data *Data) *CompleteData {
 }
 
 func StringListNode(name string, minN, optionalN int, opts ...ArgOpt) Processor {
-	return listNode(name, minN, optionalN, StringListType, stringListTransform, opts...)
-}
-
-func stringListTransform(sl []*string) (*Value, error) {
-	r := make([]string, 0, len(sl))
-	for _, s := range sl {
-		r = append(r, *s)
-	}
-	return StringListValue(r...), nil
+	return listNode(name, minN, optionalN, StringListType, opts...)
 }
 
 func IntListNode(name string, minN, optionalN int, opts ...ArgOpt) Processor {
-	return listNode(name, minN, optionalN, IntListType, intListTransform, opts...)
-}
-
-func intListTransform(sl []*string) (*Value, error) {
-	var err error
-	var is []int
-	for _, s := range sl {
-		i, e := strconv.Atoi(*s)
-		if e != nil {
-			// TODO: add failed to load field to values.
-			// These can be used in autocomplete if necessary.
-			err = e
-		}
-		is = append(is, i)
-	}
-	return IntListValue(is...), err
+	return listNode(name, minN, optionalN, IntListType, opts...)
 }
 
 func FloatListNode(name string, minN, optionalN int, opts ...ArgOpt) Processor {
-	return listNode(name, minN, optionalN, FloatListType, floatListTransform, opts...)
-}
-
-func floatListTransform(sl []*string) (*Value, error) {
-	var err error
-	var fs []float64
-	for _, s := range sl {
-		f, e := strconv.ParseFloat(*s, 64)
-		if e != nil {
-			err = e
-		}
-		fs = append(fs, f)
-	}
-	return FloatListValue(fs...), err
+	return listNode(name, minN, optionalN, FloatListType, opts...)
 }
 
 func StringNode(name string, opts ...ArgOpt) Processor {
-	return listNode(name, 1, 0, StringType, stringTransform, opts...)
+	return listNode(name, 1, 0, StringType, opts...)
 }
 
 func OptionalStringNode(name string, opts ...ArgOpt) Processor {
-	return listNode(name, 0, 1, StringType, stringTransform, opts...)
-}
-
-func stringTransform(sl []*string) (*Value, error) {
-	if len(sl) == 0 {
-		return StringValue(""), nil
-	}
-	return StringValue(*sl[0]), nil
+	return listNode(name, 0, 1, StringType, opts...)
 }
 
 func IntNode(name string, opts ...ArgOpt) Processor {
-	return listNode(name, 1, 0, IntType, intTransform, opts...)
+	return listNode(name, 1, 0, IntType, opts...)
 }
 
 func OptionalIntNode(name string, opts ...ArgOpt) Processor {
-	return listNode(name, 0, 1, IntType, intTransform, opts...)
-}
-
-func intTransform(sl []*string) (*Value, error) {
-	if len(sl) == 0 {
-		return IntValue(0), nil
-	}
-	i, err := strconv.Atoi(*sl[0])
-	return IntValue(i), err
+	return listNode(name, 0, 1, IntType, opts...)
 }
 
 func FloatNode(name string, opts ...ArgOpt) Processor {
-	return listNode(name, 1, 0, FloatType, floatTransform, opts...)
+	return listNode(name, 1, 0, FloatType, opts...)
 }
 
 func OptionalFloatNode(name string, opts ...ArgOpt) Processor {
-	return listNode(name, 0, 1, FloatType, floatTransform, opts...)
-}
-
-func floatTransform(sl []*string) (*Value, error) {
-	if len(sl) == 0 {
-		return FloatValue(0), nil
-	}
-	f, err := strconv.ParseFloat(*sl[0], 64)
-	return FloatValue(f), err
+	return listNode(name, 0, 1, FloatType, opts...)
 }
 
 func BoolNode(name string) Processor {
-	return listNode(name, 1, 0, BoolType, boolTransform, BoolCompletor())
+	return listNode(name, 1, 0, BoolType, BoolCompletor())
 }
 
-func boolTransform(sl []*string) (*Value, error) {
-	if len(sl) == 0 {
-		return FalseValue(), nil
-	}
-	b, err := strconv.ParseBool(*sl[0])
-	return BoolValue(b), err
-}
-
-func listNode(name string, minN, optionalN int, vt ValueType, transformer func([]*string) (*Value, error), opts ...ArgOpt) Processor {
+func listNode(name string, minN, optionalN int, vt ValueType, opts ...ArgOpt) Processor {
 	return &argNode{
 		name:      name,
 		minN:      minN,
 		optionalN: optionalN,
 		opt:       newArgOpt(opts...),
 		vt:        vt,
-		transform: transformer,
+		//transform: transformer,
 	}
 }

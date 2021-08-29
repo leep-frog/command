@@ -3,13 +3,84 @@ package command
 import (
 	"encoding/json"
 	"fmt"
-	"strconv"
 	"strings"
 )
 
-/*type valueType interface {
-  TODO
-}*/
+// valueTypeHandler is the interface that each value type needs to implement.
+type valueTypeHandler interface {
+	parseAuxValue(*auxValue) *Value
+	type_() ValueType
+	marshalJSON(*Value) ([]byte, error)
+	toArgs(*Value) []string
+	str(*Value) string
+	equal(this, that *Value) bool
+	transform([]*string) (*Value, error)
+	typeString() string
+}
+
+type valueHandler map[ValueType]valueTypeHandler
+
+func (vh *valueHandler) parseAuxValue(av *auxValue) *Value {
+	if h, ok := (*vh)[av.Type]; ok {
+		return h.parseAuxValue(av)
+	}
+	return nil
+}
+
+func (vh *valueHandler) marshalJSON(v *Value) ([]byte, error) {
+	if h, ok := (*vh)[v.type_]; ok {
+		return h.marshalJSON(v)
+	}
+	return nil, fmt.Errorf("unknown ValueType: %v", v.type_)
+}
+
+func (vh *valueHandler) toArgs(v *Value) []string {
+	if h, ok := (*vh)[v.type_]; ok {
+		return h.toArgs(v)
+	}
+	return nil
+}
+
+func (vh *valueHandler) str(v *Value) string {
+	if h, ok := (*vh)[v.type_]; ok {
+		return h.str(v)
+	}
+	return "UNKNOWN_VALUE_TYPE"
+}
+
+func (vh *valueHandler) equal(this, that *Value) bool {
+	h, ok := (*vh)[this.type_]
+	if !ok {
+		return this.type_ == that.type_
+	}
+	return ok && this.type_ == that.type_ && h.equal(this, that)
+}
+
+func (vh *valueHandler) transform(vt ValueType, sl []*string, k string) (*Value, error) {
+	if h, ok := (*vh)[vt]; ok {
+		return h.transform(sl)
+	}
+	return nil, fmt.Errorf("unknown value type: %v", vt)
+}
+
+func (vh *valueHandler) typeString(vt ValueType) string {
+	if h, ok := (*vh)[vt]; ok {
+		return h.typeString()
+	}
+	return "UNKNOWN_VALUE_TYPE"
+}
+
+var (
+	vtMap = valueHandler{
+		StringType:     &stringValueHandler{},
+		IntType:        &intValueHandler{},
+		FloatType:      &floatValueHandler{},
+		BoolType:       &boolValueHandler{},
+		StringListType: &stringListValueHandler{},
+		IntListType:    &intListValueHandler{},
+		FloatListType:  &floatListValueHandler{},
+	}
+)
 
 func StringListValue(s ...string) *Value {
 	return &Value{
@@ -121,11 +192,11 @@ type auxValue struct {
 }
 
 func (vt ValueType) MarshalJSON() ([]byte, error) {
-	s, ok := typeToString[vt]
+	s, ok := vtMap[vt]
 	if !ok {
 		return nil, fmt.Errorf("unknown ValueType: %v", vt)
 	}
-	return json.Marshal(s)
+	return json.Marshal(s.typeString())
 }
 
 func (vt *ValueType) UnmarshalJSON(b []byte) error {
@@ -133,8 +204,8 @@ func (vt *ValueType) UnmarshalJSON(b []byte) error {
 	if err := json.Unmarshal(b, &sb); err != nil {
 		return fmt.Errorf("ValueType requires string value: %v", err)
 	}
-	for t, s := range typeToString {
-		if sb == s {
+	for t, h := range vtMap {
+		if sb == h.typeString() {
 			*vt = t
 			return nil
 		}
@@ -142,86 +213,20 @@ func (vt *ValueType) UnmarshalJSON(b []byte) error {
 	return fmt.Errorf("unknown ValueType: %q", sb)
 }
 
-var (
-	typeToString = map[ValueType]string{
-		StringType:     "String",
-		IntType:        "Int",
-		FloatType:      "Float",
-		BoolType:       "Bool",
-		StringListType: "StringList",
-		IntListType:    "IntList",
-		FloatListType:  "FloatList",
-	}
-)
-
 func (v *Value) Type() ValueType {
 	return v.type_
 }
 
 func (v *Value) ToArgs() []string {
-	// TODO: use interface map instead of a bunch of switch statements.
-	switch v.type_ {
-	case StringType, IntType, BoolType:
-		return []string{v.Str()}
-	case FloatType:
-		return []string{strconv.FormatFloat(v.Float(), 'f', -1, 64)}
-	case StringListType:
-		return v.StringList()
-	case IntListType:
-		sl := make([]string, 0, len(v.IntList()))
-		for _, i := range v.IntList() {
-			sl = append(sl, fmt.Sprintf("%d", i))
-		}
-		return sl
-	case FloatListType:
-		sl := make([]string, 0, len(v.FloatList()))
-		for _, f := range v.FloatList() {
-			sl = append(sl, strconv.FormatFloat(f, 'f', -1, 64))
-		}
-		return sl
-	}
-	return nil
+	return vtMap.toArgs(v)
 }
 
 func (av *auxValue) toVal() *Value {
-	switch av.Type {
-	case StringType:
-		return StringValue(*av.String)
-	case IntType:
-		return IntValue(*av.Int)
-	case FloatType:
-		return FloatValue(*av.Float)
-	case BoolType:
-		return BoolValue(*av.Bool)
-	case StringListType:
-		return StringListValue(av.StringList...)
-	case IntListType:
-		return IntListValue(av.IntList...)
-	case FloatListType:
-		return FloatListValue(av.FloatList...)
-	}
-	return nil
+	return vtMap.parseAuxValue(av)
 }
 
 func (v *Value) MarshalJSON() ([]byte, error) {
-	t := v.type_
-	switch v.type_ {
-	case StringType:
-		return json.Marshal(&auxString{t, v.string})
-	case IntType:
-		return json.Marshal(&auxInt{t, v.int})
-	case FloatType:
-		return json.Marshal(&auxFloat{t, v.float})
-	case BoolType:
-		return json.Marshal(&auxBool{t, v.bool})
-	case StringListType:
-		return json.Marshal(&auxStringList{t, v.stringList})
-	case IntListType:
-		return json.Marshal(&auxIntList{t, v.intList})
-	case FloatListType:
-		return json.Marshal(&auxFloatList{t, v.floatList})
-	}
-	return nil, fmt.Errorf("unknown ValueType: %v", v.type_)
+	return vtMap.marshalJSON(v)
 }
 
 func (v *Value) UnmarshalJSON(b []byte) error {
@@ -320,24 +325,7 @@ func (v *Value) IsType(vt ValueType) bool {
 }
 
 func (v *Value) Str() string {
-	switch v.type_ {
-	case StringType:
-		return v.String()
-	case IntType:
-		return fmt.Sprintf(intFmt, v.Int())
-	case FloatType:
-		return fmt.Sprintf(floatFmt, v.Float())
-	case BoolType:
-		return fmt.Sprintf("%v", v.Bool())
-	case StringListType:
-		return strings.Join(v.StringList(), ", ")
-	case IntListType:
-		return intSliceToString(v.IntList())
-	case FloatListType:
-		return floatSliceToString(v.FloatList())
-	}
-	// Unreachable
-	return "UNKNOWN_VALUE_TYPE"
+	return vtMap.str(v)
 }
 
 func intSliceToString(is []int) string {
@@ -363,27 +351,7 @@ func (v *Value) Equal(that *Value) bool {
 	if v == nil || that == nil {
 		return false
 	}
-	if v.type_ != that.type_ {
-		return false
-	}
-	switch v.type_ {
-	case StringType:
-		return (v.string == nil && that.string == nil) || (v.string != nil && that.string != nil && *v.string == *that.string)
-	case IntType:
-		return (v.int == nil && that.int == nil) || (v.int != nil && that.int != nil && *v.int == *that.int)
-	case FloatType:
-		return (v.float == nil && that.float == nil) || (v.float != nil && that.float != nil && *v.float == *that.float)
-	case BoolType:
-		return (v.bool == nil && that.bool == nil) || (v.bool != nil && that.bool != nil && *v.bool == *that.bool)
-	case StringListType:
-		return strListCmp(v.stringList, that.stringList)
-	case IntListType:
-		return intListCmp(v.intList, that.intList)
-	case FloatListType:
-		return floatListCmp(v.floatList, that.floatList)
-	}
-	// Unreachable
-	return true
+	return vtMap.equal(v, that)
 }
 
 func intListCmp(this, that []int) bool {

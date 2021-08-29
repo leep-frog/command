@@ -90,7 +90,7 @@ func ExecuteTest(t *testing.T, etc *ExecuteTestCase, opts *ExecuteTestOptions) {
 
 	oldRun := run
 	run = func(cmd *exec.Cmd) error {
-		if cmd.Path != "bash" {
+		if cmd.Path != "bash" && cmd.Path != "C:\\msys64\\usr\\bin\\bash.exe" {
 			t.Fatalf(`expected cmd path to be "bash"; got %q`, cmd.Path)
 		}
 		if len(cmd.Args) != 2 {

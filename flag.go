@@ -108,15 +108,15 @@ func (f *flag) ShortName() rune {
 }
 
 func StringFlag(name string, shortName rune, opts ...ArgOpt) Flag {
-	return listFlag(name, shortName, 1, 0, stringTransform, opts...)
+	return listFlag(name, shortName, 1, 0, StringType, opts...)
 }
 
 func IntFlag(name string, shortName rune, opts ...ArgOpt) Flag {
-	return listFlag(name, shortName, 1, 0, intTransform, opts...)
+	return listFlag(name, shortName, 1, 0, IntType, opts...)
 }
 
 func FloatFlag(name string, shortName rune, opts ...ArgOpt) Flag {
-	return listFlag(name, shortName, 1, 0, floatTransform, opts...)
+	return listFlag(name, shortName, 1, 0, FloatType, opts...)
 }
 
 func BoolFlag(name string, shortName rune) Flag {
@@ -143,18 +143,18 @@ func (bf *boolFlag) Execute(_ *Input, _ Output, data *Data, _ *ExecuteData) erro
 }
 
 func StringListFlag(name string, shortName rune, minN, optionalN int, opts ...ArgOpt) Flag {
-	return listFlag(name, shortName, minN, optionalN, stringListTransform, opts...)
+	return listFlag(name, shortName, minN, optionalN, StringListType, opts...)
 }
 
 func IntListFlag(name string, shortName rune, minN, optionalN int, opts ...ArgOpt) Flag {
-	return listFlag(name, shortName, minN, optionalN, intListTransform, opts...)
+	return listFlag(name, shortName, minN, optionalN, IntListType, opts...)
 }
 
 func FloatListFlag(name string, shortName rune, minN, optionalN int, opts ...ArgOpt) Flag {
-	return listFlag(name, shortName, minN, optionalN, floatListTransform, opts...)
+	return listFlag(name, shortName, minN, optionalN, FloatListType, opts...)
 }
 
-func listFlag(name string, shortName rune, minN, optionalN int, transform func(s []*string) (*Value, error), opts ...ArgOpt) Flag {
+func listFlag(name string, shortName rune, minN, optionalN int, vt ValueType, opts ...ArgOpt) Flag {
 	return &flag{
 		name:      name,
 		shortName: shortName,
@@ -164,7 +164,7 @@ func listFlag(name string, shortName rune, minN, optionalN int, transform func(s
 			minN:      minN,
 			optionalN: optionalN,
 			opt:       newArgOpt(opts...),
-			transform: transform,
+			vt:        vt,
 		},
 	}
 }

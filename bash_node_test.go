@@ -236,8 +236,6 @@ func TestBashNode(t *testing.T) {
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			fmt.Println("====================")
-			fmt.Println(test.name)
 			ExecuteTest(t, test.etc, &ExecuteTestOptions{RunResponses: test.frs})
 		})
 	}

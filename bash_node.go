@@ -101,23 +101,7 @@ func (bn *bashCommand) getValue(data *Data) (*Value, error) {
 		return nil, err
 	}
 
-	switch bn.vt {
-	case StringType:
-		return StringValue(rawOut.String()), nil
-	case IntType:
-		return intTransform(sl)
-	case FloatType:
-		return floatTransform(sl)
-	case BoolType:
-		return boolTransform(sl)
-	case StringListType:
-		return stringListTransform(sl)
-	case IntListType:
-		return intListTransform(sl)
-	case FloatListType:
-		return floatListTransform(sl)
-	}
-	return nil, fmt.Errorf("unknown value type for bash execution: %v", bn.vt)
+	return vtMap.transform(bn.vt, sl, "bn")
 }
 
 func outToSlice(rawOut bytes.Buffer) ([]*string, error) {
