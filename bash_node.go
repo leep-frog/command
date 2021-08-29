@@ -102,7 +102,7 @@ func (bn *bashCommand) getValue(data *Data) (*Value, error) {
 	cmd.Stderr = &rawErr
 
 	if err := run(cmd); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to execute bash command: %v", err)
 	}
 
 	sl, err := outToSlice(rawOut)
