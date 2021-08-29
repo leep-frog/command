@@ -1,6 +1,7 @@
 package command
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -25,15 +26,21 @@ type output struct {
 	wg         *sync.WaitGroup
 }
 
-// TODO: if only one input provided, then ignore percentage signs
 func (o *output) Stdout(s string, a ...interface{}) {
-	// TODO if len(a) == 0 { below } { else o.stdoutChan <- s }
-	// Same for stderr
-	o.stdoutChan <- fmt.Sprintf(s, a...)
+	if len(a) == 0 {
+		o.stdoutChan <- s
+	} else {
+		o.stdoutChan <- fmt.Sprintf(s, a...)
+	}
 }
 
 func (o *output) Stderr(s string, a ...interface{}) error {
-	err := fmt.Errorf(s, a...)
+	var err error
+	if len(a) == 0 {
+		err = errors.New(s)
+	} else {
+		err = fmt.Errorf(s, a...)
+	}
 	o.stderrChan <- err.Error()
 	return err
 }
