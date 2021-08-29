@@ -94,10 +94,6 @@ type CLI interface {
 	Setup() []string
 }
 
-func debugMode() bool {
-	return os.Getenv("LEEP_FROG_DEBUG") != ""
-}
-
 func execute(cli CLI, executeFile string, args []string) {
 	output := command.NewOutput()
 	eData, err := command.Execute(cli.Node(), command.ParseExecuteArgs(args), output)
@@ -125,11 +121,11 @@ func execute(cli CLI, executeFile string, args []string) {
 		log.Fatalf("failed to open file: %v", err)
 	}
 
-	if debugMode() {
+	if command.DebugMode() {
 		fmt.Println("# Executable Contents")
 	}
 	v := strings.Join(eData.Executable, "\n")
-	if debugMode() {
+	if command.DebugMode() {
 		fmt.Println(v)
 	}
 

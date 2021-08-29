@@ -291,7 +291,7 @@ type ValueType int
 
 const (
 	UnspecifiedValueType ValueType = iota
-	StringListType                 // ValueType = iota
+	StringListType
 	StringType
 	IntType
 	IntListType

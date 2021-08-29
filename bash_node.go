@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"os"
 	"os/exec"
 	"strings"
 )
@@ -70,6 +71,10 @@ func (bn *bashCommand) Execute(input *Input, output Output, data *Data, eData *E
 	return nil
 }
 
+func DebugMode() bool {
+	return os.Getenv("LEEP_FROG_DEBUG") != ""
+}
+
 func (bn *bashCommand) getValue(data *Data) (*Value, error) {
 	// Create temp file.
 	f, err := ioutil.TempFile("", "leepFrogCommandExecution")
@@ -83,6 +88,10 @@ func (bn *bashCommand) getValue(data *Data) (*Value, error) {
 	}
 	if err := f.Close(); err != nil {
 		return nil, fmt.Errorf("failed to cleanup temporary execution file: %v", err)
+	}
+
+	if DebugMode() {
+		fmt.Printf("Bash execution file: %s\n", f.Name())
 	}
 
 	// Execute the contents of the file.
