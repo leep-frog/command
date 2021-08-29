@@ -203,7 +203,8 @@ func TestValueCommands(t *testing.T) {
 				return nil
 			}))
 
-			ExecuteTest(t, test.etc, &ExecuteTestOptions{testInput: true})
+			test.etc.testInput = true
+			ExecuteTest(t, test.etc)
 		})
 	}
 }

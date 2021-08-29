@@ -111,7 +111,6 @@ func (bn *bashCommand) getValue(data *Data, output Output) (*Value, error) {
 	cmd.Stderr = &rawErr
 
 	if err := run(cmd); err != nil {
-		fmt.Println("yup")
 		retErr := fmt.Errorf("failed to execute bash command: %v", err)
 
 		sl, sliceErr := outToSlice(rawErr)

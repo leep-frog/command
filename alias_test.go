@@ -1230,7 +1230,8 @@ func TestAliasExecute(t *testing.T) {
 			ac.changed = false
 			ac.mp = test.am
 
-			ExecuteTest(t, test.etc, &ExecuteTestOptions{testInput: true})
+			test.etc.testInput = true
+			ExecuteTest(t, test.etc)
 			ChangeTest(t, test.wantAC, ac, cmp.AllowUnexported(simpleAliasCLI{}))
 		})
 	}
@@ -1707,7 +1708,7 @@ func TestAliasComplete(t *testing.T) {
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			ac.mp = test.mp
-			CompleteTest(t, test.ctc, nil)
+			CompleteTest(t, test.ctc)
 		})
 	}
 }

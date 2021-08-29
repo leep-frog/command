@@ -9,7 +9,6 @@ func TestBashNode(t *testing.T) {
 	for _, test := range []struct {
 		name string
 		etc  *ExecuteTestCase
-		frs  []*FakeRun
 	}{
 		// Generic tests
 		{
@@ -23,10 +22,10 @@ func TestBashNode(t *testing.T) {
 				}},
 				WantErr:    fmt.Errorf("failed to execute bash command: oops"),
 				WantStderr: []string{"failed to execute bash command: oops"},
-			},
-			frs: []*FakeRun{
-				{
-					Err: fmt.Errorf("oops"),
+				RunResponses: []*FakeRun{
+					{
+						Err: fmt.Errorf("oops"),
+					},
 				},
 			},
 		},
@@ -46,12 +45,12 @@ func TestBashNode(t *testing.T) {
 					"trois",
 					"failed to execute bash command: oops",
 				},
-			},
-			frs: []*FakeRun{
-				{
-					Stdout: []string{"one", "two", "three"},
-					Stderr: []string{"un", "deux", "trois"},
-					Err:    fmt.Errorf("oops"),
+				RunResponses: []*FakeRun{
+					{
+						Stdout: []string{"one", "two", "three"},
+						Stderr: []string{"un", "deux", "trois"},
+						Err:    fmt.Errorf("oops"),
+					},
 				},
 			},
 		},
@@ -68,10 +67,10 @@ func TestBashNode(t *testing.T) {
 				WantData: &Data{
 					"s": StringValue("aloha"),
 				},
-			},
-			frs: []*FakeRun{
-				{
-					Stdout: []string{"aloha"},
+				RunResponses: []*FakeRun{
+					{
+						Stdout: []string{"aloha"},
+					},
 				},
 			},
 		},
@@ -87,8 +86,8 @@ func TestBashNode(t *testing.T) {
 				WantData: &Data{
 					"s": StringValue(""),
 				},
+				RunResponses: []*FakeRun{{}},
 			},
-			frs: []*FakeRun{{}},
 		},
 		{
 			name: "successful command hides stderr",
@@ -102,11 +101,11 @@ func TestBashNode(t *testing.T) {
 				WantData: &Data{
 					"s": StringValue("aloha"),
 				},
-			},
-			frs: []*FakeRun{
-				{
-					Stdout: []string{"aloha"},
-					Stderr: []string{"ahola"},
+				RunResponses: []*FakeRun{
+					{
+						Stdout: []string{"aloha"},
+						Stderr: []string{"ahola"},
+					},
 				},
 			},
 		},
@@ -123,10 +122,10 @@ func TestBashNode(t *testing.T) {
 				WantData: &Data{
 					"s": StringListValue("aloha", "hello there", "howdy"),
 				},
-			},
-			frs: []*FakeRun{
-				{
-					Stdout: []string{"aloha", "hello there", "howdy"},
+				RunResponses: []*FakeRun{
+					{
+						Stdout: []string{"aloha", "hello there", "howdy"},
+					},
 				},
 			},
 		},
@@ -142,10 +141,10 @@ func TestBashNode(t *testing.T) {
 				WantData: &Data{
 					"s": StringListValue("aloha", "hello there", "howdy", "", ""),
 				},
-			},
-			frs: []*FakeRun{
-				{
-					Stdout: []string{"aloha", "hello there", "howdy", "", ""},
+				RunResponses: []*FakeRun{
+					{
+						Stdout: []string{"aloha", "hello there", "howdy", "", ""},
+					},
 				},
 			},
 		},
@@ -162,10 +161,10 @@ func TestBashNode(t *testing.T) {
 				WantData: &Data{
 					"i": IntValue(1248),
 				},
-			},
-			frs: []*FakeRun{
-				{
-					Stdout: []string{"1248"},
+				RunResponses: []*FakeRun{
+					{
+						Stdout: []string{"1248"},
+					},
 				},
 			},
 		},
@@ -181,8 +180,8 @@ func TestBashNode(t *testing.T) {
 				WantData: &Data{
 					"i": IntValue(0),
 				},
+				RunResponses: []*FakeRun{{}},
 			},
-			frs: []*FakeRun{{}},
 		},
 		{
 			name: "error when not an int",
@@ -195,10 +194,10 @@ func TestBashNode(t *testing.T) {
 				}},
 				WantErr:    fmt.Errorf(`strconv.Atoi: parsing "two": invalid syntax`),
 				WantStderr: []string{`strconv.Atoi: parsing "two": invalid syntax`},
-			},
-			frs: []*FakeRun{
-				{
-					Stdout: []string{"two"},
+				RunResponses: []*FakeRun{
+					{
+						Stdout: []string{"two"},
+					},
 				},
 			},
 		},
@@ -215,10 +214,10 @@ func TestBashNode(t *testing.T) {
 				WantData: &Data{
 					"i": IntListValue(2, 3, 5, 7),
 				},
-			},
-			frs: []*FakeRun{
-				{
-					Stdout: []string{"2", "3", "5", "7"},
+				RunResponses: []*FakeRun{
+					{
+						Stdout: []string{"2", "3", "5", "7"},
+					},
 				},
 			},
 		},
@@ -233,10 +232,10 @@ func TestBashNode(t *testing.T) {
 				}},
 				WantErr:    fmt.Errorf(`strconv.Atoi: parsing "two": invalid syntax`),
 				WantStderr: []string{`strconv.Atoi: parsing "two": invalid syntax`},
-			},
-			frs: []*FakeRun{
-				{
-					Stdout: []string{"2", "two", "200"},
+				RunResponses: []*FakeRun{
+					{
+						Stdout: []string{"2", "two", "200"},
+					},
 				},
 			},
 		},
@@ -253,10 +252,10 @@ func TestBashNode(t *testing.T) {
 				WantData: &Data{
 					"i": IntValue(1248),
 				},
-			},
-			frs: []*FakeRun{
-				{
-					Stdout: []string{"1248"},
+				RunResponses: []*FakeRun{
+					{
+						Stdout: []string{"1248"},
+					},
 				},
 			},
 		},
@@ -271,10 +270,10 @@ func TestBashNode(t *testing.T) {
 				}},
 				WantErr:    fmt.Errorf(`strconv.Atoi: parsing "two": invalid syntax`),
 				WantStderr: []string{`strconv.Atoi: parsing "two": invalid syntax`},
-			},
-			frs: []*FakeRun{
-				{
-					Stdout: []string{"two"},
+				RunResponses: []*FakeRun{
+					{
+						Stdout: []string{"two"},
+					},
 				},
 			},
 		},
@@ -291,10 +290,10 @@ func TestBashNode(t *testing.T) {
 				WantData: &Data{
 					"i": IntListValue(2, 3, 5, 7),
 				},
-			},
-			frs: []*FakeRun{
-				{
-					Stdout: []string{"2", "3", "5", "7"},
+				RunResponses: []*FakeRun{
+					{
+						Stdout: []string{"2", "3", "5", "7"},
+					},
 				},
 			},
 		},
@@ -309,10 +308,10 @@ func TestBashNode(t *testing.T) {
 				}},
 				WantErr:    fmt.Errorf(`strconv.Atoi: parsing "two": invalid syntax`),
 				WantStderr: []string{`strconv.Atoi: parsing "two": invalid syntax`},
-			},
-			frs: []*FakeRun{
-				{
-					Stdout: []string{"2", "two", "200"},
+				RunResponses: []*FakeRun{
+					{
+						Stdout: []string{"2", "two", "200"},
+					},
 				},
 			},
 		},
@@ -332,10 +331,10 @@ func TestBashNode(t *testing.T) {
 				WantData: &Data{
 					"i": IntValue(1248),
 				},
-			},
-			frs: []*FakeRun{
-				{
-					Stdout: []string{"1248"},
+				RunResponses: []*FakeRun{
+					{
+						Stdout: []string{"1248"},
+					},
 				},
 			},
 		},
@@ -350,17 +349,18 @@ func TestBashNode(t *testing.T) {
 				}},
 				WantStderr: []string{"validation failed: [IntNonNegative] value isn't non-negative"},
 				WantErr:    fmt.Errorf("validation failed: [IntNonNegative] value isn't non-negative"),
-			},
-			frs: []*FakeRun{
-				{
-					Stdout: []string{"-1248"},
+
+				RunResponses: []*FakeRun{
+					{
+						Stdout: []string{"-1248"},
+					},
 				},
 			},
 		},
 		/* Useful for commenting out tests. */
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			ExecuteTest(t, test.etc, &ExecuteTestOptions{RunResponses: test.frs})
+			ExecuteTest(t, test.etc)
 		})
 	}
 }

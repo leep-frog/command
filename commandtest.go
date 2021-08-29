@@ -25,21 +25,19 @@ type ExecuteTestCase struct {
 	WantStderr      []string
 	WantErr         error
 
-	// Arguments only used for internal testing.
+	// Whether or not to test actual input against wantInput.
+	testInput bool
 	wantInput *Input
 
 	// WantRunContents are the set of commands that should have been run in bash.
 	WantRunContents [][]string
 	gotRunContents  [][]string
-}
 
-type ExecuteTestOptions struct {
-	// TODO: just move these into ExecuteTestCase
-	testInput bool
-
+	// RequiresSetup indicates whether or not the command requires setup
 	RequiresSetup bool
 	SetupContents []string
 
+	// RunResponses are the stubbed responses to return from exec.Cmd.Run.
 	RunResponses    []*FakeRun
 	WantRunCommands [][]string
 }
@@ -64,7 +62,7 @@ func setupForTest(t *testing.T, contents []string) string {
 	return f.Name()
 }
 
-func ExecuteTest(t *testing.T, etc *ExecuteTestCase, opts *ExecuteTestOptions) {
+func ExecuteTest(t *testing.T, etc *ExecuteTestCase) {
 	t.Helper()
 
 	if etc == nil {
@@ -76,17 +74,14 @@ func ExecuteTest(t *testing.T, etc *ExecuteTestCase, opts *ExecuteTestOptions) {
 	if wantData == nil {
 		wantData = &Data{}
 	}
-	if opts != nil && opts.RequiresSetup {
-		setupFile := setupForTest(t, opts.SetupContents)
+	if etc.RequiresSetup {
+		setupFile := setupForTest(t, etc.SetupContents)
 		args = append([]string{setupFile}, args...)
 		wantData.Set(SetupArgName, StringValue(setupFile))
 		t.Cleanup(func() { os.Remove(setupFile) })
 	}
 
-	runResponses := []*FakeRun{}
-	if opts != nil {
-		runResponses = opts.RunResponses
-	}
+	runResponses := etc.RunResponses
 
 	oldRun := run
 	run = func(cmd *exec.Cmd) error {
@@ -110,7 +105,6 @@ func ExecuteTest(t *testing.T, etc *ExecuteTestCase, opts *ExecuteTestOptions) {
 		r := runResponses[0]
 		runResponses = runResponses[1:]
 		write(t, cmd.Stdout, r.Stdout)
-		fmt.Println("adding stderr", r.Stderr)
 		write(t, cmd.Stderr, r.Stderr)
 		return r.Err
 	}
@@ -159,7 +153,7 @@ func ExecuteTest(t *testing.T, etc *ExecuteTestCase, opts *ExecuteTestOptions) {
 	}
 
 	// Check input (if relevant).
-	if opts != nil && opts.testInput {
+	if etc.testInput {
 		wantInput := etc.wantInput
 		if wantInput == nil {
 			wantInput = &Input{}
@@ -170,8 +164,8 @@ func ExecuteTest(t *testing.T, etc *ExecuteTestCase, opts *ExecuteTestOptions) {
 	}
 
 	// Check all run responses were used.
-	if opts != nil && len(runResponses) > 0 {
-		t.Errorf("unused run responses: %v", opts.RunResponses)
+	if len(runResponses) > 0 {
+		t.Errorf("unused run responses: %v", runResponses)
 	}
 
 	// Check proper commands were run.
@@ -216,9 +210,7 @@ type CompleteTestCase struct {
 	WantData *Data
 }
 
-type CompleteTestOptions struct{}
-
-func CompleteTest(t *testing.T, ctc *CompleteTestCase, opts *CompleteTestOptions) {
+func CompleteTest(t *testing.T, ctc *CompleteTestCase) {
 	t.Helper()
 	data := &Data{}
 

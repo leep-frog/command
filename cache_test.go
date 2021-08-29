@@ -375,7 +375,8 @@ func TestCacheExecution(t *testing.T) {
 			cc.cache = test.cache
 
 			// Generic testing.
-			ExecuteTest(t, test.etc, &ExecuteTestOptions{testInput: true})
+			test.etc.testInput = true
+			ExecuteTest(t, test.etc)
 			ChangeTest(t, test.wantCache, cc, cmp.AllowUnexported(simpleCacheCLI{}))
 		})
 	}
@@ -416,7 +417,7 @@ func TestCacheComplete(t *testing.T) {
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			cc.cache = test.cache
-			CompleteTest(t, test.ctc, nil)
+			CompleteTest(t, test.ctc)
 		})
 	}
 }

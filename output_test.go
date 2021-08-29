@@ -34,7 +34,7 @@ func TestOutput(t *testing.T) {
 		/* Useful for commenting out tests. */
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			ExecuteTest(t, test.etc, nil)
+			ExecuteTest(t, test.etc)
 		})
 	}
 }

@@ -2022,7 +2022,11 @@ func TestExecute(t *testing.T) {
 		/* Useful for commenting out tests. */
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			ExecuteTest(t, test.etc, &ExecuteTestOptions{testInput: true})
+			if test.etc == nil {
+				test.etc = &ExecuteTestCase{}
+			}
+			test.etc.testInput = true
+			ExecuteTest(t, test.etc)
 		})
 	}
 }
@@ -2695,7 +2699,7 @@ func TestComplete(t *testing.T) {
 			}
 			defer func() { filepathAbs = oldAbs }()
 
-			CompleteTest(t, test.ctc, nil)
+			CompleteTest(t, test.ctc)
 		})
 	}
 }
