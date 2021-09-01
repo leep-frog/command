@@ -40,9 +40,29 @@ func TestBashNode(t *testing.T) {
 				}},
 				WantErr: fmt.Errorf("failed to execute bash command: oops"),
 				WantStderr: []string{
-					"un",
-					"deux",
-					"trois",
+					"un\ndeux\ntrois",
+					"failed to execute bash command: oops",
+				},
+				RunResponses: []*FakeRun{
+					{
+						Stdout: []string{"one", "two", "three"},
+						Stderr: []string{"un", "deux", "trois"},
+						Err:    fmt.Errorf("oops"),
+					},
+				},
+			},
+		},
+		{
+			name: "bash command hides stderr on error",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(BashCommand(StringType, "s", []string{"echo hello"}, HideStderr())),
+				WantRunContents: [][]string{{
+					"set -e",
+					"set -o pipefail",
+					"echo hello",
+				}},
+				WantErr: fmt.Errorf("failed to execute bash command: oops"),
+				WantStderr: []string{
 					"failed to execute bash command: oops",
 				},
 				RunResponses: []*FakeRun{
@@ -90,9 +110,30 @@ func TestBashNode(t *testing.T) {
 			},
 		},
 		{
-			name: "successful command hides stderr",
+			name: "successful command shows stderr",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(BashCommand(StringType, "s", []string{"echo hello"})),
+				WantRunContents: [][]string{{
+					"set -e",
+					"set -o pipefail",
+					"echo hello",
+				}},
+				WantData: &Data{
+					"s": StringValue("aloha"),
+				},
+				WantStderr: []string{"ahola"},
+				RunResponses: []*FakeRun{
+					{
+						Stdout: []string{"aloha"},
+						Stderr: []string{"ahola"},
+					},
+				},
+			},
+		},
+		{
+			name: "successful command hides stderr",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(BashCommand(StringType, "s", []string{"echo hello"}, HideStderr())),
 				WantRunContents: [][]string{{
 					"set -e",
 					"set -o pipefail",

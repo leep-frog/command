@@ -56,7 +56,7 @@ func (vh *valueHandler) equal(this, that *Value) bool {
 	return ok && this.type_ == that.type_ && h.equal(this, that)
 }
 
-func (vh *valueHandler) transform(vt ValueType, sl []*string, k string) (*Value, error) {
+func (vh *valueHandler) transform(vt ValueType, sl []*string) (*Value, error) {
 	if h, ok := (*vh)[vt]; ok {
 		return h.transform(sl)
 	}

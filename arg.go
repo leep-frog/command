@@ -33,7 +33,7 @@ func (an *argNode) Execute(i *Input, o Output, data *Data, eData *ExecuteData) e
 	}
 
 	// Transform from string to value.
-	v, err := vtMap.transform(an.vt, sl, "1")
+	v, err := vtMap.transform(an.vt, sl)
 	if err != nil {
 		o.Stderr(err.Error())
 		return err
@@ -105,7 +105,7 @@ func (an *argNode) Complete(input *Input, data *Data) *CompleteData {
 	sl, enough := input.PopN(an.minN, an.optionalN)
 
 	// Try to transform from string to value.
-	v, err := vtMap.transform(an.vt, sl, "2")
+	v, err := vtMap.transform(an.vt, sl)
 	if err != nil {
 		// If we're on the last one, then complete it.
 		if !enough || input.FullyProcessed() {

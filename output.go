@@ -26,25 +26,26 @@ type Output interface {
 }
 
 type outputWriter struct {
-	stdout bool
-	output Output
+	writeFunc func(string)
 }
 
 func (ow *outputWriter) Write(b []byte) (int, error) {
-	if ow.stdout {
-		ow.output.Stdout(string(b))
-	} else {
-		ow.output.Stderr(string(b))
+	if ow.writeFunc != nil {
+		ow.writeFunc(string(b))
 	}
 	return len(b), nil
 }
 
+func DevNull() io.Writer {
+	return &outputWriter{}
+}
+
 func StdoutWriter(o Output) io.Writer {
-	return &outputWriter{true, o}
+	return &outputWriter{o.Stdout}
 }
 
 func StderrWriter(o Output) io.Writer {
-	return &outputWriter{false, o}
+	return &outputWriter{func(s string) { o.Stderr(s) }}
 }
 
 type output struct {

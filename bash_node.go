@@ -31,12 +31,23 @@ func BashCommand(vt ValueType, argName string, command []string, opts ...BashOpt
 	return bc
 }
 
+type hideStderr struct{}
+
+func (*hideStderr) modifyBashNode(bc *bashCommand) {
+	bc.hideStderr = true
+}
+
+func HideStderr() BashOption {
+	return &hideStderr{}
+}
+
 type bashCommand struct {
 	vt       ValueType
 	argName  string
 	contents []string
 
 	validators []*validatorOption
+	hideStderr bool
 }
 
 type BashOption interface {
@@ -104,30 +115,18 @@ func (bn *bashCommand) getValue(data *Data, output Output) (*Value, error) {
 	}
 
 	// Execute the contents of the file.
-	var rawOut, rawErr bytes.Buffer
+	var rawOut bytes.Buffer
 	// msys/mingw doesn't work if "bash" is excluded.
 	cmd := exec.Command("bash", f.Name())
 	cmd.Stdout = &rawOut
-	cmd.Stderr = &rawErr
+	if bn.hideStderr {
+		cmd.Stderr = DevNull()
+	} else {
+		cmd.Stderr = StderrWriter(output)
+	}
 
 	if err := run(cmd); err != nil {
-		retErr := fmt.Errorf("failed to execute bash command: %v", err)
-
-		sl, sliceErr := outToSlice(rawErr)
-		if sliceErr != nil {
-			output.Stderrf("failed to read stderr: %v", sliceErr)
-			return nil, retErr
-		}
-
-		v, tErr := vtMap.transform(StringListType, sl, "ugh")
-		if tErr != nil {
-			output.Stderrf("failed to convert stderr to string slice: %v", tErr)
-		}
-
-		for _, s := range v.StringList() {
-			output.Stderr(s)
-		}
-		return nil, retErr
+		return nil, fmt.Errorf("failed to execute bash command: %v", err)
 	}
 
 	sl, err := outToSlice(rawOut)
@@ -135,7 +134,7 @@ func (bn *bashCommand) getValue(data *Data, output Output) (*Value, error) {
 		return nil, err
 	}
 
-	return vtMap.transform(bn.vt, sl, "bn")
+	return vtMap.transform(bn.vt, sl)
 }
 
 func outToSlice(rawOut bytes.Buffer) ([]*string, error) {
