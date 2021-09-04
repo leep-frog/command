@@ -69,6 +69,9 @@ func (bn *bashCommand) set(v *Value, d *Data) {
 func (bn *bashCommand) Execute(input *Input, output Output, data *Data, eData *ExecuteData) error {
 	v, err := bn.getValue(data, output)
 	if err != nil {
+		if bn.hideStderr {
+			return err
+		}
 		return output.Err(err)
 	}
 

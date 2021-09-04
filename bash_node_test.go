@@ -62,9 +62,6 @@ func TestBashNode(t *testing.T) {
 					"echo hello",
 				}},
 				WantErr: fmt.Errorf("failed to execute bash command: oops"),
-				WantStderr: []string{
-					"failed to execute bash command: oops",
-				},
 				RunResponses: []*FakeRun{
 					{
 						Stdout: []string{"one", "two", "three"},
