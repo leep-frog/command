@@ -395,6 +395,23 @@ func TestBashNode(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "bash node with failing validators and hidden stderr",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(BashCommand(IntType, "i", []string{"echo -1248"}, IntNonNegative(), HideStderr())),
+				WantRunContents: [][]string{{
+					"set -e",
+					"set -o pipefail",
+					"echo -1248",
+				}},
+				WantErr: fmt.Errorf("validation failed: [IntNonNegative] value isn't non-negative"),
+				RunResponses: []*FakeRun{
+					{
+						Stdout: []string{"-1248"},
+					},
+				},
+			},
+		},
 		/* Useful for commenting out tests. */
 	} {
 		t.Run(test.name, func(t *testing.T) {
