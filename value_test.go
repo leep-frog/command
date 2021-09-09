@@ -12,6 +12,7 @@ func TestValueCommands(t *testing.T) {
 	for _, test := range []struct {
 		name           string
 		etc            *ExecuteTestCase
+		wantType       ValueType
 		wantString     string
 		wantStringList []string
 		wantInt        int
@@ -24,7 +25,8 @@ func TestValueCommands(t *testing.T) {
 			name: "empty value",
 		},
 		{
-			name: "string is populated",
+			name:     "string is populated",
+			wantType: StringType,
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(StringNode("argName")),
 				Args: []string{"string-val"},
@@ -40,7 +42,8 @@ func TestValueCommands(t *testing.T) {
 			wantString: "string-val",
 		},
 		{
-			name: "string list is populated",
+			name:     "string list is populated",
+			wantType: StringListType,
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(StringListNode("argName", 2, 3)),
 				Args: []string{"string", "list", "val"},
@@ -58,7 +61,8 @@ func TestValueCommands(t *testing.T) {
 			wantStringList: []string{"string", "list", "val"},
 		},
 		{
-			name: "int is populated",
+			name:     "int is populated",
+			wantType: IntType,
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(IntNode("argName")),
 				Args: []string{"123"},
@@ -74,7 +78,8 @@ func TestValueCommands(t *testing.T) {
 			wantInt: 123,
 		},
 		{
-			name: "int list is populated",
+			name:     "int list is populated",
+			wantType: IntListType,
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(IntListNode("argName", 2, 3)),
 				Args: []string{"12", "345", "6"},
@@ -92,7 +97,8 @@ func TestValueCommands(t *testing.T) {
 			wantIntList: []int{12, 345, 6},
 		},
 		{
-			name: "flaot is populated",
+			name:     "flaot is populated",
+			wantType: FloatType,
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(FloatNode("argName")),
 				Args: []string{"12.3"},
@@ -108,7 +114,8 @@ func TestValueCommands(t *testing.T) {
 			wantFloat: 12.3,
 		},
 		{
-			name: "float list is populated",
+			name:     "float list is populated",
+			wantType: FloatListType,
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(FloatListNode("argName", 2, 3)),
 				Args: []string{"1.2", "-345", ".6"},
@@ -126,7 +133,8 @@ func TestValueCommands(t *testing.T) {
 			wantFloatList: []float64{1.2, -345, .6},
 		},
 		{
-			name: "bool is populated",
+			name:     "bool is populated",
+			wantType: BoolType,
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(BoolNode("argName")),
 				Args: []string{"true"},
@@ -150,13 +158,30 @@ func TestValueCommands(t *testing.T) {
 				name := "argName"
 				v := data.get(name)
 
+				old := checkFunc
+				expect := func(w2 ValueType) {
+					checkFunc = func(g1, g2 ValueType) {
+						if test.wantType != g1 {
+							t.Errorf("Unexpected value type: want %v; got %v", test.wantType, g1)
+						}
+						if w2 != g2 {
+							t.Errorf("Unexpected value type: want %v; got %v", w2, g2)
+						}
+					}
+				}
+				defer func() { checkFunc = old }()
+
 				// strings
+				expect(StringType)
 				if diff := cmp.Diff(test.wantString, v.String()); diff != "" {
 					t.Errorf("String() produced diff (-want, +got):\n%s", diff)
 				}
 				if diff := cmp.Diff(test.wantString, data.String(name)); diff != "" {
 					t.Errorf("data.String() produced diff (-want, +got):\n%s", diff)
 				}
+
+				// string list
+				expect(StringListType)
 				if diff := cmp.Diff(test.wantStringList, v.StringList()); diff != "" {
 					t.Errorf("StringList() produced diff (-want, +got):\n%s", diff)
 				}
@@ -165,12 +190,16 @@ func TestValueCommands(t *testing.T) {
 				}
 
 				// ints
+				expect(IntType)
 				if diff := cmp.Diff(test.wantInt, v.Int()); diff != "" {
 					t.Errorf("Int() produced diff (-want, +got):\n%s", diff)
 				}
 				if diff := cmp.Diff(test.wantInt, data.Int(name)); diff != "" {
 					t.Errorf("data.Int() produced diff (-want, +got):\n%s", diff)
 				}
+
+				// int list
+				expect(IntListType)
 				if diff := cmp.Diff(test.wantIntList, v.IntList()); diff != "" {
 					t.Errorf("IntList() produced diff (-want, +got):\n%s", diff)
 				}
@@ -179,12 +208,16 @@ func TestValueCommands(t *testing.T) {
 				}
 
 				// floats
+				expect(FloatType)
 				if diff := cmp.Diff(test.wantFloat, v.Float()); diff != "" {
 					t.Errorf("Float() produced diff (-want, +got):\n%s", diff)
 				}
 				if diff := cmp.Diff(test.wantFloat, data.Float(name)); diff != "" {
 					t.Errorf("data.Float() produced diff (-want, +got):\n%s", diff)
 				}
+
+				// float list
+				expect(FloatListType)
 				if diff := cmp.Diff(test.wantFloatList, v.FloatList()); diff != "" {
 					t.Errorf("FloatList() produced diff (-want, +got):\n%s", diff)
 				}
@@ -193,6 +226,7 @@ func TestValueCommands(t *testing.T) {
 				}
 
 				// bool
+				expect(BoolType)
 				if diff := cmp.Diff(test.wantBool, v.Bool()); diff != "" {
 					t.Errorf("Bool() produced diff (-want, +got):\n%s", diff)
 				}
@@ -570,9 +604,9 @@ func TestValueEqualAndJSONMarshaling(t *testing.T) {
 
 func TestValueTypeErrors(t *testing.T) {
 	for _, val := range []int{0, 8, -3, 15} {
-		t.Run(fmt.Sprintf("marshaling ValueType(%d)", val), func(t *testing.T) {
+		t.Run(fmt.Sprintf("marshaling ValueType(%v)", val), func(t *testing.T) {
 			vt := ValueType(val)
-			wantErr := fmt.Sprintf("json: error calling MarshalJSON for type command.ValueType: unknown ValueType: %d", val)
+			wantErr := fmt.Sprintf("json: error calling MarshalJSON for type command.ValueType: unknown ValueType: %v", vt)
 			_, err := json.Marshal(vt)
 			if err == nil {
 				t.Fatalf("json.Marshal(%v) returned nil error; want %q", vt, wantErr)
@@ -645,19 +679,19 @@ func TestValueTypeErrors(t *testing.T) {
 		{
 			name:    "empty value",
 			val:     &Value{},
-			wantErr: "json: error calling MarshalJSON for type *command.Value: unknown ValueType: 0",
+			wantErr: "json: error calling MarshalJSON for type *command.Value: unknown ValueType: UNKNOWN_VALUE_TYPE",
 			wantStr: "UNKNOWN_VALUE_TYPE",
 		},
 		{
 			name:    "value with invalid type",
 			val:     &Value{type_: 8},
-			wantErr: "json: error calling MarshalJSON for type *command.Value: unknown ValueType: 8",
+			wantErr: "json: error calling MarshalJSON for type *command.Value: unknown ValueType: UNKNOWN_VALUE_TYPE",
 			wantStr: "UNKNOWN_VALUE_TYPE",
 		},
 		{
 			name:    "value with other invalid type",
 			val:     &Value{type_: -1},
-			wantErr: "json: error calling MarshalJSON for type *command.Value: unknown ValueType: -1",
+			wantErr: "json: error calling MarshalJSON for type *command.Value: unknown ValueType: UNKNOWN_VALUE_TYPE",
 			wantStr: "UNKNOWN_VALUE_TYPE",
 		},
 	} {

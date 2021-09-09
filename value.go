@@ -18,6 +18,10 @@ type valueTypeHandler interface {
 	typeString() string
 }
 
+func (vt ValueType) String() string {
+	return vtMap.typeString(vt)
+}
+
 type valueHandler map[ValueType]valueTypeHandler
 
 func (vh *valueHandler) parseAuxValue(av *auxValue) *Value {
@@ -238,10 +242,23 @@ func (v *Value) UnmarshalJSON(b []byte) error {
 	return err
 }
 
+var (
+	checkFunc = func(actual, want ValueType) {
+		if want != actual {
+			panic(fmt.Sprintf("Requested value of type %v when actual type is %v", want, actual))
+		}
+	}
+)
+
+func (v *Value) checkType(vt ValueType) {
+	checkFunc(v.type_, vt)
+}
+
 func (v *Value) String() string {
 	if v == nil || v.string == nil {
 		return ""
 	}
+	v.checkType(StringType)
 	return *v.string
 }
 
@@ -249,6 +266,7 @@ func (v *Value) Int() int {
 	if v == nil || v.int == nil {
 		return 0
 	}
+	v.checkType(IntType)
 	return *v.int
 }
 
@@ -256,6 +274,7 @@ func (v *Value) Float() float64 {
 	if v == nil || v.float == nil {
 		return 0
 	}
+	v.checkType(FloatType)
 	return *v.float
 }
 
@@ -263,6 +282,7 @@ func (v *Value) Bool() bool {
 	if v == nil || v.bool == nil {
 		return false
 	}
+	v.checkType(BoolType)
 	return *v.bool
 }
 
@@ -270,6 +290,7 @@ func (v *Value) StringList() []string {
 	if v == nil {
 		return nil
 	}
+	v.checkType(StringListType)
 	return v.stringList
 }
 
@@ -277,6 +298,7 @@ func (v *Value) IntList() []int {
 	if v == nil {
 		return nil
 	}
+	v.checkType(IntListType)
 	return v.intList
 }
 
@@ -284,6 +306,7 @@ func (v *Value) FloatList() []float64 {
 	if v == nil {
 		return nil
 	}
+	v.checkType(FloatListType)
 	return v.floatList
 }
 

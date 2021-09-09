@@ -464,8 +464,8 @@ func TestExecute(t *testing.T) {
 				WantData: &Data{
 					"strArg": StringValue("123"),
 				},
-				WantStderr: []string{"validation failed: option can only be bound to arguments with type 3"},
-				WantErr:    fmt.Errorf("validation failed: option can only be bound to arguments with type 3"),
+				WantStderr: []string{"validation failed: option can only be bound to arguments with type Int"},
+				WantErr:    fmt.Errorf("validation failed: option can only be bound to arguments with type Int"),
 			},
 		},
 		// Contains
@@ -1939,8 +1939,8 @@ func TestExecute(t *testing.T) {
 				wantInput: &Input{
 					args: []*inputArg{{value: "hello"}},
 				},
-				WantErr:    fmt.Errorf("Transformer of type 3 cannot be applied to a value with type 2"),
-				WantStderr: []string{"Transformer of type 3 cannot be applied to a value with type 2"},
+				WantErr:    fmt.Errorf("Transformer of type Int cannot be applied to a value with type String"),
+				WantStderr: []string{"Transformer of type Int cannot be applied to a value with type String"},
 			},
 		},
 		// BranchNode tests
