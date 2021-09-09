@@ -75,15 +75,9 @@ func (bn *bashCommand) Execute(input *Input, output Output, data *Data, eData *E
 }
 
 func (bn *bashCommand) execute(input *Input, output Output, data *Data, eData *ExecuteData) error {
-	v, err := bn.getValue(data, output)
+	v, err := bn.Run(output)
 	if err != nil {
 		return err
-	}
-
-	for _, validator := range bn.validators {
-		if err := validator.Validate(v); err != nil {
-			return fmt.Errorf("validation failed: %v", err)
-		}
 	}
 
 	bn.set(v, data)
@@ -94,7 +88,7 @@ func DebugMode() bool {
 	return os.Getenv("LEEP_FROG_DEBUG") != ""
 }
 
-func (bn *bashCommand) getValue(data *Data, output Output) (*Value, error) {
+func (bn *bashCommand) Run(output Output) (*Value, error) {
 	// Create temp file.
 	f, err := ioutil.TempFile("", "leepFrogCommandExecution")
 	if err != nil {
@@ -142,7 +136,18 @@ func (bn *bashCommand) getValue(data *Data, output Output) (*Value, error) {
 		return nil, err
 	}
 
-	return vtMap.transform(bn.vt, sl)
+	v, err := vtMap.transform(bn.vt, sl)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, validator := range bn.validators {
+		if err := validator.Validate(v); err != nil {
+			return nil, fmt.Errorf("validation failed: %v", err)
+		}
+	}
+
+	return v, nil
 }
 
 func outToSlice(rawOut bytes.Buffer) ([]*string, error) {
