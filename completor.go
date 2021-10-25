@@ -345,3 +345,12 @@ func getAutofillLetters(laFile string, suggestions []string) (string, bool) {
 	}
 	return caseToCompleteWith[:completeUpTo], true
 }
+
+// TODO: add opts to this to populate the file fetcher.
+// TODO: add FileListNode too
+func FileNode(argName string) Processor {
+	ao := &Completor{
+		SuggestionFetcher: &FileFetcher{},
+	}
+	return StringNode(argName, ao)
+}
