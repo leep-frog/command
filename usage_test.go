@@ -1,6 +1,13 @@
 package command
 
-import "testing"
+import (
+	"testing"
+)
+
+const (
+	aliasDesc = "  *: Start of new aliasable section"
+	cacheDesc = "  ^: Start of new cachable section"
+)
 
 func TestUsage(t *testing.T) {
 	for _, test := range []struct {
@@ -68,6 +75,46 @@ func TestUsage(t *testing.T) {
 					"",
 					"Arguments:",
 					"  SARG: test desc",
+				},
+			},
+		},
+		{
+			name: "works with alias",
+			utc: &UsageTestCase{
+				Node: AliasNode("aliasName", nil, SerialNodes(
+					Description("command desc"),
+					StringListNode("SARG", testDesc, 0, UnboundedList),
+					SimpleProcessor(nil, nil),
+				)),
+				WantString: []string{
+					"command desc",
+					"* [ SARG ... ]",
+					"",
+					"Arguments:",
+					"  SARG: test desc",
+					"\n",
+					"Symbols:",
+					aliasDesc,
+				},
+			},
+		},
+		{
+			name: "works with cache",
+			utc: &UsageTestCase{
+				Node: CacheNode("cacheName", nil, SerialNodes(
+					Description("command desc"),
+					StringListNode("SARG", testDesc, 0, UnboundedList),
+					SimpleProcessor(nil, nil),
+				)),
+				WantString: []string{
+					"command desc",
+					"^ [ SARG ... ]",
+					"",
+					"Arguments:",
+					"  SARG: test desc",
+					"\n",
+					"Symbols:",
+					cacheDesc,
 				},
 			},
 		},

@@ -15,7 +15,20 @@ func CacheNode(name string, c CachableCLI, n *Node) *Node {
 			c:    c,
 			n:    n,
 		},
+		Edge: &cacheUsageNode{n},
 	}
+}
+
+type cacheUsageNode struct {
+	n *Node
+}
+
+func (cun *cacheUsageNode) Next(i *Input, d *Data) (*Node, error) {
+	return nil, nil
+}
+
+func (cun *cacheUsageNode) UsageNext() *Node {
+	return cun.n
 }
 
 type commandCache struct {
