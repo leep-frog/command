@@ -23,11 +23,48 @@ func TestUsage(t *testing.T) {
 			},
 		},
 		{
+			name: "works with optional arg",
+			utc: &UsageTestCase{
+				Node: SerialNodes(OptionalStringNode("SARG", "desc")),
+				WantString: []string{
+					"[ SARG ]",
+					"",
+					"Arguments:",
+					"  SARG: desc",
+				},
+			},
+		},
+		{
+			name: "works with single arg and description node",
+			utc: &UsageTestCase{
+				Node: SerialNodes(StringNode("SARG", "desc"), Description("Does absolutely nothing")),
+				WantString: []string{
+					"Does absolutely nothing",
+					"SARG",
+					"",
+					"Arguments:",
+					"  SARG: desc",
+				},
+			},
+		},
+		{
 			name: "works with list arg",
 			utc: &UsageTestCase{
 				Node: SerialNodes(StringListNode("SARG", testDesc, 2, 3)),
 				WantString: []string{
-					"SARG",
+					"SARG SARG [ SARG SARG SARG ]",
+					"",
+					"Arguments:",
+					"  SARG: test desc",
+				},
+			},
+		},
+		{
+			name: "works with unbounded list arg",
+			utc: &UsageTestCase{
+				Node: SerialNodes(StringListNode("SARG", testDesc, 0, UnboundedList)),
+				WantString: []string{
+					"[ SARG ... ]",
 					"",
 					"Arguments:",
 					"  SARG: test desc",

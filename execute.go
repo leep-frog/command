@@ -124,16 +124,20 @@ type Edge interface {
 	UsageNext() *Node
 }
 
-func PopulateUsage(n *Node, u *Usage) {
+func GetUsage(n *Node) *Usage {
+	u := &Usage{
+		UsageSection: &UsageSection{},
+	}
 	for n != nil {
 		n.Processor.Usage(u)
 
 		if n.Edge == nil {
-			return
+			return u
 		}
 
 		n = n.Edge.UsageNext()
 	}
+	return u
 }
 
 func Execute(n *Node, input *Input, output Output) (*ExecuteData, error) {

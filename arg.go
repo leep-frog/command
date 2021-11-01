@@ -1,5 +1,7 @@
 package command
 
+import "fmt"
+
 type argNode struct {
 	name      string
 	desc      string
@@ -25,7 +27,20 @@ func (an *argNode) Usage(u *Usage) {
 		u.UsageSection.Add(ArgSection, an.name, an.desc)
 	}
 
-	u.Usage = append(u.Usage, an.name)
+	for i := 0; i < an.minN; i++ {
+		u.Usage = append(u.Usage, an.name)
+	}
+	if an.optionalN == UnboundedList {
+		u.Usage = append(u.Usage, fmt.Sprintf("[ %s ... ]", an.name))
+	} else {
+		if an.optionalN > 0 {
+			u.Usage = append(u.Usage, "[")
+			for i := 0; i < an.optionalN; i++ {
+				u.Usage = append(u.Usage, an.name)
+			}
+			u.Usage = append(u.Usage, "]")
+		}
+	}
 }
 
 func (an *argNode) Execute(i *Input, o Output, data *Data, eData *ExecuteData) error {
@@ -86,6 +101,10 @@ func (an *argNode) Execute(i *Input, o Output, data *Data, eData *ExecuteData) e
 func IsNotEnoughArgsError(err error) bool {
 	_, ok := err.(*notEnoughArgs)
 	return ok
+}
+
+func IsUsageError(err error) bool {
+	return IsNotEnoughArgsError(err) || IsExtraArgsError(err)
 }
 
 func NotEnoughArgs() error {

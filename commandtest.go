@@ -74,11 +74,7 @@ func UsageTest(t *testing.T, utc *UsageTestCase) {
 		utc = &UsageTestCase{}
 	}
 
-	u := &Usage{
-		UsageSection: &UsageSection{},
-	}
-	PopulateUsage(utc.Node, u)
-	if diff := cmp.Diff(strings.Join(utc.WantString, "\n"), u.String()); diff != "" {
+	if diff := cmp.Diff(strings.Join(utc.WantString, "\n"), GetUsage(utc.Node).String()); diff != "" {
 		t.Errorf("UsageString() returned incorrect response (-want, +got):\n%s", diff)
 	}
 }

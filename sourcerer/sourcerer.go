@@ -100,6 +100,10 @@ func execute(cli CLI, executeFile string, args []string) {
 	eData, err := command.Execute(cli.Node(), command.ParseExecuteArgs(args), output)
 	output.Close()
 	if err != nil {
+		if command.IsUsageError(err) {
+			u := command.GetUsage(cli.Node())
+			output.Stderr(u.String())
+		}
 		// Commands are responsible for printing out error messages so
 		// we just return if there are any issues here
 		os.Exit(1)
