@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"os/exec"
 	"runtime"
 	"strconv"
 	"strings"
@@ -274,4 +275,32 @@ func save(c CLI) error {
 
 func cacheKey(cli CLI) string {
 	return fmt.Sprintf("leep-frog-cache-key-%s", cli.Name())
+}
+
+// TODO: add these to clis.go and look into (potential) performance issues
+// might need to allow for multiple binaries (binary per CLI?)
+func SimpleCommands(m map[string]string) []CLI {
+	cs := []CLI{}
+	for name, cmd := range m {
+		cs = append(cs, &bashCLI{name, cmd})
+	}
+	return cs
+}
+
+type bashCLI struct {
+	name          string
+	commandString string
+}
+
+func (bc *bashCLI) Changed() bool     { return false }
+func (bc *bashCLI) Setup() []string   { return nil }
+func (bc *bashCLI) Load(string) error { return nil }
+func (bc *bashCLI) Name() string      { return bc.name }
+func (bc *bashCLI) Node() *command.Node {
+	return command.SerialNodes(command.ExecutorNode(func(o command.Output, d *command.Data) error {
+		cmd := exec.Command("bash", bc.commandString)
+		cmd.Stdout = command.StdoutWriter(o)
+		cmd.Stderr = command.StderrWriter(o)
+		return cmd.Run()
+	}))
 }

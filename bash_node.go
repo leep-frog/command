@@ -45,6 +45,7 @@ type bashCommand struct {
 	vt       ValueType
 	argName  string
 	contents []string
+	desc     string
 
 	validators []*validatorOption
 	hideStderr bool
@@ -60,6 +61,10 @@ func (bn *bashCommand) Get(d *Data) *Value {
 
 func (bn *bashCommand) Complete(input *Input, data *Data) *CompleteData {
 	return nil
+}
+
+func (bn *bashCommand) Usage(u *Usage) {
+	u.Description = bn.desc
 }
 
 func (bn *bashCommand) set(v *Value, d *Data) {

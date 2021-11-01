@@ -24,6 +24,11 @@ type commandCache struct {
 	n    *Node
 }
 
+func (cc *commandCache) Usage(u *Usage) {
+	u.UsageSection.Add(SymbolSection, "^", "Start of new cachable section")
+	u.Usage = append(u.Usage, "^")
+}
+
 func (cc *commandCache) Complete(input *Input, data *Data) *CompleteData {
 	return getCompleteData(cc.n, input, data)
 }

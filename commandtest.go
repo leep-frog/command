@@ -15,6 +15,11 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 )
 
+type UsageTestCase struct {
+	Node       *Node
+	WantString []string
+}
+
 type ExecuteTestCase struct {
 	Node *Node
 	Args []string
@@ -60,6 +65,22 @@ func setupForTest(t *testing.T, contents []string) string {
 		fmt.Fprintln(f, s)
 	}
 	return f.Name()
+}
+
+func UsageTest(t *testing.T, utc *UsageTestCase) {
+	t.Helper()
+
+	if utc == nil {
+		utc = &UsageTestCase{}
+	}
+
+	u := &Usage{
+		UsageSection: &UsageSection{},
+	}
+	PopulateUsage(utc.Node, u)
+	if diff := cmp.Diff(strings.Join(utc.WantString, "\n"), u.String()); diff != "" {
+		t.Errorf("UsageString() returned incorrect response (-want, +got):\n%s", diff)
+	}
 }
 
 func ExecuteTest(t *testing.T, etc *ExecuteTestCase) {

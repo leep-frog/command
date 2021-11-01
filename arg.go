@@ -2,6 +2,7 @@ package command
 
 type argNode struct {
 	name      string
+	desc      string
 	opt       *argOpt
 	minN      int
 	optionalN int
@@ -17,6 +18,14 @@ func (an *argNode) Set(v *Value, data *Data) {
 	} else {
 		data.Set(an.name, v)
 	}
+}
+
+func (an *argNode) Usage(u *Usage) {
+	if an.desc != "" {
+		u.UsageSection.Add(ArgSection, an.name, an.desc)
+	}
+
+	u.Usage = append(u.Usage, an.name)
 }
 
 func (an *argNode) Execute(i *Input, o Output, data *Data, eData *ExecuteData) error {
@@ -165,49 +174,50 @@ func (an *argNode) Complete(input *Input, data *Data) *CompleteData {
 	}
 }
 
-func StringListNode(name string, minN, optionalN int, opts ...ArgOpt) Processor {
-	return listNode(name, minN, optionalN, StringListType, opts...)
+func StringListNode(name, desc string, minN, optionalN int, opts ...ArgOpt) Processor {
+	return listNode(name, desc, minN, optionalN, StringListType, opts...)
 }
 
-func IntListNode(name string, minN, optionalN int, opts ...ArgOpt) Processor {
-	return listNode(name, minN, optionalN, IntListType, opts...)
+func IntListNode(name, desc string, minN, optionalN int, opts ...ArgOpt) Processor {
+	return listNode(name, desc, minN, optionalN, IntListType, opts...)
 }
 
-func FloatListNode(name string, minN, optionalN int, opts ...ArgOpt) Processor {
-	return listNode(name, minN, optionalN, FloatListType, opts...)
+func FloatListNode(name, desc string, minN, optionalN int, opts ...ArgOpt) Processor {
+	return listNode(name, desc, minN, optionalN, FloatListType, opts...)
 }
 
-func StringNode(name string, opts ...ArgOpt) Processor {
-	return listNode(name, 1, 0, StringType, opts...)
+func StringNode(name, desc string, opts ...ArgOpt) Processor {
+	return listNode(name, desc, 1, 0, StringType, opts...)
 }
 
-func OptionalStringNode(name string, opts ...ArgOpt) Processor {
-	return listNode(name, 0, 1, StringType, opts...)
+func OptionalStringNode(name, desc string, opts ...ArgOpt) Processor {
+	return listNode(name, desc, 0, 1, StringType, opts...)
 }
 
-func IntNode(name string, opts ...ArgOpt) Processor {
-	return listNode(name, 1, 0, IntType, opts...)
+func IntNode(name, desc string, opts ...ArgOpt) Processor {
+	return listNode(name, desc, 1, 0, IntType, opts...)
 }
 
-func OptionalIntNode(name string, opts ...ArgOpt) Processor {
-	return listNode(name, 0, 1, IntType, opts...)
+func OptionalIntNode(name, desc string, opts ...ArgOpt) Processor {
+	return listNode(name, desc, 0, 1, IntType, opts...)
 }
 
-func FloatNode(name string, opts ...ArgOpt) Processor {
-	return listNode(name, 1, 0, FloatType, opts...)
+func FloatNode(name, desc string, opts ...ArgOpt) Processor {
+	return listNode(name, desc, 1, 0, FloatType, opts...)
 }
 
-func OptionalFloatNode(name string, opts ...ArgOpt) Processor {
-	return listNode(name, 0, 1, FloatType, opts...)
+func OptionalFloatNode(name, desc string, opts ...ArgOpt) Processor {
+	return listNode(name, desc, 0, 1, FloatType, opts...)
 }
 
-func BoolNode(name string) Processor {
-	return listNode(name, 1, 0, BoolType, BoolCompletor())
+func BoolNode(name, desc string) Processor {
+	return listNode(name, desc, 1, 0, BoolType, BoolCompletor())
 }
 
-func listNode(name string, minN, optionalN int, vt ValueType, opts ...ArgOpt) Processor {
+func listNode(name, desc string, minN, optionalN int, vt ValueType, opts ...ArgOpt) Processor {
 	return &argNode{
 		name:      name,
+		desc:      desc,
 		minN:      minN,
 		optionalN: optionalN,
 		opt:       newArgOpt(opts...),

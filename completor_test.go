@@ -143,7 +143,7 @@ func TestCompletors(t *testing.T) {
 		},*/
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			gn := SerialNodes(StringListNode("test", 2, 5, test.c))
+			gn := SerialNodes(StringListNode("test", testDesc, 2, 5, test.c))
 			got := Autocomplete(gn, test.args)
 			if diff := cmp.Diff(test.want, got); diff != "" {
 				t.Errorf("genericAutocomplete(%v, %v) returned diff (-want, +got):\n%s", gn, test.args, diff)
@@ -519,7 +519,7 @@ func TestParseAndComplete(t *testing.T) {
 					Options: test.suggestions,
 				},
 			}
-			n := SerialNodes(StringListNode("sl", 0, UnboundedList, c))
+			n := SerialNodes(StringListNode("sl", testDesc, 0, UnboundedList, c))
 
 			data := &Data{}
 			got := autocomplete(n, test.args, data)
@@ -1135,9 +1135,9 @@ func TestFetchers(t *testing.T) {
 				Distinct:          test.distinct,
 			}
 
-			gn := SerialNodes(StringListNode("test", 2, 5, completor))
+			gn := SerialNodes(StringListNode("test", testDesc, 2, 5, completor))
 			if test.stringArg {
-				gn = SerialNodes(StringNode("test", completor))
+				gn = SerialNodes(StringNode("test", testDesc, completor))
 			}
 
 			got := Autocomplete(gn, test.args)

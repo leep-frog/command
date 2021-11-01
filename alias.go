@@ -9,8 +9,7 @@ import (
 
 var (
 	aliasArgName = "ALIAS"
-	aliasArg     = StringNode(aliasArgName, MinLength(1))
-	aliasesArg   = StringListNode(aliasArgName, 1, UnboundedList)
+	aliasArg     = StringNode(aliasArgName, "TODO alias desc", MinLength(1))
 )
 
 type aliasedArg struct {
@@ -93,13 +92,17 @@ func aliasCompletor(name string, ac AliasCLI) *Completor {
 	}
 }
 
+const (
+	hiddenNodeDesc = "hidden_node"
+)
+
 func aliasListArg(name string, ac AliasCLI) Processor {
-	return StringListNode(aliasArgName, 1, UnboundedList, aliasCompletor(name, ac))
+	return StringListNode(aliasArgName, hiddenNodeDesc, 1, UnboundedList, aliasCompletor(name, ac))
 }
 
 func aliasSearcher(name string, ac AliasCLI, n *Node) *Node {
 	// TODO: make regexp arg type (maybe after Go implements type parameters).
-	regexArg := StringListNode("regexp", 1, UnboundedList)
+	regexArg := StringListNode("regexp", hiddenNodeDesc, 1, UnboundedList)
 	return SerialNodes(regexArg, ExecutorNode(func(output Output, data *Data) error {
 		rs := []*regexp.Regexp{}
 		for _, r := range data.StringList("regexp") {
@@ -186,6 +189,12 @@ type executeAlias struct {
 	name string
 }
 
+func (ea *executeAlias) Usage(u *Usage) {
+	u.UsageSection.Add(SymbolSection, "*", "Start of new aliasable section")
+	// TODO: show alias subcommands on --help
+	u.Usage = append(u.Usage, "*")
+}
+
 func (ea *executeAlias) Execute(input *Input, output Output, data *Data, eData *ExecuteData) error {
 	return output.Err(input.CheckAliases(1, ea.ac, ea.name, false))
 }
@@ -203,6 +212,10 @@ type addAlias struct {
 	node *Node
 	ac   AliasCLI
 	name string
+}
+
+func (aa *addAlias) Usage(*Usage) {
+	return
 }
 
 func (aa *addAlias) Execute(input *Input, output Output, data *Data, _ *ExecuteData) error {

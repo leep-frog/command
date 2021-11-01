@@ -2,6 +2,8 @@ package command
 
 import (
 	"fmt"
+	"sort"
+	"strings"
 )
 
 type Node struct {
@@ -9,14 +11,129 @@ type Node struct {
 	Edge      Edge
 }
 
+const (
+	ArgSection    = "Arguments"
+	FlagSection   = "Flags"
+	SymbolSection = "Symbols"
+
+	UsageDepth = 0
+)
+
+type Usage struct {
+	// Sections is a map from section name to phrase for that section to description for that key.
+	// Only displayed when --help flag is provided
+	UsageSection *UsageSection
+	// Description is the usage doc for the command
+	Description string
+	Usage       []string
+
+	SubSections []*Usage
+}
+
+func (u *Usage) String() string {
+	var r []string
+	r = u.string(r, 0)
+
+	var sections []string
+	if u.UsageSection != nil {
+		for s := range *u.UsageSection {
+			sections = append(sections, s)
+		}
+		sort.Strings(sections)
+		for _, sk := range sections {
+			r = append(r, fmt.Sprintf("%s:", sk))
+			kvs := (*u.UsageSection)[sk]
+			var keys []string
+			for k := range kvs {
+				keys = append(keys, k)
+			}
+			sort.Strings(keys)
+			for _, k := range keys {
+				r = append(r, fmt.Sprintf("  %s: %s", k, kvs[k]))
+			}
+
+			r = append(r, "\n")
+		}
+	}
+
+	i := len(r) - 1
+	for ; i > 0 && r[i-1] == ""; i-- {
+	}
+	r = r[:i]
+
+	return strings.Join(r, "\n")
+}
+
+func (u *Usage) string(r []string, depth int) []string {
+	prefix := strings.Repeat(" ", depth*2)
+	if u.Description != "" {
+		r = append(r, prefix+u.Description)
+	}
+	r = append(r, prefix+strings.Join(u.Usage, " "))
+	r = append(r, "") // since we join with newlines, this just adds one extra newline
+
+	for _, su := range u.SubSections {
+		r = su.string(r, depth+1)
+
+		for section, m := range *su.UsageSection {
+			for k, v := range m {
+				u.UsageSection.Add(section, k, v)
+			}
+		}
+	}
+	return r
+}
+
+type UsageSection map[string]map[string]string
+
+func (us *UsageSection) Add(section, key, value string) {
+	if (*us)[section] == nil {
+		(*us)[section] = map[string]string{}
+	}
+	(*us)[section][key] = value
+}
+
+type descNode struct {
+	desc string
+}
+
+func Description(desc string) Processor {
+	return &descNode{desc}
+}
+
+func (dn *descNode) Usage(u *Usage) {
+	u.Description = dn.desc
+}
+
+func (dn *descNode) Execute(*Input, Output, *Data, *ExecuteData) error {
+	return nil
+}
+
+func (dn *descNode) Complete(*Input, *Data) *CompleteData {
+	return nil
+}
+
 type Processor interface {
 	Execute(*Input, Output, *Data, *ExecuteData) error
-	// Complete should return complete data if there was an error or a completion can be made.
 	Complete(*Input, *Data) *CompleteData
+	Usage(*Usage)
 }
 
 type Edge interface {
 	Next(*Input, *Data) (*Node, error)
+	UsageNext() *Node
+}
+
+func PopulateUsage(n *Node, u *Usage) {
+	for n != nil {
+		n.Processor.Usage(u)
+
+		if n.Edge == nil {
+			return
+		}
+
+		n = n.Edge.UsageNext()
+	}
 }
 
 func Execute(n *Node, input *Input, output Output) (*ExecuteData, error) {

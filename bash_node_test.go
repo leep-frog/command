@@ -2,10 +2,14 @@ package command
 
 import (
 	"fmt"
+	"runtime"
 	"testing"
 )
 
 func TestBashNode(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip(runtime.GOOS, "bash tests do not work with windows")
+	}
 	for _, test := range []struct {
 		name string
 		etc  *ExecuteTestCase

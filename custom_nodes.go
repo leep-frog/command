@@ -11,7 +11,7 @@ const (
 
 var (
 	// TODO: file validator
-	SetupArg = StringNode(SetupArgName)
+	SetupArg = FileNode(SetupArgName, "file used to run setup for command")
 )
 
 type simpleEdge struct {
@@ -20,6 +20,10 @@ type simpleEdge struct {
 
 func (se *simpleEdge) Next(*Input, *Data) (*Node, error) {
 	return se.n, nil
+}
+
+func (se *simpleEdge) UsageNext() *Node {
+	return se.n
 }
 
 func SimpleEdge(n *Node) Edge {
@@ -54,6 +58,7 @@ func SerialNodesTo(to *Node, p Processor, ps ...Processor) *Node {
 
 type executor struct {
 	executor func(Output, *Data) error
+	desc     string
 }
 
 func (e *executor) Execute(_ *Input, _ Output, _ *Data, eData *ExecuteData) error {
@@ -63,6 +68,10 @@ func (e *executor) Execute(_ *Input, _ Output, _ *Data, eData *ExecuteData) erro
 
 func (e *executor) Complete(*Input, *Data) *CompleteData {
 	return nil
+}
+
+func (e *executor) Usage(u *Usage) {
+	u.Description = e.desc
 }
 
 func ExecutorNode(f func(Output, *Data) error) Processor {
@@ -120,6 +129,7 @@ func (bn *branchNode) getNext(input *Input, data *Data) error {
 	s, ok := input.Peek()
 	if !ok {
 		if bn.def == nil {
+			// TODO: display usage.
 			return fmt.Errorf("branching argument required")
 		}
 		bn.next = bn.def
@@ -149,6 +159,24 @@ func (bn *branchNode) Next(input *Input, data *Data) (*Node, error) {
 	return bn.next, nil
 }
 
+func (bn *branchNode) UsageNext() *Node {
+	return nil
+}
+
+func (bn *branchNode) Usage(u *Usage) {
+	for name, n := range bn.branches {
+		// TODO: create new usage and get it for branch
+		_ = n
+
+		subUsage := &Usage{
+			Usage: []string{name},
+		}
+		//subUsage = getUsage(n)
+
+		u.SubSections = append(u.SubSections, subUsage)
+	}
+}
+
 func BranchNode(branches map[string]*Node, dflt *Node, completeSubcommands bool) *Node {
 	if branches == nil {
 		branches = map[string]*Node{}
@@ -172,8 +200,15 @@ func SimpleProcessor(e func(*Input, Output, *Data, *ExecuteData) error, c func(*
 }
 
 type simpleProcessor struct {
-	e func(*Input, Output, *Data, *ExecuteData) error
-	c func(*Input, *Data) *CompleteData
+	e    func(*Input, Output, *Data, *ExecuteData) error
+	c    func(*Input, *Data) *CompleteData
+	desc string
+}
+
+func (sp *simpleProcessor) Usage(u *Usage) {
+	if sp.desc != "" {
+		u.Description = sp.desc
+	}
 }
 
 func (sp *simpleProcessor) Execute(i *Input, o Output, d *Data, e *ExecuteData) error {

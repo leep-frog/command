@@ -28,7 +28,7 @@ func TestValueCommands(t *testing.T) {
 			name:     "string is populated",
 			wantType: StringType,
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(StringNode("argName")),
+				Node: SerialNodes(StringNode("argName", testDesc)),
 				Args: []string{"string-val"},
 				WantData: &Data{
 					"argName": StringValue("string-val"),
@@ -45,7 +45,7 @@ func TestValueCommands(t *testing.T) {
 			name:     "string list is populated",
 			wantType: StringListType,
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(StringListNode("argName", 2, 3)),
+				Node: SerialNodes(StringListNode("argName", testDesc, 2, 3)),
 				Args: []string{"string", "list", "val"},
 				WantData: &Data{
 					"argName": StringListValue("string", "list", "val"),
@@ -64,7 +64,7 @@ func TestValueCommands(t *testing.T) {
 			name:     "int is populated",
 			wantType: IntType,
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(IntNode("argName")),
+				Node: SerialNodes(IntNode("argName", testDesc)),
 				Args: []string{"123"},
 				WantData: &Data{
 					"argName": IntValue(123),
@@ -81,7 +81,7 @@ func TestValueCommands(t *testing.T) {
 			name:     "int list is populated",
 			wantType: IntListType,
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(IntListNode("argName", 2, 3)),
+				Node: SerialNodes(IntListNode("argName", testDesc, 2, 3)),
 				Args: []string{"12", "345", "6"},
 				WantData: &Data{
 					"argName": IntListValue(12, 345, 6),
@@ -100,7 +100,7 @@ func TestValueCommands(t *testing.T) {
 			name:     "flaot is populated",
 			wantType: FloatType,
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(FloatNode("argName")),
+				Node: SerialNodes(FloatNode("argName", testDesc)),
 				Args: []string{"12.3"},
 				WantData: &Data{
 					"argName": FloatValue(12.3),
@@ -117,7 +117,7 @@ func TestValueCommands(t *testing.T) {
 			name:     "float list is populated",
 			wantType: FloatListType,
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(FloatListNode("argName", 2, 3)),
+				Node: SerialNodes(FloatListNode("argName", testDesc, 2, 3)),
 				Args: []string{"1.2", "-345", ".6"},
 				WantData: &Data{
 					"argName": FloatListValue(1.2, -345, 0.6),
@@ -136,7 +136,7 @@ func TestValueCommands(t *testing.T) {
 			name:     "bool is populated",
 			wantType: BoolType,
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(BoolNode("argName")),
+				Node: SerialNodes(BoolNode("argName", testDesc)),
 				Args: []string{"true"},
 				WantData: &Data{
 					"argName": TrueValue(),
