@@ -75,9 +75,11 @@ func (u *Usage) string(r []string, depth int) []string {
 	for _, su := range u.SubSections {
 		r = su.string(r, depth+1)
 
-		for section, m := range *su.UsageSection {
-			for k, v := range m {
-				u.UsageSection.Add(section, k, v)
+		if su.UsageSection != nil {
+			for section, m := range *su.UsageSection {
+				for k, v := range m {
+					u.UsageSection.Add(section, k, v)
+				}
 			}
 		}
 	}
