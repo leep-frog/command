@@ -160,20 +160,23 @@ func (bn *branchNode) Next(input *Input, data *Data) (*Node, error) {
 }
 
 func (bn *branchNode) UsageNext() *Node {
-	return nil
+	return bn.def
 }
 
 func (bn *branchNode) Usage(u *Usage) {
-	for name, n := range bn.branches {
-		// TODO: create new usage and get it for branch
-		_ = n
+	u.UsageSection.Add(SymbolSection, "<", "start of subcommand branches")
+	u.Usage = append(u.Usage, "<")
 
-		subUsage := &Usage{
-			Usage: []string{name},
-		}
-		//subUsage = getUsage(n)
+	var names []string
+	for name := range bn.branches {
+		names = append(names, name)
+	}
+	sort.Strings(names)
 
-		u.SubSections = append(u.SubSections, subUsage)
+	for _, name := range names {
+		su := GetUsage(bn.branches[name])
+		su.Usage = append([]string{name}, su.Usage...)
+		u.SubSections = append(u.SubSections, su)
 	}
 }
 
