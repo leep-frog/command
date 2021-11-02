@@ -58,7 +58,6 @@ func SerialNodesTo(to *Node, p Processor, ps ...Processor) *Node {
 
 type executor struct {
 	executor func(Output, *Data) error
-	desc     string
 }
 
 func (e *executor) Execute(_ *Input, _ Output, _ *Data, eData *ExecuteData) error {
@@ -71,7 +70,7 @@ func (e *executor) Complete(*Input, *Data) *CompleteData {
 }
 
 func (e *executor) Usage(u *Usage) {
-	u.Description = e.desc
+	return
 }
 
 func ExecutorNode(f func(Output, *Data) error) Processor {
