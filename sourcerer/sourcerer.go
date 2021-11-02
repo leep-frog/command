@@ -217,7 +217,7 @@ func Source(clis ...CLI) {
 		// (cli, filename (for ExecuteData.Exectuable), args)
 		execute(cli, os.Args[2], os.Args[4:])
 	case "usage":
-		fmt.Println(command.GetUsage(cli.Node()))
+		fmt.Println(command.GetUsage(cli.Node()).String())
 	default:
 		log.Fatalf("unknown process: %v", os.Args)
 	}
