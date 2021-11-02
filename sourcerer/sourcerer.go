@@ -302,7 +302,7 @@ func (bc *bashCLI) Load(string) error { return nil }
 func (bc *bashCLI) Name() string      { return bc.name }
 func (bc *bashCLI) Node() *command.Node {
 	return command.SerialNodes(command.ExecutorNode(func(o command.Output, d *command.Data) error {
-		cmd := exec.Command("bash", bc.commandString)
+		cmd := exec.Command("bash", "-c", bc.commandString)
 		cmd.Stdout = command.StdoutWriter(o)
 		cmd.Stderr = command.StderrWriter(o)
 		return cmd.Run()
