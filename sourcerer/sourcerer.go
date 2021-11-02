@@ -250,6 +250,11 @@ func generateFile(clis ...CLI) {
 		log.Fatalf("failed to write autocomplete function to file: %v", err)
 	}
 
+	// define the usage function
+	if _, err := f.WriteString(usageFunction); err != nil {
+		log.Fatalf("failed to write usage function to file: %v", err)
+	}
+
 	for _, cli := range clis {
 		alias := cli.Name()
 
