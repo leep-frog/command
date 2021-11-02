@@ -354,3 +354,10 @@ func FileNode(argName, desc string) Processor {
 	}
 	return StringNode(argName, desc, ao)
 }
+
+func FileListNode(argName, desc string, minN, optionalN int) Processor {
+	ao := &Completor{
+		SuggestionFetcher: &FileFetcher{},
+	}
+	return StringListNode(argName, desc, minN, optionalN, ao)
+}

@@ -201,47 +201,47 @@ func (an *ArgNode) Complete(input *Input, data *Data) *CompleteData {
 	}
 }
 
-func StringListNode(name, desc string, minN, optionalN int, opts ...ArgOpt) Processor {
+func StringListNode(name, desc string, minN, optionalN int, opts ...ArgOpt) *ArgNode {
 	return listNode(name, desc, minN, optionalN, StringListType, opts...)
 }
 
-func IntListNode(name, desc string, minN, optionalN int, opts ...ArgOpt) Processor {
+func IntListNode(name, desc string, minN, optionalN int, opts ...ArgOpt) *ArgNode {
 	return listNode(name, desc, minN, optionalN, IntListType, opts...)
 }
 
-func FloatListNode(name, desc string, minN, optionalN int, opts ...ArgOpt) Processor {
+func FloatListNode(name, desc string, minN, optionalN int, opts ...ArgOpt) *ArgNode {
 	return listNode(name, desc, minN, optionalN, FloatListType, opts...)
 }
 
-func StringNode(name, desc string, opts ...ArgOpt) Processor {
+func StringNode(name, desc string, opts ...ArgOpt) *ArgNode {
 	return listNode(name, desc, 1, 0, StringType, opts...)
 }
 
-func OptionalStringNode(name, desc string, opts ...ArgOpt) Processor {
+func OptionalStringNode(name, desc string, opts ...ArgOpt) *ArgNode {
 	return listNode(name, desc, 0, 1, StringType, opts...)
 }
 
-func IntNode(name, desc string, opts ...ArgOpt) Processor {
+func IntNode(name, desc string, opts ...ArgOpt) *ArgNode {
 	return listNode(name, desc, 1, 0, IntType, opts...)
 }
 
-func OptionalIntNode(name, desc string, opts ...ArgOpt) Processor {
+func OptionalIntNode(name, desc string, opts ...ArgOpt) *ArgNode {
 	return listNode(name, desc, 0, 1, IntType, opts...)
 }
 
-func FloatNode(name, desc string, opts ...ArgOpt) Processor {
+func FloatNode(name, desc string, opts ...ArgOpt) *ArgNode {
 	return listNode(name, desc, 1, 0, FloatType, opts...)
 }
 
-func OptionalFloatNode(name, desc string, opts ...ArgOpt) Processor {
+func OptionalFloatNode(name, desc string, opts ...ArgOpt) *ArgNode {
 	return listNode(name, desc, 0, 1, FloatType, opts...)
 }
 
-func BoolNode(name, desc string) Processor {
+func BoolNode(name, desc string) *ArgNode {
 	return listNode(name, desc, 1, 0, BoolType, BoolCompletor())
 }
 
-func listNode(name, desc string, minN, optionalN int, vt ValueType, opts ...ArgOpt) Processor {
+func listNode(name, desc string, minN, optionalN int, vt ValueType, opts ...ArgOpt) *ArgNode {
 	return &ArgNode{
 		name:      name,
 		desc:      desc,
