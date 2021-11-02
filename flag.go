@@ -92,7 +92,6 @@ func (fn *flagNode) Execute(input *Input, output Output, data *Data, eData *Exec
 }
 
 func (fn *flagNode) Usage(u *Usage) {
-	fmt.Println("un")
 	var flags []Flag
 	for k, f := range fn.flagMap {
 		// flagMap contains entries for name and short name, so ensure we only do each one once.
