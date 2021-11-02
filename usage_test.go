@@ -5,8 +5,9 @@ import (
 )
 
 const (
-	aliasDesc = "  *: Start of new aliasable section"
-	cacheDesc = "  ^: Start of new cachable section"
+	AliasDesc  = "  *: Start of new aliasable section"
+	CacheDesc  = "  ^: Start of new cachable section"
+	BranchDesc = "  <: Start of subcommand branches"
 )
 
 func TestUsage(t *testing.T) {
@@ -94,7 +95,7 @@ func TestUsage(t *testing.T) {
 					"  SARG: test desc",
 					"\n",
 					"Symbols:",
-					aliasDesc,
+					AliasDesc,
 				},
 			},
 		},
@@ -114,7 +115,7 @@ func TestUsage(t *testing.T) {
 					"  SARG: test desc",
 					"\n",
 					"Symbols:",
-					cacheDesc,
+					CacheDesc,
 				},
 			},
 		},
@@ -152,7 +153,7 @@ func TestUsage(t *testing.T) {
 					"",
 					"",
 					"Symbols:",
-					"  <: start of subcommand branches",
+					BranchDesc,
 				},
 			},
 		},

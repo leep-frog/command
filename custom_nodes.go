@@ -164,7 +164,7 @@ func (bn *branchNode) UsageNext() *Node {
 }
 
 func (bn *branchNode) Usage(u *Usage) {
-	u.UsageSection.Add(SymbolSection, "<", "start of subcommand branches")
+	u.UsageSection.Add(SymbolSection, "<", "Start of subcommand branches")
 	u.Usage = append(u.Usage, "<")
 
 	var names []string
