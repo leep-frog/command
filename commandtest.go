@@ -15,6 +15,12 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 )
 
+const (
+	AliasDesc  = "  *: Start of new aliasable section"
+	CacheDesc  = "  ^: Start of new cachable section"
+	BranchDesc = "  <: Start of subcommand branches"
+)
+
 type UsageTestCase struct {
 	Node       *Node
 	WantString []string

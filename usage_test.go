@@ -4,12 +4,6 @@ import (
 	"testing"
 )
 
-const (
-	AliasDesc  = "  *: Start of new aliasable section"
-	CacheDesc  = "  ^: Start of new cachable section"
-	BranchDesc = "  <: Start of subcommand branches"
-)
-
 func TestUsage(t *testing.T) {
 	for _, test := range []struct {
 		name string
