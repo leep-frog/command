@@ -67,7 +67,12 @@ const (
 
 	usageFunction = `
 	function mancli {
-		$GOPATH/bin/leep-frog-source usage ignoreThis "$@"
+		if [ $# -eq 1 ]
+    then
+		  $GOPATH/bin/leep-frog-source usage ignoreThis "$1"
+		else
+		  echo Usage: mancli cli
+    fi
 	}
 	`
 
@@ -181,7 +186,7 @@ func Source(clis ...CLI) {
 		return
 	}
 
-	if len(os.Args) < 3 {
+	if len(os.Args) < 4 {
 		log.Fatalf("Not enough arguments provided to leep-frog function")
 	}
 
