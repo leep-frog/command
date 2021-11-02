@@ -347,15 +347,14 @@ func getAutofillLetters(laFile string, suggestions []string) (string, bool) {
 }
 
 // TODO: add opts to this to populate the file fetcher.
-// TODO: add FileListNode too
-func FileNode(argName, desc string) Processor {
+func FileNode(argName, desc string) *ArgNode {
 	ao := &Completor{
 		SuggestionFetcher: &FileFetcher{},
 	}
 	return StringNode(argName, desc, ao)
 }
 
-func FileListNode(argName, desc string, minN, optionalN int) Processor {
+func FileListNode(argName, desc string, minN, optionalN int) *ArgNode {
 	ao := &Completor{
 		SuggestionFetcher: &FileFetcher{},
 	}
