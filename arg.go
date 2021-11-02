@@ -2,7 +2,7 @@ package command
 
 import "fmt"
 
-type argNode struct {
+type ArgNode struct {
 	name      string
 	desc      string
 	opt       *argOpt
@@ -14,7 +14,15 @@ type argNode struct {
 	flag      bool
 }
 
-func (an *argNode) Set(v *Value, data *Data) {
+func (an *ArgNode) Name() string {
+	return an.name
+}
+
+func (an *ArgNode) Desc() string {
+	return an.desc
+}
+
+func (an *ArgNode) Set(v *Value, data *Data) {
 	if an.opt != nil && an.opt.customSet != nil {
 		an.opt.customSet(v, data)
 	} else {
@@ -22,7 +30,7 @@ func (an *argNode) Set(v *Value, data *Data) {
 	}
 }
 
-func (an *argNode) Usage(u *Usage) {
+func (an *ArgNode) Usage(u *Usage) {
 	if an.desc != "" {
 		u.UsageSection.Add(ArgSection, an.name, an.desc)
 	}
@@ -43,7 +51,7 @@ func (an *argNode) Usage(u *Usage) {
 	}
 }
 
-func (an *argNode) Execute(i *Input, o Output, data *Data, eData *ExecuteData) error {
+func (an *ArgNode) Execute(i *Input, o Output, data *Data, eData *ExecuteData) error {
 	an.aliasCheck(i, false)
 
 	sl, enough := i.PopN(an.minN, an.optionalN)
@@ -117,7 +125,7 @@ func (ne *notEnoughArgs) Error() string {
 	return "not enough arguments"
 }
 
-func (an *argNode) aliasCheck(input *Input, complete bool) {
+func (an *ArgNode) aliasCheck(input *Input, complete bool) {
 	if an.opt != nil && an.opt.alias != nil {
 		if an.optionalN == UnboundedList {
 			input.CheckAliases(len(input.remaining), an.opt.alias.AliasCLI, an.opt.alias.AliasName, complete)
@@ -127,7 +135,7 @@ func (an *argNode) aliasCheck(input *Input, complete bool) {
 	}
 }
 
-func (an *argNode) Complete(input *Input, data *Data) *CompleteData {
+func (an *ArgNode) Complete(input *Input, data *Data) *CompleteData {
 	an.aliasCheck(input, true)
 
 	sl, enough := input.PopN(an.minN, an.optionalN)
@@ -234,7 +242,7 @@ func BoolNode(name, desc string) Processor {
 }
 
 func listNode(name, desc string, minN, optionalN int, vt ValueType, opts ...ArgOpt) Processor {
-	return &argNode{
+	return &ArgNode{
 		name:      name,
 		desc:      desc,
 		minN:      minN,

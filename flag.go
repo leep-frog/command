@@ -115,7 +115,7 @@ type flag struct {
 	name      string
 	desc      string
 	shortName rune
-	argNode   *argNode
+	argNode   *ArgNode
 }
 
 func (f *flag) Desc() string {
@@ -215,7 +215,7 @@ func listFlag(name, desc string, shortName rune, minN, optionalN int, vt ValueTy
 		name:      name,
 		desc:      desc,
 		shortName: shortName,
-		argNode: &argNode{
+		argNode: &ArgNode{
 			flag:      true,
 			name:      name,
 			minN:      minN,
