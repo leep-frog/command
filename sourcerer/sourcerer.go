@@ -65,6 +65,12 @@ const (
 	}
 	`
 
+	usageFunction = `
+	function mancli {
+		$GOPATH/bin/leep-frog-source usage ignoreThis "$@"
+	}
+	`
+
 	// setupFunctionFormat is used to run setup functions prior to a CLI command execution.
 	setupFunctionFormat = `
 	function %s {
@@ -210,6 +216,8 @@ func Source(clis ...CLI) {
 		// TODO: change filename to file writer?
 		// (cli, filename (for ExecuteData.Exectuable), args)
 		execute(cli, os.Args[2], os.Args[4:])
+	case "usage":
+		fmt.Println(command.GetUsage(cli.Node()))
 	default:
 		log.Fatalf("unknown process: %v", os.Args)
 	}
