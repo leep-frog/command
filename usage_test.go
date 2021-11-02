@@ -151,6 +151,22 @@ func TestUsage(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "works with flags",
+			utc: &UsageTestCase{
+				Node: SerialNodesTo(nil, NewFlagNode(
+					BoolFlag("new", 'n', "new files"),
+					BoolFlag("debug", 'd', "debug stuff"),
+				)),
+				WantString: []string{
+					"--debug|-d --new|-n",
+					"",
+					"Flags:",
+					"  debug: debug stuff",
+					"  new: new files",
+				},
+			},
+		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			UsageTest(t, test.utc)

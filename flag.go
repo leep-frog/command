@@ -92,9 +92,13 @@ func (fn *flagNode) Execute(input *Input, output Output, data *Data, eData *Exec
 }
 
 func (fn *flagNode) Usage(u *Usage) {
+	fmt.Println("un")
 	var flags []Flag
-	for _, f := range fn.flagMap {
-		flags = append(flags, f)
+	for k, f := range fn.flagMap {
+		// flagMap contains entries for name and short name, so ensure we only do each one once.
+		if k == fmt.Sprintf("--%s", f.Name()) {
+			flags = append(flags, f)
+		}
 	}
 
 	sort.SliceStable(flags, func(i, j int) bool { return flags[i].Name() < flags[j].Name() })
@@ -104,7 +108,7 @@ func (fn *flagNode) Usage(u *Usage) {
 			u.UsageSection.Add(FlagSection, f.Name(), f.Desc())
 		}
 
-		u.Usage = append(u.Usage, f.Name())
+		u.Usage = append(u.Usage, fmt.Sprintf("--%s|-%c", f.Name(), f.ShortName()))
 	}
 }
 

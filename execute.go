@@ -67,7 +67,6 @@ func (u *Usage) String() string {
 func (u *Usage) string(r []string, depth int) []string {
 	prefix := strings.Repeat(" ", depth*2)
 	if u.Description != "" {
-		fmt.Println("yup", u.Description)
 		r = append(r, prefix+u.Description)
 	}
 	r = append(r, prefix+strings.Join(u.Usage, " "))
@@ -105,7 +104,6 @@ func Description(desc string) Processor {
 }
 
 func (dn *descNode) Usage(u *Usage) {
-	fmt.Println("here")
 	u.Description = dn.desc
 }
 
