@@ -107,7 +107,7 @@ func (fn *flagNode) Usage(u *Usage) {
 			u.UsageSection.Add(FlagSection, f.Name(), f.Desc())
 		}
 
-		u.Usage = append(u.Usage, fmt.Sprintf("--%s|-%c", f.Name(), f.ShortName()))
+		u.Flags = append(u.Flags, fmt.Sprintf("--%s|-%c", f.Name(), f.ShortName()))
 	}
 }
 

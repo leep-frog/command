@@ -26,6 +26,7 @@ type Usage struct {
 	// Description is the usage doc for the command
 	Description string
 	Usage       []string
+	Flags       []string
 
 	SubSections []*Usage
 }
@@ -52,7 +53,8 @@ func (u *Usage) String() string {
 				r = append(r, fmt.Sprintf("  %s: %s", k, kvs[k]))
 			}
 
-			r = append(r, "\n")
+			// Since already split by newlines, this statement actually adds one newline.
+			r = append(r, "")
 		}
 	}
 
@@ -69,7 +71,7 @@ func (u *Usage) string(r []string, depth int) []string {
 	if u.Description != "" {
 		r = append(r, prefix+u.Description)
 	}
-	r = append(r, prefix+strings.Join(u.Usage, " "))
+	r = append(r, prefix+strings.Join(append(u.Usage, u.Flags...), " "))
 	r = append(r, "") // since we join with newlines, this just adds one extra newline
 
 	for _, su := range u.SubSections {
