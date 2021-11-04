@@ -23,6 +23,8 @@ const (
 	// The file that was used to create the source file will also
 	// be used for executing and autocompleting cli commands.
 	generateBinary = `
+	set -e
+
 	pushd . > /dev/null
 	cd "$(dirname %s)"
 	# TODO: this won't work if two separate source files are used.
@@ -34,8 +36,7 @@ const (
 	autocompleteFunction = `
 	function _custom_autocomplete {
 		tFile=$(mktemp)
-		# TODO: don't need COMP_WORDS anymore?
-		$GOPATH/bin/leep-frog-source autocomplete $COMP_POINT ${COMP_WORDS[0]} "$COMP_LINE" > $tFile
+		$GOPATH/bin/leep-frog-source autocomplete ${COMP_WORDS[0]} $COMP_POINT "$COMP_LINE" > $tFile
 		local IFS=$'\n'
 		COMPREPLY=( $(cat $tFile) )
 		rm $tFile
@@ -66,12 +67,7 @@ const (
 
 	usageFunction = `
 	function mancli {
-		if [ $# -eq 1 ]
-    then
-		  $GOPATH/bin/leep-frog-source usage ignoreThis "$1"
-		else
-		  echo Usage: mancli cli
-    fi
+		$GOPATH/bin/leep-frog-source usage "$@"
 	}
 	`
 
@@ -254,8 +250,8 @@ func (s *sourcerer) Node() *command.Node {
 			command.ExecutorNode(s.usageExecutor),
 		),
 		"execute": command.SerialNodes(
-			cliArg,
 			fileArg,
+			cliArg,
 			passthroughArgs,
 			command.ExecutorNode(s.executeExecutor),
 		),
@@ -296,7 +292,7 @@ func source(clis []CLI, osArgs []string, o command.Output) {
 var (
 	// Stubbed out for testing purposes
 	getSourceLoc = func() (string, error) {
-		_, sourceLocation, _, ok := runtime.Caller(3)
+		_, sourceLocation, _, ok := runtime.Caller(7)
 		if !ok {
 			return "", fmt.Errorf("failed to fetch caller")
 		}

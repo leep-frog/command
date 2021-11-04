@@ -29,6 +29,8 @@ func TestGenerateBinaryNode(t *testing.T) {
 			name: "generates source file when no CLIs",
 			wantFile: []string{
 				"",
+				"	set -e",
+				"",
 				`	pushd . > /dev/null`,
 				`	cd "$(dirname /fake/source/location)"`,
 				`	# TODO: this won't work if two separate source files are used.`,
@@ -37,8 +39,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 				`	`,
 				`	function _custom_autocomplete {`,
 				`		tFile=$(mktemp)`,
-				`		# TODO: don't need COMP_WORDS anymore?`,
-				`		$GOPATH/bin/leep-frog-source autocomplete $COMP_POINT ${COMP_WORDS[0]} "$COMP_LINE" > $tFile`,
+				`		$GOPATH/bin/leep-frog-source autocomplete ${COMP_WORDS[0]} $COMP_POINT "$COMP_LINE" > $tFile`,
 				`		local IFS=$'\n'`,
 				`		COMPREPLY=( $(cat $tFile) )`,
 				`		rm $tFile`,
@@ -58,12 +59,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 				`	}`,
 				`	`,
 				`	function mancli {`,
-				`		if [ $# -eq 1 ]`,
-				"    then",
-				`		  $GOPATH/bin/leep-frog-source usage ignoreThis "$1"`,
-				`		else`,
-				`		  echo Usage: mancli cli`,
-				"    fi",
+				`		$GOPATH/bin/leep-frog-source usage "$@"`,
 				`	}`,
 				`	`,
 			},
@@ -76,6 +72,8 @@ func TestGenerateBinaryNode(t *testing.T) {
 			}), &testCLI{name: "basic", setup: []string{"his", "story"}}),
 			wantFile: []string{
 				"",
+				"	set -e",
+				"",
 				`	pushd . > /dev/null`,
 				`	cd "$(dirname /fake/source/location)"`,
 				`	# TODO: this won't work if two separate source files are used.`,
@@ -84,8 +82,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 				`	`,
 				`	function _custom_autocomplete {`,
 				`		tFile=$(mktemp)`,
-				`		# TODO: don't need COMP_WORDS anymore?`,
-				`		$GOPATH/bin/leep-frog-source autocomplete $COMP_POINT ${COMP_WORDS[0]} "$COMP_LINE" > $tFile`,
+				`		$GOPATH/bin/leep-frog-source autocomplete ${COMP_WORDS[0]} $COMP_POINT "$COMP_LINE" > $tFile`,
 				`		local IFS=$'\n'`,
 				`		COMPREPLY=( $(cat $tFile) )`,
 				`		rm $tFile`,
@@ -105,12 +102,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 				`	}`,
 				`	`,
 				`	function mancli {`,
-				`		if [ $# -eq 1 ]`,
-				"    then",
-				`		  $GOPATH/bin/leep-frog-source usage ignoreThis "$1"`,
-				`		else`,
-				`		  echo Usage: mancli cli`,
-				"    fi",
+				`		$GOPATH/bin/leep-frog-source usage "$@"`,
 				`	}`,
 				`	`,
 				`	function _setup_for_basic_cli {`,
@@ -185,24 +177,24 @@ func TestSourcerer(t *testing.T) {
 		},
 		// Execute tests
 		{
-			name: "fails if no cli arg",
-			args: []string{"execute"},
-			wantStderr: []string{
-				`Argument "CLI" requires at least 1 argument, got 0`,
-				u,
-			},
-		},
-		{
 			name: "fails if no file arg",
-			args: []string{"execute", "idk"},
+			args: []string{"execute"},
 			wantStderr: []string{
 				`Argument "FILE" requires at least 1 argument, got 0`,
 				u,
 			},
 		},
 		{
+			name: "fails if no cli arg",
+			args: []string{"execute", "file"},
+			wantStderr: []string{
+				`Argument "CLI" requires at least 1 argument, got 0`,
+				u,
+			},
+		},
+		{
 			name: "fails if unknown CLI",
-			args: []string{"execute", "idk", "file"},
+			args: []string{"execute", "file", "idk"},
 			wantStderr: []string{
 				`unknown CLI "idk"`,
 			},
@@ -226,7 +218,7 @@ func TestSourcerer(t *testing.T) {
 					},
 				},
 			},
-			args:       []string{"execute", "basic", "file"},
+			args:       []string{"execute", "file", "basic"},
 			wantStdout: []string{"Output:"},
 		},
 		{
@@ -239,7 +231,7 @@ func TestSourcerer(t *testing.T) {
 					},
 				},
 			},
-			args:       []string{"execute", "basic", "file"},
+			args:       []string{"execute", "file", "basic"},
 			wantStderr: []string{"oops"},
 		},
 		{
@@ -264,7 +256,7 @@ func TestSourcerer(t *testing.T) {
 					},
 				},
 			},
-			args: []string{"execute", "basic", "file", "un", "deux", "trois"},
+			args: []string{"execute", "file", "basic", "un", "deux", "trois"},
 			wantStdout: []string{
 				"Output:",
 				"sl: un, deux, trois",
@@ -277,7 +269,7 @@ func TestSourcerer(t *testing.T) {
 					name: "basic",
 				},
 			},
-			args: []string{"execute", "basic", "file", "un", "deux", "trois"},
+			args: []string{"execute", "file", "basic", "un", "deux", "trois"},
 			wantStderr: []string{
 				"Unprocessed extra args: [un deux trois]",
 				"",
@@ -296,7 +288,7 @@ func TestSourcerer(t *testing.T) {
 					},
 				},
 			},
-			args: []string{"execute", "basic", "file"},
+			args: []string{"execute", "file", "basic"},
 			wantCLIs: map[string]CLI{
 				"basic": &testCLI{
 					Stuff: "things",
@@ -314,7 +306,7 @@ func TestSourcerer(t *testing.T) {
 					},
 				},
 			},
-			args: []string{"execute", "basic", f.Name()},
+			args: []string{"execute", f.Name(), "basic"},
 			wantFile: []string{
 				"echo",
 				"hello",
