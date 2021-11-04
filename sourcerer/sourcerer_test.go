@@ -29,8 +29,6 @@ func TestGenerateBinaryNode(t *testing.T) {
 			name: "generates source file when no CLIs",
 			wantFile: []string{
 				"",
-				"	set -e",
-				"",
 				`	pushd . > /dev/null`,
 				`	cd "$(dirname /fake/source/location)"`,
 				`	# TODO: this won't work if two separate source files are used.`,
@@ -71,8 +69,6 @@ func TestGenerateBinaryNode(t *testing.T) {
 				"l": "ls -la",
 			}), &testCLI{name: "basic", setup: []string{"his", "story"}}),
 			wantFile: []string{
-				"",
-				"	set -e",
 				"",
 				`	pushd . > /dev/null`,
 				`	cd "$(dirname /fake/source/location)"`,

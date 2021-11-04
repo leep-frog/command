@@ -23,8 +23,6 @@ const (
 	// The file that was used to create the source file will also
 	// be used for executing and autocompleting cli commands.
 	generateBinary = `
-	set -e
-
 	pushd . > /dev/null
 	cd "$(dirname %s)"
 	# TODO: this won't work if two separate source files are used.
