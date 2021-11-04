@@ -24,8 +24,8 @@ func TestAliasExecute(t *testing.T) {
 			name: "alias requires arg",
 			etc: &ExecuteTestCase{
 				Node:       AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", testDesc, 1, 2))),
-				WantErr:    fmt.Errorf("not enough arguments"),
-				WantStderr: []string{"not enough arguments"},
+				WantErr:    fmt.Errorf(`Argument "sl" requires at least 1 argument, got 0`),
+				WantStderr: []string{`Argument "sl" requires at least 1 argument, got 0`},
 			},
 		},
 		// Add alias tests.
@@ -39,8 +39,8 @@ func TestAliasExecute(t *testing.T) {
 						{value: "a"},
 					},
 				},
-				WantErr:    fmt.Errorf("not enough arguments"),
-				WantStderr: []string{"not enough arguments"},
+				WantErr:    fmt.Errorf(`Argument "ALIAS" requires at least 1 argument, got 0`),
+				WantStderr: []string{`Argument "ALIAS" requires at least 1 argument, got 0`},
 			},
 		},
 		{
@@ -192,8 +192,8 @@ func TestAliasExecute(t *testing.T) {
 				WantData: &Data{
 					"ALIAS": StringValue("empty"),
 				},
-				WantErr:    fmt.Errorf("not enough arguments"),
-				WantStderr: []string{"not enough arguments"},
+				WantErr:    fmt.Errorf(`Argument "ALIAS" requires at least 1 argument, got 0`),
+				WantStderr: []string{`Argument "ALIAS" requires at least 1 argument, got 0`},
 				wantInput: &Input{
 					snapshotCount: 1,
 					args: []*inputArg{
@@ -436,7 +436,6 @@ func TestAliasExecute(t *testing.T) {
 			},
 		},
 		// Executing node tests.
-		// TODO: test that executable is returned and that executor is run (by adding output.Stdout(...) and ensuring it is included in test.WantStdout).
 		{
 			name: "Fails to replace alias with empty value",
 			am: map[string]map[string][]string{
@@ -811,8 +810,8 @@ func TestAliasExecute(t *testing.T) {
 						{value: "deux"},
 					},
 				},
-				WantErr:    fmt.Errorf("not enough arguments"),
-				WantStderr: []string{"not enough arguments"},
+				WantErr:    fmt.Errorf(`Argument "sl" requires at least 3 arguments, got 2`),
+				WantStderr: []string{`Argument "sl" requires at least 3 arguments, got 2`},
 			},
 		},
 		{
@@ -893,8 +892,8 @@ func TestAliasExecute(t *testing.T) {
 			etc: &ExecuteTestCase{
 				Node:       AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", testDesc, 1, 2))),
 				Args:       []string{"g"},
-				WantErr:    fmt.Errorf("not enough arguments"),
-				WantStderr: []string{"not enough arguments"},
+				WantErr:    fmt.Errorf(`Argument "ALIAS" requires at least 1 argument, got 0`),
+				WantStderr: []string{`Argument "ALIAS" requires at least 1 argument, got 0`},
 				wantInput: &Input{
 					args: []*inputArg{
 						{value: "g"},
@@ -1007,8 +1006,8 @@ func TestAliasExecute(t *testing.T) {
 			etc: &ExecuteTestCase{
 				Node:       AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", testDesc, 1, 2))),
 				Args:       []string{"s"},
-				WantStderr: []string{"not enough arguments"},
-				WantErr:    fmt.Errorf("not enough arguments"),
+				WantStderr: []string{`Argument "regexp" requires at least 1 argument, got 0`},
+				WantErr:    fmt.Errorf(`Argument "regexp" requires at least 1 argument, got 0`),
 				wantInput: &Input{
 					args: []*inputArg{
 						{value: "s"},
@@ -1105,8 +1104,8 @@ func TestAliasExecute(t *testing.T) {
 			etc: &ExecuteTestCase{
 				Node:       AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", testDesc, 1, 2))),
 				Args:       []string{"d"},
-				WantErr:    fmt.Errorf("not enough arguments"),
-				WantStderr: []string{"not enough arguments"},
+				WantErr:    fmt.Errorf(`Argument "ALIAS" requires at least 1 argument, got 0`),
+				WantStderr: []string{`Argument "ALIAS" requires at least 1 argument, got 0`},
 				wantInput: &Input{
 					args: []*inputArg{
 						{value: "d"},

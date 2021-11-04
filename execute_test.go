@@ -47,8 +47,8 @@ func TestExecute(t *testing.T) {
 			name: "Fails if arg and no argument",
 			etc: &ExecuteTestCase{
 				Node:       SerialNodes(StringNode("s", testDesc)),
-				WantErr:    fmt.Errorf("not enough arguments"),
-				WantStderr: []string{"not enough arguments"},
+				WantErr:    fmt.Errorf(`Argument "s" requires at least 1 argument, got 0`),
+				WantStderr: []string{`Argument "s" requires at least 1 argument, got 0`},
 			},
 		},
 		{
@@ -76,16 +76,16 @@ func TestExecute(t *testing.T) {
 			name: "Fails if int arg and no argument",
 			etc: &ExecuteTestCase{
 				Node:       SerialNodes(IntNode("i", testDesc)),
-				WantErr:    fmt.Errorf("not enough arguments"),
-				WantStderr: []string{"not enough arguments"},
+				WantErr:    fmt.Errorf(`Argument "i" requires at least 1 argument, got 0`),
+				WantStderr: []string{`Argument "i" requires at least 1 argument, got 0`},
 			},
 		},
 		{
 			name: "Fails if float arg and no argument",
 			etc: &ExecuteTestCase{
 				Node:       SerialNodes(FloatNode("f", testDesc)),
-				WantErr:    fmt.Errorf("not enough arguments"),
-				WantStderr: []string{"not enough arguments"},
+				WantErr:    fmt.Errorf(`Argument "f" requires at least 1 argument, got 0`),
+				WantStderr: []string{`Argument "f" requires at least 1 argument, got 0`},
 			},
 		},
 		{
@@ -245,8 +245,8 @@ func TestExecute(t *testing.T) {
 				WantData: &Data{
 					"sl": StringListValue("hello", "there", "kenobi"),
 				},
-				WantErr:    fmt.Errorf("not enough arguments"),
-				WantStderr: []string{"not enough arguments"},
+				WantErr:    fmt.Errorf(`Argument "sl" requires at least 4 arguments, got 3`),
+				WantStderr: []string{`Argument "sl" requires at least 4 arguments, got 3`},
 			},
 		},
 		{
@@ -394,6 +394,18 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		// Executor tests.
+		{
+			name: "Sets executable",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(SimpleProcessor(func(i *Input, o Output, d *Data, ed *ExecuteData) error {
+					ed.Executable = []string{"hello", "there"}
+					return nil
+				}, nil)),
+				WantExecuteData: &ExecuteData{
+					Executable: []string{"hello", "there"},
+				},
+			},
+		},
 		{
 			name: "executes with proper data",
 			etc: &ExecuteTestCase{
@@ -1501,8 +1513,8 @@ func TestExecute(t *testing.T) {
 			etc: &ExecuteTestCase{
 				Node:       &Node{Processor: NewFlagNode(StringFlag("strFlag", 'f', testDesc))},
 				Args:       []string{"--strFlag"},
-				WantStderr: []string{"not enough arguments"},
-				WantErr:    fmt.Errorf("not enough arguments"),
+				WantStderr: []string{`Argument "strFlag" requires at least 1 argument, got 0`},
+				WantErr:    fmt.Errorf(`Argument "strFlag" requires at least 1 argument, got 0`),
 				wantInput: &Input{
 					args: []*inputArg{
 						{value: "--strFlag"},
@@ -1756,8 +1768,8 @@ func TestExecute(t *testing.T) {
 					},
 					remaining: []int{0},
 				},
-				WantStderr: []string{"not enough arguments"},
-				WantErr:    fmt.Errorf("not enough arguments"),
+				WantStderr: []string{`Argument "slFlag" requires at least 2 arguments, got 1`},
+				WantErr:    fmt.Errorf(`Argument "slFlag" requires at least 2 arguments, got 1`),
 				WantData: &Data{
 					"slFlag": StringListValue("hello"),
 				},

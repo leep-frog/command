@@ -42,8 +42,8 @@ func TestCacheExecution(t *testing.T) {
 				Node: CacheNode("money", cc, SerialNodes(
 					StringNode("s", testDesc),
 				)),
-				WantErr:    fmt.Errorf("not enough arguments"),
-				WantStderr: []string{"not enough arguments"},
+				WantErr:    fmt.Errorf(`Argument "s" requires at least 1 argument, got 0`),
+				WantStderr: []string{`Argument "s" requires at least 1 argument, got 0`},
 			},
 		},
 		{
@@ -75,8 +75,8 @@ func TestCacheExecution(t *testing.T) {
 					StringListNode("sl", testDesc, 3, 0),
 				)),
 				Args:       []string{"dollar", "bills"},
-				WantErr:    fmt.Errorf("not enough arguments"),
-				WantStderr: []string{"not enough arguments"},
+				WantErr:    fmt.Errorf(`Argument "sl" requires at least 3 arguments, got 2`),
+				WantStderr: []string{`Argument "sl" requires at least 3 arguments, got 2`},
 				WantData: &Data{
 					"sl": StringListValue("dollar", "bills"),
 				},

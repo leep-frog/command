@@ -280,7 +280,7 @@ func (aa *addAlias) Execute(input *Input, output Output, data *Data, _ *ExecuteD
 
 	sl := input.GetSnapshot(snapshot)
 	if len(sl) == 0 {
-		return output.Err(NotEnoughArgs())
+		return output.Err(NotEnoughArgs(aliasArgName, 1, 0))
 	}
 	setAlias(aa.ac, aa.name, alias, sl)
 	return nil

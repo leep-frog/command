@@ -59,7 +59,7 @@ func (an *ArgNode) Execute(i *Input, o Output, data *Data, eData *ExecuteData) e
 	// Don't set at all if no arguments provided for arg.
 	if len(sl) == 0 {
 		if !enough {
-			return o.Err(NotEnoughArgs())
+			return o.Err(an.notEnoughErr(len(sl)))
 		}
 		return nil
 	}
@@ -101,9 +101,13 @@ func (an *ArgNode) Execute(i *Input, o Output, data *Data, eData *ExecuteData) e
 	}
 
 	if !enough {
-		return o.Err(NotEnoughArgs())
+		return o.Err(an.notEnoughErr(len(sl)))
 	}
 	return nil
+}
+
+func (an *ArgNode) notEnoughErr(got int) error {
+	return NotEnoughArgs(an.name, an.minN, got)
 }
 
 func IsNotEnoughArgsError(err error) bool {
@@ -115,14 +119,22 @@ func IsUsageError(err error) bool {
 	return IsNotEnoughArgsError(err) || IsExtraArgsError(err)
 }
 
-func NotEnoughArgs() error {
-	return &notEnoughArgs{}
+func NotEnoughArgs(name string, req, got int) error {
+	return &notEnoughArgs{name, req, got}
 }
 
-type notEnoughArgs struct{}
+type notEnoughArgs struct {
+	name string
+	req  int
+	got  int
+}
 
 func (ne *notEnoughArgs) Error() string {
-	return "not enough arguments"
+	plural := "s"
+	if ne.req == 1 {
+		plural = ""
+	}
+	return fmt.Sprintf("Argument %q requires at least %d argument%s, got %d", ne.name, ne.req, plural, ne.got)
 }
 
 func (an *ArgNode) aliasCheck(input *Input, complete bool) {

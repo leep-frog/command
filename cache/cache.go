@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"testing"
 )
 
 const (
@@ -19,7 +20,22 @@ var (
 	EnvCacheVar = "LEEP_CACHE"
 )
 
-type Cache struct{}
+type Cache struct {
+	dir string
+}
+
+func NewTestCache(t *testing.T) *Cache {
+	t.Helper()
+	dir, err := ioutil.TempDir("", "test-leep-frog-command-cache")
+	if err != nil {
+		t.Fatalf("failed to create temp directory: %v", err)
+	}
+	return &Cache{dir}
+}
+
+func NewCache() *Cache {
+	return &Cache{os.Getenv(EnvCacheVar)}
+}
 
 func (c *Cache) Put(key, data string) error {
 	return c.writeFile(key, data)
@@ -67,19 +83,18 @@ func (c *Cache) readFile(key string) (string, error) {
 }
 
 func (c *Cache) getCacheDir() (string, error) {
-	cacheDirStr := os.Getenv(EnvCacheVar)
-	if cacheDirStr == "" {
+	if c.dir == "" {
 		return "", fmt.Errorf("environment variable %q is not set", EnvCacheVar)
 	}
 
-	cacheDir, err := os.Stat(cacheDirStr)
+	cacheDir, err := os.Stat(c.dir)
 	if err != nil {
 		return "", fmt.Errorf("invalid cache path: %v", err)
 	}
 	if !cacheDir.Mode().IsDir() {
 		return "", fmt.Errorf("%q must point to a directory", EnvCacheVar)
 	}
-	return cacheDirStr, nil
+	return c.dir, nil
 }
 
 func (c *Cache) fileFromKey(key string) (string, error) {
@@ -93,7 +108,7 @@ func (c *Cache) fileFromKey(key string) (string, error) {
 
 	cacheDir, err := c.getCacheDir()
 	if err != nil {
-		return "", fmt.Errorf("failed to get cache direction: %v", err)
+		return "", fmt.Errorf("failed to get cache directory: %v", err)
 	}
 	return filepath.Join(cacheDir, key), nil
 }

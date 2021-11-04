@@ -1,7 +1,6 @@
 package cache
 
 import (
-	"io/ioutil"
 	"os"
 	"strings"
 	"testing"
@@ -29,22 +28,10 @@ func TestPut(t *testing.T) {
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			// Temporarily change cache dir
-			tmpPath, err := ioutil.TempDir("", "test-optimizer-cache")
-			if err != nil {
-				t.Fatalf("failed to create tmp directory: %v", err)
-			}
-			defer os.RemoveAll(tmpPath)
+			c := NewTestCache(t)
+			defer os.RemoveAll(c.dir)
 
-			ecv := EnvCacheVar
-			EnvCacheVar = "_TMP_CACHE"
-			defer func() { EnvCacheVar = ecv }()
-			os.Setenv(EnvCacheVar, tmpPath)
-			defer func() { os.Setenv(EnvCacheVar, "") }()
-
-			c := &Cache{}
-
-			err = c.Put(test.key, test.data)
+			err := c.Put(test.key, test.data)
 			if test.wantErr == "" && err != nil {
 				t.Errorf("Put(%s, %s) returned err %v; want nil", test.key, test.data, err)
 			}
@@ -83,33 +70,22 @@ func TestGet(t *testing.T) {
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			// Temporarily change cache dir
-			tmpPath, err := ioutil.TempDir("", "test-optimizer-cache")
-			if err != nil {
-				t.Fatalf("failed to create tmp directory: %v", err)
-			}
-			defer os.RemoveAll(tmpPath)
+			c := NewTestCache(t)
+			defer os.RemoveAll(c.dir)
 
-			ecv := EnvCacheVar
-			EnvCacheVar = "_TMP_CACHE"
-			defer func() { EnvCacheVar = ecv }()
-			os.Setenv(EnvCacheVar, tmpPath)
-			defer func() { os.Setenv(EnvCacheVar, "") }()
-
-			c := &Cache{}
-			err = c.Put("abc", "123\n456\n")
-			if err != nil {
+			if err := c.Put("abc", "123\n456\n"); err != nil {
 				t.Fatalf("failed to setup cache: %v", err)
 			}
 
 			resp, err := c.Get(test.key)
 			if test.wantErr == "" && err != nil {
-				t.Errorf("Get(%s) returned err %v; want nil", test.key, err)
+				t.Errorf("Get(%s) returned err: %v; want nil", test.key, err)
 			}
 			if test.wantErr != "" && err == nil {
 				t.Errorf("Get(%s) returned nil; want err %q", test.key, test.wantErr)
 			}
 			if test.wantErr != "" && err != nil && !strings.Contains(err.Error(), test.wantErr) {
-				t.Errorf("Get(%s) returned err %q; want %q", test.key, err.Error(), test.wantErr)
+				t.Errorf("Get(%s) returned err: %q; want %q", test.key, err.Error(), test.wantErr)
 			}
 
 			if diff := cmp.Diff(test.want, resp); diff != "" {
@@ -162,22 +138,10 @@ func TestPutStruct(t *testing.T) {
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			// Temporarily change cache dir
-			tmpPath, err := ioutil.TempDir("", "test-optimizer-cache")
-			if err != nil {
-				t.Fatalf("failed to create tmp directory: %v", err)
-			}
-			defer os.RemoveAll(tmpPath)
+			c := NewTestCache(t)
+			defer os.RemoveAll(c.dir)
 
-			ecv := EnvCacheVar
-			EnvCacheVar = "_TMP_CACHE"
-			defer func() { EnvCacheVar = ecv }()
-			os.Setenv(EnvCacheVar, tmpPath)
-			defer func() { os.Setenv(EnvCacheVar, "") }()
-
-			c := &Cache{}
-
-			err = c.PutStruct(test.key, test.data)
+			err := c.PutStruct(test.key, test.data)
 			if test.wantErr == "" && err != nil {
 				t.Errorf("PutStruct(%s, %v) returned err %v; want nil", test.key, test.data, err)
 			}
