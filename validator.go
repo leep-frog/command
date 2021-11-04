@@ -2,6 +2,7 @@ package command
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 )
 
@@ -23,6 +24,16 @@ func Contains(s string) *validatorOption {
 	return StringOption(
 		func(vs string) bool { return strings.Contains(vs, s) },
 		fmt.Errorf("[Contains] value doesn't contain substring %q", s),
+	)
+}
+
+func MatchesRegex(pattern string) *validatorOption {
+	r := regexp.MustCompile(pattern)
+	return StringOption(
+		func(vs string) bool {
+			return r.MatchString(vs)
+		},
+		fmt.Errorf("[MatchesRegex] value doesn't match regex %q", pattern),
 	)
 }
 

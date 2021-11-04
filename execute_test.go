@@ -484,6 +484,7 @@ func TestExecute(t *testing.T) {
 				WantErr:    fmt.Errorf("validation failed: option can only be bound to arguments with type Int"),
 			},
 		},
+
 		// Contains
 		{
 			name: "contains works",
@@ -519,6 +520,43 @@ func TestExecute(t *testing.T) {
 				},
 				WantStderr: []string{`validation failed: [Contains] value doesn't contain substring "good"`},
 				WantErr:    fmt.Errorf(`validation failed: [Contains] value doesn't contain substring "good"`),
+			},
+		},
+		// MatchesRegex
+		{
+			name: "matches regex works",
+			etc: &ExecuteTestCase{
+				Node: &Node{
+					Processor: StringNode("strArg", testDesc, MatchesRegex("a+b=?c")),
+				},
+				Args: []string{"equiation: aabcdef"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "equiation: aabcdef"},
+					},
+				},
+				WantData: &Data{
+					"strArg": StringValue("equiation: aabcdef"),
+				},
+			},
+		},
+		{
+			name: "matches regex fails",
+			etc: &ExecuteTestCase{
+				Node: &Node{
+					Processor: StringNode("strArg", testDesc, MatchesRegex("i+")),
+				},
+				Args: []string{"team"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "team"},
+					},
+				},
+				WantData: &Data{
+					"strArg": StringValue("team"),
+				},
+				WantStderr: []string{`validation failed: [MatchesRegex] value doesn't match regex "i+"`},
+				WantErr:    fmt.Errorf(`validation failed: [MatchesRegex] value doesn't match regex "i+"`),
 			},
 		},
 		// MinLength

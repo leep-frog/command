@@ -85,6 +85,7 @@ func (an *ArgNode) Execute(i *Input, o Output, data *Data, eData *ExecuteData) e
 	}
 
 	// Copy values into returned list (required for aliasing)
+	// TODO (maybe): allow transformer to change the type (or length for lists) of value???
 	newSl := v.ToArgs()
 	for i := 0; i < len(sl); i++ {
 		*sl[i] = newSl[i]
@@ -181,12 +182,6 @@ func (an *ArgNode) Complete(input *Input, data *Data) *CompleteData {
 				v = newV
 			}
 		}
-	}
-
-	// Copy values into returned list (required for aliasing)
-	newSl := v.ToArgs()
-	for i := 0; i < len(sl); i++ {
-		*sl[i] = newSl[i]
 	}
 
 	an.Set(v, data)

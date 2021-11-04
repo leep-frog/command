@@ -26,15 +26,15 @@ const (
 	pushd . > /dev/null
 	cd "$(dirname %s)"
 	# TODO: this won't work if two separate source files are used.
-	go build -o $GOPATH/bin/leep-frog-source 
+	go build -o $GOPATH/bin/%s
 	popd > /dev/null
 	`
 
 	// autocompleteFunction defines a bash function for CLI autocompletion.
 	autocompleteFunction = `
-	function _custom_autocomplete {
+	function _custom_autocomplete_%s {
 		tFile=$(mktemp)
-		$GOPATH/bin/leep-frog-source autocomplete ${COMP_WORDS[0]} $COMP_POINT "$COMP_LINE" > $tFile
+		$GOPATH/bin/%s autocomplete ${COMP_WORDS[0]} $COMP_POINT "$COMP_LINE" > $tFile
 		local IFS=$'\n'
 		COMPREPLY=( $(cat $tFile) )
 		rm $tFile
@@ -49,10 +49,10 @@ const (
 	// $GOPATH/bin/leep-frog-execute rp|e|...
 	// $GOPATH/bin/leep-frog-ls
 	executeFunction = `
-	function _custom_execute {
+	function _custom_execute_%s {
 		# tmpFile is the file to which we write ExecuteData.Executable
 		tmpFile=$(mktemp)
-		$GOPATH/bin/leep-frog-source execute $tmpFile "$@"
+		$GOPATH/bin/%s execute $tmpFile "$@"
 		source $tmpFile
 		if [ -z "$LEEP_FROG_DEBUG" ]
 		then
@@ -65,7 +65,7 @@ const (
 
 	usageFunction = `
 	function mancli {
-		$GOPATH/bin/leep-frog-source usage "$@"
+		$GOPATH/bin/%s usage "$@"
 	}
 	`
 
@@ -77,14 +77,15 @@ const (
 	`
 
 	// aliasWithSetupFormat is an alias definition template for commands that require a setup function.
-	aliasWithSetupFormat = "alias %s='o=$(mktemp) && %s > $o && _custom_execute %s $o'\n"
+	aliasWithSetupFormat = "alias %s='o=$(mktemp) && %s > $o && _custom_execute_%s %s $o'\n"
 	// aliasFormat is an alias definition template for commands that don't require a setup function.
-	aliasFormat = "alias %s='_custom_execute %s'\n"
+	aliasFormat = "alias %s='_custom_execute_%s %s'\n"
 )
 
 var (
 	cliArg          = command.StringNode("CLI", "Name of the CLI command to use")
 	fileArg         = command.FileNode("FILE", "Temporary file for execution")
+	targetNameArg   = command.OptionalStringNode("TARGET_NAME", "The name of the created target in $GOPATH/bin")
 	passthroughArgs = command.StringListNode("ARG", "Arguments that get passed through to relevant CLI command", 0, command.UnboundedList)
 	compPointArg    = command.IntNode("COMP_POINT", "COMP_POINT variable from bash complete function")
 	compLineArg     = command.StringNode("COMP_LINE", "COMP_LINE variable from bash complete function")
@@ -234,7 +235,11 @@ func (s *sourcerer) getCLI(cli string) (CLI, error) {
 }
 
 func (s *sourcerer) Node() *command.Node {
-	generateBinaryNode := command.SerialNodes(command.ExecutorNode(s.generateFile))
+	generateBinaryNode := command.SerialNodes(
+		// TODO: add default capabilities
+		targetNameArg,
+		command.ExecutorNode(s.generateFile),
+	)
 
 	return command.BranchNode(map[string]*command.Node{
 		"autocomplete": command.SerialNodes(
@@ -304,28 +309,33 @@ func (s *sourcerer) generateFile(o command.Output, d *command.Data) error {
 		return o.Stderrf("failed to create tmp file: %v", err)
 	}
 
+	filename := "leep-frog-source"
+	if d.HasArg(targetNameArg.Name()) {
+		filename = d.String(targetNameArg.Name())
+	}
+
 	sourceLocation, err := getSourceLoc()
 	if err != nil {
 		return o.Err(err)
 	}
 
 	// cd into the directory of the file that is actually calling this and install dependencies.
-	if _, err := f.WriteString(fmt.Sprintf(generateBinary, sourceLocation)); err != nil {
+	if _, err := f.WriteString(fmt.Sprintf(generateBinary, sourceLocation, filename)); err != nil {
 		return o.Stderrf("failed to write binary generator code to file: %v", err)
 	}
 
 	// define the autocomplete function
-	if _, err := f.WriteString(autocompleteFunction); err != nil {
+	if _, err := f.WriteString(fmt.Sprintf(autocompleteFunction, filename, filename)); err != nil {
 		return o.Stderrf("failed to write autocomplete function to file: %v", err)
 	}
 
 	// define the execute function
-	if _, err := f.WriteString(executeFunction); err != nil {
+	if _, err := f.WriteString(fmt.Sprintf(executeFunction, filename, filename)); err != nil {
 		return o.Stderrf("failed to write autocomplete function to file: %v", err)
 	}
 
 	// define the usage function
-	if _, err := f.WriteString(usageFunction); err != nil {
+	if _, err := f.WriteString(fmt.Sprintf(usageFunction, filename)); err != nil {
 		return o.Stderrf("failed to write usage function to file: %v", err)
 	}
 
@@ -333,13 +343,13 @@ func (s *sourcerer) generateFile(o command.Output, d *command.Data) error {
 	for _, cli := range s.clis {
 		alias := cli.Name()
 
-		aliasCommand := fmt.Sprintf(aliasFormat, alias, alias)
+		aliasCommand := fmt.Sprintf(aliasFormat, alias, filename, alias)
 		if scs := cli.Setup(); len(scs) > 0 {
 			setupFunctionName := fmt.Sprintf("_setup_for_%s_cli", alias)
 			if _, err := f.WriteString(fmt.Sprintf(setupFunctionFormat, setupFunctionName, strings.Join(scs, "  \n  "))); err != nil {
 				return o.Stderrf("failed to write setup command to file: %v", err)
 			}
-			aliasCommand = fmt.Sprintf(aliasWithSetupFormat, alias, setupFunctionName, alias)
+			aliasCommand = fmt.Sprintf(aliasWithSetupFormat, alias, setupFunctionName, filename, alias)
 		}
 
 		if _, err := f.WriteString(aliasCommand); err != nil {
@@ -347,7 +357,7 @@ func (s *sourcerer) generateFile(o command.Output, d *command.Data) error {
 		}
 
 		// We sort ourselves, hence the no sort.
-		if _, err := f.WriteString(fmt.Sprintf("complete -F _custom_autocomplete -o nosort %s\n", alias)); err != nil {
+		if _, err := f.WriteString(fmt.Sprintf("complete -F _custom_autocomplete_%s -o nosort %s\n", filename, alias)); err != nil {
 			return o.Stderrf("failed to write autocomplete command to file: %v", err)
 		}
 	}
