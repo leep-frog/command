@@ -37,6 +37,20 @@ func MatchesRegex(pattern string) *validatorOption {
 	)
 }
 
+func InList(choices ...string) *validatorOption {
+	return StringOption(
+		func(vs string) bool {
+			for _, c := range choices {
+				if vs == c {
+					return true
+				}
+			}
+			return false
+		},
+		fmt.Errorf("[InList] argument must be one of %v", choices),
+	)
+}
+
 func MinLength(length int) *validatorOption {
 	var plural string
 	if length != 1 {

@@ -522,6 +522,7 @@ func TestExecute(t *testing.T) {
 				WantErr:    fmt.Errorf(`validation failed: [Contains] value doesn't contain substring "good"`),
 			},
 		},
+
 		// MatchesRegex
 		{
 			name: "matches regex works",
@@ -557,6 +558,79 @@ func TestExecute(t *testing.T) {
 				},
 				WantStderr: []string{`validation failed: [MatchesRegex] value doesn't match regex "i+"`},
 				WantErr:    fmt.Errorf(`validation failed: [MatchesRegex] value doesn't match regex "i+"`),
+			},
+		},
+		// InList & string menu
+		{
+			name: "InList works",
+			etc: &ExecuteTestCase{
+				Node: &Node{
+					Processor: StringNode("strArg", testDesc, InList("abc", "def", "ghi")),
+				},
+				Args: []string{"def"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "def"},
+					},
+				},
+				WantData: &Data{
+					"strArg": StringValue("def"),
+				},
+			},
+		},
+		{
+			name: "InList fails",
+			etc: &ExecuteTestCase{
+				Node: &Node{
+					Processor: StringNode("strArg", testDesc, InList("abc", "def", "ghi")),
+				},
+				Args: []string{"jkl"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "jkl"},
+					},
+				},
+				WantData: &Data{
+					"strArg": StringValue("jkl"),
+				},
+				WantStderr: []string{`validation failed: [InList] argument must be one of [abc def ghi]`},
+				WantErr:    fmt.Errorf(`validation failed: [InList] argument must be one of [abc def ghi]`),
+			},
+		},
+		{
+			name: "StringMenu works",
+			etc: &ExecuteTestCase{
+				Node: &Node{
+					Processor: StringMenu("strArg", testDesc, "abc", "def", "ghi"),
+				},
+				Args: []string{"def"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "def"},
+					},
+				},
+				WantData: &Data{
+					"strArg": StringValue("def"),
+				},
+			},
+		},
+		{
+			name: "StringMenu fails",
+			etc: &ExecuteTestCase{
+				Node: &Node{
+					Processor: StringMenu("strArg", testDesc, "abc", "def", "ghi"),
+				},
+				Args: []string{"jkl"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "jkl"},
+					},
+				},
+				WantData: &Data{
+					"strArg": StringValue("jkl"),
+				},
+				WantStderr: []string{`validation failed: [InList] argument must be one of [abc def ghi]`},
+				WantErr:    fmt.Errorf(`validation failed: [InList] argument must be one of [abc def ghi]`),
 			},
 		},
 		// MinLength
@@ -2659,6 +2733,29 @@ func TestComplete(t *testing.T) {
 					"default": StringListValue("something", ""),
 				},
 				Want: []string{"command", "default", "opts"},
+			},
+		},
+		// StringMenu tests.
+		{
+			name: "StringMenu completes choices",
+			ctc: &CompleteTestCase{
+				Node: SerialNodes(StringMenu("sm", "desc", "abc", "def", "ghi")),
+				Args: "cmd ",
+				Want: []string{"abc", "def", "ghi"},
+				WantData: &Data{
+					"sm": StringValue(""),
+				},
+			},
+		},
+		{
+			name: "StringMenu completes partial",
+			ctc: &CompleteTestCase{
+				Node: SerialNodes(StringMenu("sm", "desc", "abc", "def", "ghi")),
+				Args: "cmd g",
+				Want: []string{"ghi"},
+				WantData: &Data{
+					"sm": StringValue("g"),
+				},
 			},
 		},
 		// Commands with different value types.

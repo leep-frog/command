@@ -226,3 +226,7 @@ func (sp *simpleProcessor) Complete(i *Input, d *Data) *CompleteData {
 	}
 	return sp.c(i, d)
 }
+
+func StringMenu(name, desc string, choices ...string) *ArgNode {
+	return StringNode(name, desc, SimpleCompletor(choices...), InList(choices...))
+}
