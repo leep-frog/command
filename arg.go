@@ -117,7 +117,7 @@ func IsNotEnoughArgsError(err error) bool {
 }
 
 func IsUsageError(err error) bool {
-	return IsNotEnoughArgsError(err) || IsExtraArgsError(err)
+	return IsNotEnoughArgsError(err) || IsExtraArgsError(err) || IsBranchingError(err)
 }
 
 func NotEnoughArgs(name string, req, got int) error {

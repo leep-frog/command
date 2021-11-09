@@ -2193,8 +2193,8 @@ func TestExecute(t *testing.T) {
 					"h": printNode("hello"),
 					"b": printNode("goodbye"),
 				}, nil, true),
-				WantStderr: []string{"branching argument required"},
-				WantErr:    fmt.Errorf("branching argument required"),
+				WantStderr: []string{"Branching argument must be one of [b h]"},
+				WantErr:    fmt.Errorf("Branching argument must be one of [b h]"),
 			},
 		},
 		{
@@ -2205,8 +2205,8 @@ func TestExecute(t *testing.T) {
 					"b": printNode("goodbye"),
 				}, nil, true),
 				Args:       []string{"uh"},
-				WantStderr: []string{"argument must be one of [b h]"},
-				WantErr:    fmt.Errorf("argument must be one of [b h]"),
+				WantStderr: []string{"Branching argument must be one of [b h]"},
+				WantErr:    fmt.Errorf("Branching argument must be one of [b h]"),
 				wantInput: &Input{
 					args: []*inputArg{
 						{value: "uh"},

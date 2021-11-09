@@ -1,6 +1,7 @@
 package sourcerer
 
 import (
+	"fmt"
 	"io/ioutil"
 	"sort"
 	"strings"
@@ -300,14 +301,19 @@ func TestSourcerer(t *testing.T) {
 			name: "properly passes extra arguments to CLI",
 			clis: []CLI{
 				&testCLI{
-					name: "basic",
+					name:       "basic",
+					processors: []command.Processor{command.StringListNode("SL", "test", 1, 1)},
 				},
 			},
-			args: []string{"execute", "file", "basic", "un", "deux", "trois"},
+			args: []string{"execute", "file", "basic", "un", "deux", "trois", "quatre"},
 			wantStderr: []string{
-				"Unprocessed extra args: [un deux trois]",
-				"",
-				u,
+				"Unprocessed extra args: [trois quatre]",
+				strings.Join([]string{
+					"SL [ SL ]",
+					"",
+					"Arguments:",
+					"  SL: test",
+				}, "\n"),
 			},
 		},
 		{
@@ -345,6 +351,43 @@ func TestSourcerer(t *testing.T) {
 				"echo",
 				"hello",
 				"there",
+			},
+		},
+		// Usage printing tests
+		{
+			name: "prints command usage for missing branch error",
+			clis: []CLI{&usageErrCLI{}},
+			args: []string{"execute", "file", "uec"},
+			wantStderr: []string{
+				"Branching argument must be one of [a b]",
+				uecUsage(),
+			},
+		},
+		{
+			name: "prints command usage for bad branch arg error",
+			clis: []CLI{&usageErrCLI{}},
+			args: []string{"execute", "file", "uec", "uh"},
+			wantStderr: []string{
+				"Branching argument must be one of [a b]",
+				uecUsage(),
+			},
+		},
+		{
+			name: "prints command usage for missing args error",
+			clis: []CLI{&usageErrCLI{}},
+			args: []string{"execute", "file", "uec", "b"},
+			wantStderr: []string{
+				`Argument "B_SL" requires at least 1 argument, got 0`,
+				uecUsage(),
+			},
+		},
+		{
+			name: "prints command usage for missing args error",
+			clis: []CLI{&usageErrCLI{}},
+			args: []string{"execute", "file", "uec", "a", "un", "deux", "trois"},
+			wantStderr: []string{
+				"Unprocessed extra args: [deux trois]",
+				uecUsage(),
 			},
 		},
 		// Autocomplete tests
@@ -486,8 +529,10 @@ func TestSourcerer(t *testing.T) {
 				"  S: desc",
 			}, "\n")},
 		},
+		/* Useful for commenting out tests */
 	} {
 		t.Run(test.name, func(t *testing.T) {
+			fmt.Println("===========", test.name)
 			if err := ioutil.WriteFile(f.Name(), nil, 0644); err != nil {
 				t.Fatalf("failed to clear file: %v", err)
 			}
@@ -568,4 +613,24 @@ func (tc *testCLI) Setup() []string { return tc.setup }
 func autocompleteSuggestions(s ...string) []string {
 	sort.Strings(s)
 	return []string{strings.Join(s, "\n") + "\n"}
+}
+
+type usageErrCLI struct{}
+
+func (uec *usageErrCLI) Name() string {
+	return "uec"
+}
+
+func (uec *usageErrCLI) Load(string) error { return nil }
+func (uec *usageErrCLI) Node() *command.Node {
+	return command.BranchNode(map[string]*command.Node{
+		"a": command.SerialNodes(command.StringListNode("A_SL", "str list", 0, 1)),
+		"b": command.SerialNodes(command.StringListNode("B_SL", "str list", 1, 0)),
+	}, nil, false)
+}
+func (uec *usageErrCLI) Changed() bool   { return false }
+func (uec *usageErrCLI) Setup() []string { return nil }
+
+func uecUsage() string {
+	return command.GetUsage((&usageErrCLI{}).Node()).String()
 }

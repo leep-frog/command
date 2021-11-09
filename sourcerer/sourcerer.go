@@ -121,7 +121,8 @@ func (s *sourcerer) executeExecutor(output command.Output, d *command.Data) erro
 
 	eData, err := command.Execute(cli.Node(), command.ParseExecuteArgs(args), output)
 	if err != nil {
-		if command.IsUsageError(err) {
+		if command.IsUsageError(err) && !s.printedUsageError {
+			s.printedUsageError = true
 			u := command.GetUsage(cli.Node())
 			output.Stderr(u.String())
 		}
@@ -208,7 +209,8 @@ func load(cli CLI) error {
 }
 
 type sourcerer struct {
-	clis []CLI
+	clis              []CLI
+	printedUsageError bool
 }
 
 func (*sourcerer) Load(jsn string) error { return nil }
@@ -279,7 +281,9 @@ func Source(clis ...CLI) {
 
 // Separate method used for testing.
 func source(clis []CLI, osArgs []string, o command.Output) {
-	s := &sourcerer{clis}
+	s := &sourcerer{
+		clis: clis,
+	}
 
 	// Sourcerer is always executed. Its execution branches into the relevant CLI's
 	// execution/autocomplete/usage path.

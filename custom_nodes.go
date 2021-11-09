@@ -90,7 +90,7 @@ type branchNode struct {
 func (bn *branchNode) Execute(input *Input, output Output, data *Data, eData *ExecuteData) error {
 	// The edge will figure out what needs to be done next.
 	if err := bn.getNext(input, data); err != nil {
-		return output.Stderr(err.Error())
+		return output.Err(err)
 	}
 	return nil
 }
@@ -128,8 +128,7 @@ func (bn *branchNode) getNext(input *Input, data *Data) error {
 	s, ok := input.Peek()
 	if !ok {
 		if bn.def == nil {
-			// TODO: display usage.
-			return fmt.Errorf("branching argument required")
+			return newBranchingErr(bn)
 		}
 		bn.next = bn.def
 		return nil
@@ -146,12 +145,29 @@ func (bn *branchNode) getNext(input *Input, data *Data) error {
 		return nil
 	}
 
-	choices := make([]string, 0, len(bn.branches))
-	for k := range bn.branches {
+	return newBranchingErr(bn)
+}
+
+type branchingErr struct {
+	bn *branchNode
+}
+
+func (be *branchingErr) Error() string {
+	choices := make([]string, 0, len(be.bn.branches))
+	for k := range be.bn.branches {
 		choices = append(choices, k)
 	}
 	sort.Strings(choices)
-	return fmt.Errorf("argument must be one of %v", choices)
+	return fmt.Sprintf("Branching argument must be one of %v", choices)
+}
+
+func newBranchingErr(bn *branchNode) error {
+	return &branchingErr{bn}
+}
+
+func IsBranchingError(err error) bool {
+	_, ok := err.(*branchingErr)
+	return ok
 }
 
 func (bn *branchNode) Next(input *Input, data *Data) (*Node, error) {
