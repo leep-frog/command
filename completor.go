@@ -63,8 +63,7 @@ func (c *Completor) modifyArgOpt(ao *argOpt) {
 }
 
 type Completion struct {
-	Suggestions []string
-	// TODO: each of these can just be option types.
+	Suggestions         []string
 	IgnoreFilter        bool
 	DontComplete        bool
 	CaseInsensitiveSort bool
@@ -157,7 +156,6 @@ func (c *Completion) Process(input *Input) []string {
 	for i, result := range results {
 		if strings.Contains(result, " ") {
 			if input.delimiter == nil {
-				// TODO: default delimiter behavior should be defined by command?
 				results[i] = strings.ReplaceAll(result, " ", "\\ ")
 			} else {
 				results[i] = fmt.Sprintf("%s%s%s", string(*input.delimiter), result, string(*input.delimiter))
@@ -239,7 +237,6 @@ func (ff *FileFetcher) Fetch(value *Value, data *Data) *Completion {
 	}
 
 	ignorable := map[string]bool{}
-	// TODO: test this.
 	if ff.IgnoreFunc != nil {
 		for _, s := range ff.IgnoreFunc(value, data) {
 			ignorable[s] = true
@@ -346,7 +343,6 @@ func getAutofillLetters(laFile string, suggestions []string) (string, bool) {
 	return caseToCompleteWith[:completeUpTo], true
 }
 
-// TODO: add opts to this to populate the file fetcher.
 func FileNode(argName, desc string) *ArgNode {
 	ao := &Completor{
 		SuggestionFetcher: &FileFetcher{},

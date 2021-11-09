@@ -689,6 +689,20 @@ func TestFetchers(t *testing.T) {
 			},
 		},
 		{
+			name: "file fetcher ignores things from IgnoreFunc",
+			f: &FileFetcher{
+				Directory: "testing/dir1",
+				IgnoreFunc: func(v *Value, d *Data) []string {
+					return []string{"third.go", "other", "fourth.py"}
+				},
+			},
+			want: []string{
+				"first.txt",
+				"second.py",
+				" ",
+			},
+		},
+		{
 			name: "file fetcher returns files matching regex",
 			f: &FileFetcher{
 				Directory: "testing/dir1",

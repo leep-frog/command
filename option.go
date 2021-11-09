@@ -4,7 +4,6 @@ import (
 	"fmt"
 )
 
-// TODO: change this to "type ArgOpt func(*argOpt)"
 type ArgOpt interface {
 	modifyArgOpt(*argOpt)
 }

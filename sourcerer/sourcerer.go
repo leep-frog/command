@@ -228,7 +228,6 @@ func (s *sourcerer) getCLI(cli string) (CLI, error) {
 
 func (s *sourcerer) Node() *command.Node {
 	generateBinaryNode := command.SerialNodes(
-		// TODO: add default capabilities
 		targetNameArg,
 		command.ExecutorNode(s.generateFile),
 	)
@@ -375,7 +374,6 @@ func cacheKey(cli CLI) string {
 }
 
 // TODO: add these to clis.go and look into (potential) performance issues
-// might need to allow for multiple binaries (binary per CLI?)
 func SimpleCommands(m map[string]string) []CLI {
 	cs := []CLI{}
 	for name, cmd := range m {
