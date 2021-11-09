@@ -4,6 +4,7 @@ import (
 	"fmt"
 )
 
+// TODO: change this to "type ArgOpt func(*argOpt)"
 type ArgOpt interface {
 	modifyArgOpt(*argOpt)
 }
@@ -14,6 +15,7 @@ type argOpt struct {
 	transformer *simpleTransformer
 	alias       *aliasOpt
 	customSet   customSetter
+	_default    *Value
 }
 
 func newArgOpt(opts ...ArgOpt) *argOpt {
@@ -89,4 +91,37 @@ func (vo *validatorOption) Validate(v *Value) error {
 		return fmt.Errorf("option can only be bound to arguments with type %v", vo.vt)
 	}
 	return vo.validate(v)
+}
+
+// Default arg option
+type defaultArgOpt struct {
+	v *Value
+}
+
+func (dao *defaultArgOpt) modifyArgOpt(ao *argOpt) {
+	ao._default = dao.v
+}
+
+func StringDefault(s string) ArgOpt {
+	return &defaultArgOpt{StringValue(s)}
+}
+
+func IntDefault(i int) ArgOpt {
+	return &defaultArgOpt{IntValue(i)}
+}
+
+func FloatDefault(f float64) ArgOpt {
+	return &defaultArgOpt{FloatValue(f)}
+}
+
+func StringListDefault(ss ...string) ArgOpt {
+	return &defaultArgOpt{StringListValue(ss...)}
+}
+
+func IntListDefault(is ...int) ArgOpt {
+	return &defaultArgOpt{IntListValue(is...)}
+}
+
+func FloatListDefault(fs ...float64) ArgOpt {
+	return &defaultArgOpt{FloatListValue(fs...)}
 }

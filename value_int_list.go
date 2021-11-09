@@ -46,8 +46,6 @@ func (ivh *intListValueHandler) transform(sl []*string) (*Value, error) {
 	for _, s := range sl {
 		i, e := strconv.Atoi(*s)
 		if e != nil {
-			// TODO: add failed to load field to values.
-			// These can be used in autocomplete if necessary.
 			err = e
 		}
 		is = append(is, i)

@@ -23,6 +23,8 @@ type Flag interface {
 func NewFlagNode(fs ...Flag) Processor {
 	m := map[string]Flag{}
 	for _, f := range fs {
+		// We explicitly don't check for duplicate keys to give more freedom to users
+		// For example, if they wanted to override a flag from a separate package
 		m[fmt.Sprintf("--%s", f.Name())] = f
 		m[fmt.Sprintf("-%c", f.ShortName())] = f
 	}
@@ -32,7 +34,6 @@ func NewFlagNode(fs ...Flag) Processor {
 }
 
 type flagNode struct {
-	// TODO: keep track of duplicate flags.
 	flagMap map[string]Flag
 }
 

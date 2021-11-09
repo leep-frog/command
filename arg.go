@@ -68,6 +68,12 @@ func (an *ArgNode) Execute(i *Input, o Output, data *Data, eData *ExecuteData) e
 		if !enough {
 			return o.Err(an.notEnoughErr(len(sl)))
 		}
+		if an.opt._default != nil {
+			if an.opt._default.type_ != an.vt {
+				return o.Stderrf("Argument %q has type %s, but its default is of type %s", an.name, an.vt, an.opt._default.type_)
+			}
+			an.Set(an.opt._default, data)
+		}
 		return nil
 	}
 

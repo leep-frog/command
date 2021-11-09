@@ -88,6 +88,36 @@ func TestExecute(t *testing.T) {
 				WantStderr: []string{`Argument "f" requires at least 1 argument, got 0`},
 			},
 		},
+		// Default value tests
+		{
+			name: "Uses default if no arg provided",
+			etc: &ExecuteTestCase{
+				Node:      SerialNodes(OptionalStringNode("s", testDesc, StringDefault("settled"))),
+				wantInput: &Input{},
+				WantData: &Data{
+					"s": StringValue("settled"),
+				},
+			},
+		},
+		{
+			name: "Fails if default is the wrong type",
+			etc: &ExecuteTestCase{
+				Node:       SerialNodes(OptionalStringNode("s", testDesc, IntDefault(1))),
+				wantInput:  &Input{},
+				WantStderr: []string{`Argument "s" has type String, but its default is of type Int`},
+				WantErr:    fmt.Errorf(`Argument "s" has type String, but its default is of type Int`),
+			},
+		},
+		{
+			name: "Default doesn't fill in required argument",
+			etc: &ExecuteTestCase{
+				Node:       SerialNodes(StringNode("s", testDesc, StringDefault("settled"))),
+				wantInput:  &Input{},
+				WantStderr: []string{`Argument "s" requires at least 1 argument, got 0`},
+				WantErr:    fmt.Errorf(`Argument "s" requires at least 1 argument, got 0`),
+			},
+		},
+		// Simple arg tests
 		{
 			name: "Processes single string arg",
 			etc: &ExecuteTestCase{
