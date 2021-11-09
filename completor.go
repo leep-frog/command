@@ -351,12 +351,12 @@ func FileNode(argName, desc string) *ArgNode {
 	ao := &Completor{
 		SuggestionFetcher: &FileFetcher{},
 	}
-	return StringNode(argName, desc, ao)
+	return StringNode(argName, desc, ao, FileTransformer())
 }
 
 func FileListNode(argName, desc string, minN, optionalN int) *ArgNode {
 	ao := &Completor{
 		SuggestionFetcher: &FileFetcher{},
 	}
-	return StringListNode(argName, desc, minN, optionalN, ao)
+	return StringListNode(argName, desc, minN, optionalN, ao, FileListTransformer())
 }

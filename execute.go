@@ -155,8 +155,10 @@ func execute(n *Node, input *Input, output Output, data *Data) (*ExecuteData, er
 		return eData, err
 	}
 
-	if eData.Executor != nil {
-		return eData, eData.Executor(output, data)
+	for _, ex := range eData.Executor {
+		if err := ex(output, data); err != nil {
+			return eData, err
+		}
 	}
 	return eData, nil
 }

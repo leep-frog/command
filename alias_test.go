@@ -111,10 +111,10 @@ func TestAliasExecute(t *testing.T) {
 						"",
 						"e",
 					}
-					ed.Executor = func(o Output, d *Data) error {
+					ed.Executor = append(ed.Executor, func(o Output, d *Data) error {
 						o.Stdout("here we are")
 						return o.Stderr("unfortunately")
-					}
+					})
 					return nil
 				}, nil), nil)),
 				Args: []string{"a", "b", "c"},

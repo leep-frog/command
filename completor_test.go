@@ -591,8 +591,6 @@ func TestFetchers(t *testing.T) {
 			f:      &FileFetcher{},
 			absErr: fmt.Errorf("failed to fetch directory"),
 		},
-		// TODO: automatically create the empty directory
-		// at beginning of this test (since not tracked by git).
 		{
 			name: "file fetcher handles empty directory",
 			f:    &FileFetcher{},

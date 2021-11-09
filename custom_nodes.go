@@ -10,7 +10,6 @@ const (
 )
 
 var (
-	// TODO: file validator
 	SetupArg = FileNode(SetupArgName, "file used to run setup for command")
 )
 
@@ -61,7 +60,7 @@ type executor struct {
 }
 
 func (e *executor) Execute(_ *Input, _ Output, _ *Data, eData *ExecuteData) error {
-	eData.Executor = e.executor
+	eData.Executor = append(eData.Executor, e.executor)
 	return nil
 }
 

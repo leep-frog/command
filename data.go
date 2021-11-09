@@ -78,8 +78,7 @@ func (d *Data) Bool(s string) bool {
 type ExecuteData struct {
 	// Executable is a list of commands to run after execution in the commands package.
 	Executable []string
-	// TODO: make this a list of functions.
-	Executor func(Output, *Data) error
+	Executor   []func(Output, *Data) error
 }
 
 type CompleteData struct {
