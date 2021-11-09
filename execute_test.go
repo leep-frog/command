@@ -522,6 +522,25 @@ func TestExecute(t *testing.T) {
 				WantErr:    fmt.Errorf(`validation failed: [Contains] value doesn't contain substring "good"`),
 			},
 		},
+		{
+			name: "AddOptions works",
+			etc: &ExecuteTestCase{
+				Node: &Node{
+					Processor: StringNode("strArg", testDesc).AddOptions(Contains("good")),
+				},
+				Args: []string{"hello"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "hello"},
+					},
+				},
+				WantData: &Data{
+					"strArg": StringValue("hello"),
+				},
+				WantStderr: []string{`validation failed: [Contains] value doesn't contain substring "good"`},
+				WantErr:    fmt.Errorf(`validation failed: [Contains] value doesn't contain substring "good"`),
+			},
+		},
 
 		// MatchesRegex
 		{

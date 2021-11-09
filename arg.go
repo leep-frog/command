@@ -14,6 +14,13 @@ type ArgNode struct {
 	flag      bool
 }
 
+func (an *ArgNode) AddOptions(opts ...ArgOpt) *ArgNode {
+	for _, o := range opts {
+		o.modifyArgOpt(an.opt)
+	}
+	return an
+}
+
 func (an *ArgNode) Name() string {
 	return an.name
 }
