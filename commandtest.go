@@ -227,6 +227,7 @@ func ChangeTest(t *testing.T, want interface{}, original Changeable, opts ...cmp
 
 type CompleteTestCase struct {
 	Node *Node
+	// Remember that args requires a dummy command argument (e.g. "cmd ")
 	Args string
 
 	Want     []string
