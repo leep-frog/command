@@ -1020,8 +1020,8 @@ func TestAliasExecute(t *testing.T) {
 			etc: &ExecuteTestCase{
 				Node:       AliasNode("pioneer", ac, SerialNodes(StringListNode("sl", testDesc, 1, 2))),
 				Args:       []string{"s", ":)"},
-				WantStderr: []string{"Invalid regexp: error parsing regexp: unexpected ): `:)`"},
-				WantErr:    fmt.Errorf("Invalid regexp: error parsing regexp: unexpected ): `:)`"),
+				WantStderr: []string{"validation failed: [ListIsRegex] value \":)\" isn't a valid regex: error parsing regexp: unexpected ): `:)`"},
+				WantErr:    fmt.Errorf("validation failed: [ListIsRegex] value \":)\" isn't a valid regex: error parsing regexp: unexpected ): `:)`"),
 				WantData: &Data{
 					"regexp": StringListValue(":)"),
 				},

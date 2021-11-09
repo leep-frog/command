@@ -1,5 +1,7 @@
 package command
 
+import "regexp"
+
 type Data map[string]*Value
 
 func (d *Data) Set(s string, v *Value) {
@@ -35,6 +37,22 @@ func (d *Data) String(s string) string {
 
 func (d *Data) StringList(s string) []string {
 	return d.get(s).StringList()
+}
+
+// Regexp returns a regexp.Regexp object that is created from the corresponding string node.
+// This function should only be used with string nodes that use the IsRegex valiator.
+func (d *Data) Regexp(s string) *regexp.Regexp {
+	return regexp.MustCompile(d.String(s))
+}
+
+// RegexpList returns a slice of regexp.Regexp objects that is created from the corresponding string list node.
+// This function should only be used with string list nodes that use the ListIsRegex valiator.
+func (d *Data) RegexpList(s string) []*regexp.Regexp {
+	var rs []*regexp.Regexp
+	for _, s := range d.StringList(s) {
+		rs = append(rs, regexp.MustCompile(s))
+	}
+	return rs
 }
 
 func (d *Data) Int(s string) int {

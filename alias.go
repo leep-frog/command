@@ -2,7 +2,6 @@ package command
 
 import (
 	"fmt"
-	"regexp"
 	"sort"
 	"strings"
 )
@@ -143,18 +142,9 @@ func aliasListArg(name string, ac AliasCLI) Processor {
 }
 
 func aliasSearcher(name string, ac AliasCLI, n *Node) *Node {
-	// TODO: make regexp arg type (maybe after Go implements type parameters).
-	regexArg := StringListNode("regexp", hiddenNodeDesc, 1, UnboundedList)
+	regexArg := StringListNode("regexp", hiddenNodeDesc, 1, UnboundedList, ListIsRegex())
 	return SerialNodes(regexArg, ExecutorNode(func(output Output, data *Data) error {
-		rs := []*regexp.Regexp{}
-		for _, r := range data.StringList("regexp") {
-			rx, err := regexp.Compile(r)
-			if err != nil {
-				return output.Stderrf("Invalid regexp: %v", err)
-			}
-			rs = append(rs, rx)
-		}
-
+		rs := data.RegexpList("regexp")
 		var as []string
 		for k, v := range getAliasMap(ac, name) {
 			as = append(as, aliasStr(k, v))

@@ -2,6 +2,7 @@ package command
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 	"regexp"
 	"testing"
@@ -282,7 +283,6 @@ func TestParseAndComplete(t *testing.T) {
 		},
 		{
 			name: "completes properly if ending on double quote with previous option",
-			// TODO: Should autocomplete just accept a string and it can parse the whole thing itself?
 			args: `cmd hello "`,
 			suggestions: []string{
 				"First Choice",
@@ -449,8 +449,6 @@ func TestParseAndComplete(t *testing.T) {
 				`Greg"s Four`,
 			},
 			want: []string{
-				// TODO: I think this may need backslashes like in the double quote case?
-				// test this with actual commands and see what happens
 				`'Greg"s Three'`,
 				`'Greg"s Two'`,
 			},
@@ -544,6 +542,8 @@ func TestFetchers(t *testing.T) {
 		f             Fetcher
 		distinct      bool
 		args          string
+		setup         func(*testing.T)
+		cleanup       func(*testing.T)
 		absErr        error
 		stringArg     bool
 		commandBranch bool
@@ -597,6 +597,16 @@ func TestFetchers(t *testing.T) {
 			name: "file fetcher handles empty directory",
 			f:    &FileFetcher{},
 			args: "cmd testing/empty/",
+			setup: func(t *testing.T) {
+				if err := os.Mkdir("testing/empty", 0644); err != nil {
+					t.Fatalf("failed to create empty directory")
+				}
+			},
+			cleanup: func(t *testing.T) {
+				if err := os.RemoveAll("testing/empty"); err != nil {
+					t.Fatalf("failed to delete empty directory")
+				}
+			},
 		},
 		{
 			name: "file fetcher works with string list arg",
@@ -638,6 +648,16 @@ func TestFetchers(t *testing.T) {
 			name: "file fetcher returns files in the specified directory",
 			f: &FileFetcher{
 				Directory: "testing",
+			},
+			setup: func(t *testing.T) {
+				if err := os.Mkdir("testing/empty", 0644); err != nil {
+					t.Fatalf("failed to create empty directory")
+				}
+			},
+			cleanup: func(t *testing.T) {
+				if err := os.RemoveAll("testing/empty"); err != nil {
+					t.Fatalf("failed to delete empty directory")
+				}
 			},
 			want: []string{
 				".surprise",
@@ -1121,6 +1141,12 @@ func TestFetchers(t *testing.T) {
 		/* Useful for commenting out tests */
 	} {
 		t.Run(test.name, func(t *testing.T) {
+			if test.setup != nil {
+				test.setup(t)
+			}
+			if test.cleanup != nil {
+				defer test.cleanup(t)
+			}
 			oldAbs := filepathAbs
 			filepathAbs = func(rel string) (string, error) {
 				if test.absErr != nil {
