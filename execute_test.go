@@ -545,7 +545,7 @@ func TestExecute(t *testing.T) {
 			name: "matches regex fails",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: StringNode("strArg", testDesc, MatchesRegex("i+")),
+					Processor: StringNode("strArg", testDesc, MatchesRegex(".*", "i+")),
 				},
 				Args: []string{"team"},
 				wantInput: &Input{
@@ -558,6 +558,44 @@ func TestExecute(t *testing.T) {
 				},
 				WantStderr: []string{`validation failed: [MatchesRegex] value doesn't match regex "i+"`},
 				WantErr:    fmt.Errorf(`validation failed: [MatchesRegex] value doesn't match regex "i+"`),
+			},
+		},
+		// ListMatchesRegex
+		{
+			name: "ListMatchesRegex works",
+			etc: &ExecuteTestCase{
+				Node: &Node{
+					Processor: StringListNode("slArg", testDesc, 1, UnboundedList, ListMatchesRegex("a+b=?c", "^eq")),
+				},
+				Args: []string{"equiation: aabcdef"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "equiation: aabcdef"},
+					},
+				},
+				WantData: &Data{
+					"slArg": StringListValue("equiation: aabcdef"),
+				},
+			},
+		},
+		{
+			name: "ListMatchesRegex fails",
+			etc: &ExecuteTestCase{
+				Node: &Node{
+					Processor: StringListNode("slArg", testDesc, 1, UnboundedList, ListMatchesRegex(".*", "i+")),
+				},
+				Args: []string{"equiation: aabcdef", "oops"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "equiation: aabcdef"},
+						{value: "oops"},
+					},
+				},
+				WantData: &Data{
+					"slArg": StringListValue("equiation: aabcdef", "oops"),
+				},
+				WantStderr: []string{`validation failed: [ListMatchesRegex] value "oops" doesn't match regex "i+"`},
+				WantErr:    fmt.Errorf(`validation failed: [ListMatchesRegex] value "oops" doesn't match regex "i+"`),
 			},
 		},
 		// InList & string menu
