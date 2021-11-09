@@ -598,6 +598,82 @@ func TestExecute(t *testing.T) {
 				WantErr:    fmt.Errorf(`validation failed: [ListMatchesRegex] value "oops" doesn't match regex "i+"`),
 			},
 		},
+		// IsRegex
+		{
+			name: "IsRegex works",
+			etc: &ExecuteTestCase{
+				Node: &Node{
+					Processor: StringNode("strArg", testDesc, IsRegex()),
+				},
+				Args: []string{".*"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: ".*"},
+					},
+				},
+				WantData: &Data{
+					"strArg": StringValue(".*"),
+				},
+			},
+		},
+		{
+			name: "IsRegex fails",
+			etc: &ExecuteTestCase{
+				Node: &Node{
+					Processor: StringNode("strArg", testDesc, IsRegex()),
+				},
+				Args: []string{"*"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "*"},
+					},
+				},
+				WantData: &Data{
+					"strArg": StringValue("*"),
+				},
+				WantStderr: []string{"validation failed: [IsRegex] value isn't a valid regex: error parsing regexp: missing argument to repetition operator: `*`"},
+				WantErr:    fmt.Errorf("validation failed: [IsRegex] value isn't a valid regex: error parsing regexp: missing argument to repetition operator: `*`"),
+			},
+		},
+		// ListIsRegex
+		{
+			name: "ListIsRegex works",
+			etc: &ExecuteTestCase{
+				Node: &Node{
+					Processor: StringListNode("slArg", testDesc, 1, UnboundedList, ListIsRegex()),
+				},
+				Args: []string{".*", " +"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: ".*"},
+						{value: " +"},
+					},
+				},
+				WantData: &Data{
+					"slArg": StringListValue(".*", " +"),
+				},
+			},
+		},
+		{
+			name: "ListIsRegex fails",
+			etc: &ExecuteTestCase{
+				Node: &Node{
+					Processor: StringListNode("slArg", testDesc, 1, UnboundedList, ListIsRegex()),
+				},
+				Args: []string{".*", "+"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: ".*"},
+						{value: "+"},
+					},
+				},
+				WantData: &Data{
+					"slArg": StringListValue(".*", "+"),
+				},
+				WantStderr: []string{"validation failed: [ListIsRegex] value \"+\" isn't a valid regex: error parsing regexp: missing argument to repetition operator: `+`"},
+				WantErr:    fmt.Errorf("validation failed: [ListIsRegex] value \"+\" isn't a valid regex: error parsing regexp: missing argument to repetition operator: `+`"),
+			},
+		},
 		// InList & string menu
 		{
 			name: "InList works",

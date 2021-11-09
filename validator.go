@@ -53,6 +53,30 @@ func MatchesRegex(pattern ...string) *validatorOption {
 	)
 }
 
+func IsRegex() *validatorOption {
+	return StringOption(
+		func(s string) error {
+			if _, err := regexp.Compile(s); err != nil {
+				return fmt.Errorf("[IsRegex] value isn't a valid regex: %v", err)
+			}
+			return nil
+		},
+	)
+}
+
+func ListIsRegex() *validatorOption {
+	return StringListOption(
+		func(ss []string) error {
+			for _, s := range ss {
+				if _, err := regexp.Compile(s); err != nil {
+					return fmt.Errorf("[ListIsRegex] value %q isn't a valid regex: %v", s, err)
+				}
+			}
+			return nil
+		},
+	)
+}
+
 func ListMatchesRegex(pattern ...string) *validatorOption {
 	var rs []*regexp.Regexp
 	for _, p := range pattern {
