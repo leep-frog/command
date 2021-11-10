@@ -97,12 +97,12 @@ func TestUsage(t *testing.T) {
 			name: "works with cache",
 			utc: &UsageTestCase{
 				Node: CacheNode("cacheName", nil, SerialNodes(
-					Description("command desc"),
+					Description("cmd desc"),
 					StringListNode("SARG", testDesc, 0, UnboundedList),
 					SimpleProcessor(nil, nil),
 				)),
 				WantString: []string{
-					"command desc",
+					"cmd desc",
 					"^ [ SARG ... ]",
 					"",
 					"Arguments:",
