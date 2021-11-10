@@ -43,3 +43,7 @@ func (ivh *intValueHandler) transform(sl []*string) (*Value, error) {
 	i, err := strconv.Atoi(*sl[0])
 	return IntValue(i), err
 }
+
+func (ivh *intValueHandler) len(v *Value) int {
+	return len(ivh.str(v))
+}

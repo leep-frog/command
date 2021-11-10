@@ -16,6 +16,7 @@ type valueTypeHandler interface {
 	equal(this, that *Value) bool
 	transform([]*string) (*Value, error)
 	typeString() string
+	len(*Value) int
 }
 
 func (vt ValueType) String() string {
@@ -72,6 +73,13 @@ func (vh *valueHandler) typeString(vt ValueType) string {
 		return h.typeString()
 	}
 	return "UNKNOWN_VALUE_TYPE"
+}
+
+func (vh *valueHandler) len(v *Value) int {
+	if h, ok := (*vh)[v.type_]; ok {
+		return h.len(v)
+	}
+	return -1
 }
 
 var (
@@ -350,6 +358,10 @@ func (v *Value) IsType(vt ValueType) bool {
 
 func (v *Value) String() string {
 	return vtMap.str(v)
+}
+
+func (v *Value) Length() int {
+	return vtMap.len(v)
 }
 
 func intSliceToString(is []int) string {

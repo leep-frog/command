@@ -43,3 +43,7 @@ func (fvh *boolValueHandler) transform(sl []*string) (*Value, error) {
 	b, err := strconv.ParseBool(*sl[0])
 	return BoolValue(b), err
 }
+
+func (fvh *boolValueHandler) len(v *Value) int {
+	return len(fvh.str(v))
+}

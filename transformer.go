@@ -14,8 +14,7 @@ func FileListTransformer() ArgOpt {
 	return &simpleTransformer{
 		vt: StringListType,
 		t: func(v *Value) (*Value, error) {
-			// TODO: value len function?
-			l := make([]string, 0, len(v.ToStringList()))
+			l := make([]string, 0, v.Length())
 			for i, s := range v.ToStringList() {
 				absStr, err := filepathAbs(s)
 				if err != nil {

@@ -43,3 +43,7 @@ func (fvh *floatValueHandler) transform(sl []*string) (*Value, error) {
 	f, err := strconv.ParseFloat(*sl[0], 64)
 	return FloatValue(f), err
 }
+
+func (fvh *floatValueHandler) len(v *Value) int {
+	return len(fvh.toArgs(v)[0])
+}

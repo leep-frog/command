@@ -24,7 +24,7 @@ func (ivh *floatListValueHandler) marshalJSON(v *Value) ([]byte, error) {
 }
 
 func (ivh *floatListValueHandler) toArgs(v *Value) []string {
-	sl := make([]string, 0, len(v.ToFloatList()))
+	sl := make([]string, 0, v.Length())
 	for _, f := range v.ToFloatList() {
 		sl = append(sl, strconv.FormatFloat(f, 'f', -1, 64))
 	}
@@ -50,4 +50,8 @@ func (ivh *floatListValueHandler) transform(sl []*string) (*Value, error) {
 		fs = append(fs, f)
 	}
 	return FloatListValue(fs...), err
+}
+
+func (ivh *floatListValueHandler) len(v *Value) int {
+	return len(v.floatList)
 }

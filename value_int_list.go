@@ -25,7 +25,7 @@ func (ivh *intListValueHandler) marshalJSON(v *Value) ([]byte, error) {
 }
 
 func (ivh *intListValueHandler) toArgs(v *Value) []string {
-	sl := make([]string, 0, len(v.ToIntList()))
+	sl := make([]string, 0, v.Length())
 	for _, i := range v.ToIntList() {
 		sl = append(sl, fmt.Sprintf("%d", i))
 	}
@@ -51,4 +51,8 @@ func (ivh *intListValueHandler) transform(sl []*string) (*Value, error) {
 		is = append(is, i)
 	}
 	return IntListValue(is...), err
+}
+
+func (ivh *intListValueHandler) len(v *Value) int {
+	return len(v.intList)
 }

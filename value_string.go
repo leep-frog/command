@@ -41,3 +41,7 @@ func (svh *stringValueHandler) transform(sl []*string) (*Value, error) {
 	}
 	return StringValue(*sl[0]), nil
 }
+
+func (svh *stringValueHandler) len(v *Value) int {
+	return len(*v.string)
+}

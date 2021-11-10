@@ -243,66 +243,82 @@ func TestValueCommands(t *testing.T) {
 	}
 }
 
-func TestValueStrAndListAndJson(t *testing.T) {
+func TestValueStrAndListAndLen(t *testing.T) {
 	for _, test := range []struct {
 		name        string
 		v           *Value
 		wantStr     string
 		wantStrList []string
+		wantLen     int
 	}{
 		{
 			name:        "string value",
 			v:           StringValue("hello there"),
 			wantStr:     `StringValue("hello there")`,
 			wantStrList: []string{"hello there"},
+			wantLen:     11,
 		},
 		{
 			name:        "int value",
 			v:           IntValue(12),
 			wantStr:     "IntValue(12)",
 			wantStrList: []string{"12"},
+			wantLen:     2,
 		},
 		{
 			name:        "float value with extra decimal points",
 			v:           FloatValue(123.4567),
 			wantStr:     "FloatValue(123.46)",
 			wantStrList: []string{"123.4567"},
+			wantLen:     8,
 		},
 		{
 			name:        "float value with no decimal points",
 			v:           FloatValue(123),
 			wantStr:     "FloatValue(123.00)",
 			wantStrList: []string{"123"},
+			wantLen:     3,
 		},
 		{
 			name:        "bool true value",
 			v:           TrueValue(),
 			wantStr:     "BoolValue(true)",
 			wantStrList: []string{"true"},
+			wantLen:     4,
 		},
 		{
 			name:        "bool false value",
 			v:           FalseValue(),
 			wantStr:     "BoolValue(false)",
 			wantStrList: []string{"false"},
+			wantLen:     5,
 		},
 		{
 			name:        "string list",
 			v:           StringListValue("hello", "there"),
 			wantStr:     `StringListValue("hello", "there")`,
 			wantStrList: []string{"hello", "there"},
+			wantLen:     2,
 		},
 		{
 			name:        "int list",
 			v:           IntListValue(12, -34, 5678),
 			wantStr:     "IntListValue(12, -34, 5678)",
 			wantStrList: []string{"12", "-34", "5678"},
+			wantLen:     3,
 		},
 		{
 			name:        "float list",
 			v:           FloatListValue(0.12, -3.4, 567.8910),
 			wantStr:     "FloatListValue(0.12, -3.40, 567.89)",
 			wantStrList: []string{"0.12", "-3.4", "567.891"},
+			wantLen:     3,
+		},
+		{
+			name:    "unknown value",
+			v:       &Value{},
+			wantStr: "UNKNOWN_VALUE_TYPE",
+			wantLen: -1,
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
@@ -312,6 +328,10 @@ func TestValueStrAndListAndJson(t *testing.T) {
 
 			if diff := cmp.Diff(test.wantStrList, test.v.ToArgs()); diff != "" {
 				t.Errorf("Value.ToArgs() returned incorrect string list (-want, +got):\n%s", diff)
+			}
+
+			if test.v.Length() != test.wantLen {
+				t.Errorf("Value.Length() returned %d; want %d", test.v.Length(), test.wantLen)
 			}
 		})
 	}

@@ -47,3 +47,7 @@ func (ivh *stringListValueHandler) transform(sl []*string) (*Value, error) {
 	}
 	return StringListValue(r...), nil
 }
+
+func (ivh *stringListValueHandler) len(v *Value) int {
+	return len(v.stringList)
+}

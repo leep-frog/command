@@ -193,7 +193,7 @@ func (ff *FileFetcher) Fetch(value *Value, data *Data) *Completion {
 	var lastArg string
 	if value.IsType(StringType) {
 		lastArg = value.ToString()
-	} else if value.IsType(StringListType) && len(value.ToStringList()) > 0 {
+	} else if value.IsType(StringListType) && value.Length() > 0 {
 		l := value.ToStringList()
 		lastArg = l[len(l)-1]
 	}

@@ -1745,7 +1745,7 @@ func newSimpleAlias(existing map[string]map[string][]string) AliasCLI {
 
 func UpperCaseTransformer() ArgOpt {
 	f := func(v *Value) (*Value, error) {
-		r := make([]string, 0, len(v.ToStringList()))
+		r := make([]string, 0, v.Length())
 		for _, v := range v.ToStringList() {
 			r = append(r, strings.ToUpper(v))
 		}
