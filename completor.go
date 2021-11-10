@@ -192,9 +192,9 @@ type FileFetcher struct {
 func (ff *FileFetcher) Fetch(value *Value, data *Data) *Completion {
 	var lastArg string
 	if value.IsType(StringType) {
-		lastArg = value.String()
-	} else if value.IsType(StringListType) && len(value.StringList()) > 0 {
-		l := value.StringList()
+		lastArg = value.ToString()
+	} else if value.IsType(StringListType) && len(value.ToStringList()) > 0 {
+		l := value.ToStringList()
 		lastArg = l[len(l)-1]
 	}
 
@@ -244,7 +244,7 @@ func (ff *FileFetcher) Fetch(value *Value, data *Data) *Completion {
 	}
 	// Remove any non-distinct matches, if relevant.
 	if ff.Distinct {
-		for _, v := range value.StringList() {
+		for _, v := range value.ToStringList() {
 			ignorable[v] = true
 		}
 	}

@@ -173,7 +173,7 @@ func TestValueCommands(t *testing.T) {
 
 				// strings
 				expect(StringType)
-				if diff := cmp.Diff(test.wantString, v.String()); diff != "" {
+				if diff := cmp.Diff(test.wantString, v.ToString()); diff != "" {
 					t.Errorf("String() produced diff (-want, +got):\n%s", diff)
 				}
 				if diff := cmp.Diff(test.wantString, data.String(name)); diff != "" {
@@ -182,7 +182,7 @@ func TestValueCommands(t *testing.T) {
 
 				// string list
 				expect(StringListType)
-				if diff := cmp.Diff(test.wantStringList, v.StringList()); diff != "" {
+				if diff := cmp.Diff(test.wantStringList, v.ToStringList()); diff != "" {
 					t.Errorf("StringList() produced diff (-want, +got):\n%s", diff)
 				}
 				if diff := cmp.Diff(test.wantStringList, data.StringList(name)); diff != "" {
@@ -191,7 +191,7 @@ func TestValueCommands(t *testing.T) {
 
 				// ints
 				expect(IntType)
-				if diff := cmp.Diff(test.wantInt, v.Int()); diff != "" {
+				if diff := cmp.Diff(test.wantInt, v.ToInt()); diff != "" {
 					t.Errorf("Int() produced diff (-want, +got):\n%s", diff)
 				}
 				if diff := cmp.Diff(test.wantInt, data.Int(name)); diff != "" {
@@ -200,7 +200,7 @@ func TestValueCommands(t *testing.T) {
 
 				// int list
 				expect(IntListType)
-				if diff := cmp.Diff(test.wantIntList, v.IntList()); diff != "" {
+				if diff := cmp.Diff(test.wantIntList, v.ToIntList()); diff != "" {
 					t.Errorf("IntList() produced diff (-want, +got):\n%s", diff)
 				}
 				if diff := cmp.Diff(test.wantIntList, data.IntList(name)); diff != "" {
@@ -209,7 +209,7 @@ func TestValueCommands(t *testing.T) {
 
 				// floats
 				expect(FloatType)
-				if diff := cmp.Diff(test.wantFloat, v.Float()); diff != "" {
+				if diff := cmp.Diff(test.wantFloat, v.ToFloat()); diff != "" {
 					t.Errorf("Float() produced diff (-want, +got):\n%s", diff)
 				}
 				if diff := cmp.Diff(test.wantFloat, data.Float(name)); diff != "" {
@@ -218,7 +218,7 @@ func TestValueCommands(t *testing.T) {
 
 				// float list
 				expect(FloatListType)
-				if diff := cmp.Diff(test.wantFloatList, v.FloatList()); diff != "" {
+				if diff := cmp.Diff(test.wantFloatList, v.ToFloatList()); diff != "" {
 					t.Errorf("FloatList() produced diff (-want, +got):\n%s", diff)
 				}
 				if diff := cmp.Diff(test.wantFloatList, data.FloatList(name)); diff != "" {
@@ -227,7 +227,7 @@ func TestValueCommands(t *testing.T) {
 
 				// bool
 				expect(BoolType)
-				if diff := cmp.Diff(test.wantBool, v.Bool()); diff != "" {
+				if diff := cmp.Diff(test.wantBool, v.ToBool()); diff != "" {
 					t.Errorf("Bool() produced diff (-want, +got):\n%s", diff)
 				}
 				if diff := cmp.Diff(test.wantBool, data.Bool(name)); diff != "" {
@@ -712,26 +712,26 @@ func TestValueTypeErrors(t *testing.T) {
 
 func TestNilValueReturnsAllNil(t *testing.T) {
 	var v *Value
-	if v.String() != "" {
-		t.Errorf(`Value(nil).String() returned %s; want ""`, v.String())
+	if v.ToString() != "" {
+		t.Errorf(`Value(nil).String() returned %s; want ""`, v.ToString())
 	}
-	if v.Int() != 0 {
-		t.Errorf(`Value(nil).Int() returned %d; want 0`, v.Int())
+	if v.ToInt() != 0 {
+		t.Errorf(`Value(nil).Int() returned %d; want 0`, v.ToInt())
 	}
-	if v.Float() != 0 {
-		t.Errorf(`Value(nil).Float() returned %0.2f; want 0.0`, v.Float())
+	if v.ToFloat() != 0 {
+		t.Errorf(`Value(nil).Float() returned %0.2f; want 0.0`, v.ToFloat())
 	}
-	if v.Bool() != false {
-		t.Errorf(`Value(nil).Bool() returned %v; want false`, v.Bool())
+	if v.ToBool() != false {
+		t.Errorf(`Value(nil).Bool() returned %v; want false`, v.ToBool())
 	}
-	if v.StringList() != nil {
-		t.Errorf(`Value(nil).StringList() returned %v; want false`, v.StringList())
+	if v.ToStringList() != nil {
+		t.Errorf(`Value(nil).StringList() returned %v; want false`, v.ToStringList())
 	}
-	if v.IntList() != nil {
-		t.Errorf(`Value(nil).IntList() returned %v; want false`, v.IntList())
+	if v.ToIntList() != nil {
+		t.Errorf(`Value(nil).IntList() returned %v; want false`, v.ToIntList())
 	}
-	if v.FloatList() != nil {
-		t.Errorf(`Value(nil).FloatList() returned %v; want false`, v.FloatList())
+	if v.ToFloatList() != nil {
+		t.Errorf(`Value(nil).FloatList() returned %v; want false`, v.ToFloatList())
 	}
 }
 

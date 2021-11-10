@@ -11,7 +11,7 @@ func StringOption(f func(string) error) *validatorOption {
 	return &validatorOption{
 		vt: StringType,
 		validate: func(v *Value) error {
-			return f(v.String())
+			return f(v.ToString())
 		},
 	}
 }
@@ -20,7 +20,7 @@ func StringListOption(f func([]string) error) *validatorOption {
 	return &validatorOption{
 		vt: StringListType,
 		validate: func(v *Value) error {
-			return f(v.StringList())
+			return f(v.ToStringList())
 		},
 	}
 }
@@ -129,7 +129,7 @@ func IntOption(f func(int) error) *validatorOption {
 	return &validatorOption{
 		vt: IntType,
 		validate: func(v *Value) error {
-			return f(v.Int())
+			return f(v.ToInt())
 		},
 	}
 }
@@ -238,7 +238,7 @@ func FloatOption(f func(float64) error) *validatorOption {
 	return &validatorOption{
 		vt: FloatType,
 		validate: func(v *Value) error {
-			return f(v.Float())
+			return f(v.ToFloat())
 		},
 	}
 }

@@ -254,7 +254,8 @@ func (v *Value) checkType(vt ValueType) {
 	checkFunc(v.type_, vt)
 }
 
-func (v *Value) String() string {
+// Prefix all of these with "To" because the "String()" method is needed for the fmt.Stringer interface
+func (v *Value) ToString() string {
 	if v == nil || v.string == nil {
 		return ""
 	}
@@ -262,7 +263,7 @@ func (v *Value) String() string {
 	return *v.string
 }
 
-func (v *Value) Int() int {
+func (v *Value) ToInt() int {
 	if v == nil || v.int == nil {
 		return 0
 	}
@@ -270,7 +271,7 @@ func (v *Value) Int() int {
 	return *v.int
 }
 
-func (v *Value) Float() float64 {
+func (v *Value) ToFloat() float64 {
 	if v == nil || v.float == nil {
 		return 0
 	}
@@ -278,7 +279,7 @@ func (v *Value) Float() float64 {
 	return *v.float
 }
 
-func (v *Value) Bool() bool {
+func (v *Value) ToBool() bool {
 	if v == nil || v.bool == nil {
 		return false
 	}
@@ -286,7 +287,7 @@ func (v *Value) Bool() bool {
 	return *v.bool
 }
 
-func (v *Value) StringList() []string {
+func (v *Value) ToStringList() []string {
 	if v == nil {
 		return nil
 	}
@@ -294,7 +295,7 @@ func (v *Value) StringList() []string {
 	return v.stringList
 }
 
-func (v *Value) IntList() []int {
+func (v *Value) ToIntList() []int {
 	if v == nil {
 		return nil
 	}
@@ -302,7 +303,7 @@ func (v *Value) IntList() []int {
 	return v.intList
 }
 
-func (v *Value) FloatList() []float64 {
+func (v *Value) ToFloatList() []float64 {
 	if v == nil {
 		return nil
 	}

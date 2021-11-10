@@ -24,15 +24,15 @@ func (ivh *floatListValueHandler) marshalJSON(v *Value) ([]byte, error) {
 }
 
 func (ivh *floatListValueHandler) toArgs(v *Value) []string {
-	sl := make([]string, 0, len(v.FloatList()))
-	for _, f := range v.FloatList() {
+	sl := make([]string, 0, len(v.ToFloatList()))
+	for _, f := range v.ToFloatList() {
 		sl = append(sl, strconv.FormatFloat(f, 'f', -1, 64))
 	}
 	return sl
 }
 
 func (ivh *floatListValueHandler) str(v *Value) string {
-	return floatSliceToString(v.FloatList())
+	return floatSliceToString(v.ToFloatList())
 }
 
 func (ivh *floatListValueHandler) equal(this, that *Value) bool {

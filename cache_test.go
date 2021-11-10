@@ -255,7 +255,7 @@ func TestCacheExecution(t *testing.T) {
 					StringListNode("sl", testDesc, 1, 2,
 						Transformer(StringListType, func(v *Value) (*Value, error) {
 							var newSL []string
-							for _, s := range v.StringList() {
+							for _, s := range v.ToStringList() {
 								newSL = append(newSL, fmt.Sprintf("$%s", s))
 							}
 							return StringListValue(newSL...), nil

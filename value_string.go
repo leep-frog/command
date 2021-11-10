@@ -25,7 +25,7 @@ func (svh *stringValueHandler) toArgs(v *Value) []string {
 }
 
 func (svh *stringValueHandler) str(v *Value) string {
-	return v.String()
+	return v.ToString()
 }
 
 func (svh *stringValueHandler) equal(this, that *Value) bool {

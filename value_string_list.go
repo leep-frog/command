@@ -24,11 +24,11 @@ func (ivh *stringListValueHandler) marshalJSON(v *Value) ([]byte, error) {
 }
 
 func (ivh *stringListValueHandler) toArgs(v *Value) []string {
-	return v.StringList()
+	return v.ToStringList()
 }
 
 func (ivh *stringListValueHandler) str(v *Value) string {
-	return strings.Join(v.StringList(), ", ")
+	return strings.Join(v.ToStringList(), ", ")
 }
 
 func (ivh *stringListValueHandler) equal(this, that *Value) bool {

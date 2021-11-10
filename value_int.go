@@ -29,7 +29,7 @@ func (ivh *intValueHandler) toArgs(v *Value) []string {
 }
 
 func (ivh *intValueHandler) str(v *Value) string {
-	return fmt.Sprintf(intFmt, v.Int())
+	return fmt.Sprintf(intFmt, v.ToInt())
 }
 
 func (ivh *intValueHandler) equal(this, that *Value) bool {

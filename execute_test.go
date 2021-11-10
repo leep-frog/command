@@ -2202,10 +2202,10 @@ func TestExecute(t *testing.T) {
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
 					StringNode("strArg", testDesc, Transformer(StringType, func(v *Value) (*Value, error) {
-						return StringValue(strings.ToUpper(v.String())), nil
+						return StringValue(strings.ToUpper(v.ToString())), nil
 					}, false)),
 					IntNode("intArg", testDesc, Transformer(IntType, func(v *Value) (*Value, error) {
-						return IntValue(10 * v.Int()), nil
+						return IntValue(10 * v.ToInt()), nil
 					}, false)),
 				),
 				Args: []string{"hello", "12"},
@@ -2223,7 +2223,7 @@ func TestExecute(t *testing.T) {
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
 					StringNode("strArg", testDesc, Transformer(IntType, func(v *Value) (*Value, error) {
-						return StringValue(strings.ToUpper(v.String())), nil
+						return StringValue(strings.ToUpper(v.ToString())), nil
 					}, false)),
 				),
 				Args: []string{"hello"},
@@ -2957,7 +2957,7 @@ func TestComplete(t *testing.T) {
 				Node: &Node{
 					Processor: StringListNode("slArg", testDesc, 1, 2, Transformer(StringListType, func(v *Value) (*Value, error) {
 						var sl []string
-						for _, s := range v.StringList() {
+						for _, s := range v.ToStringList() {
 							sl = append(sl, fmt.Sprintf("_%s_", s))
 						}
 						return StringListValue(sl...), nil
@@ -3369,16 +3369,16 @@ func sampleRepeaterNode(minN, optionalN int) Processor {
 	return NodeRepeater(SerialNodes(
 		StringNode("KEY", testDesc, CustomSetter(func(v *Value, d *Data) {
 			if !d.HasArg("keys") {
-				d.Set("keys", StringListValue(v.String()))
+				d.Set("keys", StringListValue(v.ToString()))
 			} else {
-				d.Set("keys", StringListValue(append(d.StringList("keys"), v.String())...))
+				d.Set("keys", StringListValue(append(d.StringList("keys"), v.ToString())...))
 			}
 		}), SimpleCompletor("alpha", "bravo", "charlie", "brown")),
 		IntNode("VALUE", testDesc, CustomSetter(func(v *Value, d *Data) {
 			if !d.HasArg("values") {
-				d.Set("values", IntListValue(v.Int()))
+				d.Set("values", IntListValue(v.ToInt()))
 			} else {
-				d.Set("values", IntListValue(append(d.IntList("values"), v.Int())...))
+				d.Set("values", IntListValue(append(d.IntList("values"), v.ToInt())...))
 			}
 		}), SimpleCompletor("1", "121", "1213121")),
 	), minN, optionalN)

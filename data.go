@@ -32,11 +32,11 @@ func (d *Data) Str(s string) string {
 }
 
 func (d *Data) String(s string) string {
-	return d.get(s).String()
+	return d.get(s).ToString()
 }
 
 func (d *Data) StringList(s string) []string {
-	return d.get(s).StringList()
+	return d.get(s).ToStringList()
 }
 
 // Regexp returns a regexp.Regexp object that is created from the corresponding string node.
@@ -56,23 +56,23 @@ func (d *Data) RegexpList(s string) []*regexp.Regexp {
 }
 
 func (d *Data) Int(s string) int {
-	return d.get(s).Int()
+	return d.get(s).ToInt()
 }
 
 func (d *Data) IntList(s string) []int {
-	return d.get(s).IntList()
+	return d.get(s).ToIntList()
 }
 
 func (d *Data) Float(s string) float64 {
-	return d.get(s).Float()
+	return d.get(s).ToFloat()
 }
 
 func (d *Data) FloatList(s string) []float64 {
-	return d.get(s).FloatList()
+	return d.get(s).ToFloatList()
 }
 
 func (d *Data) Bool(s string) bool {
-	return d.get(s).Bool()
+	return d.get(s).ToBool()
 }
 
 type ExecuteData struct {

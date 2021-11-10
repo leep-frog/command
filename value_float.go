@@ -25,11 +25,11 @@ func (fvh *floatValueHandler) marshalJSON(v *Value) ([]byte, error) {
 }
 
 func (fvh *floatValueHandler) toArgs(v *Value) []string {
-	return []string{strconv.FormatFloat(v.Float(), 'f', -1, 64)}
+	return []string{strconv.FormatFloat(v.ToFloat(), 'f', -1, 64)}
 }
 
 func (fvh *floatValueHandler) str(v *Value) string {
-	return fmt.Sprintf(floatFmt, v.Float())
+	return fmt.Sprintf(floatFmt, v.ToFloat())
 }
 
 func (fvh *floatValueHandler) equal(this, that *Value) bool {

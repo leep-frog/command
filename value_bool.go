@@ -29,7 +29,7 @@ func (fvh *boolValueHandler) toArgs(v *Value) []string {
 }
 
 func (fvh *boolValueHandler) str(v *Value) string {
-	return fmt.Sprintf("%v", v.Bool())
+	return fmt.Sprintf("%v", v.ToBool())
 }
 
 func (fvh *boolValueHandler) equal(this, that *Value) bool {

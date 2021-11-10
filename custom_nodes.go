@@ -207,7 +207,6 @@ func BranchNode(branches map[string]*Node, dflt *Node, completeSubcommands bool)
 	}
 }
 
-// TODO: The latter function is never used, so maybe just remove it?
 func SimpleProcessor(e func(*Input, Output, *Data, *ExecuteData) error, c func(*Input, *Data) (*Completion, error)) Processor {
 	return &simpleProcessor{
 		e: e,
