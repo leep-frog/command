@@ -2496,6 +2496,73 @@ func TestExecute(t *testing.T) {
 				},
 			},
 		},
+		// ListBreaker tests
+		{
+			name: "Handles broken list",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					StringListNode("SL", testDesc, 1, UnboundedList, BreakListAtString("ghi")),
+					StringListNode("SL2", testDesc, 0, UnboundedList),
+				),
+				Args: []string{"abc", "def", "ghi", "jkl"},
+				WantData: &Data{
+					"SL":  StringListValue("abc", "def"),
+					"SL2": StringListValue("jkl"),
+				},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "abc"},
+						{value: "def"},
+						{value: "ghi"},
+						{value: "jkl"},
+					},
+				},
+			},
+		},
+		{
+			name: "Handles unbroken list",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					StringListNode("SL", testDesc, 1, UnboundedList, BreakListAtString("ghi")),
+					StringListNode("SL2", testDesc, 0, UnboundedList),
+				),
+				Args: []string{"abc", "def", "ghif", "jkl"},
+				WantData: &Data{
+					"SL": StringListValue("abc", "def", "ghif", "jkl"),
+				},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "abc"},
+						{value: "def"},
+						{value: "ghif"},
+						{value: "jkl"},
+					},
+				},
+			},
+		},
+		{
+			name: "Fails if arguments required after broken list",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					StringListNode("SL", testDesc, 1, UnboundedList, BreakListAtString("ghi")),
+					StringListNode("SL2", testDesc, 1, UnboundedList),
+				),
+				Args: []string{"abc", "def", "ghif", "jkl"},
+				WantData: &Data{
+					"SL": StringListValue("abc", "def", "ghif", "jkl"),
+				},
+				WantErr:    fmt.Errorf(`Argument "SL2" requires at least 1 argument, got 0`),
+				WantStderr: []string{`Argument "SL2" requires at least 1 argument, got 0`},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "abc"},
+						{value: "def"},
+						{value: "ghif"},
+						{value: "jkl"},
+					},
+				},
+			},
+		},
 		/* Useful for commenting out tests. */
 	} {
 		t.Run(test.name, func(t *testing.T) {
@@ -3323,6 +3390,36 @@ func TestComplete(t *testing.T) {
 				WantData: &Data{
 					"keys":   StringListValue("brown", "charlie", "alpha"),
 					"values": IntListValue(12, 21, 100),
+				},
+			},
+		},
+		// ListBreaker tests
+		{
+			name: "Suggests things after broken list",
+			ctc: &CompleteTestCase{
+				Node: SerialNodes(
+					StringListNode("SL", testDesc, 1, UnboundedList, BreakListAtString("ghi"), SimpleCompletor("un", "deux", "trois")),
+					StringListNode("SL2", testDesc, 0, UnboundedList, SimpleCompletor("one", "two", "three")),
+				),
+				Args: "cmd abc def ghi ",
+				Want: []string{"one", "three", "two"},
+				WantData: &Data{
+					"SL":  StringListValue("abc", "def"),
+					"SL2": StringListValue(""),
+				},
+			},
+		},
+		{
+			name: "Suggests things before list is broken",
+			ctc: &CompleteTestCase{
+				Node: SerialNodes(
+					StringListNode("SL", testDesc, 1, UnboundedList, BreakListAtString("ghi"), SimpleCompletor("un", "deux", "trois", "uno")),
+					StringListNode("SL2", testDesc, 0, UnboundedList, SimpleCompletor("one", "two", "three")),
+				),
+				Args: "cmd abc def un",
+				Want: []string{"un", "uno"},
+				WantData: &Data{
+					"SL": StringListValue("abc", "def", "un"),
 				},
 			},
 		},

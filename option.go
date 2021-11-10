@@ -15,6 +15,7 @@ type argOpt struct {
 	alias       *aliasOpt
 	customSet   customSetter
 	_default    *Value
+	breaker     ListBreaker
 }
 
 func newArgOpt(opts ...ArgOpt) *argOpt {

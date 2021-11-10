@@ -325,3 +325,35 @@ func (sp *simpleProcessor) Complete(i *Input, d *Data) (*Completion, error) {
 func StringMenu(name, desc string, choices ...string) *ArgNode {
 	return StringNode(name, desc, SimpleCompletor(choices...), InList(choices...))
 }
+
+type ListBreaker interface {
+	Break(s string) bool
+	Usage(u *Usage)
+	DiscardBreak() bool
+	ArgOpt
+}
+
+func BreakListAtString(symbol string) ListBreaker {
+	return &symbolListBreaker{symbol}
+}
+
+type symbolListBreaker struct {
+	symbol string
+}
+
+func (slb *symbolListBreaker) modifyArgOpt(ao *argOpt) {
+	ao.breaker = slb
+}
+
+func (slb *symbolListBreaker) Break(s string) bool {
+	return s == slb.symbol
+}
+
+func (slb *symbolListBreaker) DiscardBreak() bool {
+	return true
+}
+
+func (slb *symbolListBreaker) Usage(u *Usage) {
+	u.Usage = append(u.Usage, slb.symbol)
+	u.UsageSection.Add(SymbolSection, slb.symbol, "List breaker")
+}

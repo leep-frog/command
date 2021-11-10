@@ -158,14 +158,14 @@ func (i *Input) PeekAt(idx int) (string, bool) {
 }
 
 func (i *Input) Pop() (string, bool) {
-	sl, ok := i.PopN(1, 0)
+	sl, ok := i.PopN(1, 0, nil)
 	if !ok {
 		return "", false
 	}
 	return *sl[0], true
 }
 
-func (i *Input) PopN(n, optN int) ([]*string, bool) {
+func (i *Input) PopN(n, optN int, breaker ListBreaker) ([]*string, bool) {
 	shift := n + optN
 	if optN == UnboundedList || shift+i.offset > len(i.remaining) {
 		shift = len(i.remaining) - i.offset
@@ -176,10 +176,20 @@ func (i *Input) PopN(n, optN int) ([]*string, bool) {
 	}
 
 	ret := make([]*string, 0, shift)
-	for idx := 0; idx < shift; idx++ {
+	idx := 0
+	var broken bool
+	for ; idx < shift; idx++ {
+		if breaker != nil && breaker.Break(i.get(idx+i.offset).value) {
+			broken = true
+			break
+		}
 		ret = append(ret, &i.get(idx+i.offset).value)
 	}
-	i.remaining = append(i.remaining[:i.offset], i.remaining[i.offset+shift:]...)
+	i.remaining = append(i.remaining[:i.offset], i.remaining[i.offset+idx:]...)
+
+	if broken && breaker.DiscardBreak() {
+		i.Pop()
+	}
 	return ret, len(ret) >= n
 }
 

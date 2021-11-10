@@ -137,7 +137,7 @@ func TestSnapshots(t *testing.T) {
 			wantSnapshot: []string{"two", "two.one", "two.two", "three"},
 		},
 		{
-			f:            func() { input.PopN(3, 0) },
+			f:            func() { input.PopN(3, 0, nil) },
 			wantSnapshot: []string{"three"},
 		},
 		{
@@ -165,11 +165,11 @@ func TestSnapshots(t *testing.T) {
 			wantSnapshot: []string{"negative.one", "zero.one", "zero.two", "zero.three", "three"},
 		},
 		{
-			f:            func() { input.PopN(1, 2) },
+			f:            func() { input.PopN(1, 2, nil) },
 			wantSnapshot: []string{"zero.three", "three"},
 		},
 		{
-			f: func() { input.PopN(0, 100) },
+			f: func() { input.PopN(0, 100, nil) },
 		},
 	} {
 		if test.f != nil {
@@ -215,6 +215,7 @@ func TestPopN(t *testing.T) {
 		want      []string
 		wantOK    bool
 		wantInput *Input
+		breaker   ListBreaker
 	}{
 		{
 			name:      "pops none",
@@ -238,6 +239,29 @@ func TestPopN(t *testing.T) {
 			wantOK: true,
 			wantInput: &Input{
 				args: []*inputArg{{value: "hello"}, {value: "there"}, {value: "person"}},
+			},
+		},
+		{
+			name:    "breaks unbounded list at breaker",
+			input:   []string{"hello", "there", "person", "how", "are", "you"},
+			optN:    UnboundedList,
+			want:    []string{"hello", "there", "person"},
+			breaker: BreakListAtString("how"),
+			wantOK:  true,
+			wantInput: &Input{
+				args:      []*inputArg{{value: "hello"}, {value: "there"}, {value: "person"}, {value: "how"}, {value: "are"}, {value: "you"}},
+				remaining: []int{4, 5},
+			},
+		},
+		{
+			name:    "pops all when no ListBreaker breaks",
+			input:   []string{"hello", "there", "person", "how", "are", "you"},
+			optN:    UnboundedList,
+			want:    []string{"hello", "there", "person", "how", "are", "you"},
+			breaker: BreakListAtString("no match"),
+			wantOK:  true,
+			wantInput: &Input{
+				args: []*inputArg{{value: "hello"}, {value: "there"}, {value: "person"}, {value: "how"}, {value: "are"}, {value: "you"}},
 			},
 		},
 		{
@@ -289,7 +313,7 @@ func TestPopN(t *testing.T) {
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			input := NewInput(test.input, nil)
-			gotPtrs, gotOK := input.PopN(test.n, test.optN)
+			gotPtrs, gotOK := input.PopN(test.n, test.optN, test.breaker)
 			var got []string
 			for _, p := range gotPtrs {
 				got = append(got, *p)
@@ -497,7 +521,7 @@ func TestPopNOffset(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			input := NewInput(test.input, nil)
 			input.offset = test.offset
-			gotPtrs, gotOK := input.PopN(test.n, test.optN)
+			gotPtrs, gotOK := input.PopN(test.n, test.optN, nil)
 			var got []string
 			for _, p := range gotPtrs {
 				got = append(got, *p)

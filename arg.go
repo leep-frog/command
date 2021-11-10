@@ -55,12 +55,16 @@ func (an *ArgNode) Usage(u *Usage) {
 			u.Usage = append(u.Usage, "]")
 		}
 	}
+
+	if an.opt.breaker != nil {
+		an.opt.breaker.Usage(u)
+	}
 }
 
 func (an *ArgNode) Execute(i *Input, o Output, data *Data, eData *ExecuteData) error {
 	an.aliasCheck(i, false)
 
-	sl, enough := i.PopN(an.minN, an.optionalN)
+	sl, enough := i.PopN(an.minN, an.optionalN, an.opt.breaker)
 
 	// Don't set at all if no arguments provided for arg.
 	if len(sl) == 0 {
@@ -162,7 +166,7 @@ func (an *ArgNode) aliasCheck(input *Input, complete bool) {
 func (an *ArgNode) Complete(input *Input, data *Data) (*Completion, error) {
 	an.aliasCheck(input, true)
 
-	sl, enough := input.PopN(an.minN, an.optionalN)
+	sl, enough := input.PopN(an.minN, an.optionalN, an.opt.breaker)
 
 	// Try to transform from string to value.
 	v, err := vtMap.transform(an.vt, sl)
