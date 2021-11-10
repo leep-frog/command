@@ -260,6 +260,37 @@ func TestUsage(t *testing.T) {
 				},
 			},
 		},
+		// StringListListNode
+		{
+			name: "StringListListNode",
+			utc: &UsageTestCase{
+				Node: SerialNodes(StringListListNode("SLL", "sl desc", ";", 1, 2)),
+				WantString: []string{
+					"[ SLL ... ] ; { [ SLL ... ] ; [ SLL ... ] ; }",
+					"",
+					"Arguments:",
+					"  SLL: sl desc",
+					"",
+					"Symbols:",
+					"  ;: List breaker",
+				},
+			},
+		},
+		{
+			name: "unbounded StringListListNode",
+			utc: &UsageTestCase{
+				Node: SerialNodes(StringListListNode("SLL", "sl desc", ";", 1, UnboundedList)),
+				WantString: []string{
+					"[ SLL ... ] ; { [ SLL ... ] ; } ...",
+					"",
+					"Arguments:",
+					"  SLL: sl desc",
+					"",
+					"Symbols:",
+					"  ;: List breaker",
+				},
+			},
+		},
 		/* Useful comment for commenting out tests */
 	} {
 		t.Run(test.name, func(t *testing.T) {

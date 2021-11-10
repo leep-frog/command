@@ -56,7 +56,7 @@ type BashOption interface {
 }
 
 func (bn *bashCommand) Get(d *Data) *Value {
-	return (*d)[bn.argName]
+	return d.Values[bn.argName]
 }
 
 func (bn *bashCommand) Complete(input *Input, data *Data) (*Completion, error) {

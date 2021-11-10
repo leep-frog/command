@@ -30,9 +30,9 @@ func TestValueCommands(t *testing.T) {
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(StringNode("argName", testDesc)),
 				Args: []string{"string-val"},
-				WantData: &Data{
+				WantData: &Data{Values: map[string]*Value{
 					"argName": StringValue("string-val"),
-				},
+				}},
 				wantInput: &Input{
 					args: []*inputArg{
 						{value: "string-val"},
@@ -47,9 +47,9 @@ func TestValueCommands(t *testing.T) {
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(StringListNode("argName", testDesc, 2, 3)),
 				Args: []string{"string", "list", "val"},
-				WantData: &Data{
+				WantData: &Data{Values: map[string]*Value{
 					"argName": StringListValue("string", "list", "val"),
-				},
+				}},
 				wantInput: &Input{
 					args: []*inputArg{
 						{value: "string"},
@@ -66,9 +66,9 @@ func TestValueCommands(t *testing.T) {
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(IntNode("argName", testDesc)),
 				Args: []string{"123"},
-				WantData: &Data{
+				WantData: &Data{Values: map[string]*Value{
 					"argName": IntValue(123),
-				},
+				}},
 				wantInput: &Input{
 					args: []*inputArg{
 						{value: "123"},
@@ -83,9 +83,9 @@ func TestValueCommands(t *testing.T) {
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(IntListNode("argName", testDesc, 2, 3)),
 				Args: []string{"12", "345", "6"},
-				WantData: &Data{
+				WantData: &Data{Values: map[string]*Value{
 					"argName": IntListValue(12, 345, 6),
-				},
+				}},
 				wantInput: &Input{
 					args: []*inputArg{
 						{value: "12"},
@@ -102,9 +102,9 @@ func TestValueCommands(t *testing.T) {
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(FloatNode("argName", testDesc)),
 				Args: []string{"12.3"},
-				WantData: &Data{
+				WantData: &Data{Values: map[string]*Value{
 					"argName": FloatValue(12.3),
-				},
+				}},
 				wantInput: &Input{
 					args: []*inputArg{
 						{value: "12.3"},
@@ -119,9 +119,9 @@ func TestValueCommands(t *testing.T) {
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(FloatListNode("argName", testDesc, 2, 3)),
 				Args: []string{"1.2", "-345", ".6"},
-				WantData: &Data{
+				WantData: &Data{Values: map[string]*Value{
 					"argName": FloatListValue(1.2, -345, 0.6),
-				},
+				}},
 				wantInput: &Input{
 					args: []*inputArg{
 						{value: "1.2"},
@@ -138,9 +138,9 @@ func TestValueCommands(t *testing.T) {
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(BoolNode("argName", testDesc)),
 				Args: []string{"true"},
-				WantData: &Data{
+				WantData: &Data{Values: map[string]*Value{
 					"argName": TrueValue(),
-				},
+				}},
 				wantInput: &Input{
 					args: []*inputArg{
 						{value: "true"},

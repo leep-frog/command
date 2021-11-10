@@ -2,26 +2,56 @@ package command
 
 import "regexp"
 
-type Data map[string]*Value
+type Data struct {
+	Values     map[string]*Value
+	Interfaces map[string]interface{}
+}
 
 func (d *Data) Set(s string, v *Value) {
-	(*d)[s] = v
+	if d.Values == nil {
+		d.Values = map[string]*Value{}
+	}
+	d.Values[s] = v
+}
+
+func (d *Data) SetI(s string, i interface{}) {
+	if d.Interfaces == nil {
+		d.Interfaces = map[string]interface{}{}
+	}
+	d.Interfaces[s] = i
 }
 
 func (d *Data) Keys() []string {
 	var keys []string
-	for k := range *d {
+	for k := range d.Values {
+		keys = append(keys, k)
+	}
+	return keys
+}
+
+func (d *Data) KeysI() []string {
+	var keys []string
+	for k := range d.Interfaces {
 		keys = append(keys, k)
 	}
 	return keys
 }
 
 func (d *Data) Get(s string) *Value {
-	return (*d)[s]
+	return d.Values[s]
+}
+
+func (d *Data) GetI(s string) interface{} {
+	return d.Interfaces[s]
 }
 
 func (d *Data) HasArg(s string) bool {
-	_, ok := (*d)[s]
+	_, ok := d.Values[s]
+	return ok
+}
+
+func (d *Data) HasArgI(s string) bool {
+	_, ok := d.Interfaces[s]
 	return ok
 }
 

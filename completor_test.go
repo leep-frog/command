@@ -165,9 +165,9 @@ func TestParseAndComplete(t *testing.T) {
 	}{
 		{
 			name: "handles empty array",
-			wantData: &Data{
+			wantData: &Data{Values: map[string]*Value{
 				"sl": StringListValue(),
-			},
+			}},
 		},
 		{
 			name: "multi-word options",
@@ -178,9 +178,9 @@ func TestParseAndComplete(t *testing.T) {
 				"Fourth Option",
 				"Fifth",
 			},
-			wantData: &Data{
+			wantData: &Data{Values: map[string]*Value{
 				"sl": StringListValue(),
-			},
+			}},
 			want: []string{
 				"Fifth",
 				`First\ Choice`,
@@ -199,9 +199,9 @@ func TestParseAndComplete(t *testing.T) {
 				"Fourth Option",
 				"Fifth",
 			},
-			wantData: &Data{
+			wantData: &Data{Values: map[string]*Value{
 				"sl": StringListValue("Fo"),
-			},
+			}},
 			want: []string{
 				`Fourth\ Option`,
 			},
@@ -214,9 +214,9 @@ func TestParseAndComplete(t *testing.T) {
 				"Fourth Option",
 				"Fifth",
 			},
-			wantData: &Data{
+			wantData: &Data{Values: map[string]*Value{
 				"sl": StringListValue("F"),
-			},
+			}},
 			want: []string{
 				"Fifth",
 				`First\ Choice`,
@@ -232,9 +232,9 @@ func TestParseAndComplete(t *testing.T) {
 				"Greg's Three",
 				"Greg's Four",
 			},
-			wantData: &Data{
+			wantData: &Data{Values: map[string]*Value{
 				"sl": StringListValue("Greg's One", ""),
-			},
+			}},
 			want: []string{
 				`Greg's\ Four`,
 				`Greg's\ One`,
@@ -257,9 +257,9 @@ func TestParseAndComplete(t *testing.T) {
 				`Greg"s\ Three`,
 				`Greg"s\ Two`,
 			},
-			wantData: &Data{
+			wantData: &Data{Values: map[string]*Value{
 				"sl": StringListValue(`Greg"s Other"s`, ""),
-			},
+			}},
 		},
 		{
 			name: "completes properly if ending on double quote",
@@ -278,9 +278,9 @@ func TestParseAndComplete(t *testing.T) {
 				`"Second Thing"`,
 				`"Third One"`,
 			},
-			wantData: &Data{
+			wantData: &Data{Values: map[string]*Value{
 				"sl": StringListValue(""),
-			},
+			}},
 		},
 		{
 			name: "completes properly if ending on double quote with previous option",
@@ -299,9 +299,9 @@ func TestParseAndComplete(t *testing.T) {
 				`"Second Thing"`,
 				`"Third One"`,
 			},
-			wantData: &Data{
+			wantData: &Data{Values: map[string]*Value{
 				"sl": StringListValue("hello", ""),
-			},
+			}},
 		},
 		{
 			name: "completes properly if ending on single quote",
@@ -320,9 +320,9 @@ func TestParseAndComplete(t *testing.T) {
 				"'Second Thing'",
 				"'Third One'",
 			},
-			wantData: &Data{
+			wantData: &Data{Values: map[string]*Value{
 				"sl": StringListValue("First Choice", ""),
-			},
+			}},
 		},
 		{
 			name: "completes with single quotes if unclosed single quote",
@@ -339,9 +339,9 @@ func TestParseAndComplete(t *testing.T) {
 				"'First Choice'",
 				"'Fourth Option'",
 			},
-			wantData: &Data{
+			wantData: &Data{Values: map[string]*Value{
 				"sl": StringListValue("First Choice", "F"),
-			},
+			}},
 		},
 		{
 			name: "last argument is just a double quote",
@@ -360,9 +360,9 @@ func TestParseAndComplete(t *testing.T) {
 				`"Second Thing"`,
 				`"Third One"`,
 			},
-			wantData: &Data{
+			wantData: &Data{Values: map[string]*Value{
 				"sl": StringListValue(""),
-			},
+			}},
 		},
 		{
 			name: "last argument is a double quote with words",
@@ -379,9 +379,9 @@ func TestParseAndComplete(t *testing.T) {
 				`"First Choice"`,
 				`"Fourth Option"`,
 			},
-			wantData: &Data{
+			wantData: &Data{Values: map[string]*Value{
 				"sl": StringListValue("F"),
-			},
+			}},
 		},
 		{
 			name: "double quote with single quote",
@@ -396,9 +396,9 @@ func TestParseAndComplete(t *testing.T) {
 				`"Greg's Three"`,
 				`"Greg's Two"`,
 			},
-			wantData: &Data{
+			wantData: &Data{Values: map[string]*Value{
 				"sl": StringListValue("Greg's T"),
-			},
+			}},
 		},
 		{
 			name: "last argument is just a single quote",
@@ -417,9 +417,9 @@ func TestParseAndComplete(t *testing.T) {
 				"'Second Thing'",
 				"'Third One'",
 			},
-			wantData: &Data{
+			wantData: &Data{Values: map[string]*Value{
 				"sl": StringListValue(""),
-			},
+			}},
 		},
 		{
 			name: "last argument is a single quote with words",
@@ -436,9 +436,9 @@ func TestParseAndComplete(t *testing.T) {
 				"'First Choice'",
 				"'Fourth Option'",
 			},
-			wantData: &Data{
+			wantData: &Data{Values: map[string]*Value{
 				"sl": StringListValue("F"),
-			},
+			}},
 		},
 		{
 			name: "single quote with double quote",
@@ -453,9 +453,9 @@ func TestParseAndComplete(t *testing.T) {
 				`'Greg"s Three'`,
 				`'Greg"s Two'`,
 			},
-			wantData: &Data{
+			wantData: &Data{Values: map[string]*Value{
 				"sl": StringListValue(`Greg"s T`),
-			},
+			}},
 		},
 		{
 			name: "end with space",
@@ -470,9 +470,9 @@ func TestParseAndComplete(t *testing.T) {
 			want: []string{
 				`Attempt\ One\ Two`,
 			},
-			wantData: &Data{
+			wantData: &Data{Values: map[string]*Value{
 				"sl": StringListValue("Attempt One "),
-			},
+			}},
 		},
 		{
 			name: "single and double words",
@@ -489,9 +489,9 @@ func TestParseAndComplete(t *testing.T) {
 				`Three\ Four`,
 				"ThreeFour",
 			},
-			wantData: &Data{
+			wantData: &Data{Values: map[string]*Value{
 				"sl": StringListValue("Three"),
-			},
+			}},
 		},
 		{
 			name: "handles backslashes before spaces",
@@ -506,9 +506,9 @@ func TestParseAndComplete(t *testing.T) {
 				`First\ Of`,
 				`First\ One`,
 			},
-			wantData: &Data{
+			wantData: &Data{Values: map[string]*Value{
 				"sl": StringListValue("First O"),
-			},
+			}},
 		},
 		/* Useful for commenting out tests */
 	} {

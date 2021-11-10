@@ -85,9 +85,9 @@ func TestBashNode(t *testing.T) {
 					"set -o pipefail",
 					"echo hello",
 				}},
-				WantData: &Data{
+				WantData: &Data{Values: map[string]*Value{
 					"s": StringValue("aloha"),
-				},
+				}},
 				RunResponses: []*FakeRun{
 					{
 						Stdout: []string{"aloha"},
@@ -104,9 +104,9 @@ func TestBashNode(t *testing.T) {
 					"set -o pipefail",
 					"don't echo hello",
 				}},
-				WantData: &Data{
+				WantData: &Data{Values: map[string]*Value{
 					"s": StringValue(""),
-				},
+				}},
 				RunResponses: []*FakeRun{{}},
 			},
 		},
@@ -119,9 +119,9 @@ func TestBashNode(t *testing.T) {
 					"set -o pipefail",
 					"echo hello",
 				}},
-				WantData: &Data{
+				WantData: &Data{Values: map[string]*Value{
 					"s": StringValue("aloha"),
-				},
+				}},
 				WantStderr: []string{"ahola"},
 				RunResponses: []*FakeRun{
 					{
@@ -140,9 +140,9 @@ func TestBashNode(t *testing.T) {
 					"set -o pipefail",
 					"echo hello",
 				}},
-				WantData: &Data{
+				WantData: &Data{Values: map[string]*Value{
 					"s": StringValue("aloha"),
-				},
+				}},
 				RunResponses: []*FakeRun{
 					{
 						Stdout: []string{"aloha"},
@@ -161,9 +161,9 @@ func TestBashNode(t *testing.T) {
 					"set -o pipefail",
 					"echo hello",
 				}},
-				WantData: &Data{
+				WantData: &Data{Values: map[string]*Value{
 					"s": StringListValue("aloha", "hello there", "howdy"),
-				},
+				}},
 				RunResponses: []*FakeRun{
 					{
 						Stdout: []string{"aloha", "hello there", "howdy"},
@@ -180,9 +180,9 @@ func TestBashNode(t *testing.T) {
 					"set -o pipefail",
 					"echo hello",
 				}},
-				WantData: &Data{
+				WantData: &Data{Values: map[string]*Value{
 					"s": StringListValue("aloha", "hello there", "howdy", "", ""),
-				},
+				}},
 				RunResponses: []*FakeRun{
 					{
 						Stdout: []string{"aloha", "hello there", "howdy", "", ""},
@@ -200,9 +200,9 @@ func TestBashNode(t *testing.T) {
 					"set -o pipefail",
 					"echo 1248",
 				}},
-				WantData: &Data{
+				WantData: &Data{Values: map[string]*Value{
 					"i": IntValue(1248),
-				},
+				}},
 				RunResponses: []*FakeRun{
 					{
 						Stdout: []string{"1248"},
@@ -219,9 +219,9 @@ func TestBashNode(t *testing.T) {
 					"set -o pipefail",
 					"don't echo 1248",
 				}},
-				WantData: &Data{
+				WantData: &Data{Values: map[string]*Value{
 					"i": IntValue(0),
-				},
+				}},
 				RunResponses: []*FakeRun{{}},
 			},
 		},
@@ -253,9 +253,9 @@ func TestBashNode(t *testing.T) {
 					"set -o pipefail",
 					"echo primes",
 				}},
-				WantData: &Data{
+				WantData: &Data{Values: map[string]*Value{
 					"i": IntListValue(2, 3, 5, 7),
-				},
+				}},
 				RunResponses: []*FakeRun{
 					{
 						Stdout: []string{"2", "3", "5", "7"},
@@ -291,9 +291,9 @@ func TestBashNode(t *testing.T) {
 					"set -o pipefail",
 					"echo 1248",
 				}},
-				WantData: &Data{
+				WantData: &Data{Values: map[string]*Value{
 					"i": IntValue(1248),
-				},
+				}},
 				RunResponses: []*FakeRun{
 					{
 						Stdout: []string{"1248"},
@@ -329,9 +329,9 @@ func TestBashNode(t *testing.T) {
 					"set -o pipefail",
 					"echo primes",
 				}},
-				WantData: &Data{
+				WantData: &Data{Values: map[string]*Value{
 					"i": IntListValue(2, 3, 5, 7),
-				},
+				}},
 				RunResponses: []*FakeRun{
 					{
 						Stdout: []string{"2", "3", "5", "7"},
@@ -370,9 +370,9 @@ func TestBashNode(t *testing.T) {
 					"set -o pipefail",
 					"echo 1248",
 				}},
-				WantData: &Data{
+				WantData: &Data{Values: map[string]*Value{
 					"i": IntValue(1248),
-				},
+				}},
 				RunResponses: []*FakeRun{
 					{
 						Stdout: []string{"1248"},

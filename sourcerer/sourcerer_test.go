@@ -237,7 +237,7 @@ func TestSourcerer(t *testing.T) {
 					name: "basic",
 					f: func(tc *testCLI, i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
 						var keys []string
-						for k := range *d {
+						for k := range d.Values {
 							keys = append(keys, k)
 						}
 						sort.Strings(keys)
@@ -275,7 +275,7 @@ func TestSourcerer(t *testing.T) {
 					},
 					f: func(tc *testCLI, i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
 						var keys []string
-						for k := range *d {
+						for k := range d.Values {
 							keys = append(keys, k)
 						}
 						sort.Strings(keys)

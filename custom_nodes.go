@@ -357,3 +357,27 @@ func (slb *symbolListBreaker) Usage(u *Usage) {
 	u.Usage = append(u.Usage, slb.symbol)
 	u.UsageSection.Add(SymbolSection, slb.symbol, "List breaker")
 }
+
+// StringListListNode parses a two-dimensional slice of strings, with each slice being separated by `breakSymbol`
+func StringListListNode(name, desc, breakSymbol string, minN, optionalN int, opts ...ArgOpt) Processor {
+	n := &Node{
+		Processor: StringListNode(name, desc, 0, UnboundedList,
+			append(opts,
+				BreakListAtString(breakSymbol),
+				CustomSetter(func(v *Value, d *Data) {
+					if v.Length() > 0 {
+						if !d.HasArgI(name) {
+							fmt.Println("yo")
+							d.SetI(name, [][]string{v.ToStringList()})
+						} else {
+							fmt.Println("he")
+							sl := d.GetI(name).([][]string)
+							d.SetI(name, append(sl, v.ToStringList()))
+						}
+					}
+				}),
+			)...,
+		),
+	}
+	return NodeRepeater(n, minN, optionalN)
+}

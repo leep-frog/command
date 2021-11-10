@@ -277,9 +277,11 @@ func source(clis []CLI, osArgs []string, o command.Output) {
 	// Sourcerer is always executed. Its execution branches into the relevant CLI's
 	// execution/autocomplete/usage path.
 	d := &command.Data{
-		cliArg.Name(): command.StringValue(s.Name()),
-		// Don't need execute file here
-		passthroughArgs.Name(): command.StringListValue(osArgs...),
+		Values: map[string]*command.Value{
+			cliArg.Name(): command.StringValue(s.Name()),
+			// Don't need execute file here
+			passthroughArgs.Name(): command.StringListValue(osArgs...),
+		},
 	}
 
 	s.executeExecutor(o, d)
