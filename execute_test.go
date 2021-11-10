@@ -443,7 +443,7 @@ func TestExecute(t *testing.T) {
 					keys := d.Keys()
 					sort.Strings(keys)
 					for _, k := range keys {
-						o.Stdoutf("%s: %s", k, d.Str(k))
+						o.Stdoutf("%s: %v", k, d.Get(k))
 					}
 					return nil
 				})),
@@ -463,9 +463,9 @@ func TestExecute(t *testing.T) {
 					"fl": FloatListValue(0.3, -4),
 				},
 				WantStdout: []string{
-					"fl: 0.30, -4.00",
-					"il: 0, 1",
-					"s: two",
+					"fl: FloatListValue(0.30, -4.00)",
+					"il: IntListValue(0, 1)",
+					`s: StringValue("two")`,
 				},
 			},
 		},
@@ -2298,7 +2298,7 @@ func TestExecute(t *testing.T) {
 					"b": printNode("goodbye"),
 				}, SerialNodes(StringListNode("sl", testDesc, 0, UnboundedList), printArgsNode().Processor), true),
 				Args:       []string{"good", "morning"},
-				WantStdout: []string{"sl: good, morning"},
+				WantStdout: []string{`sl: StringListValue("good", "morning")`},
 				WantData: &Data{
 					"sl": StringListValue("good", "morning"),
 				},
@@ -3274,7 +3274,6 @@ func TestComplete(t *testing.T) {
 				Args: "cmd brown 12 c",
 				Want: []string{"charlie"},
 				WantData: &Data{
-					// TODO: cmp.diff printing for this is a bit lacking
 					"keys":   StringListValue("brown", "c"),
 					"values": IntListValue(12),
 				},
@@ -3287,7 +3286,6 @@ func TestComplete(t *testing.T) {
 				Args: "cmd brown 12 charlie 21 alpha 1",
 				Want: []string{"1", "121", "1213121"},
 				WantData: &Data{
-					// TODO: cmp.diff printing for this is a bit lacking
 					"keys":   StringListValue("brown", "charlie", "alpha"),
 					"values": IntListValue(12, 21, 1),
 				},
@@ -3300,7 +3298,6 @@ func TestComplete(t *testing.T) {
 				Args: "cmd brown 12 charlie 21 alpha 100 delta 98 b",
 				Want: []string{"bravo", "brown"},
 				WantData: &Data{
-					// TODO: cmp.diff printing for this is a bit lacking
 					"keys":   StringListValue("brown", "charlie", "alpha", "delta", "b"),
 					"values": IntListValue(12, 21, 100, 98),
 				},
@@ -3312,7 +3309,6 @@ func TestComplete(t *testing.T) {
 				Node: SerialNodes(sampleRepeaterNode(2, 1)),
 				Args: "cmd brown 12 charlie 21 alpha 100 b",
 				WantData: &Data{
-					// TODO: cmp.diff printing for this is a bit lacking
 					"keys":   StringListValue("brown", "charlie", "alpha"),
 					"values": IntListValue(12, 21, 100),
 				},
@@ -3325,7 +3321,6 @@ func TestComplete(t *testing.T) {
 				Node: SerialNodes(sampleRepeaterNode(2, 1), StringNode("S", testDesc, SimpleCompletor("un", "deux", "trois"))),
 				Args: "cmd brown 12 charlie 21 alpha 100",
 				WantData: &Data{
-					// TODO: cmp.diff printing for this is a bit lacking
 					"keys":   StringListValue("brown", "charlie", "alpha"),
 					"values": IntListValue(12, 21, 100),
 				},
@@ -3358,7 +3353,7 @@ func printArgsNode() *Node {
 	return &Node{
 		Processor: ExecutorNode(func(output Output, data *Data) error {
 			for k, v := range *data {
-				output.Stdoutf("%s: %s", k, v.Str())
+				output.Stdoutf("%s: %v", k, v)
 			}
 			return nil
 		}),

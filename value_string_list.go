@@ -2,6 +2,7 @@ package command
 
 import (
 	"encoding/json"
+	"fmt"
 	"strings"
 )
 
@@ -28,7 +29,11 @@ func (ivh *stringListValueHandler) toArgs(v *Value) []string {
 }
 
 func (ivh *stringListValueHandler) str(v *Value) string {
-	return strings.Join(v.ToStringList(), ", ")
+	var r []string
+	for _, s := range v.ToStringList() {
+		r = append(r, fmt.Sprintf("%q", s))
+	}
+	return strings.Join(r, ", ")
 }
 
 func (ivh *stringListValueHandler) equal(this, that *Value) bool {

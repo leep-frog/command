@@ -47,7 +47,7 @@ func (vh *valueHandler) toArgs(v *Value) []string {
 
 func (vh *valueHandler) str(v *Value) string {
 	if h, ok := (*vh)[v.type_]; ok {
-		return h.str(v)
+		return fmt.Sprintf("%vValue(%v)", v.type_, h.str(v))
 	}
 	return "UNKNOWN_VALUE_TYPE"
 }
@@ -348,7 +348,7 @@ func (v *Value) IsType(vt ValueType) bool {
 	return v.type_ == vt
 }
 
-func (v *Value) Str() string {
+func (v *Value) String() string {
 	return vtMap.str(v)
 }
 

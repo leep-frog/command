@@ -156,7 +156,7 @@ func TestValueCommands(t *testing.T) {
 			}
 			test.etc.Node = SerialNodesTo(test.etc.Node, ExecutorNode(func(output Output, data *Data) error {
 				name := "argName"
-				v := data.get(name)
+				v := data.Get(name)
 
 				old := checkFunc
 				expect := func(w2 ValueType) {
@@ -253,60 +253,60 @@ func TestValueStrAndListAndJson(t *testing.T) {
 		{
 			name:        "string value",
 			v:           StringValue("hello there"),
-			wantStr:     "hello there",
+			wantStr:     `StringValue("hello there")`,
 			wantStrList: []string{"hello there"},
 		},
 		{
 			name:        "int value",
 			v:           IntValue(12),
-			wantStr:     "12",
+			wantStr:     "IntValue(12)",
 			wantStrList: []string{"12"},
 		},
 		{
 			name:        "float value with extra decimal points",
 			v:           FloatValue(123.4567),
-			wantStr:     "123.46",
+			wantStr:     "FloatValue(123.46)",
 			wantStrList: []string{"123.4567"},
 		},
 		{
 			name:        "float value with no decimal points",
 			v:           FloatValue(123),
-			wantStr:     "123.00",
+			wantStr:     "FloatValue(123.00)",
 			wantStrList: []string{"123"},
 		},
 		{
 			name:        "bool true value",
 			v:           TrueValue(),
-			wantStr:     "true",
+			wantStr:     "BoolValue(true)",
 			wantStrList: []string{"true"},
 		},
 		{
 			name:        "bool false value",
 			v:           FalseValue(),
-			wantStr:     "false",
+			wantStr:     "BoolValue(false)",
 			wantStrList: []string{"false"},
 		},
 		{
 			name:        "string list",
 			v:           StringListValue("hello", "there"),
-			wantStr:     "hello, there",
+			wantStr:     `StringListValue("hello", "there")`,
 			wantStrList: []string{"hello", "there"},
 		},
 		{
 			name:        "int list",
 			v:           IntListValue(12, -34, 5678),
-			wantStr:     "12, -34, 5678",
+			wantStr:     "IntListValue(12, -34, 5678)",
 			wantStrList: []string{"12", "-34", "5678"},
 		},
 		{
 			name:        "float list",
 			v:           FloatListValue(0.12, -3.4, 567.8910),
-			wantStr:     "0.12, -3.40, 567.89",
+			wantStr:     "FloatListValue(0.12, -3.40, 567.89)",
 			wantStrList: []string{"0.12", "-3.4", "567.891"},
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			if diff := cmp.Diff(test.wantStr, test.v.Str()); diff != "" {
+			if diff := cmp.Diff(test.wantStr, fmt.Sprintf("%v", test.v)); diff != "" {
 				t.Errorf("Value.Str() returned incorrect string (-want, +got):\n%s", diff)
 			}
 
@@ -703,7 +703,7 @@ func TestValueTypeErrors(t *testing.T) {
 			if diff := cmp.Diff(err.Error(), test.wantErr); diff != "" {
 				t.Errorf("json.Marshal(%v) returned error diff:\n%s", test.val, diff)
 			}
-			if diff := cmp.Diff(test.wantStr, test.val.Str()); diff != "" {
+			if diff := cmp.Diff(test.wantStr, fmt.Sprintf("%v", test.val)); diff != "" {
 				t.Errorf("Value(%v).Str() produced diff: %v", test.val, diff)
 			}
 		})

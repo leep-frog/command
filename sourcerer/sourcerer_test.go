@@ -243,7 +243,7 @@ func TestSourcerer(t *testing.T) {
 						sort.Strings(keys)
 						o.Stdout("Output:")
 						for _, k := range keys {
-							o.Stdoutf("%s: %s", k, d.Str(k))
+							o.Stdoutf("%s: %s", k, d.Get(k))
 						}
 						return nil
 					},
@@ -281,7 +281,7 @@ func TestSourcerer(t *testing.T) {
 						sort.Strings(keys)
 						o.Stdout("Output:")
 						for _, k := range keys {
-							o.Stdoutf("%s: %s", k, d.Str(k))
+							o.Stdoutf("%s: %s", k, d.Get(k))
 						}
 						return nil
 					},
@@ -290,7 +290,7 @@ func TestSourcerer(t *testing.T) {
 			args: []string{"execute", "file", "basic", "un", "deux", "trois"},
 			wantStdout: []string{
 				"Output:",
-				"sl: un, deux, trois",
+				`sl: StringListValue("un", "deux", "trois")`,
 			},
 		},
 		{

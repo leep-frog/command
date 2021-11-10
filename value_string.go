@@ -1,6 +1,9 @@
 package command
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"fmt"
+)
 
 type stringValueHandler struct{}
 
@@ -21,11 +24,11 @@ func (svh *stringValueHandler) marshalJSON(v *Value) ([]byte, error) {
 }
 
 func (svh *stringValueHandler) toArgs(v *Value) []string {
-	return []string{v.Str()}
+	return []string{v.ToString()}
 }
 
 func (svh *stringValueHandler) str(v *Value) string {
-	return v.ToString()
+	return fmt.Sprintf("%q", v.ToString())
 }
 
 func (svh *stringValueHandler) equal(this, that *Value) bool {

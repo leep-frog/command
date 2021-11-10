@@ -25,7 +25,7 @@ func (ivh *intValueHandler) marshalJSON(v *Value) ([]byte, error) {
 }
 
 func (ivh *intValueHandler) toArgs(v *Value) []string {
-	return []string{v.Str()}
+	return []string{ivh.str(v)}
 }
 
 func (ivh *intValueHandler) str(v *Value) string {

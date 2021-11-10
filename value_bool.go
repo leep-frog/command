@@ -25,7 +25,7 @@ func (fvh *boolValueHandler) marshalJSON(v *Value) ([]byte, error) {
 }
 
 func (fvh *boolValueHandler) toArgs(v *Value) []string {
-	return []string{v.Str()}
+	return []string{fvh.str(v)}
 }
 
 func (fvh *boolValueHandler) str(v *Value) string {

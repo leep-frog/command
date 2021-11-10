@@ -16,7 +16,7 @@ func (d *Data) Keys() []string {
 	return keys
 }
 
-func (d *Data) get(s string) *Value {
+func (d *Data) Get(s string) *Value {
 	return (*d)[s]
 }
 
@@ -25,18 +25,12 @@ func (d *Data) HasArg(s string) bool {
 	return ok
 }
 
-// Str returns a string representation of the arg's value
-// regardless if the arg is actually a string or not.
-func (d *Data) Str(s string) string {
-	return d.get(s).Str()
-}
-
 func (d *Data) String(s string) string {
-	return d.get(s).ToString()
+	return d.Get(s).ToString()
 }
 
 func (d *Data) StringList(s string) []string {
-	return d.get(s).ToStringList()
+	return d.Get(s).ToStringList()
 }
 
 // Regexp returns a regexp.Regexp object that is created from the corresponding string node.
@@ -56,23 +50,23 @@ func (d *Data) RegexpList(s string) []*regexp.Regexp {
 }
 
 func (d *Data) Int(s string) int {
-	return d.get(s).ToInt()
+	return d.Get(s).ToInt()
 }
 
 func (d *Data) IntList(s string) []int {
-	return d.get(s).ToIntList()
+	return d.Get(s).ToIntList()
 }
 
 func (d *Data) Float(s string) float64 {
-	return d.get(s).ToFloat()
+	return d.Get(s).ToFloat()
 }
 
 func (d *Data) FloatList(s string) []float64 {
-	return d.get(s).ToFloatList()
+	return d.Get(s).ToFloatList()
 }
 
 func (d *Data) Bool(s string) bool {
-	return d.get(s).ToBool()
+	return d.Get(s).ToBool()
 }
 
 type ExecuteData struct {
