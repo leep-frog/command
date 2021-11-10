@@ -260,6 +260,6 @@ func CompleteTest(t *testing.T, ctc *CompleteTestCase) {
 		wantData = &Data{}
 	}
 	if diff := cmp.Diff(wantData, data, cmpopts.EquateEmpty()); diff != "" {
-		t.Errorf("getCompleteData(%s) improperly parsed args (-want, +got)\n:%s", ctc.Args, diff)
+		t.Errorf("Autocomplete(%s) improperly parsed args (-want, +got)\n:%s", ctc.Args, diff)
 	}
 }
