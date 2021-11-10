@@ -40,5 +40,6 @@ func getCompleteData(n *Node, input *Input, data *Data) *CompleteData {
 		}
 	}
 
+	// TODO: return error if not fully processed
 	return nil
 }

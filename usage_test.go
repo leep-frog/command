@@ -188,6 +188,59 @@ func TestUsage(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "NodeRepeater usage works for finite optional",
+			utc: &UsageTestCase{
+				Node: SerialNodes(sampleRepeaterNode(2, 1)),
+				WantString: []string{
+					"KEY VALUE KEY VALUE { KEY VALUE }",
+					"",
+					"Arguments:",
+					"  KEY: test desc",
+					"  VALUE: test desc",
+				},
+			},
+		},
+		{
+			name: "NodeRepeater usage works for no optional",
+			utc: &UsageTestCase{
+				Node: SerialNodes(sampleRepeaterNode(2, 0)),
+				WantString: []string{
+					"KEY VALUE KEY VALUE",
+					"",
+					"Arguments:",
+					"  KEY: test desc",
+					"  VALUE: test desc",
+				},
+			},
+		},
+		{
+			name: "NodeRepeater usage works for no required",
+			utc: &UsageTestCase{
+				Node: SerialNodes(sampleRepeaterNode(0, 1)),
+				WantString: []string{
+					"{ KEY VALUE }",
+					"",
+					"Arguments:",
+					"  KEY: test desc",
+					"  VALUE: test desc",
+				},
+			},
+		},
+		{
+			name: "NodeRepeater usage works for unbounded",
+			utc: &UsageTestCase{
+				Node: SerialNodes(sampleRepeaterNode(3, UnboundedList)),
+				WantString: []string{
+					"KEY VALUE KEY VALUE KEY VALUE { KEY VALUE } ...",
+					"",
+					"Arguments:",
+					"  KEY: test desc",
+					"  VALUE: test desc",
+				},
+			},
+		},
+		/* Useful comment for commenting out tests */
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			UsageTest(t, test.utc)

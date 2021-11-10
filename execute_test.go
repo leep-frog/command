@@ -2310,6 +2310,192 @@ func TestExecute(t *testing.T) {
 				},
 			},
 		},
+		// NodeRepeater tests
+		{
+			name: "NodeRepeater fails if not enough",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(sampleRepeaterNode(3, 0)),
+				Args: []string{"k1", "100", "k2", "200"},
+				WantData: &Data{
+					"keys":   StringListValue("k1", "k2"),
+					"values": IntListValue(100, 200),
+				},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "k1"},
+						{value: "100"},
+						{value: "k2"},
+						{value: "200"},
+					},
+				},
+				WantErr:    fmt.Errorf(`Argument "KEY" requires at least 1 argument, got 0`),
+				WantStderr: []string{`Argument "KEY" requires at least 1 argument, got 0`},
+			},
+		},
+		{
+			name: "NodeRepeater fails if middle node doen't have enough",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(sampleRepeaterNode(1, 1)),
+				Args: []string{"k1", "100", "k2"},
+				WantData: &Data{
+					"keys":   StringListValue("k1", "k2"),
+					"values": IntListValue(100),
+				},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "k1"},
+						{value: "100"},
+						{value: "k2"},
+					},
+				},
+				WantErr:    fmt.Errorf(`Argument "VALUE" requires at least 1 argument, got 0`),
+				WantStderr: []string{`Argument "VALUE" requires at least 1 argument, got 0`},
+			},
+		},
+		{
+			name: "NodeRepeater fails if too many",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(sampleRepeaterNode(1, 0)),
+				Args: []string{"k1", "100", "k2", "200"},
+				WantData: &Data{
+					"keys":   StringListValue("k1"),
+					"values": IntListValue(100),
+				},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "k1"},
+						{value: "100"},
+						{value: "k2"},
+						{value: "200"},
+					},
+					remaining: []int{2, 3},
+				},
+				WantErr:    fmt.Errorf(`Unprocessed extra args: [k2 200]`),
+				WantStderr: []string{`Unprocessed extra args: [k2 200]`},
+			},
+		},
+		{
+			name: "NodeRepeater accepts minimum when no optional",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(sampleRepeaterNode(2, 0)),
+				Args: []string{"k1", "100", "k2", "200"},
+				WantData: &Data{
+					"keys":   StringListValue("k1", "k2"),
+					"values": IntListValue(100, 200),
+				},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "k1"},
+						{value: "100"},
+						{value: "k2"},
+						{value: "200"},
+					},
+				},
+			},
+		},
+		{
+			name: "NodeRepeater accepts minimum when optional",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(sampleRepeaterNode(2, 3)),
+				Args: []string{"k1", "100", "k2", "200"},
+				WantData: &Data{
+					"keys":   StringListValue("k1", "k2"),
+					"values": IntListValue(100, 200),
+				},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "k1"},
+						{value: "100"},
+						{value: "k2"},
+						{value: "200"},
+					},
+				},
+			},
+		},
+		{
+			name: "NodeRepeater accepts minimum when unlimited optional",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(sampleRepeaterNode(2, 3)),
+				Args: []string{"k1", "100", "k2", "200"},
+				WantData: &Data{
+					"keys":   StringListValue("k1", "k2"),
+					"values": IntListValue(100, 200),
+				},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "k1"},
+						{value: "100"},
+						{value: "k2"},
+						{value: "200"},
+					},
+				},
+			},
+		},
+		{
+			name: "NodeRepeater accepts maximum when no optional",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(sampleRepeaterNode(2, 0)),
+				Args: []string{"k1", "100", "k2", "200"},
+				WantData: &Data{
+					"keys":   StringListValue("k1", "k2"),
+					"values": IntListValue(100, 200),
+				},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "k1"},
+						{value: "100"},
+						{value: "k2"},
+						{value: "200"},
+					},
+				},
+			},
+		},
+		{
+			name: "NodeRepeater accepts maximum when optional",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(sampleRepeaterNode(1, 1)),
+				Args: []string{"k1", "100", "k2", "200"},
+				WantData: &Data{
+					"keys":   StringListValue("k1", "k2"),
+					"values": IntListValue(100, 200),
+				},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "k1"},
+						{value: "100"},
+						{value: "k2"},
+						{value: "200"},
+					},
+				},
+			},
+		},
+		{
+			name: "NodeRepeater with unlimited optional accepts a bunch",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(sampleRepeaterNode(1, UnboundedList)),
+				Args: []string{"k1", "100", "k2", "200", "k3", "300", "k4", "400", "...", "0", "kn", "999"},
+				WantData: &Data{
+					"keys":   StringListValue("k1", "k2", "k3", "k4", "...", "kn"),
+					"values": IntListValue(100, 200, 300, 400, 0, 999),
+				},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "k1"},
+						{value: "100"},
+						{value: "k2"},
+						{value: "200"},
+						{value: "k3"},
+						{value: "300"},
+						{value: "k4"},
+						{value: "400"},
+						{value: "..."},
+						{value: "0"},
+						{value: "kn"},
+						{value: "999"},
+					},
+				},
+			},
+		},
 		/* Useful for commenting out tests. */
 	} {
 		t.Run(test.name, func(t *testing.T) {
@@ -3005,6 +3191,102 @@ func TestComplete(t *testing.T) {
 				},
 			},
 		},
+		// NodeRepeater
+		{
+			name: "NodeRepeater completes first node",
+			ctc: &CompleteTestCase{
+				Node: SerialNodes(sampleRepeaterNode(1, 2)),
+				Want: []string{"alpha", "bravo", "brown", "charlie"},
+				WantData: &Data{
+					"keys": StringListValue(""),
+				},
+			},
+		},
+		{
+			name: "NodeRepeater completes first node partial",
+			ctc: &CompleteTestCase{
+				Node: SerialNodes(sampleRepeaterNode(1, 2)),
+				Args: "cmd b",
+				Want: []string{"bravo", "brown"},
+				WantData: &Data{
+					"keys": StringListValue("b"),
+				},
+			},
+		},
+		{
+			name: "NodeRepeater completes second node",
+			ctc: &CompleteTestCase{
+				Node: SerialNodes(sampleRepeaterNode(1, 2)),
+				Args: "cmd brown ",
+				Want: []string{"1", "121", "1213121"},
+				WantData: &Data{
+					"keys": StringListValue("brown"),
+				},
+			},
+		},
+		{
+			name: "NodeRepeater completes second node partial",
+			ctc: &CompleteTestCase{
+				Node: SerialNodes(sampleRepeaterNode(1, 2)),
+				Args: "cmd brown 12",
+				Want: []string{"121", "1213121"},
+				WantData: &Data{
+					"keys":   StringListValue("brown"),
+					"values": IntListValue(12),
+				},
+			},
+		},
+		{
+			name: "NodeRepeater completes second required iteration",
+			ctc: &CompleteTestCase{
+				Node: SerialNodes(sampleRepeaterNode(2, 0)),
+				Args: "cmd brown 12 c",
+				Want: []string{"charlie"},
+				WantData: &Data{
+					// TODO: cmp.diff printing for this is a bit lacking
+					"keys":   StringListValue("brown", "c"),
+					"values": IntListValue(12),
+				},
+			},
+		},
+		{
+			name: "NodeRepeater completes optional iteration",
+			ctc: &CompleteTestCase{
+				Node: SerialNodes(sampleRepeaterNode(2, 1)),
+				Args: "cmd brown 12 charlie 21 alpha 1",
+				Want: []string{"1", "121", "1213121"},
+				WantData: &Data{
+					// TODO: cmp.diff printing for this is a bit lacking
+					"keys":   StringListValue("brown", "charlie", "alpha"),
+					"values": IntListValue(12, 21, 1),
+				},
+			},
+		},
+		{
+			name: "NodeRepeater completes unbounded optional iteration",
+			ctc: &CompleteTestCase{
+				Node: SerialNodes(sampleRepeaterNode(2, UnboundedList)),
+				Args: "cmd brown 12 charlie 21 alpha 100 delta 98 b",
+				Want: []string{"bravo", "brown"},
+				WantData: &Data{
+					// TODO: cmp.diff printing for this is a bit lacking
+					"keys":   StringListValue("brown", "charlie", "alpha", "delta", "b"),
+					"values": IntListValue(12, 21, 100, 98),
+				},
+			},
+		},
+		{
+			name: "NodeRepeater doesn't complete beyond repeated iterations",
+			ctc: &CompleteTestCase{
+				Node: SerialNodes(sampleRepeaterNode(2, 1)),
+				Args: "cmd brown 12 charlie 21 alpha 100 b",
+				WantData: &Data{
+					// TODO: cmp.diff printing for this is a bit lacking
+					"keys":   StringListValue("brown", "charlie", "alpha"),
+					"values": IntListValue(12, 21, 100),
+				},
+			},
+		},
 		/* Useful comment for commenting out tests */
 	} {
 		t.Run(test.name, func(t *testing.T) {
@@ -3037,4 +3319,23 @@ func printArgsNode() *Node {
 			return nil
 		}),
 	}
+}
+
+func sampleRepeaterNode(minN, optionalN int) Processor {
+	return NodeRepeater(SerialNodes(
+		StringNode("KEY", testDesc, CustomSetter(func(v *Value, d *Data) {
+			if !d.HasArg("keys") {
+				d.Set("keys", StringListValue(v.String()))
+			} else {
+				d.Set("keys", StringListValue(append(d.StringList("keys"), v.String())...))
+			}
+		}), SimpleCompletor("alpha", "bravo", "charlie", "brown")),
+		IntNode("VALUE", testDesc, CustomSetter(func(v *Value, d *Data) {
+			if !d.HasArg("values") {
+				d.Set("values", IntListValue(v.Int()))
+			} else {
+				d.Set("values", IntListValue(append(d.IntList("values"), v.Int())...))
+			}
+		}), SimpleCompletor("1", "121", "1213121")),
+	), minN, optionalN)
 }

@@ -1,7 +1,6 @@
 package sourcerer
 
 import (
-	"fmt"
 	"io/ioutil"
 	"sort"
 	"strings"
@@ -529,7 +528,6 @@ func TestSourcerer(t *testing.T) {
 		/* Useful for commenting out tests */
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			fmt.Println("===========", test.name)
 			if err := ioutil.WriteFile(f.Name(), nil, 0644); err != nil {
 				t.Fatalf("failed to clear file: %v", err)
 			}

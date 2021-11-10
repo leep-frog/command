@@ -8,7 +8,6 @@ type ArgNode struct {
 	opt       *argOpt
 	minN      int
 	optionalN int
-	//transform func([]*string) (*Value, error)
 	vt        ValueType
 	shortName rune
 	flag      bool

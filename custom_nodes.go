@@ -216,6 +216,88 @@ func SimpleProcessor(e func(*Input, Output, *Data, *ExecuteData) error, c func(*
 	}
 }
 
+// NodeRepeater is a `Processor` that runs the provided Node at least `minN` times and up to `minN + optionalN` times.
+// It should work with most node types, but hasn't been tested with branch nodes and flags really.
+// Additionally, any argument nodes under it should probably use `CustomSetter` arg options.
+func NodeRepeater(n *Node, minN, optionalN int) Processor {
+	return &nodeRepeater{minN, optionalN, n}
+}
+
+type nodeRepeater struct {
+	minN      int
+	optionalN int
+	n         *Node
+}
+
+func (nr *nodeRepeater) Usage(u *Usage) {
+	nu := GetUsage(nr.n)
+
+	// Merge UsageSection
+	for k1, m := range *nu.UsageSection {
+		for k2, v := range m {
+			u.UsageSection.Add(k1, k2, v)
+		}
+	}
+
+	// Merge Description
+	if nu.Description != "" {
+		u.Description = nu.Description
+	}
+
+	// Add Arguments
+	for i := 0; i < nr.minN; i++ {
+		u.Usage = append(u.Usage, nu.Usage...)
+	}
+
+	if nr.optionalN == UnboundedList {
+		u.Usage = append(u.Usage, "{")
+		u.Usage = append(u.Usage, nu.Usage...)
+		u.Usage = append(u.Usage, "}")
+		u.Usage = append(u.Usage, "...")
+	} else if nr.optionalN > 0 {
+		u.Usage = append(u.Usage, "{")
+		for i := 0; i < nr.optionalN; i++ {
+			u.Usage = append(u.Usage, nu.Usage...)
+		}
+		u.Usage = append(u.Usage, "}")
+	}
+
+	// We don't add flags because those are, presumably, done all at once at the beginning.
+	// Additionally, SubSections are only used by BranchNodes, and I can't imagine those being used inside of NodeRepeater
+	// If I am ever proven wrong on either of those claims, that person can implement usage updating in that case.
+}
+
+func (nr *nodeRepeater) proceedCondition(exCount int, i *Input) bool {
+	// Keep going if...
+	return (
+	// we haven't run the minimum number of times
+	exCount < nr.minN ||
+		// there is more input AND there are optional cycles left
+		(!i.FullyProcessed() && (nr.optionalN == UnboundedList || exCount < nr.minN+nr.optionalN)))
+}
+
+func (nr *nodeRepeater) Execute(i *Input, o Output, d *Data, e *ExecuteData) error {
+	ieo := NewIgnoreErrOutput(o, IsExtraArgsError)
+	for exCount := 0; nr.proceedCondition(exCount, i); exCount++ {
+		if err := iterativeExecute(nr.n, i, ieo, d, e); err != nil && !IsExtraArgsError(err) {
+			return err
+		}
+	}
+	// A not enough args error will, presumably, be returned by
+	// one of the iterativeExecute functions if necessary
+	return nil
+}
+
+func (nr *nodeRepeater) Complete(i *Input, d *Data) *CompleteData {
+	for exCount := 0; nr.proceedCondition(exCount, i); exCount++ {
+		if c := getCompleteData(nr.n, i, d); c != nil {
+			return c
+		}
+	}
+	// TODO: should we return an empty completion if input is fully processed???
+	return nil
+}
+
 type simpleProcessor struct {
 	e    func(*Input, Output, *Data, *ExecuteData) error
 	c    func(*Input, *Data) *CompleteData
