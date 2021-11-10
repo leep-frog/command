@@ -80,10 +80,3 @@ type ExecuteData struct {
 	Executable []string
 	Executor   []func(Output, *Data) error
 }
-
-type CompleteData struct {
-	// Since printing out data during a completion command causes issues,
-	// any error encountered will be stored here.
-	Completion *Completion
-	Error      error
-}

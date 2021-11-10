@@ -64,8 +64,8 @@ func (e *executor) Execute(_ *Input, _ Output, _ *Data, eData *ExecuteData) erro
 	return nil
 }
 
-func (e *executor) Complete(*Input, *Data) *CompleteData {
-	return nil
+func (e *executor) Complete(*Input, *Data) (*Completion, error) {
+	return nil, nil
 }
 
 func (e *executor) Usage(u *Usage) {
@@ -94,33 +94,31 @@ func (bn *branchNode) Execute(input *Input, output Output, data *Data, eData *Ex
 	return nil
 }
 
-func (bn *branchNode) Complete(input *Input, data *Data) *CompleteData {
+func (bn *branchNode) Complete(input *Input, data *Data) (*Completion, error) {
 	if len(input.remaining) > 1 {
-		bn.getNext(input, data)
-		return nil
+		return nil, bn.getNext(input, data)
 	}
 
-	cd := &CompleteData{}
+	c := &Completion{}
+	var defaultNodeErr error
 	if bn.def != nil {
 		// Need to iterate over the remaining nodes in case the immediately next node
 		// doesn't process any args and the one after it does.
-		if newCD := getCompleteData(bn.def, input, data); newCD != nil {
-			cd = newCD
+		var newC *Completion
+		newC, defaultNodeErr = getCompleteData(bn.def, input, data)
+		if newC != nil {
+			c = newC
 		}
 	}
 
 	if !bn.scCompletion {
-		return cd
-	}
-
-	if cd.Completion == nil {
-		cd.Completion = &Completion{}
+		return c, defaultNodeErr
 	}
 
 	for k := range bn.branches {
-		cd.Completion.Suggestions = append(cd.Completion.Suggestions, k)
+		c.Suggestions = append(c.Suggestions, k)
 	}
-	return cd
+	return c, defaultNodeErr
 }
 
 func (bn *branchNode) getNext(input *Input, data *Data) error {
@@ -209,7 +207,8 @@ func BranchNode(branches map[string]*Node, dflt *Node, completeSubcommands bool)
 	}
 }
 
-func SimpleProcessor(e func(*Input, Output, *Data, *ExecuteData) error, c func(*Input, *Data) *CompleteData) Processor {
+// TODO: The latter function is never used, so maybe just remove it?
+func SimpleProcessor(e func(*Input, Output, *Data, *ExecuteData) error, c func(*Input, *Data) (*Completion, error)) Processor {
 	return &simpleProcessor{
 		e: e,
 		c: c,
@@ -288,19 +287,20 @@ func (nr *nodeRepeater) Execute(i *Input, o Output, d *Data, e *ExecuteData) err
 	return nil
 }
 
-func (nr *nodeRepeater) Complete(i *Input, d *Data) *CompleteData {
+func (nr *nodeRepeater) Complete(i *Input, d *Data) (*Completion, error) {
 	for exCount := 0; nr.proceedCondition(exCount, i); exCount++ {
-		if c := getCompleteData(nr.n, i, d); c != nil {
-			return c
+		c, err := getCompleteData(nr.n, i, d)
+		if c != nil || err != nil {
+			return c, err
 		}
 	}
 	// TODO: should we return an empty completion if input is fully processed???
-	return nil
+	return nil, nil
 }
 
 type simpleProcessor struct {
 	e    func(*Input, Output, *Data, *ExecuteData) error
-	c    func(*Input, *Data) *CompleteData
+	c    func(*Input, *Data) (*Completion, error)
 	desc string
 }
 
@@ -317,9 +317,9 @@ func (sp *simpleProcessor) Execute(i *Input, o Output, d *Data, e *ExecuteData) 
 	return sp.e(i, o, d, e)
 }
 
-func (sp *simpleProcessor) Complete(i *Input, d *Data) *CompleteData {
+func (sp *simpleProcessor) Complete(i *Input, d *Data) (*Completion, error) {
 	if sp.c == nil {
-		return nil
+		return nil, nil
 	}
 	return sp.c(i, d)
 }

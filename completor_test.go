@@ -161,6 +161,7 @@ func TestParseAndComplete(t *testing.T) {
 		suggestions []string
 		wantData    *Data
 		want        []string
+		wantErr     error
 	}{
 		{
 			name: "handles empty array",
@@ -520,7 +521,17 @@ func TestParseAndComplete(t *testing.T) {
 			n := SerialNodes(StringListNode("sl", testDesc, 0, UnboundedList, c))
 
 			data := &Data{}
-			got := autocomplete(n, test.args, data)
+			got, err := autocomplete(n, test.args, data)
+			if test.wantErr == nil && err != nil {
+				t.Errorf("autocomplete(%v) returned error (%v) when shouldn't have", test.args, err)
+			}
+			if test.wantErr != nil {
+				if err == nil {
+					t.Errorf("autocomplete(%v) returned no error when should have returned %v", test.args, test.wantErr)
+				} else if diff := cmp.Diff(test.wantErr.Error(), err.Error()); diff != "" {
+					t.Errorf("autocomplete(%v) returned unexpected error (-want, +got):\n%s", test.args, diff)
+				}
+			}
 			if diff := cmp.Diff(test.want, got, cmpopts.EquateEmpty()); diff != "" {
 				t.Errorf("Autocomplete(%s) produced incorrect completions (-want, +got):\n%s", test.args, diff)
 			}
@@ -530,7 +541,7 @@ func TestParseAndComplete(t *testing.T) {
 				wantData = &Data{}
 			}
 			if diff := cmp.Diff(wantData, data, cmpopts.EquateEmpty()); diff != "" {
-				t.Errorf("getCompleteData(%s) improperly parsed args (-want, +got)\n:%s", test.args, diff)
+				t.Errorf("Autocomplete(%s) improperly parsed args (-want, +got)\n:%s", test.args, diff)
 			}
 		})
 	}

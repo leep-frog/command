@@ -42,7 +42,7 @@ func (cc *commandCache) Usage(u *Usage) {
 	u.Usage = append(u.Usage, "^")
 }
 
-func (cc *commandCache) Complete(input *Input, data *Data) *CompleteData {
+func (cc *commandCache) Complete(input *Input, data *Data) (*Completion, error) {
 	return getCompleteData(cc.n, input, data)
 }
 

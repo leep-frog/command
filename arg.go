@@ -159,7 +159,7 @@ func (an *ArgNode) aliasCheck(input *Input, complete bool) {
 	}
 }
 
-func (an *ArgNode) Complete(input *Input, data *Data) *CompleteData {
+func (an *ArgNode) Complete(input *Input, data *Data) (*Completion, error) {
 	an.aliasCheck(input, true)
 
 	sl, enough := input.PopN(an.minN, an.optionalN)
@@ -173,14 +173,10 @@ func (an *ArgNode) Complete(input *Input, data *Data) *CompleteData {
 			if len(sl) > 0 {
 				lastArg = *sl[len(sl)-1]
 			}
-			return &CompleteData{
-				Completion: an.opt.completor.Complete(lastArg, v, data),
-			}
+			return an.opt.completor.Complete(lastArg, v, data), nil
 		}
 
-		return &CompleteData{
-			Error: err,
-		}
+		return nil, err
 	}
 
 	// Run custom transformer on a best effor basis (i.e. if the transformer fails,
@@ -201,12 +197,12 @@ func (an *ArgNode) Complete(input *Input, data *Data) *CompleteData {
 
 	// If we have enough and more needs to be processed.
 	if enough && !input.FullyProcessed() {
-		return nil
+		return nil, nil
 	}
 
 	if an.opt == nil || an.opt.completor == nil {
 		// We are completing for this arg so we should return.
-		return &CompleteData{}
+		return &Completion{}, nil
 	}
 
 	var lastArg string
@@ -214,9 +210,7 @@ func (an *ArgNode) Complete(input *Input, data *Data) *CompleteData {
 	if len(ta) > 0 {
 		lastArg = ta[len(ta)-1]
 	}
-	return &CompleteData{
-		Completion: an.opt.completor.Complete(lastArg, v, data),
-	}
+	return an.opt.completor.Complete(lastArg, v, data), nil
 }
 
 func StringListNode(name, desc string, minN, optionalN int, opts ...ArgOpt) *ArgNode {

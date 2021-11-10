@@ -37,7 +37,7 @@ type flagNode struct {
 	flagMap map[string]Flag
 }
 
-func (fn *flagNode) Complete(input *Input, data *Data) *CompleteData {
+func (fn *flagNode) Complete(input *Input, data *Data) (*Completion, error) {
 	for i := 0; i < len(input.remaining); {
 		a, _ := input.PeekAt(i)
 		f, ok := fn.flagMap[a]
@@ -49,9 +49,10 @@ func (fn *flagNode) Complete(input *Input, data *Data) *CompleteData {
 		input.offset = i
 		// Remove flag argument (e.g. --flagName).
 		input.Pop()
-		if cd := f.Processor().Complete(input, data); cd != nil {
+		c, err := f.Processor().Complete(input, data)
+		if c != nil || err != nil {
 			input.offset = 0
-			return cd
+			return c, err
 		}
 		input.offset = 0
 	}
@@ -62,13 +63,11 @@ func (fn *flagNode) Complete(input *Input, data *Data) *CompleteData {
 			k = append(k, n)
 		}
 		sort.Strings(k)
-		return &CompleteData{
-			Completion: &Completion{
-				Suggestions: k,
-			},
-		}
+		return &Completion{
+			Suggestions: k,
+		}, nil
 	}
-	return nil
+	return nil, nil
 }
 
 func (fn *flagNode) Execute(input *Input, output Output, data *Data, eData *ExecuteData) error {
@@ -184,8 +183,8 @@ func (bf *boolFlag) Processor() Processor {
 	return bf
 }
 
-func (bf *boolFlag) Complete(*Input, *Data) *CompleteData {
-	return nil
+func (bf *boolFlag) Complete(*Input, *Data) (*Completion, error) {
+	return nil, nil
 }
 
 func (bf *boolFlag) Usage(u *Usage) {

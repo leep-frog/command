@@ -59,8 +59,8 @@ func (bn *bashCommand) Get(d *Data) *Value {
 	return (*d)[bn.argName]
 }
 
-func (bn *bashCommand) Complete(input *Input, data *Data) *CompleteData {
-	return nil
+func (bn *bashCommand) Complete(input *Input, data *Data) (*Completion, error) {
+	return nil, nil
 }
 
 func (bn *bashCommand) Usage(u *Usage) {

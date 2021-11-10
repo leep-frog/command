@@ -80,7 +80,7 @@ func (un *aliasUsageNode) Execute(input *Input, output Output, data *Data, eData
 	return un.opNode.Processor.Execute(input, output, data, eData)
 }
 
-func (un *aliasUsageNode) Complete(input *Input, data *Data) *CompleteData {
+func (un *aliasUsageNode) Complete(input *Input, data *Data) (*Completion, error) {
 	return un.opNode.Processor.Complete(input, data)
 }
 
@@ -227,13 +227,11 @@ func (ea *executeAlias) Execute(input *Input, output Output, data *Data, eData *
 	return output.Err(input.CheckAliases(1, ea.ac, ea.name, false))
 }
 
-func (ea *executeAlias) Complete(input *Input, data *Data) *CompleteData {
+func (ea *executeAlias) Complete(input *Input, data *Data) (*Completion, error) {
 	if err := input.CheckAliases(1, ea.ac, ea.name, true); err != nil {
-		return &CompleteData{
-			Error: err,
-		}
+		return nil, err
 	}
-	return nil
+	return nil, nil
 }
 
 type addAlias struct {
@@ -276,6 +274,6 @@ func (aa *addAlias) Execute(input *Input, output Output, data *Data, _ *ExecuteD
 	return nil
 }
 
-func (aa *addAlias) Complete(input *Input, data *Data) *CompleteData {
+func (aa *addAlias) Complete(input *Input, data *Data) (*Completion, error) {
 	return getCompleteData(aa.node, input, data)
 }

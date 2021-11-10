@@ -2537,9 +2537,9 @@ func (t *tt) do(input *Input) {
 	}
 }
 
-func (t *tt) Complete(input *Input, data *Data) *CompleteData {
+func (t *tt) Complete(input *Input, data *Data) (*Completion, error) {
 	t.do(input)
-	return nil
+	return nil, nil
 }
 
 func TestComplete(t *testing.T) {
@@ -3051,7 +3051,37 @@ func TestComplete(t *testing.T) {
 					"alpha": SerialNodes(OptionalStringNode("hello", testDesc, SimpleCompletor("other", "stuff"))),
 					"bravo": {},
 				}, nil, true),
-				Args: "cmd some thing else",
+				Args:    "cmd some thing else",
+				WantErr: fmt.Errorf("Branching argument must be one of [a alpha bravo]"),
+			},
+		},
+		{
+			name: "branch node returns default node error if branch completion is false",
+			ctc: &CompleteTestCase{
+				Node: BranchNode(map[string]*Node{
+					"a":     {},
+					"alpha": SerialNodes(OptionalStringNode("hello", testDesc, SimpleCompletor("other", "stuff"))),
+					"bravo": {},
+				}, SerialNodes(SimpleProcessor(nil, func(i *Input, d *Data) (*Completion, error) {
+					return nil, fmt.Errorf("bad news bears")
+				})), false),
+				Args:    "cmd ",
+				WantErr: fmt.Errorf("bad news bears"),
+			},
+		},
+		{
+			name: "branch node returns default node error and branch completions",
+			ctc: &CompleteTestCase{
+				Node: BranchNode(map[string]*Node{
+					"a":     {},
+					"alpha": SerialNodes(OptionalStringNode("hello", testDesc, SimpleCompletor("other", "stuff"))),
+					"bravo": {},
+				}, SerialNodes(SimpleProcessor(nil, func(i *Input, d *Data) (*Completion, error) {
+					return nil, fmt.Errorf("bad news bears")
+				})), true),
+				Args:    "cmd ",
+				Want:    []string{"a", "alpha", "bravo"},
+				WantErr: fmt.Errorf("bad news bears"),
 			},
 		},
 		{

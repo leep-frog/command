@@ -231,6 +231,7 @@ type CompleteTestCase struct {
 	Args string
 
 	Want     []string
+	WantErr  error
 	WantData *Data
 }
 
@@ -238,7 +239,18 @@ func CompleteTest(t *testing.T, ctc *CompleteTestCase) {
 	t.Helper()
 	data := &Data{}
 
-	got := autocomplete(ctc.Node, ctc.Args, data)
+	got, err := autocomplete(ctc.Node, ctc.Args, data)
+	if ctc.WantErr == nil && err != nil {
+		t.Errorf("autocomplete(%v) returned error (%v) when shouldn't have", ctc.Args, err)
+	}
+	if ctc.WantErr != nil {
+		if err == nil {
+			t.Errorf("autocomplete(%v) returned no error when should have returned %v", ctc.Args, ctc.WantErr)
+		} else if diff := cmp.Diff(ctc.WantErr.Error(), err.Error()); diff != "" {
+			t.Errorf("autocomplete(%v) returned unexpected error (-want, +got):\n%s", ctc.Args, diff)
+		}
+	}
+
 	if diff := cmp.Diff(ctc.Want, got, cmpopts.EquateEmpty()); diff != "" {
 		t.Errorf("Autocomplete(%v) produced incorrect completions (-want, +got):\n%s", ctc.Args, diff)
 	}

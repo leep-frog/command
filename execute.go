@@ -113,13 +113,13 @@ func (dn *descNode) Execute(*Input, Output, *Data, *ExecuteData) error {
 	return nil
 }
 
-func (dn *descNode) Complete(*Input, *Data) *CompleteData {
-	return nil
+func (dn *descNode) Complete(*Input, *Data) (*Completion, error) {
+	return nil, nil
 }
 
 type Processor interface {
 	Execute(*Input, Output, *Data, *ExecuteData) error
-	Complete(*Input, *Data) *CompleteData
+	Complete(*Input, *Data) (*Completion, error)
 	Usage(*Usage)
 }
 

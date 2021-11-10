@@ -1287,7 +1287,8 @@ func TestAliasComplete(t *testing.T) {
 					&Completor{
 						SuggestionFetcher: &ListFetcher{[]string{"un", "deux", "trois"}},
 					}))),
-				Args: "cmd alpha b ",
+				Args:    "cmd alpha b ",
+				WantErr: fmt.Errorf("alias has empty value"),
 			},
 		},
 		{

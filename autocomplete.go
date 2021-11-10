@@ -1,30 +1,31 @@
 package command
 
 func Autocomplete(n *Node, compLine string) []string {
-	return autocomplete(n, compLine, &Data{})
+	// Printing things out in autocomplete mode isn't feasible, so the error
+	// is only really used for testing purposes, hence why it is ignored here.
+	sl, _ := autocomplete(n, compLine, &Data{})
+	return sl
 }
 
 // Separate method for testing purposes.
-func autocomplete(n *Node, compLine string, data *Data) []string {
+func autocomplete(n *Node, compLine string, data *Data) ([]string, error) {
 	input := ParseCompLine(compLine)
-	cd := getCompleteData(n, input, data)
-	if cd == nil {
-		return nil
-	}
-	c := cd.Completion
-	if c == nil {
-		return nil
-	}
+	c, err := getCompleteData(n, input, data)
 
-	return append(c.Process(input))
+	var r []string
+	if c != nil {
+		r = c.Process(input)
+	}
+	return r, err
 }
 
 // Separate method for testing purposes.
-func getCompleteData(n *Node, input *Input, data *Data) *CompleteData {
+func getCompleteData(n *Node, input *Input, data *Data) (*Completion, error) {
 	for n != nil {
 		if n.Processor != nil {
-			if c := n.Processor.Complete(input, data); c != nil {
-				return c
+			c, err := n.Processor.Complete(input, data)
+			if c != nil || err != nil {
+				return c, err
 			}
 		}
 
@@ -34,12 +35,10 @@ func getCompleteData(n *Node, input *Input, data *Data) *CompleteData {
 
 		var err error
 		if n, err = n.Edge.Next(input, data); err != nil {
-			return &CompleteData{
-				Error: err,
-			}
+			return nil, err
 		}
 	}
 
-	// TODO: return error if not fully processed
-	return nil
+	// TODO: return error if not fully processed (extra args err)
+	return nil, nil
 }
