@@ -39,6 +39,8 @@ func getCompleteData(n *Node, input *Input, data *Data) (*Completion, error) {
 		}
 	}
 
-	// TODO: return error if not fully processed (extra args err)
+	if !input.FullyProcessed() {
+		return nil, ExtraArgsErr(input)
+	}
 	return nil, nil
 }

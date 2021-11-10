@@ -290,11 +290,10 @@ func (nr *nodeRepeater) Execute(i *Input, o Output, d *Data, e *ExecuteData) err
 func (nr *nodeRepeater) Complete(i *Input, d *Data) (*Completion, error) {
 	for exCount := 0; nr.proceedCondition(exCount, i); exCount++ {
 		c, err := getCompleteData(nr.n, i, d)
-		if c != nil || err != nil {
+		if c != nil || (err != nil && !IsExtraArgsError(err)) {
 			return c, err
 		}
 	}
-	// TODO: should we return an empty completion if input is fully processed???
 	return nil, nil
 }
 

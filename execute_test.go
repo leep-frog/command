@@ -2676,6 +2676,7 @@ func TestComplete(t *testing.T) {
 					"sl": StringListValue("uno", "dos"),
 					"i":  IntValue(1),
 				},
+				WantErr: fmt.Errorf("Unprocessed extra args: [what now]"),
 			},
 		},
 		{
@@ -3310,6 +3311,19 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(sampleRepeaterNode(2, 1)),
 				Args: "cmd brown 12 charlie 21 alpha 100 b",
+				WantData: &Data{
+					// TODO: cmp.diff printing for this is a bit lacking
+					"keys":   StringListValue("brown", "charlie", "alpha"),
+					"values": IntListValue(12, 21, 100),
+				},
+				WantErr: fmt.Errorf("Unprocessed extra args: [b]"),
+			},
+		},
+		{
+			name: "NodeRepeater works if fully processed",
+			ctc: &CompleteTestCase{
+				Node: SerialNodes(sampleRepeaterNode(2, 1), StringNode("S", testDesc, SimpleCompletor("un", "deux", "trois"))),
+				Args: "cmd brown 12 charlie 21 alpha 100",
 				WantData: &Data{
 					// TODO: cmp.diff printing for this is a bit lacking
 					"keys":   StringListValue("brown", "charlie", "alpha"),
