@@ -2,6 +2,7 @@ package command
 
 import (
 	"fmt"
+	"os"
 	"regexp"
 	"strings"
 )
@@ -118,6 +119,103 @@ func MinLength(length int) *validatorOption {
 		func(vs string) error {
 			if len(vs) < length {
 				return fmt.Errorf("[MinLength] value must be at least %d character%s", length, plural)
+			}
+			return nil
+		},
+	)
+}
+
+func fileExists(vName, s string) (os.FileInfo, error) {
+	fi, err := os.Stat(s)
+	if os.IsNotExist(err) {
+		return fi, fmt.Errorf("[%s] file %q does not exist", vName, s)
+	}
+	if err != nil {
+		return fi, fmt.Errorf("[%s] failed to read file %q: %v", vName, s, err)
+	}
+	return fi, nil
+}
+
+func FileExists() *validatorOption {
+	return StringOption(
+		func(s string) error {
+			_, err := fileExists("FileExists", s)
+			return err
+		},
+	)
+}
+
+func FilesExist() *validatorOption {
+	return StringListOption(
+		func(ss []string) error {
+			for _, s := range ss {
+				if _, err := fileExists("FilesExist", s); err != nil {
+					return err
+				}
+			}
+			return nil
+		},
+	)
+}
+
+func isDir(vName, s string) error {
+	fi, err := fileExists(vName, s)
+	if err != nil {
+		return err
+	}
+	if !fi.IsDir() {
+		return fmt.Errorf("[%s] argument %q is a file", vName, s)
+	}
+	return nil
+}
+
+func IsDir() *validatorOption {
+	return StringOption(
+		func(s string) error {
+			return isDir("IsDir", s)
+		},
+	)
+}
+
+func AreDirs() *validatorOption {
+	return StringListOption(
+		func(ss []string) error {
+			for _, s := range ss {
+				if err := isDir("AreDirs", s); err != nil {
+					return err
+				}
+			}
+			return nil
+		},
+	)
+}
+
+func isFile(vName, s string) error {
+	fi, err := fileExists(vName, s)
+	if err != nil {
+		return err
+	}
+	if fi.IsDir() {
+		return fmt.Errorf("[%s] argument %q is a directory", vName, s)
+	}
+	return nil
+}
+
+func IsFile() *validatorOption {
+	return StringOption(
+		func(s string) error {
+			return isFile("IsFile", s)
+		},
+	)
+}
+
+func AreFiles() *validatorOption {
+	return StringListOption(
+		func(ss []string) error {
+			for _, s := range ss {
+				if err := isFile("AreFiles", s); err != nil {
+					return err
+				}
 			}
 			return nil
 		},

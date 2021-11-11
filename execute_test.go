@@ -572,7 +572,6 @@ func TestExecute(t *testing.T) {
 				WantErr:    fmt.Errorf(`validation failed: [Contains] value doesn't contain substring "good"`),
 			},
 		},
-
 		// MatchesRegex
 		{
 			name: "matches regex works",
@@ -722,6 +721,309 @@ func TestExecute(t *testing.T) {
 				}},
 				WantStderr: []string{"validation failed: [ListIsRegex] value \"+\" isn't a valid regex: error parsing regexp: missing argument to repetition operator: `+`"},
 				WantErr:    fmt.Errorf("validation failed: [ListIsRegex] value \"+\" isn't a valid regex: error parsing regexp: missing argument to repetition operator: `+`"),
+			},
+		},
+		// FileExists and FilesExist
+		{
+			name: "FileExists works",
+			etc: &ExecuteTestCase{
+				Node: &Node{
+					Processor: StringNode("S", testDesc, FileExists()),
+				},
+				Args: []string{"execute_test.go"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "execute_test.go"},
+					},
+				},
+				WantData: &Data{Values: map[string]*Value{
+					"S": StringValue("execute_test.go"),
+				}},
+			},
+		},
+		{
+			name: "FileExists fails",
+			etc: &ExecuteTestCase{
+				Node: &Node{
+					Processor: StringNode("S", testDesc, FileExists()),
+				},
+				Args: []string{"execute_test.gone"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "execute_test.gone"},
+					},
+				},
+				WantData: &Data{Values: map[string]*Value{
+					"S": StringValue("execute_test.gone"),
+				}},
+				WantErr:    fmt.Errorf(`validation failed: [FileExists] file "execute_test.gone" does not exist`),
+				WantStderr: []string{`validation failed: [FileExists] file "execute_test.gone" does not exist`},
+			},
+		},
+		{
+			name: "FilesExist works",
+			etc: &ExecuteTestCase{
+				Node: &Node{
+					Processor: StringListNode("SL", testDesc, 1, 3, FilesExist()),
+				},
+				Args: []string{"execute_test.go", "execute.go"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "execute_test.go"},
+						{value: "execute.go"},
+					},
+				},
+				WantData: &Data{Values: map[string]*Value{
+					"SL": StringListValue("execute_test.go", "execute.go"),
+				}},
+			},
+		},
+		{
+			name: "FilesExist fails",
+			etc: &ExecuteTestCase{
+				Node: &Node{
+					Processor: StringListNode("SL", testDesc, 1, 3, FilesExist()),
+				},
+				Args: []string{"execute_test.go", "execute.gone"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "execute_test.go"},
+						{value: "execute.gone"},
+					},
+				},
+				WantData: &Data{Values: map[string]*Value{
+					"SL": StringListValue("execute_test.go", "execute.gone"),
+				}},
+				WantErr:    fmt.Errorf(`validation failed: [FilesExist] file "execute.gone" does not exist`),
+				WantStderr: []string{`validation failed: [FilesExist] file "execute.gone" does not exist`},
+			},
+		},
+		// IsDir and AreDirs
+		{
+			name: "IsDir works",
+			etc: &ExecuteTestCase{
+				Node: &Node{
+					Processor: StringNode("S", testDesc, IsDir()),
+				},
+				Args: []string{"testing"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "testing"},
+					},
+				},
+				WantData: &Data{Values: map[string]*Value{
+					"S": StringValue("testing"),
+				}},
+			},
+		},
+		{
+			name: "IsDir fails when does not exist",
+			etc: &ExecuteTestCase{
+				Node: &Node{
+					Processor: StringNode("S", testDesc, IsDir()),
+				},
+				Args: []string{"tested"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "tested"},
+					},
+				},
+				WantData: &Data{Values: map[string]*Value{
+					"S": StringValue("tested"),
+				}},
+				WantErr:    fmt.Errorf(`validation failed: [IsDir] file "tested" does not exist`),
+				WantStderr: []string{`validation failed: [IsDir] file "tested" does not exist`},
+			},
+		},
+		{
+			name: "IsDir fails when not a directory",
+			etc: &ExecuteTestCase{
+				Node: &Node{
+					Processor: StringNode("S", testDesc, IsDir()),
+				},
+				Args: []string{"execute_test.go"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "execute_test.go"},
+					},
+				},
+				WantData: &Data{Values: map[string]*Value{
+					"S": StringValue("execute_test.go"),
+				}},
+				WantErr:    fmt.Errorf(`validation failed: [IsDir] argument "execute_test.go" is a file`),
+				WantStderr: []string{`validation failed: [IsDir] argument "execute_test.go" is a file`},
+			},
+		},
+		{
+			name: "AreDirs works",
+			etc: &ExecuteTestCase{
+				Node: &Node{
+					Processor: StringListNode("SL", testDesc, 1, 3, AreDirs()),
+				},
+				Args: []string{"testing", "cache"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "testing"},
+						{value: "cache"},
+					},
+				},
+				WantData: &Data{Values: map[string]*Value{
+					"SL": StringListValue("testing", "cache"),
+				}},
+			},
+		},
+		{
+			name: "AreDirs fails when does not exist",
+			etc: &ExecuteTestCase{
+				Node: &Node{
+					Processor: StringListNode("SL", testDesc, 1, 3, AreDirs()),
+				},
+				Args: []string{"testing", "cash"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "testing"},
+						{value: "cash"},
+					},
+				},
+				WantData: &Data{Values: map[string]*Value{
+					"SL": StringListValue("testing", "cash"),
+				}},
+				WantErr:    fmt.Errorf(`validation failed: [AreDirs] file "cash" does not exist`),
+				WantStderr: []string{`validation failed: [AreDirs] file "cash" does not exist`},
+			},
+		},
+		{
+			name: "AreDirs fails when not a directory",
+			etc: &ExecuteTestCase{
+				Node: &Node{
+					Processor: StringListNode("SL", testDesc, 1, 3, AreDirs()),
+				},
+				Args: []string{"testing", "execute.go"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "testing"},
+						{value: "execute.go"},
+					},
+				},
+				WantData: &Data{Values: map[string]*Value{
+					"SL": StringListValue("testing", "execute.go"),
+				}},
+				WantErr:    fmt.Errorf(`validation failed: [AreDirs] argument "execute.go" is a file`),
+				WantStderr: []string{`validation failed: [AreDirs] argument "execute.go" is a file`},
+			},
+		},
+		// IsFile and AreFiles
+		{
+			name: "IsFile works",
+			etc: &ExecuteTestCase{
+				Node: &Node{
+					Processor: StringNode("S", testDesc, IsFile()),
+				},
+				Args: []string{"execute.go"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "execute.go"},
+					},
+				},
+				WantData: &Data{Values: map[string]*Value{
+					"S": StringValue("execute.go"),
+				}},
+			},
+		},
+		{
+			name: "IsFile fails when does not exist",
+			etc: &ExecuteTestCase{
+				Node: &Node{
+					Processor: StringNode("S", testDesc, IsFile()),
+				},
+				Args: []string{"tested"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "tested"},
+					},
+				},
+				WantData: &Data{Values: map[string]*Value{
+					"S": StringValue("tested"),
+				}},
+				WantErr:    fmt.Errorf(`validation failed: [IsFile] file "tested" does not exist`),
+				WantStderr: []string{`validation failed: [IsFile] file "tested" does not exist`},
+			},
+		},
+		{
+			name: "IsFile fails when not a file",
+			etc: &ExecuteTestCase{
+				Node: &Node{
+					Processor: StringNode("S", testDesc, IsFile()),
+				},
+				Args: []string{"testing"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "testing"},
+					},
+				},
+				WantData: &Data{Values: map[string]*Value{
+					"S": StringValue("testing"),
+				}},
+				WantErr:    fmt.Errorf(`validation failed: [IsFile] argument "testing" is a directory`),
+				WantStderr: []string{`validation failed: [IsFile] argument "testing" is a directory`},
+			},
+		},
+		{
+			name: "AreFiles works",
+			etc: &ExecuteTestCase{
+				Node: &Node{
+					Processor: StringListNode("SL", testDesc, 1, 3, AreFiles()),
+				},
+				Args: []string{"execute.go", "cache.go"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "execute.go"},
+						{value: "cache.go"},
+					},
+				},
+				WantData: &Data{Values: map[string]*Value{
+					"SL": StringListValue("execute.go", "cache.go"),
+				}},
+			},
+		},
+		{
+			name: "AreFiles fails when does not exist",
+			etc: &ExecuteTestCase{
+				Node: &Node{
+					Processor: StringListNode("SL", testDesc, 1, 3, AreFiles()),
+				},
+				Args: []string{"execute.go", "cash"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "execute.go"},
+						{value: "cash"},
+					},
+				},
+				WantData: &Data{Values: map[string]*Value{
+					"SL": StringListValue("execute.go", "cash"),
+				}},
+				WantErr:    fmt.Errorf(`validation failed: [AreFiles] file "cash" does not exist`),
+				WantStderr: []string{`validation failed: [AreFiles] file "cash" does not exist`},
+			},
+		},
+		{
+			name: "AreFiles fails when not a directory",
+			etc: &ExecuteTestCase{
+				Node: &Node{
+					Processor: StringListNode("SL", testDesc, 1, 3, AreFiles()),
+				},
+				Args: []string{"execute.go", "testing"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "execute.go"},
+						{value: "testing"},
+					},
+				},
+				WantData: &Data{Values: map[string]*Value{
+					"SL": StringListValue("execute.go", "testing"),
+				}},
+				WantErr:    fmt.Errorf(`validation failed: [AreFiles] argument "testing" is a directory`),
+				WantStderr: []string{`validation failed: [AreFiles] argument "testing" is a directory`},
 			},
 		},
 		// InList & string menu
