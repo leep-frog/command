@@ -367,10 +367,8 @@ func StringListListNode(name, desc, breakSymbol string, minN, optionalN int, opt
 				CustomSetter(func(v *Value, d *Data) {
 					if v.Length() > 0 {
 						if !d.HasArgI(name) {
-							fmt.Println("yo")
 							d.SetI(name, [][]string{v.ToStringList()})
 						} else {
-							fmt.Println("he")
 							sl := d.GetI(name).([][]string)
 							d.SetI(name, append(sl, v.ToStringList()))
 						}
