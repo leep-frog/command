@@ -10,7 +10,7 @@ const (
 )
 
 var (
-	SetupArg = FileNode(SetupArgName, "file used to run setup for command")
+	SetupArg = FileNode(SetupArgName, "file used to run setup for command", HiddenArg())
 )
 
 type simpleEdge struct {
@@ -378,4 +378,14 @@ func StringListListNode(name, desc, breakSymbol string, minN, optionalN int, opt
 		),
 	}
 	return NodeRepeater(n, minN, optionalN)
+}
+
+type hiddenArg struct{}
+
+func (ha *hiddenArg) modifyArgOpt(ao *argOpt) {
+	ao.hiddenUsage = true
+}
+
+func HiddenArg() ArgOpt {
+	return &hiddenArg{}
 }

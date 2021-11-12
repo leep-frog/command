@@ -343,16 +343,18 @@ func getAutofillLetters(laFile string, suggestions []string) (string, bool) {
 	return caseToCompleteWith[:completeUpTo], true
 }
 
-func FileNode(argName, desc string) *ArgNode {
-	ao := &Completor{
-		SuggestionFetcher: &FileFetcher{},
-	}
-	return StringNode(argName, desc, ao, FileTransformer())
+func FileNode(argName, desc string, opts ...ArgOpt) *ArgNode {
+	opts = append(opts,
+		&Completor{SuggestionFetcher: &FileFetcher{}},
+		FileTransformer(),
+	)
+	return StringNode(argName, desc, opts...)
 }
 
-func FileListNode(argName, desc string, minN, optionalN int) *ArgNode {
-	ao := &Completor{
-		SuggestionFetcher: &FileFetcher{},
-	}
-	return StringListNode(argName, desc, minN, optionalN, ao, FileListTransformer())
+func FileListNode(argName, desc string, minN, optionalN int, opts ...ArgOpt) *ArgNode {
+	opts = append(opts,
+		&Completor{SuggestionFetcher: &FileFetcher{}},
+		FileListTransformer(),
+	)
+	return StringListNode(argName, desc, minN, optionalN, opts...)
 }

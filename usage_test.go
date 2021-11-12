@@ -37,6 +37,40 @@ func TestUsage(t *testing.T) {
 			},
 		},
 		{
+			name: "works with hidden arg",
+			utc: &UsageTestCase{
+				Node: SerialNodes(
+					StringNode("SARG1", "desc"),
+					StringNode("SARG2", "desc", HiddenArg()),
+					StringNode("SARG3", "desc"),
+				),
+				WantString: []string{
+					"SARG1 SARG3",
+					"",
+					"Arguments:",
+					"  SARG1: desc",
+					"  SARG3: desc",
+				},
+			},
+		},
+		{
+			name: "setup arg is hidden",
+			utc: &UsageTestCase{
+				Node: SerialNodes(
+					StringNode("SARG", "desc"),
+					SetupArg,
+					IntNode("IARG", "idesc"),
+				),
+				WantString: []string{
+					"SARG IARG",
+					"",
+					"Arguments:",
+					"  IARG: idesc",
+					"  SARG: desc",
+				},
+			},
+		},
+		{
 			name: "works with single arg and description node",
 			utc: &UsageTestCase{
 				Node: SerialNodes(StringNode("SARG", "desc"), Description("Does absolutely nothing")),

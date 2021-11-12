@@ -37,6 +37,10 @@ func (an *ArgNode) Set(v *Value, data *Data) {
 }
 
 func (an *ArgNode) Usage(u *Usage) {
+	if an.opt != nil && an.opt.hiddenUsage {
+		return
+	}
+
 	if an.desc != "" {
 		u.UsageSection.Add(ArgSection, an.name, an.desc)
 	}
