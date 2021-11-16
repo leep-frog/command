@@ -48,7 +48,15 @@ func (u *Usage) String() string {
 			for k := range kvs {
 				keys = append(keys, k)
 			}
-			sort.Strings(keys)
+			if sk == FlagSection {
+				// We want to sort flags by full name, not short flags.
+				// So, we trim "  [c]" from each flag description.
+				sort.SliceStable(keys, func(i, j int) bool {
+					return keys[i][4:] < keys[j][4:]
+				})
+			} else {
+				sort.Strings(keys)
+			}
 			for _, k := range keys {
 				r = append(r, fmt.Sprintf("  %s: %s", k, kvs[k]))
 			}

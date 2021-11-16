@@ -223,6 +223,28 @@ func TestUsage(t *testing.T) {
 			},
 		},
 		{
+			name: "flags are sorted by full name, not short flag",
+			utc: &UsageTestCase{
+				Node: SerialNodesTo(nil,
+					NewFlagNode(
+						BoolFlag("first", 'b', "un"),
+						BoolFlag("second", 'a', "deux"),
+					),
+					StringNode("SN", "node for a string"),
+				),
+				WantString: []string{
+					"SN --first|-b --second|-a",
+					"",
+					"Arguments:",
+					"  SN: node for a string",
+					"",
+					"Flags:",
+					"  [b] first: un",
+					"  [a] second: deux",
+				},
+			},
+		},
+		{
 			name: "NodeRepeater usage works for finite optional",
 			utc: &UsageTestCase{
 				Node: SerialNodes(sampleRepeaterNode(2, 1)),
