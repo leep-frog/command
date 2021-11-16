@@ -18,6 +18,14 @@ type Flag interface {
 	Processor() Processor
 }
 
+func flagName(f Flag) string {
+	return fmt.Sprintf("--%s", f.Name())
+}
+
+func flagShortName(f Flag) string {
+	return fmt.Sprintf("-%c", f.ShortName())
+}
+
 // NewFlagNode returns a node that iterates over the remaining command line
 // arguments and processes any flags that are present.
 func NewFlagNode(fs ...Flag) Processor {
@@ -25,8 +33,8 @@ func NewFlagNode(fs ...Flag) Processor {
 	for _, f := range fs {
 		// We explicitly don't check for duplicate keys to give more freedom to users
 		// For example, if they wanted to override a flag from a separate package
-		m[fmt.Sprintf("--%s", f.Name())] = f
-		m[fmt.Sprintf("-%c", f.ShortName())] = f
+		m[flagName(f)] = f
+		m[flagShortName(f)] = f
 	}
 	return &flagNode{
 		flagMap: m,
@@ -95,7 +103,7 @@ func (fn *flagNode) Usage(u *Usage) {
 	var flags []Flag
 	for k, f := range fn.flagMap {
 		// flagMap contains entries for name and short name, so ensure we only do each one once.
-		if k == fmt.Sprintf("--%s", f.Name()) {
+		if k == flagName(f) {
 			flags = append(flags, f)
 		}
 	}
@@ -104,10 +112,10 @@ func (fn *flagNode) Usage(u *Usage) {
 
 	for _, f := range flags {
 		if f.Desc() != "" {
-			u.UsageSection.Add(FlagSection, f.Name(), f.Desc())
+			u.UsageSection.Add(FlagSection, fmt.Sprintf("[%c] %s", f.ShortName(), f.Name()), f.Desc())
 		}
 
-		u.Flags = append(u.Flags, fmt.Sprintf("--%s|-%c", f.Name(), f.ShortName()))
+		u.Flags = append(u.Flags, fmt.Sprintf("%s|%s", flagName(f), flagShortName(f)))
 	}
 }
 
