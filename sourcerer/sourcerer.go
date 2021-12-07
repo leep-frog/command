@@ -72,7 +72,7 @@ const (
 	aliasFormat = "alias %s='_custom_execute_%s %s'\n"
 )
 
-// RunNodes runs the provided node
+// RunNodes executes the provided node. This function is used in individual main.go like files.
 func RunNodes(n *command.Node) error {
 	o := command.NewOutput()
 	// Don't care about execute data
