@@ -2,6 +2,7 @@ package command
 
 import (
 	"fmt"
+	"os"
 	"sort"
 	"strings"
 )
@@ -154,6 +155,27 @@ func GetUsage(n *Node) *Usage {
 
 func Execute(n *Node, input *Input, output Output) (*ExecuteData, error) {
 	return execute(n, input, output, &Data{})
+}
+
+// RunNodes executes the provided node. This function can be used when nodes
+// aren't used for CLI tools (such as in regular main.go files that are
+// executed via "go run").
+func RunNodes(n *Node) (*Data, error) {
+	d := &Data{}
+	return d, runNodes(n, d)
+}
+
+// Separate method for testing purposes.
+func runNodes(n *Node, d *Data) error {
+	o := NewOutput()
+	// Don't care about execute data
+	if _, err := execute(n, ParseExecuteArgs(os.Args[1:]), o, d); err != nil {
+		if IsUsageError(err) {
+			o.Stderr(GetUsage(n).String())
+		}
+		return err
+	}
+	return nil
 }
 
 // Separate method for testing purposes.
