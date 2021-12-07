@@ -72,7 +72,7 @@ const (
 	aliasFormat = "alias %s='_custom_execute_%s %s'\n"
 )
 
-// ParseArgs executes the provided CLI
+// RunNodes runs the provided node
 func RunNodes(n *command.Node) error {
 	o := command.NewOutput()
 	// Don't care about execute data
