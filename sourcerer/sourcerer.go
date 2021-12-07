@@ -72,6 +72,19 @@ const (
 	aliasFormat = "alias %s='_custom_execute_%s %s'\n"
 )
 
+// ParseArgs executes the provided CLI
+func RunNodes(n *command.Node) error {
+	o := command.NewOutput()
+	// Don't care about execute data
+	if _, err := command.Execute(n, command.ParseExecuteArgs(os.Args[1:]), o); err != nil {
+		if command.IsUsageError(err) {
+			o.Stderr(command.GetUsage(n).String())
+		}
+		return err
+	}
+	return nil
+}
+
 var (
 	cliArg          = command.StringNode("CLI", "Name of the CLI command to use")
 	fileArg         = command.FileNode("FILE", "Temporary file for execution")
