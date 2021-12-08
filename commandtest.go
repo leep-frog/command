@@ -51,6 +51,9 @@ type ExecuteTestCase struct {
 	// RunResponses are the stubbed responses to return from exec.Cmd.Run.
 	RunResponses    []*FakeRun
 	WantRunCommands [][]string
+
+	// Options to skip checks
+	SkipDataCheck bool
 }
 
 type FakeRun struct {
@@ -163,7 +166,7 @@ func ExecuteTest(t *testing.T, etc *ExecuteTestCase) {
 	}
 
 	// Check Data.
-	if diff := cmp.Diff(wantData, data, cmpopts.EquateEmpty()); diff != "" {
+	if diff := cmp.Diff(wantData, data, cmpopts.EquateEmpty()); diff != "" && !etc.SkipDataCheck {
 		t.Errorf("execute(%v) returned unexpected Data (-want, +got):\n%s", etc.Args, diff)
 	}
 
