@@ -55,7 +55,10 @@ const (
 
 	usageFunction = `
 	function mancli {
-		$GOPATH/bin/%s usage "$@"
+		# Extract the custom execute function so that this function
+		# can work regardless of file name
+		file="$(type $1 | head -n 1 | grep "is aliased to ._custom_execute_" | grep "_custom_execute_[^[:space:]]*" -o | sed s/_custom_execute_//g)"
+		"$GOPATH/bin/$file" usage $@
 	}
 	`
 
@@ -330,7 +333,7 @@ func (s *sourcerer) generateFile(o command.Output, d *command.Data) error {
 	}
 
 	// define the usage function
-	if _, err := f.WriteString(fmt.Sprintf(usageFunction, filename)); err != nil {
+	if _, err := f.WriteString(usageFunction); err != nil {
 		return o.Stderrf("failed to write usage function to file: %v", err)
 	}
 
