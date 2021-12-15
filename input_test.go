@@ -246,7 +246,7 @@ func TestPopN(t *testing.T) {
 			input:   []string{"hello", "there", "person", "how", "are", "you"},
 			optN:    UnboundedList,
 			want:    []string{"hello", "there", "person"},
-			breaker: BreakListAtString("how"),
+			breaker: ListUntilSymbol("how"),
 			wantOK:  true,
 			wantInput: &Input{
 				args:      []*inputArg{{value: "hello"}, {value: "there"}, {value: "person"}, {value: "how"}, {value: "are"}, {value: "you"}},
@@ -258,7 +258,7 @@ func TestPopN(t *testing.T) {
 			input:   []string{"hello", "there", "person", "how", "are", "you"},
 			optN:    UnboundedList,
 			want:    []string{"hello", "there", "person", "how", "are", "you"},
-			breaker: BreakListAtString("no match"),
+			breaker: ListUntilSymbol("no match"),
 			wantOK:  true,
 			wantInput: &Input{
 				args: []*inputArg{{value: "hello"}, {value: "there"}, {value: "person"}, {value: "how"}, {value: "are"}, {value: "you"}},

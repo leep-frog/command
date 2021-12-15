@@ -301,7 +301,7 @@ func TestUsage(t *testing.T) {
 			name: "NodeRepeater usage works for unbounded",
 			utc: &UsageTestCase{
 				Node: SerialNodes(
-					StringListNode("SL", testDesc, 1, UnboundedList, BreakListAtString("ghi")),
+					StringListNode("SL", testDesc, 1, UnboundedList, ListUntilSymbol("ghi")),
 					StringListNode("SL2", testDesc, 0, UnboundedList),
 				),
 				WantString: []string{

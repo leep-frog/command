@@ -2804,7 +2804,7 @@ func TestExecute(t *testing.T) {
 			name: "Handles broken list",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					StringListNode("SL", testDesc, 1, UnboundedList, BreakListAtString("ghi")),
+					StringListNode("SL", testDesc, 1, UnboundedList, ListUntilSymbol("ghi")),
 					StringListNode("SL2", testDesc, 0, UnboundedList),
 				),
 				Args: []string{"abc", "def", "ghi", "jkl"},
@@ -2826,7 +2826,7 @@ func TestExecute(t *testing.T) {
 			name: "Handles unbroken list",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					StringListNode("SL", testDesc, 1, UnboundedList, BreakListAtString("ghi")),
+					StringListNode("SL", testDesc, 1, UnboundedList, ListUntilSymbol("ghi")),
 					StringListNode("SL2", testDesc, 0, UnboundedList),
 				),
 				Args: []string{"abc", "def", "ghif", "jkl"},
@@ -2847,7 +2847,7 @@ func TestExecute(t *testing.T) {
 			name: "Fails if arguments required after broken list",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					StringListNode("SL", testDesc, 1, UnboundedList, BreakListAtString("ghi")),
+					StringListNode("SL", testDesc, 1, UnboundedList, ListUntilSymbol("ghi")),
 					StringListNode("SL2", testDesc, 1, UnboundedList),
 				),
 				Args: []string{"abc", "def", "ghif", "jkl"},
@@ -3856,7 +3856,7 @@ func TestComplete(t *testing.T) {
 			name: "Suggests things after broken list",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					StringListNode("SL", testDesc, 1, UnboundedList, BreakListAtString("ghi"), SimpleCompletor("un", "deux", "trois")),
+					StringListNode("SL", testDesc, 1, UnboundedList, ListUntilSymbol("ghi"), SimpleCompletor("un", "deux", "trois")),
 					StringListNode("SL2", testDesc, 0, UnboundedList, SimpleCompletor("one", "two", "three")),
 				),
 				Args: "cmd abc def ghi ",
@@ -3871,7 +3871,7 @@ func TestComplete(t *testing.T) {
 			name: "Suggests things before list is broken",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					StringListNode("SL", testDesc, 1, UnboundedList, BreakListAtString("ghi"), SimpleCompletor("un", "deux", "trois", "uno")),
+					StringListNode("SL", testDesc, 1, UnboundedList, ListUntilSymbol("ghi"), SimpleCompletor("un", "deux", "trois", "uno")),
 					StringListNode("SL2", testDesc, 0, UnboundedList, SimpleCompletor("one", "two", "three")),
 				),
 				Args: "cmd abc def un",

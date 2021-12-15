@@ -333,29 +333,43 @@ type ListBreaker interface {
 	ArgOpt
 }
 
-func BreakListAtString(symbol string) ListBreaker {
-	return &symbolListBreaker{symbol}
+func ListUntilSymbol(symbol string) ListBreaker {
+	return ListUntil(
+		func(s string) bool {
+			return s == symbol
+		},
+		true,
+		func(u *Usage) {
+			u.Usage = append(u.Usage, symbol)
+			u.UsageSection.Add(SymbolSection, symbol, "List breaker")
+		},
+	)
 }
 
-type symbolListBreaker struct {
-	symbol string
+func ListUntil(f func(s string) bool, discard bool, u func(*Usage)) ListBreaker {
+	return &untilListBreaker{f, discard, u}
 }
 
-func (slb *symbolListBreaker) modifyArgOpt(ao *argOpt) {
-	ao.breaker = slb
+type untilListBreaker struct {
+	f       func(s string) bool
+	discard bool
+	u       func(*Usage)
 }
 
-func (slb *symbolListBreaker) Break(s string) bool {
-	return s == slb.symbol
+func (ulb *untilListBreaker) modifyArgOpt(ao *argOpt) {
+	ao.breaker = ulb
 }
 
-func (slb *symbolListBreaker) DiscardBreak() bool {
-	return true
+func (ulb *untilListBreaker) Break(s string) bool {
+	return ulb.f(s)
 }
 
-func (slb *symbolListBreaker) Usage(u *Usage) {
-	u.Usage = append(u.Usage, slb.symbol)
-	u.UsageSection.Add(SymbolSection, slb.symbol, "List breaker")
+func (ulb *untilListBreaker) DiscardBreak() bool {
+	return ulb.discard
+}
+
+func (ulb *untilListBreaker) Usage(u *Usage) {
+	ulb.u(u)
 }
 
 // StringListListNode parses a two-dimensional slice of strings, with each slice being separated by `breakSymbol`
@@ -363,7 +377,7 @@ func StringListListNode(name, desc, breakSymbol string, minN, optionalN int, opt
 	n := &Node{
 		Processor: StringListNode(name, desc, 0, UnboundedList,
 			append(opts,
-				BreakListAtString(breakSymbol),
+				ListUntilSymbol(breakSymbol),
 				CustomSetter(func(v *Value, d *Data) {
 					if v.Length() > 0 {
 						if !d.HasArgI(name) {
