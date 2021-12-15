@@ -236,6 +236,8 @@ type CompleteTestCase struct {
 	Want     []string
 	WantErr  error
 	WantData *Data
+
+	SkipDataCheck bool
 }
 
 func CompleteTest(t *testing.T, ctc *CompleteTestCase) {
@@ -262,7 +264,7 @@ func CompleteTest(t *testing.T, ctc *CompleteTestCase) {
 	if wantData == nil {
 		wantData = &Data{}
 	}
-	if diff := cmp.Diff(wantData, data, cmpopts.EquateEmpty()); diff != "" {
+	if diff := cmp.Diff(wantData, data, cmpopts.EquateEmpty()); diff != "" && !ctc.SkipDataCheck {
 		t.Errorf("Autocomplete(%s) improperly parsed args (-want, +got)\n:%s", ctc.Args, diff)
 	}
 }
