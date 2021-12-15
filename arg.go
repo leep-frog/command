@@ -172,6 +172,16 @@ func (an *ArgNode) Complete(input *Input, data *Data) (*Completion, error) {
 
 	sl, enough := input.PopN(an.minN, an.optionalN, an.opt.breaker)
 
+	// If this is the last arg, we want the node walkthrough to stop (which
+	// doesn't happen if c and err are nil).
+	c, err := an.complete(sl, enough, input, data)
+	if (!enough || input.FullyProcessed()) && c == nil {
+		c = &Completion{}
+	}
+	return c, err
+}
+
+func (an *ArgNode) complete(sl []*string, enough bool, input *Input, data *Data) (*Completion, error) {
 	// Try to transform from string to value.
 	v, err := vtMap.transform(an.vt, sl)
 	if err != nil {
@@ -209,8 +219,7 @@ func (an *ArgNode) Complete(input *Input, data *Data) (*Completion, error) {
 	}
 
 	if an.opt == nil || an.opt.completor == nil {
-		// We are completing for this arg so we should return.
-		return &Completion{}, nil
+		return nil, nil
 	}
 
 	var lastArg string

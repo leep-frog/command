@@ -3069,7 +3069,6 @@ func TestComplete(t *testing.T) {
 				}},
 			},
 		},
-
 		// Basic tests
 		{
 			name: "empty graph",
@@ -3209,6 +3208,24 @@ func TestComplete(t *testing.T) {
 				Want: []string{"zzz-1", "zzz-2", "zzz-4"},
 				WantData: &Data{Values: map[string]*Value{
 					"sl": StringListValue("zz"),
+				}},
+			},
+		},
+		// Ensure completion iteration stops if necessary.
+		{
+			name: "stop iterating if a completion returns nil",
+			ctc: &CompleteTestCase{
+				Node: SerialNodes(
+					StringNode("PATH", "dd", &Completor{
+						SuggestionFetcher: SimpleFetcher(func(v *Value, d *Data) *Completion {
+							return nil
+						}),
+					}),
+					StringListNode("SUB_PATH", "stc", 0, UnboundedList, SimpleCompletor("un", "deux", "trois")),
+				),
+				Args: "cmd p",
+				WantData: &Data{Values: map[string]*Value{
+					"PATH": StringValue("p"),
 				}},
 			},
 		},
