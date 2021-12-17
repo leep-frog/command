@@ -426,11 +426,37 @@ func TestExecute(t *testing.T) {
 		},
 		// Executor tests.
 		{
-			name: "Sets executable with ExecutableNode",
+			name: "Sets executable with SimpleExecutableNode",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(ExecutableNode("hello", "there")),
+				Node: SerialNodes(SimpleExecutableNode("hello", "there")),
 				WantExecuteData: &ExecuteData{
 					Executable: []string{"hello", "there"},
+				},
+			},
+		},
+		{
+			name: "Sets executable with ExecutableNode",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					StringListNode("SL", "", 0, UnboundedList),
+					ExecutableNode(func(d *Data) []string {
+						return d.StringList("SL")
+					}),
+				),
+				Args: []string{"abc", "def"},
+				WantExecuteData: &ExecuteData{
+					Executable: []string{"abc", "def"},
+				},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "abc"},
+						{value: "def"},
+					},
+				},
+				WantData: &Data{
+					Values: map[string]*Value{
+						"SL": StringListValue("abc", "def"),
+					},
 				},
 			},
 		},
@@ -4076,7 +4102,7 @@ func TestRunNodes(t *testing.T) {
 			name: "execute data",
 			rtc: &RunNodeTestCase{
 				Node: SerialNodes(
-					ExecutableNode(
+					SimpleExecutableNode(
 						"echo hello",
 						"echo there",
 					),
@@ -4167,7 +4193,6 @@ func TestRunNodes(t *testing.T) {
 		/* Useful for commenting out tests. */
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			fmt.Println(test.name, "=======================")
 			test.rtc.SkipDataCheck = true
 			RunNodeTest(t, test.rtc)
 		})

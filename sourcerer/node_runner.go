@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 
@@ -28,17 +29,31 @@ func (gl *GoLeep) Name() string {
 	return "goleep"
 }
 
-func (gl *GoLeep) goFiles(d *command.Data) []string {
-	if d.HasArg(goFilesFlag.Name()) {
-		return d.StringList(goFilesFlag.Name())
-	}
-	return []string{"*.go"}
-}
+const (
+	goFileGetter = `goFiles="$(ls *.go | grep -v _test.go$)"`
+)
 
 func (gl *GoLeep) runCommand(d *command.Data, subCmd string, extraArgs []string) []string {
-	args := append([]string{"go", "run"}, gl.goFiles(d)...)
-	args = append(args, subCmd)
-	return []string{strings.Join(append(args, extraArgs...), " ")}
+	var ea string
+	if len(extraArgs) > 0 {
+		ea = fmt.Sprintf(" %s", strings.Join(extraArgs, " "))
+	}
+
+	if d.HasArg(goFilesFlag.Name()) {
+		return []string{
+			fmt.Sprintf(
+				"go run %s %s%s",
+				strings.Join(d.StringList(goFilesFlag.Name()), " "),
+				subCmd,
+				ea,
+			),
+		}
+	}
+
+	return []string{
+		`goFiles="$(ls *.go | grep -v _test.go$)"`,
+		fmt.Sprintf("go run $goFiles %s%s", subCmd, ea),
+	}
 }
 
 // Separate method for testing
@@ -76,7 +91,8 @@ func (gl *GoLeep) Node() *command.Node {
 			}
 
 			// Run the command
-			cmd := gl.runCommand(d, "execute", append([]string{f.Name()}, d.StringList(passAlongArgs.Name())...))
+			// Need to use ToSlash because mingw
+			cmd := gl.runCommand(d, "execute", append([]string{filepath.ToSlash(f.Name())}, d.StringList(passAlongArgs.Name())...))
 			bc := command.BashCommand(command.StringListType, "BASH_OUTPUT", cmd)
 			v, err := bc.Run(o)
 			if err != nil {

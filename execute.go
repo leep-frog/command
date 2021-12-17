@@ -163,7 +163,7 @@ func Execute(n *Node, input *Input, output Output) (*ExecuteData, error) {
 // executed via "go run").
 func RunNodes(n *Node) error {
 	o := NewOutput()
-	err := runNodes(n, NewOutput(), &Data{}, os.Args[1:])
+	err := runNodes(n, o, &Data{}, os.Args[1:])
 	o.Close()
 	return err
 }

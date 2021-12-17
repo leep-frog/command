@@ -418,11 +418,11 @@ func HiddenArg() ArgOpt {
 }
 
 type executableAppender struct {
-	contents []string
+	f func(*Data) []string
 }
 
 func (ea *executableAppender) Execute(i *Input, o Output, d *Data, ed *ExecuteData) error {
-	ed.Executable = append(ed.Executable, ea.contents...)
+	ed.Executable = append(ed.Executable, ea.f(d)...)
 	return nil
 }
 
@@ -432,6 +432,10 @@ func (ea *executableAppender) Complete(*Input, *Data) (*Completion, error) {
 
 func (ea *executableAppender) Usage(*Usage) {}
 
-func ExecutableNode(s ...string) Processor {
-	return &executableAppender{s}
+func SimpleExecutableNode(sl ...string) Processor {
+	return ExecutableNode(func(d *Data) []string { return sl })
+}
+
+func ExecutableNode(f func(*Data) []string) Processor {
+	return &executableAppender{f}
 }

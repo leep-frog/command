@@ -29,5 +29,5 @@ func (sc *staticCLI) Load(string) error {
 func (sc *staticCLI) Changed() bool   { return false }
 func (sc *staticCLI) Setup() []string { return nil }
 func (sc *staticCLI) Node() *Node {
-	return SerialNodes(ExecutableNode(sc.commands...))
+	return SerialNodes(SimpleExecutableNode(sc.commands...))
 }

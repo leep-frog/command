@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -31,7 +32,8 @@ func TestNodeRunner(t *testing.T) {
 				WantRunContents: [][]string{{
 					"set -e",
 					"set -o pipefail",
-					`go run *.go execute TMP_FILE`,
+					`goFiles="$(ls *.go | grep -v _test.go$)"`,
+					"go run $goFiles execute TMP_FILE",
 				}},
 			},
 		},
@@ -98,12 +100,13 @@ func TestNodeRunner(t *testing.T) {
 				WantRunContents: [][]string{{
 					"set -e",
 					"set -o pipefail",
-					`go run *.go execute TMP_FILE`,
+					goFileGetter,
+					`go run $goFiles execute TMP_FILE`,
 				}},
 			},
 		},
 		{
-			name: "passses extra args to command",
+			name: "passes extra args to command",
 			etc: &command.ExecuteTestCase{
 				Args: []string{
 					"arg1",
@@ -113,7 +116,8 @@ func TestNodeRunner(t *testing.T) {
 				WantRunContents: [][]string{{
 					"set -e",
 					"set -o pipefail",
-					`go run *.go execute TMP_FILE arg1 arg2`,
+					goFileGetter,
+					`go run $goFiles execute TMP_FILE arg1 arg2`,
 				}},
 			},
 		},
@@ -142,7 +146,10 @@ func TestNodeRunner(t *testing.T) {
 					"usage",
 				},
 				WantExecuteData: &command.ExecuteData{
-					Executable: []string{"go run *.go usage"},
+					Executable: []string{
+						goFileGetter,
+						"go run $goFiles usage",
+					},
 				},
 			},
 		},
@@ -181,7 +188,7 @@ func TestNodeRunner(t *testing.T) {
 			defer func() { getTmpFile = oldGet }()
 			for _, sets := range test.etc.WantRunContents {
 				for i, line := range sets {
-					sets[i] = strings.ReplaceAll(line, "TMP_FILE", f.Name())
+					sets[i] = strings.ReplaceAll(line, "TMP_FILE", filepath.ToSlash(f.Name()))
 				}
 			}
 
@@ -223,7 +230,8 @@ func TestAutocomplete(t *testing.T) {
 				WantRunContents: [][]string{{
 					"set -e",
 					"set -o pipefail",
-					`go run *.go autocomplete ""`,
+					goFileGetter,
+					`go run $goFiles autocomplete ""`,
 				}},
 				Want: []string{
 					"deux",

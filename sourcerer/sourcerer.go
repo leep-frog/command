@@ -22,7 +22,7 @@ const (
 	generateBinary = `
 	pushd . > /dev/null
 	cd "$(dirname %s)"
-	go build -o $GOPATH/bin/%s
+	go build -o $GOPATH/bin/_%s_runner
 	popd > /dev/null
 	`
 
@@ -30,7 +30,7 @@ const (
 	autocompleteFunction = `
 	function _custom_autocomplete_%s {
 		tFile=$(mktemp)
-		$GOPATH/bin/%s autocomplete ${COMP_WORDS[0]} $COMP_POINT "$COMP_LINE" > $tFile
+		$GOPATH/bin/_%s_runner autocomplete ${COMP_WORDS[0]} $COMP_POINT "$COMP_LINE" > $tFile
 		local IFS=$'\n'
 		COMPREPLY=( $(cat $tFile) )
 		rm $tFile
@@ -42,7 +42,7 @@ const (
 	function _custom_execute_%s {
 		# tmpFile is the file to which we write ExecuteData.Executable
 		tmpFile=$(mktemp)
-		$GOPATH/bin/%s execute $tmpFile "$@"
+		$GOPATH/bin/_%s_runner execute $tmpFile "$@"
 		source $tmpFile
 		if [ -z "$LEEP_FROG_DEBUG" ]
 		then
@@ -136,6 +136,10 @@ func (s *sourcerer) executeExecutor(output command.Output, d *command.Data) erro
 		return nil
 	}
 
+	for i, line := range eData.Executable {
+		eData.Executable[i] = strings.ReplaceAll(line, `\`, `\\`)
+	}
+
 	f, err := os.OpenFile(executeFile, os.O_WRONLY, 0644)
 	if err != nil {
 		return output.Stderrf("failed to open file: %v", err)
@@ -210,7 +214,7 @@ func (*sourcerer) Load(jsn string) error { return nil }
 func (*sourcerer) Changed() bool         { return false }
 func (*sourcerer) Setup() []string       { return nil }
 func (*sourcerer) Name() string {
-	return "sb"
+	return "_internal_sourcerer"
 }
 
 func (s *sourcerer) getCLI(cli string) (CLI, error) {

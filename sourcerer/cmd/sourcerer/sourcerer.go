@@ -1,6 +1,10 @@
 package main
 
 import (
+	"fmt"
+	"path/filepath"
+	"strings"
+
 	"github.com/leep-frog/command"
 	"github.com/leep-frog/command/sourcerer"
 )
@@ -16,14 +20,17 @@ func (*SourcererCommand) Name() string {
 }
 
 func (*SourcererCommand) Node() *command.Node {
+	dName := "DIRECTORY"
+	bsName := "BINARY_SUFFIX"
 	return command.SerialNodes(
-		command.FileNode("DIRECTORY", "Directory in which to create CLI"),
-		command.SimpleProcessor(func(i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
-			command.ExecuteData
-		}, nil),
-		command.ExecutorNode(func(o command.Output, d *command.Data) error {
-			command.ExecuteData
-		})
+		command.FileNode(dName, "Directory in which to create CLI"),
+		command.StringNode(bsName, "Suffix for the name", command.MinLength(3)),
+		command.ExecutableNode(func(d *command.Data) []string {
+			f := strings.ReplaceAll(filepath.Join(d.String(dName), "*.go"), `\`, "/")
+			return []string{
+				fmt.Sprintf("source $(go run %s %s)", f, d.String(bsName)),
+			}
+		}),
 	)
 }
 
