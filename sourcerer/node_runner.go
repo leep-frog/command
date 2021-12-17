@@ -11,6 +11,11 @@ import (
 	"github.com/leep-frog/command"
 )
 
+func GoLeepCLI() *GoLeep {
+	return &GoLeep{}
+}
+
+// GoLeep is a CLI that runs command nodes that are defined in "main" packages.
 type GoLeep struct{}
 
 var (
