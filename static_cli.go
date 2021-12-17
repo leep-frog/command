@@ -29,8 +29,5 @@ func (sc *staticCLI) Load(string) error {
 func (sc *staticCLI) Changed() bool   { return false }
 func (sc *staticCLI) Setup() []string { return nil }
 func (sc *staticCLI) Node() *Node {
-	return SerialNodes(SimpleProcessor(func(i *Input, o Output, d *Data, ed *ExecuteData) error {
-		ed.Executable = append(ed.Executable, sc.commands...)
-		return nil
-	}, nil))
+	return SerialNodes(ExecutableNode(sc.commands...))
 }

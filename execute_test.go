@@ -426,7 +426,16 @@ func TestExecute(t *testing.T) {
 		},
 		// Executor tests.
 		{
-			name: "Sets executable",
+			name: "Sets executable with ExecutableNode",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(ExecutableNode("hello", "there")),
+				WantExecuteData: &ExecuteData{
+					Executable: []string{"hello", "there"},
+				},
+			},
+		},
+		{
+			name: "Sets executable with processor",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(SimpleProcessor(func(i *Input, o Output, d *Data, ed *ExecuteData) error {
 					ed.Executable = []string{"hello", "there"}
@@ -4067,13 +4076,10 @@ func TestRunNodes(t *testing.T) {
 			name: "execute data",
 			rtc: &RunNodeTestCase{
 				Node: SerialNodes(
-					SimpleProcessor(func(i *Input, o Output, d *Data, ed *ExecuteData) error {
-						ed.Executable = []string{
-							"echo hello",
-							"echo there",
-						}
-						return nil
-					}, nil),
+					ExecutableNode(
+						"echo hello",
+						"echo there",
+					),
 				),
 				Args: []string{"execute", "TMP_FILE"},
 				WantFileContents: []string{

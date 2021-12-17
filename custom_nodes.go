@@ -416,3 +416,22 @@ func (ha *hiddenArg) modifyArgOpt(ao *argOpt) {
 func HiddenArg() ArgOpt {
 	return &hiddenArg{}
 }
+
+type executableAppender struct {
+	contents []string
+}
+
+func (ea *executableAppender) Execute(i *Input, o Output, d *Data, ed *ExecuteData) error {
+	ed.Executable = append(ed.Executable, ea.contents...)
+	return nil
+}
+
+func (ea *executableAppender) Complete(*Input, *Data) (*Completion, error) {
+	return nil, nil
+}
+
+func (ea *executableAppender) Usage(*Usage) {}
+
+func ExecutableNode(s ...string) Processor {
+	return &executableAppender{s}
+}
