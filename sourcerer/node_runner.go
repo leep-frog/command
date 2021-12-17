@@ -17,7 +17,8 @@ var (
 	goFilesFlag = command.StringListFlag("GO_FILES", 'f', "Go files to run", 1, command.UnboundedList, command.ListUntilNotRegex(goFileRegex), &command.Completor{
 		SuggestionFetcher: &command.FileFetcher{
 			Distinct: true,
-			Regexp:   goFileRegex,
+			// TODO: Add a field FileTypes
+			Regexp: goFileRegex,
 		},
 	})
 	passAlongArgs = command.StringListNode("PASSTHROUGH_ARGS", "Args to pass through to the command", 0, command.UnboundedList)
