@@ -2,6 +2,7 @@ package command
 
 import (
 	"fmt"
+	"regexp"
 	"sort"
 )
 
@@ -333,6 +334,16 @@ type ListBreaker interface {
 	ArgOpt
 }
 
+func ListUntilNotRegex(r *regexp.Regexp) ListBreaker {
+	return ListUntil(
+		func(s string) bool {
+			return !r.MatchString(s)
+		},
+		false,
+		nil,
+	)
+}
+
 func ListUntilSymbol(symbol string) ListBreaker {
 	return ListUntil(
 		func(s string) bool {
@@ -369,7 +380,9 @@ func (ulb *untilListBreaker) DiscardBreak() bool {
 }
 
 func (ulb *untilListBreaker) Usage(u *Usage) {
-	ulb.u(u)
+	if ulb.u != nil {
+		ulb.u(u)
+	}
 }
 
 // StringListListNode parses a two-dimensional slice of strings, with each slice being separated by `breakSymbol`

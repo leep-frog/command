@@ -3979,3 +3979,191 @@ func sampleRepeaterNode(minN, optionalN int) Processor {
 		}), SimpleCompletor("1", "121", "1213121")),
 	), minN, optionalN)
 }
+
+func TestRunNodes(t *testing.T) {
+	sum := SerialNodes(
+		Description("Adds A and B"),
+		IntNode("A", "The first value"),
+		IntNode("B", "The second value"),
+		ExecutorNode(func(o Output, d *Data) error {
+			o.Stdoutf("%d", d.Int("A")+d.Int("B"))
+			return nil
+		}),
+	)
+	for _, test := range []struct {
+		name string
+		rtc  *RunNodeTestCase
+	}{
+		// execute tests (without keyword)
+		{
+			name: "no keyword requires arguments",
+			rtc: &RunNodeTestCase{
+				Node: sum,
+				WantStderr: []string{
+					`Argument "A" requires at least 1 argument, got 0`,
+					GetUsage(sum).String(),
+				},
+				WantErr: fmt.Errorf(`Argument "A" requires at least 1 argument, got 0`),
+			},
+		},
+		{
+			name: "no keyword fails with extra",
+			rtc: &RunNodeTestCase{
+				Node: sum,
+				Args: []string{"5", "7", "9"},
+				WantStderr: []string{
+					`Unprocessed extra args: [9]`,
+					GetUsage(sum).String(),
+				},
+				WantErr: fmt.Errorf(`Unprocessed extra args: [9]`),
+			},
+		},
+		{
+			name: "successfully runs node",
+			rtc: &RunNodeTestCase{
+				Node: sum,
+				Args: []string{"5", "7"},
+				WantStdout: []string{
+					"12",
+				},
+			},
+		},
+		// execute tests with keyword
+		{
+			name: "execute requires arguments",
+			rtc: &RunNodeTestCase{
+				Node: sum,
+				Args: []string{"execute", "TMP_FILE"},
+				WantStderr: []string{
+					`Argument "A" requires at least 1 argument, got 0`,
+					GetUsage(sum).String(),
+				},
+				WantErr: fmt.Errorf(`Argument "A" requires at least 1 argument, got 0`),
+			},
+		},
+		{
+			name: "execute fails with extra",
+			rtc: &RunNodeTestCase{
+				Node: sum,
+				Args: []string{"execute", "TMP_FILE", "5", "7", "9"},
+				WantStderr: []string{
+					`Unprocessed extra args: [9]`,
+					GetUsage(sum).String(),
+				},
+				WantErr: fmt.Errorf(`Unprocessed extra args: [9]`),
+			},
+		},
+		{
+			name: "successfully runs node",
+			rtc: &RunNodeTestCase{
+				Node: sum,
+				Args: []string{"execute", "TMP_FILE", "5", "7"},
+				WantStdout: []string{
+					"12",
+				},
+			},
+		},
+		{
+			name: "execute data",
+			rtc: &RunNodeTestCase{
+				Node: SerialNodes(
+					SimpleProcessor(func(i *Input, o Output, d *Data, ed *ExecuteData) error {
+						ed.Executable = []string{
+							"echo hello",
+							"echo there",
+						}
+						return nil
+					}, nil),
+				),
+				Args: []string{"execute", "TMP_FILE"},
+				WantFileContents: []string{
+					"echo hello",
+					"echo there",
+				},
+			},
+		},
+		// Autocomplete tests
+		{
+			name: "autocompletes empty",
+			rtc: &RunNodeTestCase{
+				Node: SerialNodes(
+					StringListNode("SL_ARG", "", 1, UnboundedList, SimpleCompletor("one", "two", "three", "four")),
+				),
+				Args: []string{"autocomplete", ""},
+				WantStdout: []string{
+					"four",
+					"one",
+					"three",
+					"two",
+				},
+			},
+		},
+		{
+			name: "autocompletes empty with command",
+			rtc: &RunNodeTestCase{
+				Node: SerialNodes(
+					StringListNode("SL_ARG", "", 1, UnboundedList, SimpleCompletor("one", "two", "three", "four")),
+				),
+				Args: []string{"autocomplete", "cmd "},
+				WantStdout: []string{
+					"four",
+					"one",
+					"three",
+					"two",
+				},
+			},
+		},
+		{
+			name: "autocompletes partial arg",
+			rtc: &RunNodeTestCase{
+				Node: SerialNodes(
+					StringListNode("SL_ARG", "", 1, UnboundedList, SimpleCompletor("one", "two", "three", "four")),
+				),
+				Args: []string{"autocomplete", "cmd t"},
+				WantStdout: []string{
+					"three",
+					"two",
+				},
+			},
+		},
+		{
+			name: "autocompletes later args",
+			rtc: &RunNodeTestCase{
+				Node: SerialNodes(
+					StringListNode("SL_ARG", "", 1, UnboundedList, SimpleCompletor("one", "two", "three", "four")),
+				),
+				Args: []string{"autocomplete", "cmd three f"},
+				WantStdout: []string{
+					"four",
+				},
+			},
+		},
+		{
+			name: "autocompletes nothing if past last arg",
+			rtc: &RunNodeTestCase{
+				Node: SerialNodes(
+					StringListNode("SL_ARG", "", 1, 0, SimpleCompletor("one", "two", "three", "four")),
+				),
+				Args: []string{"autocomplete", "cmd three f"},
+			},
+		},
+		// Usage tests
+		{
+			name: "prints usage",
+			rtc: &RunNodeTestCase{
+				Node: sum,
+				Args: []string{"usage"},
+				WantStdout: []string{
+					GetUsage(sum).String(),
+				},
+			},
+		},
+		/* Useful for commenting out tests. */
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			fmt.Println(test.name, "=======================")
+			test.rtc.SkipDataCheck = true
+			RunNodeTest(t, test.rtc)
+		})
+	}
+}

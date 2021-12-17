@@ -11,6 +11,7 @@ import (
 
 // Output defines methods for writing output.
 type Output interface {
+	// TODO: add Stdoutln and Stderrln
 	// Writes a line to stdout.
 	Stdout(string)
 	// Writes a line to stderr and returns an error with the same message.

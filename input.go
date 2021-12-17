@@ -179,6 +179,8 @@ func (i *Input) PopN(n, optN int, breaker ListBreaker) ([]*string, bool) {
 	idx := 0
 	var broken bool
 	for ; idx < shift; idx++ {
+		// TODO: don't break if less than min value
+		// TODO: add validators to lis breakers to guarantee required fields
 		if breaker != nil && breaker.Break(i.get(idx+i.offset).value) {
 			broken = true
 			break

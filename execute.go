@@ -2,6 +2,7 @@ package command
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"sort"
 	"strings"
@@ -160,20 +161,57 @@ func Execute(n *Node, input *Input, output Output) (*ExecuteData, error) {
 // RunNodes executes the provided node. This function can be used when nodes
 // aren't used for CLI tools (such as in regular main.go files that are
 // executed via "go run").
-func RunNodes(n *Node) (*Data, error) {
-	d := &Data{}
-	return d, runNodes(n, d)
+func RunNodes(n *Node) error {
+	o := NewOutput()
+	err := runNodes(n, NewOutput(), &Data{}, os.Args[1:])
+	o.Close()
+	return err
 }
 
 // Separate method for testing purposes.
-func runNodes(n *Node, d *Data) error {
-	o := NewOutput()
-	// Don't care about execute data
-	if _, err := execute(n, ParseExecuteArgs(os.Args[1:]), o, d); err != nil {
+func runNodes(n *Node, o Output, d *Data, args []string) error {
+	// We set default node to n in case user tries to run with "go run", but using goleep
+	// is better because "go run main.go autocomplete" won't work as expected.
+	var filename string
+	exNode := SerialNodesTo(n,
+		FileNode("NODE_RUNNER_FILE", "Temporary file for execution"),
+		SimpleProcessor(func(i *Input, o Output, d *Data, ed *ExecuteData) error {
+			filename = d.String("NODE_RUNNER_FILE")
+			return nil
+		}, nil),
+	)
+
+	ptName := "PASSTHROUGH_ARGS"
+	bn := BranchNode(map[string]*Node{
+		"execute": exNode,
+		"usage": SerialNodes(
+			ExecutorNode(func(o Output, d *Data) error {
+				o.Stdout(GetUsage(n).String())
+				return nil
+			}),
+		),
+		"autocomplete": SerialNodes(
+			// Don't need comp point because input will have already been trimmed by goleep processing.
+			StringNode(ptName, ""),
+			ExecutorNode(func(o Output, d *Data) error {
+				for _, s := range Autocomplete(n, d.String(ptName)) {
+					o.Stdout(s)
+				}
+				return nil
+			})),
+	}, n, false)
+
+	eData, err := execute(bn, ParseExecuteArgs(args), o, d)
+	if err != nil {
 		if IsUsageError(err) {
 			o.Stderr(GetUsage(n).String())
 		}
 		return err
+	}
+	if filename != "" && len(eData.Executable) > 0 {
+		if err := ioutil.WriteFile(filename, []byte(strings.Join(eData.Executable, "\n")), 0644); err != nil {
+			return o.Stderrf("failed to write eData.Executable to file: %v", err)
+		}
 	}
 	return nil
 }
