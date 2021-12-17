@@ -439,14 +439,42 @@ func TestExecute(t *testing.T) {
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
 					StringListNode("SL", "", 0, UnboundedList),
-					ExecutableNode(func(d *Data) []string {
-						return d.StringList("SL")
+					ExecutableNode(func(o Output, d *Data) ([]string, error) {
+						o.Stdout("hello")
+						o.Stderr("there")
+						return d.StringList("SL"), nil
 					}),
 				),
-				Args: []string{"abc", "def"},
+				Args:       []string{"abc", "def"},
+				WantStdout: []string{"hello"},
+				WantStderr: []string{"there"},
 				WantExecuteData: &ExecuteData{
 					Executable: []string{"abc", "def"},
 				},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "abc"},
+						{value: "def"},
+					},
+				},
+				WantData: &Data{
+					Values: map[string]*Value{
+						"SL": StringListValue("abc", "def"),
+					},
+				},
+			},
+		},
+		{
+			name: "ExecutableNode returning error",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					StringListNode("SL", "", 0, UnboundedList),
+					ExecutableNode(func(o Output, d *Data) ([]string, error) {
+						return d.StringList("SL"), fmt.Errorf("bad news bears")
+					}),
+				),
+				Args:    []string{"abc", "def"},
+				WantErr: fmt.Errorf("bad news bears"),
 				wantInput: &Input{
 					args: []*inputArg{
 						{value: "abc"},
