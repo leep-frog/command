@@ -24,12 +24,12 @@ func (*SourcererCommand) Node() *command.Node {
 	bsName := "BINARY_SUFFIX"
 	return command.SerialNodes(
 		command.FileNode(dName, "Directory in which to create CLI"),
-		command.StringNode(bsName, "Suffix for the name", command.MinLength(3)),
-		command.ExecutableNode(func(d *command.Data) []string {
+		command.StringNode(bsName, "Suffix for the name", command.MinLength(1)),
+		command.ExecutableNode(func(_ command.Output, d *command.Data) ([]string, error) {
 			f := strings.ReplaceAll(filepath.Join(d.String(dName), "*.go"), `\`, "/")
 			return []string{
 				fmt.Sprintf("source $(go run %s %s)", f, d.String(bsName)),
-			}
+			}, nil
 		}),
 	)
 }
