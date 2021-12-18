@@ -168,6 +168,28 @@ func TestBashNode(t *testing.T) {
 			},
 		},
 		{
+			name: "bash node for string list forwards stdout",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(BashCommand(StringListType, "s", []string{"echo hello"}, ForwardStdout())),
+				WantRunContents: [][]string{{
+					"set -e",
+					"set -o pipefail",
+					"echo hello",
+				}},
+				WantStdout: []string{
+					"aloha\nhello there\nhowdy",
+				},
+				WantData: &Data{Values: map[string]*Value{
+					"s": StringListValue("aloha", "hello there", "howdy"),
+				}},
+				RunResponses: []*FakeRun{
+					{
+						Stdout: []string{"aloha", "hello there", "howdy"},
+					},
+				},
+			},
+		},
+		{
 			name: "bash node for string list gets empty new lines at end",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(BashCommand(StringListType, "s", []string{"echo hello"})),

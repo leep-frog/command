@@ -91,12 +91,41 @@ func TestNodeRunner(t *testing.T) {
 					},
 				}},
 				WantStdout: []string{
-					"hello there",
-					"general Kenobi",
+					"hello there\ngeneral Kenobi",
 				},
 				WantStderr: []string{
 					"goodbye then\ngeneral Grevious",
 				},
+				WantRunContents: [][]string{{
+					"set -e",
+					"set -o pipefail",
+					goFileGetter,
+					`go run $goFiles execute TMP_FILE`,
+				}},
+			},
+		},
+		{
+			name: "handles bash command error",
+			etc: &command.ExecuteTestCase{
+				RunResponses: []*command.FakeRun{{
+					Err: fmt.Errorf("bad news bears"),
+					Stdout: []string{
+						"hello there",
+						"general Kenobi",
+					},
+					Stderr: []string{
+						"goodbye then",
+						"general Grevious",
+					},
+				}},
+				WantStdout: []string{
+					"hello there\ngeneral Kenobi",
+				},
+				WantStderr: []string{
+					"goodbye then\ngeneral Grevious",
+					"failed to run bash script: failed to execute bash command: bad news bears",
+				},
+				WantErr: fmt.Errorf("failed to run bash script: failed to execute bash command: bad news bears"),
 				WantRunContents: [][]string{{
 					"set -e",
 					"set -o pipefail",
@@ -238,6 +267,25 @@ func TestAutocomplete(t *testing.T) {
 					"trois",
 					"un",
 				},
+			},
+		},
+		{
+			name: "handles run response error",
+			ctc: &command.CompleteTestCase{
+				Args: "cmd ",
+				RunResponses: []*command.FakeRun{
+					{
+						Err:    fmt.Errorf("whoops"),
+						Stdout: []string{"un", "deux", "trois"},
+					},
+				},
+				WantErr: fmt.Errorf(`failed to execute bash command: whoops`),
+				WantRunContents: [][]string{{
+					"set -e",
+					"set -o pipefail",
+					goFileGetter,
+					`go run $goFiles autocomplete ""`,
+				}},
 			},
 		},
 		/* TODO: completion with list breaker at break

@@ -41,14 +41,25 @@ func HideStderr() BashOption {
 	return &hideStderr{}
 }
 
+type forwardStdout struct{}
+
+func (*forwardStdout) modifyBashNode(bc *bashCommand) {
+	bc.forwardStdout = true
+}
+
+func ForwardStdout() BashOption {
+	return &forwardStdout{}
+}
+
 type bashCommand struct {
 	vt       ValueType
 	argName  string
 	contents []string
 	desc     string
 
-	validators []*validatorOption
-	hideStderr bool
+	validators    []*validatorOption
+	hideStderr    bool
+	forwardStdout bool
 }
 
 type BashOption interface {
@@ -125,7 +136,11 @@ func (bn *bashCommand) Run(output Output) (*Value, error) {
 	var rawOut bytes.Buffer
 	// msys/mingw doesn't work if "bash" is excluded.
 	cmd := exec.Command("bash", f.Name())
-	cmd.Stdout = &rawOut
+	if bn.forwardStdout {
+		cmd.Stdout = io.MultiWriter(StdoutWriter(output), &rawOut)
+	} else {
+		cmd.Stdout = &rawOut
+	}
 	if bn.hideStderr {
 		cmd.Stderr = DevNull()
 	} else {

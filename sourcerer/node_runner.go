@@ -98,15 +98,9 @@ func (gl *GoLeep) Node() *command.Node {
 			// Run the command
 			// Need to use ToSlash because mingw
 			cmd := gl.runCommand(d, "execute", append([]string{filepath.ToSlash(f.Name())}, d.StringList(passAlongArgs.Name())...))
-			bc := command.BashCommand(command.StringListType, "BASH_OUTPUT", cmd)
-			v, err := bc.Run(o)
-			if err != nil {
-				return nil
-			}
-			// Just pass input through
-			// TODO: add option to do this in bc.Run
-			for _, line := range v.ToStringList() {
-				o.Stdout(line)
+			bc := command.BashCommand(command.StringListType, "BASH_OUTPUT", cmd, command.ForwardStdout())
+			if _, err := bc.Run(o); err != nil {
+				return o.Stderrf("failed to run bash script: %v", err)
 			}
 
 			b, err := ioutil.ReadFile(f.Name())
