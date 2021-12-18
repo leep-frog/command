@@ -2,7 +2,6 @@ package command
 
 import (
 	"fmt"
-	"regexp"
 	"sort"
 )
 
@@ -334,10 +333,21 @@ type ListBreaker interface {
 	ArgOpt
 }
 
-func ListUntilNotRegex(r *regexp.Regexp) ListBreaker {
+func ListWhileValid(opts ...*validatorOption) ListBreaker {
+	for _, opt := range opts {
+		if opt.vt != StringType {
+			panic(fmt.Sprintf("Validator must be for StringType, but is for %v", opt.vt))
+		}
+	}
 	return ListUntil(
 		func(s string) bool {
-			return !r.MatchString(s)
+			sv := StringValue(s)
+			for _, opt := range opts {
+				if err := opt.validate(sv); err != nil {
+					return true
+				}
+			}
+			return false
 		},
 		false,
 		nil,

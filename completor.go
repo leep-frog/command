@@ -184,6 +184,7 @@ type FileFetcher struct {
 	// Separate from Completor.Distinct because file fetching
 	// does more complicated custom logic.
 	Distinct          bool
+	FileTypes         []string
 	IgnoreFiles       bool
 	IgnoreDirectories bool
 	IgnoreFunc        func(*Value, *Data) []string
@@ -211,6 +212,10 @@ func (ff *FileFetcher) Fetch(value *Value, data *Data) (*Completion, error) {
 
 	onlyDir := true
 	suggestions := make([]string, 0, len(files))
+	allowedFileTypes := map[string]bool{}
+	for _, ft := range ff.FileTypes {
+		allowedFileTypes[ft] = true
+	}
 	for _, f := range files {
 		if (f.Mode().IsDir() && ff.IgnoreDirectories) || (f.Mode().IsRegular() && ff.IgnoreFiles) {
 			continue
@@ -226,7 +231,7 @@ func (ff *FileFetcher) Fetch(value *Value, data *Data) (*Completion, error) {
 
 		if f.Mode().IsDir() {
 			suggestions = append(suggestions, fmt.Sprintf("%s/", f.Name()))
-		} else {
+		} else if len(allowedFileTypes) == 0 || allowedFileTypes[filepath.Ext(f.Name())] {
 			onlyDir = false
 			suggestions = append(suggestions, f.Name())
 		}

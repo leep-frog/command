@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strings"
 
 	"github.com/leep-frog/command"
@@ -19,12 +18,11 @@ func GoLeepCLI() *GoLeep {
 type GoLeep struct{}
 
 var (
-	goFileRegex = regexp.MustCompile(`\.go$`)
-	goFilesFlag = command.StringListFlag("GO_FILES", 'f', "Go files to run", 1, command.UnboundedList, command.ListUntilNotRegex(goFileRegex), &command.Completor{
+	goFilesFlag = command.StringListFlag("GO_FILES", 'f', "Go files to run", 1, command.UnboundedList, command.ListWhileValid(command.MatchesRegex("\\.go$")), &command.Completor{
 		SuggestionFetcher: &command.FileFetcher{
-			Distinct: true,
-			// TODO: Add a field FileTypes
-			Regexp: goFileRegex,
+			Distinct:          true,
+			FileTypes:         []string{".go"},
+			IgnoreDirectories: true,
 		},
 	})
 	passAlongArgs = command.StringListNode("PASSTHROUGH_ARGS", "Args to pass through to the command", 0, command.UnboundedList)

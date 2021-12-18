@@ -618,6 +618,26 @@ func TestFetchers(t *testing.T) {
 			absErr: fmt.Errorf("failed to fetch directory"),
 		},
 		{
+			name: "file fetcher returns files with file types and directories",
+			f: &FileFetcher{
+				FileTypes: []string{".mod", ".sum"},
+			},
+			args:      "cmd ",
+			stringArg: true,
+			want: []string{
+				".git/",
+				"cache/",
+				"cmd/",
+				"color/",
+				"examples/",
+				"go.mod",
+				"go.sum",
+				"sourcerer/",
+				"testing/",
+				" ",
+			},
+		},
+		{
 			name: "file fetcher handles empty directory",
 			f:    &FileFetcher{},
 			args: "cmd testing/empty/",
