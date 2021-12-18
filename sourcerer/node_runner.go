@@ -139,7 +139,6 @@ type goleepFetcher struct {
 	gl *GoLeep
 }
 
-// TODO: change fetch interface function to return error as well so it can be tested
 func (glf *goleepFetcher) Fetch(v *command.Value, data *command.Data) (*command.Completion, error) {
 	extraArgs := []string{
 		// Need the extra "unusedCmd" arg because autocompletion throws away the first arg (because it assumes it's the command)
