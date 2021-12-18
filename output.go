@@ -11,7 +11,6 @@ import (
 
 // Output defines methods for writing output.
 type Output interface {
-	// TODO: add Stdoutln and Stderrln
 	// Writes a line to stdout.
 	Stdout(string)
 	// Writes a line to stderr and returns an error with the same message.
@@ -20,6 +19,10 @@ type Output interface {
 	Stdoutf(string, ...interface{})
 	// Writes a formatted line to stderr and returns an error with the same message.
 	Stderrf(string, ...interface{}) error
+	// Writes interfaces to stdout.
+	Stdoutln(...interface{})
+	// Writes interfaces to stderr.
+	Stderrln(...interface{}) error
 	// Writes the provided error to stderr and returns the provided error.
 	Err(err error) error
 	// Close informs the os that no more data will be written.
@@ -63,15 +66,29 @@ func (o *output) Stdoutf(s string, a ...interface{}) {
 	o.stdoutChan <- fmt.Sprintf(s, a...)
 }
 
+func (o *output) Stdoutln(a ...interface{}) {
+	// Trim newline
+	s := fmt.Sprintln(a...)
+	o.stdoutChan <- s[:len(s)-1]
+}
+
 func (o *output) Stderr(s string) error {
-	err := errors.New(s)
-	o.stderrChan <- err.Error()
-	return err
+	return o.writeStderr(s)
 }
 
 func (o *output) Stderrf(s string, a ...interface{}) error {
-	err := fmt.Errorf(s, a...)
-	o.stderrChan <- err.Error()
+	return o.writeStderr(fmt.Sprintf(s, a...))
+}
+
+func (o *output) Stderrln(a ...interface{}) error {
+	// Trim newline
+	s := fmt.Sprintln(a...)
+	return o.writeStderr(s[:len(s)-1])
+}
+
+func (o *output) writeStderr(s string) error {
+	err := errors.New(s)
+	o.stderrChan <- s
 	return err
 }
 
@@ -147,12 +164,20 @@ func (ieo *ignoreErrOutput) Stdoutf(s string, a ...interface{}) {
 	ieo.o.Stdoutf(s, a...)
 }
 
+func (ieo *ignoreErrOutput) Stdoutln(a ...interface{}) {
+	ieo.o.Stdoutln(a...)
+}
+
 func (ieo *ignoreErrOutput) Stderr(s string) error {
 	return ieo.o.Stderr(s)
 }
 
 func (ieo *ignoreErrOutput) Stderrf(s string, a ...interface{}) error {
 	return ieo.o.Stderrf(s, a...)
+}
+
+func (ieo *ignoreErrOutput) Stderrln(a ...interface{}) error {
+	return ieo.o.Stderrln(a...)
 }
 
 func (ieo *ignoreErrOutput) Err(err error) error {
@@ -198,12 +223,20 @@ func (fo *FakeOutput) Stdoutf(s string, a ...interface{}) {
 	fo.c.Stdoutf(s, a...)
 }
 
+func (fo *FakeOutput) Stdoutln(a ...interface{}) {
+	fo.c.Stdoutln(a...)
+}
+
 func (fo *FakeOutput) Stderr(s string) error {
 	return fo.c.Stderr(s)
 }
 
 func (fo *FakeOutput) Stderrf(s string, a ...interface{}) error {
 	return fo.c.Stderrf(s, a...)
+}
+
+func (fo *FakeOutput) Stderrln(a ...interface{}) error {
+	return fo.c.Stderrln(a...)
 }
 
 func (fo *FakeOutput) Err(err error) error {

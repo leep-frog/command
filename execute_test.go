@@ -2600,6 +2600,26 @@ func TestExecute(t *testing.T) {
 				WantStderr: []string{"Transformer of type Int cannot be applied to a value with type String"},
 			},
 		},
+		// Stdoutln tests
+		{
+			name: "stdoutln works",
+			etc: &ExecuteTestCase{
+				Node: printlnNode(true, "one", 2, 3.0),
+				WantStdout: []string{
+					"one 2 3",
+				},
+			},
+		},
+		{
+			name: "stderrln works",
+			etc: &ExecuteTestCase{
+				Node: printlnNode(false, "uh", 0),
+				WantStderr: []string{
+					"uh 0",
+				},
+				WantErr: fmt.Errorf("uh 0"),
+			},
+		},
 		// BranchNode tests
 		{
 			name: "branch node requires branch argument",
@@ -4013,6 +4033,18 @@ func printNode(s string) *Node {
 	}
 }
 
+func printlnNode(stdout bool, a ...interface{}) *Node {
+	return &Node{
+		Processor: ExecutorNode(func(output Output, _ *Data) error {
+			if !stdout {
+				return output.Stderrln(a...)
+			}
+			output.Stdoutln(a...)
+			return nil
+		}),
+	}
+}
+
 func printArgsNode() *Node {
 	return &Node{
 		Processor: ExecutorNode(func(output Output, data *Data) error {
@@ -4049,7 +4081,7 @@ func TestRunNodes(t *testing.T) {
 		IntNode("A", "The first value"),
 		IntNode("B", "The second value"),
 		ExecutorNode(func(o Output, d *Data) error {
-			o.Stdoutf("%d", d.Int("A")+d.Int("B"))
+			o.Stdoutln(d.Int("A") + d.Int("B"))
 			return nil
 		}),
 	)
