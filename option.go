@@ -9,7 +9,7 @@ type ArgOpt interface {
 }
 
 type argOpt struct {
-	validators  []*validatorOption
+	validators  []*ValidatorOption
 	completor   *Completor
 	transformer *simpleTransformer
 	alias       *aliasOpt
@@ -75,20 +75,20 @@ func Transformer(vt ValueType, f func(*Value) (*Value, error), forComplete bool)
 	}
 }
 
-type validatorOption struct {
+type ValidatorOption struct {
 	vt       ValueType
 	validate func(*Value) error
 }
 
-func (vo *validatorOption) modifyArgOpt(ao *argOpt) {
+func (vo *ValidatorOption) modifyArgOpt(ao *argOpt) {
 	ao.validators = append(ao.validators, vo)
 }
 
-func (vo *validatorOption) modifyBashNode(bn *bashCommand) {
+func (vo *ValidatorOption) modifyBashNode(bn *bashCommand) {
 	bn.validators = append(bn.validators, vo)
 }
 
-func (vo *validatorOption) Validate(v *Value) error {
+func (vo *ValidatorOption) Validate(v *Value) error {
 	if !v.IsType(vo.vt) {
 		return fmt.Errorf("option can only be bound to arguments with type %v", vo.vt)
 	}

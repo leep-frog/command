@@ -178,12 +178,22 @@ func (i *Input) PopN(n, optN int, breaker ListBreaker) ([]*string, bool) {
 	ret := make([]*string, 0, shift)
 	idx := 0
 	var broken bool
+	var validators []*ValidatorOption
+	if breaker != nil {
+		validators = breaker.Validators()
+	}
 	for ; idx < shift; idx++ {
-		// TODO: don't break if less than min value
-		// TODO: add validators to lis breakers to guarantee required fields
-		if breaker != nil && breaker.Break(i.get(idx+i.offset).value) {
-			broken = true
-			break
+		// Only check for list breaks after the min value.
+		if idx >= n {
+			for _, validator := range validators {
+				if err := validator.validate(StringValue(i.get(idx + i.offset).value)); err != nil {
+					broken = true
+					break
+				}
+			}
+			if broken {
+				break
+			}
 		}
 		ret = append(ret, &i.get(idx+i.offset).value)
 	}

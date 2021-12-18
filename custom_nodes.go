@@ -327,62 +327,63 @@ func StringMenu(name, desc string, choices ...string) *ArgNode {
 }
 
 type ListBreaker interface {
-	Break(s string) bool
+	Validators() []*ValidatorOption
 	Usage(u *Usage)
 	DiscardBreak() bool
 	ArgOpt
 }
 
-func ListWhileValid(opts ...*validatorOption) ListBreaker {
-	for _, opt := range opts {
-		if opt.vt != StringType {
-			panic(fmt.Sprintf("Validator must be for StringType, but is for %v", opt.vt))
-		}
-	}
-	return ListUntil(
-		func(s string) bool {
-			sv := StringValue(s)
-			for _, opt := range opts {
-				if err := opt.validate(sv); err != nil {
-					return true
-				}
-			}
-			return false
-		},
-		false,
-		nil,
-	)
+type ListBreakerOption *func(*untilListBreaker)
+
+func newBreakerOpt(f func(*untilListBreaker)) ListBreakerOption {
+	return &f
 }
 
-func ListUntilSymbol(symbol string) ListBreaker {
+func DiscardBreaker() ListBreakerOption {
+	return newBreakerOpt(func(ulb *untilListBreaker) {
+		ulb.discard = true
+	})
+}
+
+func ListBreakerUsage(uf func(*Usage)) ListBreakerOption {
+	return newBreakerOpt(func(ulb *untilListBreaker) {
+		ulb.u = uf
+	})
+}
+
+func ListUntilSymbol(symbol string, opts ...ListBreakerOption) ListBreaker {
 	return ListUntil(
-		func(s string) bool {
-			return s == symbol
-		},
-		true,
-		func(u *Usage) {
+		[]*ValidatorOption{StringDoesNotEqual(symbol)},
+		append(opts, ListBreakerUsage(func(u *Usage) {
 			u.Usage = append(u.Usage, symbol)
 			u.UsageSection.Add(SymbolSection, symbol, "List breaker")
-		},
+		}))...,
 	)
 }
 
-func ListUntil(f func(s string) bool, discard bool, u func(*Usage)) ListBreaker {
-	return &untilListBreaker{f, discard, u}
+func ListUntil(validators []*ValidatorOption, opts ...ListBreakerOption) ListBreaker {
+	ulb := &untilListBreaker{
+		validators: validators,
+	}
+
+	for _, opt := range opts {
+		(*opt)(ulb)
+	}
+	return ulb
 }
 
 type untilListBreaker struct {
-	f       func(s string) bool
-	discard bool
-	u       func(*Usage)
+	validators []*ValidatorOption
+	discard    bool
+	u          func(*Usage)
 }
 
 func (ulb *untilListBreaker) modifyArgOpt(ao *argOpt) {
 	ao.breaker = ulb
 }
 
-func (ulb *untilListBreaker) Break(s string) bool {
-	return ulb.f(s)
+func (ulb *untilListBreaker) Validators() []*ValidatorOption {
+	return ulb.validators
 }
 
 func (ulb *untilListBreaker) DiscardBreak() bool {
@@ -400,7 +401,7 @@ func StringListListNode(name, desc, breakSymbol string, minN, optionalN int, opt
 	n := &Node{
 		Processor: StringListNode(name, desc, 0, UnboundedList,
 			append(opts,
-				ListUntilSymbol(breakSymbol),
+				ListUntilSymbol(breakSymbol, DiscardBreaker()),
 				CustomSetter(func(v *Value, d *Data) {
 					if v.Length() > 0 {
 						if !d.HasArgI(name) {

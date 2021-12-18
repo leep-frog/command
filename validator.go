@@ -7,9 +7,10 @@ import (
 	"strings"
 )
 
+// TODO: in go 1.18, ValidatorOption can become ValidatorOption[ValueType]
 // String options
-func StringOption(f func(string) error) *validatorOption {
-	return &validatorOption{
+func StringOption(f func(string) error) *ValidatorOption {
+	return &ValidatorOption{
 		vt: StringType,
 		validate: func(v *Value) error {
 			return f(v.ToString())
@@ -17,8 +18,8 @@ func StringOption(f func(string) error) *validatorOption {
 	}
 }
 
-func StringListOption(f func([]string) error) *validatorOption {
-	return &validatorOption{
+func StringListOption(f func([]string) error) *ValidatorOption {
+	return &ValidatorOption{
 		vt: StringListType,
 		validate: func(v *Value) error {
 			return f(v.ToStringList())
@@ -26,7 +27,19 @@ func StringListOption(f func([]string) error) *validatorOption {
 	}
 }
 
-func Contains(s string) *validatorOption {
+// TODO: add test for this
+func StringDoesNotEqual(s string) *ValidatorOption {
+	return StringOption(
+		func(vs string) error {
+			if vs == s {
+				return fmt.Errorf("[StringDoesNotEqual] value cannot equal %q", s)
+			}
+			return nil
+		},
+	)
+}
+
+func Contains(s string) *ValidatorOption {
 	return StringOption(
 		func(vs string) error {
 			if !strings.Contains(vs, s) {
@@ -37,7 +50,7 @@ func Contains(s string) *validatorOption {
 	)
 }
 
-func MatchesRegex(pattern ...string) *validatorOption {
+func MatchesRegex(pattern ...string) *ValidatorOption {
 	var rs []*regexp.Regexp
 	for _, p := range pattern {
 		rs = append(rs, regexp.MustCompile(p))
@@ -54,7 +67,7 @@ func MatchesRegex(pattern ...string) *validatorOption {
 	)
 }
 
-func IsRegex() *validatorOption {
+func IsRegex() *ValidatorOption {
 	return StringOption(
 		func(s string) error {
 			if _, err := regexp.Compile(s); err != nil {
@@ -65,7 +78,7 @@ func IsRegex() *validatorOption {
 	)
 }
 
-func ListIsRegex() *validatorOption {
+func ListIsRegex() *ValidatorOption {
 	return StringListOption(
 		func(ss []string) error {
 			for _, s := range ss {
@@ -78,7 +91,7 @@ func ListIsRegex() *validatorOption {
 	)
 }
 
-func ListMatchesRegex(pattern ...string) *validatorOption {
+func ListMatchesRegex(pattern ...string) *ValidatorOption {
 	var rs []*regexp.Regexp
 	for _, p := range pattern {
 		rs = append(rs, regexp.MustCompile(p))
@@ -97,7 +110,7 @@ func ListMatchesRegex(pattern ...string) *validatorOption {
 	)
 }
 
-func InList(choices ...string) *validatorOption {
+func InList(choices ...string) *ValidatorOption {
 	return StringOption(
 		func(vs string) error {
 			for _, c := range choices {
@@ -110,7 +123,7 @@ func InList(choices ...string) *validatorOption {
 	)
 }
 
-func MinLength(length int) *validatorOption {
+func MinLength(length int) *ValidatorOption {
 	var plural string
 	if length != 1 {
 		plural = "s"
@@ -136,7 +149,7 @@ func fileExists(vName, s string) (os.FileInfo, error) {
 	return fi, nil
 }
 
-func FileExists() *validatorOption {
+func FileExists() *ValidatorOption {
 	return StringOption(
 		func(s string) error {
 			_, err := fileExists("FileExists", s)
@@ -145,7 +158,7 @@ func FileExists() *validatorOption {
 	)
 }
 
-func FilesExist() *validatorOption {
+func FilesExist() *ValidatorOption {
 	return StringListOption(
 		func(ss []string) error {
 			for _, s := range ss {
@@ -169,7 +182,7 @@ func isDir(vName, s string) error {
 	return nil
 }
 
-func IsDir() *validatorOption {
+func IsDir() *ValidatorOption {
 	return StringOption(
 		func(s string) error {
 			return isDir("IsDir", s)
@@ -177,7 +190,7 @@ func IsDir() *validatorOption {
 	)
 }
 
-func AreDirs() *validatorOption {
+func AreDirs() *ValidatorOption {
 	return StringListOption(
 		func(ss []string) error {
 			for _, s := range ss {
@@ -201,7 +214,7 @@ func isFile(vName, s string) error {
 	return nil
 }
 
-func IsFile() *validatorOption {
+func IsFile() *ValidatorOption {
 	return StringOption(
 		func(s string) error {
 			return isFile("IsFile", s)
@@ -209,7 +222,7 @@ func IsFile() *validatorOption {
 	)
 }
 
-func AreFiles() *validatorOption {
+func AreFiles() *ValidatorOption {
 	return StringListOption(
 		func(ss []string) error {
 			for _, s := range ss {
@@ -223,8 +236,8 @@ func AreFiles() *validatorOption {
 }
 
 // Int options
-func IntOption(f func(int) error) *validatorOption {
-	return &validatorOption{
+func IntOption(f func(int) error) *ValidatorOption {
+	return &ValidatorOption{
 		vt: IntType,
 		validate: func(v *Value) error {
 			return f(v.ToInt())
@@ -232,7 +245,7 @@ func IntOption(f func(int) error) *validatorOption {
 	}
 }
 
-func IntEQ(i int) *validatorOption {
+func IntEQ(i int) *ValidatorOption {
 	return IntOption(
 		func(vi int) error {
 			if vi == i {
@@ -243,7 +256,7 @@ func IntEQ(i int) *validatorOption {
 	)
 }
 
-func IntNE(i int) *validatorOption {
+func IntNE(i int) *ValidatorOption {
 	return IntOption(
 		func(vi int) error {
 			if vi != i {
@@ -254,7 +267,7 @@ func IntNE(i int) *validatorOption {
 	)
 }
 
-func IntLT(i int) *validatorOption {
+func IntLT(i int) *ValidatorOption {
 	return IntOption(
 		func(vi int) error {
 			if vi < i {
@@ -265,7 +278,7 @@ func IntLT(i int) *validatorOption {
 	)
 }
 
-func IntLTE(i int) *validatorOption {
+func IntLTE(i int) *ValidatorOption {
 	return IntOption(
 		func(vi int) error {
 			if vi <= i {
@@ -276,7 +289,7 @@ func IntLTE(i int) *validatorOption {
 	)
 }
 
-func IntGT(i int) *validatorOption {
+func IntGT(i int) *ValidatorOption {
 	return IntOption(
 		func(vi int) error {
 			if vi > i {
@@ -287,7 +300,7 @@ func IntGT(i int) *validatorOption {
 	)
 }
 
-func IntGTE(i int) *validatorOption {
+func IntGTE(i int) *ValidatorOption {
 	return IntOption(
 		func(vi int) error {
 			if vi >= i {
@@ -298,7 +311,7 @@ func IntGTE(i int) *validatorOption {
 	)
 }
 
-func IntPositive() *validatorOption {
+func IntPositive() *ValidatorOption {
 	return IntOption(
 		func(vi int) error {
 			if vi > 0 {
@@ -309,7 +322,7 @@ func IntPositive() *validatorOption {
 	)
 }
 
-func IntNonNegative() *validatorOption {
+func IntNonNegative() *ValidatorOption {
 	return IntOption(
 		func(vi int) error {
 			if vi >= 0 {
@@ -320,7 +333,7 @@ func IntNonNegative() *validatorOption {
 	)
 }
 
-func IntNegative() *validatorOption {
+func IntNegative() *ValidatorOption {
 	return IntOption(
 		func(vi int) error {
 			if vi < 0 {
@@ -332,8 +345,8 @@ func IntNegative() *validatorOption {
 }
 
 // Float options
-func FloatOption(f func(float64) error) *validatorOption {
-	return &validatorOption{
+func FloatOption(f func(float64) error) *ValidatorOption {
+	return &ValidatorOption{
 		vt: FloatType,
 		validate: func(v *Value) error {
 			return f(v.ToFloat())
@@ -341,7 +354,7 @@ func FloatOption(f func(float64) error) *validatorOption {
 	}
 }
 
-func FloatEQ(f float64) *validatorOption {
+func FloatEQ(f float64) *ValidatorOption {
 	return FloatOption(
 		func(vf float64) error {
 			if vf == f {
@@ -352,7 +365,7 @@ func FloatEQ(f float64) *validatorOption {
 	)
 }
 
-func FloatNE(f float64) *validatorOption {
+func FloatNE(f float64) *ValidatorOption {
 	return FloatOption(
 		func(vf float64) error {
 			if vf != f {
@@ -363,7 +376,7 @@ func FloatNE(f float64) *validatorOption {
 	)
 }
 
-func FloatLT(f float64) *validatorOption {
+func FloatLT(f float64) *ValidatorOption {
 	return FloatOption(
 		func(vf float64) error {
 			if vf < f {
@@ -374,7 +387,7 @@ func FloatLT(f float64) *validatorOption {
 	)
 }
 
-func FloatLTE(f float64) *validatorOption {
+func FloatLTE(f float64) *ValidatorOption {
 	return FloatOption(
 		func(vf float64) error {
 			if vf <= f {
@@ -385,7 +398,7 @@ func FloatLTE(f float64) *validatorOption {
 	)
 }
 
-func FloatGT(f float64) *validatorOption {
+func FloatGT(f float64) *ValidatorOption {
 	return FloatOption(
 		func(vf float64) error {
 			if vf > f {
@@ -396,7 +409,7 @@ func FloatGT(f float64) *validatorOption {
 	)
 }
 
-func FloatGTE(f float64) *validatorOption {
+func FloatGTE(f float64) *ValidatorOption {
 	return FloatOption(
 		func(vf float64) error {
 			if vf >= f {
@@ -407,7 +420,7 @@ func FloatGTE(f float64) *validatorOption {
 	)
 }
 
-func FloatPositive() *validatorOption {
+func FloatPositive() *ValidatorOption {
 	return FloatOption(
 		func(vi float64) error {
 			if vi > 0 {
@@ -418,7 +431,7 @@ func FloatPositive() *validatorOption {
 	)
 }
 
-func FloatNonNegative() *validatorOption {
+func FloatNonNegative() *ValidatorOption {
 	return FloatOption(
 		func(vi float64) error {
 			if vi >= 0 {
@@ -429,7 +442,7 @@ func FloatNonNegative() *validatorOption {
 	)
 }
 
-func FloatNegative() *validatorOption {
+func FloatNegative() *ValidatorOption {
 	return FloatOption(
 		func(vi float64) error {
 			if vi < 0 {

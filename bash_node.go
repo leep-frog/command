@@ -57,7 +57,7 @@ type bashCommand struct {
 	contents []string
 	desc     string
 
-	validators    []*validatorOption
+	validators    []*ValidatorOption
 	hideStderr    bool
 	forwardStdout bool
 }

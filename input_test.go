@@ -250,6 +250,18 @@ func TestPopN(t *testing.T) {
 			wantOK:  true,
 			wantInput: &Input{
 				args:      []*inputArg{{value: "hello"}, {value: "there"}, {value: "person"}, {value: "how"}, {value: "are"}, {value: "you"}},
+				remaining: []int{3, 4, 5},
+			},
+		},
+		{
+			name:    "breaks unbounded list at breaker with discard",
+			input:   []string{"hello", "there", "person", "how", "are", "you"},
+			optN:    UnboundedList,
+			want:    []string{"hello", "there", "person"},
+			breaker: ListUntilSymbol("how", DiscardBreaker()),
+			wantOK:  true,
+			wantInput: &Input{
+				args:      []*inputArg{{value: "hello"}, {value: "there"}, {value: "person"}, {value: "how"}, {value: "are"}, {value: "you"}},
 				remaining: []int{4, 5},
 			},
 		},

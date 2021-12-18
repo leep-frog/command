@@ -579,6 +579,43 @@ func TestExecute(t *testing.T) {
 			},
 		},
 
+		// StringDoesNotEqual
+		{
+			name: "string dne works",
+			etc: &ExecuteTestCase{
+				Node: &Node{
+					Processor: StringNode("strArg", testDesc, StringDoesNotEqual("bad")),
+				},
+				Args: []string{"good"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "good"},
+					},
+				},
+				WantData: &Data{Values: map[string]*Value{
+					"strArg": StringValue("good"),
+				}},
+			},
+		},
+		{
+			name: "string dne fails",
+			etc: &ExecuteTestCase{
+				Node: &Node{
+					Processor: StringNode("strArg", testDesc, StringDoesNotEqual("bad")),
+				},
+				Args: []string{"bad"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "bad"},
+					},
+				},
+				WantData: &Data{Values: map[string]*Value{
+					"strArg": StringValue("bad"),
+				}},
+				WantStderr: []string{`validation failed: [StringDoesNotEqual] value cannot equal "bad"`},
+				WantErr:    fmt.Errorf(`validation failed: [StringDoesNotEqual] value cannot equal "bad"`),
+			},
+		},
 		// Contains
 		{
 			name: "contains works",
@@ -2893,6 +2930,28 @@ func TestExecute(t *testing.T) {
 				Args: []string{"abc", "def", "ghi", "jkl"},
 				WantData: &Data{Values: map[string]*Value{
 					"SL":  StringListValue("abc", "def"),
+					"SL2": StringListValue("ghi", "jkl"),
+				}},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "abc"},
+						{value: "def"},
+						{value: "ghi"},
+						{value: "jkl"},
+					},
+				},
+			},
+		},
+		{
+			name: "Handles broken list with discard",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					StringListNode("SL", testDesc, 1, UnboundedList, ListUntilSymbol("ghi", DiscardBreaker())),
+					StringListNode("SL2", testDesc, 0, UnboundedList),
+				),
+				Args: []string{"abc", "def", "ghi", "jkl"},
+				WantData: &Data{Values: map[string]*Value{
+					"SL":  StringListValue("abc", "def"),
 					"SL2": StringListValue("jkl"),
 				}},
 				wantInput: &Input{
@@ -3958,6 +4017,21 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
 					StringListNode("SL", testDesc, 1, UnboundedList, ListUntilSymbol("ghi"), SimpleCompletor("un", "deux", "trois")),
+					StringListNode("SL2", testDesc, 0, UnboundedList, SimpleCompletor("one", "two", "three")),
+				),
+				Args: "cmd abc def ghi ",
+				Want: []string{"one", "three", "two"},
+				WantData: &Data{Values: map[string]*Value{
+					"SL":  StringListValue("abc", "def"),
+					"SL2": StringListValue("ghi", ""),
+				}},
+			},
+		},
+		{
+			name: "Suggests things after broken list with discard",
+			ctc: &CompleteTestCase{
+				Node: SerialNodes(
+					StringListNode("SL", testDesc, 1, UnboundedList, ListUntilSymbol("ghi", DiscardBreaker()), SimpleCompletor("un", "deux", "trois")),
 					StringListNode("SL2", testDesc, 0, UnboundedList, SimpleCompletor("one", "two", "three")),
 				),
 				Args: "cmd abc def ghi ",
