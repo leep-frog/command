@@ -345,22 +345,22 @@ func ListBreakerUsage(uf func(*Usage)) ListBreakerOption {
 }
 
 func ListUntilSymbol(symbol string, opts ...ListBreakerOption) *ListBreaker {
-	return ListUntil(
-		[]*ValidatorOption{StringDoesNotEqual(symbol)},
-		append(opts, ListBreakerUsage(func(u *Usage) {
-			u.Usage = append(u.Usage, symbol)
-			u.UsageSection.Add(SymbolSection, symbol, "List breaker")
-		}))...,
-	)
+	return ListUntil(StringDoesNotEqual(symbol)).AddOptions(append(opts, ListBreakerUsage(func(u *Usage) {
+		u.Usage = append(u.Usage, symbol)
+		u.UsageSection.Add(SymbolSection, symbol, "List breaker")
+	}))...)
 }
 
-func ListUntil(validators []*ValidatorOption, opts ...ListBreakerOption) *ListBreaker {
-	lb := &ListBreaker{
-		validators: validators,
-	}
-
+func (lb *ListBreaker) AddOptions(opts ...ListBreakerOption) *ListBreaker {
 	for _, opt := range opts {
 		(*opt)(lb)
+	}
+	return lb
+}
+
+func ListUntil(validators ...*ValidatorOption) *ListBreaker {
+	lb := &ListBreaker{
+		validators: validators,
 	}
 	return lb
 }
