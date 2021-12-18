@@ -422,13 +422,19 @@ func (*errorTester) setup(t *testing.T, tc *testContext) {}
 func (et *errorTester) check(t *testing.T, prefix string, tc *testContext) {
 	t.Helper()
 
-	if et.want == nil && tc.err != nil {
-		t.Errorf("%s returned error (%v) when shouldn't have", prefix, tc.err)
+	cmpError(t, prefix, et.want, tc.err)
+}
+
+func cmpError(t *testing.T, prefix string, wantErr, err error) {
+	t.Helper()
+
+	if wantErr == nil && err != nil {
+		t.Errorf("%s returned error (%v) when shouldn't have", prefix, err)
 	}
-	if et.want != nil {
-		if tc.err == nil {
-			t.Errorf("%s returned no error when should have returned %v", prefix, et.want)
-		} else if diff := cmp.Diff(et.want.Error(), tc.err.Error()); diff != "" {
+	if wantErr != nil {
+		if err == nil {
+			t.Errorf("%s returned no error when should have returned %v", prefix, wantErr)
+		} else if diff := cmp.Diff(wantErr.Error(), err.Error()); diff != "" {
 			t.Errorf("%s returned unexpected error (-want, +got):\n%s", prefix, diff)
 		}
 	}

@@ -37,19 +37,19 @@ func SimpleDistinctCompletor(s ...string) *Completor {
 }
 
 type simpleFetcher struct {
-	f func(*Value, *Data) *Completion
+	f func(*Value, *Data) (*Completion, error)
 }
 
-func (sf *simpleFetcher) Fetch(v *Value, d *Data) *Completion {
+func (sf *simpleFetcher) Fetch(v *Value, d *Data) (*Completion, error) {
 	return sf.f(v, d)
 }
 
-func SimpleFetcher(f func(*Value, *Data) *Completion) Fetcher {
+func SimpleFetcher(f func(*Value, *Data) (*Completion, error)) Fetcher {
 	return &simpleFetcher{f: f}
 }
 
 type Fetcher interface {
-	Fetch(*Value, *Data) *Completion
+	Fetch(*Value, *Data) (*Completion, error)
 }
 
 type Completor struct {
@@ -78,24 +78,24 @@ func BoolCompletor() *Completor {
 
 type boolFetcher struct{}
 
-func (*boolFetcher) Fetch(*Value, *Data) *Completion {
+func (*boolFetcher) Fetch(*Value, *Data) (*Completion, error) {
 	var keys []string
 	for k := range boolStringMap {
 		keys = append(keys, k)
 	}
 	return &Completion{
 		Suggestions: keys,
-	}
+	}, nil
 }
 
-func (c *Completor) Complete(rawValue string, value *Value, data *Data) *Completion {
+func (c *Completor) Complete(rawValue string, value *Value, data *Data) (*Completion, error) {
 	if c == nil || c.SuggestionFetcher == nil {
-		return nil
+		return nil, nil
 	}
 
-	completion := c.SuggestionFetcher.Fetch(value, data)
-	if completion == nil {
-		return nil
+	completion, err := c.SuggestionFetcher.Fetch(value, data)
+	if completion == nil || err != nil {
+		return nil, err
 	}
 
 	if c.Distinct {
@@ -119,7 +119,7 @@ func (c *Completor) Complete(rawValue string, value *Value, data *Data) *Complet
 
 	completion.CaseInsensitive = completion.CaseInsensitive || c.CaseInsensitive
 
-	return completion
+	return completion, nil
 }
 
 func (c *Completion) Process(input *Input) []string {
@@ -173,8 +173,8 @@ type ListFetcher struct {
 	Options []string
 }
 
-func (lf *ListFetcher) Fetch(*Value, *Data) *Completion {
-	return &Completion{Suggestions: lf.Options}
+func (lf *ListFetcher) Fetch(*Value, *Data) (*Completion, error) {
+	return &Completion{Suggestions: lf.Options}, nil
 }
 
 type FileFetcher struct {
@@ -189,7 +189,7 @@ type FileFetcher struct {
 	IgnoreFunc        func(*Value, *Data) []string
 }
 
-func (ff *FileFetcher) Fetch(value *Value, data *Data) *Completion {
+func (ff *FileFetcher) Fetch(value *Value, data *Data) (*Completion, error) {
 	var lastArg string
 	if value.IsType(StringType) {
 		lastArg = value.ToString()
@@ -201,12 +201,12 @@ func (ff *FileFetcher) Fetch(value *Value, data *Data) *Completion {
 	laDir, laFile := filepath.Split(lastArg)
 	dir, err := filepathAbs(filepath.Join(ff.Directory, laDir))
 	if err != nil {
-		return nil
+		return nil, fmt.Errorf("failed to get absolute filepath: %v", err)
 	}
 
 	files, err := ioutil.ReadDir(dir)
 	if err != nil {
-		return nil
+		return nil, fmt.Errorf("failed to read dir: %v", err)
 	}
 
 	onlyDir := true
@@ -233,7 +233,7 @@ func (ff *FileFetcher) Fetch(value *Value, data *Data) *Completion {
 	}
 
 	if len(suggestions) == 0 {
-		return nil
+		return nil, nil
 	}
 
 	ignorable := map[string]bool{}
@@ -256,7 +256,7 @@ func (ff *FileFetcher) Fetch(value *Value, data *Data) *Completion {
 		}
 	}
 	if len(relevantSuggestions) == 0 {
-		return nil
+		return nil, nil
 	}
 	suggestions = relevantSuggestions
 
@@ -277,7 +277,7 @@ func (ff *FileFetcher) Fetch(value *Value, data *Data) *Completion {
 			// without a space after it.
 			c.Suggestions = append(c.Suggestions, fmt.Sprintf("%s%s", c.Suggestions[0], suffixChar))
 		}
-		return c
+		return c, nil
 	}
 
 	autoFill, ok := getAutofillLetters(laFile, c.Suggestions)
@@ -287,7 +287,7 @@ func (ff *FileFetcher) Fetch(value *Value, data *Data) *Completion {
 		// prefix so this would actually autocomplete to the prefix
 		// without the directory name
 		c.DontComplete = true
-		return c
+		return c, nil
 	}
 
 	// Otherwise, we should complete all of the autofill letters
@@ -298,7 +298,7 @@ func (ff *FileFetcher) Fetch(value *Value, data *Data) *Completion {
 		autoFill + suffixChar,
 	}
 
-	return c
+	return c, nil
 }
 
 func getAutofillLetters(laFile string, suggestions []string) (string, bool) {

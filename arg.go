@@ -192,7 +192,7 @@ func (an *ArgNode) complete(sl []*string, enough bool, input *Input, data *Data)
 			if len(sl) > 0 {
 				lastArg = *sl[len(sl)-1]
 			}
-			return an.opt.completor.Complete(lastArg, v, data), nil
+			return an.opt.completor.Complete(lastArg, v, data)
 		}
 
 		return nil, err
@@ -228,7 +228,7 @@ func (an *ArgNode) complete(sl []*string, enough bool, input *Input, data *Data)
 	if len(ta) > 0 {
 		lastArg = ta[len(ta)-1]
 	}
-	return an.opt.completor.Complete(lastArg, v, data), nil
+	return an.opt.completor.Complete(lastArg, v, data)
 }
 
 func StringListNode(name, desc string, minN, optionalN int, opts ...ArgOpt) *ArgNode {

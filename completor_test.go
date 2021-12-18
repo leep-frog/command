@@ -13,10 +13,11 @@ import (
 
 func TestCompletors(t *testing.T) {
 	for _, test := range []struct {
-		name string
-		c    *Completor
-		args string
-		want []string
+		name    string
+		c       *Completor
+		args    string
+		want    []string
+		wantErr error
 	}{
 		{
 			name: "nil completor returns nil",
@@ -68,13 +69,25 @@ func TestCompletors(t *testing.T) {
 			want: []string{"ABC", "Abc", "abc"},
 		},
 		{
+			name:    "returns error",
+			args:    "cmd A",
+			wantErr: fmt.Errorf("bad news bears"),
+			c: &Completor{
+				SuggestionFetcher: SimpleFetcher(func(*Value, *Data) (*Completion, error) {
+					return &Completion{
+						Suggestions: []string{"abc", "Abc", "ABC", "def", "Def", "DEF"},
+					}, fmt.Errorf("bad news bears")
+				}),
+			},
+		},
+		{
 			name: "completes only matching cases",
 			args: "cmd A",
 			c: &Completor{
-				SuggestionFetcher: SimpleFetcher(func(*Value, *Data) *Completion {
+				SuggestionFetcher: SimpleFetcher(func(*Value, *Data) (*Completion, error) {
 					return &Completion{
 						Suggestions: []string{"abc", "Abc", "ABC", "def", "Def", "DEF"},
-					}
+					}, nil
 				}),
 			},
 			want: []string{"ABC", "Abc"},
@@ -83,11 +96,11 @@ func TestCompletors(t *testing.T) {
 			name: "completes all cases if completor.CaseInsensitive and upper",
 			args: "cmd A",
 			c: &Completor{
-				SuggestionFetcher: SimpleFetcher(func(*Value, *Data) *Completion {
+				SuggestionFetcher: SimpleFetcher(func(*Value, *Data) (*Completion, error) {
 					return &Completion{
 						CaseInsensitive: true,
 						Suggestions:     []string{"abc", "Abc", "ABC", "def", "Def", "DEF"},
-					}
+					}, nil
 				}),
 			},
 			want: []string{"ABC", "Abc", "abc"},
@@ -96,11 +109,11 @@ func TestCompletors(t *testing.T) {
 			name: "completes all cases if completor.CaseInsensitive and lower",
 			args: "cmd a",
 			c: &Completor{
-				SuggestionFetcher: SimpleFetcher(func(*Value, *Data) *Completion {
+				SuggestionFetcher: SimpleFetcher(func(*Value, *Data) (*Completion, error) {
 					return &Completion{
 						CaseInsensitive: true,
 						Suggestions:     []string{"abc", "Abc", "ABC", "def", "Def", "DEF"},
-					}
+					}, nil
 				}),
 			},
 			want: []string{"ABC", "Abc", "abc"},
@@ -144,11 +157,13 @@ func TestCompletors(t *testing.T) {
 		},*/
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			gn := SerialNodes(StringListNode("test", testDesc, 2, 5, test.c))
-			got := Autocomplete(gn, test.args)
-			if diff := cmp.Diff(test.want, got); diff != "" {
-				t.Errorf("genericAutocomplete(%v, %v) returned diff (-want, +got):\n%s", gn, test.args, diff)
-			}
+			CompleteTest(t, &CompleteTestCase{
+				Node:          SerialNodes(StringListNode("test", testDesc, 2, 5, test.c)),
+				Args:          test.args,
+				Want:          test.want,
+				WantErr:       test.wantErr,
+				SkipDataCheck: true,
+			})
 		})
 	}
 }

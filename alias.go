@@ -121,14 +121,14 @@ func AliasNode(name string, ac AliasCLI, n *Node) *Node {
 func aliasCompletor(name string, ac AliasCLI) *Completor {
 	return &Completor{
 		Distinct: true,
-		SuggestionFetcher: SimpleFetcher(func(v *Value, d *Data) *Completion {
+		SuggestionFetcher: SimpleFetcher(func(v *Value, d *Data) (*Completion, error) {
 			s := []string{}
 			for k := range getAliasMap(ac, name) {
 				s = append(s, k)
 			}
 			return &Completion{
 				Suggestions: s,
-			}
+			}, nil
 		}),
 	}
 }

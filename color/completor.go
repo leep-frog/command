@@ -6,10 +6,10 @@ import (
 
 type fetcher struct{}
 
-func (f *fetcher) Fetch(value *command.Value, data *command.Data) *command.Completion {
+func (f *fetcher) Fetch(value *command.Value, data *command.Data) (*command.Completion, error) {
 	return &command.Completion{
 		Suggestions: Attributes(),
-	}
+	}, nil
 }
 
 func Completor() *command.Completor {

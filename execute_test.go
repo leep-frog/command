@@ -3300,13 +3300,31 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
 					StringNode("PATH", "dd", &Completor{
-						SuggestionFetcher: SimpleFetcher(func(v *Value, d *Data) *Completion {
-							return nil
+						SuggestionFetcher: SimpleFetcher(func(v *Value, d *Data) (*Completion, error) {
+							return nil, nil
 						}),
 					}),
 					StringListNode("SUB_PATH", "stc", 0, UnboundedList, SimpleCompletor("un", "deux", "trois")),
 				),
 				Args: "cmd p",
+				WantData: &Data{Values: map[string]*Value{
+					"PATH": StringValue("p"),
+				}},
+			},
+		},
+		{
+			name: "stop iterating if a completion returns an error",
+			ctc: &CompleteTestCase{
+				Node: SerialNodes(
+					StringNode("PATH", "dd", &Completor{
+						SuggestionFetcher: SimpleFetcher(func(v *Value, d *Data) (*Completion, error) {
+							return nil, fmt.Errorf("ruh-roh")
+						}),
+					}),
+					StringListNode("SUB_PATH", "stc", 0, UnboundedList, SimpleCompletor("un", "deux", "trois")),
+				),
+				Args:    "cmd p",
+				WantErr: fmt.Errorf("ruh-roh"),
 				WantData: &Data{Values: map[string]*Value{
 					"PATH": StringValue("p"),
 				}},
