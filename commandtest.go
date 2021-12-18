@@ -105,6 +105,9 @@ type RunNodeTestCase struct {
 func RunNodeTest(t *testing.T, rtc *RunNodeTestCase) {
 	t.Helper()
 
+	// Define prefix before TMP_FILE is switched out
+	prefix := fmt.Sprintf("RunNodes(%v)", rtc.Args)
+
 	var f *os.File
 	for i, line := range rtc.Args {
 		if line == "TMP_FILE" {
@@ -122,35 +125,25 @@ func RunNodeTest(t *testing.T, rtc *RunNodeTestCase) {
 		rtc = &RunNodeTestCase{}
 	}
 
-	data := &Data{}
-	fo := NewFakeOutput()
-	err := runNodes(rtc.Node, fo, data, rtc.Args)
-	if rtc.WantErr == nil && err != nil {
-		t.Errorf("RunNodes(%v) returned error (%v) when shouldn't have", rtc.Args, err)
+	tc := &testContext{
+		data: &Data{},
+		fo:   NewFakeOutput(),
 	}
-	if rtc.WantErr != nil {
-		if err == nil {
-			t.Errorf("RunNodes(%v) returned no error when should have returned %v", rtc.Args, rtc.WantErr)
-		} else if diff := cmp.Diff(rtc.WantErr.Error(), err.Error()); diff != "" {
-			t.Errorf("RunNodes(%v) returned unexpected error (-want, +got):\n%s", rtc.Args, diff)
-		}
+	defer tc.fo.Close()
+
+	testers := []commandTester{
+		&outputTester{rtc.WantStdout, rtc.WantStderr},
+		&errorTester{rtc.WantErr},
+		checkIf(!rtc.SkipDataCheck, &dataTester{rtc.WantData}),
 	}
 
-	// Check Data.
-	wantData := rtc.WantData
-	if wantData == nil {
-		wantData = &Data{}
+	for _, tester := range testers {
+		tester.setup(t, tc)
 	}
-	if diff := cmp.Diff(wantData, data, cmpopts.EquateEmpty()); diff != "" && !rtc.SkipDataCheck {
-		t.Errorf("RunNodes(%v) returned unexpected Data (-want, +got):\n%s", rtc.Args, diff)
-	}
+	tc.err = runNodes(rtc.Node, tc.fo, tc.data, rtc.Args)
 
-	// Check Stderr and Stdout.
-	if diff := cmp.Diff(rtc.WantStdout, fo.GetStdout(), cmpopts.EquateEmpty()); diff != "" {
-		t.Errorf("RunNodes(%v) sent wrong data to stdout (-want, +got):\n%s", rtc.Args, diff)
-	}
-	if diff := cmp.Diff(rtc.WantStderr, fo.GetStderr(), cmpopts.EquateEmpty()); diff != "" {
-		t.Errorf("RunNodes(%v) sent wrong data to stderr (-want, +got):\n%s", rtc.Args, diff)
+	for _, tester := range testers {
+		tester.check(t, prefix, tc)
 	}
 
 	var fileContents []string
