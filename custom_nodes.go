@@ -326,32 +326,25 @@ func StringMenu(name, desc string, choices ...string) *ArgNode {
 	return StringNode(name, desc, SimpleCompletor(choices...), InList(choices...))
 }
 
-type ListBreaker interface {
-	Validators() []*ValidatorOption
-	Usage(u *Usage)
-	DiscardBreak() bool
-	ArgOpt
-}
+type ListBreakerOption *func(*ListBreaker)
 
-type ListBreakerOption *func(*untilListBreaker)
-
-func newBreakerOpt(f func(*untilListBreaker)) ListBreakerOption {
+func newBreakerOpt(f func(*ListBreaker)) ListBreakerOption {
 	return &f
 }
 
 func DiscardBreaker() ListBreakerOption {
-	return newBreakerOpt(func(ulb *untilListBreaker) {
-		ulb.discard = true
+	return newBreakerOpt(func(lb *ListBreaker) {
+		lb.discard = true
 	})
 }
 
 func ListBreakerUsage(uf func(*Usage)) ListBreakerOption {
-	return newBreakerOpt(func(ulb *untilListBreaker) {
-		ulb.u = uf
+	return newBreakerOpt(func(lb *ListBreaker) {
+		lb.u = uf
 	})
 }
 
-func ListUntilSymbol(symbol string, opts ...ListBreakerOption) ListBreaker {
+func ListUntilSymbol(symbol string, opts ...ListBreakerOption) *ListBreaker {
 	return ListUntil(
 		[]*ValidatorOption{StringDoesNotEqual(symbol)},
 		append(opts, ListBreakerUsage(func(u *Usage) {
@@ -361,38 +354,38 @@ func ListUntilSymbol(symbol string, opts ...ListBreakerOption) ListBreaker {
 	)
 }
 
-func ListUntil(validators []*ValidatorOption, opts ...ListBreakerOption) ListBreaker {
-	ulb := &untilListBreaker{
+func ListUntil(validators []*ValidatorOption, opts ...ListBreakerOption) *ListBreaker {
+	lb := &ListBreaker{
 		validators: validators,
 	}
 
 	for _, opt := range opts {
-		(*opt)(ulb)
+		(*opt)(lb)
 	}
-	return ulb
+	return lb
 }
 
-type untilListBreaker struct {
+type ListBreaker struct {
 	validators []*ValidatorOption
 	discard    bool
 	u          func(*Usage)
 }
 
-func (ulb *untilListBreaker) modifyArgOpt(ao *argOpt) {
-	ao.breaker = ulb
+func (lb *ListBreaker) modifyArgOpt(ao *argOpt) {
+	ao.breaker = lb
 }
 
-func (ulb *untilListBreaker) Validators() []*ValidatorOption {
-	return ulb.validators
+func (lb *ListBreaker) Validators() []*ValidatorOption {
+	return lb.validators
 }
 
-func (ulb *untilListBreaker) DiscardBreak() bool {
-	return ulb.discard
+func (lb *ListBreaker) DiscardBreak() bool {
+	return lb.discard
 }
 
-func (ulb *untilListBreaker) Usage(u *Usage) {
-	if ulb.u != nil {
-		ulb.u(u)
+func (lb *ListBreaker) Usage(u *Usage) {
+	if lb.u != nil {
+		lb.u(u)
 	}
 }
 

@@ -215,7 +215,7 @@ func TestPopN(t *testing.T) {
 		want      []string
 		wantOK    bool
 		wantInput *Input
-		breaker   ListBreaker
+		breaker   *ListBreaker
 	}{
 		{
 			name:      "pops none",

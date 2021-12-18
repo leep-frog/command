@@ -165,7 +165,7 @@ func (i *Input) Pop() (string, bool) {
 	return *sl[0], true
 }
 
-func (i *Input) PopN(n, optN int, breaker ListBreaker) ([]*string, bool) {
+func (i *Input) PopN(n, optN int, breaker *ListBreaker) ([]*string, bool) {
 	shift := n + optN
 	if optN == UnboundedList || shift+i.offset > len(i.remaining) {
 		shift = len(i.remaining) - i.offset

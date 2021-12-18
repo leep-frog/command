@@ -15,7 +15,7 @@ type argOpt struct {
 	alias       *aliasOpt
 	customSet   customSetter
 	_default    *Value
-	breaker     ListBreaker
+	breaker     *ListBreaker
 
 	hiddenUsage bool
 }
