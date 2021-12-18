@@ -42,7 +42,6 @@ type ExecuteTestCase struct {
 
 	// WantRunContents are the set of commands that should have been run in bash.
 	WantRunContents [][]string
-	gotRunContents  [][]string
 
 	// RequiresSetup indicates whether or not the command requires setup
 	RequiresSetup bool
@@ -177,126 +176,39 @@ func ExecuteTest(t *testing.T, etc *ExecuteTestCase) {
 		etc = &ExecuteTestCase{}
 	}
 
-	args := etc.Args
-	wantData := etc.WantData
-	if wantData == nil {
-		wantData = &Data{}
+	tc := &testContext{
+		data:         &Data{},
+		fo:           NewFakeOutput(),
+		runResponses: etc.RunResponses,
 	}
+	defer tc.fo.Close()
+	args := etc.Args
 	if etc.RequiresSetup {
 		setupFile := setupForTest(t, etc.SetupContents)
 		args = append([]string{setupFile}, args...)
-		wantData.Set(SetupArgName, StringValue(setupFile))
+		tc.data.Set(SetupArgName, StringValue(setupFile))
 		t.Cleanup(func() { os.Remove(setupFile) })
 	}
+	tc.input = NewInput(args, nil)
 
-	runResponses := &etc.RunResponses
-	oldRun := run
-	run = stubRunResponses(t, etc, runResponses)
-	defer func() { run = oldRun }()
-
-	input := NewInput(args, nil)
-
-	fo := NewFakeOutput()
-	data := &Data{}
-
-	eData, err := execute(etc.Node, input, fo, data)
-	if etc.WantErr == nil && err != nil {
-		t.Errorf("execute(%v) returned error (%v) when shouldn't have", etc.Args, err)
-	}
-	if etc.WantErr != nil {
-		if err == nil {
-			t.Errorf("execute(%v) returned no error when should have returned %v", etc.Args, etc.WantErr)
-		} else if diff := cmp.Diff(etc.WantErr.Error(), err.Error()); diff != "" {
-			t.Errorf("execute(%v) returned unexpected error (-want, +got):\n%s", etc.Args, diff)
-		}
+	testers := []commandTester{
+		&outputTester{etc.WantStdout, etc.WantStderr},
+		&errorTester{etc.WantErr},
+		&executeDataTester{etc.WantExecuteData},
+		&runResponseTester{etc.WantRunContents},
+		checkIf(!etc.SkipDataCheck, &dataTester{etc.WantData}),
+		checkIf(etc.testInput, &inputTester{etc.wantInput}),
 	}
 
-	// Check ExecuteData.
-	wantEData := etc.WantExecuteData
-	if wantEData == nil {
-		wantEData = &ExecuteData{}
-	}
-	if eData == nil {
-		eData = &ExecuteData{}
-	}
-	if diff := cmp.Diff(wantEData, eData, cmpopts.IgnoreFields(ExecuteData{}, "Executor")); diff != "" {
-		t.Errorf("execute(%v) returned unexpected ExecuteData (-want, +got):\n%s", etc.Args, diff)
+	for _, tester := range testers {
+		tester.setup(t, tc)
 	}
 
-	// Check Data.
-	if diff := cmp.Diff(wantData, data, cmpopts.EquateEmpty()); diff != "" && !etc.SkipDataCheck {
-		t.Errorf("execute(%v) returned unexpected Data (-want, +got):\n%s", etc.Args, diff)
-	}
+	tc.eData, tc.err = execute(etc.Node, tc.input, tc.fo, tc.data)
 
-	// Check Stderr and Stdout.
-	if diff := cmp.Diff(etc.WantStdout, fo.GetStdout(), cmpopts.EquateEmpty()); diff != "" {
-		t.Errorf("execute(%v) sent wrong data to stdout (-want, +got):\n%s", etc.Args, diff)
-	}
-	if diff := cmp.Diff(etc.WantStderr, fo.GetStderr(), cmpopts.EquateEmpty()); diff != "" {
-		t.Errorf("execute(%v) sent wrong data to stderr (-want, +got):\n%s", etc.Args, diff)
-	}
-
-	// Check input (if relevant).
-	if etc.testInput {
-		wantInput := etc.wantInput
-		if wantInput == nil {
-			wantInput = &Input{}
-		}
-		if diff := cmp.Diff(wantInput, input, cmpopts.EquateEmpty(), cmp.AllowUnexported(Input{}, inputArg{})); diff != "" {
-			t.Errorf("execute(%v) incorrectly modified input (-want, +got):\n%s", etc.Args, diff)
-		}
-	}
-
-	// Check all run responses were used.
-	if len(*runResponses) > 0 {
-		t.Errorf("unused run responses: %v", runResponses)
-	}
-
-	// Check proper commands were run.
-	if diff := cmp.Diff(etc.WantRunContents, etc.gotRunContents); diff != "" {
-		t.Errorf("execute(%v) produced unexpected bash commands:\n%s", etc.Args, diff)
-	}
-}
-
-type runStubber interface {
-	addRunResponse([]string)
-}
-
-func (etc *ExecuteTestCase) addRunResponse(lines []string) {
-	etc.gotRunContents = append(etc.gotRunContents, lines)
-}
-
-func (ctc *CompleteTestCase) addRunResponse(lines []string) {
-	ctc.gotRunContents = append(ctc.gotRunContents, lines)
-}
-
-func stubRunResponses(t *testing.T, rs runStubber, runResponses *[]*FakeRun) func(cmd *exec.Cmd) error {
-	return func(cmd *exec.Cmd) error {
-		if cmd.Path != "bash" && cmd.Path != "C:\\msys64\\usr\\bin\\bash.exe" && cmd.Path != "C:\\Windows\\system32\\bash.exe" {
-			t.Fatalf(`expected cmd path to be "bash"; got %q`, cmd.Path)
-		}
-		if len(cmd.Args) != 2 {
-			t.Fatalf("expected two args ('bash filename'), but got %v", cmd.Args)
-		}
-		if len(*runResponses) == 0 {
-			t.Fatalf("ran out of stubbed run responses")
-		}
-
-		content, err := ioutil.ReadFile(cmd.Args[1])
-		if err != nil {
-			t.Fatalf("unable to read file: %v", err)
-		}
-		lines := strings.Split(string(content), "\n")
-		rs.addRunResponse(lines)
-
-		r := (*runResponses)[0]
-		*runResponses = (*runResponses)[1:]
-		write(t, cmd.Stdout, r.Stdout)
-		write(t, cmd.Stderr, r.Stderr)
-		if r.F != nil {
-			r.F(t)
-		}
-		return r.Err
+	prefix := fmt.Sprintf("Execute(%v)", etc.Args)
+	for _, tester := range testers {
+		tester.check(t, prefix, tc)
 	}
 }
 
@@ -339,55 +251,224 @@ type CompleteTestCase struct {
 
 	SkipDataCheck bool
 
-	// TODO: make type that ctc and etc both point to
 	// RunResponses are the stubbed responses to return from exec.Cmd.Run.
 	RunResponses []*FakeRun
 
 	// WantRunContents are the set of commands that should have been run in bash.
 	WantRunContents [][]string
-	gotRunContents  [][]string
 }
 
 func CompleteTest(t *testing.T, ctc *CompleteTestCase) {
 	t.Helper()
-	data := &Data{}
 
-	runResponses := &ctc.RunResponses
-	oldRun := run
-	run = stubRunResponses(t, ctc, runResponses)
-	defer func() { run = oldRun }()
-
-	got, err := autocomplete(ctc.Node, ctc.Args, data)
-	if ctc.WantErr == nil && err != nil {
-		t.Errorf("autocomplete(%v) returned error (%v) when shouldn't have", ctc.Args, err)
+	if ctc == nil {
+		ctc = &CompleteTestCase{}
 	}
-	if ctc.WantErr != nil {
-		if err == nil {
-			t.Errorf("autocomplete(%v) returned no error when should have returned %v", ctc.Args, ctc.WantErr)
-		} else if diff := cmp.Diff(ctc.WantErr.Error(), err.Error()); diff != "" {
-			t.Errorf("autocomplete(%v) returned unexpected error (-want, +got):\n%s", ctc.Args, diff)
+
+	tc := &testContext{
+		data:         &Data{},
+		runResponses: ctc.RunResponses,
+	}
+
+	testers := []commandTester{
+		&runResponseTester{ctc.WantRunContents},
+		&errorTester{ctc.WantErr},
+		&autocompleteTester{ctc.Want},
+		checkIf(!ctc.SkipDataCheck, &dataTester{ctc.WantData}),
+	}
+
+	for _, tester := range testers {
+		tester.setup(t, tc)
+	}
+
+	tc.autocompleteSuggestions, tc.err = autocomplete(ctc.Node, ctc.Args, tc.data)
+
+	prefix := fmt.Sprintf("Autocomplete(%v)", ctc.Args)
+	for _, tester := range testers {
+		tester.check(t, prefix, tc)
+	}
+}
+
+type testContext struct {
+	data  *Data
+	fo    *FakeOutput
+	input *Input
+
+	runResponses   []*FakeRun
+	gotRunContents [][]string
+
+	err error
+
+	eData                   *ExecuteData
+	autocompleteSuggestions []string
+}
+
+type commandTester interface {
+	setup(*testing.T, *testContext)
+	check(*testing.T, string, *testContext)
+}
+
+type noOpTester struct{}
+
+func (*noOpTester) setup(t *testing.T, tc *testContext) {}
+
+func (*noOpTester) check(t *testing.T, prefix string, tc *testContext) {}
+
+func checkIf(cond bool, ct commandTester) commandTester {
+	if cond {
+		return ct
+	}
+	return &noOpTester{}
+}
+
+type dataTester struct {
+	want *Data
+}
+
+func (*dataTester) setup(t *testing.T, tc *testContext) {}
+
+func (dt *dataTester) check(t *testing.T, prefix string, tc *testContext) {
+	t.Helper()
+	if dt.want == nil {
+		dt.want = &Data{}
+	}
+
+	if diff := cmp.Diff(dt.want, tc.data, cmpopts.EquateEmpty()); diff != "" {
+		t.Errorf("%s produced incorrect Data (-want, +got):\n%s", prefix, diff)
+	}
+}
+
+type outputTester struct {
+	wantStdout []string
+	wantStderr []string
+}
+
+func (*outputTester) setup(t *testing.T, tc *testContext) {}
+func (ot *outputTester) check(t *testing.T, prefix string, tc *testContext) {
+	t.Helper()
+	if diff := cmp.Diff(ot.wantStdout, tc.fo.GetStdout(), cmpopts.EquateEmpty()); diff != "" {
+		t.Errorf("%s sent wrong data to stdout (-want, +got):\n%s", prefix, diff)
+	}
+	if diff := cmp.Diff(ot.wantStderr, tc.fo.GetStderr(), cmpopts.EquateEmpty()); diff != "" {
+		t.Errorf("%s sent wrong data to stderr (-want, +got):\n%s", prefix, diff)
+	}
+}
+
+type inputTester struct {
+	want *Input
+}
+
+func (*inputTester) setup(t *testing.T, tc *testContext) {}
+func (it *inputTester) check(t *testing.T, prefix string, tc *testContext) {
+	t.Helper()
+	if it.want == nil {
+		it.want = &Input{}
+	}
+	if diff := cmp.Diff(it.want, tc.input, cmpopts.EquateEmpty(), cmp.AllowUnexported(Input{}, inputArg{})); diff != "" {
+		t.Errorf("%s incorrectly modified input (-want, +got):\n%s", prefix, diff)
+	}
+}
+
+type runResponseTester struct {
+	want [][]string
+}
+
+func stubRunResponses(t *testing.T, tc *testContext) func(cmd *exec.Cmd) error {
+	return func(cmd *exec.Cmd) error {
+		if cmd.Path != "bash" && cmd.Path != "C:\\msys64\\usr\\bin\\bash.exe" && cmd.Path != "C:\\Windows\\system32\\bash.exe" {
+			t.Fatalf(`expected cmd path to be "bash"; got %q`, cmd.Path)
 		}
-	}
+		if len(cmd.Args) != 2 {
+			t.Fatalf("expected two args ('bash filename'), but got %v", cmd.Args)
+		}
+		if len(tc.runResponses) == 0 {
+			t.Fatalf("ran out of stubbed run responses")
+		}
 
-	if diff := cmp.Diff(ctc.Want, got, cmpopts.EquateEmpty()); diff != "" {
-		t.Errorf("Autocomplete(%v) produced incorrect completions (-want, +got):\n%s", ctc.Args, diff)
-	}
+		content, err := ioutil.ReadFile(cmd.Args[1])
+		if err != nil {
+			t.Fatalf("unable to read file: %v", err)
+		}
+		lines := strings.Split(string(content), "\n")
+		tc.gotRunContents = append(tc.gotRunContents, lines)
 
-	wantData := ctc.WantData
-	if wantData == nil {
-		wantData = &Data{}
+		r := tc.runResponses[0]
+		tc.runResponses = tc.runResponses[1:]
+		write(t, cmd.Stdout, r.Stdout)
+		write(t, cmd.Stderr, r.Stderr)
+		if r.F != nil {
+			r.F(t)
+		}
+		return r.Err
 	}
-	if diff := cmp.Diff(wantData, data, cmpopts.EquateEmpty()); diff != "" && !ctc.SkipDataCheck {
-		t.Errorf("Autocomplete(%s) improperly parsed args (-want, +got)\n:%s", ctc.Args, diff)
-	}
+}
 
-	// Check all run responses were used.
-	if len(*runResponses) > 0 {
-		t.Errorf("unused run responses: %v", runResponses)
+func (rrt *runResponseTester) setup(t *testing.T, tc *testContext) {
+	oldRun := run
+	run = stubRunResponses(t, tc)
+	t.Cleanup(func() { run = oldRun })
+}
+
+func (rrt *runResponseTester) check(t *testing.T, prefix string, tc *testContext) {
+	t.Helper()
+	if len(tc.runResponses) > 0 {
+		t.Errorf("unused run responses: %v", tc.runResponses)
 	}
 
 	// Check proper commands were run.
-	if diff := cmp.Diff(ctc.WantRunContents, ctc.gotRunContents); diff != "" {
-		t.Errorf("Autocomplete(%v) produced unexpected bash commands:\n%s", ctc.Args, diff)
+	if diff := cmp.Diff(rrt.want, tc.gotRunContents); diff != "" {
+		t.Errorf("%s produced unexpected bash commands:\n%s", prefix, diff)
+	}
+}
+
+type errorTester struct {
+	want error
+}
+
+func (*errorTester) setup(t *testing.T, tc *testContext) {}
+func (et *errorTester) check(t *testing.T, prefix string, tc *testContext) {
+	t.Helper()
+
+	if et.want == nil && tc.err != nil {
+		t.Errorf("%s returned error (%v) when shouldn't have", prefix, tc.err)
+	}
+	if et.want != nil {
+		if tc.err == nil {
+			t.Errorf("%s returned no error when should have returned %v", prefix, et.want)
+		} else if diff := cmp.Diff(et.want.Error(), tc.err.Error()); diff != "" {
+			t.Errorf("%s returned unexpected error (-want, +got):\n%s", prefix, diff)
+		}
+	}
+}
+
+type executeDataTester struct {
+	want *ExecuteData
+}
+
+func (*executeDataTester) setup(t *testing.T, tc *testContext) {}
+func (et *executeDataTester) check(t *testing.T, prefix string, tc *testContext) {
+	t.Helper()
+
+	if et.want == nil {
+		et.want = &ExecuteData{}
+	}
+	if tc.eData == nil {
+		tc.eData = &ExecuteData{}
+	}
+	if diff := cmp.Diff(et.want, tc.eData, cmpopts.IgnoreFields(ExecuteData{}, "Executor")); diff != "" {
+		t.Errorf("%s returned unexpected ExecuteData (-want, +got):\n%s", prefix, diff)
+	}
+}
+
+type autocompleteTester struct {
+	want []string
+}
+
+func (*autocompleteTester) setup(t *testing.T, tc *testContext) {}
+func (at *autocompleteTester) check(t *testing.T, prefix string, tc *testContext) {
+	t.Helper()
+
+	if diff := cmp.Diff(at.want, tc.autocompleteSuggestions); diff != "" {
+		t.Errorf("%s produced incorrect completions (-want, +got):\n%s", prefix, diff)
 	}
 }
