@@ -2943,6 +2943,29 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
+			name: "List breaker before min value",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					StringListNode("SL", testDesc, 3, UnboundedList, ListUntilSymbol("ghi")),
+				),
+				Args: []string{"abc", "def", "ghi", "jkl"},
+				WantData: &Data{Values: map[string]*Value{
+					"SL": StringListValue("abc", "def"),
+				}},
+				WantErr:    fmt.Errorf(`Argument "SL" requires at least 3 arguments, got 2`),
+				WantStderr: []string{`Argument "SL" requires at least 3 arguments, got 2`},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "abc"},
+						{value: "def"},
+						{value: "ghi"},
+						{value: "jkl"},
+					},
+					remaining: []int{2, 3},
+				},
+			},
+		},
+		{
 			name: "Handles broken list with discard",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(

@@ -183,17 +183,14 @@ func (i *Input) PopN(n, optN int, breaker *ListBreaker) ([]*string, bool) {
 		validators = breaker.Validators()
 	}
 	for ; idx < shift; idx++ {
-		// Only check for list breaks after the min value.
-		if idx >= n {
-			for _, validator := range validators {
-				if err := validator.validate(StringValue(i.get(idx + i.offset).value)); err != nil {
-					broken = true
-					break
-				}
-			}
-			if broken {
+		for _, validator := range validators {
+			if err := validator.validate(StringValue(i.get(idx + i.offset).value)); err != nil {
+				broken = true
 				break
 			}
+		}
+		if broken {
+			break
 		}
 		ret = append(ret, &i.get(idx+i.offset).value)
 	}
