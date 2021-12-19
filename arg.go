@@ -170,7 +170,6 @@ func (an *ArgNode) aliasCheck(input *Input, complete bool) {
 func (an *ArgNode) Complete(input *Input, data *Data) (*Completion, error) {
 	an.aliasCheck(input, true)
 
-	// TODO: issue here if breaker is the last character
 	sl, enough := input.PopN(an.minN, an.optionalN, an.opt.breaker)
 
 	// If this is the last arg, we want the node walkthrough to stop (which
