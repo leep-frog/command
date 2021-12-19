@@ -154,11 +154,11 @@ func TestNodeRunner(t *testing.T) {
 			name: "handles extra go files",
 			etc: &command.ExecuteTestCase{
 				Args: []string{
+					"arg1",
+					"arg2",
 					"-f",
 					"main.go",
 					"other.go",
-					"arg1",
-					"arg2",
 				},
 				RunResponses: []*command.FakeRun{{}},
 				WantRunContents: [][]string{{
@@ -288,11 +288,10 @@ func TestAutocomplete(t *testing.T) {
 				}},
 			},
 		},
-		/* TODO: completion with list breaker at break
 		{
 			name: "completes distinct go files",
 			ctc: &command.CompleteTestCase{
-				Args: "cmd node_runner.go ",
+				Args: "cmd -f node_runner.go n",
 				Want: []string{
 					"node_runner_test.go",
 				},
@@ -302,7 +301,7 @@ func TestAutocomplete(t *testing.T) {
 					},
 				},
 			},
-		},*/
+		},
 		/* Useful for commenting out tests */
 	} {
 		t.Run(test.name, func(t *testing.T) {

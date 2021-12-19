@@ -18,7 +18,7 @@ func GoLeepCLI() *GoLeep {
 type GoLeep struct{}
 
 var (
-	goFilesFlag = command.StringListFlag("GO_FILES", 'f', "Go files to run", 1, command.UnboundedList, command.ListUntil(command.MatchesRegex("\\.go$")), &command.Completor{
+	goFilesFlag = command.StringListFlag("GO_FILES", 'f', "Go files to run", 1, command.UnboundedList, command.ListMatchesRegex("\\.go$"), &command.Completor{
 		SuggestionFetcher: &command.FileFetcher{
 			Distinct:          true,
 			FileTypes:         []string{".go"},
