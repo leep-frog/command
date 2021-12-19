@@ -27,7 +27,6 @@ func StringListOption(f func([]string) error) *ValidatorOption {
 	}
 }
 
-// TODO: add test for this
 func StringDoesNotEqual(s string) *ValidatorOption {
 	return StringOption(
 		func(vs string) error {
