@@ -169,6 +169,10 @@ func ExecuteTest(t *testing.T, etc *ExecuteTestCase) {
 		etc = &ExecuteTestCase{}
 	}
 
+	if etc.WantData == nil {
+		etc.WantData = &Data{}
+	}
+
 	tc := &testContext{
 		data:         &Data{},
 		fo:           NewFakeOutput(),
