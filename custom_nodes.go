@@ -326,10 +326,10 @@ func StringMenu(name, desc string, choices ...string) *ArgNode {
 	return StringNode(name, desc, SimpleCompletor(choices...), InList(choices...))
 }
 
-type ListBreakerOption *func(*ListBreaker)
+type ListBreakerOption func(*ListBreaker)
 
 func newBreakerOpt(f func(*ListBreaker)) ListBreakerOption {
-	return &f
+	return f
 }
 
 func DiscardBreaker() ListBreakerOption {
@@ -353,7 +353,7 @@ func ListUntilSymbol(symbol string, opts ...ListBreakerOption) *ListBreaker {
 
 func (lb *ListBreaker) AddOptions(opts ...ListBreakerOption) *ListBreaker {
 	for _, opt := range opts {
-		(*opt)(lb)
+		opt(lb)
 	}
 	return lb
 }
