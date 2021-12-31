@@ -78,6 +78,13 @@ func ExecutorNode(f func(Output, *Data) error) Processor {
 	}
 }
 
+func SafeExecutorNode(f func(Output, *Data)) Processor {
+	return ExecutorNode(func(o Output, d *Data) error {
+		f(o, d)
+		return nil
+	})
+}
+
 type branchNode struct {
 	branches     map[string]*Node
 	def          *Node
