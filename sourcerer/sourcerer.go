@@ -236,7 +236,7 @@ func (s *sourcerer) getCLI(cli string) (CLI, error) {
 func (s *sourcerer) Node() *command.Node {
 	generateBinaryNode := command.SerialNodes(
 		targetNameArg,
-		command.ExecutorNode(s.generateFile),
+		command.ExecuteErrNode(s.generateFile),
 	)
 
 	return command.BranchNode(map[string]*command.Node{
@@ -244,17 +244,17 @@ func (s *sourcerer) Node() *command.Node {
 			cliArg,
 			compPointArg,
 			compLineArg,
-			command.ExecutorNode(s.autocompleteExecutor),
+			command.ExecuteErrNode(s.autocompleteExecutor),
 		),
 		"usage": command.SerialNodes(
 			cliArg,
-			command.ExecutorNode(s.usageExecutor),
+			command.ExecuteErrNode(s.usageExecutor),
 		),
 		"execute": command.SerialNodes(
 			fileArg,
 			cliArg,
 			passthroughArgs,
-			command.ExecutorNode(s.executeExecutor),
+			command.ExecuteErrNode(s.executeExecutor),
 		),
 	}, generateBinaryNode, true)
 }
@@ -401,7 +401,7 @@ func (bc *bashCLI) Setup() []string   { return nil }
 func (bc *bashCLI) Load(string) error { return nil }
 func (bc *bashCLI) Name() string      { return bc.name }
 func (bc *bashCLI) Node() *command.Node {
-	return command.SerialNodes(command.ExecutorNode(func(o command.Output, d *command.Data) error {
+	return command.SerialNodes(command.ExecuteErrNode(func(o command.Output, d *command.Data) error {
 		cmd := exec.Command("bash", "-c", bc.commandString)
 		cmd.Stdout = command.StdoutWriter(o)
 		cmd.Stderr = command.StderrWriter(o)

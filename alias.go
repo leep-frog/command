@@ -143,7 +143,7 @@ func aliasListArg(name string, ac AliasCLI) Processor {
 
 func aliasSearcher(name string, ac AliasCLI, n *Node) *Node {
 	regexArg := StringListNode("regexp", hiddenNodeDesc, 1, UnboundedList, ListIsRegex())
-	return SerialNodes(regexArg, ExecutorNode(func(output Output, data *Data) error {
+	return SerialNodes(regexArg, ExecutorNode(func(output Output, data *Data) {
 		rs := data.RegexpList("regexp")
 		var as []string
 		for k, v := range getAliasMap(ac, name) {
@@ -162,12 +162,11 @@ func aliasSearcher(name string, ac AliasCLI, n *Node) *Node {
 				output.Stdout(a)
 			}
 		}
-		return nil
 	}))
 }
 
 func aliasLister(name string, ac AliasCLI, n *Node) *Node {
-	return SerialNodes(ExecutorNode(func(output Output, data *Data) error {
+	return SerialNodes(ExecutorNode(func(output Output, data *Data) {
 		var r []string
 		for k, v := range getAliasMap(ac, name) {
 			r = append(r, aliasStr(k, v))
@@ -176,12 +175,11 @@ func aliasLister(name string, ac AliasCLI, n *Node) *Node {
 		for _, v := range r {
 			output.Stdout(v)
 		}
-		return nil
 	}))
 }
 
 func aliasDeleter(name string, ac AliasCLI, n *Node) *Node {
-	return SerialNodes(aliasListArg(name, ac), ExecutorNode(func(output Output, data *Data) error {
+	return SerialNodes(aliasListArg(name, ac), ExecuteErrNode(func(output Output, data *Data) error {
 		if len(getAliasMap(ac, name)) == 0 {
 			return output.Stderr("Alias group has no aliases yet.")
 		}
@@ -199,7 +197,7 @@ func aliasStr(alias string, values []string) string {
 }
 
 func aliasGetter(name string, ac AliasCLI, n *Node) *Node {
-	return SerialNodes(aliasListArg(name, ac), ExecutorNode(func(output Output, data *Data) error {
+	return SerialNodes(aliasListArg(name, ac), ExecuteErrNode(func(output Output, data *Data) error {
 		if getAliasMap(ac, name) == nil {
 			return output.Stderrf("No aliases exist for alias type %q", name)
 		}

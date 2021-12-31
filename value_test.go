@@ -154,7 +154,7 @@ func TestValueCommands(t *testing.T) {
 			if test.etc == nil {
 				test.etc = &ExecuteTestCase{}
 			}
-			test.etc.Node = SerialNodesTo(test.etc.Node, ExecutorNode(func(output Output, data *Data) error {
+			test.etc.Node = SerialNodesTo(test.etc.Node, ExecutorNode(func(output Output, data *Data) {
 				name := "argName"
 				v := data.Get(name)
 
@@ -233,8 +233,6 @@ func TestValueCommands(t *testing.T) {
 				if diff := cmp.Diff(test.wantBool, data.Bool(name)); diff != "" {
 					t.Errorf("data.Bool() produced diff (-want, +got):\n%s", diff)
 				}
-
-				return nil
 			}))
 
 			test.etc.testInput = true

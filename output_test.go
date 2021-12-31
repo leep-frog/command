@@ -14,7 +14,7 @@ func TestOutput(t *testing.T) {
 		{
 			name: "output formats when interfaces provided",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(ExecutorNode(func(o Output, d *Data) error {
+				Node: SerialNodes(ExecutorNode(func(o Output, d *Data) {
 					t := "there"
 					o.Stdout("hello %s")
 					o.Stdoutf("hello %s", t)
@@ -22,8 +22,6 @@ func TestOutput(t *testing.T) {
 					k := "kenobi"
 					o.Stderr("general %s")
 					o.Stderrf("general %s", k)
-
-					return nil
 				})),
 				WantStdout: []string{
 					"hello %s",

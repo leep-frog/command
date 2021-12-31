@@ -72,14 +72,14 @@ func (e *executor) Usage(u *Usage) {
 	return
 }
 
-func ExecutorNode(f func(Output, *Data) error) Processor {
+func ExecuteErrNode(f func(Output, *Data) error) Processor {
 	return &executor{
 		executor: f,
 	}
 }
 
-func SafeExecutorNode(f func(Output, *Data)) Processor {
-	return ExecutorNode(func(o Output, d *Data) error {
+func ExecutorNode(f func(Output, *Data)) Processor {
+	return ExecuteErrNode(func(o Output, d *Data) error {
 		f(o, d)
 		return nil
 	})

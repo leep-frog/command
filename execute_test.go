@@ -503,13 +503,12 @@ func TestExecute(t *testing.T) {
 		{
 			name: "executes with proper data",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(IntListNode("il", testDesc, 2, 0), StringNode("s", testDesc), FloatListNode("fl", testDesc, 1, 2), ExecutorNode(func(o Output, d *Data) error {
+				Node: SerialNodes(IntListNode("il", testDesc, 2, 0), StringNode("s", testDesc), FloatListNode("fl", testDesc, 1, 2), ExecutorNode(func(o Output, d *Data) {
 					keys := d.Keys()
 					sort.Strings(keys)
 					for _, k := range keys {
 						o.Stdoutf("%s: %v", k, d.Get(k))
 					}
-					return nil
 				})),
 				Args: []string{"0", "1", "two", "0.3", "-4"},
 				wantInput: &Input{
@@ -536,7 +535,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "executor error is returned",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(IntListNode("il", testDesc, 2, 0), StringNode("s", testDesc), FloatListNode("fl", testDesc, 1, 2), ExecutorNode(func(o Output, d *Data) error {
+				Node: SerialNodes(IntListNode("il", testDesc, 2, 0), StringNode("s", testDesc), FloatListNode("fl", testDesc, 1, 2), ExecuteErrNode(func(o Output, d *Data) error {
 					return o.Stderr("bad news bears")
 				})),
 				Args: []string{"0", "1", "two", "0.3", "-4"},
@@ -4141,16 +4140,15 @@ func TestComplete(t *testing.T) {
 
 func printNode(s string) *Node {
 	return &Node{
-		Processor: ExecutorNode(func(output Output, _ *Data) error {
+		Processor: ExecutorNode(func(output Output, _ *Data) {
 			output.Stdout(s)
-			return nil
 		}),
 	}
 }
 
 func printlnNode(stdout bool, a ...interface{}) *Node {
 	return &Node{
-		Processor: ExecutorNode(func(output Output, _ *Data) error {
+		Processor: ExecuteErrNode(func(output Output, _ *Data) error {
 			if !stdout {
 				return output.Stderrln(a...)
 			}
@@ -4162,11 +4160,10 @@ func printlnNode(stdout bool, a ...interface{}) *Node {
 
 func printArgsNode() *Node {
 	return &Node{
-		Processor: ExecutorNode(func(output Output, data *Data) error {
+		Processor: ExecutorNode(func(output Output, data *Data) {
 			for k, v := range data.Values {
 				output.Stdoutf("%s: %v", k, v)
 			}
-			return nil
 		}),
 	}
 }
@@ -4195,9 +4192,8 @@ func TestRunNodes(t *testing.T) {
 		Description("Adds A and B"),
 		IntNode("A", "The first value"),
 		IntNode("B", "The second value"),
-		ExecutorNode(func(o Output, d *Data) error {
+		ExecutorNode(func(o Output, d *Data) {
 			o.Stdoutln(d.Int("A") + d.Int("B"))
-			return nil
 		}),
 	)
 	for _, test := range []struct {

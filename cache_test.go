@@ -293,9 +293,8 @@ func TestCacheExecution(t *testing.T) {
 			etc: &ExecuteTestCase{
 				Node: CacheNode("money", cc, SerialNodes(
 					StringNode("s", testDesc),
-					ExecutorNode(func(output Output, _ *Data) error {
+					ExecutorNode(func(output Output, _ *Data) {
 						output.Stdout("We made it!")
-						return nil
 					}),
 				)),
 				Args: []string{"dollar"},
