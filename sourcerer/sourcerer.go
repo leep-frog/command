@@ -191,19 +191,24 @@ func (s *sourcerer) autocompleteExecutor(o command.Output, d *command.Data) erro
 
 // separate method for testing
 var (
+	// EnvCacheVar is the environment variable pointing to the path for caching.
+	// var so it can be modified for tests
+	EnvCacheVar = "LEEP_CACHE"
+	// getCache is a variable function so it can be swapped in tests
 	getCache = func() *cache.Cache {
-		return cache.NewCache()
+		return cache.New(os.Getenv(EnvCacheVar))
 	}
 )
 
 func load(cli CLI) error {
 	ck := cacheKey(cli)
 	cash := getCache()
-	s, err := cash.Get(ck)
-	if err != nil {
+	if s, fileExists, err := cash.Get(ck); err != nil {
 		return fmt.Errorf("failed to load cli %q: %v", cli.Name(), err)
+	} else if fileExists {
+		return cli.Load(s)
 	}
-	return cli.Load(s)
+	return nil
 }
 
 type sourcerer struct {
