@@ -205,7 +205,7 @@ func load(cli CLI) error {
 	cash := getCache()
 	if s, fileExists, err := cash.Get(ck); err != nil {
 		return fmt.Errorf("failed to load cli %q: %v", cli.Name(), err)
-	} else if fileExists {
+	} else if fileExists && s != "" {
 		return cli.Load(s)
 	}
 	return nil

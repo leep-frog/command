@@ -25,18 +25,13 @@ type Todo struct {
 }
 
 func (tl *Todo) Load(jsn string) error {
-	if jsn == "" {
-		tl = &Todo{}
-		return nil
-	}
-
 	if err := json.Unmarshal([]byte(jsn), tl); err != nil {
 		return fmt.Errorf("failed to unmarshal todo json: %v", err)
 	}
 	return nil
 }
 
-func (tl *Todo) ListItems(output command.Output, data *command.Data) error {
+func (tl *Todo) ListItems(output command.Output, data *command.Data) {
 	ps := make([]string, 0, len(tl.Items))
 	count := 0
 	for k, v := range tl.Items {
@@ -56,8 +51,6 @@ func (tl *Todo) ListItems(output command.Output, data *command.Data) error {
 			output.Stdout(fmt.Sprintf("  %s", s))
 		}
 	}
-
-	return nil
 }
 
 func (tl *Todo) Setup() []string { return nil }
@@ -133,7 +126,7 @@ type fetcher struct {
 	Primary bool
 }
 
-func (f *fetcher) Fetch(value *command.Value, data *command.Data) *command.Completion {
+func (f *fetcher) Fetch(value *command.Value, data *command.Data) (*command.Completion, error) {
 	if f.Primary {
 		primaries := make([]string, 0, len(f.List.Items))
 		for p := range f.List.Items {
@@ -141,7 +134,7 @@ func (f *fetcher) Fetch(value *command.Value, data *command.Data) *command.Compl
 		}
 		return &command.Completion{
 			Suggestions: primaries,
-		}
+		}, nil
 	}
 
 	p := data.String(primaryArg)
@@ -152,7 +145,7 @@ func (f *fetcher) Fetch(value *command.Value, data *command.Data) *command.Compl
 	}
 	return &command.Completion{
 		Suggestions: secondaries,
-	}
+	}, nil
 }
 
 func (tl *Todo) Node() *command.Node {
@@ -170,12 +163,12 @@ func (tl *Todo) Node() *command.Node {
 			"a": command.SerialNodes(
 				command.StringNode(primaryArg, "primary", pf),
 				command.OptionalStringNode(secondaryArg, "secondary"),
-				command.ExecutorNode(tl.AddItem),
+				command.ExecuteErrNode(tl.AddItem),
 			),
 			"d": command.SerialNodes(
 				command.StringNode(primaryArg, "primary", pf),
 				command.OptionalStringNode(secondaryArg, "secondary", sf),
-				command.ExecutorNode(tl.DeleteItem),
+				command.ExecuteErrNode(tl.DeleteItem),
 			),
 		},
 		command.SerialNodes(command.ExecutorNode(tl.ListItems)),
