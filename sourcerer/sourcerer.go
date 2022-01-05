@@ -90,6 +90,7 @@ type CLI interface {
 	// Name is the name of the alias command to use for this CLI.
 	Name() string
 	// Load loads a json string into the CLI object.
+	// TODO: just use json.Unmarshaller interface here
 	Load(json string) error
 	// Node returns the command node for the CLI. This is where the CLI's logic lives.
 	Node() *command.Node

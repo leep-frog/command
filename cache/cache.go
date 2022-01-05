@@ -71,11 +71,10 @@ func (c *Cache) readFile(key string) (string, error) {
 	}
 
 	// Check if the file exists.
-	if _, err := os.Stat(filename); os.IsNotExist(err) {
+	data, err := os.ReadFile(filename)
+	if os.IsNotExist(err) {
 		return "", nil
 	}
-
-	data, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return "", fmt.Errorf("failed to read file: %v", err)
 	}
