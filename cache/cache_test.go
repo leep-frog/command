@@ -2,6 +2,7 @@ package cache
 
 import (
 	"fmt"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -203,16 +204,17 @@ func fullCache(t *testing.T, c *Cache) map[string]string {
 
 func TestExecute(t *testing.T) {
 	for _, test := range []struct {
-		name string
-		puts []*put
-		etc  *command.ExecuteTestCase
-		want map[string]string
+		name  string
+		puts  []*put
+		etc   *command.ExecuteTestCase
+		want  map[string]string
+		wantC *Cache
 	}{
 		{
 			name: "Requires branching arg",
 			etc: &command.ExecuteTestCase{
-				WantErr:    fmt.Errorf("Branching argument must be one of [delete get list put]"),
-				WantStderr: []string{"Branching argument must be one of [delete get list put]"},
+				WantErr:    fmt.Errorf("Branching argument must be one of [delete get list put setdir]"),
+				WantStderr: []string{"Branching argument must be one of [delete get list put setdir]"},
 			},
 		},
 		{
@@ -366,6 +368,43 @@ func TestExecute(t *testing.T) {
 				"hello": "there",
 			},
 		},
+		// setdir tests
+		{
+			name: "setdir requires an argument",
+			etc: &command.ExecuteTestCase{
+				Args:       []string{"setdir"},
+				WantErr:    fmt.Errorf(`Argument "DIR" requires at least 1 argument, got 0`),
+				WantStderr: []string{`Argument "DIR" requires at least 1 argument, got 0`},
+			},
+		},
+		{
+			name: "setdir requires an existing file",
+			etc: &command.ExecuteTestCase{
+				Args:       []string{"setdir", "uh"},
+				WantErr:    fmt.Errorf("validation failed: [IsDir] file %q does not exist", fpAbs(t, "uh")),
+				WantStderr: []string{fmt.Sprintf("validation failed: [IsDir] file %q does not exist", fpAbs(t, "uh"))},
+			},
+		},
+		{
+			name: "setdir doesn't allow files",
+			etc: &command.ExecuteTestCase{
+				Args:       []string{"setdir", "cache.go"},
+				WantErr:    fmt.Errorf("validation failed: [IsDir] argument %q is a file", fpAbs(t, "cache.go")),
+				WantStderr: []string{fmt.Sprintf("validation failed: [IsDir] argument %q is a file", fpAbs(t, "cache.go"))},
+			},
+		},
+		{
+			name: "setdir works",
+			etc: &command.ExecuteTestCase{
+				Args: []string{"setdir", "testing"},
+			},
+			wantC: &Cache{
+				Dir: fpAbs(t, "testing"),
+			},
+			want: map[string]string{
+				"empty.txt": "nothing to see here",
+			},
+		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			c := NewTestCache(t)
@@ -378,12 +417,21 @@ func TestExecute(t *testing.T) {
 			test.etc.Node = c.Node()
 			test.etc.SkipDataCheck = true
 			command.ExecuteTest(t, test.etc)
+			command.ChangeTest(t, test.wantC, c, cmpopts.IgnoreUnexported(Cache{}))
 
 			if diff := cmp.Diff(test.want, fullCache(t, c), cmpopts.EquateEmpty()); diff != "" {
 				t.Errorf("Execute(%v) resulted in incorrect cache (-want, +got):\n%s", test.etc.Args, diff)
 			}
 		})
 	}
+}
+
+func fpAbs(t *testing.T, f string) string {
+	r, err := filepath.Abs(f)
+	if err != nil {
+		t.Fatalf("failed to get absolute path: %v", err)
+	}
+	return r
 }
 
 func TestCompletion(t *testing.T) {
@@ -401,7 +449,7 @@ func TestCompletion(t *testing.T) {
 			name: "completes branches",
 			ctc: &command.CompleteTestCase{
 				Args: "cmd ",
-				Want: []string{"delete", "get", "list", "put"},
+				Want: []string{"delete", "get", "list", "put", "setdir"},
 			},
 		},
 		{

@@ -15,23 +15,38 @@ import (
 )
 
 const (
-	keyRegex = `^([a-zA-Z0-9_-]+)$`
+	keyRegex = `^([a-zA-Z0-9_\.-]+)$`
 )
 
 type Cache struct {
-	dir string
+	Dir     string
+	changed bool
 }
 
 func (c *Cache) Name() string {
 	return "cash"
 }
 
-func (c *Cache) Changed() bool     { return false }
-func (c *Cache) Setup() []string   { return nil }
-func (c *Cache) Load(string) error { return nil }
+func (c *Cache) Changed() bool {
+	return c.changed
+}
+func (c *Cache) Setup() []string { return nil }
+func (c *Cache) Load(jsn string) error {
+	if err := json.Unmarshal([]byte(jsn), c); err != nil {
+		return fmt.Errorf("failed to unmarshal cache json: %v", err)
+	}
+	return nil
+}
 func (c *Cache) Node() *command.Node {
 	arg := command.StringNode("KEY", "Key of the data to get", command.MatchesRegex(keyRegex), &command.Completor{SuggestionFetcher: &fetcher{c}})
 	return command.BranchNode(map[string]*command.Node{
+		"setdir": command.SerialNodes(
+			command.FileNode("DIR", "Directory in which to store data", command.IsDir()),
+			command.ExecutorNode(func(o command.Output, d *command.Data) {
+				c.Dir = d.String("DIR")
+				c.changed = true
+			}),
+		),
 		"get": command.SerialNodes(
 			arg,
 			command.ExecuteErrNode(func(o command.Output, d *command.Data) error {
@@ -102,11 +117,20 @@ func NewTestCache(t *testing.T) *Cache {
 			t.Logf("failed to clean up test cache: %v", err)
 		}
 	})
-	return &Cache{dir}
+	return &Cache{
+		Dir: dir,
+	}
 }
 
-func New(dir string) *Cache {
-	return &Cache{dir}
+// Creates a new cache from an environment variable
+func New(e string) (*Cache, error) {
+	c := &Cache{
+		Dir: os.Getenv(e),
+	}
+	if _, err := c.getCacheDir(); err != nil {
+		return nil, fmt.Errorf("invalid environment variable (%s) for cache: %v", e, err)
+	}
+	return c, nil
 }
 
 func (c *Cache) Put(key, data string) error {
@@ -121,7 +145,11 @@ func (c *Cache) Put(key, data string) error {
 }
 
 func (c *Cache) List() ([]string, error) {
-	fs, err := os.ReadDir(c.dir)
+	dir, err := c.getCacheDir()
+	if err != nil {
+		return nil, err
+	}
+	fs, err := os.ReadDir(dir)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read files in directory: %v", err)
 	}
@@ -170,18 +198,19 @@ func (c *Cache) PutStruct(key string, i interface{}) error {
 }
 
 func (c *Cache) getCacheDir() (string, error) {
-	if c.dir == "" {
+	if c.Dir == "" {
 		return "", fmt.Errorf("cache directory cannot be empty")
 	}
 
-	cacheDir, err := os.Stat(c.dir)
-	if err != nil {
-		return "", fmt.Errorf("invalid cache path: %v", err)
+	cacheDir, err := os.Stat(c.Dir)
+	if os.IsNotExist(err) {
+		return "", fmt.Errorf("cache directory does not exist")
+	} else if err != nil {
+		return "", fmt.Errorf("failed to get info for cache: %v", err)
+	} else if !cacheDir.Mode().IsDir() {
+		return "", fmt.Errorf("cache directory must point to a directory, not a file")
 	}
-	if !cacheDir.Mode().IsDir() {
-		return "", fmt.Errorf("cache directory must point to a directory")
-	}
-	return c.dir, nil
+	return c.Dir, nil
 }
 
 func (c *Cache) fileFromKey(key string) (string, error) {

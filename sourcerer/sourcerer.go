@@ -193,17 +193,19 @@ func (s *sourcerer) autocompleteExecutor(o command.Output, d *command.Data) erro
 var (
 	// EnvCacheVar is the environment variable pointing to the path for caching.
 	// var so it can be modified for tests
-	EnvCacheVar = "LEEP_CACHE"
+	EnvCacheVar = "LEEP_CLI_CACHE"
 	// getCache is a variable function so it can be swapped in tests
-	getCache = func() *cache.Cache {
-		return cache.New(os.Getenv(EnvCacheVar))
+	getCache = func() (*cache.Cache, error) {
+		return cache.New(EnvCacheVar)
 	}
 )
 
 func load(cli CLI) error {
 	ck := cacheKey(cli)
-	cash := getCache()
-	if s, fileExists, err := cash.Get(ck); err != nil {
+	cash, err := getCache()
+	if err != nil {
+		return err
+	} else if s, fileExists, err := cash.Get(ck); err != nil {
 		return fmt.Errorf("failed to load cli %q: %v", cli.Name(), err)
 	} else if fileExists && s != "" {
 		return cli.Load(s)
@@ -377,7 +379,11 @@ func (s *sourcerer) generateFile(o command.Output, d *command.Data) error {
 
 func save(c CLI) error {
 	ck := cacheKey(c)
-	cash := getCache()
+	cash, err := getCache()
+	if err != nil {
+		return err
+	}
+
 	if err := cash.PutStruct(ck, c); err != nil {
 		return fmt.Errorf("failed to save cli %q: %v", c.Name(), err)
 	}

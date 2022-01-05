@@ -543,8 +543,8 @@ func TestSourcerer(t *testing.T) {
 			// Stub out real cache
 			cash := cache.NewTestCache(t)
 			ogc := getCache
-			getCache = func() *cache.Cache {
-				return cash
+			getCache = func() (*cache.Cache, error) {
+				return cash, nil
 			}
 			defer func() { getCache = ogc }()
 

@@ -220,7 +220,7 @@ type Changeable interface {
 }
 
 // ChangeTest tests if an object has changed.
-func ChangeTest(t *testing.T, want interface{}, original Changeable, opts ...cmp.Option) {
+func ChangeTest(t *testing.T, want, original Changeable, opts ...cmp.Option) {
 	wantChanged := want != nil && !reflect.ValueOf(want).IsNil()
 	if original.Changed() != wantChanged {
 		if wantChanged {
