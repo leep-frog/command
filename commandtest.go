@@ -426,10 +426,10 @@ func (*errorTester) setup(t *testing.T, tc *testContext) {}
 func (et *errorTester) check(t *testing.T, prefix string, tc *testContext) {
 	t.Helper()
 
-	cmpError(t, prefix, et.want, tc.err)
+	CmpError(t, prefix, et.want, tc.err)
 }
 
-func cmpError(t *testing.T, prefix string, wantErr, err error) {
+func CmpError(t *testing.T, prefix string, wantErr, err error) {
 	t.Helper()
 
 	if wantErr == nil && err != nil {
