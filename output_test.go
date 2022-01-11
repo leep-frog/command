@@ -40,6 +40,57 @@ func TestOutput(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "output terminates on error, but not on nil",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(ExecutorNode(func(o Output, d *Data) {
+					o.Stdout("hello")
+					o.Stderr("there")
+
+					o.Terminate(nil)
+
+					o.Stdout("general")
+					o.Stderr("kenobi")
+
+					o.Terminate(fmt.Errorf("donzo"))
+
+					o.Stdout("ignore")
+					o.Stderr("this")
+				})),
+				WantStdout: []string{
+					"hello",
+					"general",
+				},
+				WantStderr: []string{
+					"there",
+					"kenobi",
+					"donzo",
+				},
+				WantErr: fmt.Errorf("donzo"),
+			},
+		},
+		{
+			name: "Terminatef terminates",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(ExecutorNode(func(o Output, d *Data) {
+					o.Stdout("hello")
+					o.Stderr("there")
+
+					o.Terminatef("ahoy %s", "matey")
+
+					o.Stdout("general")
+					o.Stderr("kenobi")
+				})),
+				WantStdout: []string{
+					"hello",
+				},
+				WantStderr: []string{
+					"there",
+					"ahoy matey",
+				},
+				WantErr: fmt.Errorf("ahoy matey"),
+			},
+		},
 		/* Useful for commenting out tests. */
 	} {
 		t.Run(test.name, func(t *testing.T) {

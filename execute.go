@@ -6,6 +6,7 @@ import (
 	"os"
 	"sort"
 	"strings"
+	"sync"
 )
 
 type Node struct {
@@ -217,16 +218,31 @@ func runNodes(n *Node, o Output, d *Data, args []string) error {
 // Separate method for testing purposes.
 func execute(n *Node, input *Input, output Output, data *Data) (*ExecuteData, error) {
 	eData := &ExecuteData{}
-	if err := iterativeExecute(n, input, output, data, eData); err != nil {
-		return eData, err
-	}
+	var wg sync.WaitGroup
+	wg.Add(1)
 
-	for _, ex := range eData.Executor {
-		if err := ex(output, data); err != nil {
-			return eData, err
+	var termErr error
+	go func() {
+		defer func() {
+			if termErr == nil {
+				termErr = output.terminateError()
+			}
+			wg.Done()
+		}()
+		if err := iterativeExecute(n, input, output, data, eData); err != nil {
+			termErr = err
+			return
 		}
-	}
-	return eData, nil
+
+		for _, ex := range eData.Executor {
+			if err := ex(output, data); err != nil {
+				termErr = err
+				return
+			}
+		}
+	}()
+	wg.Wait()
+	return eData, termErr
 }
 
 func iterativeExecute(n *Node, input *Input, output Output, data *Data, eData *ExecuteData) error {

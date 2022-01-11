@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"runtime"
 	"sync"
 )
 
@@ -29,6 +30,12 @@ type Output interface {
 	Annotate(error, string) error
 	// Annotatef prepends the message to the error
 	Annotatef(error, string, ...interface{}) error
+	// Annotate prepends the message to the error
+	Terminate(error)
+	// Annotatef prepends the message to the error
+	Terminatef(string, ...interface{})
+	// terminateError is the error produced from Terminate[f]
+	terminateError() error
 	// Close informs the os that no more data will be written.
 	Close()
 }
@@ -60,6 +67,7 @@ type output struct {
 	stdoutChan chan string
 	stderrChan chan string
 	wg         *sync.WaitGroup
+	termErr    error
 }
 
 func (o *output) Stdout(s string) {
@@ -85,10 +93,16 @@ func (o *output) Stderrf(s string, a ...interface{}) error {
 }
 
 func (o *output) Annotate(err error, s string) error {
+	if err == nil {
+		return nil
+	}
 	return o.writeStderr(fmt.Sprintf("%s: %v", s, err))
 }
 
 func (o *output) Annotatef(err error, s string, a ...interface{}) error {
+	if err == nil {
+		return nil
+	}
 	return o.writeStderr(fmt.Sprintf("%s: %v", fmt.Sprintf(s, a...), err))
 }
 
@@ -96,6 +110,25 @@ func (o *output) Stderrln(a ...interface{}) error {
 	// Trim newline
 	s := fmt.Sprintln(a...)
 	return o.writeStderr(s[:len(s)-1])
+}
+
+func (o *output) Terminate(err error) {
+	if err != nil {
+		o.terminate(o.Stderr(err.Error()))
+	}
+}
+
+func (o *output) Terminatef(s string, a ...interface{}) {
+	o.terminate(o.Stderrf(s, a...))
+}
+
+func (o *output) terminate(err error) {
+	o.termErr = err
+	runtime.Goexit()
+}
+
+func (o *output) terminateError() error {
+	return o.termErr
 }
 
 func (o *output) writeStderr(s string) error {
@@ -200,6 +233,18 @@ func (ieo *ignoreErrOutput) Stderrln(a ...interface{}) error {
 	return ieo.o.Stderrln(a...)
 }
 
+func (ieo *ignoreErrOutput) Terminate(err error) {
+	ieo.o.Terminate(err)
+}
+
+func (ieo *ignoreErrOutput) Terminatef(s string, a ...interface{}) {
+	ieo.o.Terminatef(s, a...)
+}
+
+func (ieo *ignoreErrOutput) terminateError() error {
+	return ieo.o.terminateError()
+}
+
 func (ieo *ignoreErrOutput) Err(err error) error {
 	// Don't output the error if it matches a filter.
 	for _, f := range ieo.fs {
@@ -276,6 +321,18 @@ func (fo *FakeOutput) Close() {
 		fo.c.Close()
 		fo.closed = true
 	}
+}
+
+func (fo *FakeOutput) terminateError() error {
+	return fo.c.terminateError()
+}
+
+func (fo *FakeOutput) Terminate(err error) {
+	fo.c.Terminate(err)
+}
+
+func (fo *FakeOutput) Terminatef(s string, a ...interface{}) {
+	fo.c.Terminatef(s, a...)
 }
 
 func (fo *FakeOutput) GetStdout() []string {
