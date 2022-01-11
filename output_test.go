@@ -91,6 +91,64 @@ func TestOutput(t *testing.T) {
 				WantErr: fmt.Errorf("ahoy matey"),
 			},
 		},
+		{
+			name: "Tannotate terminates",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(ExecutorNode(func(o Output, d *Data) {
+					o.Stdout("hello")
+					o.Stderr("there")
+
+					o.Tannotate(nil, "don't mind me")
+
+					o.Stdout("general")
+					o.Stderr("kenobi")
+
+					o.Tannotate(fmt.Errorf("do mind me"), "but")
+
+					o.Stdout("ignore")
+					o.Stderr("us")
+				})),
+				WantStdout: []string{
+					"hello",
+					"general",
+				},
+				WantStderr: []string{
+					"there",
+					"kenobi",
+					"but: do mind me",
+				},
+				WantErr: fmt.Errorf("but: do mind me"),
+			},
+		},
+		{
+			name: "Tannotate terminates",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(ExecutorNode(func(o Output, d *Data) {
+					o.Stdout("hello")
+					o.Stderr("there")
+
+					o.Tannotatef(nil, "don't %s me", "mind")
+
+					o.Stdout("general")
+					o.Stderr("kenobi")
+
+					o.Tannotatef(fmt.Errorf("do mind me"), "%s%s", "how", "ever")
+
+					o.Stdout("ignore")
+					o.Stderr("us")
+				})),
+				WantStdout: []string{
+					"hello",
+					"general",
+				},
+				WantStderr: []string{
+					"there",
+					"kenobi",
+					"however: do mind me",
+				},
+				WantErr: fmt.Errorf("however: do mind me"),
+			},
+		},
 		/* Useful for commenting out tests. */
 	} {
 		t.Run(test.name, func(t *testing.T) {

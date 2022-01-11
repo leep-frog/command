@@ -30,10 +30,14 @@ type Output interface {
 	Annotate(error, string) error
 	// Annotatef prepends the message to the error
 	Annotatef(error, string, ...interface{}) error
-	// Annotate prepends the message to the error
+	// Terminate terminates the execution with the provided error (if it's not nil).
 	Terminate(error)
-	// Annotatef prepends the message to the error
+	// Terminatef terminates the execution with a formatted error.
 	Terminatef(string, ...interface{})
+	// Tannotate terminates the execution with the an annotation of provided error (if it's not nil).
+	Tannotate(error, string)
+	// Tannotatef terminates the execution with an annotation of the provided error (if it's not nil).
+	Tannotatef(error, string, ...interface{})
 	// terminateError is the error produced from Terminate[f]
 	terminateError() error
 	// Close informs the os that no more data will be written.
@@ -122,6 +126,18 @@ func (o *output) Terminatef(s string, a ...interface{}) {
 	o.terminate(o.Stderrf(s, a...))
 }
 
+func (o *output) Tannotate(err error, s string) {
+	if err != nil {
+		o.Terminate(fmt.Errorf("%s: %v", s, err))
+	}
+}
+
+func (o *output) Tannotatef(err error, s string, a ...interface{}) {
+	if err != nil {
+		o.Terminate(fmt.Errorf("%s: %v", fmt.Sprintf(s, a...), err))
+	}
+}
+
 func (o *output) terminate(err error) {
 	o.termErr = err
 	runtime.Goexit()
@@ -190,59 +206,15 @@ func osFromChan(so, se func(string)) Output {
 }
 
 func NewIgnoreErrOutput(o Output, fs ...func(error) bool) Output {
-	return &ignoreErrOutput{
-		o:  o,
-		fs: fs,
-	}
+	return &ignoreErrOutput{o, fs}
 }
+
+// so it can be a field name in Output wrapper implementors
+type fo Output
 
 type ignoreErrOutput struct {
-	o  Output
+	fo
 	fs []func(error) bool
-}
-
-func (ieo *ignoreErrOutput) Stdout(s string) {
-	ieo.o.Stdout(s)
-}
-
-func (ieo *ignoreErrOutput) Stdoutf(s string, a ...interface{}) {
-	ieo.o.Stdoutf(s, a...)
-}
-
-func (ieo *ignoreErrOutput) Stdoutln(a ...interface{}) {
-	ieo.o.Stdoutln(a...)
-}
-
-func (ieo *ignoreErrOutput) Stderr(s string) error {
-	return ieo.o.Stderr(s)
-}
-
-func (ieo *ignoreErrOutput) Stderrf(s string, a ...interface{}) error {
-	return ieo.o.Stderrf(s, a...)
-}
-
-func (ieo *ignoreErrOutput) Annotate(err error, s string) error {
-	return ieo.o.Annotate(err, s)
-}
-
-func (ieo *ignoreErrOutput) Annotatef(err error, s string, a ...interface{}) error {
-	return ieo.o.Annotatef(err, s, a...)
-}
-
-func (ieo *ignoreErrOutput) Stderrln(a ...interface{}) error {
-	return ieo.o.Stderrln(a...)
-}
-
-func (ieo *ignoreErrOutput) Terminate(err error) {
-	ieo.o.Terminate(err)
-}
-
-func (ieo *ignoreErrOutput) Terminatef(s string, a ...interface{}) {
-	ieo.o.Terminatef(s, a...)
-}
-
-func (ieo *ignoreErrOutput) terminateError() error {
-	return ieo.o.terminateError()
 }
 
 func (ieo *ignoreErrOutput) Err(err error) error {
@@ -253,17 +225,13 @@ func (ieo *ignoreErrOutput) Err(err error) error {
 		}
 	}
 	// Regular output functionality if no filter matched.
-	return ieo.o.Err(err)
-}
-
-func (ieo *ignoreErrOutput) Close() {
-	ieo.o.Close()
+	return ieo.fo.Err(err)
 }
 
 type FakeOutput struct {
+	fo
 	stdout []string
 	stderr []string
-	c      Output
 	closed bool
 }
 
@@ -276,63 +244,15 @@ func NewFakeOutput() *FakeOutput {
 		tcos.stderr = append(tcos.stderr, s)
 	}
 	cos := osFromChan(so, se)
-	tcos.c = cos
+	tcos.fo = cos
 	return tcos
-}
-
-func (fo *FakeOutput) Stdout(s string) {
-	fo.c.Stdout(s)
-}
-
-func (fo *FakeOutput) Stdoutf(s string, a ...interface{}) {
-	fo.c.Stdoutf(s, a...)
-}
-
-func (fo *FakeOutput) Stdoutln(a ...interface{}) {
-	fo.c.Stdoutln(a...)
-}
-
-func (fo *FakeOutput) Stderr(s string) error {
-	return fo.c.Stderr(s)
-}
-
-func (fo *FakeOutput) Stderrf(s string, a ...interface{}) error {
-	return fo.c.Stderrf(s, a...)
-}
-
-func (fo *FakeOutput) Annotate(err error, s string) error {
-	return fo.c.Annotate(err, s)
-}
-
-func (fo *FakeOutput) Annotatef(err error, s string, a ...interface{}) error {
-	return fo.c.Annotatef(err, s, a...)
-}
-
-func (fo *FakeOutput) Stderrln(a ...interface{}) error {
-	return fo.c.Stderrln(a...)
-}
-
-func (fo *FakeOutput) Err(err error) error {
-	return fo.c.Err(err)
 }
 
 func (fo *FakeOutput) Close() {
 	if !fo.closed {
-		fo.c.Close()
+		fo.fo.Close()
 		fo.closed = true
 	}
-}
-
-func (fo *FakeOutput) terminateError() error {
-	return fo.c.terminateError()
-}
-
-func (fo *FakeOutput) Terminate(err error) {
-	fo.c.Terminate(err)
-}
-
-func (fo *FakeOutput) Terminatef(s string, a ...interface{}) {
-	fo.c.Terminatef(s, a...)
 }
 
 func (fo *FakeOutput) GetStdout() []string {
