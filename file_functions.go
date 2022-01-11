@@ -18,27 +18,43 @@ func relFile(name string) string {
 }
 
 func ReadAll(name string) ([]os.FileInfo, error) {
-	return ioutil.ReadDir(relFile(name))
+	a, b := ioutil.ReadDir(relFile(name))
+	return a, newFileErr(b)
 }
 
 func ReadFile(name string) ([]string, error) {
 	b, err := os.ReadFile(relFile(name))
 	if err != nil {
-		return nil, err
+		return nil, newFileErr(err)
 	}
 	return strings.Split(string(b), "\n"), nil
 }
 
 func Mkdir(name string) error {
-	return os.Mkdir(relFile(name), 0644)
+	return newFileErr(os.Mkdir(relFile(name), 0644))
 }
 
 func CreateFile(name string, contents []string) error {
-	return ioutil.WriteFile(relFile(name), []byte(strings.Join(contents, "\n")), 0644)
+	return newFileErr(ioutil.WriteFile(relFile(name), []byte(strings.Join(contents, "\n")), 0644))
 }
 
 func DeleteFile(name string) error {
-	return os.Remove(relFile(name))
+	return newFileErr(os.Remove(relFile(name)))
+}
+
+type fileErr struct {
+	err error
+}
+
+func (fe *fileErr) Error() string {
+	return strings.ReplaceAll(fe.err.Error(), fileRoot, "TEST_DIR")
+}
+
+func newFileErr(err error) error {
+	if err == nil {
+		return nil
+	}
+	return &fileErr{err}
 }
 
 func Stat(name string) (os.FileInfo, error) {
