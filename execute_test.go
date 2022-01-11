@@ -3168,6 +3168,38 @@ func TestExecute(t *testing.T) {
 				WantStderr: []string{"Unprocessed extra args: [other stuff]"},
 			},
 		},
+		// File functions
+		{
+			name: "verify that files are created and deleted",
+			etc: &ExecuteTestCase{
+				InitFiles: []*FakeFile{
+					NewFakeFile("simple.txt", []string{"hello", "there"}),
+					NewFakeDir("some-dir", []*FakeFile{
+						NewFakeDir("deeper-dir", nil),
+						NewFakeFile("other", []string{"s", "t", "u", "ff"}),
+						NewFakeFile("another", []string{""}),
+					}),
+				},
+				WantFiles: []*FakeFile{
+					NewFakeFile("simple.txt", []string{"hello", "there"}),
+					NewFakeDir("some-dir", []*FakeFile{
+						NewFakeDir("deeper-dir", nil),
+						NewFakeFile("other", []string{"s", "t", "u", "ff"}),
+						NewFakeFile("another", []string{""}),
+					}),
+				},
+			},
+		},
+		{
+			name: "verify file check can be skipped",
+			etc: &ExecuteTestCase{
+				InitFiles: []*FakeFile{
+					NewFakeFile("simple.txt", []string{"hello", "there"}),
+					NewFakeDir("some-dir", nil),
+				},
+				SkipFileCheck: true,
+			},
+		},
 		/* Useful for commenting out tests. */
 	} {
 		t.Run(test.name, func(t *testing.T) {
@@ -4124,6 +4156,38 @@ func TestComplete(t *testing.T) {
 				},
 			},
 		},
+		// File functions
+		{
+			name: "verify that files are created and deleted",
+			ctc: &CompleteTestCase{
+				InitFiles: []*FakeFile{
+					NewFakeFile("simple.txt", []string{"hello", "there"}),
+					NewFakeDir("some-dir", []*FakeFile{
+						NewFakeDir("deeper-dir", nil),
+						NewFakeFile("other", []string{"s", "t", "u", "ff"}),
+						NewFakeFile("another", []string{""}),
+					}),
+				},
+				WantFiles: []*FakeFile{
+					NewFakeFile("simple.txt", []string{"hello", "there"}),
+					NewFakeDir("some-dir", []*FakeFile{
+						NewFakeDir("deeper-dir", nil),
+						NewFakeFile("other", []string{"s", "t", "u", "ff"}),
+						NewFakeFile("another", []string{""}),
+					}),
+				},
+			},
+		},
+		{
+			name: "verify file check can be skipped",
+			ctc: &CompleteTestCase{
+				InitFiles: []*FakeFile{
+					NewFakeFile("simple.txt", []string{"hello", "there"}),
+					NewFakeDir("some-dir", nil),
+				},
+				SkipFileCheck: true,
+			},
+		},
 		/* Useful comment for commenting out tests */
 	} {
 		t.Run(test.name, func(t *testing.T) {
@@ -4359,6 +4423,46 @@ func TestRunNodes(t *testing.T) {
 				WantStdout: []string{
 					GetUsage(sum).String(),
 				},
+			},
+		},
+		// File functions
+		{
+			name: "verify that files are created and deleted",
+			rtc: &RunNodeTestCase{
+				Node: SerialNodes(
+					StringListNode("SL_ARG", "", 1, UnboundedList),
+				),
+				Args: []string{"autocomplete", "cmd okay"},
+				InitFiles: []*FakeFile{
+					NewFakeFile("simple.txt", []string{"hello", "there"}),
+					NewFakeDir("some-dir", []*FakeFile{
+						NewFakeDir("deeper-dir", nil),
+						NewFakeFile("other", []string{"s", "t", "u", "ff"}),
+						NewFakeFile("another", []string{""}),
+					}),
+				},
+				WantFiles: []*FakeFile{
+					NewFakeFile("simple.txt", []string{"hello", "there"}),
+					NewFakeDir("some-dir", []*FakeFile{
+						NewFakeDir("deeper-dir", nil),
+						NewFakeFile("other", []string{"s", "t", "u", "ff"}),
+						NewFakeFile("another", []string{""}),
+					}),
+				},
+			},
+		},
+		{
+			name: "verify file check can be skipped",
+			rtc: &RunNodeTestCase{
+				Node: SerialNodes(
+					StringListNode("SL_ARG", "", 1, UnboundedList),
+				),
+				Args: []string{"autocomplete", "cmd okay"},
+				InitFiles: []*FakeFile{
+					NewFakeFile("simple.txt", []string{"hello", "there"}),
+					NewFakeDir("some-dir", nil),
+				},
+				SkipFileCheck: true,
 			},
 		},
 		/* Useful for commenting out tests. */
