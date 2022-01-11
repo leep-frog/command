@@ -1,6 +1,7 @@
 package command
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -22,6 +23,10 @@ func TestOutput(t *testing.T) {
 					k := "kenobi"
 					o.Stderr("general %s")
 					o.Stderrf("general %s", k)
+
+					// Make sure we don't format the %s from the error
+					o.Annotate(fmt.Errorf("bad news bears %%s"), "attention animals")
+					o.Annotatef(fmt.Errorf("rough news rabbits %%s"), "attention %d dalmations", 101)
 				})),
 				WantStdout: []string{
 					"hello %s",
@@ -30,6 +35,8 @@ func TestOutput(t *testing.T) {
 				WantStderr: []string{
 					"general %s",
 					"general kenobi",
+					"attention animals: bad news bears %s",
+					"attention 101 dalmations: rough news rabbits %s",
 				},
 			},
 		},

@@ -25,6 +25,10 @@ type Output interface {
 	Stderrln(...interface{}) error
 	// Writes the provided error to stderr and returns the provided error.
 	Err(err error) error
+	// Annotate prepends the message to the error
+	Annotate(error, string) error
+	// Annotatef prepends the message to the error
+	Annotatef(error, string, ...interface{}) error
 	// Close informs the os that no more data will be written.
 	Close()
 }
@@ -78,6 +82,14 @@ func (o *output) Stderr(s string) error {
 
 func (o *output) Stderrf(s string, a ...interface{}) error {
 	return o.writeStderr(fmt.Sprintf(s, a...))
+}
+
+func (o *output) Annotate(err error, s string) error {
+	return o.writeStderr(fmt.Sprintf("%s: %v", s, err))
+}
+
+func (o *output) Annotatef(err error, s string, a ...interface{}) error {
+	return o.writeStderr(fmt.Sprintf("%s: %v", fmt.Sprintf(s, a...), err))
 }
 
 func (o *output) Stderrln(a ...interface{}) error {
@@ -176,6 +188,14 @@ func (ieo *ignoreErrOutput) Stderrf(s string, a ...interface{}) error {
 	return ieo.o.Stderrf(s, a...)
 }
 
+func (ieo *ignoreErrOutput) Annotate(err error, s string) error {
+	return ieo.o.Annotate(err, s)
+}
+
+func (ieo *ignoreErrOutput) Annotatef(err error, s string, a ...interface{}) error {
+	return ieo.o.Annotatef(err, s, a...)
+}
+
 func (ieo *ignoreErrOutput) Stderrln(a ...interface{}) error {
 	return ieo.o.Stderrln(a...)
 }
@@ -233,6 +253,14 @@ func (fo *FakeOutput) Stderr(s string) error {
 
 func (fo *FakeOutput) Stderrf(s string, a ...interface{}) error {
 	return fo.c.Stderrf(s, a...)
+}
+
+func (fo *FakeOutput) Annotate(err error, s string) error {
+	return fo.c.Annotate(err, s)
+}
+
+func (fo *FakeOutput) Annotatef(err error, s string, a ...interface{}) error {
+	return fo.c.Annotatef(err, s, a...)
 }
 
 func (fo *FakeOutput) Stderrln(a ...interface{}) error {
