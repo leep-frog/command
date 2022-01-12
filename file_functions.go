@@ -47,6 +47,9 @@ type fileErr struct {
 }
 
 func (fe *fileErr) Error() string {
+	if fileRoot == "" {
+		return fe.err.Error()
+	}
 	return strings.ReplaceAll(fe.err.Error(), fileRoot, "TEST_DIR/")
 }
 
