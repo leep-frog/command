@@ -59,6 +59,7 @@ var (
 		`  file="$(type $1 | head -n 1 | grep "is aliased to ._custom_execute_" | grep "_custom_execute_[^[:space:]]*" -o | sed s/_custom_execute_//g)"`,
 		`  "$GOPATH/bin/$file" usage $@`,
 		"}",
+		"alias u=mancli",
 	}, "\n")
 
 	// setupFunctionFormat is used to run setup functions prior to a CLI command execution.

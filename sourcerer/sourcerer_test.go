@@ -57,6 +57,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 				`  file="$(type $1 | head -n 1 | grep "is aliased to ._custom_execute_" | grep "_custom_execute_[^[:space:]]*" -o | sed s/_custom_execute_//g)"`,
 				`  "$GOPATH/bin/$file" usage $@`,
 				`}`,
+				`alias u=mancli`,
 			},
 		},
 		{
@@ -92,6 +93,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 				`  file="$(type $1 | head -n 1 | grep "is aliased to ._custom_execute_" | grep "_custom_execute_[^[:space:]]*" -o | sed s/_custom_execute_//g)"`,
 				`  "$GOPATH/bin/$file" usage $@`,
 				`}`,
+				`alias u=mancli`,
 			},
 		},
 		{
@@ -130,6 +132,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 				`  file="$(type $1 | head -n 1 | grep "is aliased to ._custom_execute_" | grep "_custom_execute_[^[:space:]]*" -o | sed s/_custom_execute_//g)"`,
 				`  "$GOPATH/bin/$file" usage $@`,
 				`}`,
+				`alias u=mancli`,
 				`function _setup_for_basic_cli {`,
 				`  his  `,
 				`  story`,
