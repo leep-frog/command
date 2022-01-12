@@ -20,88 +20,78 @@ func TestGenerateBinaryNode(t *testing.T) {
 	defer func() { getSourceLoc = oldGSL }()
 
 	for _, test := range []struct {
-		name     string
-		clis     []CLI
-		args     []string
-		wantFile []string
+		name       string
+		clis       []CLI
+		args       []string
+		wantOutput []string
 	}{
 		{
 			name: "generates source file when no CLIs",
-			wantFile: []string{
-				"",
-				`	pushd . > /dev/null`,
-				`	cd "$(dirname /fake/source/location)"`,
-				`	go build -o $GOPATH/bin/_leep-frog-source_runner`,
-				`	popd > /dev/null`,
-				`	`,
-				`	function _custom_autocomplete_leep-frog-source {`,
-				`		tFile=$(mktemp)`,
-				`		$GOPATH/bin/_leep-frog-source_runner autocomplete ${COMP_WORDS[0]} $COMP_POINT "$COMP_LINE" > $tFile`,
-				`		local IFS=$'\n'`,
-				`		COMPREPLY=( $(cat $tFile) )`,
-				`		rm $tFile`,
-				`	}`,
-				`	`,
-				`	function _custom_execute_leep-frog-source {`,
-				`		# tmpFile is the file to which we write ExecuteData.Executable`,
-				`		tmpFile=$(mktemp)`,
-				`		$GOPATH/bin/_leep-frog-source_runner execute $tmpFile "$@"`,
-				`		source $tmpFile`,
-				`		if [ -z "$LEEP_FROG_DEBUG" ]`,
-				`		then`,
-				`		  rm $tmpFile`,
-				`		else`,
-				`		  echo $tmpFile`,
-				`		fi`,
-				`	}`,
-				`	`,
-				`	function mancli {`,
-				"		# Extract the custom execute function so that this function",
-				"		# can work regardless of file name",
-				`		file="$(type $1 | head -n 1 | grep "is aliased to ._custom_execute_" | grep "_custom_execute_[^[:space:]]*" -o | sed s/_custom_execute_//g)"`,
-				`		"$GOPATH/bin/$file" usage $@`,
-				`	}`,
-				`	`,
+			wantOutput: []string{
+				`pushd . > /dev/null`,
+				`cd "$(dirname /fake/source/location)"`,
+				`go build -o $GOPATH/bin/_leep-frog-source_runner`,
+				`popd > /dev/null`,
+				`function _custom_autocomplete_leep-frog-source {`,
+				`  tFile=$(mktemp)`,
+				`  $GOPATH/bin/_leep-frog-source_runner autocomplete ${COMP_WORDS[0]} $COMP_POINT "$COMP_LINE" > $tFile`,
+				`  local IFS=$'\n'`,
+				`  COMPREPLY=( $(cat $tFile) )`,
+				`  rm $tFile`,
+				`}`,
+				`function _custom_execute_leep-frog-source {`,
+				`  # tmpFile is the file to which we write ExecuteData.Executable`,
+				`  tmpFile=$(mktemp)`,
+				`  $GOPATH/bin/_leep-frog-source_runner execute $tmpFile "$@"`,
+				`  source $tmpFile`,
+				`  if [ -z "$LEEP_FROG_DEBUG" ]`,
+				`  then`,
+				`    rm $tmpFile`,
+				`  else`,
+				`    echo $tmpFile`,
+				`  fi`,
+				`}`,
+				`function mancli {`,
+				"  # Extract the custom execute function so that this function",
+				"  # can work regardless of file name",
+				`  file="$(type $1 | head -n 1 | grep "is aliased to ._custom_execute_" | grep "_custom_execute_[^[:space:]]*" -o | sed s/_custom_execute_//g)"`,
+				`  "$GOPATH/bin/$file" usage $@`,
+				`}`,
 			},
 		},
 		{
 			name: "generates source file with custom filename",
 			args: []string{"custom-output_file"},
-			wantFile: []string{
-				"",
-				`	pushd . > /dev/null`,
-				`	cd "$(dirname /fake/source/location)"`,
-				`	go build -o $GOPATH/bin/_custom-output_file_runner`,
-				`	popd > /dev/null`,
-				`	`,
-				`	function _custom_autocomplete_custom-output_file {`,
-				`		tFile=$(mktemp)`,
-				`		$GOPATH/bin/_custom-output_file_runner autocomplete ${COMP_WORDS[0]} $COMP_POINT "$COMP_LINE" > $tFile`,
-				`		local IFS=$'\n'`,
-				`		COMPREPLY=( $(cat $tFile) )`,
-				`		rm $tFile`,
-				`	}`,
-				`	`,
-				`	function _custom_execute_custom-output_file {`,
-				`		# tmpFile is the file to which we write ExecuteData.Executable`,
-				`		tmpFile=$(mktemp)`,
-				`		$GOPATH/bin/_custom-output_file_runner execute $tmpFile "$@"`,
-				`		source $tmpFile`,
-				`		if [ -z "$LEEP_FROG_DEBUG" ]`,
-				`		then`,
-				`		  rm $tmpFile`,
-				`		else`,
-				`		  echo $tmpFile`,
-				`		fi`,
-				`	}`,
-				`	`,
-				`	function mancli {`,
-				"		# Extract the custom execute function so that this function",
-				"		# can work regardless of file name",
-				`		file="$(type $1 | head -n 1 | grep "is aliased to ._custom_execute_" | grep "_custom_execute_[^[:space:]]*" -o | sed s/_custom_execute_//g)"`,
-				`		"$GOPATH/bin/$file" usage $@`,
-				`	}`,
-				`	`,
+			wantOutput: []string{
+				`pushd . > /dev/null`,
+				`cd "$(dirname /fake/source/location)"`,
+				`go build -o $GOPATH/bin/_custom-output_file_runner`,
+				`popd > /dev/null`,
+				`function _custom_autocomplete_custom-output_file {`,
+				`  tFile=$(mktemp)`,
+				`  $GOPATH/bin/_custom-output_file_runner autocomplete ${COMP_WORDS[0]} $COMP_POINT "$COMP_LINE" > $tFile`,
+				`  local IFS=$'\n'`,
+				`  COMPREPLY=( $(cat $tFile) )`,
+				`  rm $tFile`,
+				`}`,
+				`function _custom_execute_custom-output_file {`,
+				`  # tmpFile is the file to which we write ExecuteData.Executable`,
+				`  tmpFile=$(mktemp)`,
+				`  $GOPATH/bin/_custom-output_file_runner execute $tmpFile "$@"`,
+				`  source $tmpFile`,
+				`  if [ -z "$LEEP_FROG_DEBUG" ]`,
+				`  then`,
+				`    rm $tmpFile`,
+				`  else`,
+				`    echo $tmpFile`,
+				`  fi`,
+				`}`,
+				`function mancli {`,
+				"  # Extract the custom execute function so that this function",
+				"  # can work regardless of file name",
+				`  file="$(type $1 | head -n 1 | grep "is aliased to ._custom_execute_" | grep "_custom_execute_[^[:space:]]*" -o | sed s/_custom_execute_//g)"`,
+				`  "$GOPATH/bin/$file" usage $@`,
+				`}`,
 			},
 		},
 		{
@@ -110,52 +100,46 @@ func TestGenerateBinaryNode(t *testing.T) {
 				"x": "exit",
 				"l": "ls -la",
 			}), &testCLI{name: "basic", setup: []string{"his", "story"}}),
-			wantFile: []string{
-				"",
-				`	pushd . > /dev/null`,
-				`	cd "$(dirname /fake/source/location)"`,
-				`	go build -o $GOPATH/bin/_leep-frog-source_runner`,
-				`	popd > /dev/null`,
-				`	`,
-				`	function _custom_autocomplete_leep-frog-source {`,
-				`		tFile=$(mktemp)`,
-				`		$GOPATH/bin/_leep-frog-source_runner autocomplete ${COMP_WORDS[0]} $COMP_POINT "$COMP_LINE" > $tFile`,
-				`		local IFS=$'\n'`,
-				`		COMPREPLY=( $(cat $tFile) )`,
-				`		rm $tFile`,
-				`	}`,
-				`	`,
-				`	function _custom_execute_leep-frog-source {`,
-				`		# tmpFile is the file to which we write ExecuteData.Executable`,
-				`		tmpFile=$(mktemp)`,
-				`		$GOPATH/bin/_leep-frog-source_runner execute $tmpFile "$@"`,
-				`		source $tmpFile`,
-				`		if [ -z "$LEEP_FROG_DEBUG" ]`,
-				`		then`,
-				`		  rm $tmpFile`,
-				`		else`,
-				`		  echo $tmpFile`,
-				`		fi`,
-				`	}`,
-				`	`,
-				`	function mancli {`,
-				"		# Extract the custom execute function so that this function",
-				"		# can work regardless of file name",
-				`		file="$(type $1 | head -n 1 | grep "is aliased to ._custom_execute_" | grep "_custom_execute_[^[:space:]]*" -o | sed s/_custom_execute_//g)"`,
-				`		"$GOPATH/bin/$file" usage $@`,
-				`	}`,
-				`	`,
-				`	function _setup_for_basic_cli {`,
-				`		his  `,
+			wantOutput: []string{
+				`pushd . > /dev/null`,
+				`cd "$(dirname /fake/source/location)"`,
+				`go build -o $GOPATH/bin/_leep-frog-source_runner`,
+				`popd > /dev/null`,
+				`function _custom_autocomplete_leep-frog-source {`,
+				`  tFile=$(mktemp)`,
+				`  $GOPATH/bin/_leep-frog-source_runner autocomplete ${COMP_WORDS[0]} $COMP_POINT "$COMP_LINE" > $tFile`,
+				`  local IFS=$'\n'`,
+				`  COMPREPLY=( $(cat $tFile) )`,
+				`  rm $tFile`,
+				`}`,
+				`function _custom_execute_leep-frog-source {`,
+				`  # tmpFile is the file to which we write ExecuteData.Executable`,
+				`  tmpFile=$(mktemp)`,
+				`  $GOPATH/bin/_leep-frog-source_runner execute $tmpFile "$@"`,
+				`  source $tmpFile`,
+				`  if [ -z "$LEEP_FROG_DEBUG" ]`,
+				`  then`,
+				`    rm $tmpFile`,
+				`  else`,
+				`    echo $tmpFile`,
+				`  fi`,
+				`}`,
+				`function mancli {`,
+				"  # Extract the custom execute function so that this function",
+				"  # can work regardless of file name",
+				`  file="$(type $1 | head -n 1 | grep "is aliased to ._custom_execute_" | grep "_custom_execute_[^[:space:]]*" -o | sed s/_custom_execute_//g)"`,
+				`  "$GOPATH/bin/$file" usage $@`,
+				`}`,
+				`function _setup_for_basic_cli {`,
+				`  his  `,
 				`  story`,
-				`	}`,
-				`	alias basic='o=$(mktemp) && _setup_for_basic_cli > $o && _custom_execute_leep-frog-source basic $o'`,
+				`}`,
+				`alias basic='o=$(mktemp) && _setup_for_basic_cli > $o && _custom_execute_leep-frog-source basic $o'`,
 				"complete -F _custom_autocomplete_leep-frog-source -o nosort basic",
 				`alias l='_custom_execute_leep-frog-source l'`,
 				"complete -F _custom_autocomplete_leep-frog-source -o nosort l",
 				"alias x='_custom_execute_leep-frog-source x'",
 				"complete -F _custom_autocomplete_leep-frog-source -o nosort x",
-				"",
 			},
 		},
 	} {
@@ -168,11 +152,14 @@ func TestGenerateBinaryNode(t *testing.T) {
 				t.Errorf("source(%v) produced stderr when none was expected:\n%v", test.args, o.GetStderr())
 			}
 
-			if len(o.GetStdout()) != 1 {
-				t.Fatalf("source(%v) should have outputted one line (a file name), but didn't:\n%v", test.args, o.GetStdout())
+			out := o.GetStdout()
+			var modified []string
+			for _, line := range out {
+				modified = append(modified, strings.Split(line, "\n")...)
 			}
-
-			cmpFile(t, "Incorrect source file generated", o.GetStdout()[0], test.wantFile)
+			if diff := cmp.Diff(test.wantOutput, modified); diff != "" {
+				t.Errorf("source(%v) returned incorrect output (-wamt, +got):\n%s", test.args, diff)
+			}
 		})
 	}
 }
@@ -205,7 +192,7 @@ func TestSourcerer(t *testing.T) {
 		wantStdout []string
 		wantStderr []string
 		wantCLIs   map[string]CLI
-		wantFile   []string
+		wantOutput []string
 	}{
 		{
 			name: "fails if invalid command branch",
@@ -352,7 +339,7 @@ func TestSourcerer(t *testing.T) {
 				},
 			},
 			args: []string{"execute", f.Name(), "basic"},
-			wantFile: []string{
+			wantOutput: []string{
 				"echo",
 				"hello",
 				"there",
@@ -562,7 +549,7 @@ func TestSourcerer(t *testing.T) {
 			}
 
 			// Check file contents
-			cmpFile(t, "Sourcing produced incorrect file contents", f.Name(), test.wantFile)
+			cmpFile(t, "Sourcing produced incorrect file contents", f.Name(), test.wantOutput)
 
 			// Check cli changes
 			for _, c := range test.clis {

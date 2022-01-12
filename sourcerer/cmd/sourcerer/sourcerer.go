@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/leep-frog/command"
@@ -26,13 +27,20 @@ func (*SourcererCommand) Node() *command.Node {
 		command.StringNode(bsName, "Suffix for the name", command.MinLength(1)),
 		command.ExecutableNode(func(_ command.Output, d *command.Data) ([]string, error) {
 			dir := strings.ReplaceAll(d.String(dName), `\`, "/")
+			// TODO: try using this? filepath.FromSlash()
 			return []string{
-				fmt.Sprintf("source $(pushd . > /dev/null ; cd %s && go run *.go %s ; popd > /dev/null)", dir, d.String(bsName)),
+				"pushd . > /dev/null",
+				fmt.Sprintf("cd %s", dir),
+				`tmpFile="$(mktemp)"`,
+				"echo AL",
+				fmt.Sprintf("go run *.go %s > $tmpFile && source $tmpFile ", d.String(bsName)),
+				"echo Be",
+				"popd > /dev/null",
 			}, nil
 		}),
 	)
 }
 
 func main() {
-	sourcerer.Source(&SourcererCommand{})
+	os.Exit(sourcerer.Source(&SourcererCommand{}))
 }

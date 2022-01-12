@@ -5,7 +5,6 @@ package sourcerer
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"runtime"
@@ -16,63 +15,63 @@ import (
 	"github.com/leep-frog/command/cache"
 )
 
-const (
+var (
 	// The file that was used to create the source file will also
 	// be used for executing and autocompleting cli commands.
-	generateBinary = `
-	pushd . > /dev/null
-	cd "$(dirname %s)"
-	go build -o $GOPATH/bin/_%s_runner
-	popd > /dev/null
-	`
+	generateBinary = strings.Join([]string{
+		"pushd . > /dev/null",
+		`cd "$(dirname %s)"`,
+		"go build -o $GOPATH/bin/_%s_runner",
+		"popd > /dev/null",
+	}, "\n")
 
 	// autocompleteFunction defines a bash function for CLI autocompletion.
-	autocompleteFunction = `
-	function _custom_autocomplete_%s {
-		tFile=$(mktemp)
-		$GOPATH/bin/_%s_runner autocomplete ${COMP_WORDS[0]} $COMP_POINT "$COMP_LINE" > $tFile
-		local IFS=$'\n'
-		COMPREPLY=( $(cat $tFile) )
-		rm $tFile
-	}
-	`
+	autocompleteFunction = strings.Join([]string{
+		"function _custom_autocomplete_%s {",
+		`  tFile=$(mktemp)`,
+		`  $GOPATH/bin/_%s_runner autocomplete ${COMP_WORDS[0]} $COMP_POINT "$COMP_LINE" > $tFile`,
+		`  local IFS=$'\n'`,
+		`  COMPREPLY=( $(cat $tFile) )`,
+		`  rm $tFile`,
+		"}",
+	}, "\n")
 
 	// executeFunction defines a bash function for CLI execution.
-	executeFunction = `
-	function _custom_execute_%s {
-		# tmpFile is the file to which we write ExecuteData.Executable
-		tmpFile=$(mktemp)
-		$GOPATH/bin/_%s_runner execute $tmpFile "$@"
-		source $tmpFile
-		if [ -z "$LEEP_FROG_DEBUG" ]
-		then
-		  rm $tmpFile
-		else
-		  echo $tmpFile
-		fi
-	}
-	`
+	executeFunction = strings.Join([]string{
+		`function _custom_execute_%s {`,
+		`  # tmpFile is the file to which we write ExecuteData.Executable`,
+		`  tmpFile=$(mktemp)`,
+		`  $GOPATH/bin/_%s_runner execute $tmpFile "$@"`,
+		`  source $tmpFile`,
+		`  if [ -z "$LEEP_FROG_DEBUG" ]`,
+		`  then`,
+		`    rm $tmpFile`,
+		`  else`,
+		`    echo $tmpFile`,
+		`  fi`,
+		`}`,
+	}, "\n")
 
-	usageFunction = `
-	function mancli {
-		# Extract the custom execute function so that this function
-		# can work regardless of file name
-		file="$(type $1 | head -n 1 | grep "is aliased to ._custom_execute_" | grep "_custom_execute_[^[:space:]]*" -o | sed s/_custom_execute_//g)"
-		"$GOPATH/bin/$file" usage $@
-	}
-	`
+	usageFunction = strings.Join([]string{
+		"function mancli {",
+		"  # Extract the custom execute function so that this function",
+		"  # can work regardless of file name",
+		`  file="$(type $1 | head -n 1 | grep "is aliased to ._custom_execute_" | grep "_custom_execute_[^[:space:]]*" -o | sed s/_custom_execute_//g)"`,
+		`  "$GOPATH/bin/$file" usage $@`,
+		"}",
+	}, "\n")
 
 	// setupFunctionFormat is used to run setup functions prior to a CLI command execution.
-	setupFunctionFormat = `
-	function %s {
-		%s
-	}
-	`
+	setupFunctionFormat = strings.Join([]string{
+		`function %s {`,
+		`  %s`,
+		"}",
+	}, "\n")
 
 	// aliasWithSetupFormat is an alias definition template for commands that require a setup function.
-	aliasWithSetupFormat = "alias %s='o=$(mktemp) && %s > $o && _custom_execute_%s %s $o'\n"
+	aliasWithSetupFormat = "alias %s='o=$(mktemp) && %s > $o && _custom_execute_%s %s $o'"
 	// aliasFormat is an alias definition template for commands that don't require a setup function.
-	aliasFormat = "alias %s='_custom_execute_%s %s'\n"
+	aliasFormat = "alias %s='_custom_execute_%s %s'"
 )
 
 var (
@@ -215,6 +214,7 @@ func load(cli CLI) error {
 
 type sourcerer struct {
 	clis              []CLI
+	sl                string
 	printedUsageError bool
 }
 
@@ -244,7 +244,7 @@ func (s *sourcerer) getCLI(cli string) (CLI, error) {
 func (s *sourcerer) Node() *command.Node {
 	generateBinaryNode := command.SerialNodes(
 		targetNameArg,
-		command.ExecuteErrNode(s.generateFile),
+		command.ExecutorNode(s.generateFile),
 	)
 
 	return command.BranchNode(map[string]*command.Node{
@@ -277,16 +277,28 @@ func (s *sourcerer) usageExecutor(o command.Output, d *command.Data) error {
 }
 
 // Source generates the bash source file for a list of CLIs.
-func Source(clis ...CLI) {
+func Source(clis ...CLI) int {
 	o := command.NewOutput()
-	source(clis, os.Args[1:], o)
-	o.Close()
+	defer o.Close()
+	if source(clis, os.Args[1:], o) != nil {
+		return 1
+	}
+	return 0
 }
 
 // Separate method used for testing.
-func source(clis []CLI, osArgs []string, o command.Output) {
+func source(clis []CLI, osArgs []string, o command.Output) error {
+	fmt.Println("HEYO")
+	sl, err := getSourceLoc()
+	fmt.Println("HEYO 1")
+	if err != nil {
+		fmt.Println("WUT")
+		return o.Annotate(err, "failed to get source location")
+	}
+	fmt.Println("HEYO 2")
 	s := &sourcerer{
 		clis: clis,
+		sl:   sl,
 	}
 
 	// Sourcerer is always executed. Its execution branches into the relevant CLI's
@@ -299,13 +311,13 @@ func source(clis []CLI, osArgs []string, o command.Output) {
 		},
 	}
 
-	s.executeExecutor(o, d)
+	return s.executeExecutor(o, d)
 }
 
 var (
 	// Stubbed out for testing purposes
 	getSourceLoc = func() (string, error) {
-		_, sourceLocation, _, ok := runtime.Caller(7)
+		_, sourceLocation, _, ok := runtime.Caller(3)
 		if !ok {
 			return "", fmt.Errorf("failed to fetch caller")
 		}
@@ -313,41 +325,23 @@ var (
 	}
 )
 
-func (s *sourcerer) generateFile(o command.Output, d *command.Data) error {
-	f, err := ioutil.TempFile("", "golang-cli-source")
-	if err != nil {
-		return o.Stderrf("failed to create tmp file: %v", err)
-	}
-
+func (s *sourcerer) generateFile(o command.Output, d *command.Data) {
 	filename := "leep-frog-source"
 	if d.HasArg(targetNameArg.Name()) {
 		filename = d.String(targetNameArg.Name())
 	}
 
-	sourceLocation, err := getSourceLoc()
-	if err != nil {
-		return o.Err(err)
-	}
-
 	// cd into the directory of the file that is actually calling this and install dependencies.
-	if _, err := f.WriteString(fmt.Sprintf(generateBinary, sourceLocation, filename)); err != nil {
-		return o.Stderrf("failed to write binary generator code to file: %v", err)
-	}
+	o.Stdoutf(generateBinary, s.sl, filename)
 
 	// define the autocomplete function
-	if _, err := f.WriteString(fmt.Sprintf(autocompleteFunction, filename, filename)); err != nil {
-		return o.Stderrf("failed to write autocomplete function to file: %v", err)
-	}
+	o.Stdoutf(autocompleteFunction, filename, filename)
 
 	// define the execute function
-	if _, err := f.WriteString(fmt.Sprintf(executeFunction, filename, filename)); err != nil {
-		return o.Stderrf("failed to write autocomplete function to file: %v", err)
-	}
+	o.Stdoutf(executeFunction, filename, filename)
 
 	// define the usage function
-	if _, err := f.WriteString(usageFunction); err != nil {
-		return o.Stderrf("failed to write usage function to file: %v", err)
-	}
+	o.Stdout(usageFunction)
 
 	sort.SliceStable(s.clis, func(i, j int) bool { return s.clis[i].Name() < s.clis[j].Name() })
 	for _, cli := range s.clis {
@@ -356,25 +350,15 @@ func (s *sourcerer) generateFile(o command.Output, d *command.Data) error {
 		aliasCommand := fmt.Sprintf(aliasFormat, alias, filename, alias)
 		if scs := cli.Setup(); len(scs) > 0 {
 			setupFunctionName := fmt.Sprintf("_setup_for_%s_cli", alias)
-			if _, err := f.WriteString(fmt.Sprintf(setupFunctionFormat, setupFunctionName, strings.Join(scs, "  \n  "))); err != nil {
-				return o.Stderrf("failed to write setup command to file: %v", err)
-			}
+			o.Stdoutf(setupFunctionFormat, setupFunctionName, strings.Join(scs, "  \n  "))
 			aliasCommand = fmt.Sprintf(aliasWithSetupFormat, alias, setupFunctionName, filename, alias)
 		}
 
-		if _, err := f.WriteString(aliasCommand); err != nil {
-			return o.Stderrf("failed to write alias to file: %v", err)
-		}
+		o.Stdout(aliasCommand)
 
 		// We sort ourselves, hence the no sort.
-		if _, err := f.WriteString(fmt.Sprintf("complete -F _custom_autocomplete_%s -o nosort %s\n", filename, alias)); err != nil {
-			return o.Stderrf("failed to write autocomplete command to file: %v", err)
-		}
+		o.Stdoutf("complete -F _custom_autocomplete_%s -o nosort %s", filename, alias)
 	}
-
-	f.Close()
-	o.Stdout(f.Name())
-	return nil
 }
 
 func save(c CLI) error {
