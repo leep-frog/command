@@ -3,6 +3,7 @@ package command
 import (
 	"fmt"
 	"sort"
+	"strings"
 )
 
 const (
@@ -86,8 +87,9 @@ func ExecutorNode(f func(Output, *Data)) Processor {
 }
 
 type branchNode struct {
-	branches     map[string]*Node
-	aliases      map[string][]string
+	branches map[string]*Node
+	// Map from alias to branch name
+	aliases      map[string]string
 	def          *Node
 	next         *Node
 	nextErr      error
@@ -145,6 +147,12 @@ func (bn *branchNode) getNext(input *Input, data *Data) error {
 		return nil
 	}
 
+	if n, ok := bn.branches[bn.aliases[s]]; ok {
+		input.Pop()
+		bn.next = n
+		return nil
+	}
+
 	if bn.def != nil {
 		bn.next = bn.def
 		return nil
@@ -193,8 +201,21 @@ func (bn *branchNode) Usage(u *Usage) {
 	}
 	sort.Strings(names)
 
+	branchToAlias := map[string][]string{}
+	for k, v := range bn.aliases {
+		branchToAlias[v] = append(branchToAlias[v], k)
+	}
+
 	for _, name := range names {
 		su := GetUsage(bn.branches[name])
+		if as := branchToAlias[name]; len(as) > 0 {
+			var r []string
+			for _, a := range as {
+				r = append(r, a)
+			}
+			sort.Strings(r)
+			name = fmt.Sprintf("[%s|%v]", name, strings.Join(r, "|"))
+		}
 		su.Usage = append([]string{name}, su.Usage...)
 		u.SubSections = append(u.SubSections, su)
 	}
@@ -205,6 +226,18 @@ type BranchNodeOption func(*branchNode)
 func DontCompleteSubcommands() BranchNodeOption {
 	return func(bn *branchNode) {
 		bn.scCompletion = false
+	}
+}
+
+func BranchAliases(aliases map[string][]string) BranchNodeOption {
+	m := map[string]string{}
+	for k, vs := range aliases {
+		for _, v := range vs {
+			m[v] = k
+		}
+	}
+	return func(bn *branchNode) {
+		bn.aliases = m
 	}
 }
 

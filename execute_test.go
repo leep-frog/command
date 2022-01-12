@@ -2732,6 +2732,44 @@ func TestExecute(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "branch node forwards to alias",
+			etc: &ExecuteTestCase{
+				Args: []string{"B"},
+				Node: BranchNode(map[string]*Node{
+					"h": printNode("hello"),
+					"b": printNode("goodbye"),
+				}, printNode("default"), BranchAliases(map[string][]string{
+					"b": {"bee", "B", "Be"},
+				})),
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "B"},
+					},
+				},
+				WantStdout: []string{"goodbye"},
+			},
+		},
+		{
+			name: "branch node fails if alias to unknown command",
+			etc: &ExecuteTestCase{
+				Args: []string{"uh"},
+				Node: BranchNode(map[string]*Node{
+					"h": printNode("hello"),
+					"b": printNode("goodbye"),
+				}, nil, BranchAliases(map[string][]string{
+					"o": {"uh"},
+				})),
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "uh"},
+					},
+					remaining: []int{0},
+				},
+				WantStderr: []string{"Branching argument must be one of [b h]"},
+				WantErr:    fmt.Errorf("Branching argument must be one of [b h]"),
+			},
+		},
 		// NodeRepeater tests
 		{
 			name: "NodeRepeater fails if not enough",
