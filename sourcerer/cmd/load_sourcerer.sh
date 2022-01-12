@@ -6,6 +6,7 @@ tmpFile="$(mktemp)"
 go run *.go sourcerer > $tmpFile && source $tmpFile
 popd > /dev/null
 
+# Below are help functions and aliases
 function gg {
   for package in "$@"
   do
@@ -18,3 +19,4 @@ function gg {
   done
 }
 
+alias u=mancli
