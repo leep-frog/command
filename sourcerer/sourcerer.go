@@ -264,7 +264,7 @@ func (s *sourcerer) Node() *command.Node {
 			passthroughArgs,
 			command.ExecuteErrNode(s.executeExecutor),
 		),
-	}, generateBinaryNode, true)
+	}, generateBinaryNode)
 }
 
 func (s *sourcerer) usageExecutor(o command.Output, d *command.Data) error {

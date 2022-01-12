@@ -156,8 +156,8 @@ func TestUsage(t *testing.T) {
 					"charlie": BranchNode(map[string]*Node{
 						"brown":  SerialNodes(Description("learn about cartoons"), FloatNode("FLOATER", "something bouyant")),
 						"yellow": SerialNodes(ExecutorNode(nil)),
-					}, nil, true),
-				}, SerialNodes(Description("the default command"), IntNode("INT_ARG", "an integer"), StringListNode("STRINGS", "unltd strings", 1, UnboundedList)), false),
+					}, nil),
+				}, SerialNodes(Description("the default command"), IntNode("INT_ARG", "an integer"), StringListNode("STRINGS", "unltd strings", 1, UnboundedList)), DontCompleteSubcommands()),
 				WantString: []string{
 					"the default command",
 					"< INT_ARG STRINGS [ STRINGS ... ]",

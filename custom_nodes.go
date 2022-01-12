@@ -87,6 +87,7 @@ func ExecutorNode(f func(Output, *Data)) Processor {
 
 type branchNode struct {
 	branches     map[string]*Node
+	aliases      map[string][]string
 	def          *Node
 	next         *Node
 	nextErr      error
@@ -199,14 +200,25 @@ func (bn *branchNode) Usage(u *Usage) {
 	}
 }
 
-func BranchNode(branches map[string]*Node, dflt *Node, completeSubcommands bool) *Node {
+type BranchNodeOption func(*branchNode)
+
+func DontCompleteSubcommands() BranchNodeOption {
+	return func(bn *branchNode) {
+		bn.scCompletion = false
+	}
+}
+
+func BranchNode(branches map[string]*Node, dflt *Node, opts ...BranchNodeOption) *Node {
 	if branches == nil {
 		branches = map[string]*Node{}
 	}
 	bn := &branchNode{
 		branches:     branches,
 		def:          dflt,
-		scCompletion: completeSubcommands,
+		scCompletion: true,
+	}
+	for _, opt := range opts {
+		opt(bn)
 	}
 	return &Node{
 		Processor: bn,

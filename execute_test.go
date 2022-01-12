@@ -2663,7 +2663,7 @@ func TestExecute(t *testing.T) {
 				Node: BranchNode(map[string]*Node{
 					"h": printNode("hello"),
 					"b": printNode("goodbye"),
-				}, nil, true),
+				}, nil),
 				WantStderr: []string{"Branching argument must be one of [b h]"},
 				WantErr:    fmt.Errorf("Branching argument must be one of [b h]"),
 			},
@@ -2674,7 +2674,7 @@ func TestExecute(t *testing.T) {
 				Node: BranchNode(map[string]*Node{
 					"h": printNode("hello"),
 					"b": printNode("goodbye"),
-				}, nil, true),
+				}, nil),
 				Args:       []string{"uh"},
 				WantStderr: []string{"Branching argument must be one of [b h]"},
 				WantErr:    fmt.Errorf("Branching argument must be one of [b h]"),
@@ -2692,7 +2692,7 @@ func TestExecute(t *testing.T) {
 				Node: BranchNode(map[string]*Node{
 					"h": printNode("hello"),
 					"b": printNode("goodbye"),
-				}, nil, true),
+				}, nil),
 				Args:       []string{"h"},
 				WantStdout: []string{"hello"},
 				wantInput: &Input{
@@ -2708,7 +2708,7 @@ func TestExecute(t *testing.T) {
 				Node: BranchNode(map[string]*Node{
 					"h": printNode("hello"),
 					"b": printNode("goodbye"),
-				}, printNode("default"), true),
+				}, printNode("default")),
 				WantStdout: []string{"default"},
 			},
 		},
@@ -2718,7 +2718,7 @@ func TestExecute(t *testing.T) {
 				Node: BranchNode(map[string]*Node{
 					"h": printNode("hello"),
 					"b": printNode("goodbye"),
-				}, SerialNodes(StringListNode("sl", testDesc, 0, UnboundedList), printArgsNode().Processor), true),
+				}, SerialNodes(StringListNode("sl", testDesc, 0, UnboundedList), printArgsNode().Processor)),
 				Args:       []string{"good", "morning"},
 				WantStdout: []string{`sl: StringListValue("good", "morning")`},
 				WantData: &Data{Values: map[string]*Value{
@@ -3221,7 +3221,7 @@ func abc() *Node {
 				StringNode("TARGET", testDesc, SimpleCompletor("clh222", "abcd222")),
 				StringNode("FUNC", testDesc, SimpleCompletor("clh333", "abcd333")),
 			))),
-	}, nil, false)
+	}, nil, DontCompleteSubcommands())
 }
 
 type tt struct{}
@@ -3747,7 +3747,7 @@ func TestComplete(t *testing.T) {
 					"a":     {},
 					"alpha": SerialNodes(OptionalStringNode("hello", testDesc, SimpleCompletor("other", "stuff"))),
 					"bravo": {},
-				}, SerialNodes(StringListNode("default", testDesc, 1, 3, SimpleCompletor("default", "command", "opts"))), true),
+				}, SerialNodes(StringListNode("default", testDesc, 1, 3, SimpleCompletor("default", "command", "opts")))),
 				Want: []string{"a", "alpha", "bravo", "command", "default", "opts"},
 				WantData: &Data{Values: map[string]*Value{
 					"default": StringListValue(),
@@ -3761,7 +3761,7 @@ func TestComplete(t *testing.T) {
 					"a":     {},
 					"alpha": SerialNodes(OptionalStringNode("hello", testDesc, SimpleCompletor("other", "stuff"))),
 					"bravo": {},
-				}, SerialNodes(StringListNode("default", testDesc, 1, 3, SimpleCompletor("default", "command", "opts"))), false),
+				}, SerialNodes(StringListNode("default", testDesc, 1, 3, SimpleCompletor("default", "command", "opts"))), DontCompleteSubcommands()),
 				Want: []string{"command", "default", "opts"},
 				WantData: &Data{Values: map[string]*Value{
 					"default": StringListValue(),
@@ -3775,7 +3775,7 @@ func TestComplete(t *testing.T) {
 					"a":     {},
 					"alpha": SerialNodes(OptionalStringNode("hello", testDesc, SimpleCompletor("other", "stuff"))),
 					"bravo": {},
-				}, SerialNodes(StringListNode("default", testDesc, 1, 3, SimpleCompletor("default", "command", "opts"))), true),
+				}, SerialNodes(StringListNode("default", testDesc, 1, 3, SimpleCompletor("default", "command", "opts")))),
 				Args: "cmd alpha ",
 				Want: []string{"other", "stuff"},
 				WantData: &Data{Values: map[string]*Value{
@@ -3790,7 +3790,7 @@ func TestComplete(t *testing.T) {
 					"a":     {},
 					"alpha": SerialNodes(OptionalStringNode("hello", testDesc, SimpleCompletor("other", "stuff"))),
 					"bravo": {},
-				}, nil, true),
+				}, nil),
 				Args:    "cmd some thing else",
 				WantErr: fmt.Errorf("Branching argument must be one of [a alpha bravo]"),
 			},
@@ -3804,7 +3804,7 @@ func TestComplete(t *testing.T) {
 					"bravo": {},
 				}, SerialNodes(SimpleProcessor(nil, func(i *Input, d *Data) (*Completion, error) {
 					return nil, fmt.Errorf("bad news bears")
-				})), false),
+				})), DontCompleteSubcommands()),
 				Args:    "cmd ",
 				WantErr: fmt.Errorf("bad news bears"),
 			},
@@ -3818,7 +3818,7 @@ func TestComplete(t *testing.T) {
 					"bravo": {},
 				}, SerialNodes(SimpleProcessor(nil, func(i *Input, d *Data) (*Completion, error) {
 					return nil, fmt.Errorf("bad news bears")
-				})), true),
+				}))),
 				Args:    "cmd ",
 				Want:    []string{"a", "alpha", "bravo"},
 				WantErr: fmt.Errorf("bad news bears"),
@@ -3831,7 +3831,7 @@ func TestComplete(t *testing.T) {
 					"a":     {},
 					"alpha": SerialNodes(OptionalStringNode("hello", testDesc, SimpleCompletor("other", "stuff"))),
 					"bravo": {},
-				}, SerialNodes(StringListNode("default", testDesc, 1, 3, SimpleCompletor("default", "command", "opts", "ahhhh"))), true),
+				}, SerialNodes(StringListNode("default", testDesc, 1, 3, SimpleCompletor("default", "command", "opts", "ahhhh")))),
 				Args: "cmd a",
 				Want: []string{"a", "ahhhh", "alpha"},
 				WantData: &Data{Values: map[string]*Value{
@@ -3846,7 +3846,7 @@ func TestComplete(t *testing.T) {
 					"a":     {},
 					"alpha": SerialNodes(OptionalStringNode("hello", testDesc, SimpleCompletor("other", "stuff"))),
 					"bravo": {},
-				}, SerialNodes(StringListNode("default", testDesc, 1, 3, SimpleCompletor("default", "command", "opts"))), true),
+				}, SerialNodes(StringListNode("default", testDesc, 1, 3, SimpleCompletor("default", "command", "opts")))),
 				Args: "cmd something ",
 				WantData: &Data{Values: map[string]*Value{
 					"default": StringListValue("something", ""),

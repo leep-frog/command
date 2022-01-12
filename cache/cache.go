@@ -89,7 +89,7 @@ func (c *Cache) Node() *command.Node {
 				return nil
 			}),
 		),
-	}, nil, true)
+	}, nil)
 }
 
 type fetcher struct {

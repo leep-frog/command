@@ -124,7 +124,7 @@ func (gl *GoLeep) Node() *command.Node {
 
 	return command.BranchNode(map[string]*command.Node{
 		"usage": usageNode,
-	}, exNode, false)
+	}, exNode, command.DontCompleteSubcommands())
 }
 
 type goleepFetcher struct {

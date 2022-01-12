@@ -617,7 +617,7 @@ func (uec *usageErrCLI) Node() *command.Node {
 	return command.BranchNode(map[string]*command.Node{
 		"a": command.SerialNodes(command.StringListNode("A_SL", "str list", 0, 1)),
 		"b": command.SerialNodes(command.StringListNode("B_SL", "str list", 1, 0)),
-	}, nil, false)
+	}, nil, command.DontCompleteSubcommands())
 }
 func (uec *usageErrCLI) Changed() bool   { return false }
 func (uec *usageErrCLI) Setup() []string { return nil }

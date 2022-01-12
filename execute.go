@@ -198,7 +198,7 @@ func runNodes(n *Node, o Output, d *Data, args []string) error {
 					o.Stdout(s)
 				}
 			})),
-	}, n, false)
+	}, n, DontCompleteSubcommands())
 
 	eData, err := execute(bn, ParseExecuteArgs(args), o, d)
 	if err != nil {
