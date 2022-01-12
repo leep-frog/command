@@ -2770,6 +2770,45 @@ func TestExecute(t *testing.T) {
 				WantErr:    fmt.Errorf("Branching argument must be one of [b h]"),
 			},
 		},
+		{
+			name: "branch node forwards to default if alias to unknown command",
+			etc: &ExecuteTestCase{
+				Args: []string{"uh"},
+				Node: BranchNode(map[string]*Node{
+					"h": printNode("hello"),
+					"b": printNode("goodbye"),
+				}, SerialNodes(StringListNode("sl", testDesc, 0, UnboundedList), printArgsNode().Processor), BranchAliases(map[string][]string{
+					"o": {"uh"},
+				})),
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "uh"},
+					},
+				},
+				WantData: &Data{
+					Values: map[string]*Value{
+						"sl": StringListValue("uh"),
+					},
+				},
+				WantStdout: []string{`sl: StringListValue("uh")`},
+			},
+		},
+		{
+			name: "branch node forwards to spaced alias",
+			etc: &ExecuteTestCase{
+				Args: []string{"bee"},
+				Node: BranchNode(map[string]*Node{
+					"h":          printNode("hello"),
+					"b bee B Be": printNode("goodbye"),
+				}, printNode("default")),
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "bee"},
+					},
+				},
+				WantStdout: []string{"goodbye"},
+			},
+		},
 		// NodeRepeater tests
 		{
 			name: "NodeRepeater fails if not enough",

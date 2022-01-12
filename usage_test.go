@@ -225,6 +225,46 @@ func TestUsage(t *testing.T) {
 			},
 		},
 		{
+			name: "works with branch node alias option via spaces",
+			utc: &UsageTestCase{
+				Node: BranchNode(map[string]*Node{
+					"alpha omega": nil,
+					"beta":        SerialNodes(StringListNode("ROPES", "lots of strings", 2, 3)),
+					"charlie chuck charles": BranchNode(map[string]*Node{
+						"brown":  SerialNodes(Description("learn about cartoons"), FloatNode("FLOATER", "something bouyant")),
+						"yellow": SerialNodes(ExecutorNode(nil)),
+					}, nil),
+				}, SerialNodes(Description("the default command"), IntNode("INT_ARG", "an integer"), StringListNode("STRINGS", "unltd strings", 1, UnboundedList)), BranchAliases(map[string][]string{
+					"charlie": {"charles", "chuck"},
+					"alpha":   {"omega"},
+				})),
+				WantString: []string{
+					"the default command",
+					"< INT_ARG STRINGS [ STRINGS ... ]",
+					"",
+					"  [alpha|omega]",
+					"",
+					"  beta ROPES ROPES [ ROPES ROPES ROPES ]",
+					"",
+					"  [charlie|charles|chuck] <",
+					"",
+					"    learn about cartoons",
+					"    brown FLOATER",
+					"",
+					"    yellow",
+					"",
+					"Arguments:",
+					"  FLOATER: something bouyant",
+					"  INT_ARG: an integer",
+					"  ROPES: lots of strings",
+					"  STRINGS: unltd strings",
+					"",
+					"Symbols:",
+					BranchDesc,
+				},
+			},
+		},
+		{
 			name: "works with flags",
 			utc: &UsageTestCase{
 				Node: SerialNodesTo(nil, NewFlagNode(

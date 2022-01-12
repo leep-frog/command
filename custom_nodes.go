@@ -245,8 +245,18 @@ func BranchNode(branches map[string]*Node, dflt *Node, opts ...BranchNodeOption)
 	if branches == nil {
 		branches = map[string]*Node{}
 	}
+	aliases := map[string]string{}
+	ob := map[string]*Node{}
+	for str, v := range branches {
+		ks := strings.Split(str, " ")
+		ob[ks[0]] = v
+		for _, k := range ks[1:] {
+			aliases[k] = ks[0]
+		}
+	}
 	bn := &branchNode{
-		branches:     branches,
+		branches:     ob,
+		aliases:      aliases,
 		def:          dflt,
 		scCompletion: true,
 	}
