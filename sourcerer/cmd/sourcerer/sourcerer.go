@@ -32,9 +32,7 @@ func (*SourcererCommand) Node() *command.Node {
 				"pushd . > /dev/null",
 				fmt.Sprintf("cd %s", dir),
 				`tmpFile="$(mktemp)"`,
-				"echo AL",
 				fmt.Sprintf("go run *.go %s > $tmpFile && source $tmpFile ", d.String(bsName)),
-				"echo Be",
 				"popd > /dev/null",
 			}, nil
 		}),

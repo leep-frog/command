@@ -288,14 +288,10 @@ func Source(clis ...CLI) int {
 
 // Separate method used for testing.
 func source(clis []CLI, osArgs []string, o command.Output) error {
-	fmt.Println("HEYO")
 	sl, err := getSourceLoc()
-	fmt.Println("HEYO 1")
 	if err != nil {
-		fmt.Println("WUT")
 		return o.Annotate(err, "failed to get source location")
 	}
-	fmt.Println("HEYO 2")
 	s := &sourcerer{
 		clis: clis,
 		sl:   sl,
