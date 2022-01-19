@@ -116,6 +116,10 @@ func Description(desc string) Processor {
 	return &descNode{desc}
 }
 
+func Descriptionf(s string, a ...interface{}) Processor {
+	return &descNode{fmt.Sprintf(s, a...)}
+}
+
 func (dn *descNode) Usage(u *Usage) {
 	u.Description = dn.desc
 }

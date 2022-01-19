@@ -13,6 +13,24 @@ func TestUsage(t *testing.T) {
 			name: "works with empty node",
 		},
 		{
+			name: "works with basic Description node",
+			utc: &UsageTestCase{
+				Node: SerialNodes(Description("hello %s")),
+				WantString: []string{
+					"hello %s",
+				},
+			},
+		},
+		{
+			name: "works with basic Descriptionf node",
+			utc: &UsageTestCase{
+				Node: SerialNodes(Descriptionf("hello %s", "there")),
+				WantString: []string{
+					"hello there",
+				},
+			},
+		},
+		{
 			name: "works with single arg",
 			utc: &UsageTestCase{
 				Node: SerialNodes(StringNode("SARG", "desc")),
