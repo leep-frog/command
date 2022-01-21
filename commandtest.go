@@ -57,6 +57,7 @@ type ExecuteTestCase struct {
 	InitFiles     []*FakeFile
 	WantFiles     []*FakeFile
 	SkipFileCheck bool
+	StubFiles     bool
 }
 
 type FakeRun struct {
@@ -110,6 +111,7 @@ type RunNodeTestCase struct {
 	InitFiles     []*FakeFile
 	WantFiles     []*FakeFile
 	SkipFileCheck bool
+	StubFiles     bool
 }
 
 func RunNodeTest(t *testing.T, rtc *RunNodeTestCase) {
@@ -145,7 +147,7 @@ func RunNodeTest(t *testing.T, rtc *RunNodeTestCase) {
 		&outputTester{rtc.WantStdout, rtc.WantStderr},
 		&errorTester{rtc.WantErr},
 		checkIf(!rtc.SkipDataCheck, &dataTester{rtc.WantData}),
-		&fileTester{rtc.InitFiles, rtc.WantFiles, rtc.SkipFileCheck},
+		checkIf(rtc.StubFiles || len(rtc.InitFiles) > 0 || len(rtc.WantFiles) > 0, &fileTester{rtc.InitFiles, rtc.WantFiles, rtc.SkipFileCheck}),
 	}
 
 	for _, tester := range testers {
@@ -205,7 +207,7 @@ func ExecuteTest(t *testing.T, etc *ExecuteTestCase) {
 		&runResponseTester{etc.RunResponses, etc.WantRunContents, nil},
 		checkIf(!etc.SkipDataCheck, &dataTester{etc.WantData}),
 		checkIf(etc.testInput, &inputTester{etc.wantInput}),
-		&fileTester{etc.InitFiles, etc.WantFiles, etc.SkipFileCheck},
+		checkIf(etc.StubFiles || len(etc.InitFiles) > 0 || len(etc.WantFiles) > 0, &fileTester{etc.InitFiles, etc.WantFiles, etc.SkipFileCheck}),
 	}
 
 	for _, tester := range testers {
@@ -269,6 +271,7 @@ type CompleteTestCase struct {
 	InitFiles     []*FakeFile
 	WantFiles     []*FakeFile
 	SkipFileCheck bool
+	StubFiles     bool
 }
 
 func CompleteTest(t *testing.T, ctc *CompleteTestCase) {
@@ -287,7 +290,7 @@ func CompleteTest(t *testing.T, ctc *CompleteTestCase) {
 		&errorTester{ctc.WantErr},
 		&autocompleteTester{ctc.Want},
 		checkIf(!ctc.SkipDataCheck, &dataTester{ctc.WantData}),
-		&fileTester{ctc.InitFiles, ctc.WantFiles, ctc.SkipFileCheck},
+		checkIf(ctc.StubFiles || len(ctc.InitFiles) > 0 || len(ctc.WantFiles) > 0, &fileTester{ctc.InitFiles, ctc.WantFiles, ctc.SkipFileCheck}),
 	}
 
 	for _, tester := range testers {

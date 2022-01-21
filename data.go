@@ -53,6 +53,10 @@ func (d *Data) String(k string) string {
 	return GetData[string](d, k)
 }
 
+func (d *Data) Get(k string) interface{} {
+	return GetData[string](d, k)
+}
+
 func (d *Data) StringList(k string) []string {
 	return GetData[[]string](d, k)
 }
