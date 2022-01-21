@@ -8,6 +8,15 @@ import (
 	"testing"
 )
 
+func absFile(t *testing.T, s ...string) string {
+	t.Helper()
+	r, err := filepath.Abs(filepath.Join(s...))
+	if err != nil {
+		t.Fatalf("failed to get absolute path for file: %v", err)
+	}
+	return r
+}
+
 type errorEdge struct {
 	e error
 }
@@ -3191,6 +3200,45 @@ func TestExecute(t *testing.T) {
 				},
 				WantErr:    fmt.Errorf("Unprocessed extra args: [other stuff]"),
 				WantStderr: []string{"Unprocessed extra args: [other stuff]"},
+			},
+		},
+		// FileContents test
+		{
+			name: "file gets read properly",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(FileContents("FILE", testDesc)),
+				Args: []string{filepath.Join("testing", "one.txt")},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: absFile(t, "testing", "one.txt")},
+					},
+				},
+				WantData: &Data{
+					Values: map[string]interface{}{
+						"FILE": []string{"hello", "there"},
+					},
+				},
+			},
+		},
+		{
+			name: "FileContents fails for unknown file",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(FileContents("FILE", testDesc)),
+				Args: []string{filepath.Join("uh")},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: absFile(t, "uh")},
+					},
+				},
+				WantStderr: []string{
+					fmt.Sprintf("validation failed: [FileExists] file %q does not exist", absFile(t, "uh")),
+				},
+				WantErr: fmt.Errorf("validation failed: [FileExists] file %q does not exist", absFile(t, "uh")),
+				WantData: &Data{
+					Values: map[string]interface{}{
+						"FILE": absFile(t, "uh"),
+					},
+				},
 			},
 		},
 		// File functions

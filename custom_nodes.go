@@ -508,3 +508,21 @@ func SimpleExecutableNode(sl ...string) Processor {
 func ExecutableNode(f func(Output, *Data) ([]string, error)) Processor {
 	return &executableAppender{f}
 }
+
+// FileContents converts a filename into the file's contents.
+func FileContents(name, desc string, opts ...ArgOpt[string]) Processor {
+	fc := FileNode(name, desc, opts...)
+	return SimpleProcessor(func(i *Input, o Output, d *Data, ed *ExecuteData) error {
+		if err := fc.Execute(i, o, d, ed); err != nil {
+			return err
+		}
+		c, err := ReadFile(d.String(name))
+		if err != nil {
+			return o.Annotatef(err, "failed to read file")
+		}
+		d.Set(name, c)
+		return nil
+	}, func(i *Input, d *Data) (*Completion, error) {
+		return fc.Complete(i, d)
+	})
+}

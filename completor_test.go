@@ -582,7 +582,6 @@ type fetcherTest[T any] struct {
 
 func (test *fetcherTest[T]) run(t *testing.T) {
 	t.Run(test.name, func(t *testing.T) {
-		fmt.Println(test.name,"+++++++++++++")
 		if test.setup != nil {
 			test.setup(t)
 		}

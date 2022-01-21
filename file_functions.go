@@ -13,6 +13,17 @@ var (
 	fileRoot = ""
 )
 
+func FileTransformer() *Transformer[string] {
+	return &Transformer[string]{
+		t: func(s string) (string, error) {
+			if fileRoot == "" {
+				return filepathAbs(s)
+			}
+			return filepath.Join(fileRoot, s), nil
+		},
+	}
+}
+
 func relFile(name string) string {
 	return filepath.Join(fileRoot, name)
 }
@@ -27,7 +38,7 @@ func ReadFile(name string) ([]string, error) {
 	if err != nil {
 		return nil, newFileErr(err)
 	}
-	return strings.Split(string(b), "\n"), nil
+	return strings.Split(strings.TrimSpace(string(b)), "\n"), nil
 }
 
 func Mkdir(name string) error {
