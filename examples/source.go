@@ -36,11 +36,11 @@ func (ss *SimpleCLI) Setup() []string {
 
 func (ss *SimpleCLI) Node() *command.Node {
 	return command.SerialNodes(
-		command.StringNode("firstName", "first name", command.SimpleCompletor("Greg", "Groog", "Gregory", "Groooooooooooooooooog")),
-		command.OptionalStringNode("lastName", "last name"),
+		command.Arg[string]("firstName", "first name", command.SimpleCompletor[string]("Greg", "Groog", "Gregory", "Groooooooooooooooooog")),
+		command.OptionalArg[string]("lastName", "last name"),
 		command.ExecuteErrNode(func(output command.Output, data *command.Data) error {
 			output.Stdoutf("Hello, %s", data.String("firstName"))
-			if data.HasArg("lastName") {
+			if data.Has("lastName") {
 				return output.Stderrf("or should I say, Professor %s!!", data.String("lastName"))
 			}
 			return nil

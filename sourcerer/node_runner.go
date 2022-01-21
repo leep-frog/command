@@ -18,14 +18,14 @@ func GoLeepCLI() *GoLeep {
 type GoLeep struct{}
 
 var (
-	goFilesFlag = command.StringListFlag("GO_FILES", 'f', "Go files to run", 1, command.UnboundedList, command.ListMatchesRegex("\\.go$"), &command.Completor{
-		SuggestionFetcher: &command.FileFetcher{
+	goFilesFlag = command.NewListFlag[string]("GO_FILES", 'f', "Go files to run", 1, command.UnboundedList, command.ValidatorList(command.MatchesRegex("\\.go$")), &command.Completor[[]string]{
+		SuggestionFetcher: &command.FileFetcher[[]string]{
 			Distinct:          true,
 			FileTypes:         []string{".go"},
 			IgnoreDirectories: true,
 		},
 	})
-	passAlongArgs = command.StringListNode("PASSTHROUGH_ARGS", "Args to pass through to the command", 0, command.UnboundedList)
+	passAlongArgs = command.ListArg[string]("PASSTHROUGH_ARGS", "Args to pass through to the command", 0, command.UnboundedList)
 )
 
 func (gl *GoLeep) Name() string {
@@ -42,7 +42,7 @@ func (gl *GoLeep) runCommand(d *command.Data, subCmd string, extraArgs []string)
 		ea = fmt.Sprintf(" %s", strings.Join(extraArgs, " "))
 	}
 
-	if d.HasArg(goFilesFlag.Name()) {
+	if d.Has(goFilesFlag.Name()) {
 		return []string{
 			fmt.Sprintf(
 				"go run %s %s%s",
@@ -79,7 +79,7 @@ func (gl *GoLeep) Node() *command.Node {
 		}, nil),
 	)
 
-	passAlongArgs.AddOptions(&command.Completor{
+	passAlongArgs.AddOptions(&command.Completor[[]string]{
 		SuggestionFetcher: &goleepFetcher{gl},
 	})
 
@@ -96,7 +96,7 @@ func (gl *GoLeep) Node() *command.Node {
 			// Run the command
 			// Need to use ToSlash because mingw
 			cmd := gl.runCommand(d, "execute", append([]string{filepath.ToSlash(f.Name())}, d.StringList(passAlongArgs.Name())...))
-			bc := command.BashCommand(command.StringListType, "BASH_OUTPUT", cmd, command.ForwardStdout())
+			bc := command.BashCommand[[]string]("BASH_OUTPUT", cmd, command.ForwardStdout[[]string]())
 			if _, err := bc.Run(o); err != nil {
 				return o.Stderrf("failed to run bash script: %v", err)
 			}
@@ -131,12 +131,12 @@ type goleepFetcher struct {
 	gl *GoLeep
 }
 
-func (glf *goleepFetcher) Fetch(v *command.Value, data *command.Data) (*command.Completion, error) {
+func (glf *goleepFetcher) Fetch(v []string, data *command.Data) (*command.Completion, error) {
 	extraArgs := []string{
 		// Need the extra "unusedCmd" arg because autocompletion throws away the first arg (because it assumes it's the command)
 		fmt.Sprintf("%q", strings.Join(data.StringList(passAlongArgs.Name()), " ")),
 	}
-	bc := command.BashCommand(command.StringListType, "BASH_OUTPUT", glf.gl.runCommand(data, "autocomplete", extraArgs), command.HideStderr())
+	bc := command.BashCommand[[]string]("BASH_OUTPUT", glf.gl.runCommand(data, "autocomplete", extraArgs), command.HideStderr[[]string]())
 	o := command.NewFakeOutput()
 	v, err := bc.Run(o)
 	o.Close()
@@ -144,6 +144,6 @@ func (glf *goleepFetcher) Fetch(v *command.Value, data *command.Data) (*command.
 		return nil, err
 	}
 	return &command.Completion{
-		Suggestions: v.ToStringList(),
+		Suggestions: v,
 	}, nil
 }

@@ -229,8 +229,8 @@ func TestExecute(t *testing.T) {
 			name: "Get requires valid key",
 			etc: &command.ExecuteTestCase{
 				Args:       []string{"get", ".?,"},
-				WantErr:    fmt.Errorf(`validation failed: [MatchesRegex] value doesn't match regex %q`, keyRegex),
-				WantStderr: []string{fmt.Sprintf(`validation failed: [MatchesRegex] value doesn't match regex %q`, keyRegex)},
+				WantErr:    fmt.Errorf(`validation failed: [MatchesRegex] value ".?," doesn't match regex %q`, keyRegex),
+				WantStderr: []string{fmt.Sprintf(`validation failed: [MatchesRegex] value ".?," doesn't match regex %q`, keyRegex)},
 			},
 		},
 		{
@@ -268,8 +268,8 @@ func TestExecute(t *testing.T) {
 			name: "Put requires valid key",
 			etc: &command.ExecuteTestCase{
 				Args:       []string{"put", ".?,"},
-				WantErr:    fmt.Errorf(`validation failed: [MatchesRegex] value doesn't match regex %q`, keyRegex),
-				WantStderr: []string{fmt.Sprintf(`validation failed: [MatchesRegex] value doesn't match regex %q`, keyRegex)},
+				WantErr:    fmt.Errorf(`validation failed: [MatchesRegex] value ".?," doesn't match regex %q`, keyRegex),
+				WantStderr: []string{fmt.Sprintf(`validation failed: [MatchesRegex] value ".?," doesn't match regex %q`, keyRegex)},
 			},
 		},
 		{
@@ -343,8 +343,8 @@ func TestExecute(t *testing.T) {
 			name: "Delete requires valid key",
 			etc: &command.ExecuteTestCase{
 				Args:       []string{"delete", ".?,"},
-				WantErr:    fmt.Errorf(`validation failed: [MatchesRegex] value doesn't match regex %q`, keyRegex),
-				WantStderr: []string{fmt.Sprintf(`validation failed: [MatchesRegex] value doesn't match regex %q`, keyRegex)},
+				WantErr:    fmt.Errorf(`validation failed: [MatchesRegex] value ".?," doesn't match regex %q`, keyRegex),
+				WantStderr: []string{fmt.Sprintf(`validation failed: [MatchesRegex] value ".?," doesn't match regex %q`, keyRegex)},
 			},
 		},
 		{

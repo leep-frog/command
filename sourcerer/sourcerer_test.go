@@ -239,7 +239,7 @@ func TestSourcerer(t *testing.T) {
 						sort.Strings(keys)
 						o.Stdout("Output:")
 						for _, k := range keys {
-							o.Stdoutf("%s: %s", k, d.Get(k))
+							o.Stdoutf("%s: %s", k, d.Values[k])
 						}
 						return nil
 					},
@@ -267,7 +267,7 @@ func TestSourcerer(t *testing.T) {
 				&testCLI{
 					name: "basic",
 					processors: []command.Processor{
-						command.StringListNode("sl", "test desc", 1, 4),
+						command.ListArg[string]("sl", "test desc", 1, 4),
 					},
 					f: func(tc *testCLI, i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
 						var keys []string
@@ -277,7 +277,7 @@ func TestSourcerer(t *testing.T) {
 						sort.Strings(keys)
 						o.Stdout("Output:")
 						for _, k := range keys {
-							o.Stdoutf("%s: %s", k, d.Get(k))
+							o.Stdoutf("%s: %s", k, d.Values[k])
 						}
 						return nil
 					},
@@ -286,7 +286,7 @@ func TestSourcerer(t *testing.T) {
 			args: []string{"execute", "file", "basic", "un", "deux", "trois"},
 			wantStdout: []string{
 				"Output:",
-				`sl: StringListValue("un", "deux", "trois")`,
+				`sl: [un deux trois]`,
 			},
 		},
 		{
@@ -294,7 +294,7 @@ func TestSourcerer(t *testing.T) {
 			clis: []CLI{
 				&testCLI{
 					name:       "basic",
-					processors: []command.Processor{command.StringListNode("SL", "test", 1, 1)},
+					processors: []command.Processor{command.ListArg[string]("SL", "test", 1, 1)},
 				},
 			},
 			args: []string{"execute", "file", "basic", "un", "deux", "trois", "quatre"},
@@ -421,7 +421,7 @@ func TestSourcerer(t *testing.T) {
 				&testCLI{
 					name: "basic",
 					processors: []command.Processor{
-						command.StringNode("s", "desc", command.SimpleCompletor("alpha", "bravo", "charlie")),
+						command.Arg[string]("s", "desc", command.SimpleCompletor[string]("alpha", "bravo", "charlie")),
 					},
 				},
 			},
@@ -438,7 +438,7 @@ func TestSourcerer(t *testing.T) {
 				&testCLI{
 					name: "basic",
 					processors: []command.Processor{
-						command.StringNode("s", "desc", command.SimpleCompletor("alpha", "bravo", "charlie", "brown", "baker")),
+						command.Arg[string]("s", "desc", command.SimpleCompletor[string]("alpha", "bravo", "charlie", "brown", "baker")),
 					},
 				},
 			},
@@ -455,8 +455,8 @@ func TestSourcerer(t *testing.T) {
 				&testCLI{
 					name: "basic",
 					processors: []command.Processor{
-						command.StringNode("s", "desc", command.SimpleCompletor("alpha", "bravo", "charlie", "brown", "baker")),
-						command.StringNode("z", "desz", command.SimpleCompletor("un", "deux", "trois")),
+						command.Arg[string]("s", "desc", command.SimpleCompletor[string]("alpha", "bravo", "charlie", "brown", "baker")),
+						command.Arg[string]("z", "desz", command.SimpleCompletor[string]("un", "deux", "trois")),
 					},
 				},
 			},
@@ -473,8 +473,8 @@ func TestSourcerer(t *testing.T) {
 				&testCLI{
 					name: "basic",
 					processors: []command.Processor{
-						command.StringNode("s", "desc", command.SimpleCompletor("alpha", "bravo", "charlie", "brown", "baker")),
-						command.StringNode("z", "desz", command.SimpleCompletor("un", "deux", "trois")),
+						command.Arg[string]("s", "desc", command.SimpleCompletor[string]("alpha", "bravo", "charlie", "brown", "baker")),
+						command.Arg[string]("z", "desz", command.SimpleCompletor[string]("un", "deux", "trois")),
 					},
 				},
 			},
@@ -505,9 +505,9 @@ func TestSourcerer(t *testing.T) {
 				&testCLI{
 					name: "basic",
 					processors: []command.Processor{
-						command.StringNode("S", "desc"),
-						command.IntListNode("IS", "ints", 2, 0),
-						command.FloatListNode("FS", "floats", 0, command.UnboundedList),
+						command.Arg[string]("S", "desc"),
+						command.ListArg[int]("IS", "ints", 2, 0),
+						command.ListArg[float64]("FS", "floats", 0, command.UnboundedList),
 					},
 				},
 			},
@@ -615,8 +615,8 @@ func (uec *usageErrCLI) Name() string {
 func (uec *usageErrCLI) Load(string) error { return nil }
 func (uec *usageErrCLI) Node() *command.Node {
 	return command.BranchNode(map[string]*command.Node{
-		"a": command.SerialNodes(command.StringListNode("A_SL", "str list", 0, 1)),
-		"b": command.SerialNodes(command.StringListNode("B_SL", "str list", 1, 0)),
+		"a": command.SerialNodes(command.ListArg[string]("A_SL", "str list", 0, 1)),
+		"b": command.SerialNodes(command.ListArg[string]("B_SL", "str list", 1, 0)),
 	}, nil, command.DontCompleteSubcommands())
 }
 func (uec *usageErrCLI) Changed() bool   { return false }

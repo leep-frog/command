@@ -38,7 +38,7 @@ func (c *Cache) Load(jsn string) error {
 	return nil
 }
 func (c *Cache) Node() *command.Node {
-	arg := command.StringNode("KEY", "Key of the data to get", command.MatchesRegex(keyRegex), &command.Completor{SuggestionFetcher: &fetcher{c}})
+	arg := command.Arg[string]("KEY", "Key of the data to get", command.MatchesRegex(keyRegex), &command.Completor[string]{SuggestionFetcher: &fetcher{c}})
 	return command.BranchNode(map[string]*command.Node{
 		"setdir": command.SerialNodes(
 			command.FileNode("DIR", "Directory in which to store data", command.IsDir()),
@@ -65,7 +65,7 @@ func (c *Cache) Node() *command.Node {
 		// TODO: allow aliases for keys (via separator? "put|p")
 		"put": command.SerialNodes(
 			arg,
-			command.StringListNode("DATA", "Data to store", 1, command.UnboundedList),
+			command.ListArg[string]("DATA", "Data to store", 1, command.UnboundedList),
 			command.ExecuteErrNode(func(o command.Output, d *command.Data) error {
 				return o.Err(c.Put(d.String(arg.Name()), strings.Join(d.StringList("DATA"), " ")))
 			}),
@@ -96,7 +96,7 @@ type fetcher struct {
 	c *Cache
 }
 
-func (f *fetcher) Fetch(value *command.Value, data *command.Data) (*command.Completion, error) {
+func (f *fetcher) Fetch(string, *command.Data) (*command.Completion, error) {
 	r, err := f.c.List()
 	if err != nil {
 		return nil, fmt.Errorf("failed to list files: %v", err)

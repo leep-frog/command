@@ -75,12 +75,12 @@ var (
 )
 
 var (
-	cliArg          = command.StringNode("CLI", "Name of the CLI command to use")
+	cliArg          = command.Arg[string]("CLI", "Name of the CLI command to use")
 	fileArg         = command.FileNode("FILE", "Temporary file for execution")
-	targetNameArg   = command.OptionalStringNode("TARGET_NAME", "The name of the created target in $GOPATH/bin")
-	passthroughArgs = command.StringListNode("ARG", "Arguments that get passed through to relevant CLI command", 0, command.UnboundedList)
-	compPointArg    = command.IntNode("COMP_POINT", "COMP_POINT variable from bash complete function")
-	compLineArg     = command.StringNode("COMP_LINE", "COMP_LINE variable from bash complete function")
+	targetNameArg   = command.OptionalArg[string]("TARGET_NAME", "The name of the created target in $GOPATH/bin")
+	passthroughArgs = command.ListArg[string]("ARG", "Arguments that get passed through to relevant CLI command", 0, command.UnboundedList)
+	compPointArg    = command.Arg[int]("COMP_POINT", "COMP_POINT variable from bash complete function")
+	compLineArg     = command.Arg[string]("COMP_LINE", "COMP_LINE variable from bash complete function")
 )
 
 // CLI provides a way to construct CLIs in go, with tab-completion.
@@ -300,10 +300,10 @@ func source(clis []CLI, osArgs []string, o command.Output) error {
 	// Sourcerer is always executed. Its execution branches into the relevant CLI's
 	// execution/autocomplete/usage path.
 	d := &command.Data{
-		Values: map[string]*command.Value{
-			cliArg.Name(): command.StringValue(s.Name()),
+		Values: map[string]interface{}{
+			cliArg.Name(): s.Name(),
 			// Don't need execute file here
-			passthroughArgs.Name(): command.StringListValue(osArgs...),
+			passthroughArgs.Name(): osArgs,
 		},
 	}
 
@@ -323,7 +323,7 @@ var (
 
 func (s *sourcerer) generateFile(o command.Output, d *command.Data) {
 	filename := "leep-frog-source"
-	if d.HasArg(targetNameArg.Name()) {
+	if d.Has(targetNameArg.Name()) {
 		filename = d.String(targetNameArg.Name())
 	}
 

@@ -6,14 +6,14 @@ import (
 
 type fetcher struct{}
 
-func (f *fetcher) Fetch(value *command.Value, data *command.Data) (*command.Completion, error) {
+func (f *fetcher) Fetch(value string, data *command.Data) (*command.Completion, error) {
 	return &command.Completion{
 		Suggestions: Attributes(),
 	}, nil
 }
 
-func Completor() *command.Completor {
-	return &command.Completor{
+func Completor() *command.Completor[string] {
+	return &command.Completor[string]{
 		Distinct:          true,
 		SuggestionFetcher: &fetcher{},
 	}
@@ -21,7 +21,7 @@ func Completor() *command.Completor {
 
 var (
 	ArgName = "format"
-	Arg     = command.StringListNode(ArgName, "color", 1, command.UnboundedList, Completor())
+	Arg     = command.ListArg[string](ArgName, "color", 1, command.UnboundedList, command.CompletorList(Completor()))
 )
 
 func ApplyCodes(f *Format, output command.Output, data *command.Data) (*Format, error) {

@@ -24,7 +24,7 @@ func (*SourcererCommand) Node() *command.Node {
 	bsName := "BINARY_SUFFIX"
 	return command.SerialNodes(
 		command.FileNode(dName, "Directory in which to create CLI", command.IsDir()),
-		command.StringNode(bsName, "Suffix for the name", command.MinLength(1)),
+		command.Arg[string](bsName, "Suffix for the name", command.MinLength(1)),
 		command.ExecutableNode(func(_ command.Output, d *command.Data) ([]string, error) {
 			dir := strings.ReplaceAll(d.String(dName), `\`, "/")
 			// TODO: try using this? filepath.FromSlash()

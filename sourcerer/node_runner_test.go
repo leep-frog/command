@@ -296,8 +296,8 @@ func TestAutocomplete(t *testing.T) {
 					"node_runner_test.go",
 				},
 				WantData: &command.Data{
-					Values: map[string]*command.Value{
-						"GO_FILES": command.StringListValue("node_runner.go", ""),
+					Values: map[string]interface{}{
+						"GO_FILES": []string{"node_runner.go", ""},
 					},
 				},
 			},
