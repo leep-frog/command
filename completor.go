@@ -369,6 +369,7 @@ func FileNode(argName, desc string, opts ...ArgOpt[string]) *ArgNode[string] {
 	opts = append(opts,
 		&Completor[string]{SuggestionFetcher: &FileFetcher[string]{}},
 		FileTransformer(),
+		FileExists(),
 	)
 	return Arg[string](argName, desc, opts...)
 }

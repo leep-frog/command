@@ -7,10 +7,10 @@ func TestHasArg(t *testing.T) {
 	d.Set("yes", "hello")
 
 	if !d.Has("yes") {
-		t.Errorf("data.HasArg('yes') returned false; want true")
+		t.Errorf("data.Has('yes') returned false; want true")
 	}
 
 	if d.Has("no") {
-		t.Errorf("data.HasArg('no') returned true; want false")
+		t.Errorf("data.Has('no') returned true; want false")
 	}
 }
