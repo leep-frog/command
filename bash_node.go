@@ -19,9 +19,8 @@ var (
 
 // BashCommand runs the provided command in bash and stores the response as
 // a value in data as a value with the provided type and argument name.
-func BashCommand(vt ValueType, argName string, command []string, opts ...BashOption) *bashCommand {
-	bc := &bashCommand{
-		vt:       vt,
+func BashCommand[T any](argName string, command []string, opts ...BashOption[T]) *bashCommand[T] {
+	bc := &bashCommand[T]{
 		argName:  argName,
 		contents: command,
 	}
@@ -31,58 +30,57 @@ func BashCommand(vt ValueType, argName string, command []string, opts ...BashOpt
 	return bc
 }
 
-type hideStderr struct{}
+type hideStderr[T any] struct{}
 
-func (*hideStderr) modifyBashNode(bc *bashCommand) {
+func (*hideStderr[T]) modifyBashNode(bc *bashCommand[T]) {
 	bc.hideStderr = true
 }
 
-func HideStderr() BashOption {
-	return &hideStderr{}
+func HideStderr[T any]() BashOption[T] {
+	return &hideStderr[T]{}
 }
 
-type forwardStdout struct{}
+type forwardStdout[T any] struct{}
 
-func (*forwardStdout) modifyBashNode(bc *bashCommand) {
+func (*forwardStdout[T]) modifyBashNode(bc *bashCommand[T]) {
 	bc.forwardStdout = true
 }
 
-func ForwardStdout() BashOption {
-	return &forwardStdout{}
+func ForwardStdout[T any]() BashOption[T] {
+	return &forwardStdout[T]{}
 }
 
-type bashCommand struct {
-	vt       ValueType
+type bashCommand[T any] struct {
 	argName  string
 	contents []string
 	desc     string
 
-	validators    []*ValidatorOption
+	validators    []*ValidatorOption[T]
 	hideStderr    bool
 	forwardStdout bool
 }
 
-type BashOption interface {
-	modifyBashNode(*bashCommand)
+type BashOption[T any] interface {
+	modifyBashNode(*bashCommand[T])
 }
 
-func (bn *bashCommand) Get(d *Data) *Value {
-	return d.Values[bn.argName]
+func (bn *bashCommand[T]) Get(d *Data) T {
+	return GetData[T](d, bn.argName)
 }
 
-func (bn *bashCommand) Complete(input *Input, data *Data) (*Completion, error) {
+func (bn *bashCommand[T]) Complete(input *Input, data *Data) (*Completion, error) {
 	return nil, nil
 }
 
-func (bn *bashCommand) Usage(u *Usage) {
+func (bn *bashCommand[T]) Usage(u *Usage) {
 	u.Description = bn.desc
 }
 
-func (bn *bashCommand) set(v *Value, d *Data) {
+func (bn *bashCommand[T]) set(v T, d *Data) {
 	d.Set(bn.argName, v)
 }
 
-func (bn *bashCommand) Execute(input *Input, output Output, data *Data, eData *ExecuteData) error {
+func (bn *bashCommand[T]) Execute(input *Input, output Output, data *Data, eData *ExecuteData) error {
 	err := bn.execute(input, output, data, eData)
 	if bn.hideStderr {
 		return err
@@ -90,7 +88,7 @@ func (bn *bashCommand) Execute(input *Input, output Output, data *Data, eData *E
 	return output.Err(err)
 }
 
-func (bn *bashCommand) execute(input *Input, output Output, data *Data, eData *ExecuteData) error {
+func (bn *bashCommand[T]) execute(input *Input, output Output, data *Data, eData *ExecuteData) error {
 	v, err := bn.Run(output)
 	if err != nil {
 		return err
@@ -104,11 +102,12 @@ func DebugMode() bool {
 	return os.Getenv("LEEP_FROG_DEBUG") != ""
 }
 
-func (bn *bashCommand) Run(output Output) (*Value, error) {
+func (bn *bashCommand[T]) Run(output Output) (T, error) {
+	var nill T
 	// Create temp file.
 	f, err := ioutil.TempFile("", "leepFrogCommandExecution")
 	if err != nil {
-		return nil, fmt.Errorf("failed to create file for execution: %v", err)
+		return nill, fmt.Errorf("failed to create file for execution: %v", err)
 	}
 
 	contents := []string{
@@ -122,10 +121,10 @@ func (bn *bashCommand) Run(output Output) (*Value, error) {
 
 	// Write contents to temp file.
 	if _, err := f.WriteString(strings.Join(contents, "\n")); err != nil {
-		return nil, fmt.Errorf("failed to write contents to execution file: %v", err)
+		return nill, fmt.Errorf("failed to write contents to execution file: %v", err)
 	}
 	if err := f.Close(); err != nil {
-		return nil, fmt.Errorf("failed to cleanup temporary execution file: %v", err)
+		return nill, fmt.Errorf("failed to cleanup temporary execution file: %v", err)
 	}
 
 	if DebugMode() {
@@ -148,22 +147,23 @@ func (bn *bashCommand) Run(output Output) (*Value, error) {
 	}
 
 	if err := run(cmd); err != nil {
-		return nil, fmt.Errorf("failed to execute bash command: %v", err)
+		return nill, fmt.Errorf("failed to execute bash command: %v", err)
 	}
 
 	sl, err := outToSlice(rawOut)
 	if err != nil {
-		return nil, err
+		return nill, err
 	}
 
-	v, err := vtMap.transform(bn.vt, sl)
+	op := getOperator[T]()
+	v, err := op.fromArgs(sl)
 	if err != nil {
-		return nil, err
+		return nill, err
 	}
 
 	for _, validator := range bn.validators {
 		if err := validator.Validate(v); err != nil {
-			return nil, fmt.Errorf("validation failed: %v", err)
+			return nill, fmt.Errorf("validation failed: %v", err)
 		}
 	}
 

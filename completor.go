@@ -19,46 +19,60 @@ const (
 	suffixChar = "_"
 )
 
-func SimpleCompletor(s ...string) *Completor {
-	return &Completor{
-		SuggestionFetcher: &ListFetcher{
+func SimpleCompletor[T any](s ...string) *Completor[T] {
+	return &Completor[T]{
+		SuggestionFetcher: &ListFetcher[T]{
 			Options: s,
 		},
 	}
 }
 
-func SimpleDistinctCompletor(s ...string) *Completor {
-	return &Completor{
+func CompletorList[T any](c *Completor[T]) *Completor[[]T] {
+	return &Completor[[]T]{
+		c.Distinct,
+		c.CaseInsensitive,
+		SimpleFetcher[[]T](func(ts []T, d *Data) (*Completion, error) {
+			var t T
+			if len(ts) > 0 {
+				t = ts[len(ts)-1]
+			}
+			return c.SuggestionFetcher.Fetch(t, d)
+		}),
+	}
+}
+
+func SimpleDistinctCompletor[T any](s ...string) *Completor[T] {
+	return &Completor[T]{
 		Distinct: true,
-		SuggestionFetcher: &ListFetcher{
+		SuggestionFetcher: &ListFetcher[T]{
 			Options: s,
 		},
 	}
 }
 
-type simpleFetcher struct {
-	f func(*Value, *Data) (*Completion, error)
+type simpleFetcher[T any] struct {
+	f func(T, *Data) (*Completion, error)
 }
 
-func (sf *simpleFetcher) Fetch(v *Value, d *Data) (*Completion, error) {
+func (sf *simpleFetcher[T]) Fetch(v T, d *Data) (*Completion, error) {
 	return sf.f(v, d)
 }
 
-func SimpleFetcher(f func(*Value, *Data) (*Completion, error)) Fetcher {
-	return &simpleFetcher{f: f}
+func SimpleFetcher[T any](f func(T, *Data) (*Completion, error)) Fetcher[T] {
+	return &simpleFetcher[T]{f: f}
 }
 
-type Fetcher interface {
-	Fetch(*Value, *Data) (*Completion, error)
+type Fetcher[T any] interface {
+	Fetch(T, *Data) (*Completion, error)
 }
 
-type Completor struct {
+type Completor[T any] struct {
 	Distinct          bool
 	CaseInsensitive   bool
-	SuggestionFetcher Fetcher
+	SuggestionFetcher Fetcher[T]
 }
 
-func (c *Completor) modifyArgOpt(ao *argOpt) {
+func (c *Completor[T]) modifyArgOpt(ao *argOpt[T]) {
 	ao.completor = c
 }
 
@@ -70,15 +84,15 @@ type Completion struct {
 	CaseInsensitive     bool
 }
 
-func BoolCompletor() *Completor {
-	return &Completor{
+func BoolCompletor() *Completor[bool] {
+	return &Completor[bool]{
 		SuggestionFetcher: &boolFetcher{},
 	}
 }
 
 type boolFetcher struct{}
 
-func (*boolFetcher) Fetch(*Value, *Data) (*Completion, error) {
+func (*boolFetcher) Fetch(bool, *Data) (*Completion, error) {
 	var keys []string
 	for k := range boolStringMap {
 		keys = append(keys, k)
@@ -88,7 +102,7 @@ func (*boolFetcher) Fetch(*Value, *Data) (*Completion, error) {
 	}, nil
 }
 
-func (c *Completor) Complete(rawValue string, value *Value, data *Data) (*Completion, error) {
+func (c *Completor[T]) Complete(rawValue string, value T, data *Data) (*Completion, error) {
 	if c == nil || c.SuggestionFetcher == nil {
 		return nil, nil
 	}
@@ -98,12 +112,14 @@ func (c *Completor) Complete(rawValue string, value *Value, data *Data) (*Comple
 		return nil, err
 	}
 
+	op := getOperator[T]()
+
 	if c.Distinct {
 		existingValues := map[string]bool{}
 		// Don't include the last element because sometimes we want to just add a
 		// a space to the command. For example,
 		// "e commands.go" should return ["commands.go"]
-		sl := value.ToArgs()
+		sl := op.toArgs(value)
 		for i := 0; i < len(sl)-1; i++ {
 			existingValues[sl[i]] = true
 		}
@@ -169,15 +185,15 @@ func (c *Completion) Process(input *Input) []string {
 	return results
 }
 
-type ListFetcher struct {
+type ListFetcher[T any] struct {
 	Options []string
 }
 
-func (lf *ListFetcher) Fetch(*Value, *Data) (*Completion, error) {
+func (lf *ListFetcher[T]) Fetch(T, *Data) (*Completion, error) {
 	return &Completion{Suggestions: lf.Options}, nil
 }
 
-type FileFetcher struct {
+type FileFetcher[T any] struct {
 	Regexp    *regexp.Regexp
 	Directory string
 	// Whether or not each argument has to be unique.
@@ -187,16 +203,14 @@ type FileFetcher struct {
 	FileTypes         []string
 	IgnoreFiles       bool
 	IgnoreDirectories bool
-	IgnoreFunc        func(*Value, *Data) []string
+	IgnoreFunc        func(T, *Data) []string
 }
 
-func (ff *FileFetcher) Fetch(value *Value, data *Data) (*Completion, error) {
+func (ff *FileFetcher[T]) Fetch(value T, data *Data) (*Completion, error) {
 	var lastArg string
-	if value.IsType(StringType) {
-		lastArg = value.ToString()
-	} else if value.IsType(StringListType) && value.Length() > 0 {
-		l := value.ToStringList()
-		lastArg = l[len(l)-1]
+	op := getOperator[T]()
+	if args := op.toArgs(value); len(args) > 0 {
+		lastArg = args[len(args)-1]
 	}
 
 	laDir, laFile := filepath.Split(lastArg)
@@ -249,9 +263,12 @@ func (ff *FileFetcher) Fetch(value *Value, data *Data) (*Completion, error) {
 	}
 	// Remove any non-distinct matches, if relevant.
 	if ff.Distinct {
-		for _, v := range value.ToStringList() {
+		// TODO: should this just go up to everything but the last value?
+		for _, v := range op.toArgs(value) {
 			ignorable[v] = true
 		}
+		fmt.Println(op.toArgs(value))
+		fmt.Println(ignorable)
 	}
 
 	relevantSuggestions := make([]string, 0, len(suggestions))
@@ -348,18 +365,18 @@ func getAutofillLetters(laFile string, suggestions []string) (string, bool) {
 	return caseToCompleteWith[:completeUpTo], true
 }
 
-func FileNode(argName, desc string, opts ...ArgOpt) *ArgNode {
+func FileNode(argName, desc string, opts ...ArgOpt[string]) *ArgNode[string] {
 	opts = append(opts,
-		&Completor{SuggestionFetcher: &FileFetcher{}},
+		&Completor[string]{SuggestionFetcher: &FileFetcher[string]{}},
 		FileTransformer(),
 	)
-	return StringNode(argName, desc, opts...)
+	return Arg[string](argName, desc, opts...)
 }
 
-func FileListNode(argName, desc string, minN, optionalN int, opts ...ArgOpt) *ArgNode {
+func FileListNode(argName, desc string, minN, optionalN int, opts ...ArgOpt[[]string]) *ArgNode[[]string] {
 	opts = append(opts,
-		&Completor{SuggestionFetcher: &FileFetcher{}},
-		FileListTransformer(),
+		&Completor[[]string]{SuggestionFetcher: &FileFetcher[[]string]{}},
+		TransformerList(FileTransformer()),
 	)
-	return StringListNode(argName, desc, minN, optionalN, opts...)
+	return ListArg[string](argName, desc, minN, optionalN, opts...)
 }

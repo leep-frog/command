@@ -119,39 +119,31 @@ func (fn *flagNode) Usage(u *Usage) {
 	}
 }
 
-type flag struct {
+type flag[T any] struct {
 	name      string
 	desc      string
 	shortName rune
-	argNode   *ArgNode
+	argNode   *ArgNode[T]
 }
 
-func (f *flag) Desc() string {
+func (f *flag[T]) Desc() string {
 	return f.desc
 }
 
-func (f *flag) Processor() Processor {
+func (f *flag[T]) Processor() Processor {
 	return f.argNode
 }
 
-func (f *flag) Name() string {
+func (f *flag[T]) Name() string {
 	return f.name
 }
 
-func (f *flag) ShortName() rune {
+func (f *flag[T]) ShortName() rune {
 	return f.shortName
 }
 
-func StringFlag(name string, shortName rune, desc string, opts ...ArgOpt) Flag {
-	return listFlag(name, desc, shortName, 1, 0, StringType, opts...)
-}
-
-func IntFlag(name string, shortName rune, desc string, opts ...ArgOpt) Flag {
-	return listFlag(name, desc, shortName, 1, 0, IntType, opts...)
-}
-
-func FloatFlag(name string, shortName rune, desc string, opts ...ArgOpt) Flag {
-	return listFlag(name, desc, shortName, 1, 0, FloatType, opts...)
+func NewFlag[T any](name string, shortName rune, desc string, opts ...ArgOpt[T]) Flag {
+	return listFlag[T](name, desc, shortName, 1, 0, opts...)
 }
 
 func BoolFlag(name string, shortName rune, desc string) Flag {
@@ -202,34 +194,25 @@ func (bf *boolFlag) Usage(u *Usage) {
 }
 
 func (bf *boolFlag) Execute(_ *Input, _ Output, data *Data, _ *ExecuteData) error {
-	data.Set(bf.name, TrueValue())
+	data.Set(bf.name, true)
 	return nil
 }
 
-func StringListFlag(name string, shortName rune, desc string, minN, optionalN int, opts ...ArgOpt) Flag {
-	return listFlag(name, desc, shortName, minN, optionalN, StringListType, opts...)
+func NewListFlag[T any](name string, shortName rune, desc string, minN, optionalN int, opts ...ArgOpt[[]T]) Flag {
+	return listFlag[[]T](name, desc, shortName, minN, optionalN, opts...)
 }
 
-func IntListFlag(name string, shortName rune, desc string, minN, optionalN int, opts ...ArgOpt) Flag {
-	return listFlag(name, desc, shortName, minN, optionalN, IntListType, opts...)
-}
-
-func FloatListFlag(name string, shortName rune, desc string, minN, optionalN int, opts ...ArgOpt) Flag {
-	return listFlag(name, desc, shortName, minN, optionalN, FloatListType, opts...)
-}
-
-func listFlag(name, desc string, shortName rune, minN, optionalN int, vt ValueType, opts ...ArgOpt) Flag {
-	return &flag{
+func listFlag[T any](name, desc string, shortName rune, minN, optionalN int, opts ...ArgOpt[T]) Flag {
+	return &flag[T]{
 		name:      name,
 		desc:      desc,
 		shortName: shortName,
-		argNode: &ArgNode{
+		argNode: &ArgNode[T]{
 			flag:      true,
 			name:      name,
 			minN:      minN,
 			optionalN: optionalN,
 			opt:       newArgOpt(opts...),
-			vt:        vt,
 		},
 	}
 }

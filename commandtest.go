@@ -193,7 +193,7 @@ func ExecuteTest(t *testing.T, etc *ExecuteTestCase) {
 	if etc.RequiresSetup {
 		setupFile := setupForTest(t, etc.SetupContents)
 		args = append([]string{setupFile}, args...)
-		etc.WantData.Set(SetupArgName, StringValue(setupFile))
+		etc.WantData.Set(SetupArgName, setupFile)
 		t.Cleanup(func() { os.Remove(setupFile) })
 	}
 	tc.input = NewInput(args, nil)

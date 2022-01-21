@@ -33,7 +33,7 @@ func TestUsage(t *testing.T) {
 		{
 			name: "works with single arg",
 			utc: &UsageTestCase{
-				Node: SerialNodes(StringNode("SARG", "desc")),
+				Node: SerialNodes(Arg[string]("SARG", "desc")),
 				WantString: []string{
 					"SARG",
 					"",
@@ -45,7 +45,7 @@ func TestUsage(t *testing.T) {
 		{
 			name: "works with optional arg",
 			utc: &UsageTestCase{
-				Node: SerialNodes(OptionalStringNode("SARG", "desc")),
+				Node: SerialNodes(OptionalArg[string]("SARG", "desc")),
 				WantString: []string{
 					"[ SARG ]",
 					"",
@@ -58,9 +58,9 @@ func TestUsage(t *testing.T) {
 			name: "works with hidden arg",
 			utc: &UsageTestCase{
 				Node: SerialNodes(
-					StringNode("SARG1", "desc"),
-					StringNode("SARG2", "desc", HiddenArg()),
-					StringNode("SARG3", "desc"),
+					Arg[string]("SARG1", "desc"),
+					Arg[string]("SARG2", "desc", HiddenArg[string]()),
+					Arg[string]("SARG3", "desc"),
 				),
 				WantString: []string{
 					"SARG1 SARG3",
@@ -75,9 +75,9 @@ func TestUsage(t *testing.T) {
 			name: "setup arg is hidden",
 			utc: &UsageTestCase{
 				Node: SerialNodes(
-					StringNode("SARG", "desc"),
+					Arg[string]("SARG", "desc"),
 					SetupArg,
-					IntNode("IARG", "idesc"),
+					Arg[int]("IARG", "idesc"),
 				),
 				WantString: []string{
 					"SARG IARG",
@@ -91,7 +91,7 @@ func TestUsage(t *testing.T) {
 		{
 			name: "works with single arg and description node",
 			utc: &UsageTestCase{
-				Node: SerialNodes(StringNode("SARG", "desc"), Description("Does absolutely nothing")),
+				Node: SerialNodes(Arg[string]("SARG", "desc"), Description("Does absolutely nothing")),
 				WantString: []string{
 					"Does absolutely nothing",
 					"SARG",
@@ -104,7 +104,7 @@ func TestUsage(t *testing.T) {
 		{
 			name: "works with list arg",
 			utc: &UsageTestCase{
-				Node: SerialNodes(StringListNode("SARG", testDesc, 2, 3)),
+				Node: SerialNodes(ListArg[string]("SARG", testDesc, 2, 3)),
 				WantString: []string{
 					"SARG SARG [ SARG SARG SARG ]",
 					"",
@@ -116,7 +116,7 @@ func TestUsage(t *testing.T) {
 		{
 			name: "works with unbounded list arg",
 			utc: &UsageTestCase{
-				Node: SerialNodes(StringListNode("SARG", testDesc, 0, UnboundedList)),
+				Node: SerialNodes(ListArg[string]("SARG", testDesc, 0, UnboundedList)),
 				WantString: []string{
 					"[ SARG ... ]",
 					"",
@@ -130,7 +130,7 @@ func TestUsage(t *testing.T) {
 			utc: &UsageTestCase{
 				Node: AliasNode("aliasName", nil, SerialNodes(
 					Description("command desc"),
-					StringListNode("SARG", testDesc, 0, UnboundedList),
+					ListArg[string]("SARG", testDesc, 0, UnboundedList),
 					SimpleProcessor(nil, nil),
 				)),
 				WantString: []string{
@@ -150,7 +150,7 @@ func TestUsage(t *testing.T) {
 			utc: &UsageTestCase{
 				Node: CacheNode("cacheName", nil, SerialNodes(
 					Description("cmd desc"),
-					StringListNode("SARG", testDesc, 0, UnboundedList),
+					ListArg[string]("SARG", testDesc, 0, UnboundedList),
 					SimpleProcessor(nil, nil),
 				)),
 				WantString: []string{
@@ -170,12 +170,12 @@ func TestUsage(t *testing.T) {
 			utc: &UsageTestCase{
 				Node: BranchNode(map[string]*Node{
 					"alpha": nil,
-					"beta":  SerialNodes(StringListNode("ROPES", "lots of strings", 2, 3)),
+					"beta":  SerialNodes(ListArg[string]("ROPES", "lots of strings", 2, 3)),
 					"charlie": BranchNode(map[string]*Node{
-						"brown":  SerialNodes(Description("learn about cartoons"), FloatNode("FLOATER", "something bouyant")),
+						"brown":  SerialNodes(Description("learn about cartoons"), Arg[float64]("FLOATER", "something bouyant")),
 						"yellow": SerialNodes(ExecutorNode(nil)),
 					}, nil),
-				}, SerialNodes(Description("the default command"), IntNode("INT_ARG", "an integer"), StringListNode("STRINGS", "unltd strings", 1, UnboundedList)), DontCompleteSubcommands()),
+				}, SerialNodes(Description("the default command"), Arg[int]("INT_ARG", "an integer"), ListArg[string]("STRINGS", "unltd strings", 1, UnboundedList)), DontCompleteSubcommands()),
 				WantString: []string{
 					"the default command",
 					"< INT_ARG STRINGS [ STRINGS ... ]",
@@ -207,12 +207,12 @@ func TestUsage(t *testing.T) {
 			utc: &UsageTestCase{
 				Node: BranchNode(map[string]*Node{
 					"alpha": nil,
-					"beta":  SerialNodes(StringListNode("ROPES", "lots of strings", 2, 3)),
+					"beta":  SerialNodes(ListArg[string]("ROPES", "lots of strings", 2, 3)),
 					"charlie": BranchNode(map[string]*Node{
-						"brown":  SerialNodes(Description("learn about cartoons"), FloatNode("FLOATER", "something bouyant")),
+						"brown":  SerialNodes(Description("learn about cartoons"), Arg[float64]("FLOATER", "something bouyant")),
 						"yellow": SerialNodes(ExecutorNode(nil)),
 					}, nil),
-				}, SerialNodes(Description("the default command"), IntNode("INT_ARG", "an integer"), StringListNode("STRINGS", "unltd strings", 1, UnboundedList)), BranchAliases(map[string][]string{
+				}, SerialNodes(Description("the default command"), Arg[int]("INT_ARG", "an integer"), ListArg[string]("STRINGS", "unltd strings", 1, UnboundedList)), BranchAliases(map[string][]string{
 					"charlie": {"charles", "chuck"},
 					"alpha":   {"omega"},
 				})),
@@ -247,12 +247,12 @@ func TestUsage(t *testing.T) {
 			utc: &UsageTestCase{
 				Node: BranchNode(map[string]*Node{
 					"alpha omega": nil,
-					"beta":        SerialNodes(StringListNode("ROPES", "lots of strings", 2, 3)),
+					"beta":        SerialNodes(ListArg[string]("ROPES", "lots of strings", 2, 3)),
 					"charlie chuck charles": BranchNode(map[string]*Node{
-						"brown":  SerialNodes(Description("learn about cartoons"), FloatNode("FLOATER", "something bouyant")),
+						"brown":  SerialNodes(Description("learn about cartoons"), Arg[float64]("FLOATER", "something bouyant")),
 						"yellow": SerialNodes(ExecutorNode(nil)),
 					}, nil),
-				}, SerialNodes(Description("the default command"), IntNode("INT_ARG", "an integer"), StringListNode("STRINGS", "unltd strings", 1, UnboundedList)), BranchAliases(map[string][]string{
+				}, SerialNodes(Description("the default command"), Arg[int]("INT_ARG", "an integer"), ListArg[string]("STRINGS", "unltd strings", 1, UnboundedList)), BranchAliases(map[string][]string{
 					"charlie": {"charles", "chuck"},
 					"alpha":   {"omega"},
 				})),
@@ -306,7 +306,7 @@ func TestUsage(t *testing.T) {
 						BoolFlag("new", 'n', "new files"),
 						BoolFlag("debug", 'd', "debug stuff"),
 					),
-					StringNode("SN", "node for a string"),
+					Arg[string]("SN", "node for a string"),
 				),
 				WantString: []string{
 					"SN --debug|-d --new|-n",
@@ -328,7 +328,7 @@ func TestUsage(t *testing.T) {
 						BoolFlag("first", 'b', "un"),
 						BoolFlag("second", 'a', "deux"),
 					),
-					StringNode("SN", "node for a string"),
+					Arg[string]("SN", "node for a string"),
 				),
 				WantString: []string{
 					"SN --first|-b --second|-a",
@@ -399,8 +399,8 @@ func TestUsage(t *testing.T) {
 			name: "NodeRepeater usage works for unbounded",
 			utc: &UsageTestCase{
 				Node: SerialNodes(
-					StringListNode("SL", testDesc, 1, UnboundedList, ListUntilSymbol("ghi")),
-					StringListNode("SL2", testDesc, 0, UnboundedList),
+					ListArg[string]("SL", testDesc, 1, UnboundedList, ListUntilSymbol("ghi")),
+					ListArg[string]("SL2", testDesc, 0, UnboundedList),
 				),
 				WantString: []string{
 					"SL [ SL ... ] ghi [ SL2 ... ]",

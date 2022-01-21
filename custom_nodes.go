@@ -11,7 +11,7 @@ const (
 )
 
 var (
-	SetupArg = FileNode(SetupArgName, "file used to run setup for command", HiddenArg())
+	SetupArg = FileNode(SetupArgName, "file used to run setup for command", HiddenArg[string]())
 )
 
 type simpleEdge struct {
@@ -384,8 +384,8 @@ func (sp *simpleProcessor) Complete(i *Input, d *Data) (*Completion, error) {
 	return sp.c(i, d)
 }
 
-func StringMenu(name, desc string, choices ...string) *ArgNode {
-	return StringNode(name, desc, SimpleCompletor(choices...), InList(choices...))
+func StringMenu(name, desc string, choices ...string) *ArgNode[string] {
+	return Arg[string](name, desc, SimpleCompletor[string](choices...), InList(choices...))
 }
 
 type ListBreakerOption func(*ListBreaker)
@@ -407,7 +407,7 @@ func ListBreakerUsage(uf func(*Usage)) ListBreakerOption {
 }
 
 func ListUntilSymbol(symbol string, opts ...ListBreakerOption) *ListBreaker {
-	return ListUntil(StringDoesNotEqual(symbol)).AddOptions(append(opts, ListBreakerUsage(func(u *Usage) {
+	return ListUntil(NEQ[string](symbol)).AddOptions(append(opts, ListBreakerUsage(func(u *Usage) {
 		u.Usage = append(u.Usage, symbol)
 		u.UsageSection.Add(SymbolSection, symbol, "List breaker")
 	}))...)
@@ -420,24 +420,24 @@ func (lb *ListBreaker) AddOptions(opts ...ListBreakerOption) *ListBreaker {
 	return lb
 }
 
-func ListUntil(validators ...*ValidatorOption) *ListBreaker {
-	lb := &ListBreaker{
+func ListUntil(validators ...*ValidatorOption[string]) *ListBreaker {
+	return &ListBreaker{
 		validators: validators,
 	}
-	return lb
 }
 
+// TODO: this should be ListBreaker[T any, ST []T]
 type ListBreaker struct {
-	validators []*ValidatorOption
+	validators []*ValidatorOption[string]
 	discard    bool
 	u          func(*Usage)
 }
 
-func (lb *ListBreaker) modifyArgOpt(ao *argOpt) {
+func (lb *ListBreaker) modifyArgOpt(ao *argOpt[[]string]) {
 	ao.breaker = lb
 }
 
-func (lb *ListBreaker) Validators() []*ValidatorOption {
+func (lb *ListBreaker) Validators() []*ValidatorOption[string] {
 	return lb.validators
 }
 
@@ -452,35 +452,34 @@ func (lb *ListBreaker) Usage(u *Usage) {
 }
 
 // StringListListNode parses a two-dimensional slice of strings, with each slice being separated by `breakSymbol`
-func StringListListNode(name, desc, breakSymbol string, minN, optionalN int, opts ...ArgOpt) Processor {
+func StringListListNode(name, desc, breakSymbol string, minN, optionalN int, opts ...ArgOpt[[]string]) Processor {
 	n := &Node{
-		Processor: StringListNode(name, desc, 0, UnboundedList,
+		Processor: ListArg[string](name, desc, 0, UnboundedList,
 			append(opts,
 				ListUntilSymbol(breakSymbol, DiscardBreaker()),
-				CustomSetter(func(v *Value, d *Data) {
-					if v.Length() > 0 {
-						if !d.HasArgI(name) {
-							d.SetI(name, [][]string{v.ToStringList()})
+				CustomSetter[[]string](func(sl []string, d *Data) {
+					if len(sl) > 0 {
+						if !d.Has(name) {
+							d.Set(name, [][]string{sl})
 						} else {
-							sl := d.GetI(name).([][]string)
-							d.SetI(name, append(sl, v.ToStringList()))
+							d.Set(name, append(GetData[[][]string](d, name), sl))
 						}
 					}
 				}),
-			)...,
+				)...,
 		),
 	}
 	return NodeRepeater(n, minN, optionalN)
 }
 
-type hiddenArg struct{}
+type hiddenArg[T any] struct{}
 
-func (ha *hiddenArg) modifyArgOpt(ao *argOpt) {
+func (ha *hiddenArg[T]) modifyArgOpt(ao *argOpt[T]) {
 	ao.hiddenUsage = true
 }
 
-func HiddenArg() ArgOpt {
-	return &hiddenArg{}
+func HiddenArg[T any]() ArgOpt[T] {
+	return &hiddenArg[T]{}
 }
 
 type executableAppender struct {

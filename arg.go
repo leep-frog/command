@@ -2,33 +2,32 @@ package command
 
 import "fmt"
 
-type ArgNode struct {
+type ArgNode[T any] struct {
 	name      string
 	desc      string
-	opt       *argOpt
+	opt       *argOpt[T]
 	minN      int
 	optionalN int
-	vt        ValueType
 	shortName rune
 	flag      bool
 }
 
-func (an *ArgNode) AddOptions(opts ...ArgOpt) *ArgNode {
+func (an *ArgNode[T]) AddOptions(opts ...ArgOpt[T]) *ArgNode[T] {
 	for _, o := range opts {
 		o.modifyArgOpt(an.opt)
 	}
 	return an
 }
 
-func (an *ArgNode) Name() string {
+func (an *ArgNode[T]) Name() string {
 	return an.name
 }
 
-func (an *ArgNode) Desc() string {
+func (an *ArgNode[T]) Desc() string {
 	return an.desc
 }
 
-func (an *ArgNode) Set(v *Value, data *Data) {
+func (an *ArgNode[T]) Set(v T, data *Data) {
 	if an.opt != nil && an.opt.customSet != nil {
 		an.opt.customSet(v, data)
 	} else {
@@ -36,7 +35,7 @@ func (an *ArgNode) Set(v *Value, data *Data) {
 	}
 }
 
-func (an *ArgNode) Usage(u *Usage) {
+func (an *ArgNode[T]) Usage(u *Usage) {
 	if an.opt != nil && an.opt.hiddenUsage {
 		return
 	}
@@ -65,7 +64,7 @@ func (an *ArgNode) Usage(u *Usage) {
 	}
 }
 
-func (an *ArgNode) Execute(i *Input, o Output, data *Data, eData *ExecuteData) error {
+func (an *ArgNode[T]) Execute(i *Input, o Output, data *Data, eData *ExecuteData) error {
 	an.aliasCheck(i, false)
 
 	sl, enough := i.PopN(an.minN, an.optionalN, an.opt.breaker)
@@ -75,28 +74,21 @@ func (an *ArgNode) Execute(i *Input, o Output, data *Data, eData *ExecuteData) e
 		if !enough {
 			return o.Err(an.notEnoughErr(len(sl)))
 		}
-		if an.opt._default != nil {
-			if an.opt._default.type_ != an.vt {
-				return o.Stderrf("Argument %q has type %s, but its default is of type %s", an.name, an.vt, an.opt._default.type_)
-			}
-			an.Set(an.opt._default, data)
+		if an.opt != nil && an.opt._default != nil {
+			an.Set(*an.opt._default, data)
 		}
 		return nil
 	}
 
 	// Transform from string to value.
-	v, err := vtMap.transform(an.vt, sl)
+	op := getOperator[T]()
+	v, err := op.fromArgs(sl)
 	if err != nil {
-		o.Stderr(err.Error())
-		return err
+		return o.Err(err)
 	}
 
 	// Run custom transformer.
 	if an.opt != nil && an.opt.transformer != nil {
-		if !v.IsType(an.opt.transformer.vt) {
-			return o.Stderrf("Transformer of type %v cannot be applied to a value with type %v", an.opt.transformer.vt, v.Type())
-		}
-
 		newV, err := an.opt.transformer.t(v)
 		if err != nil {
 			return o.Stderrf("Custom transformer failed: %v", err)
@@ -105,7 +97,7 @@ func (an *ArgNode) Execute(i *Input, o Output, data *Data, eData *ExecuteData) e
 	}
 
 	// Copy values into returned list (required for aliasing)
-	newSl := v.ToArgs()
+	newSl := op.toArgs(v)
 	for i := 0; i < len(sl); i++ {
 		*sl[i] = newSl[i]
 	}
@@ -126,7 +118,7 @@ func (an *ArgNode) Execute(i *Input, o Output, data *Data, eData *ExecuteData) e
 	return nil
 }
 
-func (an *ArgNode) notEnoughErr(got int) error {
+func (an *ArgNode[T]) notEnoughErr(got int) error {
 	return NotEnoughArgs(an.name, an.minN, got)
 }
 
@@ -157,7 +149,7 @@ func (ne *notEnoughArgs) Error() string {
 	return fmt.Sprintf("Argument %q requires at least %d argument%s, got %d", ne.name, ne.req, plural, ne.got)
 }
 
-func (an *ArgNode) aliasCheck(input *Input, complete bool) {
+func (an *ArgNode[T]) aliasCheck(input *Input, complete bool) {
 	if an.opt != nil && an.opt.alias != nil {
 		if an.optionalN == UnboundedList {
 			input.CheckAliases(len(input.remaining), an.opt.alias.AliasCLI, an.opt.alias.AliasName, complete)
@@ -167,7 +159,7 @@ func (an *ArgNode) aliasCheck(input *Input, complete bool) {
 	}
 }
 
-func (an *ArgNode) Complete(input *Input, data *Data) (*Completion, error) {
+func (an *ArgNode[T]) Complete(input *Input, data *Data) (*Completion, error) {
 	an.aliasCheck(input, true)
 
 	sl, enough := input.PopN(an.minN, an.optionalN, an.opt.breaker)
@@ -181,9 +173,10 @@ func (an *ArgNode) Complete(input *Input, data *Data) (*Completion, error) {
 	return c, err
 }
 
-func (an *ArgNode) complete(sl []*string, enough bool, input *Input, data *Data) (*Completion, error) {
+func (an *ArgNode[T]) complete(sl []*string, enough bool, input *Input, data *Data) (*Completion, error) {
 	// Try to transform from string to value.
-	v, err := vtMap.transform(an.vt, sl)
+	op := getOperator[T]()
+	v, err := op.fromArgs(sl)
 	if err != nil {
 		// If we're on the last one, then complete it.
 		if !enough || input.FullyProcessed() {
@@ -201,11 +194,9 @@ func (an *ArgNode) complete(sl []*string, enough bool, input *Input, data *Data)
 	// then we just continue with the original value).
 	if an.opt != nil && an.opt.transformer != nil && an.opt.transformer.forComplete {
 		// Don't return an error because this may not be the last one.
-		if v.IsType(an.opt.transformer.vt) {
-			newV, err := an.opt.transformer.t(v)
-			if err == nil {
-				v = newV
-			}
+		newV, err := an.opt.transformer.t(v)
+		if err == nil {
+			v = newV
 		}
 	}
 
@@ -223,61 +214,36 @@ func (an *ArgNode) complete(sl []*string, enough bool, input *Input, data *Data)
 	}
 
 	var lastArg string
-	ta := v.ToArgs()
+	ta := op.toArgs(v)
 	if len(ta) > 0 {
 		lastArg = ta[len(ta)-1]
 	}
 	return an.opt.completor.Complete(lastArg, v, data)
 }
 
-func StringListNode(name, desc string, minN, optionalN int, opts ...ArgOpt) *ArgNode {
-	return listNode(name, desc, minN, optionalN, StringListType, opts...)
+func Arg[T any](name, desc string, opts ...ArgOpt[T]) *ArgNode[T] {
+	return listNode[T](name, desc, 1, 0, opts...)
 }
 
-func IntListNode(name, desc string, minN, optionalN int, opts ...ArgOpt) *ArgNode {
-	return listNode(name, desc, minN, optionalN, IntListType, opts...)
+func OptionalArg[T any](name, desc string, opts ...ArgOpt[T]) *ArgNode[T] {
+	return listNode[T](name, desc, 0, 1, opts...)
 }
 
-func FloatListNode(name, desc string, minN, optionalN int, opts ...ArgOpt) *ArgNode {
-	return listNode(name, desc, minN, optionalN, FloatListType, opts...)
+func ListArg[T any](name, desc string, minN, optionalN int, opts ...ArgOpt[[]T]) *ArgNode[[]T] {
+	return listNode[[]T](name, desc, minN, optionalN, opts...)
 }
 
-func StringNode(name, desc string, opts ...ArgOpt) *ArgNode {
-	return listNode(name, desc, 1, 0, StringType, opts...)
+func BoolNode(name, desc string) *ArgNode[bool] {
+	return listNode[bool](name, desc, 1, 0, BoolCompletor())
 }
 
-func OptionalStringNode(name, desc string, opts ...ArgOpt) *ArgNode {
-	return listNode(name, desc, 0, 1, StringType, opts...)
-}
-
-func IntNode(name, desc string, opts ...ArgOpt) *ArgNode {
-	return listNode(name, desc, 1, 0, IntType, opts...)
-}
-
-func OptionalIntNode(name, desc string, opts ...ArgOpt) *ArgNode {
-	return listNode(name, desc, 0, 1, IntType, opts...)
-}
-
-func FloatNode(name, desc string, opts ...ArgOpt) *ArgNode {
-	return listNode(name, desc, 1, 0, FloatType, opts...)
-}
-
-func OptionalFloatNode(name, desc string, opts ...ArgOpt) *ArgNode {
-	return listNode(name, desc, 0, 1, FloatType, opts...)
-}
-
-func BoolNode(name, desc string) *ArgNode {
-	return listNode(name, desc, 1, 0, BoolType, BoolCompletor())
-}
-
-func listNode(name, desc string, minN, optionalN int, vt ValueType, opts ...ArgOpt) *ArgNode {
-	return &ArgNode{
+func listNode[T any](name, desc string, minN, optionalN int, opts ...ArgOpt[T]) *ArgNode[T] {
+	return &ArgNode[T]{
 		name:      name,
 		desc:      desc,
 		minN:      minN,
 		optionalN: optionalN,
 		opt:       newArgOpt(opts...),
-		vt:        vt,
 		//transform: transformer,
 	}
 }

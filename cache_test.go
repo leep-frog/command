@@ -40,7 +40,7 @@ func TestCacheExecution(t *testing.T) {
 			name: "Fails if later nodes fail",
 			etc: &ExecuteTestCase{
 				Node: CacheNode("money", cc, SerialNodes(
-					StringNode("s", testDesc),
+					Arg[string]("s", testDesc),
 				)),
 				WantErr:    fmt.Errorf(`Argument "s" requires at least 1 argument, got 0`),
 				WantStderr: []string{`Argument "s" requires at least 1 argument, got 0`},
@@ -50,13 +50,13 @@ func TestCacheExecution(t *testing.T) {
 			name: "Fails if extra arguments and doesn't cache",
 			etc: &ExecuteTestCase{
 				Node: CacheNode("money", cc, SerialNodes(
-					StringNode("s", testDesc),
+					Arg[string]("s", testDesc),
 				)),
 				Args:       []string{"dollar", "bills"},
 				WantErr:    fmt.Errorf("Unprocessed extra args: [bills]"),
 				WantStderr: []string{"Unprocessed extra args: [bills]"},
-				WantData: &Data{Values: map[string]*Value{
-					"s": StringValue("dollar"),
+				WantData: &Data{Values: map[string]interface{}{
+					"s": "dollar",
 				}},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -72,13 +72,13 @@ func TestCacheExecution(t *testing.T) {
 			name: "Fails if not enough arguments error",
 			etc: &ExecuteTestCase{
 				Node: CacheNode("money", cc, SerialNodes(
-					StringListNode("sl", testDesc, 3, 0),
+					ListArg[string]("sl", testDesc, 3, 0),
 				)),
 				Args:       []string{"dollar", "bills"},
 				WantErr:    fmt.Errorf(`Argument "sl" requires at least 3 arguments, got 2`),
 				WantStderr: []string{`Argument "sl" requires at least 3 arguments, got 2`},
-				WantData: &Data{Values: map[string]*Value{
-					"sl": StringListValue("dollar", "bills"),
+				WantData: &Data{Values: map[string]interface{}{
+					"sl": []string{"dollar", "bills"},
 				}},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -93,13 +93,13 @@ func TestCacheExecution(t *testing.T) {
 			name: "caches data on validator error",
 			etc: &ExecuteTestCase{
 				Node: CacheNode("money", cc, SerialNodes(
-					StringNode("s", testDesc, MinLength(100)),
+					Arg[string]("s", testDesc, MinLength(100)),
 				)),
 				Args:       []string{"dollar"},
 				WantErr:    fmt.Errorf("validation failed: [MinLength] value must be at least 100 characters"),
 				WantStderr: []string{"validation failed: [MinLength] value must be at least 100 characters"},
-				WantData: &Data{Values: map[string]*Value{
-					"s": StringValue("dollar"),
+				WantData: &Data{Values: map[string]interface{}{
+					"s": "dollar",
 				}},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -122,11 +122,11 @@ func TestCacheExecution(t *testing.T) {
 			},
 			etc: &ExecuteTestCase{
 				Node: CacheNode("money", cc, SerialNodes(
-					StringNode("s", testDesc),
+					Arg[string]("s", testDesc),
 				)),
 				Args: []string{"dollar"},
-				WantData: &Data{Values: map[string]*Value{
-					"s": StringValue("dollar"),
+				WantData: &Data{Values: map[string]interface{}{
+					"s": "dollar",
 				}},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -143,14 +143,14 @@ func TestCacheExecution(t *testing.T) {
 			},
 			etc: &ExecuteTestCase{
 				Node: CacheNode("money", cc, SerialNodes(
-					StringNode("s", testDesc,
-						Transformer(StringType, func(v *Value) (*Value, error) {
-							return StringValue("usd"), nil
+					Arg[string]("s", testDesc,
+						NewTransformer[string](func(string) (string, error) {
+							return "usd", nil
 						}, false),
 					))),
 				Args: []string{"dollar"},
-				WantData: &Data{Values: map[string]*Value{
-					"s": StringValue("usd"),
+				WantData: &Data{Values: map[string]interface{}{
+					"s": "usd",
 				}},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -164,11 +164,11 @@ func TestCacheExecution(t *testing.T) {
 			name: "Caches data on success",
 			etc: &ExecuteTestCase{
 				Node: CacheNode("money", cc, SerialNodes(
-					StringNode("s", testDesc),
+					Arg[string]("s", testDesc),
 				)),
 				Args: []string{"dollar"},
-				WantData: &Data{Values: map[string]*Value{
-					"s": StringValue("dollar"),
+				WantData: &Data{Values: map[string]interface{}{
+					"s": "dollar",
 				}},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -192,11 +192,11 @@ func TestCacheExecution(t *testing.T) {
 			},
 			etc: &ExecuteTestCase{
 				Node: CacheNode("money", cc, SerialNodes(
-					StringNode("s", testDesc),
+					Arg[string]("s", testDesc),
 				)),
 				Args: []string{"dollar"},
-				WantData: &Data{Values: map[string]*Value{
-					"s": StringValue("dollar"),
+				WantData: &Data{Values: map[string]interface{}{
+					"s": "dollar",
 				}},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -217,15 +217,15 @@ func TestCacheExecution(t *testing.T) {
 			name: "Caches transformed args",
 			etc: &ExecuteTestCase{
 				Node: CacheNode("money", cc, SerialNodes(
-					StringNode("s", testDesc,
-						Transformer(StringType, func(v *Value) (*Value, error) {
-							return StringValue("usd"), nil
+					Arg[string]("s", testDesc,
+						NewTransformer[string](func(string) (string, error) {
+							return "usd", nil
 						}, false),
 					),
 				)),
 				Args: []string{"dollar"},
-				WantData: &Data{Values: map[string]*Value{
-					"s": StringValue("usd"),
+				WantData: &Data{Values: map[string]interface{}{
+					"s": "usd",
 				}},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -245,29 +245,29 @@ func TestCacheExecution(t *testing.T) {
 			name: "Caches lots of args",
 			etc: &ExecuteTestCase{
 				Node: CacheNode("money", cc, SerialNodes(
-					IntNode("i", testDesc),
-					StringNode("s", testDesc,
-						Transformer(StringType, func(v *Value) (*Value, error) {
-							return StringValue("usd"), nil
+					Arg[int]("i", testDesc),
+					Arg[string]("s", testDesc,
+						NewTransformer[string](func(string) (string, error) {
+							return "usd", nil
 						}, false),
 					),
-					FloatListNode("fl", testDesc, 2, 0),
-					StringListNode("sl", testDesc, 1, 2,
-						Transformer(StringListType, func(v *Value) (*Value, error) {
+					ListArg[float64]("fl", testDesc, 2, 0),
+					ListArg[string]("sl", testDesc, 1, 2,
+						NewTransformer[[]string](func(v []string) ([]string, error) {
 							var newSL []string
-							for _, s := range v.ToStringList() {
+							for _, s := range v {
 								newSL = append(newSL, fmt.Sprintf("$%s", s))
 							}
-							return StringListValue(newSL...), nil
+							return newSL, nil
 						}, false),
 					),
 				)),
 				Args: []string{"123", "dollar", "3.4", "4.5", "six", "7"},
-				WantData: &Data{Values: map[string]*Value{
-					"s":  StringValue("usd"),
-					"i":  IntValue(123),
-					"fl": FloatListValue(3.4, 4.5),
-					"sl": StringListValue("$six", "$7"),
+				WantData: &Data{Values: map[string]interface{}{
+					"s":  "usd",
+					"i":  123,
+					"fl": []float64{3.4, 4.5},
+					"sl": []string{"$six", "$7"},
 				}},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -292,14 +292,14 @@ func TestCacheExecution(t *testing.T) {
 			name: "Executes the executor",
 			etc: &ExecuteTestCase{
 				Node: CacheNode("money", cc, SerialNodes(
-					StringNode("s", testDesc),
+					Arg[string]("s", testDesc),
 					ExecutorNode(func(output Output, _ *Data) {
 						output.Stdout("We made it!")
 					}),
 				)),
 				Args: []string{"dollar"},
-				WantData: &Data{Values: map[string]*Value{
-					"s": StringValue("dollar"),
+				WantData: &Data{Values: map[string]interface{}{
+					"s": "dollar",
 				}},
 				WantStdout: []string{"We made it!"},
 				wantInput: &Input{
@@ -320,7 +320,7 @@ func TestCacheExecution(t *testing.T) {
 		{
 			name: "Works when no cache exists",
 			etc: &ExecuteTestCase{
-				Node: CacheNode("money", cc, SerialNodes(OptionalStringNode("s", testDesc)))},
+				Node: CacheNode("money", cc, SerialNodes(OptionalArg[string]("s", testDesc)))},
 		},
 		{
 			name: "Works when cache exists",
@@ -328,12 +328,12 @@ func TestCacheExecution(t *testing.T) {
 				"money": {"usd"},
 			},
 			etc: &ExecuteTestCase{
-				Node: CacheNode("money", cc, SerialNodes(OptionalStringNode("s", testDesc))),
+				Node: CacheNode("money", cc, SerialNodes(OptionalArg[string]("s", testDesc))),
 				wantInput: &Input{
 					args: []*inputArg{{value: "usd"}},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"s": StringValue("usd"),
+				WantData: &Data{Values: map[string]interface{}{
+					"s": "usd",
 				}},
 			},
 		},
@@ -344,9 +344,9 @@ func TestCacheExecution(t *testing.T) {
 			},
 			etc: &ExecuteTestCase{
 				Node: CacheNode("money", cc, SerialNodes(
-					StringNode("s", testDesc),
-					IntListNode("il", testDesc, 2, 0),
-					FloatListNode("fl", testDesc, 1, 3),
+					Arg[string]("s", testDesc),
+					ListArg[int]("il", testDesc, 2, 0),
+					ListArg[float64]("fl", testDesc, 1, 3),
 				)),
 				wantInput: &Input{
 					args: []*inputArg{
@@ -356,10 +356,10 @@ func TestCacheExecution(t *testing.T) {
 						{value: "4"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"s":  StringValue("usd"),
-					"il": IntListValue(1, 2),
-					"fl": FloatListValue(4),
+				WantData: &Data{Values: map[string]interface{}{
+					"s":  "usd",
+					"il": []int{1, 2},
+					"fl": []float64{4},
 				}},
 			},
 		},
@@ -397,9 +397,9 @@ func TestCacheComplete(t *testing.T) {
 			name: "defers completion to provided node",
 			ctc: &CompleteTestCase{
 				Node: CacheNode("money", cc, SerialNodes(
-					StringListNode("sl", testDesc, 1, 2,
-						&Completor{
-							SuggestionFetcher: &ListFetcher{
+					ListArg[string]("sl", testDesc, 1, 2,
+						&Completor[[]string]{
+							SuggestionFetcher: &ListFetcher[[]string]{
 								Options: []string{"buck", "dollar", "dollHairs", "dinero", "usd"},
 							},
 						},
@@ -407,8 +407,8 @@ func TestCacheComplete(t *testing.T) {
 				)),
 				Args: "cmd $ d",
 				Want: []string{"dinero", "dollHairs", "dollar"},
-				WantData: &Data{Values: map[string]*Value{
-					"sl": StringListValue("$", "d"),
+				WantData: &Data{Values: map[string]interface{}{
+					"sl": []string{"$", "d"},
 				}},
 			},
 		},

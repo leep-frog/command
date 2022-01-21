@@ -8,7 +8,7 @@ import (
 
 var (
 	aliasArgName = "ALIAS"
-	aliasArg     = StringNode(aliasArgName, "TODO alias desc", MinLength(1))
+	aliasArg     = Arg[string](aliasArgName, "TODO alias desc", MinLength(1))
 )
 
 type aliasedArg struct {
@@ -118,10 +118,10 @@ func AliasNode(name string, ac AliasCLI, n *Node) *Node {
 	}
 }
 
-func aliasCompletor(name string, ac AliasCLI) *Completor {
-	return &Completor{
+func aliasCompletor(name string, ac AliasCLI) *Completor[string] {
+	return &Completor[string]{
 		Distinct: true,
-		SuggestionFetcher: SimpleFetcher(func(v *Value, d *Data) (*Completion, error) {
+		SuggestionFetcher: SimpleFetcher[string](func(v string, d *Data) (*Completion, error) {
 			s := []string{}
 			for k := range getAliasMap(ac, name) {
 				s = append(s, k)
@@ -138,11 +138,11 @@ const (
 )
 
 func aliasListArg(name string, ac AliasCLI) Processor {
-	return StringListNode(aliasArgName, hiddenNodeDesc, 1, UnboundedList, aliasCompletor(name, ac))
+	return ListArg[string](aliasArgName, hiddenNodeDesc, 1, UnboundedList, CompletorList(aliasCompletor(name, ac)))
 }
 
 func aliasSearcher(name string, ac AliasCLI, n *Node) *Node {
-	regexArg := StringListNode("regexp", hiddenNodeDesc, 1, UnboundedList, ListIsRegex())
+	regexArg := ListArg[string]("regexp", hiddenNodeDesc, 1, UnboundedList, ValidatorList(IsRegex()))
 	return SerialNodes(regexArg, ExecutorNode(func(output Output, data *Data) {
 		rs := data.RegexpList("regexp")
 		var as []string

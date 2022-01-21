@@ -14,7 +14,7 @@ func TestBashNode(t *testing.T) {
 		{
 			name: "bash command returns an error",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(BashCommand(StringType, "s", []string{"echo hello"})),
+				Node: SerialNodes(BashCommand[string]("s", []string{"echo hello"})),
 				WantRunContents: [][]string{{
 					"set -e",
 					"set -o pipefail",
@@ -32,7 +32,7 @@ func TestBashNode(t *testing.T) {
 		{
 			name: "bash command prints stderr on error",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(BashCommand(StringType, "s", []string{"echo hello"})),
+				Node: SerialNodes(BashCommand[string]("s", []string{"echo hello"})),
 				WantRunContents: [][]string{{
 					"set -e",
 					"set -o pipefail",
@@ -55,7 +55,7 @@ func TestBashNode(t *testing.T) {
 		{
 			name: "bash command hides stderr on error",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(BashCommand(StringType, "s", []string{"echo hello"}, HideStderr())),
+				Node: SerialNodes(BashCommand[string]("s", []string{"echo hello"}, HideStderr[string]())),
 				WantRunContents: [][]string{{
 					"set -e",
 					"set -o pipefail",
@@ -75,14 +75,14 @@ func TestBashNode(t *testing.T) {
 		{
 			name: "bash node for string",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(BashCommand(StringType, "s", []string{"echo hello"})),
+				Node: SerialNodes(BashCommand[string]("s", []string{"echo hello"})),
 				WantRunContents: [][]string{{
 					"set -e",
 					"set -o pipefail",
 					"echo hello",
 				}},
-				WantData: &Data{Values: map[string]*Value{
-					"s": StringValue("aloha"),
+				WantData: &Data{Values: map[string]interface{}{
+					"s": "aloha",
 				}},
 				RunResponses: []*FakeRun{
 					{
@@ -94,14 +94,14 @@ func TestBashNode(t *testing.T) {
 		{
 			name: "bash node for string works with empty output",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(BashCommand(StringType, "s", []string{"don't echo hello"})),
+				Node: SerialNodes(BashCommand[string]("s", []string{"don't echo hello"})),
 				WantRunContents: [][]string{{
 					"set -e",
 					"set -o pipefail",
 					"don't echo hello",
 				}},
-				WantData: &Data{Values: map[string]*Value{
-					"s": StringValue(""),
+				WantData: &Data{Values: map[string]interface{}{
+					"s": "",
 				}},
 				RunResponses: []*FakeRun{{}},
 			},
@@ -109,14 +109,14 @@ func TestBashNode(t *testing.T) {
 		{
 			name: "successful command shows stderr",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(BashCommand(StringType, "s", []string{"echo hello"})),
+				Node: SerialNodes(BashCommand[string]("s", []string{"echo hello"})),
 				WantRunContents: [][]string{{
 					"set -e",
 					"set -o pipefail",
 					"echo hello",
 				}},
-				WantData: &Data{Values: map[string]*Value{
-					"s": StringValue("aloha"),
+				WantData: &Data{Values: map[string]interface{}{
+					"s": "aloha",
 				}},
 				WantStderr: []string{"ahola"},
 				RunResponses: []*FakeRun{
@@ -130,14 +130,14 @@ func TestBashNode(t *testing.T) {
 		{
 			name: "successful command hides stderr",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(BashCommand(StringType, "s", []string{"echo hello"}, HideStderr())),
+				Node: SerialNodes(BashCommand[string]("s", []string{"echo hello"}, HideStderr[string]())),
 				WantRunContents: [][]string{{
 					"set -e",
 					"set -o pipefail",
 					"echo hello",
 				}},
-				WantData: &Data{Values: map[string]*Value{
-					"s": StringValue("aloha"),
+				WantData: &Data{Values: map[string]interface{}{
+					"s": "aloha",
 				}},
 				RunResponses: []*FakeRun{
 					{
@@ -151,14 +151,14 @@ func TestBashNode(t *testing.T) {
 		{
 			name: "bash node for string list",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(BashCommand(StringListType, "s", []string{"echo hello"})),
+				Node: SerialNodes(BashCommand[[]string]("s", []string{"echo hello"})),
 				WantRunContents: [][]string{{
 					"set -e",
 					"set -o pipefail",
 					"echo hello",
 				}},
-				WantData: &Data{Values: map[string]*Value{
-					"s": StringListValue("aloha", "hello there", "howdy"),
+				WantData: &Data{Values: map[string]interface{}{
+					"s": []string{"aloha", "hello there", "howdy"},
 				}},
 				RunResponses: []*FakeRun{
 					{
@@ -170,7 +170,7 @@ func TestBashNode(t *testing.T) {
 		{
 			name: "bash node for string list forwards stdout",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(BashCommand(StringListType, "s", []string{"echo hello"}, ForwardStdout())),
+				Node: SerialNodes(BashCommand[[]string]("s", []string{"echo hello"}, ForwardStdout[[]string]())),
 				WantRunContents: [][]string{{
 					"set -e",
 					"set -o pipefail",
@@ -179,8 +179,8 @@ func TestBashNode(t *testing.T) {
 				WantStdout: []string{
 					"aloha\nhello there\nhowdy",
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"s": StringListValue("aloha", "hello there", "howdy"),
+				WantData: &Data{Values: map[string]interface{}{
+					"s": []string{"aloha", "hello there", "howdy"},
 				}},
 				RunResponses: []*FakeRun{
 					{
@@ -192,14 +192,14 @@ func TestBashNode(t *testing.T) {
 		{
 			name: "bash node for string list gets empty new lines at end",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(BashCommand(StringListType, "s", []string{"echo hello"})),
+				Node: SerialNodes(BashCommand[[]string]("s", []string{"echo hello"})),
 				WantRunContents: [][]string{{
 					"set -e",
 					"set -o pipefail",
 					"echo hello",
 				}},
-				WantData: &Data{Values: map[string]*Value{
-					"s": StringListValue("aloha", "hello there", "howdy", "", ""),
+				WantData: &Data{Values: map[string]interface{}{
+					"s": []string{"aloha", "hello there", "howdy", "", ""},
 				}},
 				RunResponses: []*FakeRun{
 					{
@@ -212,14 +212,14 @@ func TestBashNode(t *testing.T) {
 		{
 			name: "bash node for int",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(BashCommand(IntType, "i", []string{"echo 1248"})),
+				Node: SerialNodes(BashCommand[int]("i", []string{"echo 1248"})),
 				WantRunContents: [][]string{{
 					"set -e",
 					"set -o pipefail",
 					"echo 1248",
 				}},
-				WantData: &Data{Values: map[string]*Value{
-					"i": IntValue(1248),
+				WantData: &Data{Values: map[string]interface{}{
+					"i": 1248,
 				}},
 				RunResponses: []*FakeRun{
 					{
@@ -231,14 +231,14 @@ func TestBashNode(t *testing.T) {
 		{
 			name: "bash node for int works with empty output",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(BashCommand(IntType, "i", []string{"don't echo 1248"})),
+				Node: SerialNodes(BashCommand[int]("i", []string{"don't echo 1248"})),
 				WantRunContents: [][]string{{
 					"set -e",
 					"set -o pipefail",
 					"don't echo 1248",
 				}},
-				WantData: &Data{Values: map[string]*Value{
-					"i": IntValue(0),
+				WantData: &Data{Values: map[string]interface{}{
+					"i": 0,
 				}},
 				RunResponses: []*FakeRun{{}},
 			},
@@ -246,7 +246,7 @@ func TestBashNode(t *testing.T) {
 		{
 			name: "error when not an int",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(BashCommand(IntType, "i", []string{"echo two"})),
+				Node: SerialNodes(BashCommand[int]("i", []string{"echo two"})),
 				WantRunContents: [][]string{{
 					"set -e",
 					"set -o pipefail",
@@ -265,14 +265,14 @@ func TestBashNode(t *testing.T) {
 		{
 			name: "bash node for int list",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(BashCommand(IntListType, "i", []string{"echo primes"})),
+				Node: SerialNodes(BashCommand[[]int]("i", []string{"echo primes"})),
 				WantRunContents: [][]string{{
 					"set -e",
 					"set -o pipefail",
 					"echo primes",
 				}},
-				WantData: &Data{Values: map[string]*Value{
-					"i": IntListValue(2, 3, 5, 7),
+				WantData: &Data{Values: map[string]interface{}{
+					"i": []int{2, 3, 5, 7},
 				}},
 				RunResponses: []*FakeRun{
 					{
@@ -284,7 +284,7 @@ func TestBashNode(t *testing.T) {
 		{
 			name: "error when not an int in list",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(BashCommand(IntListType, "i", []string{"echo two"})),
+				Node: SerialNodes(BashCommand[[]int]("i", []string{"echo two"})),
 				WantRunContents: [][]string{{
 					"set -e",
 					"set -o pipefail",
@@ -303,14 +303,14 @@ func TestBashNode(t *testing.T) {
 		{
 			name: "bash node for int",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(BashCommand(IntType, "i", []string{"echo 1248"})),
+				Node: SerialNodes(BashCommand[int]("i", []string{"echo 1248"})),
 				WantRunContents: [][]string{{
 					"set -e",
 					"set -o pipefail",
 					"echo 1248",
 				}},
-				WantData: &Data{Values: map[string]*Value{
-					"i": IntValue(1248),
+				WantData: &Data{Values: map[string]interface{}{
+					"i": 1248,
 				}},
 				RunResponses: []*FakeRun{
 					{
@@ -322,7 +322,7 @@ func TestBashNode(t *testing.T) {
 		{
 			name: "error when not an int",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(BashCommand(IntType, "i", []string{"echo two"})),
+				Node: SerialNodes(BashCommand[int]("i", []string{"echo two"})),
 				WantRunContents: [][]string{{
 					"set -e",
 					"set -o pipefail",
@@ -341,14 +341,14 @@ func TestBashNode(t *testing.T) {
 		{
 			name: "bash node for int list",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(BashCommand(IntListType, "i", []string{"echo primes"})),
+				Node: SerialNodes(BashCommand[[]int]("i", []string{"echo primes"})),
 				WantRunContents: [][]string{{
 					"set -e",
 					"set -o pipefail",
 					"echo primes",
 				}},
-				WantData: &Data{Values: map[string]*Value{
-					"i": IntListValue(2, 3, 5, 7),
+				WantData: &Data{Values: map[string]interface{}{
+					"i": []int{2, 3, 5, 7},
 				}},
 				RunResponses: []*FakeRun{
 					{
@@ -360,7 +360,7 @@ func TestBashNode(t *testing.T) {
 		{
 			name: "error when not an int in list",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(BashCommand(IntListType, "i", []string{"echo two"})),
+				Node: SerialNodes(BashCommand[[]int]("i", []string{"echo two"})),
 				WantRunContents: [][]string{{
 					"set -e",
 					"set -o pipefail",
@@ -382,14 +382,14 @@ func TestBashNode(t *testing.T) {
 		{
 			name: "bash node with validators",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(BashCommand(IntType, "i", []string{"echo 1248"}, IntNonNegative())),
+				Node: SerialNodes(BashCommand[int]("i", []string{"echo 1248"}, NonNegative[int]())),
 				WantRunContents: [][]string{{
 					"set -e",
 					"set -o pipefail",
 					"echo 1248",
 				}},
-				WantData: &Data{Values: map[string]*Value{
-					"i": IntValue(1248),
+				WantData: &Data{Values: map[string]interface{}{
+					"i": 1248,
 				}},
 				RunResponses: []*FakeRun{
 					{
@@ -401,14 +401,14 @@ func TestBashNode(t *testing.T) {
 		{
 			name: "bash node with failing validators",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(BashCommand(IntType, "i", []string{"echo -1248"}, IntNonNegative())),
+				Node: SerialNodes(BashCommand[int]("i", []string{"echo -1248"}, NonNegative[int]())),
 				WantRunContents: [][]string{{
 					"set -e",
 					"set -o pipefail",
 					"echo -1248",
 				}},
-				WantStderr: []string{"validation failed: [IntNonNegative] value isn't non-negative"},
-				WantErr:    fmt.Errorf("validation failed: [IntNonNegative] value isn't non-negative"),
+				WantStderr: []string{"validation failed: [NonNegative] value isn't non-negative"},
+				WantErr:    fmt.Errorf("validation failed: [NonNegative] value isn't non-negative"),
 
 				RunResponses: []*FakeRun{
 					{
@@ -420,13 +420,13 @@ func TestBashNode(t *testing.T) {
 		{
 			name: "bash node with failing validators and hidden stderr",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(BashCommand(IntType, "i", []string{"echo -1248"}, IntNonNegative(), HideStderr())),
+				Node: SerialNodes(BashCommand[int]("i", []string{"echo -1248"}, NonNegative[int](), HideStderr[int]())),
 				WantRunContents: [][]string{{
 					"set -e",
 					"set -o pipefail",
 					"echo -1248",
 				}},
-				WantErr: fmt.Errorf("validation failed: [IntNonNegative] value isn't non-negative"),
+				WantErr: fmt.Errorf("validation failed: [NonNegative] value isn't non-negative"),
 				RunResponses: []*FakeRun{
 					{
 						Stdout: []string{"-1248"},

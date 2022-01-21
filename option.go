@@ -1,129 +1,127 @@
 package command
 
-import (
-	"fmt"
-)
-
-type ArgOpt interface {
-	modifyArgOpt(*argOpt)
+type ArgOpt[T any] interface {
+	modifyArgOpt(*argOpt[T])
 }
 
-type argOpt struct {
-	validators  []*ValidatorOption
-	completor   *Completor
-	transformer *simpleTransformer
-	alias       *aliasOpt
-	customSet   customSetter
-	_default    *Value
+type argOpt[T any] struct {
+	validators  []*ValidatorOption[T]
+	completor   *Completor[T]
+	transformer *Transformer[T]
+	alias       *aliasOpt[T]
+	customSet   customSetter[T]
+	_default    *T
 	breaker     *ListBreaker
 
 	hiddenUsage bool
 }
 
-func newArgOpt(opts ...ArgOpt) *argOpt {
-	ao := &argOpt{}
+func newArgOpt[T any](opts ...ArgOpt[T]) *argOpt[T] {
+	ao := &argOpt[T]{}
 	for _, opt := range opts {
 		opt.modifyArgOpt(ao)
 	}
 	return ao
 }
 
-func AliasOpt(name string, ac AliasCLI) ArgOpt {
-	return &aliasOpt{
+func AliasOpt[T any](name string, ac AliasCLI) ArgOpt[T] {
+	return &aliasOpt[T]{
 		AliasName: name,
 		AliasCLI:  ac,
 	}
 }
 
-type aliasOpt struct {
+type aliasOpt[T any] struct {
 	AliasName string
 	AliasCLI  AliasCLI
 }
 
-func (ao *aliasOpt) modifyArgOpt(argO *argOpt) {
+func (ao *aliasOpt[T]) modifyArgOpt(argO *argOpt[T]) {
 	argO.alias = ao
 }
 
-func CustomSetter(f func(*Value, *Data)) ArgOpt {
-	cs := customSetter(f)
+func CustomSetter[T any](f func(T, *Data)) ArgOpt[T] {
+	cs := customSetter[T](f)
 	return &cs
 }
 
-type customSetter func(*Value, *Data)
+type customSetter[T any] func(T, *Data)
 
-func (cs *customSetter) modifyArgOpt(ao *argOpt) {
+func (cs *customSetter[T]) modifyArgOpt(ao *argOpt[T]) {
 	ao.customSet = *cs
 }
 
-type simpleTransformer struct {
-	vt ValueType
-	t  func(v *Value) (*Value, error)
+type Transformer[T any] struct {
+	t  func(T) (T, error)
 	// forComplete is whether or not the value
 	// should be transformed during completions.
 	forComplete bool
 }
 
-func (st *simpleTransformer) modifyArgOpt(ao *argOpt) {
-	ao.transformer = st
+func (t *Transformer[T]) modifyArgOpt(ao *argOpt[T]) {
+	ao.transformer = t
 }
 
-func Transformer(vt ValueType, f func(*Value) (*Value, error), forComplete bool) ArgOpt {
-	return &simpleTransformer{
-		vt:          vt,
+//func (t *Transformer[T]) ForList() *Transformer[[]T] {
+func TransformerList[T any](t *Transformer[T]) *Transformer[[]T] {
+	return NewTransformer[[]T](func(vs []T) ([]T, error) {
+		l := make([]T, 0, len(vs))
+		for i, v := range vs {
+			nv, err := t.t(v)
+			if err != nil {
+				return append(l, vs[i:]...), err
+			}
+			l = append(l, nv)
+		}
+		return l, nil
+	}, t.forComplete)
+}
+
+func NewTransformer[T any](f func(T) (T, error), forComplete bool) *Transformer[T] {
+	return &Transformer[T]{
 		t:           f,
 		forComplete: forComplete,
 	}
 }
 
-type ValidatorOption struct {
-	vt       ValueType
-	validate func(*Value) error
+type ValidatorOption[T any] struct {
+	validate func(T) error
 }
 
-func (vo *ValidatorOption) modifyArgOpt(ao *argOpt) {
+func ValidatorList[T any](vo *ValidatorOption[T]) *ValidatorOption[[]T] {
+	return &ValidatorOption[[]T]{
+		validate: func(ts []T) error {
+			for _, t := range ts {
+				if err := vo.validate(t); err != nil {
+					return err
+				}
+			}
+			return nil
+		},
+	}
+}
+
+func (vo *ValidatorOption[T]) modifyArgOpt(ao *argOpt[T]) {
 	ao.validators = append(ao.validators, vo)
 }
 
-func (vo *ValidatorOption) modifyBashNode(bn *bashCommand) {
+func (vo *ValidatorOption[T]) modifyBashNode(bn *bashCommand[T]) {
 	bn.validators = append(bn.validators, vo)
 }
 
-func (vo *ValidatorOption) Validate(v *Value) error {
-	if !v.IsType(vo.vt) {
-		return fmt.Errorf("option can only be bound to arguments with type %v", vo.vt)
-	}
+func (vo *ValidatorOption[T]) Validate(v T) error {
 	return vo.validate(v)
 }
 
 // Default arg option
-type defaultArgOpt struct {
-	v *Value
+type defaultArgOpt[T any] struct {
+	v T
 }
 
-func (dao *defaultArgOpt) modifyArgOpt(ao *argOpt) {
-	ao._default = dao.v
+func (dao *defaultArgOpt[T]) modifyArgOpt(ao *argOpt[T]) {
+	ao._default = &dao.v
 }
 
-func StringDefault(s string) ArgOpt {
-	return &defaultArgOpt{StringValue(s)}
-}
-
-func IntDefault(i int) ArgOpt {
-	return &defaultArgOpt{IntValue(i)}
-}
-
-func FloatDefault(f float64) ArgOpt {
-	return &defaultArgOpt{FloatValue(f)}
-}
-
-func StringListDefault(ss ...string) ArgOpt {
-	return &defaultArgOpt{StringListValue(ss...)}
-}
-
-func IntListDefault(is ...int) ArgOpt {
-	return &defaultArgOpt{IntListValue(is...)}
-}
-
-func FloatListDefault(fs ...float64) ArgOpt {
-	return &defaultArgOpt{FloatListValue(fs...)}
+func Default[T any](v T) ArgOpt[T] {
+	return &defaultArgOpt[T]{v}
 }

@@ -47,7 +47,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "Fails if arg and no argument",
 			etc: &ExecuteTestCase{
-				Node:       SerialNodes(StringNode("s", testDesc)),
+				Node:       SerialNodes(Arg[string]("s", testDesc)),
 				WantErr:    fmt.Errorf(`Argument "s" requires at least 1 argument, got 0`),
 				WantStderr: []string{`Argument "s" requires at least 1 argument, got 0`},
 			},
@@ -57,7 +57,7 @@ func TestExecute(t *testing.T) {
 			etc: &ExecuteTestCase{
 				Args: []string{"hello"},
 				Node: &Node{
-					Processor: StringNode("s", testDesc),
+					Processor: Arg[string]("s", testDesc),
 					Edge: &errorEdge{
 						e: fmt.Errorf("bad news bears"),
 					},
@@ -68,15 +68,15 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantErr: fmt.Errorf("bad news bears"),
-				WantData: &Data{Values: map[string]*Value{
-					"s": StringValue("hello"),
+				WantData: &Data{Values: map[string]interface{}{
+					"s": "hello",
 				}},
 			},
 		},
 		{
 			name: "Fails if int arg and no argument",
 			etc: &ExecuteTestCase{
-				Node:       SerialNodes(IntNode("i", testDesc)),
+				Node:       SerialNodes(Arg[int]("i", testDesc)),
 				WantErr:    fmt.Errorf(`Argument "i" requires at least 1 argument, got 0`),
 				WantStderr: []string{`Argument "i" requires at least 1 argument, got 0`},
 			},
@@ -84,7 +84,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "Fails if float arg and no argument",
 			etc: &ExecuteTestCase{
-				Node:       SerialNodes(FloatNode("f", testDesc)),
+				Node:       SerialNodes(Arg[float64]("f", testDesc)),
 				WantErr:    fmt.Errorf(`Argument "f" requires at least 1 argument, got 0`),
 				WantStderr: []string{`Argument "f" requires at least 1 argument, got 0`},
 			},
@@ -93,26 +93,17 @@ func TestExecute(t *testing.T) {
 		{
 			name: "Uses default if no arg provided",
 			etc: &ExecuteTestCase{
-				Node:      SerialNodes(OptionalStringNode("s", testDesc, StringDefault("settled"))),
+				Node:      SerialNodes(OptionalArg[string]("s", testDesc, Default[string]("settled"))),
 				wantInput: &Input{},
-				WantData: &Data{Values: map[string]*Value{
-					"s": StringValue("settled"),
+				WantData: &Data{Values: map[string]interface{}{
+					"s": "settled",
 				}},
-			},
-		},
-		{
-			name: "Fails if default is the wrong type",
-			etc: &ExecuteTestCase{
-				Node:       SerialNodes(OptionalStringNode("s", testDesc, IntDefault(1))),
-				wantInput:  &Input{},
-				WantStderr: []string{`Argument "s" has type String, but its default is of type Int`},
-				WantErr:    fmt.Errorf(`Argument "s" has type String, but its default is of type Int`),
 			},
 		},
 		{
 			name: "Default doesn't fill in required argument",
 			etc: &ExecuteTestCase{
-				Node:       SerialNodes(StringNode("s", testDesc, StringDefault("settled"))),
+				Node:       SerialNodes(Arg[string]("s", testDesc, Default[string]("settled"))),
 				wantInput:  &Input{},
 				WantStderr: []string{`Argument "s" requires at least 1 argument, got 0`},
 				WantErr:    fmt.Errorf(`Argument "s" requires at least 1 argument, got 0`),
@@ -122,37 +113,37 @@ func TestExecute(t *testing.T) {
 		{
 			name: "Processes single string arg",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(StringNode("s", testDesc)),
+				Node: SerialNodes(Arg[string]("s", testDesc)),
 				Args: []string{"hello"},
 				wantInput: &Input{
 					args: []*inputArg{
 						{value: "hello"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"s": StringValue("hello"),
+				WantData: &Data{Values: map[string]interface{}{
+					"s": "hello",
 				}},
 			},
 		},
 		{
 			name: "Processes single int arg",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(IntNode("i", testDesc)),
+				Node: SerialNodes(Arg[int]("i", testDesc)),
 				Args: []string{"123"},
 				wantInput: &Input{
 					args: []*inputArg{
 						{value: "123"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"i": IntValue(123),
+				WantData: &Data{Values: map[string]interface{}{
+					"i": 123,
 				}},
 			},
 		},
 		{
 			name: "Int arg fails if not an int",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(IntNode("i", testDesc)),
+				Node: SerialNodes(Arg[int]("i", testDesc)),
 				Args: []string{"12.3"},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -166,22 +157,22 @@ func TestExecute(t *testing.T) {
 		{
 			name: "Processes single float arg",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(FloatNode("f", testDesc)),
+				Node: SerialNodes(Arg[float64]("f", testDesc)),
 				Args: []string{"-12.3"},
 				wantInput: &Input{
 					args: []*inputArg{
 						{value: "-12.3"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"f": FloatValue(-12.3),
+				WantData: &Data{Values: map[string]interface{}{
+					"f": -12.3,
 				}},
 			},
 		},
 		{
 			name: "Float arg fails if not a float",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(FloatNode("f", testDesc)),
+				Node: SerialNodes(Arg[float64]("f", testDesc)),
 				Args: []string{"twelve"},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -196,7 +187,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "List fails if not enough args",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(StringListNode("sl", testDesc, 1, 1)),
+				Node: SerialNodes(ListArg[string]("sl", testDesc, 1, 1)),
 				Args: []string{"hello", "there", "sir"},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -206,8 +197,8 @@ func TestExecute(t *testing.T) {
 					},
 					remaining: []int{2},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"sl": StringListValue("hello", "there"),
+				WantData: &Data{Values: map[string]interface{}{
+					"sl": []string{"hello", "there"},
 				}},
 				WantErr:    fmt.Errorf("Unprocessed extra args: [sir]"),
 				WantStderr: []string{"Unprocessed extra args: [sir]"},
@@ -216,22 +207,22 @@ func TestExecute(t *testing.T) {
 		{
 			name: "Processes string list if minimum provided",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(StringListNode("sl", testDesc, 1, 2)),
+				Node: SerialNodes(ListArg[string]("sl", testDesc, 1, 2)),
 				Args: []string{"hello"},
 				wantInput: &Input{
 					args: []*inputArg{
 						{value: "hello"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"sl": StringListValue("hello"),
+				WantData: &Data{Values: map[string]interface{}{
+					"sl": []string{"hello"},
 				}},
 			},
 		},
 		{
 			name: "Processes string list if some optional provided",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(StringListNode("sl", testDesc, 1, 2)),
+				Node: SerialNodes(ListArg[string]("sl", testDesc, 1, 2)),
 				Args: []string{"hello", "there"},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -239,15 +230,15 @@ func TestExecute(t *testing.T) {
 						{value: "there"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"sl": StringListValue("hello", "there"),
+				WantData: &Data{Values: map[string]interface{}{
+					"sl": []string{"hello", "there"},
 				}},
 			},
 		},
 		{
 			name: "Processes string list if max args provided",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(StringListNode("sl", testDesc, 1, 2)),
+				Node: SerialNodes(ListArg[string]("sl", testDesc, 1, 2)),
 				Args: []string{"hello", "there", "maam"},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -256,15 +247,15 @@ func TestExecute(t *testing.T) {
 						{value: "maam"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"sl": StringListValue("hello", "there", "maam"),
+				WantData: &Data{Values: map[string]interface{}{
+					"sl": []string{"hello", "there", "maam"},
 				}},
 			},
 		},
 		{
 			name: "Unbounded string list fails if less than min provided",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(StringListNode("sl", testDesc, 4, UnboundedList)),
+				Node: SerialNodes(ListArg[string]("sl", testDesc, 4, UnboundedList)),
 				Args: []string{"hello", "there", "kenobi"},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -273,8 +264,8 @@ func TestExecute(t *testing.T) {
 						{value: "kenobi"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"sl": StringListValue("hello", "there", "kenobi"),
+				WantData: &Data{Values: map[string]interface{}{
+					"sl": []string{"hello", "there", "kenobi"},
 				}},
 				WantErr:    fmt.Errorf(`Argument "sl" requires at least 4 arguments, got 3`),
 				WantStderr: []string{`Argument "sl" requires at least 4 arguments, got 3`},
@@ -283,22 +274,22 @@ func TestExecute(t *testing.T) {
 		{
 			name: "Processes unbounded string list if min provided",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(StringListNode("sl", testDesc, 1, UnboundedList)),
+				Node: SerialNodes(ListArg[string]("sl", testDesc, 1, UnboundedList)),
 				Args: []string{"hello"},
 				wantInput: &Input{
 					args: []*inputArg{
 						{value: "hello"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"sl": StringListValue("hello"),
+				WantData: &Data{Values: map[string]interface{}{
+					"sl": []string{"hello"},
 				}},
 			},
 		},
 		{
 			name: "Processes unbounded string list if more than min provided",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(StringListNode("sl", testDesc, 1, UnboundedList)),
+				Node: SerialNodes(ListArg[string]("sl", testDesc, 1, UnboundedList)),
 				Args: []string{"hello", "there", "kenobi"},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -307,15 +298,15 @@ func TestExecute(t *testing.T) {
 						{value: "kenobi"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"sl": StringListValue("hello", "there", "kenobi"),
+				WantData: &Data{Values: map[string]interface{}{
+					"sl": []string{"hello", "there", "kenobi"},
 				}},
 			},
 		},
 		{
 			name: "Processes int list",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(IntListNode("il", testDesc, 1, 2)),
+				Node: SerialNodes(ListArg[int]("il", testDesc, 1, 2)),
 				Args: []string{"1", "-23"},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -323,15 +314,15 @@ func TestExecute(t *testing.T) {
 						{value: "-23"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"il": IntListValue(1, -23),
+				WantData: &Data{Values: map[string]interface{}{
+					"il": []int{1, -23},
 				}},
 			},
 		},
 		{
 			name: "Int list fails if an arg isn't an int",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(IntListNode("il", testDesc, 1, 2)),
+				Node: SerialNodes(ListArg[int]("il", testDesc, 1, 2)),
 				Args: []string{"1", "four", "-23"},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -347,7 +338,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "Processes float list",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(FloatListNode("fl", testDesc, 1, 2)),
+				Node: SerialNodes(ListArg[float64]("fl", testDesc, 1, 2)),
 				Args: []string{"0.1", "-2.3"},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -355,15 +346,15 @@ func TestExecute(t *testing.T) {
 						{value: "-2.3"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"fl": FloatListValue(0.1, -2.3),
+				WantData: &Data{Values: map[string]interface{}{
+					"fl": []float64{0.1, -2.3},
 				}},
 			},
 		},
 		{
 			name: "Float list fails if an arg isn't an float",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(FloatListNode("fl", testDesc, 1, 2)),
+				Node: SerialNodes(ListArg[float64]("fl", testDesc, 1, 2)),
 				Args: []string{"0.1", "four", "-23"},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -380,7 +371,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "Processes multiple args",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(IntListNode("il", testDesc, 2, 0), StringNode("s", testDesc), FloatListNode("fl", testDesc, 1, 2)),
+				Node: SerialNodes(ListArg[int]("il", testDesc, 2, 0), Arg[string]("s", testDesc), ListArg[float64]("fl", testDesc, 1, 2)),
 				Args: []string{"0", "1", "two", "0.3", "-4"},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -391,17 +382,17 @@ func TestExecute(t *testing.T) {
 						{value: "-4"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"il": IntListValue(0, 1),
-					"s":  StringValue("two"),
-					"fl": FloatListValue(0.3, -4),
+				WantData: &Data{Values: map[string]interface{}{
+					"il": []int{0, 1},
+					"s":  "two",
+					"fl": []float64{0.3, -4},
 				}},
 			},
 		},
 		{
 			name: "Fails if extra args when multiple",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(IntListNode("il", testDesc, 2, 0), StringNode("s", testDesc), FloatListNode("fl", testDesc, 1, 2)),
+				Node: SerialNodes(ListArg[int]("il", testDesc, 2, 0), Arg[string]("s", testDesc), ListArg[float64]("fl", testDesc, 1, 2)),
 				Args: []string{"0", "1", "two", "0.3", "-4", "0.5", "6"},
 				wantInput: &Input{
 					remaining: []int{6},
@@ -415,10 +406,10 @@ func TestExecute(t *testing.T) {
 						{value: "6"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"il": IntListValue(0, 1),
-					"s":  StringValue("two"),
-					"fl": FloatListValue(0.3, -4, 0.5),
+				WantData: &Data{Values: map[string]interface{}{
+					"il": []int{0, 1},
+					"s":  "two",
+					"fl": []float64{0.3, -4, 0.5},
 				}},
 				WantErr:    fmt.Errorf("Unprocessed extra args: [6]"),
 				WantStderr: []string{"Unprocessed extra args: [6]"},
@@ -438,7 +429,7 @@ func TestExecute(t *testing.T) {
 			name: "Sets executable with ExecutableNode",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					StringListNode("SL", "", 0, UnboundedList),
+					ListArg[string]("SL", "", 0, UnboundedList),
 					ExecutableNode(func(o Output, d *Data) ([]string, error) {
 						o.Stdout("hello")
 						o.Stderr("there")
@@ -458,8 +449,8 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"SL": StringListValue("abc", "def"),
+					Values: map[string]interface{}{
+						"SL": []string{"abc", "def"},
 					},
 				},
 			},
@@ -468,7 +459,7 @@ func TestExecute(t *testing.T) {
 			name: "ExecutableNode returning error",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					StringListNode("SL", "", 0, UnboundedList),
+					ListArg[string]("SL", "", 0, UnboundedList),
 					ExecutableNode(func(o Output, d *Data) ([]string, error) {
 						return d.StringList("SL"), fmt.Errorf("bad news bears")
 					}),
@@ -482,8 +473,8 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"SL": StringListValue("abc", "def"),
+					Values: map[string]interface{}{
+						"SL": []string{"abc", "def"},
 					},
 				},
 			},
@@ -503,13 +494,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "executes with proper data",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(IntListNode("il", testDesc, 2, 0), StringNode("s", testDesc), FloatListNode("fl", testDesc, 1, 2), ExecutorNode(func(o Output, d *Data) {
-					keys := d.Keys()
-					sort.Strings(keys)
-					for _, k := range keys {
-						o.Stdoutf("%s: %v", k, d.Get(k))
-					}
-				})),
+				Node: SerialNodesTo(printArgsNode(), ListArg[int]("il", testDesc, 2, 0), Arg[string]("s", testDesc), ListArg[float64]("fl", testDesc, 1, 2)),
 				Args: []string{"0", "1", "two", "0.3", "-4"},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -520,22 +505,22 @@ func TestExecute(t *testing.T) {
 						{value: "-4"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"il": IntListValue(0, 1),
-					"s":  StringValue("two"),
-					"fl": FloatListValue(0.3, -4),
+				WantData: &Data{Values: map[string]interface{}{
+					"il": []int{0, 1},
+					"s":  "two",
+					"fl": []float64{0.3, -4},
 				}},
 				WantStdout: []string{
-					"fl: FloatListValue(0.30, -4.00)",
-					"il: IntListValue(0, 1)",
-					`s: StringValue("two")`,
+					"fl: [0.3 -4]",
+					"il: [0 1]",
+					`s: two`,
 				},
 			},
 		},
 		{
 			name: "executor error is returned",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(IntListNode("il", testDesc, 2, 0), StringNode("s", testDesc), FloatListNode("fl", testDesc, 1, 2), ExecuteErrNode(func(o Output, d *Data) error {
+				Node: SerialNodes(ListArg[int]("il", testDesc, 2, 0), Arg[string]("s", testDesc), ListArg[float64]("fl", testDesc, 1, 2), ExecuteErrNode(func(o Output, d *Data) error {
 					return o.Stderr("bad news bears")
 				})),
 				Args: []string{"0", "1", "two", "0.3", "-4"},
@@ -548,42 +533,22 @@ func TestExecute(t *testing.T) {
 						{value: "-4"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"il": IntListValue(0, 1),
-					"s":  StringValue("two"),
-					"fl": FloatListValue(0.3, -4),
+				WantData: &Data{Values: map[string]interface{}{
+					"il": []int{0, 1},
+					"s":  "two",
+					"fl": []float64{0.3, -4},
 				}},
 				WantStderr: []string{"bad news bears"},
 				WantErr:    fmt.Errorf("bad news bears"),
 			},
 		},
 		// ArgValidator tests
-		{
-			name: "breaks when arg option is for invalid type",
-			etc: &ExecuteTestCase{
-				Node: &Node{
-					Processor: StringNode("strArg", testDesc, IntEQ(123)),
-				},
-				Args: []string{"123"},
-				wantInput: &Input{
-					args: []*inputArg{
-						{value: "123"},
-					},
-				},
-				WantData: &Data{Values: map[string]*Value{
-					"strArg": StringValue("123"),
-				}},
-				WantStderr: []string{"validation failed: option can only be bound to arguments with type Int"},
-				WantErr:    fmt.Errorf("validation failed: option can only be bound to arguments with type Int"),
-			},
-		},
-
 		// StringDoesNotEqual
 		{
 			name: "string dne works",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: StringNode("strArg", testDesc, StringDoesNotEqual("bad")),
+					Processor: Arg[string]("strArg", testDesc, NEQ[string]("bad")),
 				},
 				Args: []string{"good"},
 				wantInput: &Input{
@@ -591,8 +556,8 @@ func TestExecute(t *testing.T) {
 						{value: "good"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"strArg": StringValue("good"),
+				WantData: &Data{Values: map[string]interface{}{
+					"strArg": "good",
 				}},
 			},
 		},
@@ -600,7 +565,7 @@ func TestExecute(t *testing.T) {
 			name: "string dne fails",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: StringNode("strArg", testDesc, StringDoesNotEqual("bad")),
+					Processor: Arg[string]("strArg", testDesc, NEQ[string]("bad")),
 				},
 				Args: []string{"bad"},
 				wantInput: &Input{
@@ -608,11 +573,11 @@ func TestExecute(t *testing.T) {
 						{value: "bad"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"strArg": StringValue("bad"),
+				WantData: &Data{Values: map[string]interface{}{
+					"strArg": "bad",
 				}},
-				WantStderr: []string{`validation failed: [StringDoesNotEqual] value cannot equal "bad"`},
-				WantErr:    fmt.Errorf(`validation failed: [StringDoesNotEqual] value cannot equal "bad"`),
+				WantStderr: []string{`validation failed: [NEQ] value cannot equal bad`},
+				WantErr:    fmt.Errorf(`validation failed: [NEQ] value cannot equal bad`),
 			},
 		},
 		// Contains
@@ -620,7 +585,7 @@ func TestExecute(t *testing.T) {
 			name: "contains works",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: StringNode("strArg", testDesc, Contains("good")),
+					Processor: Arg[string]("strArg", testDesc, Contains("good")),
 				},
 				Args: []string{"goodbye"},
 				wantInput: &Input{
@@ -628,8 +593,8 @@ func TestExecute(t *testing.T) {
 						{value: "goodbye"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"strArg": StringValue("goodbye"),
+				WantData: &Data{Values: map[string]interface{}{
+					"strArg": "goodbye",
 				}},
 			},
 		},
@@ -637,7 +602,7 @@ func TestExecute(t *testing.T) {
 			name: "contains fails",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: StringNode("strArg", testDesc, Contains("good")),
+					Processor: Arg[string]("strArg", testDesc, Contains("good")),
 				},
 				Args: []string{"hello"},
 				wantInput: &Input{
@@ -645,8 +610,8 @@ func TestExecute(t *testing.T) {
 						{value: "hello"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"strArg": StringValue("hello"),
+				WantData: &Data{Values: map[string]interface{}{
+					"strArg": "hello",
 				}},
 				WantStderr: []string{`validation failed: [Contains] value doesn't contain substring "good"`},
 				WantErr:    fmt.Errorf(`validation failed: [Contains] value doesn't contain substring "good"`),
@@ -656,7 +621,7 @@ func TestExecute(t *testing.T) {
 			name: "AddOptions works",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: StringNode("strArg", testDesc).AddOptions(Contains("good")),
+					Processor: Arg[string]("strArg", testDesc).AddOptions(Contains("good")),
 				},
 				Args: []string{"hello"},
 				wantInput: &Input{
@@ -664,8 +629,8 @@ func TestExecute(t *testing.T) {
 						{value: "hello"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"strArg": StringValue("hello"),
+				WantData: &Data{Values: map[string]interface{}{
+					"strArg": "hello",
 				}},
 				WantStderr: []string{`validation failed: [Contains] value doesn't contain substring "good"`},
 				WantErr:    fmt.Errorf(`validation failed: [Contains] value doesn't contain substring "good"`),
@@ -676,7 +641,7 @@ func TestExecute(t *testing.T) {
 			name: "matches regex works",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: StringNode("strArg", testDesc, MatchesRegex("a+b=?c")),
+					Processor: Arg[string]("strArg", testDesc, MatchesRegex("a+b=?c")),
 				},
 				Args: []string{"equiation: aabcdef"},
 				wantInput: &Input{
@@ -684,8 +649,8 @@ func TestExecute(t *testing.T) {
 						{value: "equiation: aabcdef"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"strArg": StringValue("equiation: aabcdef"),
+				WantData: &Data{Values: map[string]interface{}{
+					"strArg": "equiation: aabcdef",
 				}},
 			},
 		},
@@ -693,7 +658,7 @@ func TestExecute(t *testing.T) {
 			name: "matches regex fails",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: StringNode("strArg", testDesc, MatchesRegex(".*", "i+")),
+					Processor: Arg[string]("strArg", testDesc, MatchesRegex(".*", "i+")),
 				},
 				Args: []string{"team"},
 				wantInput: &Input{
@@ -701,11 +666,11 @@ func TestExecute(t *testing.T) {
 						{value: "team"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"strArg": StringValue("team"),
+				WantData: &Data{Values: map[string]interface{}{
+					"strArg": "team",
 				}},
-				WantStderr: []string{`validation failed: [MatchesRegex] value doesn't match regex "i+"`},
-				WantErr:    fmt.Errorf(`validation failed: [MatchesRegex] value doesn't match regex "i+"`),
+				WantStderr: []string{`validation failed: [MatchesRegex] value "team" doesn't match regex "i+"`},
+				WantErr:    fmt.Errorf(`validation failed: [MatchesRegex] value "team" doesn't match regex "i+"`),
 			},
 		},
 		// ListMatchesRegex
@@ -713,7 +678,7 @@ func TestExecute(t *testing.T) {
 			name: "ListMatchesRegex works",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: StringListNode("slArg", testDesc, 1, UnboundedList, ListMatchesRegex("a+b=?c", "^eq")),
+					Processor: ListArg[string]("slArg", testDesc, 1, UnboundedList, ValidatorList(MatchesRegex("a+b=?c", "^eq"))),
 				},
 				Args: []string{"equiation: aabcdef"},
 				wantInput: &Input{
@@ -721,8 +686,8 @@ func TestExecute(t *testing.T) {
 						{value: "equiation: aabcdef"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"slArg": StringListValue("equiation: aabcdef"),
+				WantData: &Data{Values: map[string]interface{}{
+					"slArg": []string{"equiation: aabcdef"},
 				}},
 			},
 		},
@@ -730,7 +695,7 @@ func TestExecute(t *testing.T) {
 			name: "ListMatchesRegex fails",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: StringListNode("slArg", testDesc, 1, UnboundedList, ListMatchesRegex(".*", "i+")),
+					Processor: ListArg[string]("slArg", testDesc, 1, UnboundedList, ValidatorList(MatchesRegex(".*", "i+"))),
 				},
 				Args: []string{"equiation: aabcdef", "oops"},
 				wantInput: &Input{
@@ -739,11 +704,11 @@ func TestExecute(t *testing.T) {
 						{value: "oops"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"slArg": StringListValue("equiation: aabcdef", "oops"),
+				WantData: &Data{Values: map[string]interface{}{
+					"slArg": []string{"equiation: aabcdef", "oops"},
 				}},
-				WantStderr: []string{`validation failed: [ListMatchesRegex] value "oops" doesn't match regex "i+"`},
-				WantErr:    fmt.Errorf(`validation failed: [ListMatchesRegex] value "oops" doesn't match regex "i+"`),
+				WantStderr: []string{`validation failed: [MatchesRegex] value "oops" doesn't match regex "i+"`},
+				WantErr:    fmt.Errorf(`validation failed: [MatchesRegex] value "oops" doesn't match regex "i+"`),
 			},
 		},
 		// IsRegex
@@ -751,7 +716,7 @@ func TestExecute(t *testing.T) {
 			name: "IsRegex works",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: StringNode("strArg", testDesc, IsRegex()),
+					Processor: Arg[string]("strArg", testDesc, IsRegex()),
 				},
 				Args: []string{".*"},
 				wantInput: &Input{
@@ -759,8 +724,8 @@ func TestExecute(t *testing.T) {
 						{value: ".*"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"strArg": StringValue(".*"),
+				WantData: &Data{Values: map[string]interface{}{
+					"strArg": ".*",
 				}},
 			},
 		},
@@ -768,7 +733,7 @@ func TestExecute(t *testing.T) {
 			name: "IsRegex fails",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: StringNode("strArg", testDesc, IsRegex()),
+					Processor: Arg[string]("strArg", testDesc, IsRegex()),
 				},
 				Args: []string{"*"},
 				wantInput: &Input{
@@ -776,11 +741,11 @@ func TestExecute(t *testing.T) {
 						{value: "*"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"strArg": StringValue("*"),
+				WantData: &Data{Values: map[string]interface{}{
+					"strArg": "*",
 				}},
-				WantStderr: []string{"validation failed: [IsRegex] value isn't a valid regex: error parsing regexp: missing argument to repetition operator: `*`"},
-				WantErr:    fmt.Errorf("validation failed: [IsRegex] value isn't a valid regex: error parsing regexp: missing argument to repetition operator: `*`"),
+				WantStderr: []string{"validation failed: [IsRegex] value \"*\" isn't a valid regex: error parsing regexp: missing argument to repetition operator: `*`"},
+				WantErr:    fmt.Errorf("validation failed: [IsRegex] value \"*\" isn't a valid regex: error parsing regexp: missing argument to repetition operator: `*`"),
 			},
 		},
 		// ListIsRegex
@@ -788,7 +753,7 @@ func TestExecute(t *testing.T) {
 			name: "ListIsRegex works",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: StringListNode("slArg", testDesc, 1, UnboundedList, ListIsRegex()),
+					Processor: ListArg[string]("slArg", testDesc, 1, UnboundedList, ValidatorList(IsRegex())),
 				},
 				Args: []string{".*", " +"},
 				wantInput: &Input{
@@ -797,8 +762,8 @@ func TestExecute(t *testing.T) {
 						{value: " +"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"slArg": StringListValue(".*", " +"),
+				WantData: &Data{Values: map[string]interface{}{
+					"slArg": []string{".*", " +"},
 				}},
 			},
 		},
@@ -806,7 +771,7 @@ func TestExecute(t *testing.T) {
 			name: "ListIsRegex fails",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: StringListNode("slArg", testDesc, 1, UnboundedList, ListIsRegex()),
+					Processor: ListArg[string]("slArg", testDesc, 1, UnboundedList, ValidatorList(IsRegex())),
 				},
 				Args: []string{".*", "+"},
 				wantInput: &Input{
@@ -815,11 +780,11 @@ func TestExecute(t *testing.T) {
 						{value: "+"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"slArg": StringListValue(".*", "+"),
+				WantData: &Data{Values: map[string]interface{}{
+					"slArg": []string{".*", "+"},
 				}},
-				WantStderr: []string{"validation failed: [ListIsRegex] value \"+\" isn't a valid regex: error parsing regexp: missing argument to repetition operator: `+`"},
-				WantErr:    fmt.Errorf("validation failed: [ListIsRegex] value \"+\" isn't a valid regex: error parsing regexp: missing argument to repetition operator: `+`"),
+				WantStderr: []string{"validation failed: [IsRegex] value \"+\" isn't a valid regex: error parsing regexp: missing argument to repetition operator: `+`"},
+				WantErr:    fmt.Errorf("validation failed: [IsRegex] value \"+\" isn't a valid regex: error parsing regexp: missing argument to repetition operator: `+`"),
 			},
 		},
 		// FileExists and FilesExist
@@ -827,7 +792,7 @@ func TestExecute(t *testing.T) {
 			name: "FileExists works",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: StringNode("S", testDesc, FileExists()),
+					Processor: Arg[string]("S", testDesc, FileExists()),
 				},
 				Args: []string{"execute_test.go"},
 				wantInput: &Input{
@@ -835,8 +800,8 @@ func TestExecute(t *testing.T) {
 						{value: "execute_test.go"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"S": StringValue("execute_test.go"),
+				WantData: &Data{Values: map[string]interface{}{
+					"S": "execute_test.go",
 				}},
 			},
 		},
@@ -844,7 +809,7 @@ func TestExecute(t *testing.T) {
 			name: "FileExists fails",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: StringNode("S", testDesc, FileExists()),
+					Processor: Arg[string]("S", testDesc, FileExists()),
 				},
 				Args: []string{"execute_test.gone"},
 				wantInput: &Input{
@@ -852,8 +817,8 @@ func TestExecute(t *testing.T) {
 						{value: "execute_test.gone"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"S": StringValue("execute_test.gone"),
+				WantData: &Data{Values: map[string]interface{}{
+					"S": "execute_test.gone",
 				}},
 				WantErr:    fmt.Errorf(`validation failed: [FileExists] file "execute_test.gone" does not exist`),
 				WantStderr: []string{`validation failed: [FileExists] file "execute_test.gone" does not exist`},
@@ -863,7 +828,7 @@ func TestExecute(t *testing.T) {
 			name: "FilesExist works",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: StringListNode("SL", testDesc, 1, 3, FilesExist()),
+					Processor: ListArg[string]("SL", testDesc, 1, 3, ValidatorList(FileExists())),
 				},
 				Args: []string{"execute_test.go", "execute.go"},
 				wantInput: &Input{
@@ -872,8 +837,8 @@ func TestExecute(t *testing.T) {
 						{value: "execute.go"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"SL": StringListValue("execute_test.go", "execute.go"),
+				WantData: &Data{Values: map[string]interface{}{
+					"SL": []string{"execute_test.go", "execute.go"},
 				}},
 			},
 		},
@@ -881,7 +846,7 @@ func TestExecute(t *testing.T) {
 			name: "FilesExist fails",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: StringListNode("SL", testDesc, 1, 3, FilesExist()),
+					Processor: ListArg[string]("SL", testDesc, 1, 3, ValidatorList(FileExists())),
 				},
 				Args: []string{"execute_test.go", "execute.gone"},
 				wantInput: &Input{
@@ -890,11 +855,11 @@ func TestExecute(t *testing.T) {
 						{value: "execute.gone"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"SL": StringListValue("execute_test.go", "execute.gone"),
+				WantData: &Data{Values: map[string]interface{}{
+					"SL": []string{"execute_test.go", "execute.gone"},
 				}},
-				WantErr:    fmt.Errorf(`validation failed: [FilesExist] file "execute.gone" does not exist`),
-				WantStderr: []string{`validation failed: [FilesExist] file "execute.gone" does not exist`},
+				WantErr:    fmt.Errorf(`validation failed: [FileExists] file "execute.gone" does not exist`),
+				WantStderr: []string{`validation failed: [FileExists] file "execute.gone" does not exist`},
 			},
 		},
 		// IsDir and AreDirs
@@ -902,7 +867,7 @@ func TestExecute(t *testing.T) {
 			name: "IsDir works",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: StringNode("S", testDesc, IsDir()),
+					Processor: Arg[string]("S", testDesc, IsDir()),
 				},
 				Args: []string{"testing"},
 				wantInput: &Input{
@@ -910,8 +875,8 @@ func TestExecute(t *testing.T) {
 						{value: "testing"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"S": StringValue("testing"),
+				WantData: &Data{Values: map[string]interface{}{
+					"S": "testing",
 				}},
 			},
 		},
@@ -919,7 +884,7 @@ func TestExecute(t *testing.T) {
 			name: "IsDir fails when does not exist",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: StringNode("S", testDesc, IsDir()),
+					Processor: Arg[string]("S", testDesc, IsDir()),
 				},
 				Args: []string{"tested"},
 				wantInput: &Input{
@@ -927,8 +892,8 @@ func TestExecute(t *testing.T) {
 						{value: "tested"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"S": StringValue("tested"),
+				WantData: &Data{Values: map[string]interface{}{
+					"S": "tested",
 				}},
 				WantErr:    fmt.Errorf(`validation failed: [IsDir] file "tested" does not exist`),
 				WantStderr: []string{`validation failed: [IsDir] file "tested" does not exist`},
@@ -938,7 +903,7 @@ func TestExecute(t *testing.T) {
 			name: "IsDir fails when not a directory",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: StringNode("S", testDesc, IsDir()),
+					Processor: Arg[string]("S", testDesc, IsDir()),
 				},
 				Args: []string{"execute_test.go"},
 				wantInput: &Input{
@@ -946,8 +911,8 @@ func TestExecute(t *testing.T) {
 						{value: "execute_test.go"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"S": StringValue("execute_test.go"),
+				WantData: &Data{Values: map[string]interface{}{
+					"S": "execute_test.go",
 				}},
 				WantErr:    fmt.Errorf(`validation failed: [IsDir] argument "execute_test.go" is a file`),
 				WantStderr: []string{`validation failed: [IsDir] argument "execute_test.go" is a file`},
@@ -957,7 +922,7 @@ func TestExecute(t *testing.T) {
 			name: "AreDirs works",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: StringListNode("SL", testDesc, 1, 3, AreDirs()),
+					Processor: ListArg[string]("SL", testDesc, 1, 3, ValidatorList(IsDir())),
 				},
 				Args: []string{"testing", "cache"},
 				wantInput: &Input{
@@ -966,8 +931,8 @@ func TestExecute(t *testing.T) {
 						{value: "cache"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"SL": StringListValue("testing", "cache"),
+				WantData: &Data{Values: map[string]interface{}{
+					"SL": []string{"testing", "cache"},
 				}},
 			},
 		},
@@ -975,7 +940,7 @@ func TestExecute(t *testing.T) {
 			name: "AreDirs fails when does not exist",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: StringListNode("SL", testDesc, 1, 3, AreDirs()),
+					Processor: ListArg[string]("SL", testDesc, 1, 3, ValidatorList(IsDir())),
 				},
 				Args: []string{"testing", "cash"},
 				wantInput: &Input{
@@ -984,18 +949,18 @@ func TestExecute(t *testing.T) {
 						{value: "cash"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"SL": StringListValue("testing", "cash"),
+				WantData: &Data{Values: map[string]interface{}{
+					"SL": []string{"testing", "cash"},
 				}},
-				WantErr:    fmt.Errorf(`validation failed: [AreDirs] file "cash" does not exist`),
-				WantStderr: []string{`validation failed: [AreDirs] file "cash" does not exist`},
+				WantErr:    fmt.Errorf(`validation failed: [IsDir] file "cash" does not exist`),
+				WantStderr: []string{`validation failed: [IsDir] file "cash" does not exist`},
 			},
 		},
 		{
 			name: "AreDirs fails when not a directory",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: StringListNode("SL", testDesc, 1, 3, AreDirs()),
+					Processor: ListArg[string]("SL", testDesc, 1, 3, ValidatorList(IsDir())),
 				},
 				Args: []string{"testing", "execute.go"},
 				wantInput: &Input{
@@ -1004,11 +969,11 @@ func TestExecute(t *testing.T) {
 						{value: "execute.go"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"SL": StringListValue("testing", "execute.go"),
+				WantData: &Data{Values: map[string]interface{}{
+					"SL": []string{"testing", "execute.go"},
 				}},
-				WantErr:    fmt.Errorf(`validation failed: [AreDirs] argument "execute.go" is a file`),
-				WantStderr: []string{`validation failed: [AreDirs] argument "execute.go" is a file`},
+				WantErr:    fmt.Errorf(`validation failed: [IsDir] argument "execute.go" is a file`),
+				WantStderr: []string{`validation failed: [IsDir] argument "execute.go" is a file`},
 			},
 		},
 		// IsFile and AreFiles
@@ -1016,7 +981,7 @@ func TestExecute(t *testing.T) {
 			name: "IsFile works",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: StringNode("S", testDesc, IsFile()),
+					Processor: Arg[string]("S", testDesc, IsFile()),
 				},
 				Args: []string{"execute.go"},
 				wantInput: &Input{
@@ -1024,8 +989,8 @@ func TestExecute(t *testing.T) {
 						{value: "execute.go"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"S": StringValue("execute.go"),
+				WantData: &Data{Values: map[string]interface{}{
+					"S": "execute.go",
 				}},
 			},
 		},
@@ -1033,7 +998,7 @@ func TestExecute(t *testing.T) {
 			name: "IsFile fails when does not exist",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: StringNode("S", testDesc, IsFile()),
+					Processor: Arg[string]("S", testDesc, IsFile()),
 				},
 				Args: []string{"tested"},
 				wantInput: &Input{
@@ -1041,8 +1006,8 @@ func TestExecute(t *testing.T) {
 						{value: "tested"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"S": StringValue("tested"),
+				WantData: &Data{Values: map[string]interface{}{
+					"S": "tested",
 				}},
 				WantErr:    fmt.Errorf(`validation failed: [IsFile] file "tested" does not exist`),
 				WantStderr: []string{`validation failed: [IsFile] file "tested" does not exist`},
@@ -1052,7 +1017,7 @@ func TestExecute(t *testing.T) {
 			name: "IsFile fails when not a file",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: StringNode("S", testDesc, IsFile()),
+					Processor: Arg[string]("S", testDesc, IsFile()),
 				},
 				Args: []string{"testing"},
 				wantInput: &Input{
@@ -1060,8 +1025,8 @@ func TestExecute(t *testing.T) {
 						{value: "testing"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"S": StringValue("testing"),
+				WantData: &Data{Values: map[string]interface{}{
+					"S": "testing",
 				}},
 				WantErr:    fmt.Errorf(`validation failed: [IsFile] argument "testing" is a directory`),
 				WantStderr: []string{`validation failed: [IsFile] argument "testing" is a directory`},
@@ -1071,7 +1036,7 @@ func TestExecute(t *testing.T) {
 			name: "AreFiles works",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: StringListNode("SL", testDesc, 1, 3, AreFiles()),
+					Processor: ListArg[string]("SL", testDesc, 1, 3, ValidatorList(IsFile())),
 				},
 				Args: []string{"execute.go", "cache.go"},
 				wantInput: &Input{
@@ -1080,8 +1045,8 @@ func TestExecute(t *testing.T) {
 						{value: "cache.go"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"SL": StringListValue("execute.go", "cache.go"),
+				WantData: &Data{Values: map[string]interface{}{
+					"SL": []string{"execute.go", "cache.go"},
 				}},
 			},
 		},
@@ -1089,7 +1054,7 @@ func TestExecute(t *testing.T) {
 			name: "AreFiles fails when does not exist",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: StringListNode("SL", testDesc, 1, 3, AreFiles()),
+					Processor: ListArg[string]("SL", testDesc, 1, 3, ValidatorList(IsFile())),
 				},
 				Args: []string{"execute.go", "cash"},
 				wantInput: &Input{
@@ -1098,18 +1063,18 @@ func TestExecute(t *testing.T) {
 						{value: "cash"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"SL": StringListValue("execute.go", "cash"),
+				WantData: &Data{Values: map[string]interface{}{
+					"SL": []string{"execute.go", "cash"},
 				}},
-				WantErr:    fmt.Errorf(`validation failed: [AreFiles] file "cash" does not exist`),
-				WantStderr: []string{`validation failed: [AreFiles] file "cash" does not exist`},
+				WantErr:    fmt.Errorf(`validation failed: [IsFile] file "cash" does not exist`),
+				WantStderr: []string{`validation failed: [IsFile] file "cash" does not exist`},
 			},
 		},
 		{
 			name: "AreFiles fails when not a directory",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: StringListNode("SL", testDesc, 1, 3, AreFiles()),
+					Processor: ListArg[string]("SL", testDesc, 1, 3, ValidatorList(IsFile())),
 				},
 				Args: []string{"execute.go", "testing"},
 				wantInput: &Input{
@@ -1118,11 +1083,11 @@ func TestExecute(t *testing.T) {
 						{value: "testing"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"SL": StringListValue("execute.go", "testing"),
+				WantData: &Data{Values: map[string]interface{}{
+					"SL": []string{"execute.go", "testing"},
 				}},
-				WantErr:    fmt.Errorf(`validation failed: [AreFiles] argument "testing" is a directory`),
-				WantStderr: []string{`validation failed: [AreFiles] argument "testing" is a directory`},
+				WantErr:    fmt.Errorf(`validation failed: [IsFile] argument "testing" is a directory`),
+				WantStderr: []string{`validation failed: [IsFile] argument "testing" is a directory`},
 			},
 		},
 		// InList & string menu
@@ -1130,7 +1095,7 @@ func TestExecute(t *testing.T) {
 			name: "InList works",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: StringNode("strArg", testDesc, InList("abc", "def", "ghi")),
+					Processor: Arg[string]("strArg", testDesc, InList("abc", "def", "ghi")),
 				},
 				Args: []string{"def"},
 				wantInput: &Input{
@@ -1138,8 +1103,8 @@ func TestExecute(t *testing.T) {
 						{value: "def"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"strArg": StringValue("def"),
+				WantData: &Data{Values: map[string]interface{}{
+					"strArg": "def",
 				}},
 			},
 		},
@@ -1147,7 +1112,7 @@ func TestExecute(t *testing.T) {
 			name: "InList fails",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: StringNode("strArg", testDesc, InList("abc", "def", "ghi")),
+					Processor: Arg[string]("strArg", testDesc, InList("abc", "def", "ghi")),
 				},
 				Args: []string{"jkl"},
 				wantInput: &Input{
@@ -1155,8 +1120,8 @@ func TestExecute(t *testing.T) {
 						{value: "jkl"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"strArg": StringValue("jkl"),
+				WantData: &Data{Values: map[string]interface{}{
+					"strArg": "jkl",
 				}},
 				WantStderr: []string{`validation failed: [InList] argument must be one of [abc def ghi]`},
 				WantErr:    fmt.Errorf(`validation failed: [InList] argument must be one of [abc def ghi]`),
@@ -1174,8 +1139,8 @@ func TestExecute(t *testing.T) {
 						{value: "def"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"strArg": StringValue("def"),
+				WantData: &Data{Values: map[string]interface{}{
+					"strArg": "def",
 				}},
 			},
 		},
@@ -1191,8 +1156,8 @@ func TestExecute(t *testing.T) {
 						{value: "jkl"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"strArg": StringValue("jkl"),
+				WantData: &Data{Values: map[string]interface{}{
+					"strArg": "jkl",
 				}},
 				WantStderr: []string{`validation failed: [InList] argument must be one of [abc def ghi]`},
 				WantErr:    fmt.Errorf(`validation failed: [InList] argument must be one of [abc def ghi]`),
@@ -1203,7 +1168,7 @@ func TestExecute(t *testing.T) {
 			name: "MinLength works",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: StringNode("strArg", testDesc, MinLength(3)),
+					Processor: Arg[string]("strArg", testDesc, MinLength(3)),
 				},
 				Args: []string{"hello"},
 				wantInput: &Input{
@@ -1211,8 +1176,8 @@ func TestExecute(t *testing.T) {
 						{value: "hello"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"strArg": StringValue("hello"),
+				WantData: &Data{Values: map[string]interface{}{
+					"strArg": "hello",
 				}},
 			},
 		},
@@ -1220,7 +1185,7 @@ func TestExecute(t *testing.T) {
 			name: "MinLength works for exact count match",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: StringNode("strArg", testDesc, MinLength(3)),
+					Processor: Arg[string]("strArg", testDesc, MinLength(3)),
 				},
 				Args: []string{"hey"},
 				wantInput: &Input{
@@ -1228,8 +1193,8 @@ func TestExecute(t *testing.T) {
 						{value: "hey"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"strArg": StringValue("hey"),
+				WantData: &Data{Values: map[string]interface{}{
+					"strArg": "hey",
 				}},
 			},
 		},
@@ -1237,7 +1202,7 @@ func TestExecute(t *testing.T) {
 			name: "MinLength fails",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: StringNode("strArg", testDesc, MinLength(3)),
+					Processor: Arg[string]("strArg", testDesc, MinLength(3)),
 				},
 				Args: []string{"hi"},
 				wantInput: &Input{
@@ -1245,8 +1210,8 @@ func TestExecute(t *testing.T) {
 						{value: "hi"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"strArg": StringValue("hi"),
+				WantData: &Data{Values: map[string]interface{}{
+					"strArg": "hi",
 				}},
 				WantStderr: []string{`validation failed: [MinLength] value must be at least 3 characters`},
 				WantErr:    fmt.Errorf(`validation failed: [MinLength] value must be at least 3 characters`),
@@ -1257,7 +1222,7 @@ func TestExecute(t *testing.T) {
 			name: "IntEQ works",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: IntNode("IntNode", testDesc, IntEQ(24)),
+					Processor: Arg[int]("Arg[int]", testDesc, EQ[int](24)),
 				},
 				Args: []string{"24"},
 				wantInput: &Input{
@@ -1265,8 +1230,8 @@ func TestExecute(t *testing.T) {
 						{value: "24"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"IntNode": IntValue(24),
+				WantData: &Data{Values: map[string]interface{}{
+					"Arg[int]": 24,
 				}},
 			},
 		},
@@ -1274,7 +1239,7 @@ func TestExecute(t *testing.T) {
 			name: "IntEQ fails",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: IntNode("IntNode", testDesc, IntEQ(24)),
+					Processor: Arg[int]("Arg[int]", testDesc, EQ[int](24)),
 				},
 				Args: []string{"25"},
 				wantInput: &Input{
@@ -1282,11 +1247,11 @@ func TestExecute(t *testing.T) {
 						{value: "25"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"IntNode": IntValue(25),
+				WantData: &Data{Values: map[string]interface{}{
+					"Arg[int]": 25,
 				}},
-				WantStderr: []string{`validation failed: [IntEQ] value isn't equal to 24`},
-				WantErr:    fmt.Errorf(`validation failed: [IntEQ] value isn't equal to 24`),
+				WantStderr: []string{`validation failed: [EQ] value isn't equal to 24`},
+				WantErr:    fmt.Errorf(`validation failed: [EQ] value isn't equal to 24`),
 			},
 		},
 		// IntNE
@@ -1294,7 +1259,7 @@ func TestExecute(t *testing.T) {
 			name: "IntNE works",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: IntNode("IntNode", testDesc, IntNE(24)),
+					Processor: Arg[int]("Arg[int]", testDesc, NEQ[int](24)),
 				},
 				Args: []string{"25"},
 				wantInput: &Input{
@@ -1302,8 +1267,8 @@ func TestExecute(t *testing.T) {
 						{value: "25"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"IntNode": IntValue(25),
+				WantData: &Data{Values: map[string]interface{}{
+					"Arg[int]": 25,
 				}},
 			},
 		},
@@ -1311,7 +1276,7 @@ func TestExecute(t *testing.T) {
 			name: "IntNE fails",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: IntNode("IntNode", testDesc, IntNE(24)),
+					Processor: Arg[int]("Arg[int]", testDesc, NEQ[int](24)),
 				},
 				Args: []string{"24"},
 				wantInput: &Input{
@@ -1319,11 +1284,11 @@ func TestExecute(t *testing.T) {
 						{value: "24"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"IntNode": IntValue(24),
+				WantData: &Data{Values: map[string]interface{}{
+					"Arg[int]": 24,
 				}},
-				WantStderr: []string{`validation failed: [IntNE] value isn't not equal to 24`},
-				WantErr:    fmt.Errorf(`validation failed: [IntNE] value isn't not equal to 24`),
+				WantStderr: []string{`validation failed: [NEQ] value cannot equal 24`},
+				WantErr:    fmt.Errorf(`validation failed: [NEQ] value cannot equal 24`),
 			},
 		},
 		// IntLT
@@ -1331,7 +1296,7 @@ func TestExecute(t *testing.T) {
 			name: "IntLT works when less than",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: IntNode("IntNode", testDesc, IntLT(25)),
+					Processor: Arg[int]("Arg[int]", testDesc, LT[int](25)),
 				},
 				Args: []string{"24"},
 				wantInput: &Input{
@@ -1339,8 +1304,8 @@ func TestExecute(t *testing.T) {
 						{value: "24"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"IntNode": IntValue(24),
+				WantData: &Data{Values: map[string]interface{}{
+					"Arg[int]": 24,
 				}},
 			},
 		},
@@ -1348,7 +1313,7 @@ func TestExecute(t *testing.T) {
 			name: "IntLT fails when equal to",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: IntNode("IntNode", testDesc, IntLT(25)),
+					Processor: Arg[int]("Arg[int]", testDesc, LT[int](25)),
 				},
 				Args: []string{"25"},
 				wantInput: &Input{
@@ -1356,18 +1321,18 @@ func TestExecute(t *testing.T) {
 						{value: "25"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"IntNode": IntValue(25),
+				WantData: &Data{Values: map[string]interface{}{
+					"Arg[int]": 25,
 				}},
-				WantStderr: []string{`validation failed: [IntLT] value isn't less than 25`},
-				WantErr:    fmt.Errorf(`validation failed: [IntLT] value isn't less than 25`),
+				WantStderr: []string{`validation failed: [LT] value isn't less than 25`},
+				WantErr:    fmt.Errorf(`validation failed: [LT] value isn't less than 25`),
 			},
 		},
 		{
 			name: "IntLT fails when greater than",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: IntNode("IntNode", testDesc, IntLT(25)),
+					Processor: Arg[int]("Arg[int]", testDesc, LT[int](25)),
 				},
 				Args: []string{"26"},
 				wantInput: &Input{
@@ -1375,11 +1340,11 @@ func TestExecute(t *testing.T) {
 						{value: "26"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"IntNode": IntValue(26),
+				WantData: &Data{Values: map[string]interface{}{
+					"Arg[int]": 26,
 				}},
-				WantStderr: []string{`validation failed: [IntLT] value isn't less than 25`},
-				WantErr:    fmt.Errorf(`validation failed: [IntLT] value isn't less than 25`),
+				WantStderr: []string{`validation failed: [LT] value isn't less than 25`},
+				WantErr:    fmt.Errorf(`validation failed: [LT] value isn't less than 25`),
 			},
 		},
 		// IntLTE
@@ -1387,7 +1352,7 @@ func TestExecute(t *testing.T) {
 			name: "IntLTE works when less than",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: IntNode("IntNode", testDesc, IntLTE(25)),
+					Processor: Arg[int]("Arg[int]", testDesc, LTE[int](25)),
 				},
 				Args: []string{"24"},
 				wantInput: &Input{
@@ -1395,8 +1360,8 @@ func TestExecute(t *testing.T) {
 						{value: "24"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"IntNode": IntValue(24),
+				WantData: &Data{Values: map[string]interface{}{
+					"Arg[int]": 24,
 				}},
 			},
 		},
@@ -1404,7 +1369,7 @@ func TestExecute(t *testing.T) {
 			name: "IntLTE works when equal to",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: IntNode("IntNode", testDesc, IntLTE(25)),
+					Processor: Arg[int]("Arg[int]", testDesc, LTE[int](25)),
 				},
 				Args: []string{"25"},
 				wantInput: &Input{
@@ -1412,8 +1377,8 @@ func TestExecute(t *testing.T) {
 						{value: "25"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"IntNode": IntValue(25),
+				WantData: &Data{Values: map[string]interface{}{
+					"Arg[int]": 25,
 				}},
 			},
 		},
@@ -1421,7 +1386,7 @@ func TestExecute(t *testing.T) {
 			name: "IntLTE fails when greater than",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: IntNode("IntNode", testDesc, IntLTE(25)),
+					Processor: Arg[int]("Arg[int]", testDesc, LTE[int](25)),
 				},
 				Args: []string{"26"},
 				wantInput: &Input{
@@ -1429,11 +1394,11 @@ func TestExecute(t *testing.T) {
 						{value: "26"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"IntNode": IntValue(26),
+				WantData: &Data{Values: map[string]interface{}{
+					"Arg[int]": 26,
 				}},
-				WantStderr: []string{`validation failed: [IntLTE] value isn't less than or equal to 25`},
-				WantErr:    fmt.Errorf(`validation failed: [IntLTE] value isn't less than or equal to 25`),
+				WantStderr: []string{`validation failed: [LTE] value isn't less than or equal to 25`},
+				WantErr:    fmt.Errorf(`validation failed: [LTE] value isn't less than or equal to 25`),
 			},
 		},
 		// IntGT
@@ -1441,7 +1406,7 @@ func TestExecute(t *testing.T) {
 			name: "IntGT fails when less than",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: IntNode("IntNode", testDesc, IntGT(25)),
+					Processor: Arg[int]("Arg[int]", testDesc, GT[int](25)),
 				},
 				Args: []string{"24"},
 				wantInput: &Input{
@@ -1449,18 +1414,18 @@ func TestExecute(t *testing.T) {
 						{value: "24"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"IntNode": IntValue(24),
+				WantData: &Data{Values: map[string]interface{}{
+					"Arg[int]": 24,
 				}},
-				WantStderr: []string{`validation failed: [IntGT] value isn't greater than 25`},
-				WantErr:    fmt.Errorf(`validation failed: [IntGT] value isn't greater than 25`),
+				WantStderr: []string{`validation failed: [GT] value isn't greater than 25`},
+				WantErr:    fmt.Errorf(`validation failed: [GT] value isn't greater than 25`),
 			},
 		},
 		{
 			name: "IntGT fails when equal to",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: IntNode("IntNode", testDesc, IntGT(25)),
+					Processor: Arg[int]("Arg[int]", testDesc, GT[int](25)),
 				},
 				Args: []string{"25"},
 				wantInput: &Input{
@@ -1468,18 +1433,18 @@ func TestExecute(t *testing.T) {
 						{value: "25"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"IntNode": IntValue(25),
+				WantData: &Data{Values: map[string]interface{}{
+					"Arg[int]": 25,
 				}},
-				WantStderr: []string{`validation failed: [IntGT] value isn't greater than 25`},
-				WantErr:    fmt.Errorf(`validation failed: [IntGT] value isn't greater than 25`),
+				WantStderr: []string{`validation failed: [GT] value isn't greater than 25`},
+				WantErr:    fmt.Errorf(`validation failed: [GT] value isn't greater than 25`),
 			},
 		},
 		{
 			name: "IntGT works when greater than",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: IntNode("IntNode", testDesc, IntGT(25)),
+					Processor: Arg[int]("Arg[int]", testDesc, GT[int](25)),
 				},
 				Args: []string{"26"},
 				wantInput: &Input{
@@ -1487,8 +1452,8 @@ func TestExecute(t *testing.T) {
 						{value: "26"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"IntNode": IntValue(26),
+				WantData: &Data{Values: map[string]interface{}{
+					"Arg[int]": 26,
 				}},
 			},
 		},
@@ -1497,7 +1462,7 @@ func TestExecute(t *testing.T) {
 			name: "IntGTE fails when less than",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: IntNode("IntNode", testDesc, IntGTE(25)),
+					Processor: Arg[int]("Arg[int]", testDesc, GTE[int](25)),
 				},
 				Args: []string{"24"},
 				wantInput: &Input{
@@ -1505,18 +1470,18 @@ func TestExecute(t *testing.T) {
 						{value: "24"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"IntNode": IntValue(24),
+				WantData: &Data{Values: map[string]interface{}{
+					"Arg[int]": 24,
 				}},
-				WantStderr: []string{`validation failed: [IntGTE] value isn't greater than or equal to 25`},
-				WantErr:    fmt.Errorf(`validation failed: [IntGTE] value isn't greater than or equal to 25`),
+				WantStderr: []string{`validation failed: [GTE] value isn't greater than or equal to 25`},
+				WantErr:    fmt.Errorf(`validation failed: [GTE] value isn't greater than or equal to 25`),
 			},
 		},
 		{
 			name: "IntGTE works when equal to",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: IntNode("IntNode", testDesc, IntGTE(25)),
+					Processor: Arg[int]("Arg[int]", testDesc, GTE[int](25)),
 				},
 				Args: []string{"25"},
 				wantInput: &Input{
@@ -1524,8 +1489,8 @@ func TestExecute(t *testing.T) {
 						{value: "25"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"IntNode": IntValue(25),
+				WantData: &Data{Values: map[string]interface{}{
+					"Arg[int]": 25,
 				}},
 			},
 		},
@@ -1533,7 +1498,7 @@ func TestExecute(t *testing.T) {
 			name: "IntGTE works when greater than",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: IntNode("IntNode", testDesc, IntGTE(25)),
+					Processor: Arg[int]("Arg[int]", testDesc, GTE[int](25)),
 				},
 				Args: []string{"26"},
 				wantInput: &Input{
@@ -1541,8 +1506,8 @@ func TestExecute(t *testing.T) {
 						{value: "26"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"IntNode": IntValue(26),
+				WantData: &Data{Values: map[string]interface{}{
+					"Arg[int]": 26,
 				}},
 			},
 		},
@@ -1551,7 +1516,7 @@ func TestExecute(t *testing.T) {
 			name: "IntPositive fails when negative",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: IntNode("IntNode", testDesc, IntPositive()),
+					Processor: Arg[int]("Arg[int]", testDesc, Positive[int]()),
 				},
 				Args: []string{"-1"},
 				wantInput: &Input{
@@ -1559,18 +1524,18 @@ func TestExecute(t *testing.T) {
 						{value: "-1"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"IntNode": IntValue(-1),
+				WantData: &Data{Values: map[string]interface{}{
+					"Arg[int]": -1,
 				}},
-				WantStderr: []string{`validation failed: [IntPositive] value isn't positive`},
-				WantErr:    fmt.Errorf(`validation failed: [IntPositive] value isn't positive`),
+				WantStderr: []string{`validation failed: [Positive] value isn't positive`},
+				WantErr:    fmt.Errorf(`validation failed: [Positive] value isn't positive`),
 			},
 		},
 		{
 			name: "IntPositive fails when zero",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: IntNode("IntNode", testDesc, IntPositive()),
+					Processor: Arg[int]("Arg[int]", testDesc, Positive[int]()),
 				},
 				Args: []string{"0"},
 				wantInput: &Input{
@@ -1578,18 +1543,18 @@ func TestExecute(t *testing.T) {
 						{value: "0"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"IntNode": IntValue(0),
+				WantData: &Data{Values: map[string]interface{}{
+					"Arg[int]": 0,
 				}},
-				WantStderr: []string{`validation failed: [IntPositive] value isn't positive`},
-				WantErr:    fmt.Errorf(`validation failed: [IntPositive] value isn't positive`),
+				WantStderr: []string{`validation failed: [Positive] value isn't positive`},
+				WantErr:    fmt.Errorf(`validation failed: [Positive] value isn't positive`),
 			},
 		},
 		{
 			name: "IntPositive works when positive",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: IntNode("IntNode", testDesc, IntPositive()),
+					Processor: Arg[int]("Arg[int]", testDesc, Positive[int]()),
 				},
 				Args: []string{"1"},
 				wantInput: &Input{
@@ -1597,8 +1562,8 @@ func TestExecute(t *testing.T) {
 						{value: "1"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"IntNode": IntValue(1),
+				WantData: &Data{Values: map[string]interface{}{
+					"Arg[int]": 1,
 				}},
 			},
 		},
@@ -1607,7 +1572,7 @@ func TestExecute(t *testing.T) {
 			name: "IntNegative works when negative",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: IntNode("IntNode", testDesc, IntNegative()),
+					Processor: Arg[int]("Arg[int]", testDesc, Negative[int]()),
 				},
 				Args: []string{"-1"},
 				wantInput: &Input{
@@ -1615,8 +1580,8 @@ func TestExecute(t *testing.T) {
 						{value: "-1"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"IntNode": IntValue(-1),
+				WantData: &Data{Values: map[string]interface{}{
+					"Arg[int]": -1,
 				}},
 			},
 		},
@@ -1624,7 +1589,7 @@ func TestExecute(t *testing.T) {
 			name: "IntNegative fails when zero",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: IntNode("IntNode", testDesc, IntNegative()),
+					Processor: Arg[int]("Arg[int]", testDesc, Negative[int]()),
 				},
 				Args: []string{"0"},
 				wantInput: &Input{
@@ -1632,18 +1597,18 @@ func TestExecute(t *testing.T) {
 						{value: "0"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"IntNode": IntValue(0),
+				WantData: &Data{Values: map[string]interface{}{
+					"Arg[int]": 0,
 				}},
-				WantStderr: []string{`validation failed: [IntNegative] value isn't negative`},
-				WantErr:    fmt.Errorf(`validation failed: [IntNegative] value isn't negative`),
+				WantStderr: []string{`validation failed: [Negative] value isn't negative`},
+				WantErr:    fmt.Errorf(`validation failed: [Negative] value isn't negative`),
 			},
 		},
 		{
 			name: "IntNegative fails when positive",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: IntNode("IntNode", testDesc, IntNegative()),
+					Processor: Arg[int]("Arg[int]", testDesc, Negative[int]()),
 				},
 				Args: []string{"1"},
 				wantInput: &Input{
@@ -1651,11 +1616,11 @@ func TestExecute(t *testing.T) {
 						{value: "1"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"IntNode": IntValue(1),
+				WantData: &Data{Values: map[string]interface{}{
+					"Arg[int]": 1,
 				}},
-				WantStderr: []string{`validation failed: [IntNegative] value isn't negative`},
-				WantErr:    fmt.Errorf(`validation failed: [IntNegative] value isn't negative`),
+				WantStderr: []string{`validation failed: [Negative] value isn't negative`},
+				WantErr:    fmt.Errorf(`validation failed: [Negative] value isn't negative`),
 			},
 		},
 		// IntNonNegative
@@ -1663,7 +1628,7 @@ func TestExecute(t *testing.T) {
 			name: "IntNonNegative fails when negative",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: IntNode("IntNode", testDesc, IntNonNegative()),
+					Processor: Arg[int]("Arg[int]", testDesc, NonNegative[int]()),
 				},
 				Args: []string{"-1"},
 				wantInput: &Input{
@@ -1671,18 +1636,18 @@ func TestExecute(t *testing.T) {
 						{value: "-1"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"IntNode": IntValue(-1),
+				WantData: &Data{Values: map[string]interface{}{
+					"Arg[int]": -1,
 				}},
-				WantStderr: []string{`validation failed: [IntNonNegative] value isn't non-negative`},
-				WantErr:    fmt.Errorf(`validation failed: [IntNonNegative] value isn't non-negative`),
+				WantStderr: []string{`validation failed: [NonNegative] value isn't non-negative`},
+				WantErr:    fmt.Errorf(`validation failed: [NonNegative] value isn't non-negative`),
 			},
 		},
 		{
 			name: "IntNonNegative works when zero",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: IntNode("IntNode", testDesc, IntNonNegative()),
+					Processor: Arg[int]("Arg[int]", testDesc, NonNegative[int]()),
 				},
 				Args: []string{"0"},
 				wantInput: &Input{
@@ -1690,8 +1655,8 @@ func TestExecute(t *testing.T) {
 						{value: "0"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"IntNode": IntValue(0),
+				WantData: &Data{Values: map[string]interface{}{
+					"Arg[int]": 0,
 				}},
 			},
 		},
@@ -1699,7 +1664,7 @@ func TestExecute(t *testing.T) {
 			name: "IntNonNegative works when positive",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: IntNode("IntNode", testDesc, IntNonNegative()),
+					Processor: Arg[int]("Arg[int]", testDesc, NonNegative[int]()),
 				},
 				Args: []string{"1"},
 				wantInput: &Input{
@@ -1707,8 +1672,8 @@ func TestExecute(t *testing.T) {
 						{value: "1"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"IntNode": IntValue(1),
+				WantData: &Data{Values: map[string]interface{}{
+					"Arg[int]": 1,
 				}},
 			},
 		},
@@ -1717,7 +1682,7 @@ func TestExecute(t *testing.T) {
 			name: "FloatEQ works",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: FloatNode("flArg", testDesc, FloatEQ(2.4)),
+					Processor: Arg[float64]("flArg", testDesc, EQ[float64](2.4)),
 				},
 				Args: []string{"2.4"},
 				wantInput: &Input{
@@ -1725,8 +1690,8 @@ func TestExecute(t *testing.T) {
 						{value: "2.4"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"flArg": FloatValue(2.4),
+				WantData: &Data{Values: map[string]interface{}{
+					"flArg": 2.4,
 				}},
 			},
 		},
@@ -1734,7 +1699,7 @@ func TestExecute(t *testing.T) {
 			name: "FloatEQ fails",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: FloatNode("flArg", testDesc, FloatEQ(2.4)),
+					Processor: Arg[float64]("flArg", testDesc, EQ[float64](2.4)),
 				},
 				Args: []string{"2.5"},
 				wantInput: &Input{
@@ -1742,11 +1707,11 @@ func TestExecute(t *testing.T) {
 						{value: "2.5"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"flArg": FloatValue(2.5),
+				WantData: &Data{Values: map[string]interface{}{
+					"flArg": 2.5,
 				}},
-				WantStderr: []string{`validation failed: [FloatEQ] value isn't equal to 2.40`},
-				WantErr:    fmt.Errorf(`validation failed: [FloatEQ] value isn't equal to 2.40`),
+				WantStderr: []string{`validation failed: [EQ] value isn't equal to 2.4`},
+				WantErr:    fmt.Errorf(`validation failed: [EQ] value isn't equal to 2.4`),
 			},
 		},
 		// FloatNE
@@ -1754,7 +1719,7 @@ func TestExecute(t *testing.T) {
 			name: "FloatNE works",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: FloatNode("flArg", testDesc, FloatNE(2.4)),
+					Processor: Arg[float64]("flArg", testDesc, NEQ[float64](2.4)),
 				},
 				Args: []string{"2.5"},
 				wantInput: &Input{
@@ -1762,8 +1727,8 @@ func TestExecute(t *testing.T) {
 						{value: "2.5"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"flArg": FloatValue(2.5),
+				WantData: &Data{Values: map[string]interface{}{
+					"flArg": 2.5,
 				}},
 			},
 		},
@@ -1771,7 +1736,7 @@ func TestExecute(t *testing.T) {
 			name: "FloatNE fails",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: FloatNode("flArg", testDesc, FloatNE(2.4)),
+					Processor: Arg[float64]("flArg", testDesc, NEQ[float64](2.4)),
 				},
 				Args: []string{"2.4"},
 				wantInput: &Input{
@@ -1779,11 +1744,11 @@ func TestExecute(t *testing.T) {
 						{value: "2.4"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"flArg": FloatValue(2.4),
+				WantData: &Data{Values: map[string]interface{}{
+					"flArg": 2.4,
 				}},
-				WantStderr: []string{`validation failed: [FloatNE] value isn't not equal to 2.40`},
-				WantErr:    fmt.Errorf(`validation failed: [FloatNE] value isn't not equal to 2.40`),
+				WantStderr: []string{`validation failed: [NEQ] value cannot equal 2.4`},
+				WantErr:    fmt.Errorf(`validation failed: [NEQ] value cannot equal 2.4`),
 			},
 		},
 		// FloatLT
@@ -1791,7 +1756,7 @@ func TestExecute(t *testing.T) {
 			name: "FloatLT works when less than",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: FloatNode("flArg", testDesc, FloatLT(2.5)),
+					Processor: Arg[float64]("flArg", testDesc, LT[float64](2.5)),
 				},
 				Args: []string{"2.4"},
 				wantInput: &Input{
@@ -1799,8 +1764,8 @@ func TestExecute(t *testing.T) {
 						{value: "2.4"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"flArg": FloatValue(2.4),
+				WantData: &Data{Values: map[string]interface{}{
+					"flArg": 2.4,
 				}},
 			},
 		},
@@ -1808,7 +1773,7 @@ func TestExecute(t *testing.T) {
 			name: "FloatLT fails when equal to",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: FloatNode("flArg", testDesc, FloatLT(2.5)),
+					Processor: Arg[float64]("flArg", testDesc, LT[float64](2.5)),
 				},
 				Args: []string{"2.5"},
 				wantInput: &Input{
@@ -1816,18 +1781,18 @@ func TestExecute(t *testing.T) {
 						{value: "2.5"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"flArg": FloatValue(2.5),
+				WantData: &Data{Values: map[string]interface{}{
+					"flArg": 2.5,
 				}},
-				WantStderr: []string{`validation failed: [FloatLT] value isn't less than 2.50`},
-				WantErr:    fmt.Errorf(`validation failed: [FloatLT] value isn't less than 2.50`),
+				WantStderr: []string{`validation failed: [LT] value isn't less than 2.5`},
+				WantErr:    fmt.Errorf(`validation failed: [LT] value isn't less than 2.5`),
 			},
 		},
 		{
 			name: "FloatLT fails when greater than",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: FloatNode("flArg", testDesc, FloatLT(2.5)),
+					Processor: Arg[float64]("flArg", testDesc, LT[float64](2.5)),
 				},
 				Args: []string{"2.6"},
 				wantInput: &Input{
@@ -1835,11 +1800,11 @@ func TestExecute(t *testing.T) {
 						{value: "2.6"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"flArg": FloatValue(2.6),
+				WantData: &Data{Values: map[string]interface{}{
+					"flArg": 2.6,
 				}},
-				WantStderr: []string{`validation failed: [FloatLT] value isn't less than 2.50`},
-				WantErr:    fmt.Errorf(`validation failed: [FloatLT] value isn't less than 2.50`),
+				WantStderr: []string{`validation failed: [LT] value isn't less than 2.5`},
+				WantErr:    fmt.Errorf(`validation failed: [LT] value isn't less than 2.5`),
 			},
 		},
 		// FloatLTE
@@ -1847,7 +1812,7 @@ func TestExecute(t *testing.T) {
 			name: "FloatLTE works when less than",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: FloatNode("flArg", testDesc, FloatLTE(2.5)),
+					Processor: Arg[float64]("flArg", testDesc, LTE[float64](2.5)),
 				},
 				Args: []string{"2.4"},
 				wantInput: &Input{
@@ -1855,8 +1820,8 @@ func TestExecute(t *testing.T) {
 						{value: "2.4"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"flArg": FloatValue(2.4),
+				WantData: &Data{Values: map[string]interface{}{
+					"flArg": 2.4,
 				}},
 			},
 		},
@@ -1864,7 +1829,7 @@ func TestExecute(t *testing.T) {
 			name: "FloatLTE works when equal to",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: FloatNode("flArg", testDesc, FloatLTE(2.5)),
+					Processor: Arg[float64]("flArg", testDesc, LTE[float64](2.5)),
 				},
 				Args: []string{"2.5"},
 				wantInput: &Input{
@@ -1872,8 +1837,8 @@ func TestExecute(t *testing.T) {
 						{value: "2.5"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"flArg": FloatValue(2.5),
+				WantData: &Data{Values: map[string]interface{}{
+					"flArg": 2.5,
 				}},
 			},
 		},
@@ -1881,7 +1846,7 @@ func TestExecute(t *testing.T) {
 			name: "FloatLTE fails when greater than",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: FloatNode("flArg", testDesc, FloatLTE(2.5)),
+					Processor: Arg[float64]("flArg", testDesc, LTE[float64](2.5)),
 				},
 				Args: []string{"2.6"},
 				wantInput: &Input{
@@ -1889,11 +1854,11 @@ func TestExecute(t *testing.T) {
 						{value: "2.6"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"flArg": FloatValue(2.6),
+				WantData: &Data{Values: map[string]interface{}{
+					"flArg": 2.6,
 				}},
-				WantStderr: []string{`validation failed: [FloatLTE] value isn't less than or equal to 2.50`},
-				WantErr:    fmt.Errorf(`validation failed: [FloatLTE] value isn't less than or equal to 2.50`),
+				WantStderr: []string{`validation failed: [LTE] value isn't less than or equal to 2.5`},
+				WantErr:    fmt.Errorf(`validation failed: [LTE] value isn't less than or equal to 2.5`),
 			},
 		},
 		// FloatGT
@@ -1901,7 +1866,7 @@ func TestExecute(t *testing.T) {
 			name: "FloatGT fails when less than",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: FloatNode("flArg", testDesc, FloatGT(2.5)),
+					Processor: Arg[float64]("flArg", testDesc, GT[float64](2.5)),
 				},
 				Args: []string{"2.4"},
 				wantInput: &Input{
@@ -1909,18 +1874,18 @@ func TestExecute(t *testing.T) {
 						{value: "2.4"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"flArg": FloatValue(2.4),
+				WantData: &Data{Values: map[string]interface{}{
+					"flArg": 2.4,
 				}},
-				WantStderr: []string{`validation failed: [FloatGT] value isn't greater than 2.50`},
-				WantErr:    fmt.Errorf(`validation failed: [FloatGT] value isn't greater than 2.50`),
+				WantStderr: []string{`validation failed: [GT] value isn't greater than 2.5`},
+				WantErr:    fmt.Errorf(`validation failed: [GT] value isn't greater than 2.5`),
 			},
 		},
 		{
 			name: "FloatGT fails when equal to",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: FloatNode("flArg", testDesc, FloatGT(2.5)),
+					Processor: Arg[float64]("flArg", testDesc, GT[float64](2.5)),
 				},
 				Args: []string{"2.5"},
 				wantInput: &Input{
@@ -1928,18 +1893,18 @@ func TestExecute(t *testing.T) {
 						{value: "2.5"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"flArg": FloatValue(2.5),
+				WantData: &Data{Values: map[string]interface{}{
+					"flArg": 2.5,
 				}},
-				WantStderr: []string{`validation failed: [FloatGT] value isn't greater than 2.50`},
-				WantErr:    fmt.Errorf(`validation failed: [FloatGT] value isn't greater than 2.50`),
+				WantStderr: []string{`validation failed: [GT] value isn't greater than 2.5`},
+				WantErr:    fmt.Errorf(`validation failed: [GT] value isn't greater than 2.5`),
 			},
 		},
 		{
 			name: "FloatGT works when greater than",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: FloatNode("flArg", testDesc, FloatGT(2.5)),
+					Processor: Arg[float64]("flArg", testDesc, GT[float64](2.5)),
 				},
 				Args: []string{"2.6"},
 				wantInput: &Input{
@@ -1947,8 +1912,8 @@ func TestExecute(t *testing.T) {
 						{value: "2.6"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"flArg": FloatValue(2.6),
+				WantData: &Data{Values: map[string]interface{}{
+					"flArg": 2.6,
 				}},
 			},
 		},
@@ -1957,7 +1922,7 @@ func TestExecute(t *testing.T) {
 			name: "FloatGTE fails when less than",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: FloatNode("flArg", testDesc, FloatGTE(2.5)),
+					Processor: Arg[float64]("flArg", testDesc, GTE[float64](2.5)),
 				},
 				Args: []string{"2.4"},
 				wantInput: &Input{
@@ -1965,18 +1930,18 @@ func TestExecute(t *testing.T) {
 						{value: "2.4"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"flArg": FloatValue(2.4),
+				WantData: &Data{Values: map[string]interface{}{
+					"flArg": 2.4,
 				}},
-				WantStderr: []string{`validation failed: [FloatGTE] value isn't greater than or equal to 2.50`},
-				WantErr:    fmt.Errorf(`validation failed: [FloatGTE] value isn't greater than or equal to 2.50`),
+				WantStderr: []string{`validation failed: [GTE] value isn't greater than or equal to 2.5`},
+				WantErr:    fmt.Errorf(`validation failed: [GTE] value isn't greater than or equal to 2.5`),
 			},
 		},
 		{
 			name: "FloatGTE works when equal to",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: FloatNode("flArg", testDesc, FloatGTE(2.5)),
+					Processor: Arg[float64]("flArg", testDesc, GTE[float64](2.5)),
 				},
 				Args: []string{"2.5"},
 				wantInput: &Input{
@@ -1984,8 +1949,8 @@ func TestExecute(t *testing.T) {
 						{value: "2.5"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"flArg": FloatValue(2.5),
+				WantData: &Data{Values: map[string]interface{}{
+					"flArg": 2.5,
 				}},
 			},
 		},
@@ -1993,7 +1958,7 @@ func TestExecute(t *testing.T) {
 			name: "FloatGTE works when greater than",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: FloatNode("flArg", testDesc, FloatGTE(2.5)),
+					Processor: Arg[float64]("flArg", testDesc, GTE[float64](2.5)),
 				},
 				Args: []string{"2.6"},
 				wantInput: &Input{
@@ -2001,8 +1966,8 @@ func TestExecute(t *testing.T) {
 						{value: "2.6"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"flArg": FloatValue(2.6),
+				WantData: &Data{Values: map[string]interface{}{
+					"flArg": 2.6,
 				}},
 			},
 		},
@@ -2011,7 +1976,7 @@ func TestExecute(t *testing.T) {
 			name: "FloatPositive fails when negative",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: FloatNode("flArg", testDesc, FloatPositive()),
+					Processor: Arg[float64]("flArg", testDesc, Positive[float64]()),
 				},
 				Args: []string{"-0.1"},
 				wantInput: &Input{
@@ -2019,18 +1984,18 @@ func TestExecute(t *testing.T) {
 						{value: "-0.1"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"flArg": FloatValue(-0.1),
+				WantData: &Data{Values: map[string]interface{}{
+					"flArg": -0.1,
 				}},
-				WantStderr: []string{`validation failed: [FloatPositive] value isn't positive`},
-				WantErr:    fmt.Errorf(`validation failed: [FloatPositive] value isn't positive`),
+				WantStderr: []string{`validation failed: [Positive] value isn't positive`},
+				WantErr:    fmt.Errorf(`validation failed: [Positive] value isn't positive`),
 			},
 		},
 		{
 			name: "FloatPositive fails when zero",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: FloatNode("flArg", testDesc, FloatPositive()),
+					Processor: Arg[float64]("flArg", testDesc, Positive[float64]()),
 				},
 				Args: []string{"0"},
 				wantInput: &Input{
@@ -2038,18 +2003,18 @@ func TestExecute(t *testing.T) {
 						{value: "0"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"flArg": FloatValue(0),
+				WantData: &Data{Values: map[string]interface{}{
+					"flArg": 0.0,
 				}},
-				WantStderr: []string{`validation failed: [FloatPositive] value isn't positive`},
-				WantErr:    fmt.Errorf(`validation failed: [FloatPositive] value isn't positive`),
+				WantStderr: []string{`validation failed: [Positive] value isn't positive`},
+				WantErr:    fmt.Errorf(`validation failed: [Positive] value isn't positive`),
 			},
 		},
 		{
 			name: "FloatPositive works when positive",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: FloatNode("flArg", testDesc, FloatPositive()),
+					Processor: Arg[float64]("flArg", testDesc, Positive[float64]()),
 				},
 				Args: []string{"0.1"},
 				wantInput: &Input{
@@ -2057,8 +2022,8 @@ func TestExecute(t *testing.T) {
 						{value: "0.1"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"flArg": FloatValue(0.1),
+				WantData: &Data{Values: map[string]interface{}{
+					"flArg": 0.1,
 				}},
 			},
 		},
@@ -2067,7 +2032,7 @@ func TestExecute(t *testing.T) {
 			name: "FloatNegative works when negative",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: FloatNode("flArg", testDesc, FloatNegative()),
+					Processor: Arg[float64]("flArg", testDesc, Negative[float64]()),
 				},
 				Args: []string{"-0.1"},
 				wantInput: &Input{
@@ -2075,8 +2040,8 @@ func TestExecute(t *testing.T) {
 						{value: "-0.1"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"flArg": FloatValue(-0.1),
+				WantData: &Data{Values: map[string]interface{}{
+					"flArg": -0.1,
 				}},
 			},
 		},
@@ -2084,7 +2049,7 @@ func TestExecute(t *testing.T) {
 			name: "FloatNegative fails when zero",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: FloatNode("flArg", testDesc, FloatNegative()),
+					Processor: Arg[float64]("flArg", testDesc, Negative[float64]()),
 				},
 				Args: []string{"0"},
 				wantInput: &Input{
@@ -2092,18 +2057,18 @@ func TestExecute(t *testing.T) {
 						{value: "0"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"flArg": FloatValue(0),
+				WantData: &Data{Values: map[string]interface{}{
+					"flArg": 0.0,
 				}},
-				WantStderr: []string{`validation failed: [FloatNegative] value isn't negative`},
-				WantErr:    fmt.Errorf(`validation failed: [FloatNegative] value isn't negative`),
+				WantStderr: []string{`validation failed: [Negative] value isn't negative`},
+				WantErr:    fmt.Errorf(`validation failed: [Negative] value isn't negative`),
 			},
 		},
 		{
 			name: "FloatNegative fails when positive",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: FloatNode("flArg", testDesc, FloatNegative()),
+					Processor: Arg[float64]("flArg", testDesc, Negative[float64]()),
 				},
 				Args: []string{"0.1"},
 				wantInput: &Input{
@@ -2111,11 +2076,11 @@ func TestExecute(t *testing.T) {
 						{value: "0.1"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"flArg": FloatValue(0.1),
+				WantData: &Data{Values: map[string]interface{}{
+					"flArg": 0.1,
 				}},
-				WantStderr: []string{`validation failed: [FloatNegative] value isn't negative`},
-				WantErr:    fmt.Errorf(`validation failed: [FloatNegative] value isn't negative`),
+				WantStderr: []string{`validation failed: [Negative] value isn't negative`},
+				WantErr:    fmt.Errorf(`validation failed: [Negative] value isn't negative`),
 			},
 		},
 		// FloatNonNegative
@@ -2123,7 +2088,7 @@ func TestExecute(t *testing.T) {
 			name: "FloatNonNegative fails when negative",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: FloatNode("flArg", testDesc, FloatNonNegative()),
+					Processor: Arg[float64]("flArg", testDesc, NonNegative[float64]()),
 				},
 				Args: []string{"-0.1"},
 				wantInput: &Input{
@@ -2131,18 +2096,18 @@ func TestExecute(t *testing.T) {
 						{value: "-0.1"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"flArg": FloatValue(-0.1),
+				WantData: &Data{Values: map[string]interface{}{
+					"flArg": -0.1,
 				}},
-				WantStderr: []string{`validation failed: [FloatNonNegative] value isn't non-negative`},
-				WantErr:    fmt.Errorf(`validation failed: [FloatNonNegative] value isn't non-negative`),
+				WantStderr: []string{`validation failed: [NonNegative] value isn't non-negative`},
+				WantErr:    fmt.Errorf(`validation failed: [NonNegative] value isn't non-negative`),
 			},
 		},
 		{
 			name: "FloatNonNegative works when zero",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: FloatNode("flArg", testDesc, FloatNonNegative()),
+					Processor: Arg[float64]("flArg", testDesc, NonNegative[float64]()),
 				},
 				Args: []string{"0"},
 				wantInput: &Input{
@@ -2150,8 +2115,8 @@ func TestExecute(t *testing.T) {
 						{value: "0"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"flArg": FloatValue(0),
+				WantData: &Data{Values: map[string]interface{}{
+					"flArg": 0.0,
 				}},
 			},
 		},
@@ -2159,7 +2124,7 @@ func TestExecute(t *testing.T) {
 			name: "FloatNonNegative works when positive",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: FloatNode("flArg", testDesc, FloatNonNegative()),
+					Processor: Arg[float64]("flArg", testDesc, NonNegative[float64]()),
 				},
 				Args: []string{"0.1"},
 				wantInput: &Input{
@@ -2167,8 +2132,8 @@ func TestExecute(t *testing.T) {
 						{value: "0.1"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"flArg": FloatValue(0.1),
+				WantData: &Data{Values: map[string]interface{}{
+					"flArg": 0.1,
 				}},
 			},
 		},
@@ -2182,13 +2147,13 @@ func TestExecute(t *testing.T) {
 		{
 			name: "flag node allows empty",
 			etc: &ExecuteTestCase{
-				Node: &Node{Processor: NewFlagNode(StringFlag("strFlag", 'f', testDesc))},
+				Node: &Node{Processor: NewFlagNode(NewFlag[string]("strFlag", 'f', testDesc))},
 			},
 		},
 		{
 			name: "flag node fails if no argument",
 			etc: &ExecuteTestCase{
-				Node:       &Node{Processor: NewFlagNode(StringFlag("strFlag", 'f', testDesc))},
+				Node:       &Node{Processor: NewFlagNode(NewFlag[string]("strFlag", 'f', testDesc))},
 				Args:       []string{"--strFlag"},
 				WantStderr: []string{`Argument "strFlag" requires at least 1 argument, got 0`},
 				WantErr:    fmt.Errorf(`Argument "strFlag" requires at least 1 argument, got 0`),
@@ -2202,10 +2167,10 @@ func TestExecute(t *testing.T) {
 		{
 			name: "flag node parses flag",
 			etc: &ExecuteTestCase{
-				Node: &Node{Processor: NewFlagNode(StringFlag("strFlag", 'f', testDesc))},
+				Node: &Node{Processor: NewFlagNode(NewFlag[string]("strFlag", 'f', testDesc))},
 				Args: []string{"--strFlag", "hello"},
-				WantData: &Data{Values: map[string]*Value{
-					"strFlag": StringValue("hello"),
+				WantData: &Data{Values: map[string]interface{}{
+					"strFlag": "hello",
 				}},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -2218,10 +2183,10 @@ func TestExecute(t *testing.T) {
 		{
 			name: "flag node parses short name flag",
 			etc: &ExecuteTestCase{
-				Node: &Node{Processor: NewFlagNode(StringFlag("strFlag", 'f', testDesc))},
+				Node: &Node{Processor: NewFlagNode(NewFlag[string]("strFlag", 'f', testDesc))},
 				Args: []string{"-f", "hello"},
-				WantData: &Data{Values: map[string]*Value{
-					"strFlag": StringValue("hello"),
+				WantData: &Data{Values: map[string]interface{}{
+					"strFlag": "hello",
 				}},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -2235,13 +2200,13 @@ func TestExecute(t *testing.T) {
 			name: "flag node parses flag in the middle",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					NewFlagNode(StringFlag("strFlag", 'f', testDesc)),
-					StringListNode("filler", testDesc, 1, 2),
+					NewFlagNode(NewFlag[string]("strFlag", 'f', testDesc)),
+					ListArg[string]("filler", testDesc, 1, 2),
 				),
 				Args: []string{"un", "--strFlag", "hello", "deux"},
-				WantData: &Data{Values: map[string]*Value{
-					"strFlag": StringValue("hello"),
-					"filler":  StringListValue("un", "deux"),
+				WantData: &Data{Values: map[string]interface{}{
+					"strFlag": "hello",
+					"filler":  []string{"un", "deux"},
 				}},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -2257,13 +2222,13 @@ func TestExecute(t *testing.T) {
 			name: "flag node parses short name flag",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					NewFlagNode(StringFlag("strFlag", 'f', testDesc)),
-					StringListNode("filler", testDesc, 1, 2),
+					NewFlagNode(NewFlag[string]("strFlag", 'f', testDesc)),
+					ListArg[string]("filler", testDesc, 1, 2),
 				),
 				Args: []string{"uno", "dos", "-f", "hello"},
-				WantData: &Data{Values: map[string]*Value{
-					"filler":  StringListValue("uno", "dos"),
-					"strFlag": StringValue("hello"),
+				WantData: &Data{Values: map[string]interface{}{
+					"filler":  []string{"uno", "dos"},
+					"strFlag": "hello",
 				}},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -2280,8 +2245,8 @@ func TestExecute(t *testing.T) {
 			name: "parses int flag",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					NewFlagNode(IntFlag("intFlag", 'f', testDesc)),
-					StringListNode("filler", testDesc, 1, 2),
+					NewFlagNode(NewFlag[int]("intFlag", 'f', testDesc)),
+					ListArg[string]("filler", testDesc, 1, 2),
 				),
 				Args: []string{"un", "deux", "-f", "3", "quatre"},
 				wantInput: &Input{
@@ -2293,9 +2258,9 @@ func TestExecute(t *testing.T) {
 						{value: "quatre"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"filler":  StringListValue("un", "deux", "quatre"),
-					"intFlag": IntValue(3),
+				WantData: &Data{Values: map[string]interface{}{
+					"filler":  []string{"un", "deux", "quatre"},
+					"intFlag": 3,
 				}},
 			},
 		},
@@ -2303,8 +2268,8 @@ func TestExecute(t *testing.T) {
 			name: "handles invalid int flag value",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					NewFlagNode(IntFlag("intFlag", 'f', testDesc)),
-					StringListNode("filler", testDesc, 1, 2),
+					NewFlagNode(NewFlag[int]("intFlag", 'f', testDesc)),
+					ListArg[string]("filler", testDesc, 1, 2),
 				),
 				Args: []string{"un", "deux", "-f", "trois", "quatre"},
 				wantInput: &Input{
@@ -2326,8 +2291,8 @@ func TestExecute(t *testing.T) {
 			name: "parses float flag",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					NewFlagNode(FloatFlag("floatFlag", 'f', testDesc)),
-					StringListNode("filler", testDesc, 1, 2),
+					NewFlagNode(NewFlag[float64]("floatFlag", 'f', testDesc)),
+					ListArg[string]("filler", testDesc, 1, 2),
 				),
 				Args: []string{"--floatFlag", "-1.2", "three"},
 				wantInput: &Input{
@@ -2337,9 +2302,9 @@ func TestExecute(t *testing.T) {
 						{value: "three"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"filler":    StringListValue("three"),
-					"floatFlag": FloatValue(-1.2),
+				WantData: &Data{Values: map[string]interface{}{
+					"filler":    []string{"three"},
+					"floatFlag": -1.2,
 				}},
 			},
 		},
@@ -2347,8 +2312,8 @@ func TestExecute(t *testing.T) {
 			name: "handles invalid float flag value",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					NewFlagNode(FloatFlag("floatFlag", 'f', testDesc)),
-					StringListNode("filler", testDesc, 1, 2),
+					NewFlagNode(NewFlag[float64]("floatFlag", 'f', testDesc)),
+					ListArg[string]("filler", testDesc, 1, 2),
 				),
 				Args: []string{"--floatFlag", "twelve", "eleven"},
 				wantInput: &Input{
@@ -2369,7 +2334,7 @@ func TestExecute(t *testing.T) {
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
 					NewFlagNode(BoolFlag("boolFlag", 'b', testDesc)),
-					StringListNode("filler", testDesc, 1, 2),
+					ListArg[string]("filler", testDesc, 1, 2),
 				),
 				Args: []string{"okay", "--boolFlag", "then"},
 				wantInput: &Input{
@@ -2379,9 +2344,9 @@ func TestExecute(t *testing.T) {
 						{value: "then"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"filler":   StringListValue("okay", "then"),
-					"boolFlag": TrueValue(),
+				WantData: &Data{Values: map[string]interface{}{
+					"filler":   []string{"okay", "then"},
+					"boolFlag": true,
 				}},
 			},
 		},
@@ -2390,7 +2355,7 @@ func TestExecute(t *testing.T) {
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
 					NewFlagNode(BoolFlag("boolFlag", 'b', testDesc)),
-					StringListNode("filler", testDesc, 1, 2),
+					ListArg[string]("filler", testDesc, 1, 2),
 				),
 				Args: []string{"okay", "-b", "then"},
 				wantInput: &Input{
@@ -2400,9 +2365,9 @@ func TestExecute(t *testing.T) {
 						{value: "then"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"filler":   StringListValue("okay", "then"),
-					"boolFlag": TrueValue(),
+				WantData: &Data{Values: map[string]interface{}{
+					"filler":   []string{"okay", "then"},
+					"boolFlag": true,
 				}},
 			},
 		},
@@ -2411,8 +2376,8 @@ func TestExecute(t *testing.T) {
 			name: "flag list works",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					NewFlagNode(StringListFlag("slFlag", 's', testDesc, 2, 3)),
-					StringListNode("filler", testDesc, 1, 2),
+					NewFlagNode(NewListFlag[string]("slFlag", 's', testDesc, 2, 3)),
+					ListArg[string]("filler", testDesc, 1, 2),
 				),
 				Args: []string{"un", "--slFlag", "hello", "there"},
 				wantInput: &Input{
@@ -2423,9 +2388,9 @@ func TestExecute(t *testing.T) {
 						{value: "there"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"filler": StringListValue("un"),
-					"slFlag": StringListValue("hello", "there"),
+				WantData: &Data{Values: map[string]interface{}{
+					"filler": []string{"un"},
+					"slFlag": []string{"hello", "there"},
 				}},
 			},
 		},
@@ -2433,8 +2398,8 @@ func TestExecute(t *testing.T) {
 			name: "flag list fails if not enough",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					NewFlagNode(StringListFlag("slFlag", 's', testDesc, 2, 3)),
-					StringListNode("filler", testDesc, 1, 2),
+					NewFlagNode(NewListFlag[string]("slFlag", 's', testDesc, 2, 3)),
+					ListArg[string]("filler", testDesc, 1, 2),
 				),
 				Args: []string{"un", "--slFlag", "hello"},
 				wantInput: &Input{
@@ -2447,8 +2412,8 @@ func TestExecute(t *testing.T) {
 				},
 				WantStderr: []string{`Argument "slFlag" requires at least 2 arguments, got 1`},
 				WantErr:    fmt.Errorf(`Argument "slFlag" requires at least 2 arguments, got 1`),
-				WantData: &Data{Values: map[string]*Value{
-					"slFlag": StringListValue("hello"),
+				WantData: &Data{Values: map[string]interface{}{
+					"slFlag": []string{"hello"},
 				}},
 			},
 		},
@@ -2457,8 +2422,8 @@ func TestExecute(t *testing.T) {
 			name: "int list works",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					NewFlagNode(IntListFlag("ilFlag", 'i', testDesc, 2, 3)),
-					StringListNode("filler", testDesc, 1, 2),
+					NewFlagNode(NewListFlag[int]("ilFlag", 'i', testDesc, 2, 3)),
+					ListArg[string]("filler", testDesc, 1, 2),
 				),
 				Args: []string{"un", "-i", "2", "4", "8", "16", "32", "64"},
 				wantInput: &Input{
@@ -2473,9 +2438,9 @@ func TestExecute(t *testing.T) {
 						{value: "64"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"filler": StringListValue("un", "64"),
-					"ilFlag": IntListValue(2, 4, 8, 16, 32),
+				WantData: &Data{Values: map[string]interface{}{
+					"filler": []string{"un", "64"},
+					"ilFlag": []int{2, 4, 8, 16, 32},
 				}},
 			},
 		},
@@ -2483,8 +2448,8 @@ func TestExecute(t *testing.T) {
 			name: "int list transform failure",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					NewFlagNode(IntListFlag("ilFlag", 'i', testDesc, 2, 3)),
-					StringListNode("filler", testDesc, 1, 2),
+					NewFlagNode(NewListFlag[int]("ilFlag", 'i', testDesc, 2, 3)),
+					ListArg[string]("filler", testDesc, 1, 2),
 				),
 				Args: []string{"un", "-i", "2", "4", "8", "16.0", "32", "64"},
 				wantInput: &Input{
@@ -2509,8 +2474,8 @@ func TestExecute(t *testing.T) {
 			name: "float list works",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					NewFlagNode(FloatListFlag("flFlag", 'f', testDesc, 0, 3)),
-					StringListNode("filler", testDesc, 1, 3),
+					NewFlagNode(NewListFlag[float64]("flFlag", 'f', testDesc, 0, 3)),
+					ListArg[string]("filler", testDesc, 1, 3),
 				),
 				Args: []string{"un", "-f", "2", "-4.4", "0.8", "16.16", "-32", "64"},
 				wantInput: &Input{
@@ -2525,9 +2490,9 @@ func TestExecute(t *testing.T) {
 						{value: "64"},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"filler": StringListValue("un", "16.16", "-32", "64"),
-					"flFlag": FloatListValue(2, -4.4, 0.8),
+				WantData: &Data{Values: map[string]interface{}{
+					"filler": []string{"un", "16.16", "-32", "64"},
+					"flFlag": []float64{2, -4.4, 0.8},
 				}},
 			},
 		},
@@ -2535,8 +2500,8 @@ func TestExecute(t *testing.T) {
 			name: "float list transform failure",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					NewFlagNode(FloatListFlag("flFlag", 'f', testDesc, 0, 3)),
-					StringListNode("filler", testDesc, 1, 2),
+					NewFlagNode(NewListFlag[float64]("flFlag", 'f', testDesc, 0, 3)),
+					ListArg[string]("filler", testDesc, 1, 2),
 				),
 				Args: []string{"un", "--flFlag", "2", "4", "eight", "16.0", "32", "64"},
 				wantInput: &Input{
@@ -2562,12 +2527,12 @@ func TestExecute(t *testing.T) {
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
 					NewFlagNode(
-						FloatListFlag("coordinates", 'c', testDesc, 2, 0),
+						NewListFlag[float64]("coordinates", 'c', testDesc, 2, 0),
 						BoolFlag("boo", 'o', testDesc),
-						StringListFlag("names", 'n', testDesc, 1, 2),
-						IntFlag("rating", 'r', testDesc),
+						NewListFlag[string]("names", 'n', testDesc, 1, 2),
+						NewFlag[int]("rating", 'r', testDesc),
 					),
-					StringListNode("extra", testDesc, 0, 10),
+					ListArg[string]("extra", testDesc, 0, 10),
 				),
 				Args: []string{"its", "--boo", "a", "-r", "9", "secret", "-n", "greggar", "groog", "beggars", "--coordinates", "2.2", "4.4", "message."},
 				wantInput: &Input{
@@ -2588,52 +2553,35 @@ func TestExecute(t *testing.T) {
 						{value: "message."},
 					},
 				},
-				WantData: &Data{Values: map[string]*Value{
-					"boo":         TrueValue(),
-					"extra":       StringListValue("its", "a", "secret", "message."),
-					"names":       StringListValue("greggar", "groog", "beggars"),
-					"coordinates": FloatListValue(2.2, 4.4),
-					"rating":      IntValue(9),
+				WantData: &Data{Values: map[string]interface{}{
+					"boo":         true,
+					"extra":       []string{"its", "a", "secret", "message."},
+					"names":       []string{"greggar", "groog", "beggars"},
+					"coordinates": []float64{2.2, 4.4},
+					"rating":      9,
 				}},
 			},
 		},
 		// Transformer tests.
-
 		{
 			name: "args get transformed",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					StringNode("strArg", testDesc, Transformer(StringType, func(v *Value) (*Value, error) {
-						return StringValue(strings.ToUpper(v.ToString())), nil
+					Arg[string]("strArg", testDesc, NewTransformer[string](func(v string) (string, error) {
+						return strings.ToUpper(v), nil
 					}, false)),
-					IntNode("intArg", testDesc, Transformer(IntType, func(v *Value) (*Value, error) {
-						return IntValue(10 * v.ToInt()), nil
+					Arg[int]("intArg", testDesc, NewTransformer[int](func(v int) (int, error) {
+						return 10 * v, nil
 					}, false)),
 				),
 				Args: []string{"hello", "12"},
-				WantData: &Data{Values: map[string]*Value{
-					"strArg": StringValue("HELLO"),
-					"intArg": IntValue(120),
+				WantData: &Data{Values: map[string]interface{}{
+					"strArg": "HELLO",
+					"intArg": 120,
 				}},
 				wantInput: &Input{
 					args: []*inputArg{{value: "HELLO"}, {value: "120"}},
 				},
-			},
-		},
-		{
-			name: "failure if transformer is for the wrong type",
-			etc: &ExecuteTestCase{
-				Node: SerialNodes(
-					StringNode("strArg", testDesc, Transformer(IntType, func(v *Value) (*Value, error) {
-						return StringValue(strings.ToUpper(v.ToString())), nil
-					}, false)),
-				),
-				Args: []string{"hello"},
-				wantInput: &Input{
-					args: []*inputArg{{value: "hello"}},
-				},
-				WantErr:    fmt.Errorf("Transformer of type Int cannot be applied to a value with type String"),
-				WantStderr: []string{"Transformer of type Int cannot be applied to a value with type String"},
 			},
 		},
 		// Stdoutln tests
@@ -2718,11 +2666,11 @@ func TestExecute(t *testing.T) {
 				Node: BranchNode(map[string]*Node{
 					"h": printNode("hello"),
 					"b": printNode("goodbye"),
-				}, SerialNodes(StringListNode("sl", testDesc, 0, UnboundedList), printArgsNode().Processor)),
+				}, SerialNodes(ListArg[string]("sl", testDesc, 0, UnboundedList), printArgsNode().Processor)),
 				Args:       []string{"good", "morning"},
-				WantStdout: []string{`sl: StringListValue("good", "morning")`},
-				WantData: &Data{Values: map[string]*Value{
-					"sl": StringListValue("good", "morning"),
+				WantStdout: []string{`sl: [good morning]`},
+				WantData: &Data{Values: map[string]interface{}{
+					"sl": []string{"good", "morning"},
 				}},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -2777,7 +2725,7 @@ func TestExecute(t *testing.T) {
 				Node: BranchNode(map[string]*Node{
 					"h": printNode("hello"),
 					"b": printNode("goodbye"),
-				}, SerialNodes(StringListNode("sl", testDesc, 0, UnboundedList), printArgsNode().Processor), BranchAliases(map[string][]string{
+				}, SerialNodes(ListArg[string]("sl", testDesc, 0, UnboundedList), printArgsNode().Processor), BranchAliases(map[string][]string{
 					"o": {"uh"},
 				})),
 				wantInput: &Input{
@@ -2786,11 +2734,11 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{
-					Values: map[string]*Value{
-						"sl": StringListValue("uh"),
+					Values: map[string]interface{}{
+						"sl": []string{"uh"},
 					},
 				},
-				WantStdout: []string{`sl: StringListValue("uh")`},
+				WantStdout: []string{`sl: [uh]`},
 			},
 		},
 		{
@@ -2815,9 +2763,9 @@ func TestExecute(t *testing.T) {
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(sampleRepeaterNode(3, 0)),
 				Args: []string{"k1", "100", "k2", "200"},
-				WantData: &Data{Values: map[string]*Value{
-					"keys":   StringListValue("k1", "k2"),
-					"values": IntListValue(100, 200),
+				WantData: &Data{Values: map[string]interface{}{
+					"keys":   []string{"k1", "k2"},
+					"values": []int{100, 200},
 				}},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -2836,9 +2784,9 @@ func TestExecute(t *testing.T) {
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(sampleRepeaterNode(1, 1)),
 				Args: []string{"k1", "100", "k2"},
-				WantData: &Data{Values: map[string]*Value{
-					"keys":   StringListValue("k1", "k2"),
-					"values": IntListValue(100),
+				WantData: &Data{Values: map[string]interface{}{
+					"keys":   []string{"k1", "k2"},
+					"values": []int{100},
 				}},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -2856,9 +2804,9 @@ func TestExecute(t *testing.T) {
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(sampleRepeaterNode(1, 0)),
 				Args: []string{"k1", "100", "k2", "200"},
-				WantData: &Data{Values: map[string]*Value{
-					"keys":   StringListValue("k1"),
-					"values": IntListValue(100),
+				WantData: &Data{Values: map[string]interface{}{
+					"keys":   []string{"k1"},
+					"values": []int{100},
 				}},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -2878,9 +2826,9 @@ func TestExecute(t *testing.T) {
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(sampleRepeaterNode(2, 0)),
 				Args: []string{"k1", "100", "k2", "200"},
-				WantData: &Data{Values: map[string]*Value{
-					"keys":   StringListValue("k1", "k2"),
-					"values": IntListValue(100, 200),
+				WantData: &Data{Values: map[string]interface{}{
+					"keys":   []string{"k1", "k2"},
+					"values": []int{100, 200},
 				}},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -2897,9 +2845,9 @@ func TestExecute(t *testing.T) {
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(sampleRepeaterNode(2, 3)),
 				Args: []string{"k1", "100", "k2", "200"},
-				WantData: &Data{Values: map[string]*Value{
-					"keys":   StringListValue("k1", "k2"),
-					"values": IntListValue(100, 200),
+				WantData: &Data{Values: map[string]interface{}{
+					"keys":   []string{"k1", "k2"},
+					"values": []int{100, 200},
 				}},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -2916,9 +2864,9 @@ func TestExecute(t *testing.T) {
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(sampleRepeaterNode(2, 3)),
 				Args: []string{"k1", "100", "k2", "200"},
-				WantData: &Data{Values: map[string]*Value{
-					"keys":   StringListValue("k1", "k2"),
-					"values": IntListValue(100, 200),
+				WantData: &Data{Values: map[string]interface{}{
+					"keys":   []string{"k1", "k2"},
+					"values": []int{100, 200},
 				}},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -2935,9 +2883,9 @@ func TestExecute(t *testing.T) {
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(sampleRepeaterNode(2, 0)),
 				Args: []string{"k1", "100", "k2", "200"},
-				WantData: &Data{Values: map[string]*Value{
-					"keys":   StringListValue("k1", "k2"),
-					"values": IntListValue(100, 200),
+				WantData: &Data{Values: map[string]interface{}{
+					"keys":   []string{"k1", "k2"},
+					"values": []int{100, 200},
 				}},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -2954,9 +2902,9 @@ func TestExecute(t *testing.T) {
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(sampleRepeaterNode(1, 1)),
 				Args: []string{"k1", "100", "k2", "200"},
-				WantData: &Data{Values: map[string]*Value{
-					"keys":   StringListValue("k1", "k2"),
-					"values": IntListValue(100, 200),
+				WantData: &Data{Values: map[string]interface{}{
+					"keys":   []string{"k1", "k2"},
+					"values": []int{100, 200},
 				}},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -2973,9 +2921,9 @@ func TestExecute(t *testing.T) {
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(sampleRepeaterNode(1, UnboundedList)),
 				Args: []string{"k1", "100", "k2", "200", "k3", "300", "k4", "400", "...", "0", "kn", "999"},
-				WantData: &Data{Values: map[string]*Value{
-					"keys":   StringListValue("k1", "k2", "k3", "k4", "...", "kn"),
-					"values": IntListValue(100, 200, 300, 400, 0, 999),
+				WantData: &Data{Values: map[string]interface{}{
+					"keys":   []string{"k1", "k2", "k3", "k4", "...", "kn"},
+					"values": []int{100, 200, 300, 400, 0, 999},
 				}},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -3000,13 +2948,13 @@ func TestExecute(t *testing.T) {
 			name: "Handles broken list",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					StringListNode("SL", testDesc, 1, UnboundedList, ListUntilSymbol("ghi")),
-					StringListNode("SL2", testDesc, 0, UnboundedList),
+					ListArg[string]("SL", testDesc, 1, UnboundedList, ListUntilSymbol("ghi")),
+					ListArg[string]("SL2", testDesc, 0, UnboundedList),
 				),
 				Args: []string{"abc", "def", "ghi", "jkl"},
-				WantData: &Data{Values: map[string]*Value{
-					"SL":  StringListValue("abc", "def"),
-					"SL2": StringListValue("ghi", "jkl"),
+				WantData: &Data{Values: map[string]interface{}{
+					"SL":  []string{"abc", "def"},
+					"SL2": []string{"ghi", "jkl"},
 				}},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -3022,11 +2970,11 @@ func TestExecute(t *testing.T) {
 			name: "List breaker before min value",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					StringListNode("SL", testDesc, 3, UnboundedList, ListUntilSymbol("ghi")),
+					ListArg[string]("SL", testDesc, 3, UnboundedList, ListUntilSymbol("ghi")),
 				),
 				Args: []string{"abc", "def", "ghi", "jkl"},
-				WantData: &Data{Values: map[string]*Value{
-					"SL": StringListValue("abc", "def"),
+				WantData: &Data{Values: map[string]interface{}{
+					"SL": []string{"abc", "def"},
 				}},
 				WantErr:    fmt.Errorf(`Argument "SL" requires at least 3 arguments, got 2`),
 				WantStderr: []string{`Argument "SL" requires at least 3 arguments, got 2`},
@@ -3045,13 +2993,13 @@ func TestExecute(t *testing.T) {
 			name: "Handles broken list with discard",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					StringListNode("SL", testDesc, 1, UnboundedList, ListUntilSymbol("ghi", DiscardBreaker())),
-					StringListNode("SL2", testDesc, 0, UnboundedList),
+					ListArg[string]("SL", testDesc, 1, UnboundedList, ListUntilSymbol("ghi", DiscardBreaker())),
+					ListArg[string]("SL2", testDesc, 0, UnboundedList),
 				),
 				Args: []string{"abc", "def", "ghi", "jkl"},
-				WantData: &Data{Values: map[string]*Value{
-					"SL":  StringListValue("abc", "def"),
-					"SL2": StringListValue("jkl"),
+				WantData: &Data{Values: map[string]interface{}{
+					"SL":  []string{"abc", "def"},
+					"SL2": []string{"jkl"},
 				}},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -3067,12 +3015,12 @@ func TestExecute(t *testing.T) {
 			name: "Handles unbroken list",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					StringListNode("SL", testDesc, 1, UnboundedList, ListUntilSymbol("ghi")),
-					StringListNode("SL2", testDesc, 0, UnboundedList),
+					ListArg[string]("SL", testDesc, 1, UnboundedList, ListUntilSymbol("ghi")),
+					ListArg[string]("SL2", testDesc, 0, UnboundedList),
 				),
 				Args: []string{"abc", "def", "ghif", "jkl"},
-				WantData: &Data{Values: map[string]*Value{
-					"SL": StringListValue("abc", "def", "ghif", "jkl"),
+				WantData: &Data{Values: map[string]interface{}{
+					"SL": []string{"abc", "def", "ghif", "jkl"},
 				}},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -3088,12 +3036,12 @@ func TestExecute(t *testing.T) {
 			name: "Fails if arguments required after broken list",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					StringListNode("SL", testDesc, 1, UnboundedList, ListUntilSymbol("ghi")),
-					StringListNode("SL2", testDesc, 1, UnboundedList),
+					ListArg[string]("SL", testDesc, 1, UnboundedList, ListUntilSymbol("ghi")),
+					ListArg[string]("SL2", testDesc, 1, UnboundedList),
 				),
 				Args: []string{"abc", "def", "ghif", "jkl"},
-				WantData: &Data{Values: map[string]*Value{
-					"SL": StringListValue("abc", "def", "ghif", "jkl"),
+				WantData: &Data{Values: map[string]interface{}{
+					"SL": []string{"abc", "def", "ghif", "jkl"},
 				}},
 				WantErr:    fmt.Errorf(`Argument "SL2" requires at least 1 argument, got 0`),
 				WantStderr: []string{`Argument "SL2" requires at least 1 argument, got 0`},
@@ -3115,7 +3063,7 @@ func TestExecute(t *testing.T) {
 					StringListListNode("SLL", testDesc, "|", 1, UnboundedList),
 				),
 				Args: []string{"abc", "def", "ghi", "jkl"},
-				WantData: &Data{Interfaces: map[string]interface{}{
+				WantData: &Data{Values: map[string]interface{}{
 					"SLL": [][]string{
 						{"abc", "def", "ghi", "jkl"},
 					},
@@ -3137,7 +3085,7 @@ func TestExecute(t *testing.T) {
 					StringListListNode("SLL", testDesc, "|", 1, UnboundedList),
 				),
 				Args: []string{"abc", "def", "|", "ghi", "||", "|", "jkl"},
-				WantData: &Data{Interfaces: map[string]interface{}{
+				WantData: &Data{Values: map[string]interface{}{
 					"SLL": [][]string{
 						{"abc", "def"},
 						{"ghi", "||"},
@@ -3164,7 +3112,7 @@ func TestExecute(t *testing.T) {
 					StringListListNode("SLL", testDesc, "|", 1, 2),
 				),
 				Args: []string{"abc", "def", "|", "ghi", "||", "|", "jkl"},
-				WantData: &Data{Interfaces: map[string]interface{}{
+				WantData: &Data{Values: map[string]interface{}{
 					"SLL": [][]string{
 						{"abc", "def"},
 						{"ghi", "||"},
@@ -3191,7 +3139,7 @@ func TestExecute(t *testing.T) {
 					StringListListNode("SLL", testDesc, "|", 1, 2),
 				),
 				Args: []string{"abc", "def", "|", "ghi", "||", "|", "jkl", "|"},
-				WantData: &Data{Interfaces: map[string]interface{}{
+				WantData: &Data{Values: map[string]interface{}{
 					"SLL": [][]string{
 						{"abc", "def"},
 						{"ghi", "||"},
@@ -3219,7 +3167,7 @@ func TestExecute(t *testing.T) {
 					StringListListNode("SLL", testDesc, "|", 1, 2),
 				),
 				Args: []string{"abc", "def", "|", "ghi", "||", "|", "jkl", "|", "other", "stuff"},
-				WantData: &Data{Interfaces: map[string]interface{}{
+				WantData: &Data{Values: map[string]interface{}{
 					"SLL": [][]string{
 						{"abc", "def"},
 						{"ghi", "||"},
@@ -3294,9 +3242,9 @@ func abc() *Node {
 		"t": AliasNode("TEST_ALIAS", nil,
 			CacheNode("TEST_CACHE", nil, SerialNodes(
 				&tt{},
-				StringNode("PATH", testDesc, SimpleCompletor("clh111", "abcd111")),
-				StringNode("TARGET", testDesc, SimpleCompletor("clh222", "abcd222")),
-				StringNode("FUNC", testDesc, SimpleCompletor("clh333", "abcd333")),
+				Arg[string]("PATH", testDesc, SimpleCompletor[string]("clh111", "abcd111")),
+				Arg[string]("TARGET", testDesc, SimpleCompletor[string]("clh222", "abcd222")),
+				Arg[string]("FUNC", testDesc, SimpleCompletor[string]("clh333", "abcd333")),
 			))),
 	}, nil, DontCompleteSubcommands())
 }
@@ -3336,9 +3284,9 @@ func TestComplete(t *testing.T) {
 				Node: abc(),
 				Args: "cmd t clh:abc",
 				Want: []string{"abcd222"},
-				WantData: &Data{Values: map[string]*Value{
-					"PATH":   StringValue("clh"),
-					"TARGET": StringValue("abc"),
+				WantData: &Data{Values: map[string]interface{}{
+					"PATH":   "clh",
+					"TARGET": "abc",
 				}},
 			},
 		},
@@ -3353,13 +3301,13 @@ func TestComplete(t *testing.T) {
 			name: "returns suggestions of first node if empty",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					StringNode("s", testDesc, SimpleCompletor("un", "deux", "trois")),
-					OptionalIntNode("i", testDesc, SimpleCompletor("2", "1")),
-					StringListNode("sl", testDesc, 0, 2, SimpleCompletor("uno", "dos")),
+					Arg[string]("s", testDesc, SimpleCompletor[string]("un", "deux", "trois")),
+					OptionalArg[int]("i", testDesc, SimpleCompletor[int]("2", "1")),
+					ListArg[string]("sl", testDesc, 0, 2, SimpleCompletor[[]string]("uno", "dos")),
 				),
 				Want: []string{"deux", "trois", "un"},
-				WantData: &Data{Values: map[string]*Value{
-					"s": StringValue(""),
+				WantData: &Data{Values: map[string]interface{}{
+					"s": "",
 				}},
 			},
 		},
@@ -3367,14 +3315,14 @@ func TestComplete(t *testing.T) {
 			name: "returns suggestions of first node if up to first arg",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					StringNode("s", testDesc, SimpleCompletor("one", "two", "three")),
-					OptionalIntNode("i", testDesc, SimpleCompletor("2", "1")),
-					StringListNode("sl", testDesc, 0, 2, SimpleCompletor("uno", "dos")),
+					Arg[string]("s", testDesc, SimpleCompletor[string]("one", "two", "three")),
+					OptionalArg[int]("i", testDesc, SimpleCompletor[int]("2", "1")),
+					ListArg[string]("sl", testDesc, 0, 2, SimpleCompletor[[]string]("uno", "dos")),
 				),
 				Args: "cmd t",
 				Want: []string{"three", "two"},
-				WantData: &Data{Values: map[string]*Value{
-					"s": StringValue("t"),
+				WantData: &Data{Values: map[string]interface{}{
+					"s": "t",
 				}},
 			},
 		},
@@ -3382,15 +3330,15 @@ func TestComplete(t *testing.T) {
 			name: "returns suggestions of middle node if that's where we're at",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					StringNode("s", testDesc, SimpleCompletor("one", "two", "three")),
-					StringListNode("sl", testDesc, 0, 2, SimpleCompletor("uno", "dos")),
-					OptionalIntNode("i", testDesc, SimpleCompletor("2", "1")),
+					Arg[string]("s", testDesc, SimpleCompletor[string]("one", "two", "three")),
+					ListArg[string]("sl", testDesc, 0, 2, SimpleCompletor[[]string]("uno", "dos")),
+					OptionalArg[int]("i", testDesc, SimpleCompletor[int]("2", "1")),
 				),
 				Args: "cmd three ",
 				Want: []string{"dos", "uno"},
-				WantData: &Data{Values: map[string]*Value{
-					"s":  StringValue("three"),
-					"sl": StringListValue(""),
+				WantData: &Data{Values: map[string]interface{}{
+					"s":  "three",
+					"sl": []string{""},
 				}},
 			},
 		},
@@ -3398,15 +3346,15 @@ func TestComplete(t *testing.T) {
 			name: "returns suggestions of middle node if partial",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					StringNode("s", testDesc, SimpleCompletor("one", "two", "three")),
-					StringListNode("sl", testDesc, 0, 2, SimpleCompletor("uno", "dos")),
-					OptionalIntNode("i", testDesc, SimpleCompletor("2", "1")),
+					Arg[string]("s", testDesc, SimpleCompletor[string]("one", "two", "three")),
+					ListArg[string]("sl", testDesc, 0, 2, SimpleCompletor[[]string]("uno", "dos")),
+					OptionalArg[int]("i", testDesc, SimpleCompletor[int]("2", "1")),
 				),
 				Args: "cmd three d",
 				Want: []string{"dos"},
-				WantData: &Data{Values: map[string]*Value{
-					"s":  StringValue("three"),
-					"sl": StringListValue("d"),
+				WantData: &Data{Values: map[string]interface{}{
+					"s":  "three",
+					"sl": []string{"d"},
 				}},
 			},
 		},
@@ -3414,15 +3362,15 @@ func TestComplete(t *testing.T) {
 			name: "returns suggestions in list",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					StringNode("s", testDesc, SimpleCompletor("one", "two", "three")),
-					StringListNode("sl", testDesc, 0, 2, SimpleCompletor("uno", "dos")),
-					OptionalIntNode("i", testDesc, SimpleCompletor("2", "1")),
+					Arg[string]("s", testDesc, SimpleCompletor[string]("one", "two", "three")),
+					ListArg[string]("sl", testDesc, 0, 2, SimpleCompletor[[]string]("uno", "dos")),
+					OptionalArg[int]("i", testDesc, SimpleCompletor[int]("2", "1")),
 				),
 				Args: "cmd three dos ",
 				Want: []string{"dos", "uno"},
-				WantData: &Data{Values: map[string]*Value{
-					"s":  StringValue("three"),
-					"sl": StringListValue("dos", ""),
+				WantData: &Data{Values: map[string]interface{}{
+					"s":  "three",
+					"sl": []string{"dos", ""},
 				}},
 			},
 		},
@@ -3430,15 +3378,15 @@ func TestComplete(t *testing.T) {
 			name: "returns suggestions for last arg",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					StringNode("s", testDesc, SimpleCompletor("one", "two", "three")),
-					StringListNode("sl", testDesc, 0, 2, SimpleCompletor("uno", "dos")),
-					OptionalIntNode("i", testDesc, SimpleCompletor("2", "1")),
+					Arg[string]("s", testDesc, SimpleCompletor[string]("one", "two", "three")),
+					ListArg[string]("sl", testDesc, 0, 2, SimpleCompletor[[]string]("uno", "dos")),
+					OptionalArg[int]("i", testDesc, SimpleCompletor[int]("2", "1")),
 				),
 				Args: "cmd three uno dos ",
 				Want: []string{"1", "2"},
-				WantData: &Data{Values: map[string]*Value{
-					"s":  StringValue("three"),
-					"sl": StringListValue("uno", "dos"),
+				WantData: &Data{Values: map[string]interface{}{
+					"s":  "three",
+					"sl": []string{"uno", "dos"},
 				}},
 			},
 		},
@@ -3446,15 +3394,15 @@ func TestComplete(t *testing.T) {
 			name: "returns nothing if iterate through all nodes",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					StringNode("s", testDesc, SimpleCompletor("one", "two", "three")),
-					StringListNode("sl", testDesc, 0, 2, SimpleCompletor("uno", "dos")),
-					OptionalIntNode("i", testDesc, SimpleCompletor("2", "1")),
+					Arg[string]("s", testDesc, SimpleCompletor[string]("one", "two", "three")),
+					ListArg[string]("sl", testDesc, 0, 2, SimpleCompletor[[]string]("uno", "dos")),
+					OptionalArg[int]("i", testDesc, SimpleCompletor[int]("2", "1")),
 				),
 				Args: "cmd three uno dos 1 what now",
-				WantData: &Data{Values: map[string]*Value{
-					"s":  StringValue("three"),
-					"sl": StringListValue("uno", "dos"),
-					"i":  IntValue(1),
+				WantData: &Data{Values: map[string]interface{}{
+					"s":  "three",
+					"sl": []string{"uno", "dos"},
+					"i":  1,
 				}},
 				WantErr: fmt.Errorf("Unprocessed extra args: [what now]"),
 			},
@@ -3463,11 +3411,11 @@ func TestComplete(t *testing.T) {
 			name: "works if empty and list starts",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					StringListNode("sl", testDesc, 1, 2, SimpleCompletor("uno", "dos")),
+					ListArg[string]("sl", testDesc, 1, 2, SimpleCompletor[[]string]("uno", "dos")),
 				),
 				Want: []string{"dos", "uno"},
-				WantData: &Data{Values: map[string]*Value{
-					"sl": StringListValue(),
+				WantData: &Data{Values: map[string]interface{}{
+					"sl": []string{},
 				}},
 			},
 		},
@@ -3475,12 +3423,12 @@ func TestComplete(t *testing.T) {
 			name: "only returns suggestions matching prefix",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					StringListNode("sl", testDesc, 1, 2, SimpleCompletor("zzz-1", "zzz-2", "yyy-3", "zzz-4")),
+					ListArg[string]("sl", testDesc, 1, 2, SimpleCompletor[[]string]("zzz-1", "zzz-2", "yyy-3", "zzz-4")),
 				),
 				Args: "cmd zz",
 				Want: []string{"zzz-1", "zzz-2", "zzz-4"},
-				WantData: &Data{Values: map[string]*Value{
-					"sl": StringListValue("zz"),
+				WantData: &Data{Values: map[string]interface{}{
+					"sl": []string{"zz"},
 				}},
 			},
 		},
@@ -3489,16 +3437,16 @@ func TestComplete(t *testing.T) {
 			name: "stop iterating if a completion returns nil",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					StringNode("PATH", "dd", &Completor{
-						SuggestionFetcher: SimpleFetcher(func(v *Value, d *Data) (*Completion, error) {
+					Arg[string]("PATH", "dd", &Completor[string]{
+						SuggestionFetcher: SimpleFetcher[string](func(string, *Data) (*Completion, error) {
 							return nil, nil
 						}),
 					}),
-					StringListNode("SUB_PATH", "stc", 0, UnboundedList, SimpleCompletor("un", "deux", "trois")),
+					ListArg[string]("SUB_PATH", "stc", 0, UnboundedList, SimpleCompletor[[]string]("un", "deux", "trois")),
 				),
 				Args: "cmd p",
-				WantData: &Data{Values: map[string]*Value{
-					"PATH": StringValue("p"),
+				WantData: &Data{Values: map[string]interface{}{
+					"PATH": "p",
 				}},
 			},
 		},
@@ -3506,17 +3454,17 @@ func TestComplete(t *testing.T) {
 			name: "stop iterating if a completion returns an error",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					StringNode("PATH", "dd", &Completor{
-						SuggestionFetcher: SimpleFetcher(func(v *Value, d *Data) (*Completion, error) {
+					Arg[string]("PATH", "dd", &Completor[string]{
+						SuggestionFetcher: SimpleFetcher[string](func(string, *Data) (*Completion, error) {
 							return nil, fmt.Errorf("ruh-roh")
 						}),
 					}),
-					StringListNode("SUB_PATH", "stc", 0, UnboundedList, SimpleCompletor("un", "deux", "trois")),
+					ListArg[string]("SUB_PATH", "stc", 0, UnboundedList, SimpleCompletor[[]string]("un", "deux", "trois")),
 				),
 				Args:    "cmd p",
 				WantErr: fmt.Errorf("ruh-roh"),
-				WantData: &Data{Values: map[string]*Value{
-					"PATH": StringValue("p"),
+				WantData: &Data{Values: map[string]interface{}{
+					"PATH": "p",
 				}},
 			},
 		},
@@ -3526,11 +3474,11 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
 					NewFlagNode(
-						StringFlag("greeting", 'h', testDesc, SimpleCompletor("hey", "hi")),
-						StringListFlag("names", 'n', testDesc, 1, 2, SimpleCompletor("ralph", "johnny", "renee")),
+						NewFlag[string]("greeting", 'h', testDesc, SimpleCompletor[string]("hey", "hi")),
+						NewListFlag[string]("names", 'n', testDesc, 1, 2, SimpleCompletor[[]string]("ralph", "johnny", "renee")),
 						BoolFlag("good", 'g', testDesc),
 					),
-					IntNode("i", testDesc, SimpleCompletor("1", "2")),
+					Arg[int]("i", testDesc, SimpleCompletor[int]("1", "2")),
 				),
 				Args: "cmd -",
 				Want: []string{"--good", "--greeting", "--names", "-g", "-h", "-n"},
@@ -3541,11 +3489,11 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
 					NewFlagNode(
-						StringFlag("greeting", 'h', testDesc, SimpleCompletor("hey", "hi")),
-						StringListFlag("names", 'n', testDesc, 1, 2, SimpleCompletor("ralph", "johnny", "renee")),
+						NewFlag[string]("greeting", 'h', testDesc, SimpleCompletor[string]("hey", "hi")),
+						NewListFlag[string]("names", 'n', testDesc, 1, 2, SimpleCompletor[[]string]("ralph", "johnny", "renee")),
 						BoolFlag("good", 'g', testDesc),
 					),
-					IntNode("i", testDesc, SimpleCompletor("1", "2")),
+					Arg[int]("i", testDesc, SimpleCompletor[int]("1", "2")),
 				),
 				Args: "cmd --",
 				Want: []string{"--good", "--greeting", "--names"},
@@ -3556,11 +3504,11 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
 					NewFlagNode(
-						StringFlag("greeting", 'h', testDesc, SimpleCompletor("hey", "hi")),
-						StringListFlag("names", 'n', testDesc, 1, 2, SimpleCompletor("ralph", "johnny", "renee")),
+						NewFlag[string]("greeting", 'h', testDesc, SimpleCompletor[string]("hey", "hi")),
+						NewListFlag[string]("names", 'n', testDesc, 1, 2, SimpleCompletor[[]string]("ralph", "johnny", "renee")),
 						BoolFlag("good", 'g', testDesc),
 					),
-					IntNode("i", testDesc, SimpleCompletor("1", "2")),
+					Arg[int]("i", testDesc, SimpleCompletor[int]("1", "2")),
 				),
 				Args: "cmd 1 -",
 				Want: []string{"--good", "--greeting", "--names", "-g", "-h", "-n"},
@@ -3571,16 +3519,16 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
 					NewFlagNode(
-						StringFlag("greeting", 'h', testDesc, SimpleCompletor("hey", "hi")),
-						StringListFlag("names", 'n', testDesc, 1, 2, SimpleCompletor("ralph", "johnny", "renee")),
+						NewFlag[string]("greeting", 'h', testDesc, SimpleCompletor[string]("hey", "hi")),
+						NewListFlag[string]("names", 'n', testDesc, 1, 2, SimpleCompletor[[]string]("ralph", "johnny", "renee")),
 						BoolFlag("good", 'g', testDesc),
 					),
-					IntNode("i", testDesc, SimpleCompletor("1", "2")),
+					Arg[int]("i", testDesc, SimpleCompletor[int]("1", "2")),
 				),
 				Args: "cmd 1 --greeting h",
 				Want: []string{"hey", "hi"},
-				WantData: &Data{Values: map[string]*Value{
-					"greeting": StringValue("h"),
+				WantData: &Data{Values: map[string]interface{}{
+					"greeting": "h",
 				}},
 			},
 		},
@@ -3589,16 +3537,16 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
 					NewFlagNode(
-						StringFlag("greeting", 'h', testDesc, SimpleCompletor("hey", "hi")),
-						StringListFlag("names", 'n', testDesc, 1, 2, SimpleCompletor("ralph", "johnny", "renee")),
+						NewFlag[string]("greeting", 'h', testDesc, SimpleCompletor[string]("hey", "hi")),
+						NewListFlag[string]("names", 'n', testDesc, 1, 2, SimpleCompletor[[]string]("ralph", "johnny", "renee")),
 						BoolFlag("good", 'g', testDesc),
 					),
-					IntNode("i", testDesc, SimpleCompletor("1", "2")),
+					Arg[int]("i", testDesc, SimpleCompletor[int]("1", "2")),
 				),
 				Args: "cmd 1 -h he",
 				Want: []string{"hey"},
-				WantData: &Data{Values: map[string]*Value{
-					"greeting": StringValue("he"),
+				WantData: &Data{Values: map[string]interface{}{
+					"greeting": "he",
 				}},
 			},
 		},
@@ -3607,17 +3555,17 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
 					NewFlagNode(
-						StringFlag("greeting", 'h', testDesc, SimpleCompletor("hey", "hi")),
-						StringListFlag("names", 'n', testDesc, 1, 2, SimpleCompletor("ralph", "johnny", "renee")),
+						NewFlag[string]("greeting", 'h', testDesc, SimpleCompletor[string]("hey", "hi")),
+						NewListFlag[string]("names", 'n', testDesc, 1, 2, SimpleCompletor[[]string]("ralph", "johnny", "renee")),
 						BoolFlag("good", 'g', testDesc),
 					),
-					IntNode("i", testDesc, SimpleCompletor("1", "2")),
+					Arg[int]("i", testDesc, SimpleCompletor[int]("1", "2")),
 				),
 				Args: "cmd 1 -h hey other --names ",
 				Want: []string{"johnny", "ralph", "renee"},
-				WantData: &Data{Values: map[string]*Value{
-					"greeting": StringValue("hey"),
-					"names":    StringListValue(""),
+				WantData: &Data{Values: map[string]interface{}{
+					"greeting": "hey",
+					"names":    []string{""},
 				}},
 			},
 		},
@@ -3626,17 +3574,17 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
 					NewFlagNode(
-						StringFlag("greeting", 'h', testDesc, SimpleCompletor("hey", "hi")),
-						StringListFlag("names", 'n', testDesc, 1, 2, SimpleDistinctCompletor("ralph", "johnny", "renee")),
+						NewFlag[string]("greeting", 'h', testDesc, SimpleCompletor[string]("hey", "hi")),
+						NewListFlag[string]("names", 'n', testDesc, 1, 2, SimpleDistinctCompletor[[]string]("ralph", "johnny", "renee")),
 						BoolFlag("good", 'g', testDesc),
 					),
-					IntNode("i", testDesc, SimpleCompletor("1", "2")),
+					Arg[int]("i", testDesc, SimpleCompletor[int]("1", "2")),
 				),
 				Args: "cmd 1 -h hey other --names ralph ",
 				Want: []string{"johnny", "renee"},
-				WantData: &Data{Values: map[string]*Value{
-					"greeting": StringValue("hey"),
-					"names":    StringListValue("ralph", ""),
+				WantData: &Data{Values: map[string]interface{}{
+					"greeting": "hey",
+					"names":    []string{"ralph", ""},
 				}},
 			},
 		},
@@ -3645,18 +3593,18 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
 					NewFlagNode(
-						StringFlag("greeting", 'h', testDesc, SimpleCompletor("hey", "hi")),
-						StringListFlag("names", 'n', testDesc, 1, 2, SimpleDistinctCompletor("ralph", "johnny", "renee")),
+						NewFlag[string]("greeting", 'h', testDesc, SimpleCompletor[string]("hey", "hi")),
+						NewListFlag[string]("names", 'n', testDesc, 1, 2, SimpleDistinctCompletor[[]string]("ralph", "johnny", "renee")),
 						BoolFlag("good", 'g', testDesc),
-						FloatFlag("float", 'f', testDesc, SimpleCompletor("1.23", "12.3", "123.4")),
+						NewFlag[float64]("float", 'f', testDesc, SimpleCompletor[float64]("1.23", "12.3", "123.4")),
 					),
-					IntNode("i", testDesc, SimpleCompletor("1", "2")),
+					Arg[int]("i", testDesc, SimpleCompletor[int]("1", "2")),
 				),
 				Args: "cmd 1 -h hey other --names ralph renee johnny -f ",
 				Want: []string{"1.23", "12.3", "123.4"},
-				WantData: &Data{Values: map[string]*Value{
-					"greeting": StringValue("hey"),
-					"names":    StringListValue("ralph", "renee", "johnny"),
+				WantData: &Data{Values: map[string]interface{}{
+					"greeting": "hey",
+					"names":    []string{"ralph", "renee", "johnny"},
 				}},
 			},
 		},
@@ -3665,18 +3613,18 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
 					NewFlagNode(
-						StringFlag("greeting", 'h', testDesc, SimpleCompletor("hey", "hi")),
-						StringListFlag("names", 'n', testDesc, 1, 2, SimpleDistinctCompletor("ralph", "johnny", "renee")),
+						NewFlag[string]("greeting", 'h', testDesc, SimpleCompletor[string]("hey", "hi")),
+						NewListFlag[string]("names", 'n', testDesc, 1, 2, SimpleDistinctCompletor[[]string]("ralph", "johnny", "renee")),
 						BoolFlag("good", 'g', testDesc),
 					),
-					StringListNode("i", testDesc, 1, 2, SimpleCompletor("hey", "ooo")),
+					ListArg[string]("i", testDesc, 1, 2, SimpleCompletor[[]string]("hey", "ooo")),
 				),
 				Args: "cmd 1 -h hello beta --names ralph renee johnny ",
 				Want: []string{"hey", "ooo"},
-				WantData: &Data{Values: map[string]*Value{
-					"i":        StringListValue("1", "beta", ""),
-					"greeting": StringValue("hello"),
-					"names":    StringListValue("ralph", "renee", "johnny"),
+				WantData: &Data{Values: map[string]interface{}{
+					"i":        []string{"1", "beta", ""},
+					"greeting": "hello",
+					"names":    []string{"ralph", "renee", "johnny"},
 				}},
 			},
 		},
@@ -3685,11 +3633,11 @@ func TestComplete(t *testing.T) {
 			name: "handles nil option",
 			ctc: &CompleteTestCase{
 				Node: &Node{
-					Processor: StringNode("strArg", testDesc),
+					Processor: Arg[string]("strArg", testDesc),
 				},
 				Args: "cmd abc",
-				WantData: &Data{Values: map[string]*Value{
-					"strArg": StringValue("abc"),
+				WantData: &Data{Values: map[string]interface{}{
+					"strArg": "abc",
 				}},
 			},
 		},
@@ -3697,21 +3645,21 @@ func TestComplete(t *testing.T) {
 			name: "list handles nil option",
 			ctc: &CompleteTestCase{
 				Node: &Node{
-					Processor: StringListNode("slArg", testDesc, 1, 2),
+					Processor: ListArg[string]("slArg", testDesc, 1, 2),
 				},
 				Args: "cmd abc",
-				WantData: &Data{Values: map[string]*Value{
-					"slArg": StringListValue("abc"),
+				WantData: &Data{Values: map[string]interface{}{
+					"slArg": []string{"abc"},
 				}},
 			},
 		},
 		{
 			name: "transformer does transform value when ForComplete is true",
 			ctc: &CompleteTestCase{
-				Node: SerialNodes(StringNode("strArg", testDesc, Transformer(StringType, func(v *Value) (*Value, error) { return StringValue("newStuff"), nil }, true))),
+				Node: SerialNodes(Arg[string]("strArg", testDesc, NewTransformer[string](func(string) (string, error) { return "newStuff", nil }, true))),
 				Args: "cmd abc",
-				WantData: &Data{Values: map[string]*Value{
-					"strArg": StringValue("newStuff"),
+				WantData: &Data{Values: map[string]interface{}{
+					"strArg": "newStuff",
 				}},
 			},
 		},
@@ -3720,11 +3668,11 @@ func TestComplete(t *testing.T) {
 			filepathAbs: filepath.Join("abso", "lutely"),
 			ctc: &CompleteTestCase{
 				Node: &Node{
-					Processor: StringNode("strArg", testDesc, FileTransformer()),
+					Processor: Arg[string]("strArg", testDesc, FileTransformer()),
 				},
 				Args: fmt.Sprintf("cmd %s", filepath.Join("relative", "path.txt")),
-				WantData: &Data{Values: map[string]*Value{
-					"strArg": StringValue(filepath.Join("relative", "path.txt")),
+				WantData: &Data{Values: map[string]interface{}{
+					"strArg": filepath.Join("relative", "path.txt"),
 				}},
 			},
 		},
@@ -3733,11 +3681,11 @@ func TestComplete(t *testing.T) {
 			filepathAbs: filepath.Join("abso", "lutely"),
 			ctc: &CompleteTestCase{
 				Node: &Node{
-					Processor: StringListNode("strArg", testDesc, 1, 2, FileListTransformer()),
+					Processor: ListArg[string]("strArg", testDesc, 1, 2, TransformerList(FileTransformer())),
 				},
 				Args: fmt.Sprintf("cmd %s", filepath.Join("relative", "path.txt")),
-				WantData: &Data{Values: map[string]*Value{
-					"strArg": StringListValue(filepath.Join("relative", "path.txt")),
+				WantData: &Data{Values: map[string]interface{}{
+					"strArg": []string{filepath.Join("relative", "path.txt")},
 				}},
 			},
 		},
@@ -3746,23 +3694,11 @@ func TestComplete(t *testing.T) {
 			filepathAbsErr: fmt.Errorf("bad news bears"),
 			ctc: &CompleteTestCase{
 				Node: &Node{
-					Processor: StringNode("strArg", testDesc, FileTransformer()),
+					Processor: Arg[string]("strArg", testDesc, FileTransformer()),
 				},
 				Args: fmt.Sprintf("cmd %s", filepath.Join("relative", "path.txt")),
-				WantData: &Data{Values: map[string]*Value{
-					"strArg": StringValue(filepath.Join("relative", "path.txt")),
-				}},
-			},
-		},
-		{
-			name: "handles transformer of incorrect type",
-			ctc: &CompleteTestCase{
-				Node: &Node{
-					Processor: IntNode("IntNode", testDesc, FileTransformer()),
-				},
-				Args: "cmd 123",
-				WantData: &Data{Values: map[string]*Value{
-					"IntNode": IntValue(123),
+				WantData: &Data{Values: map[string]interface{}{
+					"strArg": filepath.Join("relative", "path.txt"),
 				}},
 			},
 		},
@@ -3771,20 +3707,20 @@ func TestComplete(t *testing.T) {
 			filepathAbs: filepath.Join("abso", "lutely"),
 			ctc: &CompleteTestCase{
 				Node: &Node{
-					Processor: StringListNode("slArg", testDesc, 1, 2, Transformer(StringListType, func(v *Value) (*Value, error) {
-						var sl []string
-						for _, s := range v.ToStringList() {
-							sl = append(sl, fmt.Sprintf("_%s_", s))
+					Processor: ListArg[string]("slArg", testDesc, 1, 2, NewTransformer[[]string](func(sl []string) ([]string, error) {
+						var r []string
+						for _, s := range sl {
+							r = append(r, fmt.Sprintf("_%s_", s))
 						}
-						return StringListValue(sl...), nil
+						return r, nil
 					}, true)),
 				},
 				Args: "cmd uno dos",
-				WantData: &Data{Values: map[string]*Value{
-					"slArg": StringListValue(
+				WantData: &Data{Values: map[string]interface{}{
+					"slArg": []string{
 						"_uno_",
 						"_dos_",
-					),
+					},
 				}},
 			},
 		},
@@ -3793,14 +3729,14 @@ func TestComplete(t *testing.T) {
 			filepathAbsErr: fmt.Errorf("bad news bears"),
 			ctc: &CompleteTestCase{
 				Node: &Node{
-					Processor: StringListNode("slArg", testDesc, 1, 2, FileListTransformer()),
+					Processor: ListArg[string]("slArg", testDesc, 1, 2, TransformerList(FileTransformer())),
 				},
 				Args: fmt.Sprintf("cmd %s %s", filepath.Join("relative", "path.txt"), filepath.Join("other.txt")),
-				WantData: &Data{Values: map[string]*Value{
-					"slArg": StringListValue(
+				WantData: &Data{Values: map[string]interface{}{
+					"slArg": []string{
 						filepath.Join("relative", "path.txt"),
 						filepath.Join("other.txt"),
-					),
+					},
 				}},
 			},
 		},
@@ -3808,11 +3744,11 @@ func TestComplete(t *testing.T) {
 			name: "handles list transformer of incorrect type",
 			ctc: &CompleteTestCase{
 				Node: &Node{
-					Processor: StringListNode("slArg", testDesc, 1, 2, FileTransformer()),
+					Processor: ListArg[string]("slArg", testDesc, 1, 2, TransformerList(FileTransformer())),
 				},
 				Args: "cmd 123",
-				WantData: &Data{Values: map[string]*Value{
-					"slArg": StringListValue("123"),
+				WantData: &Data{Values: map[string]interface{}{
+					"slArg": []string{"123"},
 				}},
 			},
 		},
@@ -3822,12 +3758,12 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: BranchNode(map[string]*Node{
 					"a":     {},
-					"alpha": SerialNodes(OptionalStringNode("hello", testDesc, SimpleCompletor("other", "stuff"))),
+					"alpha": SerialNodes(OptionalArg[string]("hello", testDesc, SimpleCompletor[string]("other", "stuff"))),
 					"bravo": {},
-				}, SerialNodes(StringListNode("default", testDesc, 1, 3, SimpleCompletor("default", "command", "opts")))),
+				}, SerialNodes(ListArg[string]("default", testDesc, 1, 3, SimpleCompletor[[]string]("default", "command", "opts")))),
 				Want: []string{"a", "alpha", "bravo", "command", "default", "opts"},
-				WantData: &Data{Values: map[string]*Value{
-					"default": StringListValue(),
+				WantData: &Data{Values: map[string]interface{}{
+					"default": []string{},
 				}},
 			},
 		},
@@ -3836,12 +3772,12 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: BranchNode(map[string]*Node{
 					"a":     {},
-					"alpha": SerialNodes(OptionalStringNode("hello", testDesc, SimpleCompletor("other", "stuff"))),
+					"alpha": SerialNodes(OptionalArg[string]("hello", testDesc, SimpleCompletor[string]("other", "stuff"))),
 					"bravo": {},
-				}, SerialNodes(StringListNode("default", testDesc, 1, 3, SimpleCompletor("default", "command", "opts"))), DontCompleteSubcommands()),
+				}, SerialNodes(ListArg[string]("default", testDesc, 1, 3, SimpleCompletor[[]string]("default", "command", "opts"))), DontCompleteSubcommands()),
 				Want: []string{"command", "default", "opts"},
-				WantData: &Data{Values: map[string]*Value{
-					"default": StringListValue(),
+				WantData: &Data{Values: map[string]interface{}{
+					"default": []string{},
 				}},
 			},
 		},
@@ -3850,13 +3786,13 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: BranchNode(map[string]*Node{
 					"a":     {},
-					"alpha": SerialNodes(OptionalStringNode("hello", testDesc, SimpleCompletor("other", "stuff"))),
+					"alpha": SerialNodes(OptionalArg[string]("hello", testDesc, SimpleCompletor[string]("other", "stuff"))),
 					"bravo": {},
-				}, SerialNodes(StringListNode("default", testDesc, 1, 3, SimpleCompletor("default", "command", "opts")))),
+				}, SerialNodes(ListArg[string]("default", testDesc, 1, 3, SimpleCompletor[[]string]("default", "command", "opts")))),
 				Args: "cmd alpha ",
 				Want: []string{"other", "stuff"},
-				WantData: &Data{Values: map[string]*Value{
-					"hello": StringValue(""),
+				WantData: &Data{Values: map[string]interface{}{
+					"hello": "",
 				}},
 			},
 		},
@@ -3865,7 +3801,7 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: BranchNode(map[string]*Node{
 					"a":     {},
-					"alpha": SerialNodes(OptionalStringNode("hello", testDesc, SimpleCompletor("other", "stuff"))),
+					"alpha": SerialNodes(OptionalArg[string]("hello", testDesc, SimpleCompletor[string]("other", "stuff"))),
 					"bravo": {},
 				}, nil),
 				Args:    "cmd some thing else",
@@ -3877,7 +3813,7 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: BranchNode(map[string]*Node{
 					"a":     {},
-					"alpha": SerialNodes(OptionalStringNode("hello", testDesc, SimpleCompletor("other", "stuff"))),
+					"alpha": SerialNodes(OptionalArg[string]("hello", testDesc, SimpleCompletor[string]("other", "stuff"))),
 					"bravo": {},
 				}, SerialNodes(SimpleProcessor(nil, func(i *Input, d *Data) (*Completion, error) {
 					return nil, fmt.Errorf("bad news bears")
@@ -3891,7 +3827,7 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: BranchNode(map[string]*Node{
 					"a":     {},
-					"alpha": SerialNodes(OptionalStringNode("hello", testDesc, SimpleCompletor("other", "stuff"))),
+					"alpha": SerialNodes(OptionalArg[string]("hello", testDesc, SimpleCompletor[string]("other", "stuff"))),
 					"bravo": {},
 				}, SerialNodes(SimpleProcessor(nil, func(i *Input, d *Data) (*Completion, error) {
 					return nil, fmt.Errorf("bad news bears")
@@ -3906,13 +3842,13 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: BranchNode(map[string]*Node{
 					"a":     {},
-					"alpha": SerialNodes(OptionalStringNode("hello", testDesc, SimpleCompletor("other", "stuff"))),
+					"alpha": SerialNodes(OptionalArg[string]("hello", testDesc, SimpleCompletor[string]("other", "stuff"))),
 					"bravo": {},
-				}, SerialNodes(StringListNode("default", testDesc, 1, 3, SimpleCompletor("default", "command", "opts", "ahhhh")))),
+				}, SerialNodes(ListArg[string]("default", testDesc, 1, 3, SimpleCompletor[[]string]("default", "command", "opts", "ahhhh")))),
 				Args: "cmd a",
 				Want: []string{"a", "ahhhh", "alpha"},
-				WantData: &Data{Values: map[string]*Value{
-					"default": StringListValue("a"),
+				WantData: &Data{Values: map[string]interface{}{
+					"default": []string{"a"},
 				}},
 			},
 		},
@@ -3921,12 +3857,12 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: BranchNode(map[string]*Node{
 					"a":     {},
-					"alpha": SerialNodes(OptionalStringNode("hello", testDesc, SimpleCompletor("other", "stuff"))),
+					"alpha": SerialNodes(OptionalArg[string]("hello", testDesc, SimpleCompletor[string]("other", "stuff"))),
 					"bravo": {},
-				}, SerialNodes(StringListNode("default", testDesc, 1, 3, SimpleCompletor("default", "command", "opts")))),
+				}, SerialNodes(ListArg[string]("default", testDesc, 1, 3, SimpleCompletor[[]string]("default", "command", "opts")))),
 				Args: "cmd something ",
-				WantData: &Data{Values: map[string]*Value{
-					"default": StringListValue("something", ""),
+				WantData: &Data{Values: map[string]interface{}{
+					"default": []string{"something", ""},
 				}},
 				Want: []string{"command", "default", "opts"},
 			},
@@ -3938,8 +3874,8 @@ func TestComplete(t *testing.T) {
 				Node: SerialNodes(StringMenu("sm", "desc", "abc", "def", "ghi")),
 				Args: "cmd ",
 				Want: []string{"abc", "def", "ghi"},
-				WantData: &Data{Values: map[string]*Value{
-					"sm": StringValue(""),
+				WantData: &Data{Values: map[string]interface{}{
+					"sm": "",
 				}},
 			},
 		},
@@ -3949,8 +3885,8 @@ func TestComplete(t *testing.T) {
 				Node: SerialNodes(StringMenu("sm", "desc", "abc", "def", "ghi")),
 				Args: "cmd g",
 				Want: []string{"ghi"},
-				WantData: &Data{Values: map[string]*Value{
-					"sm": StringValue("g"),
+				WantData: &Data{Values: map[string]interface{}{
+					"sm": "g",
 				}},
 			},
 		},
@@ -3958,40 +3894,40 @@ func TestComplete(t *testing.T) {
 		{
 			name: "int arg gets completed",
 			ctc: &CompleteTestCase{
-				Node: SerialNodes(IntNode("iArg", testDesc, SimpleCompletor("12", "45", "456", "468", "7"))),
+				Node: SerialNodes(Arg[int]("iArg", testDesc, SimpleCompletor[int]("12", "45", "456", "468", "7"))),
 				Args: "cmd 4",
 				Want: []string{"45", "456", "468"},
-				WantData: &Data{Values: map[string]*Value{
-					"iArg": IntValue(4),
+				WantData: &Data{Values: map[string]interface{}{
+					"iArg": 4,
 				}},
 			},
 		},
 		{
 			name: "optional int arg gets completed",
 			ctc: &CompleteTestCase{
-				Node: SerialNodes(OptionalIntNode("iArg", testDesc, SimpleCompletor("12", "45", "456", "468", "7"))),
+				Node: SerialNodes(OptionalArg[int]("iArg", testDesc, SimpleCompletor[int]("12", "45", "456", "468", "7"))),
 				Args: "cmd 4",
 				Want: []string{"45", "456", "468"},
-				WantData: &Data{Values: map[string]*Value{
-					"iArg": IntValue(4),
+				WantData: &Data{Values: map[string]interface{}{
+					"iArg": 4,
 				}},
 			},
 		},
 		{
 			name: "int list arg gets completed",
 			ctc: &CompleteTestCase{
-				Node: SerialNodes(IntListNode("iArg", testDesc, 2, 3, SimpleCompletor("12", "45", "456", "468", "7"))),
+				Node: SerialNodes(ListArg[int]("iArg", testDesc, 2, 3, SimpleCompletor[[]int]("12", "45", "456", "468", "7"))),
 				Args: "cmd 1 4",
 				Want: []string{"45", "456", "468"},
-				WantData: &Data{Values: map[string]*Value{
-					"iArg": IntListValue(1, 4),
+				WantData: &Data{Values: map[string]interface{}{
+					"iArg": []int{1, 4},
 				}},
 			},
 		},
 		{
 			name: "int list arg gets completed if previous one was invalid",
 			ctc: &CompleteTestCase{
-				Node: SerialNodes(IntListNode("iArg", testDesc, 2, 3, SimpleCompletor("12", "45", "456", "468", "7"))),
+				Node: SerialNodes(ListArg[int]("iArg", testDesc, 2, 3, SimpleCompletor[[]int]("12", "45", "456", "468", "7"))),
 				Args: "cmd one 4",
 				Want: []string{"45", "456", "468"},
 			},
@@ -3999,32 +3935,32 @@ func TestComplete(t *testing.T) {
 		{
 			name: "int list arg optional args get completed",
 			ctc: &CompleteTestCase{
-				Node: SerialNodes(IntListNode("iArg", testDesc, 2, 3, SimpleCompletor("12", "45", "456", "468", "7"))),
+				Node: SerialNodes(ListArg[int]("iArg", testDesc, 2, 3, SimpleCompletor[[]int]("12", "45", "456", "468", "7"))),
 				Args: "cmd 1 2 3 4",
 				Want: []string{"45", "456", "468"},
-				WantData: &Data{Values: map[string]*Value{
-					"iArg": IntListValue(1, 2, 3, 4),
+				WantData: &Data{Values: map[string]interface{}{
+					"iArg": []int{1, 2, 3, 4},
 				}},
 			},
 		},
 		{
 			name: "float arg gets completed",
 			ctc: &CompleteTestCase{
-				Node: SerialNodes(FloatNode("fArg", testDesc, SimpleCompletor("12", "4.5", "45.6", "468", "7"))),
+				Node: SerialNodes(Arg[float64]("fArg", testDesc, SimpleCompletor[float64]("12", "4.5", "45.6", "468", "7"))),
 				Args: "cmd 4",
 				Want: []string{"4.5", "45.6", "468"},
-				WantData: &Data{Values: map[string]*Value{
-					"fArg": FloatValue(4),
+				WantData: &Data{Values: map[string]interface{}{
+					"fArg": 4.0,
 				}},
 			},
 		},
 		{
 			name: "float list arg gets completed",
 			ctc: &CompleteTestCase{
-				Node: SerialNodes(FloatListNode("fArg", testDesc, 1, 2, SimpleCompletor("12", "4.5", "45.6", "468", "7"))),
+				Node: SerialNodes(ListArg[float64]("fArg", testDesc, 1, 2, SimpleCompletor[[]float64]("12", "4.5", "45.6", "468", "7"))),
 				Want: []string{"12", "4.5", "45.6", "468", "7"},
-				WantData: &Data{Values: map[string]*Value{
-					"fArg": FloatListValue(),
+				WantData: &Data{Values: map[string]interface{}{
+					"fArg": []float64{},
 				}},
 			},
 		},
@@ -4033,8 +3969,8 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(BoolNode("bArg", testDesc)),
 				Want: []string{"0", "1", "F", "FALSE", "False", "T", "TRUE", "True", "f", "false", "t", "true"},
-				WantData: &Data{Values: map[string]*Value{
-					"bArg": FalseValue(),
+				WantData: &Data{Values: map[string]interface{}{
+					"bArg": false,
 				}},
 			},
 		},
@@ -4044,8 +3980,8 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(sampleRepeaterNode(1, 2)),
 				Want: []string{"alpha", "bravo", "brown", "charlie"},
-				WantData: &Data{Values: map[string]*Value{
-					"keys": StringListValue(""),
+				WantData: &Data{Values: map[string]interface{}{
+					"keys": []string{""},
 				}},
 			},
 		},
@@ -4055,8 +3991,8 @@ func TestComplete(t *testing.T) {
 				Node: SerialNodes(sampleRepeaterNode(1, 2)),
 				Args: "cmd b",
 				Want: []string{"bravo", "brown"},
-				WantData: &Data{Values: map[string]*Value{
-					"keys": StringListValue("b"),
+				WantData: &Data{Values: map[string]interface{}{
+					"keys": []string{"b"},
 				}},
 			},
 		},
@@ -4066,8 +4002,8 @@ func TestComplete(t *testing.T) {
 				Node: SerialNodes(sampleRepeaterNode(1, 2)),
 				Args: "cmd brown ",
 				Want: []string{"1", "121", "1213121"},
-				WantData: &Data{Values: map[string]*Value{
-					"keys": StringListValue("brown"),
+				WantData: &Data{Values: map[string]interface{}{
+					"keys": []string{"brown"},
 				}},
 			},
 		},
@@ -4077,9 +4013,9 @@ func TestComplete(t *testing.T) {
 				Node: SerialNodes(sampleRepeaterNode(1, 2)),
 				Args: "cmd brown 12",
 				Want: []string{"121", "1213121"},
-				WantData: &Data{Values: map[string]*Value{
-					"keys":   StringListValue("brown"),
-					"values": IntListValue(12),
+				WantData: &Data{Values: map[string]interface{}{
+					"keys":   []string{"brown"},
+					"values": []int{12},
 				}},
 			},
 		},
@@ -4089,9 +4025,9 @@ func TestComplete(t *testing.T) {
 				Node: SerialNodes(sampleRepeaterNode(2, 0)),
 				Args: "cmd brown 12 c",
 				Want: []string{"charlie"},
-				WantData: &Data{Values: map[string]*Value{
-					"keys":   StringListValue("brown", "c"),
-					"values": IntListValue(12),
+				WantData: &Data{Values: map[string]interface{}{
+					"keys":   []string{"brown", "c"},
+					"values": []int{12},
 				}},
 			},
 		},
@@ -4101,9 +4037,9 @@ func TestComplete(t *testing.T) {
 				Node: SerialNodes(sampleRepeaterNode(2, 1)),
 				Args: "cmd brown 12 charlie 21 alpha 1",
 				Want: []string{"1", "121", "1213121"},
-				WantData: &Data{Values: map[string]*Value{
-					"keys":   StringListValue("brown", "charlie", "alpha"),
-					"values": IntListValue(12, 21, 1),
+				WantData: &Data{Values: map[string]interface{}{
+					"keys":   []string{"brown", "charlie", "alpha"},
+					"values": []int{12, 21, 1},
 				}},
 			},
 		},
@@ -4113,9 +4049,9 @@ func TestComplete(t *testing.T) {
 				Node: SerialNodes(sampleRepeaterNode(2, UnboundedList)),
 				Args: "cmd brown 12 charlie 21 alpha 100 delta 98 b",
 				Want: []string{"bravo", "brown"},
-				WantData: &Data{Values: map[string]*Value{
-					"keys":   StringListValue("brown", "charlie", "alpha", "delta", "b"),
-					"values": IntListValue(12, 21, 100, 98),
+				WantData: &Data{Values: map[string]interface{}{
+					"keys":   []string{"brown", "charlie", "alpha", "delta", "b"},
+					"values": []int{12, 21, 100, 98},
 				}},
 			},
 		},
@@ -4124,9 +4060,9 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(sampleRepeaterNode(2, 1)),
 				Args: "cmd brown 12 charlie 21 alpha 100 b",
-				WantData: &Data{Values: map[string]*Value{
-					"keys":   StringListValue("brown", "charlie", "alpha"),
-					"values": IntListValue(12, 21, 100),
+				WantData: &Data{Values: map[string]interface{}{
+					"keys":   []string{"brown", "charlie", "alpha"},
+					"values": []int{12, 21, 100},
 				}},
 				WantErr: fmt.Errorf("Unprocessed extra args: [b]"),
 			},
@@ -4134,11 +4070,11 @@ func TestComplete(t *testing.T) {
 		{
 			name: "NodeRepeater works if fully processed",
 			ctc: &CompleteTestCase{
-				Node: SerialNodes(sampleRepeaterNode(2, 1), StringNode("S", testDesc, SimpleCompletor("un", "deux", "trois"))),
+				Node: SerialNodes(sampleRepeaterNode(2, 1), Arg[string]("S", testDesc, SimpleCompletor[string]("un", "deux", "trois"))),
 				Args: "cmd brown 12 charlie 21 alpha 100",
-				WantData: &Data{Values: map[string]*Value{
-					"keys":   StringListValue("brown", "charlie", "alpha"),
-					"values": IntListValue(12, 21, 100),
+				WantData: &Data{Values: map[string]interface{}{
+					"keys":   []string{"brown", "charlie", "alpha"},
+					"values": []int{12, 21, 100},
 				}},
 			},
 		},
@@ -4147,14 +4083,14 @@ func TestComplete(t *testing.T) {
 			name: "Suggests things after broken list",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					StringListNode("SL", testDesc, 1, UnboundedList, ListUntilSymbol("ghi"), SimpleCompletor("un", "deux", "trois")),
-					StringListNode("SL2", testDesc, 0, UnboundedList, SimpleCompletor("one", "two", "three")),
+					ListArg[string]("SL", testDesc, 1, UnboundedList, ListUntilSymbol("ghi"), SimpleCompletor[[]string]("un", "deux", "trois")),
+					ListArg[string]("SL2", testDesc, 0, UnboundedList, SimpleCompletor[[]string]("one", "two", "three")),
 				),
 				Args: "cmd abc def ghi ",
 				Want: []string{"one", "three", "two"},
-				WantData: &Data{Values: map[string]*Value{
-					"SL":  StringListValue("abc", "def"),
-					"SL2": StringListValue("ghi", ""),
+				WantData: &Data{Values: map[string]interface{}{
+					"SL":  []string{"abc", "def"},
+					"SL2": []string{"ghi", ""},
 				}},
 			},
 		},
@@ -4162,14 +4098,14 @@ func TestComplete(t *testing.T) {
 			name: "Suggests things after broken list with discard",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					StringListNode("SL", testDesc, 1, UnboundedList, ListUntilSymbol("ghi", DiscardBreaker()), SimpleCompletor("un", "deux", "trois")),
-					StringListNode("SL2", testDesc, 0, UnboundedList, SimpleCompletor("one", "two", "three")),
+					ListArg[string]("SL", testDesc, 1, UnboundedList, ListUntilSymbol("ghi", DiscardBreaker()), SimpleCompletor[[]string]("un", "deux", "trois")),
+					ListArg[string]("SL2", testDesc, 0, UnboundedList, SimpleCompletor[[]string]("one", "two", "three")),
 				),
 				Args: "cmd abc def ghi ",
 				Want: []string{"one", "three", "two"},
-				WantData: &Data{Values: map[string]*Value{
-					"SL":  StringListValue("abc", "def"),
-					"SL2": StringListValue(""),
+				WantData: &Data{Values: map[string]interface{}{
+					"SL":  []string{"abc", "def"},
+					"SL2": []string{""},
 				}},
 			},
 		},
@@ -4177,13 +4113,13 @@ func TestComplete(t *testing.T) {
 			name: "Suggests things before list is broken",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					StringListNode("SL", testDesc, 1, UnboundedList, ListUntilSymbol("ghi"), SimpleCompletor("un", "deux", "trois", "uno")),
-					StringListNode("SL2", testDesc, 0, UnboundedList, SimpleCompletor("one", "two", "three")),
+					ListArg[string]("SL", testDesc, 1, UnboundedList, ListUntilSymbol("ghi"), SimpleCompletor[[]string]("un", "deux", "trois", "uno")),
+					ListArg[string]("SL2", testDesc, 0, UnboundedList, SimpleCompletor[[]string]("one", "two", "three")),
 				),
 				Args: "cmd abc def un",
 				Want: []string{"un", "uno"},
-				WantData: &Data{Values: map[string]*Value{
-					"SL": StringListValue("abc", "def", "un"),
+				WantData: &Data{Values: map[string]interface{}{
+					"SL": []string{"abc", "def", "un"},
 				}},
 			},
 		},
@@ -4192,11 +4128,11 @@ func TestComplete(t *testing.T) {
 			name: "StringListListNode works if no breakers",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					StringListListNode("SLL", testDesc, "|", 1, UnboundedList, SimpleCompletor("one", "two", "three")),
+					StringListListNode("SLL", testDesc, "|", 1, UnboundedList, SimpleCompletor[[]string]("one", "two", "three")),
 				),
 				Args: "cmd abc def ghi ",
 				Want: []string{"one", "three", "two"},
-				WantData: &Data{Interfaces: map[string]interface{}{
+				WantData: &Data{Values: map[string]interface{}{
 					"SLL": [][]string{{"abc", "def", "ghi", ""}},
 				}},
 			},
@@ -4205,11 +4141,11 @@ func TestComplete(t *testing.T) {
 			name: "StringListListNode works with breakers",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					StringListListNode("SLL", testDesc, "|", 1, UnboundedList, SimpleCompletor("one", "two", "three")),
+					StringListListNode("SLL", testDesc, "|", 1, UnboundedList, SimpleCompletor[[]string]("one", "two", "three")),
 				),
 				Args: "cmd abc def | ghi t",
 				Want: []string{"three", "two"},
-				WantData: &Data{Interfaces: map[string]interface{}{
+				WantData: &Data{Values: map[string]interface{}{
 					"SLL": [][]string{{"abc", "def"}, {"ghi", "t"}},
 				}},
 			},
@@ -4218,17 +4154,15 @@ func TestComplete(t *testing.T) {
 			name: "completes args after StringListListNode",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					StringListListNode("SLL", testDesc, "|", 1, 1, SimpleCompletor("one", "two", "three")),
-					StringNode("S", testDesc, SimpleCompletor("un", "deux", "trois")),
+					StringListListNode("SLL", testDesc, "|", 1, 1, SimpleCompletor[[]string]("one", "two", "three")),
+					Arg[string]("S", testDesc, SimpleCompletor[string]("un", "deux", "trois")),
 				),
 				Args: "cmd abc def | ghi | ",
 				Want: []string{"deux", "trois", "un"},
 				WantData: &Data{
-					Interfaces: map[string]interface{}{
+					Values: map[string]interface{}{
 						"SLL": [][]string{{"abc", "def"}, {"ghi"}},
-					},
-					Values: map[string]*Value{
-						"S": StringValue(""),
+						"S":   "",
 					},
 				},
 			},
@@ -4302,8 +4236,13 @@ func printlnNode(stdout bool, a ...interface{}) *Node {
 func printArgsNode() *Node {
 	return &Node{
 		Processor: ExecutorNode(func(output Output, data *Data) {
-			for k, v := range data.Values {
-				output.Stdoutf("%s: %v", k, v)
+			var keys []string
+			for k := range data.Values {
+				keys = append(keys, k)
+			}
+			sort.Strings(keys)
+			for _, k := range keys {
+				output.Stdoutf("%s: %v", k, data.Values[k])
 			}
 		}),
 	}
@@ -4311,28 +4250,28 @@ func printArgsNode() *Node {
 
 func sampleRepeaterNode(minN, optionalN int) Processor {
 	return NodeRepeater(SerialNodes(
-		StringNode("KEY", testDesc, CustomSetter(func(v *Value, d *Data) {
-			if !d.HasArg("keys") {
-				d.Set("keys", StringListValue(v.ToString()))
+		Arg[string]("KEY", testDesc, CustomSetter[string](func(v string, d *Data) {
+			if !d.Has("keys") {
+				d.Set("keys", []string{v})
 			} else {
-				d.Set("keys", StringListValue(append(d.StringList("keys"), v.ToString())...))
+				d.Set("keys", append(d.StringList("keys"), v))
 			}
-		}), SimpleCompletor("alpha", "bravo", "charlie", "brown")),
-		IntNode("VALUE", testDesc, CustomSetter(func(v *Value, d *Data) {
-			if !d.HasArg("values") {
-				d.Set("values", IntListValue(v.ToInt()))
+		}), SimpleCompletor[string]("alpha", "bravo", "charlie", "brown")),
+		Arg[int]("VALUE", testDesc, CustomSetter(func(v int, d *Data) {
+			if !d.Has("values") {
+				d.Set("values", []int{v})
 			} else {
-				d.Set("values", IntListValue(append(d.IntList("values"), v.ToInt())...))
+				d.Set("values", append(d.IntList("values"), v))
 			}
-		}), SimpleCompletor("1", "121", "1213121")),
+		}), SimpleCompletor[int]("1", "121", "1213121")),
 	), minN, optionalN)
 }
 
 func TestRunNodes(t *testing.T) {
 	sum := SerialNodes(
 		Description("Adds A and B"),
-		IntNode("A", "The first value"),
-		IntNode("B", "The second value"),
+		Arg[int]("A", "The first value"),
+		Arg[int]("B", "The second value"),
 		ExecutorNode(func(o Output, d *Data) {
 			o.Stdoutln(d.Int("A") + d.Int("B"))
 		}),
@@ -4431,7 +4370,7 @@ func TestRunNodes(t *testing.T) {
 			name: "autocompletes empty",
 			rtc: &RunNodeTestCase{
 				Node: SerialNodes(
-					StringListNode("SL_ARG", "", 1, UnboundedList, SimpleCompletor("one", "two", "three", "four")),
+					ListArg[string]("SL_ARG", "", 1, UnboundedList, SimpleCompletor[[]string]("one", "two", "three", "four")),
 				),
 				Args: []string{"autocomplete", ""},
 				WantStdout: []string{
@@ -4446,7 +4385,7 @@ func TestRunNodes(t *testing.T) {
 			name: "autocompletes empty with command",
 			rtc: &RunNodeTestCase{
 				Node: SerialNodes(
-					StringListNode("SL_ARG", "", 1, UnboundedList, SimpleCompletor("one", "two", "three", "four")),
+					ListArg[string]("SL_ARG", "", 1, UnboundedList, SimpleCompletor[[]string]("one", "two", "three", "four")),
 				),
 				Args: []string{"autocomplete", "cmd "},
 				WantStdout: []string{
@@ -4461,7 +4400,7 @@ func TestRunNodes(t *testing.T) {
 			name: "autocompletes partial arg",
 			rtc: &RunNodeTestCase{
 				Node: SerialNodes(
-					StringListNode("SL_ARG", "", 1, UnboundedList, SimpleCompletor("one", "two", "three", "four")),
+					ListArg[string]("SL_ARG", "", 1, UnboundedList, SimpleCompletor[[]string]("one", "two", "three", "four")),
 				),
 				Args: []string{"autocomplete", "cmd t"},
 				WantStdout: []string{
@@ -4474,7 +4413,7 @@ func TestRunNodes(t *testing.T) {
 			name: "autocompletes later args",
 			rtc: &RunNodeTestCase{
 				Node: SerialNodes(
-					StringListNode("SL_ARG", "", 1, UnboundedList, SimpleCompletor("one", "two", "three", "four")),
+					ListArg[string]("SL_ARG", "", 1, UnboundedList, SimpleCompletor[[]string]("one", "two", "three", "four")),
 				),
 				Args: []string{"autocomplete", "cmd three f"},
 				WantStdout: []string{
@@ -4486,7 +4425,7 @@ func TestRunNodes(t *testing.T) {
 			name: "autocompletes nothing if past last arg",
 			rtc: &RunNodeTestCase{
 				Node: SerialNodes(
-					StringListNode("SL_ARG", "", 1, 0, SimpleCompletor("one", "two", "three", "four")),
+					ListArg[string]("SL_ARG", "", 1, 0, SimpleCompletor[[]string]("one", "two", "three", "four")),
 				),
 				Args: []string{"autocomplete", "cmd three f"},
 			},
@@ -4507,7 +4446,7 @@ func TestRunNodes(t *testing.T) {
 			name: "verify that files are created and deleted",
 			rtc: &RunNodeTestCase{
 				Node: SerialNodes(
-					StringListNode("SL_ARG", "", 1, UnboundedList),
+					ListArg[string]("SL_ARG", "", 1, UnboundedList),
 				),
 				Args: []string{"autocomplete", "cmd okay"},
 				InitFiles: []*FakeFile{
@@ -4532,7 +4471,7 @@ func TestRunNodes(t *testing.T) {
 			name: "verify file check can be skipped",
 			rtc: &RunNodeTestCase{
 				Node: SerialNodes(
-					StringListNode("SL_ARG", "", 1, UnboundedList),
+					ListArg[string]("SL_ARG", "", 1, UnboundedList),
 				),
 				Args: []string{"autocomplete", "cmd okay"},
 				InitFiles: []*FakeFile{

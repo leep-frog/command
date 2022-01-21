@@ -12,25 +12,26 @@ import (
 )
 
 func TestCompletors(t *testing.T) {
-	for _, test := range []struct {
+	type testCase struct {
 		name    string
-		c       *Completor
+		c       *Completor[[]string]
 		args    string
 		want    []string
 		wantErr error
-	}{
+	}
+	for _, test := range []*testCase{
 		{
 			name: "nil completor returns nil",
 		},
 		{
 			name: "nil fetcher returns nil",
-			c:    &Completor{},
+			c:    &Completor[[]string]{},
 		},
 		{
 			name: "doesn't complete if case mismatch with upper",
 			args: "cmd A",
-			c: &Completor{
-				SuggestionFetcher: &ListFetcher{
+			c: &Completor[[]string]{
+				SuggestionFetcher: &ListFetcher[[]string]{
 					Options: []string{"abc", "Abc", "ABC"},
 				},
 			},
@@ -39,8 +40,8 @@ func TestCompletors(t *testing.T) {
 		{
 			name: "doesn't complete if case mismatch with lower",
 			args: "cmd a",
-			c: &Completor{
-				SuggestionFetcher: &ListFetcher{
+			c: &Completor[[]string]{
+				SuggestionFetcher: &ListFetcher[[]string]{
 					Options: []string{"abc", "Abc", "ABC"},
 				},
 			},
@@ -49,9 +50,9 @@ func TestCompletors(t *testing.T) {
 		{
 			name: "completes all cases if completor.CaseInsensitive and upper",
 			args: "cmd A",
-			c: &Completor{
+			c: &Completor[[]string]{
 				CaseInsensitive: true,
-				SuggestionFetcher: &ListFetcher{
+				SuggestionFetcher: &ListFetcher[[]string]{
 					Options: []string{"abc", "Abc", "ABC", "def", "Def", "DEF"},
 				},
 			},
@@ -60,9 +61,9 @@ func TestCompletors(t *testing.T) {
 		{
 			name: "completes all cases if completor.CaseInsensitive and lower",
 			args: "cmd a",
-			c: &Completor{
+			c: &Completor[[]string]{
 				CaseInsensitive: true,
-				SuggestionFetcher: &ListFetcher{
+				SuggestionFetcher: &ListFetcher[[]string]{
 					Options: []string{"abc", "Abc", "ABC", "def", "Def", "DEF"},
 				},
 			},
@@ -72,8 +73,8 @@ func TestCompletors(t *testing.T) {
 			name:    "returns error",
 			args:    "cmd A",
 			wantErr: fmt.Errorf("bad news bears"),
-			c: &Completor{
-				SuggestionFetcher: SimpleFetcher(func(*Value, *Data) (*Completion, error) {
+			c: &Completor[[]string]{
+				SuggestionFetcher: SimpleFetcher[[]string](func([]string, *Data) (*Completion, error) {
 					return &Completion{
 						Suggestions: []string{"abc", "Abc", "ABC", "def", "Def", "DEF"},
 					}, fmt.Errorf("bad news bears")
@@ -83,8 +84,8 @@ func TestCompletors(t *testing.T) {
 		{
 			name: "completes only matching cases",
 			args: "cmd A",
-			c: &Completor{
-				SuggestionFetcher: SimpleFetcher(func(*Value, *Data) (*Completion, error) {
+			c: &Completor[[]string]{
+				SuggestionFetcher: SimpleFetcher[[]string](func([]string, *Data) (*Completion, error) {
 					return &Completion{
 						Suggestions: []string{"abc", "Abc", "ABC", "def", "Def", "DEF"},
 					}, nil
@@ -95,8 +96,8 @@ func TestCompletors(t *testing.T) {
 		{
 			name: "completes all cases if completor.CaseInsensitive and upper",
 			args: "cmd A",
-			c: &Completor{
-				SuggestionFetcher: SimpleFetcher(func(*Value, *Data) (*Completion, error) {
+			c: &Completor[[]string]{
+				SuggestionFetcher: SimpleFetcher[[]string](func([]string, *Data) (*Completion, error) {
 					return &Completion{
 						CaseInsensitive: true,
 						Suggestions:     []string{"abc", "Abc", "ABC", "def", "Def", "DEF"},
@@ -108,8 +109,8 @@ func TestCompletors(t *testing.T) {
 		{
 			name: "completes all cases if completor.CaseInsensitive and lower",
 			args: "cmd a",
-			c: &Completor{
-				SuggestionFetcher: SimpleFetcher(func(*Value, *Data) (*Completion, error) {
+			c: &Completor[[]string]{
+				SuggestionFetcher: SimpleFetcher[[]string](func([]string, *Data) (*Completion, error) {
 					return &Completion{
 						CaseInsensitive: true,
 						Suggestions:     []string{"abc", "Abc", "ABC", "def", "Def", "DEF"},
@@ -119,32 +120,14 @@ func TestCompletors(t *testing.T) {
 			want: []string{"ABC", "Abc", "abc"},
 		},
 		{
-			name: "bool completor returns bool values",
-			c:    BoolCompletor(),
-			want: []string{
-				"0",
-				"1",
-				"F",
-				"FALSE",
-				"False",
-				"T",
-				"TRUE",
-				"True",
-				"f",
-				"false",
-				"t",
-				"true",
-			},
-		},
-		{
 			name: "non-distinct completor returns duplicates",
-			c:    SimpleCompletor("first", "second", "third"),
+			c:    SimpleCompletor[[]string]("first", "second", "third"),
 			args: "cmd first second ",
 			want: []string{"first", "second", "third"},
 		},
 		{
 			name: "distinct completor does not return duplicates",
-			c:    SimpleDistinctCompletor("first", "second", "third"),
+			c:    SimpleDistinctCompletor[[]string]("first", "second", "third"),
 			args: "cmd first second ",
 			want: []string{"third"},
 		},
@@ -158,7 +141,7 @@ func TestCompletors(t *testing.T) {
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			CompleteTest(t, &CompleteTestCase{
-				Node:          SerialNodes(StringListNode("test", testDesc, 2, 5, test.c)),
+				Node:          SerialNodes(ListArg[string]("test", testDesc, 2, 5, test.c)),
 				Args:          test.args,
 				Want:          test.want,
 				WantErr:       test.wantErr,
@@ -166,6 +149,28 @@ func TestCompletors(t *testing.T) {
 			})
 		})
 	}
+}
+
+func TestBoolCompletor(t *testing.T) {
+	CompleteTest(t, &CompleteTestCase{
+		Node:          SerialNodes(Arg[bool]("test", testDesc, BoolCompletor())),
+		Args:          "cmd ",
+		Want:          []string{
+			"0",
+			"1",
+			"F",
+			"FALSE",
+			"False",
+			"T",
+			"TRUE",
+			"True",
+			"f",
+			"false",
+			"t",
+			"true",
+		},
+		SkipDataCheck: true,
+	})
 }
 
 func TestParseAndComplete(t *testing.T) {
@@ -180,8 +185,8 @@ func TestParseAndComplete(t *testing.T) {
 	}{
 		{
 			name: "handles empty array",
-			wantData: &Data{Values: map[string]*Value{
-				"sl": StringListValue(),
+			wantData: &Data{Values: map[string]interface{}{
+				"sl": []string{},
 			}},
 		},
 		{
@@ -193,8 +198,8 @@ func TestParseAndComplete(t *testing.T) {
 				"Fourth Option",
 				"Fifth",
 			},
-			wantData: &Data{Values: map[string]*Value{
-				"sl": StringListValue(),
+			wantData: &Data{Values: map[string]interface{}{
+				"sl": []string{},
 			}},
 			want: []string{
 				"Fifth",
@@ -214,8 +219,8 @@ func TestParseAndComplete(t *testing.T) {
 				"Fourth Option",
 				"Fifth",
 			},
-			wantData: &Data{Values: map[string]*Value{
-				"sl": StringListValue("Fo"),
+			wantData: &Data{Values: map[string]interface{}{
+				"sl": []string{"Fo"},
 			}},
 			want: []string{
 				`Fourth\ Option`,
@@ -229,8 +234,8 @@ func TestParseAndComplete(t *testing.T) {
 				"Fourth Option",
 				"Fifth",
 			},
-			wantData: &Data{Values: map[string]*Value{
-				"sl": StringListValue("F"),
+			wantData: &Data{Values: map[string]interface{}{
+				"sl": []string{"F"},
 			}},
 			want: []string{
 				"Fifth",
@@ -247,8 +252,8 @@ func TestParseAndComplete(t *testing.T) {
 				"Greg's Three",
 				"Greg's Four",
 			},
-			wantData: &Data{Values: map[string]*Value{
-				"sl": StringListValue("Greg's One", ""),
+			wantData: &Data{Values: map[string]interface{}{
+				"sl": []string{"Greg's One", ""},
 			}},
 			want: []string{
 				`Greg's\ Four`,
@@ -272,8 +277,8 @@ func TestParseAndComplete(t *testing.T) {
 				`Greg"s\ Three`,
 				`Greg"s\ Two`,
 			},
-			wantData: &Data{Values: map[string]*Value{
-				"sl": StringListValue(`Greg"s Other"s`, ""),
+			wantData: &Data{Values: map[string]interface{}{
+				"sl": []string{`Greg"s Other"s`, ""},
 			}},
 		},
 		{
@@ -293,8 +298,8 @@ func TestParseAndComplete(t *testing.T) {
 				`"Second Thing"`,
 				`"Third One"`,
 			},
-			wantData: &Data{Values: map[string]*Value{
-				"sl": StringListValue(""),
+			wantData: &Data{Values: map[string]interface{}{
+				"sl": []string{""},
 			}},
 		},
 		{
@@ -314,8 +319,8 @@ func TestParseAndComplete(t *testing.T) {
 				`"Second Thing"`,
 				`"Third One"`,
 			},
-			wantData: &Data{Values: map[string]*Value{
-				"sl": StringListValue("hello", ""),
+			wantData: &Data{Values: map[string]interface{}{
+				"sl": []string{"hello", ""},
 			}},
 		},
 		{
@@ -335,8 +340,8 @@ func TestParseAndComplete(t *testing.T) {
 				"'Second Thing'",
 				"'Third One'",
 			},
-			wantData: &Data{Values: map[string]*Value{
-				"sl": StringListValue("First Choice", ""),
+			wantData: &Data{Values: map[string]interface{}{
+				"sl": []string{"First Choice", ""},
 			}},
 		},
 		{
@@ -354,8 +359,8 @@ func TestParseAndComplete(t *testing.T) {
 				"'First Choice'",
 				"'Fourth Option'",
 			},
-			wantData: &Data{Values: map[string]*Value{
-				"sl": StringListValue("First Choice", "F"),
+			wantData: &Data{Values: map[string]interface{}{
+				"sl": []string{"First Choice", "F"},
 			}},
 		},
 		{
@@ -375,8 +380,8 @@ func TestParseAndComplete(t *testing.T) {
 				`"Second Thing"`,
 				`"Third One"`,
 			},
-			wantData: &Data{Values: map[string]*Value{
-				"sl": StringListValue(""),
+			wantData: &Data{Values: map[string]interface{}{
+				"sl": []string{""},
 			}},
 		},
 		{
@@ -394,8 +399,8 @@ func TestParseAndComplete(t *testing.T) {
 				`"First Choice"`,
 				`"Fourth Option"`,
 			},
-			wantData: &Data{Values: map[string]*Value{
-				"sl": StringListValue("F"),
+			wantData: &Data{Values: map[string]interface{}{
+				"sl": []string{"F"},
 			}},
 		},
 		{
@@ -411,8 +416,8 @@ func TestParseAndComplete(t *testing.T) {
 				`"Greg's Three"`,
 				`"Greg's Two"`,
 			},
-			wantData: &Data{Values: map[string]*Value{
-				"sl": StringListValue("Greg's T"),
+			wantData: &Data{Values: map[string]interface{}{
+				"sl": []string{"Greg's T"},
 			}},
 		},
 		{
@@ -432,8 +437,8 @@ func TestParseAndComplete(t *testing.T) {
 				"'Second Thing'",
 				"'Third One'",
 			},
-			wantData: &Data{Values: map[string]*Value{
-				"sl": StringListValue(""),
+			wantData: &Data{Values: map[string]interface{}{
+				"sl": []string{""},
 			}},
 		},
 		{
@@ -451,8 +456,8 @@ func TestParseAndComplete(t *testing.T) {
 				"'First Choice'",
 				"'Fourth Option'",
 			},
-			wantData: &Data{Values: map[string]*Value{
-				"sl": StringListValue("F"),
+			wantData: &Data{Values: map[string]interface{}{
+				"sl": []string{"F"},
 			}},
 		},
 		{
@@ -468,8 +473,8 @@ func TestParseAndComplete(t *testing.T) {
 				`'Greg"s Three'`,
 				`'Greg"s Two'`,
 			},
-			wantData: &Data{Values: map[string]*Value{
-				"sl": StringListValue(`Greg"s T`),
+			wantData: &Data{Values: map[string]interface{}{
+				"sl": []string{`Greg"s T`},
 			}},
 		},
 		{
@@ -485,8 +490,8 @@ func TestParseAndComplete(t *testing.T) {
 			want: []string{
 				`Attempt\ One\ Two`,
 			},
-			wantData: &Data{Values: map[string]*Value{
-				"sl": StringListValue("Attempt One "),
+			wantData: &Data{Values: map[string]interface{}{
+				"sl": []string{"Attempt One "},
 			}},
 		},
 		{
@@ -504,8 +509,8 @@ func TestParseAndComplete(t *testing.T) {
 				`Three\ Four`,
 				"ThreeFour",
 			},
-			wantData: &Data{Values: map[string]*Value{
-				"sl": StringListValue("Three"),
+			wantData: &Data{Values: map[string]interface{}{
+				"sl": []string{"Three"},
 			}},
 		},
 		{
@@ -521,19 +526,19 @@ func TestParseAndComplete(t *testing.T) {
 				`First\ Of`,
 				`First\ One`,
 			},
-			wantData: &Data{Values: map[string]*Value{
-				"sl": StringListValue("First O"),
+			wantData: &Data{Values: map[string]interface{}{
+				"sl": []string{"First O"},
 			}},
 		},
 		/* Useful for commenting out tests */
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			c := &Completor{
-				SuggestionFetcher: &ListFetcher{
+			c := &Completor[[]string]{
+				SuggestionFetcher: &ListFetcher[[]string]{
 					Options: test.suggestions,
 				},
 			}
-			n := SerialNodes(StringListNode("sl", testDesc, 0, UnboundedList, c))
+			n := SerialNodes(ListArg[string]("sl", testDesc, 0, UnboundedList, c))
 
 			data := &Data{}
 			got, err := autocomplete(n, test.args, data)
@@ -562,68 +567,110 @@ func TestParseAndComplete(t *testing.T) {
 	}
 }
 
-func TestFetchers(t *testing.T) {
-	for _, test := range []struct {
-		name          string
-		f             Fetcher
-		distinct      bool
-		args          string
-		setup         func(*testing.T)
-		cleanup       func(*testing.T)
-		absErr        error
-		stringArg     bool
-		commandBranch bool
-		want          []string
-	}{
+type fetcherTest[T any] struct {
+	name          string
+	f             Fetcher[[]T]
+	singleF Fetcher[T]
+	distinct      bool
+	args          string
+	setup         func(*testing.T)
+	cleanup       func(*testing.T)
+	absErr        error
+	commandBranch bool
+	want          []string
+}
+
+func (test *fetcherTest[T]) run(t *testing.T) {
+	t.Run(test.name, func(t *testing.T) {
+		fmt.Println(test.name,"+++++++++++++")
+		if test.setup != nil {
+			test.setup(t)
+		}
+		if test.cleanup != nil {
+			defer test.cleanup(t)
+		}
+		oldAbs := filepathAbs
+		filepathAbs = func(rel string) (string, error) {
+			if test.absErr != nil {
+				return "", test.absErr
+			}
+			return filepath.Abs(rel)
+		}
+		defer func() { filepathAbs = oldAbs }()
+
+		var got []string
+		if test.singleF != nil{
+			completor := &Completor[T]{
+				SuggestionFetcher: test.singleF,
+				Distinct:          test.distinct,
+			}
+			got = Autocomplete(SerialNodes(Arg[T]("test", testDesc, completor)), test.args)
+		} else {
+			completor := &Completor[[]T]{
+				SuggestionFetcher: test.f,
+				Distinct:          test.distinct,
+			}
+			got = Autocomplete(SerialNodes(ListArg[T]("test", testDesc, 2, 5, completor)), test.args)
+		}
+
+		if diff := cmp.Diff(test.want, got); diff != "" {
+			t.Errorf("genericAutocomplete(%v) returned diff (-want, +got):\n%s", test.args, diff)
+		}
+	})
+}
+
+var (
+	boolFetcherCases = []*fetcherTest[bool]{
+				// BoolFetcher
+				{
+					name: "bool fetcher returns value",
+					singleF:    &boolFetcher{},
+					want: []string{
+						"0",
+						"1",
+						"F",
+						"FALSE",
+						"False",
+						"T",
+						"TRUE",
+						"True",
+						"f",
+						"false",
+						"t",
+						"true",
+					},
+				},
+	}
+	stringFetcherCases = []*fetcherTest[string]{
 		{
 			name: "list fetcher returns nil",
-			f:    &ListFetcher{},
+			f:    &ListFetcher[[]string]{},
 		},
 		{
 			name: "list fetcher returns empty list",
-			f: &ListFetcher{
+			f: &ListFetcher[[]string]{
 				Options: []string{},
 			},
 		},
 		{
 			name: "list fetcher returns list",
-			f: &ListFetcher{
+			f: &ListFetcher[[]string]{
 				Options: []string{"first", "second", "third"},
 			},
 			want: []string{"first", "second", "third"},
 		},
-		// BoolFetcher
-		{
-			name: "bool fetcher returns value",
-			f:    &boolFetcher{},
-			want: []string{
-				"0",
-				"1",
-				"F",
-				"FALSE",
-				"False",
-				"T",
-				"TRUE",
-				"True",
-				"f",
-				"false",
-				"t",
-				"true",
-			},
-		},
 		// FileFetcher tests
 		{
 			name:   "file fetcher returns nil if failure fetching current directory",
-			f:      &FileFetcher{},
+			f:      &FileFetcher[[]string]{},
 			absErr: fmt.Errorf("failed to fetch directory"),
 		},
 		{
 			name: "file fetcher returns files with file types and directories",
-			f: &FileFetcher{
+			singleF: &FileFetcher[string]{
 				FileTypes: []string{".mod", ".sum"},
 			},
 			args:      "cmd ",
-			stringArg: true,
 			want: []string{
 				".git/",
 				"cache/",
@@ -639,7 +686,7 @@ func TestFetchers(t *testing.T) {
 		},
 		{
 			name: "file fetcher handles empty directory",
-			f:    &FileFetcher{},
+			f:    &FileFetcher[[]string]{},
 			args: "cmd testing/empty/",
 			setup: func(t *testing.T) {
 				if err := os.Mkdir("testing/empty", 0644); err != nil {
@@ -654,7 +701,7 @@ func TestFetchers(t *testing.T) {
 		},
 		{
 			name: "file fetcher works with string list arg",
-			f:    &FileFetcher{},
+			f:    &FileFetcher[[]string]{},
 			args: "cmd execu",
 			want: []string{
 				"execute",
@@ -664,7 +711,7 @@ func TestFetchers(t *testing.T) {
 		{
 			name:     "file fetcher works when distinct",
 			distinct: true,
-			f: &FileFetcher{
+			f: &FileFetcher[[]string]{
 				Distinct: true,
 			},
 			args: "cmd execute.go execu",
@@ -674,9 +721,8 @@ func TestFetchers(t *testing.T) {
 		},
 		{
 			name:      "file fetcher works with string arg",
-			f:         &FileFetcher{},
+			singleF:         &FileFetcher[string]{},
 			args:      "cmd execu",
-			stringArg: true,
 			want: []string{
 				"execute",
 				"execute_",
@@ -684,13 +730,13 @@ func TestFetchers(t *testing.T) {
 		},
 		{
 			name: "file fetcher returns nil if failure listing directory",
-			f: &FileFetcher{
+			f: &FileFetcher[[]string]{
 				Directory: "does/not/exist",
 			},
 		},
 		{
 			name: "file fetcher returns files in the specified directory",
-			f: &FileFetcher{
+			f: &FileFetcher[[]string]{
 				Directory: "testing",
 			},
 			setup: func(t *testing.T) {
@@ -723,7 +769,7 @@ func TestFetchers(t *testing.T) {
 		},
 		{
 			name: "file fetcher returns files in the specified directory",
-			f: &FileFetcher{
+			f: &FileFetcher[[]string]{
 				Directory: "testing/dir1",
 			},
 			want: []string{
@@ -736,9 +782,9 @@ func TestFetchers(t *testing.T) {
 		},
 		{
 			name: "file fetcher ignores things from IgnoreFunc",
-			f: &FileFetcher{
+			f: &FileFetcher[[]string]{
 				Directory: "testing/dir1",
-				IgnoreFunc: func(v *Value, d *Data) []string {
+				IgnoreFunc: func([]string, *Data) []string {
 					return []string{"third.go", "other", "fourth.py"}
 				},
 			},
@@ -750,7 +796,7 @@ func TestFetchers(t *testing.T) {
 		},
 		{
 			name: "file fetcher returns files matching regex",
-			f: &FileFetcher{
+			f: &FileFetcher[[]string]{
 				Directory: "testing/dir1",
 				Regexp:    regexp.MustCompile(".*.py$"),
 			},
@@ -762,7 +808,7 @@ func TestFetchers(t *testing.T) {
 		},
 		{
 			name: "file fetcher requires prefix",
-			f: &FileFetcher{
+			f: &FileFetcher[[]string]{
 				Directory: "testing/dir3",
 			},
 			args: "cmd th",
@@ -774,7 +820,7 @@ func TestFetchers(t *testing.T) {
 		},
 		{
 			name: "file fetcher ignores directories",
-			f: &FileFetcher{
+			f: &FileFetcher[[]string]{
 				Directory:         "testing/dir2",
 				IgnoreDirectories: true,
 			},
@@ -785,7 +831,7 @@ func TestFetchers(t *testing.T) {
 		},
 		{
 			name: "file fetcher ignores files",
-			f: &FileFetcher{
+			f: &FileFetcher[[]string]{
 				Directory:   "testing/dir2",
 				IgnoreFiles: true,
 			},
@@ -799,7 +845,7 @@ func TestFetchers(t *testing.T) {
 		},
 		{
 			name: "file fetcher completes to directory",
-			f:    &FileFetcher{},
+			f:    &FileFetcher[[]string]{},
 			args: "cmd testing/dir1",
 			want: []string{
 				"testing/dir1/",
@@ -808,7 +854,7 @@ func TestFetchers(t *testing.T) {
 		},
 		{
 			name: "file fetcher completes to directory when starting dir specified",
-			f: &FileFetcher{
+			f: &FileFetcher[[]string]{
 				Directory: "testing",
 			},
 			args: "cmd dir1",
@@ -819,7 +865,7 @@ func TestFetchers(t *testing.T) {
 		},
 		{
 			name: "file fetcher shows contents of directory when ending with a separator",
-			f:    &FileFetcher{},
+			f:    &FileFetcher[[]string]{},
 			args: "cmd testing/dir1/",
 			want: []string{
 				"first.txt",
@@ -831,7 +877,7 @@ func TestFetchers(t *testing.T) {
 		},
 		{
 			name: "file fetcher completes to directory when ending with a separator and when starting dir specified",
-			f: &FileFetcher{
+			f: &FileFetcher[[]string]{
 				Directory: "testing",
 			},
 			args: "cmd dir1/",
@@ -845,7 +891,7 @@ func TestFetchers(t *testing.T) {
 		},
 		{
 			name: "file fetcher only shows basenames when multiple options with different next letter",
-			f:    &FileFetcher{},
+			f:    &FileFetcher[[]string]{},
 			args: "cmd testing/dir",
 			want: []string{
 				"dir1/",
@@ -857,7 +903,7 @@ func TestFetchers(t *testing.T) {
 		},
 		{
 			name: "file fetcher shows full names when multiple options with same next letter",
-			f:    &FileFetcher{},
+			f:    &FileFetcher[[]string]{},
 			args: "cmd testing/d",
 			want: []string{
 				"testing/dir",
@@ -866,7 +912,7 @@ func TestFetchers(t *testing.T) {
 		},
 		{
 			name: "file fetcher only shows basenames when multiple options and starting dir",
-			f: &FileFetcher{
+			f: &FileFetcher[[]string]{
 				Directory: "testing/dir1",
 			},
 			args: "cmd f",
@@ -878,7 +924,7 @@ func TestFetchers(t *testing.T) {
 		},
 		{
 			name: "file fetcher handles directories with spaces",
-			f:    &FileFetcher{},
+			f:    &FileFetcher[[]string]{},
 			args: `cmd testing/dir4/folder\ wit`,
 			want: []string{
 				`testing/dir4/folder\ with\ spaces/`,
@@ -887,7 +933,7 @@ func TestFetchers(t *testing.T) {
 		},
 		{
 			name: "file fetcher handles directories with spaces when same argument",
-			f:    &FileFetcher{},
+			f:    &FileFetcher[[]string]{},
 			args: `cmd testing/dir4/folder\ wit`,
 			want: []string{
 				`testing/dir4/folder\ with\ spaces/`,
@@ -896,7 +942,7 @@ func TestFetchers(t *testing.T) {
 		},
 		{
 			name: "file fetcher can dive into folder with spaces",
-			f:    &FileFetcher{},
+			f:    &FileFetcher[[]string]{},
 			args: `cmd testing/dir4/folder\ with\ spaces/`,
 			want: []string{
 				"goodbye.go",
@@ -906,7 +952,7 @@ func TestFetchers(t *testing.T) {
 		},
 		{
 			name: "file fetcher can dive into folder with spaces when combined args",
-			f:    &FileFetcher{},
+			f:    &FileFetcher[[]string]{},
 			args: `cmd testing/dir4/folder\ with\ spaces/`,
 			want: []string{
 				"goodbye.go",
@@ -916,7 +962,7 @@ func TestFetchers(t *testing.T) {
 		},
 		{
 			name: "autocomplete fills in letters that are the same for all options",
-			f:    &FileFetcher{},
+			f:    &FileFetcher[[]string]{},
 			args: `cmd testing/dir4/fo`,
 			want: []string{
 				"testing/dir4/folder",
@@ -925,7 +971,7 @@ func TestFetchers(t *testing.T) {
 		},
 		{
 			name:          "file fetcher doesn't get filtered out when part of a CommandBranch",
-			f:             &FileFetcher{},
+			f:             &FileFetcher[[]string]{},
 			commandBranch: true,
 			args:          "cmd testing/dir",
 			want: []string{
@@ -938,7 +984,7 @@ func TestFetchers(t *testing.T) {
 		},
 		{
 			name:          "file fetcher handles multiple options in directory",
-			f:             &FileFetcher{},
+			f:             &FileFetcher[[]string]{},
 			commandBranch: true,
 			args:          "cmd testing/dir1/f",
 			want: []string{
@@ -949,7 +995,7 @@ func TestFetchers(t *testing.T) {
 		},
 		{
 			name:          "case insensitive gets letters autofilled",
-			f:             &FileFetcher{},
+			f:             &FileFetcher[[]string]{},
 			commandBranch: true,
 			args:          "cmd testing/dI",
 			want: []string{
@@ -959,7 +1005,7 @@ func TestFetchers(t *testing.T) {
 		},
 		{
 			name:          "case insensitive recommends all without complete",
-			f:             &FileFetcher{},
+			f:             &FileFetcher[[]string]{},
 			commandBranch: true,
 			args:          "cmd testing/DiR",
 			want: []string{
@@ -972,7 +1018,7 @@ func TestFetchers(t *testing.T) {
 		},
 		{
 			name:          "file fetcher ignores case",
-			f:             &FileFetcher{},
+			f:             &FileFetcher[[]string]{},
 			commandBranch: true,
 			args:          "cmd testing/cases/abc",
 			want: []string{
@@ -982,7 +1028,7 @@ func TestFetchers(t *testing.T) {
 		},
 		{
 			name:          "file fetcher sorting ignores cases when no file",
-			f:             &FileFetcher{},
+			f:             &FileFetcher[[]string]{},
 			commandBranch: true,
 			args:          "cmd testing/moreCases/",
 			want: []string{
@@ -992,7 +1038,7 @@ func TestFetchers(t *testing.T) {
 		},
 		{
 			name:          "file fetcher sorting ignores cases when autofilling",
-			f:             &FileFetcher{},
+			f:             &FileFetcher[[]string]{},
 			commandBranch: true,
 			args:          "cmd testing/moreCases/q",
 			want: []string{
@@ -1002,7 +1048,7 @@ func TestFetchers(t *testing.T) {
 		},
 		{
 			name:          "file fetcher sorting ignores cases when not autofilling",
-			f:             &FileFetcher{},
+			f:             &FileFetcher[[]string]{},
 			commandBranch: true,
 			args:          "cmd testing/moreCases/qW_t",
 			want: []string{
@@ -1014,7 +1060,7 @@ func TestFetchers(t *testing.T) {
 		},
 		{
 			name: "file fetcher completes to case matched completion",
-			f:    &FileFetcher{},
+			f:    &FileFetcher[[]string]{},
 			args: "cmd testing/meta",
 			want: []string{
 				"testing/metadata",
@@ -1023,7 +1069,7 @@ func TestFetchers(t *testing.T) {
 		},
 		{
 			name: "file fetcher completes to case matched completion",
-			f:    &FileFetcher{},
+			f:    &FileFetcher[[]string]{},
 			args: "cmd testing/ME",
 			want: []string{
 				"testing/METADATA",
@@ -1032,7 +1078,7 @@ func TestFetchers(t *testing.T) {
 		},
 		{
 			name: "file fetcher completes to something when no cases match",
-			f:    &FileFetcher{},
+			f:    &FileFetcher[[]string]{},
 			args: "cmd testing/MeTa",
 			want: []string{
 				"testing/METADATA",
@@ -1041,7 +1087,7 @@ func TestFetchers(t *testing.T) {
 		},
 		{
 			name: "file fetcher completes to case matched completion in current directory",
-			f: &FileFetcher{
+			f: &FileFetcher[[]string]{
 				Directory: "testing",
 			},
 			args: "cmd meta",
@@ -1052,7 +1098,7 @@ func TestFetchers(t *testing.T) {
 		},
 		{
 			name: "file fetcher completes to case matched completion in current directory",
-			f: &FileFetcher{
+			f: &FileFetcher[[]string]{
 				Directory: "testing",
 			},
 			args: "cmd MET",
@@ -1063,7 +1109,7 @@ func TestFetchers(t *testing.T) {
 		},
 		{
 			name: "file fetcher completes to something when no cases match in current directory",
-			f: &FileFetcher{
+			f: &FileFetcher[[]string]{
 				Directory: "testing",
 			},
 			args: "cmd meTA",
@@ -1074,7 +1120,7 @@ func TestFetchers(t *testing.T) {
 		},
 		{
 			name: "file fetcher doesn't complete when matches a prefix",
-			f:    &FileFetcher{},
+			f:    &FileFetcher[[]string]{},
 			args: "cmd testing/METADATA",
 			want: []string{
 				"METADATA",
@@ -1084,7 +1130,7 @@ func TestFetchers(t *testing.T) {
 		},
 		{
 			name: "file fetcher doesn't complete when matches a prefix file",
-			f:    &FileFetcher{},
+			f:    &FileFetcher[[]string]{},
 			args: "cmd testing/metadata_/m",
 			want: []string{
 				"m1",
@@ -1094,7 +1140,7 @@ func TestFetchers(t *testing.T) {
 		},
 		{
 			name:     "file fetcher returns complete match if distinct",
-			f:        &FileFetcher{},
+			f:        &FileFetcher[[]string]{},
 			distinct: true,
 			args:     "cmd testing/metadata_/m1",
 			want: []string{
@@ -1104,13 +1150,13 @@ func TestFetchers(t *testing.T) {
 		// Distinct file fetchers.
 		{
 			name: "file fetcher returns repeats if not distinct",
-			f:    &FileFetcher{},
+			f:    &FileFetcher[[]string]{},
 			args: "cmd testing/three.txt testing/t",
 			want: []string{"three.txt", "two.txt", " "},
 		},
 		{
 			name: "file fetcher returns distinct",
-			f: &FileFetcher{
+			f: &FileFetcher[[]string]{
 				Distinct: true,
 			},
 			args: "cmd testing/three.txt testing/t",
@@ -1118,14 +1164,14 @@ func TestFetchers(t *testing.T) {
 		},
 		{
 			name: "file fetcher handles non with distinct",
-			f: &FileFetcher{
+			f: &FileFetcher[[]string]{
 				Distinct: true,
 			},
 			args: "cmd testing/three.txt testing/two.txt testing/t",
 		},
 		{
 			name: "file fetcher first level distinct partially completes",
-			f: &FileFetcher{
+			f: &FileFetcher[[]string]{
 				Distinct: true,
 			},
 			args: "cmd comp",
@@ -1133,7 +1179,7 @@ func TestFetchers(t *testing.T) {
 		},
 		{
 			name: "file fetcher first level distinct returns all options",
-			f: &FileFetcher{
+			f: &FileFetcher[[]string]{
 				Distinct: true,
 			},
 			args: "cmd c",
@@ -1152,7 +1198,7 @@ func TestFetchers(t *testing.T) {
 		},
 		{
 			name: "file fetcher first level distinct completes partial",
-			f: &FileFetcher{
+			f: &FileFetcher[[]string]{
 				Distinct: true,
 			},
 			args: "cmd custom_nodes.go comp",
@@ -1163,7 +1209,7 @@ func TestFetchers(t *testing.T) {
 		},
 		{
 			name: "file fetcher first level distinct suggests remaining",
-			f: &FileFetcher{
+			f: &FileFetcher[[]string]{
 				Distinct: true,
 			},
 			args: "cmd completor.go c",
@@ -1181,7 +1227,7 @@ func TestFetchers(t *testing.T) {
 		},
 		{
 			name: "file fetcher first level distinct completes partial",
-			f: &FileFetcher{
+			f: &FileFetcher[[]string]{
 				Distinct: true,
 			},
 			args: "cmd completor.go completor_test.go c",
@@ -1197,37 +1243,14 @@ func TestFetchers(t *testing.T) {
 			},
 		},
 		/* Useful for commenting out tests */
-	} {
-		t.Run(test.name, func(t *testing.T) {
-			if test.setup != nil {
-				test.setup(t)
-			}
-			if test.cleanup != nil {
-				defer test.cleanup(t)
-			}
-			oldAbs := filepathAbs
-			filepathAbs = func(rel string) (string, error) {
-				if test.absErr != nil {
-					return "", test.absErr
-				}
-				return filepath.Abs(rel)
-			}
-			defer func() { filepathAbs = oldAbs }()
+	}
+)
 
-			completor := &Completor{
-				SuggestionFetcher: test.f,
-				Distinct:          test.distinct,
-			}
-
-			gn := SerialNodes(StringListNode("test", testDesc, 2, 5, completor))
-			if test.stringArg {
-				gn = SerialNodes(StringNode("test", testDesc, completor))
-			}
-
-			got := Autocomplete(gn, test.args)
-			if diff := cmp.Diff(test.want, got); diff != "" {
-				t.Errorf("genericAutocomplete(%v) returned diff (-want, +got):\n%s", test.args, diff)
-			}
-		})
+func TestFetchers(t *testing.T) {
+	for _, test := range stringFetcherCases {
+		test.run(t)
+	}
+	for _, test := range boolFetcherCases {
+		test.run(t)
 	}
 }

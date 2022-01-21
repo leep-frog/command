@@ -196,7 +196,7 @@ func runNodes(n *Node, o Output, d *Data, args []string) error {
 		),
 		"autocomplete": SerialNodes(
 			// Don't need comp point because input will have already been trimmed by goleep processing.
-			StringNode(ptName, ""),
+			Arg[string](ptName, ""),
 			ExecutorNode(func(o Output, d *Data) {
 				for _, s := range Autocomplete(n, d.String(ptName)) {
 					o.Stdout(s)
