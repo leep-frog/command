@@ -267,8 +267,6 @@ func (ff *FileFetcher[T]) Fetch(value T, data *Data) (*Completion, error) {
 		for _, v := range op.toArgs(value) {
 			ignorable[v] = true
 		}
-		fmt.Println(op.toArgs(value))
-		fmt.Println(ignorable)
 	}
 
 	relevantSuggestions := make([]string, 0, len(suggestions))

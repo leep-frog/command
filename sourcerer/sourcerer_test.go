@@ -12,6 +12,10 @@ import (
 	"github.com/leep-frog/command/cache"
 )
 
+const (
+	fakeFile = "FAKE_FILE"
+)
+
 func TestGenerateBinaryNode(t *testing.T) {
 	oldGSL := getSourceLoc
 	getSourceLoc = func() (string, error) {
@@ -213,7 +217,7 @@ func TestSourcerer(t *testing.T) {
 		},
 		{
 			name: "fails if no cli arg",
-			args: []string{"execute", "file"},
+			args: []string{"execute", fakeFile},
 			wantStderr: []string{
 				`Argument "CLI" requires at least 1 argument, got 0`,
 				u,
@@ -221,7 +225,7 @@ func TestSourcerer(t *testing.T) {
 		},
 		{
 			name: "fails if unknown CLI",
-			args: []string{"execute", "file", "idk"},
+			args: []string{"execute", fakeFile, "idk"},
 			wantStderr: []string{
 				`unknown CLI "idk"`,
 			},
@@ -245,7 +249,7 @@ func TestSourcerer(t *testing.T) {
 					},
 				},
 			},
-			args:       []string{"execute", "file", "basic"},
+			args:       []string{"execute", fakeFile, "basic"},
 			wantStdout: []string{"Output:"},
 		},
 		{
@@ -258,7 +262,7 @@ func TestSourcerer(t *testing.T) {
 					},
 				},
 			},
-			args:       []string{"execute", "file", "basic"},
+			args:       []string{"execute", fakeFile, "basic"},
 			wantStderr: []string{"oops"},
 		},
 		{
@@ -283,7 +287,7 @@ func TestSourcerer(t *testing.T) {
 					},
 				},
 			},
-			args: []string{"execute", "file", "basic", "un", "deux", "trois"},
+			args: []string{"execute", fakeFile, "basic", "un", "deux", "trois"},
 			wantStdout: []string{
 				"Output:",
 				`sl: [un deux trois]`,
@@ -297,7 +301,7 @@ func TestSourcerer(t *testing.T) {
 					processors: []command.Processor{command.ListArg[string]("SL", "test", 1, 1)},
 				},
 			},
-			args: []string{"execute", "file", "basic", "un", "deux", "trois", "quatre"},
+			args: []string{"execute", fakeFile, "basic", "un", "deux", "trois", "quatre"},
 			wantStderr: []string{
 				"Unprocessed extra args: [trois quatre]",
 				strings.Join([]string{
@@ -320,7 +324,7 @@ func TestSourcerer(t *testing.T) {
 					},
 				},
 			},
-			args: []string{"execute", "file", "basic"},
+			args: []string{"execute", fakeFile, "basic"},
 			wantCLIs: map[string]CLI{
 				"basic": &testCLI{
 					Stuff: "things",
@@ -349,7 +353,7 @@ func TestSourcerer(t *testing.T) {
 		{
 			name: "prints command usage for missing branch error",
 			clis: []CLI{&usageErrCLI{}},
-			args: []string{"execute", "file", "uec"},
+			args: []string{"execute", fakeFile, "uec"},
 			wantStderr: []string{
 				"Branching argument must be one of [a b]",
 				uecUsage(),
@@ -358,7 +362,7 @@ func TestSourcerer(t *testing.T) {
 		{
 			name: "prints command usage for bad branch arg error",
 			clis: []CLI{&usageErrCLI{}},
-			args: []string{"execute", "file", "uec", "uh"},
+			args: []string{"execute", fakeFile, "uec", "uh"},
 			wantStderr: []string{
 				"Branching argument must be one of [a b]",
 				uecUsage(),
@@ -367,7 +371,7 @@ func TestSourcerer(t *testing.T) {
 		{
 			name: "prints command usage for missing args error",
 			clis: []CLI{&usageErrCLI{}},
-			args: []string{"execute", "file", "uec", "b"},
+			args: []string{"execute", fakeFile, "uec", "b"},
 			wantStderr: []string{
 				`Argument "B_SL" requires at least 1 argument, got 0`,
 				uecUsage(),
@@ -376,7 +380,7 @@ func TestSourcerer(t *testing.T) {
 		{
 			name: "prints command usage for missing args error",
 			clis: []CLI{&usageErrCLI{}},
-			args: []string{"execute", "file", "uec", "a", "un", "deux", "trois"},
+			args: []string{"execute", fakeFile, "uec", "a", "un", "deux", "trois"},
 			wantStderr: []string{
 				"Unprocessed extra args: [deux trois]",
 				uecUsage(),
@@ -527,6 +531,17 @@ func TestSourcerer(t *testing.T) {
 			if err := ioutil.WriteFile(f.Name(), nil, 0644); err != nil {
 				t.Fatalf("failed to clear file: %v", err)
 			}
+
+			fake, err := ioutil.TempFile("", "leep-frog-sourcerer-test")
+			if err != nil {
+				t.Fatalf("failed to create temp file: %v", err)
+			}
+			for i, s := range test.args {
+				if s == fakeFile {
+					test.args[i] = fake.Name()
+				}
+			}
+
 			// Stub out real cache
 			cash := cache.NewTestCache(t)
 			ogc := getCache
