@@ -18,11 +18,11 @@ func TestNodeRunner(t *testing.T) {
 		writeToFile []string
 	}{
 		{
-			name: "requires at least 1 go file",
+			name: "requires go-dir arg",
 			etc: &command.ExecuteTestCase{
-				Args:       []string{"--GO_FILES"},
-				WantStderr: []string{`Argument "GO_FILES" requires at least 1 argument, got 0`},
-				WantErr:    fmt.Errorf(`Argument "GO_FILES" requires at least 1 argument, got 0`),
+				Args:       []string{"--go-dir"},
+				WantStderr: []string{`Argument "go-dir" requires at least 1 argument, got 0`},
+				WantErr:    fmt.Errorf(`Argument "go-dir" requires at least 1 argument, got 0`),
 			},
 		},
 		{
@@ -32,23 +32,22 @@ func TestNodeRunner(t *testing.T) {
 				WantRunContents: [][]string{{
 					"set -e",
 					"set -o pipefail",
-					`goFiles="$(ls *.go | grep -v _test.go$)"`,
-					"go run $goFiles execute TMP_FILE",
+					"go run . execute TMP_FILE",
 				}},
 			},
 		},
 		{
-			name: "runs single go file",
+			name: "runs other go dir",
 			etc: &command.ExecuteTestCase{
 				Args: []string{
-					"-f",
-					"main.go",
+					"-d",
+					"../examples",
 				},
 				RunResponses: []*command.FakeRun{{}},
 				WantRunContents: [][]string{{
 					"set -e",
 					"set -o pipefail",
-					`go run main.go execute TMP_FILE`,
+					`go run ../examples execute TMP_FILE`,
 				}},
 			},
 		},
@@ -59,15 +58,11 @@ func TestNodeRunner(t *testing.T) {
 				"echo goodbye",
 			},
 			etc: &command.ExecuteTestCase{
-				Args: []string{
-					"--GO_FILES",
-					"main.go",
-				},
 				RunResponses: []*command.FakeRun{{}},
 				WantRunContents: [][]string{{
 					"set -e",
 					"set -o pipefail",
-					`go run main.go execute TMP_FILE`,
+					`go run . execute TMP_FILE`,
 				}},
 				WantExecuteData: &command.ExecuteData{
 					Executable: []string{
@@ -99,8 +94,7 @@ func TestNodeRunner(t *testing.T) {
 				WantRunContents: [][]string{{
 					"set -e",
 					"set -o pipefail",
-					goFileGetter,
-					`go run $goFiles execute TMP_FILE`,
+					`go run . execute TMP_FILE`,
 				}},
 			},
 		},
@@ -129,8 +123,7 @@ func TestNodeRunner(t *testing.T) {
 				WantRunContents: [][]string{{
 					"set -e",
 					"set -o pipefail",
-					goFileGetter,
-					`go run $goFiles execute TMP_FILE`,
+					`go run . execute TMP_FILE`,
 				}},
 			},
 		},
@@ -145,26 +138,7 @@ func TestNodeRunner(t *testing.T) {
 				WantRunContents: [][]string{{
 					"set -e",
 					"set -o pipefail",
-					goFileGetter,
-					`go run $goFiles execute TMP_FILE arg1 arg2`,
-				}},
-			},
-		},
-		{
-			name: "handles extra go files",
-			etc: &command.ExecuteTestCase{
-				Args: []string{
-					"arg1",
-					"arg2",
-					"-f",
-					"main.go",
-					"other.go",
-				},
-				RunResponses: []*command.FakeRun{{}},
-				WantRunContents: [][]string{{
-					"set -e",
-					"set -o pipefail",
-					`go run main.go other.go execute TMP_FILE arg1 arg2`,
+					`go run . execute TMP_FILE arg1 arg2`,
 				}},
 			},
 		},
@@ -176,23 +150,22 @@ func TestNodeRunner(t *testing.T) {
 				},
 				WantExecuteData: &command.ExecuteData{
 					Executable: []string{
-						goFileGetter,
-						"go run $goFiles usage",
+						"go run . usage",
 					},
 				},
 			},
 		},
 		{
-			name: "runs usage with go files",
+			name: "runs usage with go dir",
 			etc: &command.ExecuteTestCase{
 				Args: []string{
 					"usage",
-					"--GO_FILES",
-					"main.go",
-					"other.go",
+					"--go-dir",
+					"../color",
 				},
+
 				WantExecuteData: &command.ExecuteData{
-					Executable: []string{"go run main.go other.go usage"},
+					Executable: []string{"go run ../color usage"},
 				},
 			},
 		},
@@ -235,14 +208,13 @@ func TestAutocomplete(t *testing.T) {
 		ctc  *command.CompleteTestCase
 	}{
 		{
-			name: "completes go files",
+			name: "completes directories",
 			ctc: &command.CompleteTestCase{
-				Args: "cmd --GO_FILES ",
+				Args: "cmd -d ../c",
 				Want: []string{
-					"node_runner.go",
-					"node_runner_test.go",
-					"sourcerer.go",
-					"sourcerer_test.go",
+					"cache/",
+					"cmd/",
+					"color/",
 					" ",
 				},
 			},
@@ -259,8 +231,7 @@ func TestAutocomplete(t *testing.T) {
 				WantRunContents: [][]string{{
 					"set -e",
 					"set -o pipefail",
-					goFileGetter,
-					`go run $goFiles autocomplete ""`,
+					`go run . autocomplete ""`,
 				}},
 				Want: []string{
 					"deux",
@@ -283,23 +254,8 @@ func TestAutocomplete(t *testing.T) {
 				WantRunContents: [][]string{{
 					"set -e",
 					"set -o pipefail",
-					goFileGetter,
-					`go run $goFiles autocomplete ""`,
+					`go run . autocomplete ""`,
 				}},
-			},
-		},
-		{
-			name: "completes distinct go files",
-			ctc: &command.CompleteTestCase{
-				Args: "cmd -f node_runner.go n",
-				Want: []string{
-					"node_runner_test.go",
-				},
-				WantData: &command.Data{
-					Values: map[string]interface{}{
-						"GO_FILES": []string{"node_runner.go", ""},
-					},
-				},
 			},
 		},
 		/* Useful for commenting out tests */
@@ -318,16 +274,16 @@ func TestUsage(t *testing.T) {
 		Node: (&GoLeep{}).Node(),
 		WantString: []string{
 			"Execute the provided go files",
-			"< [ PASSTHROUGH_ARGS ... ] --GO_FILES|-f",
+			"< [ PASSTHROUGH_ARGS ... ] --go-dir|-d",
 			"",
 			"  Get the usage of the provided go files",
-			"  usage --GO_FILES|-f",
+			"  usage --go-dir|-d",
 			"",
 			"Arguments:",
 			"  PASSTHROUGH_ARGS: Args to pass through to the command",
 			"",
 			"Flags:",
-			"  [f] GO_FILES: Go files to run",
+			"  [d] go-dir: Directory of package to run",
 			"",
 			"Symbols:",
 			command.BranchDesc,

@@ -110,6 +110,36 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
+			name: "Flag defaults get set",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					NewFlagNode(
+						NewFlag[string]("s", 's', testDesc, Default[string]("defStr")),
+						NewFlag[string]("s2", '2', testDesc, Default[string]("defStrTwo")),
+						NewFlag[int]("it", 't', testDesc, Default[int](-456)),
+						NewFlag[int]("i", 'i', testDesc, Default[int](123)),
+						NewFlag[[]float64]("fs", 'f', testDesc, Default[[]float64]([]float64{1.2, 3.4, -5.6})),
+					),
+				),
+				Args: []string{"--it", "7", "-2", "dos"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "--it"},
+						{value: "7"},
+						{value: "-2"},
+						{value: "dos"},
+					},
+				},
+				WantData: &Data{Values: map[string]interface{}{
+					"s":  "defStr",
+					"s2": "dos",
+					"it": 7,
+					"i":  123,
+					"fs": []float64{1.2, 3.4, -5.6},
+				}},
+			},
+		},
+		{
 			name: "Default doesn't fill in required argument",
 			etc: &ExecuteTestCase{
 				Node:       SerialNodes(Arg[string]("s", testDesc, Default[string]("settled"))),

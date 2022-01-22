@@ -18,13 +18,18 @@ func GoLeepCLI() *GoLeep {
 type GoLeep struct{}
 
 var (
-	goFilesFlag = command.NewListFlag[string]("GO_FILES", 'f', "Go files to run", 1, command.UnboundedList, command.ValidatorList(command.MatchesRegex("\\.go$")), &command.Completor[[]string]{
-		SuggestionFetcher: &command.FileFetcher[[]string]{
-			Distinct:          true,
-			FileTypes:         []string{".go"},
-			IgnoreDirectories: true,
+	goDirectory = command.NewFlag[string](
+		"go-dir",
+		'd',
+		"Directory of package to run",
+		command.IsDir(),
+		&command.Completor[string]{
+			SuggestionFetcher: &command.FileFetcher[string]{
+				IgnoreFiles: true,
+			},
 		},
-	})
+		command.Default[string]("."),
+	)
 	passAlongArgs = command.ListArg[string]("PASSTHROUGH_ARGS", "Args to pass through to the command", 0, command.UnboundedList)
 )
 
@@ -32,30 +37,14 @@ func (gl *GoLeep) Name() string {
 	return "goleep"
 }
 
-const (
-	goFileGetter = `goFiles="$(ls *.go | grep -v _test.go$)"`
-)
-
 func (gl *GoLeep) runCommand(d *command.Data, subCmd string, extraArgs []string) []string {
 	var ea string
 	if len(extraArgs) > 0 {
 		ea = fmt.Sprintf(" %s", strings.Join(extraArgs, " "))
 	}
 
-	if d.Has(goFilesFlag.Name()) {
-		return []string{
-			fmt.Sprintf(
-				"go run %s %s%s",
-				strings.Join(d.StringList(goFilesFlag.Name()), " "),
-				subCmd,
-				ea,
-			),
-		}
-	}
-
 	return []string{
-		`goFiles="$(ls *.go | grep -v _test.go$)"`,
-		fmt.Sprintf("go run $goFiles %s%s", subCmd, ea),
+		fmt.Sprintf("go run %s %s%s", d.String(goDirectory.Name()), subCmd, ea),
 	}
 }
 
@@ -72,7 +61,7 @@ func (gl *GoLeep) Setup() []string        { return nil }
 func (gl *GoLeep) Node() *command.Node {
 	usageNode := command.SerialNodes(
 		command.Description("Get the usage of the provided go files"),
-		command.NewFlagNode(goFilesFlag),
+		command.NewFlagNode(goDirectory),
 		command.SimpleProcessor(func(i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
 			ed.Executable = gl.runCommand(d, "usage", nil)
 			return nil
@@ -85,7 +74,7 @@ func (gl *GoLeep) Node() *command.Node {
 
 	exNode := command.SerialNodes(
 		command.Description("Execute the provided go files"),
-		command.NewFlagNode(goFilesFlag),
+		command.NewFlagNode(goDirectory),
 		passAlongArgs,
 		command.SimpleProcessor(func(i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
 			f, err := getTmpFile()

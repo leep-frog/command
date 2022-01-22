@@ -16,6 +16,8 @@ type Flag interface {
 	ShortName() rune
 	// Processor returns a node processor that processes arguments after the flag indicator.
 	Processor() Processor
+	// ProcessMissing processes the flag when it is not provided
+	ProcessMissing(d *Data)
 }
 
 func flagName(f Flag) string {
@@ -46,6 +48,10 @@ type flagNode struct {
 }
 
 func (fn *flagNode) Complete(input *Input, data *Data) (*Completion, error) {
+	unprocessed := map[string]Flag{}
+	for _, f := range fn.flagMap {
+		unprocessed[f.Name()] = f
+	}
 	for i := 0; i < len(input.remaining); {
 		a, _ := input.PeekAt(i)
 		f, ok := fn.flagMap[a]
@@ -53,6 +59,7 @@ func (fn *flagNode) Complete(input *Input, data *Data) (*Completion, error) {
 			i++
 			continue
 		}
+		delete(unprocessed, f.Name())
 
 		input.offset = i
 		// Remove flag argument (e.g. --flagName).
@@ -75,10 +82,17 @@ func (fn *flagNode) Complete(input *Input, data *Data) (*Completion, error) {
 			Suggestions: k,
 		}, nil
 	}
+	for _, f := range unprocessed {
+		f.ProcessMissing(data)
+}
 	return nil, nil
 }
 
 func (fn *flagNode) Execute(input *Input, output Output, data *Data, eData *ExecuteData) error {
+	unprocessed := map[string]Flag{}
+	for _, f := range fn.flagMap {
+		unprocessed[f.Name()] = f
+	}
 	for i := 0; i < len(input.remaining); {
 		a, _ := input.PeekAt(i)
 		f, ok := fn.flagMap[a]
@@ -86,6 +100,7 @@ func (fn *flagNode) Execute(input *Input, output Output, data *Data, eData *Exec
 			i++
 			continue
 		}
+		delete(unprocessed, f.Name())
 
 		input.offset = i
 		// Remove flag argument (e.g. --flagName).
@@ -96,6 +111,9 @@ func (fn *flagNode) Execute(input *Input, output Output, data *Data, eData *Exec
 		}
 		input.offset = 0
 	}
+	for _, f := range unprocessed {
+		f.ProcessMissing(data)
+}
 	return nil
 }
 
@@ -132,6 +150,12 @@ func (f *flag[T]) Desc() string {
 
 func (f *flag[T]) Processor() Processor {
 	return f.argNode
+}
+
+func (f *flag[T]) ProcessMissing(d *Data) {
+	if f.argNode.opt != nil && f.argNode.opt._default != nil {
+		f.argNode.Set(*f.argNode.opt._default, d)
+	}
 }
 
 func (f *flag[T]) Name() string {
@@ -182,6 +206,8 @@ func (bf *boolFlag) ShortName() rune {
 func (bf *boolFlag) Processor() Processor {
 	return bf
 }
+
+func (bf *boolFlag) ProcessMissing(*Data)  {}
 
 func (bf *boolFlag) Complete(*Input, *Data) (*Completion, error) {
 	return nil, nil
