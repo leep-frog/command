@@ -44,7 +44,7 @@ func (gl *GoLeep) runCommand(d *command.Data, subCmd string, extraArgs []string)
 	}
 
 	return []string{
-		fmt.Sprintf("go run %s %s%s", d.String(goDirectory.Name()), subCmd, ea),
+		fmt.Sprintf("go1.18beta1 run %s %s%s", d.String(goDirectory.Name()), subCmd, ea),
 	}
 }
 
