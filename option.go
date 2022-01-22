@@ -7,7 +7,7 @@ type ArgOpt[T any] interface {
 type argOpt[T any] struct {
 	validators  []*ValidatorOption[T]
 	completor   *Completor[T]
-	transformer *Transformer[T]
+	transformers []*Transformer[T]
 	alias       *aliasOpt[T]
 	customSet   customSetter[T]
 	_default    *T
@@ -59,7 +59,7 @@ type Transformer[T any] struct {
 }
 
 func (t *Transformer[T]) modifyArgOpt(ao *argOpt[T]) {
-	ao.transformer = t
+	ao.transformers = append(ao.transformers, t)
 }
 
 //func (t *Transformer[T]) ForList() *Transformer[[]T] {
