@@ -2,7 +2,6 @@ package cache
 
 import (
 	"fmt"
-	"path/filepath"
 	"strings"
 	"testing"
 
@@ -381,16 +380,16 @@ func TestExecute(t *testing.T) {
 			name: "setdir requires an existing file",
 			etc: &command.ExecuteTestCase{
 				Args:       []string{"setdir", "uh"},
-				WantErr:    fmt.Errorf("validation failed: [IsDir] file %q does not exist", fpAbs(t, "uh")),
-				WantStderr: []string{fmt.Sprintf("validation failed: [IsDir] file %q does not exist", fpAbs(t, "uh"))},
+				WantErr:    fmt.Errorf("validation failed: [IsDir] file %q does not exist", command.FilepathAbs(t, "uh")),
+				WantStderr: []string{fmt.Sprintf("validation failed: [IsDir] file %q does not exist", command.FilepathAbs(t, "uh"))},
 			},
 		},
 		{
 			name: "setdir doesn't allow files",
 			etc: &command.ExecuteTestCase{
 				Args:       []string{"setdir", "cache.go"},
-				WantErr:    fmt.Errorf("validation failed: [IsDir] argument %q is a file", fpAbs(t, "cache.go")),
-				WantStderr: []string{fmt.Sprintf("validation failed: [IsDir] argument %q is a file", fpAbs(t, "cache.go"))},
+				WantErr:    fmt.Errorf("validation failed: [IsDir] argument %q is a file", command.FilepathAbs(t, "cache.go")),
+				WantStderr: []string{fmt.Sprintf("validation failed: [IsDir] argument %q is a file", command.FilepathAbs(t, "cache.go"))},
 			},
 		},
 		{
@@ -399,7 +398,7 @@ func TestExecute(t *testing.T) {
 				Args: []string{"setdir", "testing"},
 			},
 			wantC: &Cache{
-				Dir: fpAbs(t, "testing"),
+				Dir: command.FilepathAbs(t, "testing"),
 			},
 			want: map[string]string{
 				"empty.txt": "nothing to see here",
@@ -424,14 +423,6 @@ func TestExecute(t *testing.T) {
 			}
 		})
 	}
-}
-
-func fpAbs(t *testing.T, f string) string {
-	r, err := filepath.Abs(f)
-	if err != nil {
-		t.Fatalf("failed to get absolute path: %v", err)
-	}
-	return r
 }
 
 func TestCompletion(t *testing.T) {

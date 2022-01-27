@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
@@ -533,4 +534,13 @@ func (ft *fileTester) check(t *testing.T, prefix string, tc *testContext) {
 	if diff := cmp.Diff(ft.want, toFakeFiles(t, ".").files, opts...); diff != "" {
 		t.Errorf("%s produced incorrect completions (-want, +got):\n%s", prefix, diff)
 	}
+}
+
+func FilepathAbs(t *testing.T, s ...string) string {
+	t.Helper()
+	r, err := filepath.Abs(filepath.Join(s...))
+	if err != nil {
+		t.Fatalf("Failed to get absolute path for file: %v", err)
+	}
+	return r
 }
