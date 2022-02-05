@@ -71,52 +71,9 @@ func aliasMap(name string, ac AliasCLI, n *Node) map[string]*Node {
 	}
 }
 
-type aliasUsageNode struct {
-	opNode    *Node
-	usageNode *Node
-}
-
-func (un *aliasUsageNode) Execute(input *Input, output Output, data *Data, eData *ExecuteData) error {
-	return un.opNode.Processor.Execute(input, output, data, eData)
-}
-
-func (un *aliasUsageNode) Complete(input *Input, data *Data) (*Completion, error) {
-	return un.opNode.Processor.Complete(input, data)
-}
-
-func (un *aliasUsageNode) Usage(u *Usage) {
-	u.UsageSection.Add(SymbolSection, "*", "Start of new aliasable section")
-	// TODO: show alias subcommands on --help
-	u.Usage = append(u.Usage, "*")
-
-	if un.usageNode == nil || un.usageNode.Processor == nil {
-		return
-	}
-	un.usageNode.Processor.Usage(u)
-}
-
-func (un *aliasUsageNode) Next(i *Input, d *Data) (*Node, error) {
-	return un.opNode.Edge.Next(i, d)
-}
-
-func (un *aliasUsageNode) UsageNext() *Node {
-	if un.usageNode == nil || un.usageNode.Edge == nil {
-		return nil
-	}
-	return un.usageNode.Edge.UsageNext()
-}
-
 func AliasNode(name string, ac AliasCLI, n *Node) *Node {
 	executor := SerialNodesTo(n, &executeAlias{node: n, ac: ac, name: name})
-	// TODO: use HideBranchUsage
-	uw := &aliasUsageNode{
-		opNode:    BranchNode(aliasMap(name, ac, n), executor, DontCompleteSubcommands()),
-		usageNode: n,
-	}
-	return &Node{
-		Processor: uw,
-		Edge:      uw,
-	}
+	return BranchNode(aliasMap(name, ac, n), executor, HideBranchUsage(), DontCompleteSubcommands())
 }
 
 func aliasCompletor(name string, ac AliasCLI) *Completor[string] {
@@ -220,7 +177,11 @@ type executeAlias struct {
 	name string
 }
 
-func (ea *executeAlias) Usage(u *Usage) {}
+func (ea *executeAlias) Usage(u *Usage) {
+	u.UsageSection.Add(SymbolSection, "*", "Start of new aliasable section")
+	// TODO: show alias subcommands on --help
+	u.Usage = append(u.Usage, "*")
+}
 
 func (ea *executeAlias) Execute(input *Input, output Output, data *Data, eData *ExecuteData) error {
 	return output.Err(input.CheckAliases(1, ea.ac, ea.name, false))
