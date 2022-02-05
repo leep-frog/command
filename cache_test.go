@@ -9,7 +9,7 @@ import (
 
 type simpleCacheCLI struct {
 	changed bool
-	cache   map[string][]string
+	cache   map[string][][]string
 }
 
 func (sc *simpleCacheCLI) Changed() bool {
@@ -20,9 +20,9 @@ func (sc *simpleCacheCLI) MarkChanged() {
 	sc.changed = true
 }
 
-func (sc *simpleCacheCLI) Cache() map[string][]string {
+func (sc *simpleCacheCLI) Cache() map[string][][]string {
 	if sc.cache == nil {
-		sc.cache = map[string][]string{}
+		sc.cache = map[string][][]string{}
 	}
 	return sc.cache
 }
@@ -32,7 +32,8 @@ func TestCacheExecution(t *testing.T) {
 	for _, test := range []struct {
 		name      string
 		etc       *ExecuteTestCase
-		cache     map[string][]string
+		opts      []CacheOption
+		cache     map[string][][]string
 		wantCache *simpleCacheCLI
 	}{
 		// Tests around adding things to the cache.
@@ -110,15 +111,15 @@ func TestCacheExecution(t *testing.T) {
 			},
 			wantCache: &simpleCacheCLI{
 				changed: true,
-				cache: map[string][]string{
-					"money": {"dollar"},
+				cache: map[string][][]string{
+					"money": {{"dollar"}},
 				},
 			},
 		},
 		{
 			name: "Doesn't mark as changed if same values",
-			cache: map[string][]string{
-				"money": {"dollar"},
+			cache: map[string][][]string{
+				"money": {{"dollar"}},
 			},
 			etc: &ExecuteTestCase{
 				Node: CacheNode("money", cc, SerialNodes(
@@ -138,8 +139,8 @@ func TestCacheExecution(t *testing.T) {
 		},
 		{
 			name: "Doesn't mark as changed if transformed is same values",
-			cache: map[string][]string{
-				"money": {"usd"},
+			cache: map[string][][]string{
+				"money": {{"usd"}},
 			},
 			etc: &ExecuteTestCase{
 				Node: CacheNode("money", cc, SerialNodes(
@@ -179,16 +180,16 @@ func TestCacheExecution(t *testing.T) {
 			},
 			wantCache: &simpleCacheCLI{
 				changed: true,
-				cache: map[string][]string{
-					"money": {"dollar"},
+				cache: map[string][][]string{
+					"money": {{"dollar"}},
 				},
 			},
 		},
 		{
 			name: "Replaces cache value",
-			cache: map[string][]string{
-				"money": {"euro", "peso"},
-				"other": {"one", "two"},
+			cache: map[string][][]string{
+				"money": {{"euro", "peso"}},
+				"other": {{"one", "two"}},
 			},
 			etc: &ExecuteTestCase{
 				Node: CacheNode("money", cc, SerialNodes(
@@ -207,9 +208,105 @@ func TestCacheExecution(t *testing.T) {
 			},
 			wantCache: &simpleCacheCLI{
 				changed: true,
-				cache: map[string][]string{
-					"money": {"dollar"},
-					"other": {"one", "two"},
+				cache: map[string][][]string{
+					"money": {{"dollar"}},
+					"other": {{"one", "two"}},
+				},
+			},
+		},
+		{
+			name: "Adds cache value",
+			cache: map[string][][]string{
+				"money": {{"euro", "peso"}},
+				"other": {{"one", "two"}},
+			},
+			etc: &ExecuteTestCase{
+				Node: CacheNode("money", cc, SerialNodes(
+					Arg[string]("s", testDesc),
+				), CacheHistory(3)),
+				Args: []string{"dollar"},
+				WantData: &Data{Values: map[string]interface{}{
+					"s": "dollar",
+				}},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "dollar", snapshots: snapshotsMap(1)},
+					},
+					snapshotCount: 1,
+				},
+			},
+			wantCache: &simpleCacheCLI{
+				changed: true,
+				cache: map[string][][]string{
+					"money": {
+						{"euro", "peso"},
+						{"dollar"},
+					},
+					"other": {{"one", "two"}},
+				},
+			},
+		},
+		{
+			name: "Overrides cache value",
+			cache: map[string][][]string{
+				"money": {
+					{"ca-ching"},
+					{"euro", "peso"},
+					{"cash", "money"},
+				},
+				"other": {{"one", "two"}},
+			},
+			etc: &ExecuteTestCase{
+				Node: CacheNode("money", cc, SerialNodes(
+					Arg[string]("s", testDesc),
+				), CacheHistory(3)),
+				Args: []string{"dollar"},
+				WantData: &Data{Values: map[string]interface{}{
+					"s": "dollar",
+				}},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "dollar", snapshots: snapshotsMap(1)},
+					},
+					snapshotCount: 1,
+				},
+			},
+			wantCache: &simpleCacheCLI{
+				changed: true,
+				cache: map[string][][]string{
+					"money": {
+						{"euro", "peso"},
+						{"cash", "money"},
+						{"dollar"},
+					},
+					"other": {{"one", "two"}},
+				},
+			},
+		},
+		{
+			name: "No changes if last matches",
+			cache: map[string][][]string{
+				"money": {
+					{"ca-ching"},
+					{"euro", "peso"},
+					{"cash", "money"},
+				},
+				"other": {{"one", "two"}},
+			},
+			etc: &ExecuteTestCase{
+				Node: CacheNode("money", cc, SerialNodes(
+					ListArg[string]("sl", testDesc, 0, 4),
+				), CacheHistory(3)),
+				Args: []string{"cash", "money"},
+				WantData: &Data{Values: map[string]interface{}{
+					"sl": []string{"cash", "money"},
+				}},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "cash", snapshots: snapshotsMap(1)},
+						{value: "money", snapshots: snapshotsMap(1)},
+					},
+					snapshotCount: 1,
 				},
 			},
 		},
@@ -236,8 +333,8 @@ func TestCacheExecution(t *testing.T) {
 			},
 			wantCache: &simpleCacheCLI{
 				changed: true,
-				cache: map[string][]string{
-					"money": {"usd"},
+				cache: map[string][][]string{
+					"money": {{"usd"}},
 				},
 			},
 		},
@@ -283,8 +380,8 @@ func TestCacheExecution(t *testing.T) {
 			},
 			wantCache: &simpleCacheCLI{
 				changed: true,
-				cache: map[string][]string{
-					"money": {"123", "usd", "3.4", "4.5", "$six", "$7"},
+				cache: map[string][][]string{
+					"money": {{"123", "usd", "3.4", "4.5", "$six", "$7"}},
 				},
 			},
 		},
@@ -311,8 +408,8 @@ func TestCacheExecution(t *testing.T) {
 			},
 			wantCache: &simpleCacheCLI{
 				changed: true,
-				cache: map[string][]string{
-					"money": {"dollar"},
+				cache: map[string][][]string{
+					"money": {{"dollar"}},
 				},
 			},
 		},
@@ -324,8 +421,8 @@ func TestCacheExecution(t *testing.T) {
 		},
 		{
 			name: "Works when cache exists",
-			cache: map[string][]string{
-				"money": {"usd"},
+			cache: map[string][][]string{
+				"money": {{"usd"}},
 			},
 			etc: &ExecuteTestCase{
 				Node: CacheNode("money", cc, SerialNodes(OptionalArg[string]("s", testDesc))),
@@ -339,8 +436,8 @@ func TestCacheExecution(t *testing.T) {
 		},
 		{
 			name: "Works for long cache",
-			cache: map[string][]string{
-				"money": {"usd", "1", "2", "4"},
+			cache: map[string][][]string{
+				"money": {{"usd", "1", "2", "4"}},
 			},
 			etc: &ExecuteTestCase{
 				Node: CacheNode("money", cc, SerialNodes(
@@ -363,10 +460,181 @@ func TestCacheExecution(t *testing.T) {
 				}},
 			},
 		},
+		{
+			name: "Works for long cache with multiple ones",
+			cache: map[string][][]string{
+				"money": {{"first", "1"}, {"second", "2"}, {"usd", "1", "2", "4"}},
+			},
+			etc: &ExecuteTestCase{
+				Node: CacheNode("money", cc, SerialNodes(
+					Arg[string]("s", testDesc),
+					ListArg[int]("il", testDesc, 2, 0),
+					ListArg[float64]("fl", testDesc, 1, 3),
+				)),
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "usd"},
+						{value: "1"},
+						{value: "2"},
+						{value: "4"},
+					},
+				},
+				WantData: &Data{Values: map[string]interface{}{
+					"s":  "usd",
+					"il": []int{1, 2},
+					"fl": []float64{4},
+				}},
+			},
+		},
+		// History
+		{
+			name: "Displays no history if none",
+			etc: &ExecuteTestCase{
+				Node: CacheNode("money", cc, SerialNodes(
+					Arg[string]("s", testDesc),
+					ListArg[int]("il", testDesc, 2, 0),
+					ListArg[float64]("fl", testDesc, 1, 3),
+				)),
+				Args: []string{"history"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "history"},
+					},
+				},
+				WantData: &Data{Values: map[string]interface{}{
+					"cache-len": 1,
+				}},
+			},
+		},
+		{
+			name: "Displays first history",
+			cache: map[string][][]string{
+				"money": {
+					{"first", "1"},
+					{"second", "2"},
+					{"usd", "1", "2", "4"},
+				},
+			},
+			etc: &ExecuteTestCase{
+				Node: CacheNode("money", cc, SerialNodes(
+					Arg[string]("s", testDesc),
+					ListArg[int]("il", testDesc, 2, 0),
+					ListArg[float64]("fl", testDesc, 1, 3),
+				)),
+				Args: []string{"history"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "history"},
+					},
+				},
+				WantData: &Data{Values: map[string]interface{}{
+					"cache-len": 1,
+				}},
+				WantStdout: []string{"usd 1 2 4"},
+			},
+		},
+		{
+			name: "Displays multiple history elements",
+			cache: map[string][][]string{
+				"money": {
+					{"first", "1"},
+					{"second", "2"},
+					{"usd", "1", "2", "4"},
+				},
+			},
+			etc: &ExecuteTestCase{
+				Node: CacheNode("money", cc, SerialNodes(
+					Arg[string]("s", testDesc),
+					ListArg[int]("il", testDesc, 2, 0),
+					ListArg[float64]("fl", testDesc, 1, 3),
+				)),
+				Args: []string{"history", "-n", "2"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "history"},
+						{value: "-n"},
+						{value: "2"},
+					},
+				},
+				WantData: &Data{Values: map[string]interface{}{
+					"cache-len": 2,
+				}},
+				WantStdout: []string{
+					"second 2",
+					"usd 1 2 4",
+				},
+			},
+		},
+		{
+			name: "Displays all history elements",
+			cache: map[string][][]string{
+				"money": {
+					{"first", "1"},
+					{"second", "2"},
+					{"usd", "1", "2", "4"},
+				},
+			},
+			etc: &ExecuteTestCase{
+				Node: CacheNode("money", cc, SerialNodes(
+					Arg[string]("s", testDesc),
+					ListArg[int]("il", testDesc, 2, 0),
+					ListArg[float64]("fl", testDesc, 1, 3),
+				)),
+				Args: []string{"history", "-n", "3"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "history"},
+						{value: "-n"},
+						{value: "3"},
+					},
+				},
+				WantData: &Data{Values: map[string]interface{}{
+					"cache-len": 3,
+				}},
+				WantStdout: []string{
+					"first 1",
+					"second 2",
+					"usd 1 2 4",
+				},
+			},
+		},
+		{
+			name: "Displays all history elements if n is too big",
+			cache: map[string][][]string{
+				"money": {
+					{"first", "1"},
+					{"second", "2"},
+					{"usd", "1", "2", "4"},
+				},
+			},
+			etc: &ExecuteTestCase{
+				Node: CacheNode("money", cc, SerialNodes(
+					Arg[string]("s", testDesc),
+					ListArg[int]("il", testDesc, 2, 0),
+					ListArg[float64]("fl", testDesc, 1, 3),
+				)),
+				Args: []string{"history", "-n", "33"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "history"},
+						{value: "-n"},
+						{value: "33"},
+					},
+				},
+				WantData: &Data{Values: map[string]interface{}{
+					"cache-len": 33,
+				}},
+				WantStdout: []string{
+					"first 1",
+					"second 2",
+					"usd 1 2 4",
+				},
+			},
+		},
 		/* Useful for commenting out tests. */
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			originalCache := map[string][]string{}
+			originalCache := map[string][][]string{}
 			for k, v := range test.cache {
 				originalCache[k] = v
 			}
@@ -385,7 +653,7 @@ func TestCacheComplete(t *testing.T) {
 	cc := &simpleCacheCLI{}
 	for _, test := range []struct {
 		name  string
-		cache map[string][]string
+		cache map[string][][]string
 		ctc   *CompleteTestCase
 	}{
 		{

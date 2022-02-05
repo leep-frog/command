@@ -108,6 +108,7 @@ func (un *aliasUsageNode) UsageNext() *Node {
 
 func AliasNode(name string, ac AliasCLI, n *Node) *Node {
 	executor := SerialNodesTo(n, &executeAlias{node: n, ac: ac, name: name})
+	// TODO: use HideBranchUsage
 	uw := &aliasUsageNode{
 		opNode:    BranchNode(aliasMap(name, ac, n), executor, DontCompleteSubcommands()),
 		usageNode: n,

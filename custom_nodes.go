@@ -94,6 +94,7 @@ type branchNode struct {
 	next         *Node
 	nextErr      error
 	scCompletion bool
+	hideUsage bool
 }
 
 func (bn *branchNode) Execute(input *Input, output Output, data *Data, eData *ExecuteData) error {
@@ -192,6 +193,10 @@ func (bn *branchNode) UsageNext() *Node {
 }
 
 func (bn *branchNode) Usage(u *Usage) {
+	if bn.hideUsage {
+		return
+	}
+	
 	u.UsageSection.Add(SymbolSection, "<", "Start of subcommand branches")
 	u.Usage = append(u.Usage, "<")
 
@@ -226,6 +231,12 @@ type BranchNodeOption func(*branchNode)
 func DontCompleteSubcommands() BranchNodeOption {
 	return func(bn *branchNode) {
 		bn.scCompletion = false
+	}
+}
+
+func HideBranchUsage() BranchNodeOption {
+	return func(bn *branchNode) {
+		bn.hideUsage = true
 	}
 }
 

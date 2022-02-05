@@ -1,22 +1,54 @@
 package command
 
+import "strings"
+
+var (
+	cacheHistoryFlag = NewFlag[int]("cache-len", 'n', "Number of historical elements to display from the cache", Default[int](1))
+)
+
 // CachableCLI
 type CachableCLI interface {
-	// GetCache returns a map from cache name to the last command run for the CLI.
-	Cache() map[string][]string
+	// GetCache returns a map from cache name to the last commands run for the CLI.
+	Cache() map[string][][]string
 	// MarkChanged marks the CLI as changed.
 	MarkChanged()
 }
 
-func CacheNode(name string, c CachableCLI, n *Node) *Node {
-	return &Node{
-		Processor: &commandCache{
-			name: name,
-			c:    c,
-			n:    n,
-		},
-		Edge: &cacheUsageNode{n},
+func CacheNode(name string, c CachableCLI, n *Node, opts ...CacheOption) *Node {
+	cc := &commandCache{
+		name: name,
+		c:    c,
+		n:    n,
 	}
+	for _, opt := range opts {
+		opt.modifyCache(cc)
+	}
+	ccN := &Node{
+		Processor: cc,
+		Edge:      &cacheUsageNode{n},
+	}
+	return BranchNode(map[string]*Node{
+		"history": SerialNodes(
+			NewFlagNode(cacheHistoryFlag),
+			ExecutorNode(cc.history),
+		),
+	}, ccN, HideBranchUsage(), DontCompleteSubcommands(), BranchAliases(map[string][]string{"history": []string{"h"}}))
+}
+
+type CacheOption interface {
+	modifyCache(*commandCache)
+}
+
+func CacheHistory(n int) CacheOption {
+	return &cacheHistory{n}
+}
+
+type cacheHistory struct {
+	number int
+}
+
+func (ch *cacheHistory) modifyCache(cc *commandCache) {
+	cc.ch = ch
 }
 
 type cacheUsageNode struct {
@@ -35,6 +67,20 @@ type commandCache struct {
 	name string
 	c    CachableCLI
 	n    *Node
+	ch   *cacheHistory
+}
+
+func (cc *commandCache) history(output Output, data *Data) {
+	sls := cc.c.Cache()[cc.name]
+	start := len(sls) - data.Int(cacheHistoryFlag.Name())
+	if start < 0 {
+		start = 0
+	}
+
+	for i := start; i < len(sls); i++ {
+		// TODO: add input
+		output.Stdoutln(strings.Join(sls[i], " "))
+	}
 }
 
 func (cc *commandCache) Usage(u *Usage) {
@@ -49,8 +95,8 @@ func (cc *commandCache) Complete(input *Input, data *Data) (*Completion, error) 
 func (cc *commandCache) Execute(input *Input, output Output, data *Data, eData *ExecuteData) error {
 	// If it's fully processed, then populate inputs.
 	if input.FullyProcessed() {
-		if sl, ok := cc.c.Cache()[cc.name]; ok {
-			input.PushFront(sl...)
+		if sls, ok := cc.c.Cache()[cc.name]; ok {
+			input.PushFront(sls[len(sls)-1]...)
 		}
 		return iterativeExecute(cc.n, input, output, data, eData)
 	}
@@ -66,8 +112,17 @@ func (cc *commandCache) Execute(input *Input, output Output, data *Data, eData *
 
 	// Even if it resulted in an error, we want to add the command to the cache.
 	s := input.GetSnapshot(snapshot)
-	if existing := cc.c.Cache()[cc.name]; !sliceEquals(existing, s) {
-		cc.c.Cache()[cc.name] = s
+	sls := cc.c.Cache()[cc.name]
+	if len(sls) == 0 || !sliceEquals(sls[len(sls)-1], s) {
+		sls = append(sls, s)
+		cut := 1
+		if cc.ch != nil {
+			cut = cc.ch.number
+			if cut > len(sls) {
+				cut = len(sls)
+			}
+		}
+		cc.c.Cache()[cc.name] = sls[len(sls)-cut:]
 		cc.c.MarkChanged()
 	}
 	return err
