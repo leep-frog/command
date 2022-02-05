@@ -71,6 +71,20 @@ func (i *Input) Remaining() []string {
 	return r
 }
 
+func (i *Input) Used() []string {
+	r := map[int]bool{}
+	for _, v := range i.remaining {
+		r[v] = true
+	}
+	var v []string
+	for idx := 0; idx < len(i.args); idx++ {
+		if !r[idx] {
+			v = append(v, i.args[idx].value)
+		}
+	}
+	return v
+}
+
 func (i *Input) Peek() (string, bool) {
 	return i.PeekAt(0)
 }

@@ -1,9 +1,14 @@
 package command
 
-import "strings"
+import (
+	"fmt"
+	"strings"
+)
 
 var (
-	cacheHistoryFlag = NewFlag[int]("cache-len", 'n', "Number of historical elements to display from the cache", Default[int](1))
+	cacheHistoryFlag     = NewFlag[int]("cache-len", 'n', "Number of historical elements to display from the cache", Default[int](1))
+	cachePrintPrefixFlag = BoolFlag("cache-prefix", 'p', "Include prefix arguments in print statement")
+	cachePrefixData      = "CACHE_PREFIX_DATA"
 )
 
 // CachableCLI
@@ -29,8 +34,23 @@ func CacheNode(name string, c CachableCLI, n *Node, opts ...CacheOption) *Node {
 	}
 	return BranchNode(map[string]*Node{
 		"history": SerialNodes(
-			NewFlagNode(cacheHistoryFlag),
-			ExecutorNode(cc.history),
+			SimpleProcessor(func(input *Input, _ Output, data *Data, _ *ExecuteData) error {
+				used := input.Used()
+				if len(used) <= 1 {
+					// If only history arg is provided, then no prefix
+					data.Set(cachePrefixData, "")
+					return nil
+				}
+				// Remove "history" arg
+				used = used[:len(used)-1]
+				data.Set(cachePrefixData, fmt.Sprintf("%s ", strings.Join(used, " ")))
+				return nil
+			}, nil),
+			NewFlagNode(
+				cacheHistoryFlag,
+				cachePrintPrefixFlag,
+			),
+			SimpleProcessor(cc.history, nil),
 		),
 	}, ccN, HideBranchUsage(), DontCompleteSubcommands(), BranchAliases(map[string][]string{"history": []string{"h"}}))
 }
@@ -70,17 +90,22 @@ type commandCache struct {
 	ch   *cacheHistory
 }
 
-func (cc *commandCache) history(output Output, data *Data) {
+func (cc *commandCache) history(input *Input, output Output, data *Data, _ *ExecuteData) error {
 	sls := cc.c.Cache()[cc.name]
 	start := len(sls) - data.Int(cacheHistoryFlag.Name())
 	if start < 0 {
 		start = 0
 	}
 
-	for i := start; i < len(sls); i++ {
-		// TODO: add input
-		output.Stdoutln(strings.Join(sls[i], " "))
+	var prefix string
+	if data.Bool(cachePrintPrefixFlag.Name()) {
+		prefix = data.String(cachePrefixData)
 	}
+	for i := start; i < len(sls); i++ {
+		// TODO: Stdoutf shouldn't add newline?
+		output.Stdoutf("%s%s", prefix, strings.Join(sls[i], " "))
+	}
+	return nil
 }
 
 func (cc *commandCache) Usage(u *Usage) {

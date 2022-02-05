@@ -171,13 +171,6 @@ func NewFlag[T any](name string, shortName rune, desc string, opts ...ArgOpt[T])
 }
 
 func BoolFlag(name string, shortName rune, desc string) Flag {
-	/*return &flag{
-		name:      name,
-		shortName: shortName,
-		argNode: &boolFlag{
-			name: name,
-		},
-	}*/
 	return &boolFlag{
 		name:      name,
 		desc:      desc,

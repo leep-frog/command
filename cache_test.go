@@ -502,7 +502,8 @@ func TestCacheExecution(t *testing.T) {
 					},
 				},
 				WantData: &Data{Values: map[string]interface{}{
-					"cache-len": 1,
+					cacheHistoryFlag.Name(): 1,
+					cachePrefixData:         "",
 				}},
 			},
 		},
@@ -528,7 +529,8 @@ func TestCacheExecution(t *testing.T) {
 					},
 				},
 				WantData: &Data{Values: map[string]interface{}{
-					"cache-len": 1,
+					cacheHistoryFlag.Name(): 1,
+					cachePrefixData:         "",
 				}},
 				WantStdout: []string{"usd 1 2 4"},
 			},
@@ -557,7 +559,8 @@ func TestCacheExecution(t *testing.T) {
 					},
 				},
 				WantData: &Data{Values: map[string]interface{}{
-					"cache-len": 2,
+					cacheHistoryFlag.Name(): 2,
+					cachePrefixData:         "",
 				}},
 				WantStdout: []string{
 					"second 2",
@@ -566,7 +569,7 @@ func TestCacheExecution(t *testing.T) {
 			},
 		},
 		{
-			name: "Displays all history elements",
+			name: "Displays all history elements with prefix flag",
 			cache: map[string][][]string{
 				"money": {
 					{"first", "1"},
@@ -589,7 +592,8 @@ func TestCacheExecution(t *testing.T) {
 					},
 				},
 				WantData: &Data{Values: map[string]interface{}{
-					"cache-len": 3,
+					cacheHistoryFlag.Name(): 3,
+					cachePrefixData:         "",
 				}},
 				WantStdout: []string{
 					"first 1",
@@ -622,12 +626,138 @@ func TestCacheExecution(t *testing.T) {
 					},
 				},
 				WantData: &Data{Values: map[string]interface{}{
-					"cache-len": 33,
+					cacheHistoryFlag.Name(): 33,
+					cachePrefixData:         "",
 				}},
 				WantStdout: []string{
 					"first 1",
 					"second 2",
 					"usd 1 2 4",
+				},
+			},
+		},
+		// History prefix
+		{
+			name: "Displays history with prefix flag if no prefix",
+			cache: map[string][][]string{
+				"money": {
+					{"first", "1"},
+					{"second", "2"},
+					{"usd", "1", "2", "4"},
+				},
+			},
+			etc: &ExecuteTestCase{
+				Node: CacheNode("money", cc, SerialNodes(
+					Arg[string]("s", testDesc),
+					ListArg[int]("il", testDesc, 2, 0),
+					ListArg[float64]("fl", testDesc, 1, 3),
+				)),
+				Args: []string{"history", "-n", "33", "-p"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "history"},
+						{value: "-n"},
+						{value: "33"},
+						{value: "-p"},
+					},
+				},
+				WantData: &Data{Values: map[string]interface{}{
+					cacheHistoryFlag.Name():     33,
+					cachePrefixData:             "",
+					cachePrintPrefixFlag.Name(): true,
+				}},
+				WantStdout: []string{
+					"first 1",
+					"second 2",
+					"usd 1 2 4",
+				},
+			},
+		},
+		{
+			name: "Displays history with prefix flag if prefix",
+			cache: map[string][][]string{
+				"money": {
+					{"first", "1"},
+					{"second", "2"},
+					{"usd", "1", "2", "4"},
+				},
+			},
+			etc: &ExecuteTestCase{
+				Node: SerialNodesTo(CacheNode("money", cc, SerialNodes(
+					Arg[string]("s", testDesc),
+					ListArg[int]("il", testDesc, 2, 0),
+					ListArg[float64]("fl", testDesc, 1, 3),
+				)),
+					Arg[string]("beforeStr", testDesc),
+					Arg[int]("beforeInt", testDesc),
+				),
+				Args: []string{"hello", "123", "history", "-n", "33", "-p"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "hello"},
+						{value: "123"},
+						{value: "history"},
+						{value: "-n"},
+						{value: "33"},
+						{value: "-p"},
+					},
+				},
+				WantData: &Data{Values: map[string]interface{}{
+					cacheHistoryFlag.Name():     33,
+					cachePrefixData:             "hello 123 ",
+					cachePrintPrefixFlag.Name(): true,
+					"beforeStr":                 "hello",
+					"beforeInt":                 123,
+				}},
+				WantStdout: []string{
+					"hello 123 first 1",
+					"hello 123 second 2",
+					"hello 123 usd 1 2 4",
+				},
+			},
+		},
+		{
+			name: "Displays history with transformed prefix flag if prefix",
+			cache: map[string][][]string{
+				"money": {
+					{"first", "1"},
+					{"second", "2"},
+					{"usd", "1", "2", "4"},
+				},
+			},
+			etc: &ExecuteTestCase{
+				Node: SerialNodesTo(CacheNode("money", cc, SerialNodes(
+					Arg[string]("s", testDesc),
+					ListArg[int]("il", testDesc, 2, 0),
+					ListArg[float64]("fl", testDesc, 1, 3),
+				)),
+					Arg[string]("beforeStr", testDesc, NewTransformer[string](func(s string) (string, error) {
+						return fmt.Sprintf("TRANSFORM(%s)", s), nil
+					}, false)),
+					Arg[int]("beforeInt", testDesc),
+				),
+				Args: []string{"hello", "123", "history", "-n", "33", "-p"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "TRANSFORM(hello)"},
+						{value: "123"},
+						{value: "history"},
+						{value: "-n"},
+						{value: "33"},
+						{value: "-p"},
+					},
+				},
+				WantData: &Data{Values: map[string]interface{}{
+					cacheHistoryFlag.Name():     33,
+					cachePrefixData:             "TRANSFORM(hello) 123 ",
+					cachePrintPrefixFlag.Name(): true,
+					"beforeStr":                 "TRANSFORM(hello)",
+					"beforeInt":                 123,
+				}},
+				WantStdout: []string{
+					"TRANSFORM(hello) 123 first 1",
+					"TRANSFORM(hello) 123 second 2",
+					"TRANSFORM(hello) 123 usd 1 2 4",
 				},
 			},
 		},
