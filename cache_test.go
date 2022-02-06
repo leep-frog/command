@@ -28,6 +28,10 @@ func (sc *simpleCacheCLI) Cache() map[string][][]string {
 }
 
 func TestCacheExecution(t *testing.T) {
+	oldDefault := defaultHistory
+	defaultHistory = 2
+	defer func() { defaultHistory = oldDefault }()
+
 	cc := &simpleCacheCLI{}
 	for _, test := range []struct {
 		name      string
@@ -194,7 +198,7 @@ func TestCacheExecution(t *testing.T) {
 			etc: &ExecuteTestCase{
 				Node: CacheNode("money", cc, SerialNodes(
 					Arg[string]("s", testDesc),
-				)),
+				), CacheHistory(1)),
 				Args: []string{"dollar"},
 				WantData: &Data{Values: map[string]interface{}{
 					"s": "dollar",
@@ -210,6 +214,70 @@ func TestCacheExecution(t *testing.T) {
 				changed: true,
 				cache: map[string][][]string{
 					"money": {{"dollar"}},
+					"other": {{"one", "two"}},
+				},
+			},
+		},
+		{
+			name: "Adds cache value for default",
+			cache: map[string][][]string{
+				"money": {{"euro", "peso"}},
+				"other": {{"one", "two"}},
+			},
+			etc: &ExecuteTestCase{
+				Node: CacheNode("money", cc, SerialNodes(
+					Arg[string]("s", testDesc),
+				)),
+				Args: []string{"dollar"},
+				WantData: &Data{Values: map[string]interface{}{
+					"s": "dollar",
+				}},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "dollar", snapshots: snapshotsMap(1)},
+					},
+					snapshotCount: 1,
+				},
+			},
+			wantCache: &simpleCacheCLI{
+				changed: true,
+				cache: map[string][][]string{
+					"money": {
+						{"euro", "peso"},
+						{"dollar"},
+					},
+					"other": {{"one", "two"}},
+				},
+			},
+		},
+		{
+			name: "Overwrites cache value when at default",
+			cache: map[string][][]string{
+				"money": {{"euro", "peso"}, {"other"}},
+				"other": {{"one", "two"}},
+			},
+			etc: &ExecuteTestCase{
+				Node: CacheNode("money", cc, SerialNodes(
+					Arg[string]("s", testDesc),
+				)),
+				Args: []string{"dollar"},
+				WantData: &Data{Values: map[string]interface{}{
+					"s": "dollar",
+				}},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "dollar", snapshots: snapshotsMap(1)},
+					},
+					snapshotCount: 1,
+				},
+			},
+			wantCache: &simpleCacheCLI{
+				changed: true,
+				cache: map[string][][]string{
+					"money": {
+						{"other"},
+						{"dollar"},
+					},
 					"other": {{"one", "two"}},
 				},
 			},

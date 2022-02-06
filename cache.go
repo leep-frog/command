@@ -9,6 +9,7 @@ var (
 	cacheHistoryFlag     = NewFlag[int]("cache-len", 'n', "Number of historical elements to display from the cache", Default[int](1))
 	cachePrintPrefixFlag = BoolFlag("cache-prefix", 'p', "Include prefix arguments in print statement")
 	cachePrefixData      = "CACHE_PREFIX_DATA"
+	defaultHistory       = 100
 )
 
 // CachableCLI
@@ -24,6 +25,7 @@ func CacheNode(name string, c CachableCLI, n *Node, opts ...CacheOption) *Node {
 		name: name,
 		c:    c,
 		n:    n,
+		ch:   &cacheHistory{defaultHistory},
 	}
 	for _, opt := range opts {
 		opt.modifyCache(cc)
