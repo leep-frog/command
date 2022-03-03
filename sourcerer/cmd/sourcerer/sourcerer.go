@@ -11,9 +11,9 @@ import (
 
 type SourcererCommand struct{}
 
-func (*SourcererCommand) Load(string) error { return nil }
-func (*SourcererCommand) Setup() []string   { return nil }
-func (*SourcererCommand) Changed() bool     { return false }
+func (*SourcererCommand) UnmarshalJSON([]byte) error { return nil }
+func (*SourcererCommand) Setup() []string            { return nil }
+func (*SourcererCommand) Changed() bool              { return false }
 
 func (*SourcererCommand) Name() string {
 	return "sourcerer"
