@@ -172,21 +172,26 @@ func (c *Cache) Delete(key string) error {
 }
 
 // Returns data, whether the file exists, and any error encountered.
-func (c *Cache) Get(key string) (string, bool, error) {
+func (c *Cache) GetBytes(key string) ([]byte, bool, error) {
 	filename, err := c.fileFromKey(key)
 	if err != nil {
-		return "", false, fmt.Errorf("failed to get file for key: %v", err)
+		return nil, false, fmt.Errorf("failed to get file for key: %v", err)
 	}
 
 	// Check if the file exists.
 	data, err := os.ReadFile(filename)
 	if os.IsNotExist(err) {
-		return "", false, nil
+		return nil, false, nil
 	}
 	if err != nil {
-		return "", false, fmt.Errorf("failed to read file: %v", err)
+		return nil, false, fmt.Errorf("failed to read file: %v", err)
 	}
-	return string(data), true, nil
+	return data, true, nil
+}
+
+func (c *Cache) Get(key string) (string, bool, error) {
+	s, b, e := c.GetBytes(key)
+	return string(s), b, e
 }
 
 func (c *Cache) PutStruct(key string, i interface{}) error {

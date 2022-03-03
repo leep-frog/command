@@ -4,6 +4,7 @@
 package sourcerer
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
@@ -86,11 +87,11 @@ var (
 // CLI provides a way to construct CLIs in go, with tab-completion.
 // Note, this has to be an interface (as opposed to a struct) because of the Load function.
 type CLI interface {
+	// Unmarshal a json blob into the CLI object.
+	json.Unmarshaler
+
 	// Name is the name of the alias command to use for this CLI.
 	Name() string
-	// Load loads a json string into the CLI object.
-	// TODO: just use json.Unmarshaller interface here
-	Load(json string) error
 	// Node returns the command node for the CLI. This is where the CLI's logic lives.
 	Node() *command.Node
 	// Changed indicates whether or not the CLI has changed after execution.
@@ -204,10 +205,10 @@ func load(cli CLI) error {
 	cash, err := getCache()
 	if err != nil {
 		return err
-	} else if s, fileExists, err := cash.Get(ck); err != nil {
+	} else if b, fileExists, err := cash.GetBytes(ck); err != nil {
 		return fmt.Errorf("failed to load cli %q: %v", cli.Name(), err)
-	} else if fileExists && s != "" {
-		return cli.Load(s)
+	} else if fileExists && b != nil {
+		return cli.UnmarshalJSON(b)
 	}
 	return nil
 }
@@ -218,9 +219,9 @@ type sourcerer struct {
 	printedUsageError bool
 }
 
-func (*sourcerer) Load(jsn string) error { return nil }
-func (*sourcerer) Changed() bool         { return false }
-func (*sourcerer) Setup() []string       { return nil }
+func (*sourcerer) UnmarshalJSON(jsn []byte) error { return nil }
+func (*sourcerer) Changed() bool                  { return false }
+func (*sourcerer) Setup() []string                { return nil }
 func (*sourcerer) Name() string {
 	return "_internal_sourcerer"
 }
@@ -388,10 +389,10 @@ type bashCLI struct {
 	commandString string
 }
 
-func (bc *bashCLI) Changed() bool     { return false }
-func (bc *bashCLI) Setup() []string   { return nil }
-func (bc *bashCLI) Load(string) error { return nil }
-func (bc *bashCLI) Name() string      { return bc.name }
+func (bc *bashCLI) Changed() bool              { return false }
+func (bc *bashCLI) Setup() []string            { return nil }
+func (bc *bashCLI) UnmarshalJSON([]byte) error { return nil }
+func (bc *bashCLI) Name() string               { return bc.name }
 func (bc *bashCLI) Node() *command.Node {
 	return command.SerialNodes(command.ExecuteErrNode(func(o command.Output, d *command.Data) error {
 		cmd := exec.Command("bash", "-c", bc.commandString)

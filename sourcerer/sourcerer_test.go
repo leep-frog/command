@@ -603,7 +603,7 @@ func (tc *testCLI) Name() string {
 	return tc.name
 }
 
-func (tc *testCLI) Load(string) error { return nil }
+func (tc *testCLI) UnmarshalJSON([]byte) error { return nil }
 func (tc *testCLI) Node() *command.Node {
 	ns := append(tc.processors, command.SimpleProcessor(func(i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
 		if tc.f != nil {
@@ -627,7 +627,7 @@ func (uec *usageErrCLI) Name() string {
 	return "uec"
 }
 
-func (uec *usageErrCLI) Load(string) error { return nil }
+func (uec *usageErrCLI) UnmarshalJSON([]byte) error { return nil }
 func (uec *usageErrCLI) Node() *command.Node {
 	return command.BranchNode(map[string]*command.Node{
 		"a": command.SerialNodes(command.ListArg[string]("A_SL", "str list", 0, 1)),
