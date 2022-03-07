@@ -87,8 +87,8 @@ var (
 // CLI provides a way to construct CLIs in go, with tab-completion.
 // Note, this has to be an interface (as opposed to a struct) because of the Load function.
 type CLI interface {
-	// Unmarshal a json blob into the CLI object.
-	json.Unmarshaler
+	// We use json unmarshaling so if a CLI type wants custom marshaling/unmarshaling,
+	// they just need to implement the json.Marshaler/Unmarshaler interface(s).
 
 	// Name is the name of the alias command to use for this CLI.
 	Name() string
@@ -208,7 +208,7 @@ func load(cli CLI) error {
 	} else if b, fileExists, err := cash.GetBytes(ck); err != nil {
 		return fmt.Errorf("failed to load cli %q: %v", cli.Name(), err)
 	} else if fileExists && b != nil {
-		return cli.UnmarshalJSON(b)
+		return json.Unmarshal(b, cli)
 	}
 	return nil
 }
