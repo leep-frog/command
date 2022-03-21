@@ -5,7 +5,8 @@ import (
 	"os"
 	"regexp"
 	"strings"
-	"constraints"
+
+	"golang.org/x/exp/constraints"
 )
 
 func Option[T any](f func(T) error) *ValidatorOption[T] {
