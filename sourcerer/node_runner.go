@@ -28,9 +28,9 @@ var (
 				IgnoreFiles: true,
 			},
 		},
-		command.Default[string]("."),
+		command.Default("."),
 	)
-	passAlongArgs = command.ListArg[string]("PASSTHROUGH_ARGS", "Args to pass through to the command", 0, command.UnboundedList)
+	passAlongArgs = command.ListArg[string](command.PassthroughArgs, "Args to pass through to the command", 0, command.UnboundedList)
 )
 
 func (gl *GoLeep) Name() string {
@@ -44,7 +44,7 @@ func (gl *GoLeep) runCommand(d *command.Data, subCmd string, extraArgs []string)
 	}
 
 	return []string{
-		fmt.Sprintf("go1.18beta1 run %s %s%s", d.String(goDirectory.Name()), subCmd, ea),
+		fmt.Sprintf("go run %s %s%s", d.String(goDirectory.Name()), subCmd, ea),
 	}
 }
 
@@ -85,7 +85,7 @@ func (gl *GoLeep) Node() *command.Node {
 			// Run the command
 			// Need to use ToSlash because mingw
 			cmd := gl.runCommand(d, "execute", append([]string{filepath.ToSlash(f.Name())}, d.StringList(passAlongArgs.Name())...))
-			bc := command.BashCommand[[]string]("BASH_OUTPUT", cmd, command.ForwardStdout[[]string]())
+			bc := command.BashCommand("BASH_OUTPUT", cmd, command.ForwardStdout[[]string]())
 			if _, err := bc.Run(o); err != nil {
 				return o.Stderrf("failed to run bash script: %v", err)
 			}
@@ -125,7 +125,7 @@ func (glf *goleepFetcher) Fetch(v []string, data *command.Data) (*command.Comple
 		// Need the extra "unusedCmd" arg because autocompletion throws away the first arg (because it assumes it's the command)
 		fmt.Sprintf("%q", strings.Join(data.StringList(passAlongArgs.Name()), " ")),
 	}
-	bc := command.BashCommand[[]string]("BASH_OUTPUT", glf.gl.runCommand(data, "autocomplete", extraArgs), command.HideStderr[[]string]())
+	bc := command.BashCommand("BASH_OUTPUT", glf.gl.runCommand(data, "autocomplete", extraArgs), command.HideStderr[[]string]())
 	o := command.NewFakeOutput()
 	v, err := bc.Run(o)
 	o.Close()

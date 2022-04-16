@@ -199,7 +199,7 @@ func (i *Input) PopN(n, optN int, breaker *ListBreaker) ([]*string, bool) {
 	for ; idx < shift; idx++ {
 		for _, validator := range validators {
 			if err := validator.validate(i.get(idx + i.offset).value); err != nil {
-			//if err := validator.validate(StringValue(i.get(idx + i.offset).value)); err != nil {
+				//if err := validator.validate(StringValue(i.get(idx + i.offset).value)); err != nil {
 				broken = true
 				break
 			}
@@ -217,6 +217,7 @@ func (i *Input) PopN(n, optN int, breaker *ListBreaker) ([]*string, bool) {
 	return ret, len(ret) >= n
 }
 
+// TODO: Should this belong to the os-type implementer
 // ParseExecuteArgs converts a list of strings into an Input struct.
 func ParseExecuteArgs(strArgs []string) *Input {
 	r := make([]int, len(strArgs))

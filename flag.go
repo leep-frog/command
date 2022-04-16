@@ -84,7 +84,7 @@ func (fn *flagNode) Complete(input *Input, data *Data) (*Completion, error) {
 	}
 	for _, f := range unprocessed {
 		f.ProcessMissing(data)
-}
+	}
 	return nil, nil
 }
 
@@ -113,7 +113,7 @@ func (fn *flagNode) Execute(input *Input, output Output, data *Data, eData *Exec
 	}
 	for _, f := range unprocessed {
 		f.ProcessMissing(data)
-}
+	}
 	return nil
 }
 
@@ -167,7 +167,7 @@ func (f *flag[T]) ShortName() rune {
 }
 
 func NewFlag[T any](name string, shortName rune, desc string, opts ...ArgOpt[T]) Flag {
-	return listFlag[T](name, desc, shortName, 1, 0, opts...)
+	return listFlag(name, desc, shortName, 1, 0, opts...)
 }
 
 func BoolFlag(name string, shortName rune, desc string) Flag {
@@ -200,7 +200,7 @@ func (bf *boolFlag) Processor() Processor {
 	return bf
 }
 
-func (bf *boolFlag) ProcessMissing(*Data)  {}
+func (bf *boolFlag) ProcessMissing(*Data) {}
 
 func (bf *boolFlag) Complete(*Input, *Data) (*Completion, error) {
 	return nil, nil
@@ -218,7 +218,7 @@ func (bf *boolFlag) Execute(_ *Input, _ Output, data *Data, _ *ExecuteData) erro
 }
 
 func NewListFlag[T any](name string, shortName rune, desc string, minN, optionalN int, opts ...ArgOpt[[]T]) Flag {
-	return listFlag[[]T](name, desc, shortName, minN, optionalN, opts...)
+	return listFlag(name, desc, shortName, minN, optionalN, opts...)
 }
 
 func listFlag[T any](name, desc string, shortName rune, minN, optionalN int, opts ...ArgOpt[T]) Flag {

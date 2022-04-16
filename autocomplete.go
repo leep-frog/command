@@ -19,7 +19,7 @@ func autocomplete(n *Node, compLine string, data *Data) ([]string, error) {
 	return r, err
 }
 
-// Separate method for testing purposes.
+// Separate method for use by modifiers (alias.go, cache.go, etc.)
 func getCompleteData(n *Node, input *Input, data *Data) (*Completion, error) {
 	for n != nil {
 		if n.Processor != nil {

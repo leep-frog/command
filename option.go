@@ -5,13 +5,13 @@ type ArgOpt[T any] interface {
 }
 
 type argOpt[T any] struct {
-	validators  []*ValidatorOption[T]
-	completor   *Completor[T]
+	validators   []*ValidatorOption[T]
+	completor    *Completor[T]
 	transformers []*Transformer[T]
-	alias       *aliasOpt[T]
-	customSet   customSetter[T]
-	_default    *T
-	breaker     *ListBreaker
+	alias        *aliasOpt[T]
+	customSet    customSetter[T]
+	_default     *T
+	breaker      *ListBreaker
 
 	hiddenUsage bool
 }
@@ -52,7 +52,7 @@ func (cs *customSetter[T]) modifyArgOpt(ao *argOpt[T]) {
 }
 
 type Transformer[T any] struct {
-	t  func(T) (T, error)
+	t func(T) (T, error)
 	// forComplete is whether or not the value
 	// should be transformed during completions.
 	forComplete bool
@@ -64,7 +64,7 @@ func (t *Transformer[T]) modifyArgOpt(ao *argOpt[T]) {
 
 //func (t *Transformer[T]) ForList() *Transformer[[]T] {
 func TransformerList[T any](t *Transformer[T]) *Transformer[[]T] {
-	return NewTransformer[[]T](func(vs []T) ([]T, error) {
+	return NewTransformer(func(vs []T) ([]T, error) {
 		l := make([]T, 0, len(vs))
 		for i, v := range vs {
 			nv, err := t.t(v)

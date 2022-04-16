@@ -94,7 +94,7 @@ type branchNode struct {
 	next         *Node
 	nextErr      error
 	scCompletion bool
-	hideUsage bool
+	hideUsage    bool
 }
 
 func (bn *branchNode) Execute(input *Input, output Output, data *Data, eData *ExecuteData) error {
@@ -196,7 +196,7 @@ func (bn *branchNode) Usage(u *Usage) {
 	if bn.hideUsage {
 		return
 	}
-	
+
 	u.UsageSection.Add(SymbolSection, "<", "Start of subcommand branches")
 	u.Usage = append(u.Usage, "<")
 
@@ -477,7 +477,7 @@ func StringListListNode(name, desc, breakSymbol string, minN, optionalN int, opt
 						}
 					}
 				}),
-				)...,
+			)...,
 		),
 	}
 	return NodeRepeater(n, minN, optionalN)

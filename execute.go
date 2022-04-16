@@ -173,20 +173,24 @@ func RunNodes(n *Node) error {
 	return err
 }
 
+const (
+	PassthroughArgs = "PASSTHROUGH_ARGS"
+)
+
 // Separate method for testing purposes.
 func runNodes(n *Node, o Output, d *Data, args []string) error {
 	// We set default node to n in case user tries to run with "go run", but using goleep
 	// is better because "go run main.go autocomplete" won't work as expected.
 	var filename string
+	nrf := "NODE_RUNNER_FILE"
 	exNode := SerialNodesTo(n,
-		FileNode("NODE_RUNNER_FILE", "Temporary file for execution"),
+		FileNode(nrf, "Temporary file for execution"),
 		SimpleProcessor(func(i *Input, o Output, d *Data, ed *ExecuteData) error {
-			filename = d.String("NODE_RUNNER_FILE")
+			filename = d.String(nrf)
 			return nil
 		}, nil),
 	)
 
-	ptName := "PASSTHROUGH_ARGS"
 	bn := BranchNode(map[string]*Node{
 		"execute": exNode,
 		"usage": SerialNodes(
@@ -196,9 +200,9 @@ func runNodes(n *Node, o Output, d *Data, args []string) error {
 		),
 		"autocomplete": SerialNodes(
 			// Don't need comp point because input will have already been trimmed by goleep processing.
-			Arg[string](ptName, ""),
+			Arg[string](PassthroughArgs, ""),
 			ExecutorNode(func(o Output, d *Data) {
-				for _, s := range Autocomplete(n, d.String(ptName)) {
+				for _, s := range Autocomplete(n, d.String(PassthroughArgs)) {
 					o.Stdout(s)
 				}
 			})),
@@ -222,6 +226,8 @@ func runNodes(n *Node, o Output, d *Data, args []string) error {
 // Separate method for testing purposes.
 func execute(n *Node, input *Input, output Output, data *Data) (*ExecuteData, error) {
 	eData := &ExecuteData{}
+
+	// This threading logic is needed in case the underlying process calls an output.Terminate command.
 	var wg sync.WaitGroup
 	wg.Add(1)
 

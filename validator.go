@@ -152,7 +152,7 @@ func EQ[T constraints.Ordered](n T) *ValidatorOption[T] {
 }
 
 func NEQ[T constraints.Ordered](n T) *ValidatorOption[T] {
-	return Option[T](
+	return Option(
 		func(v T) error {
 			if v != n {
 				return nil
@@ -163,7 +163,7 @@ func NEQ[T constraints.Ordered](n T) *ValidatorOption[T] {
 }
 
 func LT[T constraints.Ordered](n T) *ValidatorOption[T] {
-	return Option[T](
+	return Option(
 		func(v T) error {
 			if v < n {
 				return nil
@@ -174,7 +174,7 @@ func LT[T constraints.Ordered](n T) *ValidatorOption[T] {
 }
 
 func LTE[T constraints.Ordered](n T) *ValidatorOption[T] {
-	return Option[T](
+	return Option(
 		func(v T) error {
 			if v <= n {
 				return nil
@@ -185,7 +185,7 @@ func LTE[T constraints.Ordered](n T) *ValidatorOption[T] {
 }
 
 func GT[T constraints.Ordered](n T) *ValidatorOption[T] {
-	return Option[T](
+	return Option(
 		func(v T) error {
 			if v > n {
 				return nil
@@ -196,7 +196,7 @@ func GT[T constraints.Ordered](n T) *ValidatorOption[T] {
 }
 
 func GTE[T constraints.Ordered](n T) *ValidatorOption[T] {
-	return Option[T](
+	return Option(
 		func(v T) error {
 			if v >= n {
 				return nil
@@ -207,7 +207,7 @@ func GTE[T constraints.Ordered](n T) *ValidatorOption[T] {
 }
 
 func Positive[T constraints.Ordered]() *ValidatorOption[T] {
-	return Option[T](
+	return Option(
 		func(v T) error {
 			var t T
 			if v > t {
@@ -219,7 +219,7 @@ func Positive[T constraints.Ordered]() *ValidatorOption[T] {
 }
 
 func NonNegative[T constraints.Ordered]() *ValidatorOption[T] {
-	return Option[T](
+	return Option(
 		func(v T) error {
 			var t T
 			if v >= t {
@@ -231,7 +231,7 @@ func NonNegative[T constraints.Ordered]() *ValidatorOption[T] {
 }
 
 func Negative[T constraints.Ordered]() *ValidatorOption[T] {
-	return Option[T](
+	return Option(
 		func(v T) error {
 			var t T
 			if v < t {

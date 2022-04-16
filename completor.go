@@ -31,7 +31,7 @@ func CompletorList[T any](c *Completor[T]) *Completor[[]T] {
 	return &Completor[[]T]{
 		c.Distinct,
 		c.CaseInsensitive,
-		SimpleFetcher[[]T](func(ts []T, d *Data) (*Completion, error) {
+		SimpleFetcher(func(ts []T, d *Data) (*Completion, error) {
 			var t T
 			if len(ts) > 0 {
 				t = ts[len(ts)-1]
@@ -369,7 +369,7 @@ func FileNode(argName, desc string, opts ...ArgOpt[string]) *ArgNode[string] {
 		FileTransformer(),
 		FileExists(),
 	)
-	return Arg[string](argName, desc, opts...)
+	return Arg(argName, desc, opts...)
 }
 
 func FileListNode(argName, desc string, minN, optionalN int, opts ...ArgOpt[[]string]) *ArgNode[[]string] {
@@ -377,5 +377,5 @@ func FileListNode(argName, desc string, minN, optionalN int, opts ...ArgOpt[[]st
 		&Completor[[]string]{SuggestionFetcher: &FileFetcher[[]string]{}},
 		TransformerList(FileTransformer()),
 	)
-	return ListArg[string](argName, desc, minN, optionalN, opts...)
+	return ListArg(argName, desc, minN, optionalN, opts...)
 }
