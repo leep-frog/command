@@ -353,8 +353,8 @@ func (s *sourcerer) generateFile(o command.Output, d *command.Data) {
 
 		o.Stdout(aliasCommand)
 
-		// TODO: Verify bash doesn't sort for us (space for don't complete)
-		o.Stdoutf("complete -F _custom_autocomplete_%s %s", filename, alias)
+		// We sort ourselves, hence the no sort.
+		o.Stdoutf("complete -F _custom_autocomplete_%s -o nosort %s", filename, alias)
 	}
 }
 
