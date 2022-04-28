@@ -42,9 +42,9 @@ var (
 		`    echo COMP_POINT: $COMP_POINT >> autocomplete.txt`,
 		`    echo COMP_LINE: "$COMP_LINE" >> autocomplete.txt`,
 		`    echo ARGS: "$@" >> autocomplete.txt`,
-		`    echo ARGS_LEN: "${#@[@]}" >> autocomplete.txt`,
+		`    echo ARGS_LEN: "$#" >> autocomplete.txt`,
 		// TODO <= 3
-		`    if [ ${#@[@]} -le 2 ]; then`,
+		`    if [ $# -le 2 ]; then`,
 		`      echo no extra args >> autocomplete.txt`,
 		`    else`,
 		`      echo NEW_ARGS: "${@[@]:2}" >> autocomplete.txt`,
