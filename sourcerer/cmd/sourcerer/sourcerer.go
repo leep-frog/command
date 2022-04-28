@@ -121,6 +121,7 @@ func (*AliaserCommand) Node() *command.Node {
 				`  exit 1`,
 				`fi`,
 				fmt.Sprintf("alias %s=%q", alias, aliasTo),
+				fmt.Sprintf("echo alias %s=%q", alias, aliasTo),
 				fmt.Sprintf(sourcerer.AutocompleteForAliasFunction, alias, cli, cli, quotedArgs),
 				fmt.Sprintf("complete -F _custom_autocomplete_for_alias_%s -o nosort %s", alias, alias),
 			}, nil
