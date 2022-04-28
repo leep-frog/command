@@ -47,7 +47,8 @@ var (
 		`  tFile=$(mktemp)`,
 		// The last argument is for extra passthrough arguments to be passed for aliaser autocompletes.
 		`  $GOPATH/bin/_${file}_runner autocomplete %s $COMP_POINT "$COMP_LINE" %s > $tFile`,
-		`  local IFS=$'\\n'`,
+		`  local IFS='`,
+		`';`,
 		`  COMPREPLY=( $(cat $tFile) )`,
 		`  #rm $tFile`,
 		"}",
