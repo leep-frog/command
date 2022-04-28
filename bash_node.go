@@ -17,6 +17,12 @@ var (
 	}
 )
 
+func BashCompletor[T any](command []string) *Completor[T] {
+	return &Completor[T]{
+		SuggestionFetcher: BashFetcher[T](command),
+	}
+}
+
 func BashFetcher[T any](command []string) Fetcher[T] {
 	return &bashFetcher[T]{command}
 }
