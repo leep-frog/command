@@ -26,31 +26,12 @@ var (
 		"popd > /dev/null",
 	}, "\n")
 
-	/*
-		function _aliased_autocomplete_%s {
-			_custom_autocomplete_%s
-		}
-	*/
-
-	// autocompleteFunction defines a bash function for CLI autocompletion.
-	autocompleteFunction = strings.Join([]string{
+	// AutocompleteFunction defines a bash function for CLI autocompletion.
+	AutocompleteFunction = strings.Join([]string{
 		"function _custom_autocomplete_%s {",
 		`  tFile=$(mktemp)`,
-		`  if [ -z "$LEEP_FROG_DEBUG" ]`,
-		`  then`,
-		`    echo COMP_WORDS: ${COMP_WORDS[0]} > autocomplete.txt`,
-		`    echo COMP_POINT: $COMP_POINT >> autocomplete.txt`,
-		`    echo COMP_LINE: "$COMP_LINE" >> autocomplete.txt`,
-		`    echo ARGS: "$@" >> autocomplete.txt`,
-		`    echo ARGS_LEN: "$#" >> autocomplete.txt`,
-		// TODO <= 3
-		`    if [ $# -le 2 ]; then`,
-		`      echo no extra args >> autocomplete.txt`,
-		`    else`,
-		`      echo NEW_ARGS: "${@:2}" >> autocomplete.txt`,
-		`    fi`,
-		`  fi`,
-		`  $GOPATH/bin/_%s_runner autocomplete ${COMP_WORDS[0]} $COMP_POINT "$COMP_LINE" "$@" > $tFile`,
+		// The last argument is for extra passthrough arguments to be passed for aliaser autocompletes.
+		`  $GOPATH/bin/_%s_runner autocomplete ${COMP_WORDS[0]} $COMP_POINT "$COMP_LINE" %s > $tFile`,
 		`  local IFS=$'\n'`,
 		`  COMPREPLY=( $(cat $tFile) )`,
 		`  rm $tFile`,
@@ -348,7 +329,7 @@ func (s *sourcerer) generateFile(o command.Output, d *command.Data) {
 	o.Stdoutf(generateBinary, s.sl, filename)
 
 	// define the autocomplete function
-	o.Stdoutf(autocompleteFunction, filename, filename)
+	o.Stdoutf(AutocompleteFunction, filename, filename, "")
 
 	// define the execute function
 	o.Stdoutf(executeFunction, filename, filename)

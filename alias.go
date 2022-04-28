@@ -6,6 +6,7 @@ import (
 	"strings"
 )
 
+// TODO: Change to something other than alias. That's conflated with bash alias builtin
 var (
 	aliasArgName = "ALIAS"
 	aliasArg     = Arg[string](aliasArgName, "TODO alias desc", MinLength(1))

@@ -54,6 +54,10 @@ func (*UpdateLeepPackageCommand) Node() *command.Node {
 	)
 }
 
+func getFile(cli string) string {
+	return fmt.Sprintf(`file="$(type %s | head -n 1 | grep "is aliased to.*_custom_execute_" | grep "_custom_execute_[^[:space:]]*" -o | sed s/_custom_execute_//g)"`, cli)
+}
+
 // UsageCommand is a CLI for printing out usage info for a CLI.
 type UsageCommand struct{}
 
@@ -73,7 +77,7 @@ func (*UsageCommand) Node() *command.Node {
 			return []string{
 				// Extract the custom execute function so that this function
 				// can work regardless of file name
-				fmt.Sprintf(`file="$(type %s | head -n 1 | grep "is aliased to.*_custom_execute_" | grep "_custom_execute_[^[:space:]]*" -o | sed s/_custom_execute_//g)"`, cli),
+				getFile(cli),
 				`if [ -z "$file" ]; then`,
 				fmt.Sprintf(`  echo %s is not a leep-frog command`, cli),
 				`else`,
@@ -84,7 +88,6 @@ func (*UsageCommand) Node() *command.Node {
 	)
 }
 
-/*
 // AliaserCommand creates an alias for another arg
 type AliaserCommand struct{}
 
@@ -93,24 +96,31 @@ func (*AliaserCommand) Changed() bool   { return false }
 func (*AliaserCommand) Name() string    { return "aliaser" }
 
 func (*AliaserCommand) Node() *command.Node {
-	dName := ""
-	bsName := "BINARY_SUFFIX"
+	a := "ALIAS"
+	c := "CLI"
+	pts := "PASSTHROUGH_ARG"
 	return command.SerialNodes(
-		command.FileNode(dName, "Directory in which to create CLI", command.IsDir()),
-		command.Arg[string](bsName, "Suffix for the name", command.MinLength(1)),
+		command.Description("Alias a command to a cli with some args included"),
+		command.Arg[string](a, "Alias of new command"),
+		command.Arg[string](c, "CLI of new command"),
+		command.ListArg[string](pts, "Args to passthrough with alias", 0, command.UnboundedList),
 		command.ExecutableNode(func(_ command.Output, d *command.Data) ([]string, error) {
-			dir := strings.ReplaceAll(d.String(dName), `\`, "/")
-			// TODO: try using this? filepath.FromSlash()
+			alias := d.String(a)
+			cli := d.String(c)
+			var qas []string
+			for _, pt := range d.StringList(pts) {
+				qas = append(qas, fmt.Sprintf("%q", pt))
+			}
+			quotedArgs := strings.Join(qas, " ")
 			return []string{
-				"pushd . > /dev/null",
-				fmt.Sprintf("cd %s", dir),
-				`tmpFile="$(mktemp)"`,
-				fmt.Sprintf("go run . %s > $tmpFile && source $tmpFile ", d.String(bsName)),
-				"popd > /dev/null",
+				getFile(cli),
+				fmt.Sprintf("alias %s=%s %s", alias, cli, quotedArgs),
+				fmt.Sprintf(sourcerer.AutocompleteFunction, fmt.Sprintf("for_alias_%s", alias), "$file", quotedArgs),
+				fmt.Sprintf("complete -F _custom_autocomplete_for_alias_%s -o nosort %s", alias, alias),
 			}, nil
 		}),
 	)
-}*/
+}
 
 type SourcererCommand struct{}
 
@@ -146,5 +156,6 @@ func main() {
 		&SourcererCommand{},
 		&UpdateLeepPackageCommand{},
 		&UsageCommand{},
+		&AliaserCommand{},
 	))
 }
