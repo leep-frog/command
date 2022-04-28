@@ -42,9 +42,11 @@ var (
 	// See AliaserCommand.
 	AutocompleteForAliasFunction = strings.Join([]string{
 		"function _custom_autocomplete_for_alias_%s {",
+		// TODO: check if `file` variable is empty
+		`  file="$(type %s | head -n 1 | grep "is aliased to.*_custom_execute_" | grep "_custom_execute_[^[:space:]]*" -o | sed s/_custom_execute_//g)"`,
 		`  tFile=$(mktemp)`,
 		// The last argument is for extra passthrough arguments to be passed for aliaser autocompletes.
-		`  $GOPATH/bin/_%s_runner autocomplete %s $COMP_POINT "$COMP_LINE" %s > $tFile`,
+		`  $GOPATH/bin/_%s_runner autocomplete $file $COMP_POINT "$COMP_LINE" %s > $tFile`,
 		`  local IFS=$'\n'`,
 		`  COMPREPLY=( $(cat $tFile) )`,
 		`  rm $tFile`,
