@@ -26,6 +26,12 @@ var (
 		"popd > /dev/null",
 	}, "\n")
 
+	/*
+		function _aliased_autocomplete_%s {
+			_custom_autocomplete_%s
+		}
+	*/
+
 	// autocompleteFunction defines a bash function for CLI autocompletion.
 	autocompleteFunction = strings.Join([]string{
 		"function _custom_autocomplete_%s {",
@@ -36,6 +42,8 @@ var (
 		`    echo COMP_POINT: $COMP_POINT >> autocomplete.txt`,
 		`    echo COMP_LINE: "$COMP_LINE" >> autocomplete.txt`,
 		`    echo ARGS: "$@" >> autocomplete.txt`,
+		`    echo ARGS_LEN: "${#ArrayName[@]}" >> autocomplete.txt`,
+		`    echo NEW_ARGS: "${@[@]:3}" >> autocomplete.txt`,
 		`  fi`,
 		`  $GOPATH/bin/_%s_runner autocomplete ${COMP_WORDS[0]} $COMP_POINT "$COMP_LINE" "$@" > $tFile`,
 		`  local IFS=$'\n'`,
