@@ -17,6 +17,24 @@ var (
 	}
 )
 
+func BashFetcher[T any](command []string) Fetcher[T] {
+	return &bashFetcher[T]{command}
+}
+
+type bashFetcher[T any] struct {
+	command []string
+}
+
+func (bf *bashFetcher[T]) Fetch(T, *Data) (*Completion, error) {
+	resp, err := BashCommand[T]("", bf.command).Run(nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch autocomplete suggestions with bash command: %v", err)
+	}
+	return &Completion{
+		Suggestions: getOperator[T]().toArgs(resp),
+	}, nil
+}
+
 // BashCommand runs the provided command in bash and stores the response as
 // a value in data as a value with the provided type and argument name.
 func BashCommand[T any](argName string, command []string, opts ...BashOption[T]) *bashCommand[T] {
