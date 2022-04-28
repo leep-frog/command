@@ -9,6 +9,21 @@ import (
 	"github.com/leep-frog/command/sourcerer"
 )
 
+var (
+	RelevantPackages = []string{
+		"cd",
+		"command",
+		"emacs",
+		"grep",
+		"labelmaker",
+		"pdf",
+		"replace",
+		"sourcecontrol",
+		"todo",
+		"workspace",
+	}
+)
+
 // UpdateLeepPackageCommand is a CLI for updating github.com/leep-frog packages
 type UpdateLeepPackageCommand struct{}
 
@@ -25,7 +40,7 @@ func (*UpdateLeepPackageCommand) Node() *command.Node {
 	pkg := "PACKAGE"
 	return command.SerialNodes(
 		command.Description("gg updates go packages from the github.com/leep-frog repository"),
-		command.ListArg[string](pkg, "Package name", 1, command.UnboundedList),
+		command.ListArg[string](pkg, "Package name", 1, command.UnboundedList, command.SimpleCompletor[[]string](RelevantPackages...)),
 		command.ExecutableNode(func(o command.Output, d *command.Data) ([]string, error) {
 			var r []string
 			for _, p := range d.StringList(pkg) {
