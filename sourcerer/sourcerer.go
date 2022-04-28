@@ -30,6 +30,13 @@ var (
 	autocompleteFunction = strings.Join([]string{
 		"function _custom_autocomplete_%s {",
 		`  tFile=$(mktemp)`,
+		`  if [ -z "$LEEP_FROG_DEBUG" ]`,
+		`  then`,
+		`    echo COMP_WORDS: ${COMP_WORDS[0]} > autocomplete.txt`,
+		`    echo COMP_POINT: $COMP_POINT >> autocomplete.txt`,
+		`    echo COMP_LINE: "$COMP_LINE" >> autocomplete.txt`,
+		`    echo ARGS: "$@" >> autocomplete.txt`,
+		`  fi`,
 		`  $GOPATH/bin/_%s_runner autocomplete ${COMP_WORDS[0]} $COMP_POINT "$COMP_LINE" "$@" > $tFile`,
 		`  local IFS=$'\n'`,
 		`  COMPREPLY=( $(cat $tFile) )`,
