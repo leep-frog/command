@@ -73,7 +73,9 @@ func (*UsageCommand) Node() *command.Node {
 	c := "CLI"
 	return command.SerialNodes(
 		command.Description("mancli prints out usage info for any leep-frog generated CLI"),
+		command.SetupArg,
 		command.Arg[string](c, "CLI for which usage should be fetched", command.SimpleDistinctCompletor[string](RelevantPackages...)),
+		// TODO: if this fails, then extra args are ignored?
 		command.ExecutableNode(func(o command.Output, d *command.Data) ([]string, error) {
 			lines, err := d.SetupOutputContents()
 			if err != nil {
