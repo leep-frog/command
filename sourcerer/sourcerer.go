@@ -44,10 +44,10 @@ var (
 		`    echo ARGS: "$@" >> autocomplete.txt`,
 		`    echo ARGS_LEN: "${#ArrayName[@]}" >> autocomplete.txt`,
 		// TODO <= 3
-		`    if [ ${#ArrayName[@]} -le 3 ]; then`,
+		`    if [ ${#ArrayName[@]} -le 2 ]; then`,
 		`      echo no extra args >> autocomplete.txt`,
 		`    else`,
-		`      echo NEW_ARGS: "${@[@]:3}" >> autocomplete.txt`,
+		`      echo NEW_ARGS: "${@[@]:2}" >> autocomplete.txt`,
 		`    fi`,
 		`  fi`,
 		`  $GOPATH/bin/_%s_runner autocomplete ${COMP_WORDS[0]} $COMP_POINT "$COMP_LINE" "$@" > $tFile`,
