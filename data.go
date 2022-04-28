@@ -23,9 +23,9 @@ func (d *Data) SetupOutputFile() string {
 }
 
 func (d *Data) SetupOutputString() (string, error) {
-	b, err := ioutil.ReadFile(d.String(SetupArgName))
+	b, err := ioutil.ReadFile(d.SetupOutputFile())
 	if err != nil {
-		return "", fmt.Errorf("failed to read setup file: %v", err)
+		return "", fmt.Errorf("failed to read setup file (%s): %v", d.SetupOutputFile(), err)
 	}
 	return strings.TrimSpace(string(b)), nil
 }
