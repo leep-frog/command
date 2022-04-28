@@ -65,7 +65,8 @@ func main() {
 		acs = append(acs, cd.DotCLI(i))
 	}
 
-	sourcerer.Source(acs...)
+  // sourcerer.Source returns the exit code of the operation.
+	os.Exit(sourcerer.Source(acs...))
 }
 ```
 

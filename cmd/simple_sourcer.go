@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 	"sort"
 
 	"github.com/leep-frog/command"
@@ -15,7 +16,7 @@ const (
 )
 
 func main() {
-	sourcerer.Source(&Todo{})
+	os.Exit(sourcerer.Source(&Todo{}))
 }
 
 type Todo struct {

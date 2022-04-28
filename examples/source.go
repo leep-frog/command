@@ -3,13 +3,14 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 
 	"github.com/leep-frog/command"
 	"github.com/leep-frog/command/sourcerer"
 )
 
 func main() {
-	sourcerer.Source(&SimpleCLI{})
+	os.Exit(sourcerer.Source(&SimpleCLI{}))
 }
 
 type SimpleCLI struct {

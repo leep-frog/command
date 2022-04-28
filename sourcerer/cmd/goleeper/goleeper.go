@@ -1,7 +1,11 @@
 package main
 
-import "github.com/leep-frog/command/sourcerer"
+import (
+	"os"
+
+	"github.com/leep-frog/command/sourcerer"
+)
 
 func main() {
-	sourcerer.Source(&sourcerer.GoLeep{})
+	os.Exit(sourcerer.Source(&sourcerer.GoLeep{}))
 }

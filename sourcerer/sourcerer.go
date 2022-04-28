@@ -205,10 +205,10 @@ func load(cli CLI) error {
 	cash, err := getCache()
 	if err != nil {
 		return err
-	} else if b, fileExists, err := cash.GetBytes(ck); err != nil {
+	} else if bytes, fileExists, err := cash.GetBytes(ck); err != nil {
 		return fmt.Errorf("failed to load cli %q: %v", cli.Name(), err)
-	} else if fileExists && b != nil {
-		return json.Unmarshal(b, cli)
+	} else if fileExists && bytes != nil {
+		return json.Unmarshal(bytes, cli)
 	}
 	return nil
 }
