@@ -78,7 +78,7 @@ func (*UsageCommand) Node() *command.Node {
 				// Extract the custom execute function so that this function
 				// can work regardless of file name
 				fmt.Sprintf(`file="$(type %s | head -n 1 | grep "is aliased to.*_custom_execute_" | grep "_custom_execute_[^[:space:]]*" -o | sed s/_custom_execute_//g)"`, cli),
-				`if [ -z "$var" ]; then`,
+				`if [ -z "$file" ]; then`,
 				fmt.Sprintf(`  echo %s is not a leep-frog command`, cli),
 				`else`,
 				fmt.Sprintf(`  "$GOPATH/bin/_${file}_runner" usage %s`, cli),
