@@ -117,7 +117,7 @@ func (*AliaserCommand) Node() *command.Node {
 				getFile(cli),
 				// TODO: check that it's a leep-frog command
 				fmt.Sprintf("alias %s=%q", alias, aliasTo),
-				fmt.Sprintf(sourcerer.AutocompleteFunction, fmt.Sprintf("for_alias_%s", alias), "$file", quotedArgs),
+				fmt.Sprintf(sourcerer.AutocompleteFunction, fmt.Sprintf("for_alias_%s", alias), "${file}", quotedArgs),
 				fmt.Sprintf("complete -F _custom_autocomplete_for_alias_%s -o nosort %s", alias, alias),
 			}, nil
 		}),
