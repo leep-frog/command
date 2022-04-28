@@ -30,7 +30,7 @@ var (
 	autocompleteFunction = strings.Join([]string{
 		"function _custom_autocomplete_%s {",
 		`  tFile=$(mktemp)`,
-		`  $GOPATH/bin/_%s_runner autocomplete ${COMP_WORDS[0]} $COMP_POINT "$COMP_LINE" > $tFile`,
+		`  $GOPATH/bin/_%s_runner autocomplete ${COMP_WORDS[0]} $COMP_POINT "$COMP_LINE" "$@" > $tFile`,
 		`  local IFS=$'\n'`,
 		`  COMPREPLY=( $(cat $tFile) )`,
 		`  rm $tFile`,
@@ -67,12 +67,13 @@ var (
 )
 
 var (
-	cliArg          = command.Arg[string]("CLI", "Name of the CLI command to use")
-	fileArg         = command.FileNode("FILE", "Temporary file for execution")
-	targetNameArg   = command.OptionalArg[string]("TARGET_NAME", "The name of the created target in $GOPATH/bin")
-	passthroughArgs = command.ListArg[string]("ARG", "Arguments that get passed through to relevant CLI command", 0, command.UnboundedList)
-	compPointArg    = command.Arg[int]("COMP_POINT", "COMP_POINT variable from bash complete function")
-	compLineArg     = command.Arg[string]("COMP_LINE", "COMP_LINE variable from bash complete function")
+	cliArg                      = command.Arg[string]("CLI", "Name of the CLI command to use")
+	fileArg                     = command.FileNode("FILE", "Temporary file for execution")
+	targetNameArg               = command.OptionalArg[string]("TARGET_NAME", "The name of the created target in $GOPATH/bin")
+	passthroughArgs             = command.ListArg[string]("ARG", "Arguments that get passed through to relevant CLI command", 0, command.UnboundedList)
+	compPointArg                = command.Arg[int]("COMP_POINT", "COMP_POINT variable from bash complete function")
+	compLineArg                 = command.Arg[string]("COMP_LINE", "COMP_LINE variable from bash complete function")
+	autocompletePassthroughArgs = command.ListArg[string]("PASSTHROUGH_ARG", "Arguments that get passed through to autocomplete command", 0, command.UnboundedList)
 )
 
 // CLI provides a way to construct CLIs in go, with tab-completion.
@@ -160,9 +161,12 @@ func (s *sourcerer) autocompleteExecutor(o command.Output, d *command.Data) erro
 
 	cpoint := d.Int(compPointArg.Name())
 	args := d.String(compLineArg.Name())[:cpoint]
+	ptArgs := d.StringList(autocompletePassthroughArgs.Name())
 
-	g := command.Autocomplete(cli.Node(), args)
-	o.Stdoutf("%s\n", strings.Join(g, "\n"))
+	g := command.Autocomplete(cli.Node(), args, ptArgs)
+	if len(g) > 0 {
+		o.Stdoutf("%s\n", strings.Join(g, "\n"))
+	}
 
 	if len(os.Getenv("LEEP_FROG_DEBUG")) > 0 {
 		debugFile, err := os.Create("leepFrogDebug.txt")
@@ -244,6 +248,7 @@ func (s *sourcerer) Node() *command.Node {
 			cliArg,
 			compPointArg,
 			compLineArg,
+			autocompletePassthroughArgs,
 			command.ExecuteErrNode(s.autocompleteExecutor),
 		),
 		"usage": command.SerialNodes(

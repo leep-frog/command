@@ -857,7 +857,9 @@ func TestCacheComplete(t *testing.T) {
 		{
 			name: "handles empty",
 			ctc: &CompleteTestCase{
-				WantData: &Data{}},
+				WantData: &Data{},
+				WantErr:  fmt.Errorf("Unprocessed extra args: []"),
+			},
 		},
 		{
 			name: "defers completion to provided node",

@@ -153,9 +153,9 @@ func TestCompletors(t *testing.T) {
 
 func TestBoolCompletor(t *testing.T) {
 	CompleteTest(t, &CompleteTestCase{
-		Node:          SerialNodes(Arg[bool]("test", testDesc, BoolCompletor())),
-		Args:          "cmd ",
-		Want:          []string{
+		Node: SerialNodes(Arg[bool]("test", testDesc, BoolCompletor())),
+		Args: "cmd ",
+		Want: []string{
 			"0",
 			"1",
 			"F",
@@ -177,6 +177,7 @@ func TestParseAndComplete(t *testing.T) {
 	for _, test := range []struct {
 		name        string
 		args        string
+		ptArgs      []string
 		cursorIdx   int
 		suggestions []string
 		wantData    *Data
@@ -186,7 +187,7 @@ func TestParseAndComplete(t *testing.T) {
 		{
 			name: "handles empty array",
 			wantData: &Data{Values: map[string]interface{}{
-				"sl": []string{},
+				"sl": []string{""},
 			}},
 		},
 		{
@@ -199,7 +200,7 @@ func TestParseAndComplete(t *testing.T) {
 				"Fifth",
 			},
 			wantData: &Data{Values: map[string]interface{}{
-				"sl": []string{},
+				"sl": []string{""},
 			}},
 			want: []string{
 				"Fifth",
@@ -541,7 +542,7 @@ func TestParseAndComplete(t *testing.T) {
 			n := SerialNodes(ListArg[string]("sl", testDesc, 0, UnboundedList, c))
 
 			data := &Data{}
-			got, err := autocomplete(n, test.args, data)
+			got, err := autocomplete(n, test.args, test.ptArgs, data)
 			if test.wantErr == nil && err != nil {
 				t.Errorf("autocomplete(%v) returned error (%v) when shouldn't have", test.args, err)
 			}
@@ -570,9 +571,10 @@ func TestParseAndComplete(t *testing.T) {
 type fetcherTest[T any] struct {
 	name          string
 	f             Fetcher[[]T]
-	singleF Fetcher[T]
+	singleF       Fetcher[T]
 	distinct      bool
 	args          string
+	ptArgs        []string
 	setup         func(*testing.T)
 	cleanup       func(*testing.T)
 	absErr        error
@@ -598,18 +600,18 @@ func (test *fetcherTest[T]) run(t *testing.T) {
 		defer func() { filepathAbs = oldAbs }()
 
 		var got []string
-		if test.singleF != nil{
+		if test.singleF != nil {
 			completor := &Completor[T]{
 				SuggestionFetcher: test.singleF,
 				Distinct:          test.distinct,
 			}
-			got = Autocomplete(SerialNodes(Arg[T]("test", testDesc, completor)), test.args)
+			got = Autocomplete(SerialNodes(Arg[T]("test", testDesc, completor)), test.args, test.ptArgs)
 		} else {
 			completor := &Completor[[]T]{
 				SuggestionFetcher: test.f,
 				Distinct:          test.distinct,
 			}
-			got = Autocomplete(SerialNodes(ListArg[T]("test", testDesc, 2, 5, completor)), test.args)
+			got = Autocomplete(SerialNodes(ListArg[T]("test", testDesc, 2, 5, completor)), test.args, test.ptArgs)
 		}
 
 		if diff := cmp.Diff(test.want, got); diff != "" {
@@ -620,25 +622,25 @@ func (test *fetcherTest[T]) run(t *testing.T) {
 
 var (
 	boolFetcherCases = []*fetcherTest[bool]{
-				// BoolFetcher
-				{
-					name: "bool fetcher returns value",
-					singleF:    &boolFetcher{},
-					want: []string{
-						"0",
-						"1",
-						"F",
-						"FALSE",
-						"False",
-						"T",
-						"TRUE",
-						"True",
-						"f",
-						"false",
-						"t",
-						"true",
-					},
-				},
+		// BoolFetcher
+		{
+			name:    "bool fetcher returns value",
+			singleF: &boolFetcher{},
+			want: []string{
+				"0",
+				"1",
+				"F",
+				"FALSE",
+				"False",
+				"T",
+				"TRUE",
+				"True",
+				"f",
+				"false",
+				"t",
+				"true",
+			},
+		},
 	}
 	stringFetcherCases = []*fetcherTest[string]{
 		{
@@ -669,7 +671,7 @@ var (
 			singleF: &FileFetcher[string]{
 				FileTypes: []string{".mod", ".sum"},
 			},
-			args:      "cmd ",
+			args: "cmd ",
 			want: []string{
 				".git/",
 				"cache/",
@@ -719,9 +721,9 @@ var (
 			},
 		},
 		{
-			name:      "file fetcher works with string arg",
-			singleF:         &FileFetcher[string]{},
-			args:      "cmd execu",
+			name:    "file fetcher works with string arg",
+			singleF: &FileFetcher[string]{},
+			args:    "cmd execu",
 			want: []string{
 				"execute",
 				"execute_",

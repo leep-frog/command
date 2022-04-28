@@ -1,15 +1,15 @@
 package command
 
-func Autocomplete(n *Node, compLine string) []string {
+func Autocomplete(n *Node, compLine string, passthroughArgs []string) []string {
 	// Printing things out in autocomplete mode isn't feasible, so the error
 	// is only really used for testing purposes, hence why it is ignored here.
-	sl, _ := autocomplete(n, compLine, &Data{})
+	sl, _ := autocomplete(n, compLine, passthroughArgs, &Data{})
 	return sl
 }
 
 // Separate method for testing purposes.
-func autocomplete(n *Node, compLine string, data *Data) ([]string, error) {
-	input := ParseCompLine(compLine)
+func autocomplete(n *Node, compLine string, passthroughArgs []string, data *Data) ([]string, error) {
+	input := ParseCompLine(compLine, passthroughArgs)
 	c, err := getCompleteData(n, input, data)
 
 	var r []string

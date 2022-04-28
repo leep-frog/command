@@ -90,12 +90,12 @@ func (an *ArgNode[T]) Execute(i *Input, o Output, data *Data, eData *ExecuteData
 	// Run custom transformer.
 	if an.opt != nil {
 		for _, transformer := range an.opt.transformers {
-		newV, err := transformer.t(v)
-		if err != nil {
-			return o.Stderrf("Custom transformer failed: %v", err)
+			newV, err := transformer.t(v)
+			if err != nil {
+				return o.Stderrf("Custom transformer failed: %v", err)
+			}
+			v = newV
 		}
-		v = newV
-	}
 	}
 
 	// Copy values into returned list (required for aliasing)

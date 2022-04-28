@@ -254,7 +254,8 @@ func ChangeTest(t *testing.T, want, original Changeable, opts ...cmp.Option) {
 type CompleteTestCase struct {
 	Node *Node
 	// Remember that args requires a dummy command argument (e.g. "cmd ")
-	Args string
+	Args            string
+	PassthroughArgs []string
 
 	Want     []string
 	WantErr  error
@@ -298,7 +299,7 @@ func CompleteTest(t *testing.T, ctc *CompleteTestCase) {
 		tester.setup(t, tc)
 	}
 
-	tc.autocompleteSuggestions, tc.err = autocomplete(ctc.Node, ctc.Args, tc.data)
+	tc.autocompleteSuggestions, tc.err = autocomplete(ctc.Node, ctc.Args, ctc.PassthroughArgs, tc.data)
 
 	prefix := fmt.Sprintf("Autocomplete(%v)", ctc.Args)
 	for _, tester := range testers {

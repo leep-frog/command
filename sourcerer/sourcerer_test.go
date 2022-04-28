@@ -1,6 +1,7 @@
 package sourcerer
 
 import (
+	"fmt"
 	"io/ioutil"
 	"sort"
 	"strings"
@@ -38,7 +39,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 				`popd > /dev/null`,
 				`function _custom_autocomplete_leep-frog-source {`,
 				`  tFile=$(mktemp)`,
-				`  $GOPATH/bin/_leep-frog-source_runner autocomplete ${COMP_WORDS[0]} $COMP_POINT "$COMP_LINE" > $tFile`,
+				`  $GOPATH/bin/_leep-frog-source_runner autocomplete ${COMP_WORDS[0]} $COMP_POINT "$COMP_LINE" "$@" > $tFile`,
 				`  local IFS=$'\n'`,
 				`  COMPREPLY=( $(cat $tFile) )`,
 				`  rm $tFile`,
@@ -67,7 +68,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 				`popd > /dev/null`,
 				`function _custom_autocomplete_custom-output_file {`,
 				`  tFile=$(mktemp)`,
-				`  $GOPATH/bin/_custom-output_file_runner autocomplete ${COMP_WORDS[0]} $COMP_POINT "$COMP_LINE" > $tFile`,
+				`  $GOPATH/bin/_custom-output_file_runner autocomplete ${COMP_WORDS[0]} $COMP_POINT "$COMP_LINE" "$@" > $tFile`,
 				`  local IFS=$'\n'`,
 				`  COMPREPLY=( $(cat $tFile) )`,
 				`  rm $tFile`,
@@ -99,7 +100,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 				`popd > /dev/null`,
 				`function _custom_autocomplete_leep-frog-source {`,
 				`  tFile=$(mktemp)`,
-				`  $GOPATH/bin/_leep-frog-source_runner autocomplete ${COMP_WORDS[0]} $COMP_POINT "$COMP_LINE" > $tFile`,
+				`  $GOPATH/bin/_leep-frog-source_runner autocomplete ${COMP_WORDS[0]} $COMP_POINT "$COMP_LINE" "$@" > $tFile`,
 				`  local IFS=$'\n'`,
 				`  COMPREPLY=( $(cat $tFile) )`,
 				`  rm $tFile`,
@@ -175,6 +176,7 @@ func TestSourcerer(t *testing.T) {
 		name       string
 		clis       []CLI
 		args       []string
+		wantErr    error
 		wantStdout []string
 		wantStderr []string
 		wantCLIs   map[string]CLI
@@ -187,6 +189,7 @@ func TestSourcerer(t *testing.T) {
 				"Unprocessed extra args: [stuff]",
 				u,
 			},
+			wantErr: fmt.Errorf("Unprocessed extra args: [stuff]"),
 		},
 		// Execute tests
 		{
@@ -196,6 +199,7 @@ func TestSourcerer(t *testing.T) {
 				`Argument "FILE" requires at least 1 argument, got 0`,
 				u,
 			},
+			wantErr: fmt.Errorf(`Argument "FILE" requires at least 1 argument, got 0`),
 		},
 		{
 			name: "fails if no cli arg",
@@ -204,6 +208,7 @@ func TestSourcerer(t *testing.T) {
 				`Argument "CLI" requires at least 1 argument, got 0`,
 				u,
 			},
+			wantErr: fmt.Errorf(`Argument "CLI" requires at least 1 argument, got 0`),
 		},
 		{
 			name: "fails if unknown CLI",
@@ -211,6 +216,7 @@ func TestSourcerer(t *testing.T) {
 			wantStderr: []string{
 				`unknown CLI "idk"`,
 			},
+			wantErr: fmt.Errorf(`unknown CLI "idk"`),
 		},
 		{
 			name: "properly executes CLI",
@@ -246,6 +252,7 @@ func TestSourcerer(t *testing.T) {
 			},
 			args:       []string{"execute", fakeFile, "basic"},
 			wantStderr: []string{"oops"},
+			wantErr:    fmt.Errorf("oops"),
 		},
 		{
 			name: "properly passes arguments to CLI",
@@ -293,6 +300,7 @@ func TestSourcerer(t *testing.T) {
 					"  SL: test",
 				}, "\n"),
 			},
+			wantErr: fmt.Errorf("Unprocessed extra args: [trois quatre]"),
 		},
 		{
 			name: "properly marks CLI as changed",
@@ -340,6 +348,7 @@ func TestSourcerer(t *testing.T) {
 				"Branching argument must be one of [a b]",
 				uecUsage(),
 			},
+			wantErr: fmt.Errorf("Branching argument must be one of [a b]"),
 		},
 		{
 			name: "prints command usage for bad branch arg error",
@@ -349,6 +358,7 @@ func TestSourcerer(t *testing.T) {
 				"Branching argument must be one of [a b]",
 				uecUsage(),
 			},
+			wantErr: fmt.Errorf("Branching argument must be one of [a b]"),
 		},
 		{
 			name: "prints command usage for missing args error",
@@ -358,6 +368,7 @@ func TestSourcerer(t *testing.T) {
 				`Argument "B_SL" requires at least 1 argument, got 0`,
 				uecUsage(),
 			},
+			wantErr: fmt.Errorf(`Argument "B_SL" requires at least 1 argument, got 0`),
 		},
 		{
 			name: "prints command usage for missing args error",
@@ -367,6 +378,7 @@ func TestSourcerer(t *testing.T) {
 				"Unprocessed extra args: [deux trois]",
 				uecUsage(),
 			},
+			wantErr: fmt.Errorf("Unprocessed extra args: [deux trois]"),
 		},
 		// Autocomplete tests
 		{
@@ -376,6 +388,7 @@ func TestSourcerer(t *testing.T) {
 				`Argument "CLI" requires at least 1 argument, got 0`,
 				u,
 			},
+			wantErr: fmt.Errorf(`Argument "CLI" requires at least 1 argument, got 0`),
 		},
 		{
 			name: "autocomplete requires comp_point",
@@ -384,6 +397,7 @@ func TestSourcerer(t *testing.T) {
 				`Argument "COMP_POINT" requires at least 1 argument, got 0`,
 				u,
 			},
+			wantErr: fmt.Errorf(`Argument "COMP_POINT" requires at least 1 argument, got 0`),
 		},
 		{
 			name: "autocomplete requires comp_line",
@@ -392,6 +406,12 @@ func TestSourcerer(t *testing.T) {
 				`Argument "COMP_LINE" requires at least 1 argument, got 0`,
 				u,
 			},
+			wantErr: fmt.Errorf(`Argument "COMP_LINE" requires at least 1 argument, got 0`),
+		},
+		{
+			name: "autocomplete doesn't require passthrough args",
+			args: []string{"autocomplete", "basic", "0", "h"},
+			clis: []CLI{&testCLI{name: "basic"}},
 		},
 		{
 			name: "autocomplete requires valid cli",
@@ -399,10 +419,11 @@ func TestSourcerer(t *testing.T) {
 			wantStderr: []string{
 				`unknown CLI "idk"`,
 			},
+			wantErr: fmt.Errorf(`unknown CLI "idk"`),
 		},
 		{
 			name: "autocomplete passes empty string along for completion",
-			args: []string{"autocomplete", "basic", "0", ""},
+			args: []string{"autocomplete", "basic", "4", "cmd "},
 			clis: []CLI{
 				&testCLI{
 					name: "basic",
@@ -417,6 +438,47 @@ func TestSourcerer(t *testing.T) {
 				"charlie",
 			),
 		},
+		{
+			name: "autocomplete doesn't complete passthrough args",
+			args: []string{"autocomplete", "basic", "4", "cmd ", "al"},
+			clis: []CLI{
+				&testCLI{
+					name: "basic",
+					processors: []command.Processor{
+						command.ListArg[string]("s", "desc", 0, command.UnboundedList, command.SimpleCompletor[[]string]("alpha", "bravo", "charlie")),
+					},
+				},
+			},
+			wantStdout: autocompleteSuggestions(
+				"alpha",
+				"bravo",
+				"charlie",
+			),
+		},
+		/*{
+			name: "autocomplete doesn't complet passthrough args",
+			args: []string{"autocomplete", "basic", "0", "", "al"},
+			clis: []CLI{
+				&testCLI{
+					name: "basic",
+					processors: []command.Processor{
+						command.ListArg[string]()
+						command.Arg[string]("s", "desc",
+							&command.Completor[string]{
+								SuggestionFetcher: command.SimpleFetcher(func(t string, d *command.Data) (*command.Completion, error) {
+									return nil, nil
+								}),
+							},
+						),
+					},
+				},
+			},
+			wantStdout: autocompleteSuggestions(
+				"alpha",
+				"bravo",
+				"charlie",
+			),
+		},*/
 		{
 			name: "autocomplete does partial completion",
 			args: []string{"autocomplete", "basic", "5", "cmd b"},
@@ -476,6 +538,7 @@ func TestSourcerer(t *testing.T) {
 				`Argument "CLI" requires at least 1 argument, got 0`,
 				u,
 			},
+			wantErr: fmt.Errorf(`Argument "CLI" requires at least 1 argument, got 0`),
 		},
 		{
 			name: "usage fails if too many args",
@@ -484,6 +547,7 @@ func TestSourcerer(t *testing.T) {
 				"Unprocessed extra args: [and]",
 				u,
 			},
+			wantErr: fmt.Errorf("Unprocessed extra args: [and]"),
 		},
 		{
 			name: "usage prints command's usage",
@@ -534,7 +598,8 @@ func TestSourcerer(t *testing.T) {
 
 			// Run source command
 			o := command.NewFakeOutput()
-			source(test.clis, test.args, o)
+			err = source(test.clis, test.args, o)
+			command.CmpError(t, fmt.Sprintf("source(%v)", test.args), test.wantErr, err)
 			o.Close()
 
 			// Check outputs

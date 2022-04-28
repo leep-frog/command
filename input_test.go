@@ -559,23 +559,24 @@ func TestPopNOffset(t *testing.T) {
 
 func TestParseCompLine(t *testing.T) {
 	for _, test := range []struct {
-		name  string
-		input string
-		want  *Input
+		name   string
+		input  string
+		ptArgs []string
+		want   *Input
 	}{
 		{
 			name: "handles empty input",
 			want: &Input{
-				args:      []*inputArg{},
-				remaining: []int{},
+				args:      []*inputArg{{value: ""}},
+				remaining: []int{0},
 			},
 		},
 		{
 			name:  "handles empty command",
 			input: "cmd",
 			want: &Input{
-				args:      []*inputArg{},
-				remaining: []int{},
+				args:      []*inputArg{{value: ""}},
+				remaining: []int{0},
 			},
 		},
 		{
@@ -584,6 +585,20 @@ func TestParseCompLine(t *testing.T) {
 			want: &Input{
 				args:      []*inputArg{{value: "one"}},
 				remaining: []int{0},
+			},
+		},
+		{
+			name:   "includes passthrough args",
+			input:  "cmd one two",
+			ptArgs: []string{"nOne", "zero"},
+			want: &Input{
+				args: []*inputArg{
+					{value: "nOne"},
+					{value: "zero"},
+					{value: "one"},
+					{value: "two"},
+				},
+				remaining: []int{0, 1, 2, 3},
 			},
 		},
 		{
@@ -663,7 +678,7 @@ func TestParseCompLine(t *testing.T) {
 		/* Useful for commenting out tests. */
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			got := ParseCompLine(test.input)
+			got := ParseCompLine(test.input, test.ptArgs)
 			if diff := cmp.Diff(test.want, got, cmp.AllowUnexported(Input{}, inputArg{})); diff != "" {
 				t.Fatalf("ParseCompLine(%v) created incorrect args (-want, +got):\n%s", test.input, diff)
 			}

@@ -3363,7 +3363,8 @@ func TestComplete(t *testing.T) {
 		{
 			name: "empty graph",
 			ctc: &CompleteTestCase{
-				Node: &Node{},
+				Node:    &Node{},
+				WantErr: fmt.Errorf("Unprocessed extra args: []"),
 			},
 		},
 		{
@@ -3484,7 +3485,7 @@ func TestComplete(t *testing.T) {
 				),
 				Want: []string{"dos", "uno"},
 				WantData: &Data{Values: map[string]interface{}{
-					"sl": []string{},
+					"sl": []string{""},
 				}},
 			},
 		},
@@ -3832,7 +3833,7 @@ func TestComplete(t *testing.T) {
 				}, SerialNodes(ListArg[string]("default", testDesc, 1, 3, SimpleCompletor[[]string]("default", "command", "opts")))),
 				Want: []string{"a", "alpha", "bravo", "command", "default", "opts"},
 				WantData: &Data{Values: map[string]interface{}{
-					"default": []string{},
+					"default": []string{""},
 				}},
 			},
 		},
@@ -3846,7 +3847,7 @@ func TestComplete(t *testing.T) {
 				}, SerialNodes(ListArg[string]("default", testDesc, 1, 3, SimpleCompletor[[]string]("default", "command", "opts"))), DontCompleteSubcommands()),
 				Want: []string{"command", "default", "opts"},
 				WantData: &Data{Values: map[string]interface{}{
-					"default": []string{},
+					"default": []string{""},
 				}},
 			},
 		},
@@ -4026,21 +4027,17 @@ func TestComplete(t *testing.T) {
 		{
 			name: "float list arg gets completed",
 			ctc: &CompleteTestCase{
-				Node: SerialNodes(ListArg[float64]("fArg", testDesc, 1, 2, SimpleCompletor[[]float64]("12", "4.5", "45.6", "468", "7"))),
-				Want: []string{"12", "4.5", "45.6", "468", "7"},
-				WantData: &Data{Values: map[string]interface{}{
-					"fArg": []float64{},
-				}},
+				Node:     SerialNodes(ListArg[float64]("fArg", testDesc, 1, 2, SimpleCompletor[[]float64]("12", "4.5", "45.6", "468", "7"))),
+				Want:     []string{"12", "4.5", "45.6", "468", "7"},
+				WantData: &Data{Values: map[string]interface{}{}},
 			},
 		},
 		{
 			name: "bool arg gets completed",
 			ctc: &CompleteTestCase{
-				Node: SerialNodes(BoolNode("bArg", testDesc)),
-				Want: []string{"0", "1", "F", "FALSE", "False", "T", "TRUE", "True", "f", "false", "t", "true"},
-				WantData: &Data{Values: map[string]interface{}{
-					"bArg": false,
-				}},
+				Node:     SerialNodes(BoolNode("bArg", testDesc)),
+				Want:     []string{"0", "1", "F", "FALSE", "False", "T", "TRUE", "True", "f", "false", "t", "true"},
+				WantData: &Data{Values: map[string]interface{}{}},
 			},
 		},
 		// NodeRepeater
@@ -4256,6 +4253,7 @@ func TestComplete(t *testing.T) {
 						NewFakeFile("another", []string{""}),
 					}),
 				},
+				WantErr: fmt.Errorf("Unprocessed extra args: []"),
 			},
 		},
 		{
@@ -4266,6 +4264,7 @@ func TestComplete(t *testing.T) {
 					NewFakeDir("some-dir", nil),
 				},
 				SkipFileCheck: true,
+				WantErr:       fmt.Errorf("Unprocessed extra args: []"),
 			},
 		},
 		/* Useful comment for commenting out tests */

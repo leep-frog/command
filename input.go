@@ -338,7 +338,7 @@ func (qs *quoteState) delimiter() *rune {
 	return &qs.quoteChar
 }
 
-func ParseCompLine(compLine string) *Input {
+func ParseCompLine(compLine string, passthroughArgs []string) *Input {
 	w := &words{}
 	state := parserState(&whitespaceState{})
 	for _, c := range compLine {
@@ -354,8 +354,12 @@ func ParseCompLine(compLine string) *Input {
 		args = append(w.words, "")
 	}
 
+	if len(args) == 1 {
+		args = append(args, "")
+	}
+
 	// The first argument is the command so we can ignore that.
-	return NewInput(args[1:], state.delimiter())
+	return NewInput(append(passthroughArgs, args[1:]...), state.delimiter())
 }
 
 func NewInput(args []string, delimiter *rune) *Input {
