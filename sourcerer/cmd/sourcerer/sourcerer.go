@@ -27,9 +27,8 @@ var (
 // UpdateLeepPackageCommand is a CLI for updating github.com/leep-frog packages
 type UpdateLeepPackageCommand struct{}
 
-func (*UpdateLeepPackageCommand) UnmarshalJSON([]byte) error { return nil }
-func (*UpdateLeepPackageCommand) Setup() []string            { return nil }
-func (*UpdateLeepPackageCommand) Changed() bool              { return false }
+func (*UpdateLeepPackageCommand) Setup() []string { return nil }
+func (*UpdateLeepPackageCommand) Changed() bool   { return false }
 
 func (*UpdateLeepPackageCommand) Name() string {
 	// gg: "go get"
@@ -56,9 +55,35 @@ func (*UpdateLeepPackageCommand) Node() *command.Node {
 	)
 }
 
+// UsageCommand is a CLI for printing out usage info for a CLI.
+type UsageCommand struct{}
+
+func (*UsageCommand) Setup() []string { return nil }
+func (*UsageCommand) Changed() bool   { return false }
+
+func (*UsageCommand) Name() string {
+	return "mancli2"
+}
+
+func (*UsageCommand) Node() *command.Node {
+	c := "cli"
+	return command.SerialNodes(
+		command.Description("mancli prints out usage info for any leep-frog generated CLI"),
+		command.Arg[string](c, "CLI", command.SimpleDistinctCompletor[string](RelevantPackages...)),
+		command.ExecutableNode(func(o command.Output, d *command.Data) ([]string, error) {
+			cli := d.String(c)
+			return []string{
+				// Extract the custom execute function so that this function
+				// can work regardless of file name
+				fmt.Sprintf(`file="$(type %s | head -n 1 | grep "is aliased to ._custom_execute_" | grep "_custom_execute_[^[:space:]]*" -o | sed s/_custom_execute_//g)"`, cli),
+				fmt.Sprintf(`"$GOPATH/bin/_${file}_runner" usage %s`, cli),
+			}, nil
+		}),
+	)
+}
+
 /*type AliaserCommand struct{}
 
-func (*AliaserCommand) UnmarshalJSON([]byte) error { return nil }
 func (*AliaserCommand) Setup() []string            { return nil }
 func (*AliaserCommand) Changed() bool              { return false }
 
@@ -88,9 +113,8 @@ func (*AliaserCommand) Node() *command.Node {
 
 type SourcererCommand struct{}
 
-func (*SourcererCommand) UnmarshalJSON([]byte) error { return nil }
-func (*SourcererCommand) Setup() []string            { return nil }
-func (*SourcererCommand) Changed() bool              { return false }
+func (*SourcererCommand) Setup() []string { return nil }
+func (*SourcererCommand) Changed() bool   { return false }
 
 func (*SourcererCommand) Name() string {
 	return "sourcerer"
@@ -120,5 +144,6 @@ func main() {
 	os.Exit(sourcerer.Source(
 		&SourcererCommand{},
 		&UpdateLeepPackageCommand{},
+		&UsageCommand{},
 	))
 }
