@@ -116,7 +116,7 @@ func (*AliaserCommand) Node() *command.Node {
 			return []string{
 				// TODO: check that it's a leep-frog command
 				fmt.Sprintf("alias %s=%q", alias, aliasTo),
-				fmt.Sprintf(sourcerer.AutocompleteForAliasFunction, alias, cli, quotedArgs),
+				fmt.Sprintf(sourcerer.AutocompleteForAliasFunction, alias, cli, cli, quotedArgs),
 				fmt.Sprintf("complete -F _custom_autocomplete_for_alias_%s -o nosort %s", alias, alias),
 			}, nil
 		}),
