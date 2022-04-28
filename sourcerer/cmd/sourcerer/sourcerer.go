@@ -58,12 +58,8 @@ func (*UpdateLeepPackageCommand) Node() *command.Node {
 // UsageCommand is a CLI for printing out usage info for a CLI.
 type UsageCommand struct{}
 
-func (*UsageCommand) Setup() []string {
-	return []string{
-		`echo "$@"`,
-	}
-}
-func (*UsageCommand) Changed() bool { return false }
+func (*UsageCommand) Setup() []string { return nil }
+func (*UsageCommand) Changed() bool   { return false }
 
 func (*UsageCommand) Name() string {
 	return "mancli2"
@@ -73,21 +69,20 @@ func (*UsageCommand) Node() *command.Node {
 	c := "CLI"
 	return command.SerialNodes(
 		command.Description("mancli prints out usage info for any leep-frog generated CLI"),
-		command.SetupArg,
 		command.Arg[string](c, "CLI for which usage should be fetched", command.SimpleDistinctCompletor[string](RelevantPackages...)),
-		// TODO: if this fails, then extra args are ignored?
+		// TODO: This is run before all args are processed. That's confusing if extra args are provided.
+		//       We'd expect an ExtraArgsErr, but instead get an error from this function.
 		command.ExecutableNode(func(o command.Output, d *command.Data) ([]string, error) {
-			lines, err := d.SetupOutputContents()
-			if err != nil {
-				return nil, o.Err(err)
-			}
-			o.Stdoutln(lines)
 			cli := d.String(c)
 			return []string{
 				// Extract the custom execute function so that this function
 				// can work regardless of file name
-				fmt.Sprintf(`file="$(type %s | head -n 1 | grep "is aliased to ._custom_execute_" | grep "_custom_execute_[^[:space:]]*" -o | sed s/_custom_execute_//g)"`, cli),
-				fmt.Sprintf(`"$GOPATH/bin/_${file}_runner" usage %s`, cli),
+				fmt.Sprintf(`file="$(type %s | head -n 1 | grep "is aliased to.*_custom_execute_" | grep "_custom_execute_[^[:space:]]*" -o | sed s/_custom_execute_//g)"`, cli),
+				`if [ -z "$var" ]; then`,
+				fmt.Sprintf(`  echo %s is not a leep-frog command`, cli),
+				`else`,
+				fmt.Sprintf(`  "$GOPATH/bin/_${file}_runner" usage %s`, cli),
+				`fi`,
 			}, nil
 		}),
 	)
