@@ -53,15 +53,6 @@ var (
 		`}`,
 	}, "\n")
 
-	usageFunction = strings.Join([]string{
-		"function mancli {",
-		"  # Extract the custom execute function so that this function",
-		"  # can work regardless of file name",
-		`  file="$(type $1 | head -n 1 | grep "is aliased to ._custom_execute_" | grep "_custom_execute_[^[:space:]]*" -o | sed s/_custom_execute_//g)"`,
-		`  "$GOPATH/bin/_${file}_runner" usage $@`,
-		"}",
-	}, "\n")
-
 	// setupFunctionFormat is used to run setup functions prior to a CLI command execution.
 	setupFunctionFormat = strings.Join([]string{
 		`function %s {`,
@@ -336,9 +327,6 @@ func (s *sourcerer) generateFile(o command.Output, d *command.Data) {
 
 	// define the execute function
 	o.Stdoutf(executeFunction, filename, filename)
-
-	// define the usage function
-	o.Stdout(usageFunction)
 
 	sort.SliceStable(s.clis, func(i, j int) bool { return s.clis[i].Name() < s.clis[j].Name() })
 	for _, cli := range s.clis {

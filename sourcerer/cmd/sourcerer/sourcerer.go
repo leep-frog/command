@@ -29,7 +29,6 @@ type UpdateLeepPackageCommand struct{}
 
 func (*UpdateLeepPackageCommand) Setup() []string { return nil }
 func (*UpdateLeepPackageCommand) Changed() bool   { return false }
-
 func (*UpdateLeepPackageCommand) Name() string {
 	// gg: "go get"
 	return "gg"
@@ -60,10 +59,7 @@ type UsageCommand struct{}
 
 func (*UsageCommand) Setup() []string { return nil }
 func (*UsageCommand) Changed() bool   { return false }
-
-func (*UsageCommand) Name() string {
-	return "mancli2"
-}
+func (*UsageCommand) Name() string    { return "mancli" }
 
 func (*UsageCommand) Node() *command.Node {
 	c := "CLI"
@@ -88,14 +84,13 @@ func (*UsageCommand) Node() *command.Node {
 	)
 }
 
-/*type AliaserCommand struct{}
+/*
+// AliaserCommand creates an alias for another arg
+type AliaserCommand struct{}
 
-func (*AliaserCommand) Setup() []string            { return nil }
-func (*AliaserCommand) Changed() bool              { return false }
-
-func (*AliaserCommand) Name() string {
-	return "aliaser"
-}
+func (*AliaserCommand) Setup() []string { return nil }
+func (*AliaserCommand) Changed() bool   { return false }
+func (*AliaserCommand) Name() string    { return "aliaser" }
 
 func (*AliaserCommand) Node() *command.Node {
 	dName := ""
