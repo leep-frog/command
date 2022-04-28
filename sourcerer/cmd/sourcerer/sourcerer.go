@@ -113,6 +113,7 @@ func (*AliaserCommand) Node() *command.Node {
 			}
 			quotedArgs := strings.Join(qas, " ")
 			aliasTo := fmt.Sprintf("%s %s", cli, quotedArgs)
+			art := fmt.Sprintf("alias %s=%q", alias, aliasTo)
 			return []string{
 				// TODO: check that it's a leep-frog command
 				getFile(cli),
@@ -121,7 +122,7 @@ func (*AliaserCommand) Node() *command.Node {
 				`  exit 1`,
 				`fi`,
 				fmt.Sprintf("alias %s=%q", alias, aliasTo),
-				fmt.Sprintf("echo alias %s=%q", alias, aliasTo),
+				fmt.Sprintf("echo %q", art),
 				fmt.Sprintf(sourcerer.AutocompleteForAliasFunction, alias, cli, cli, quotedArgs),
 				fmt.Sprintf("complete -F _custom_autocomplete_for_alias_%s -o nosort %s", alias, alias),
 			}, nil
