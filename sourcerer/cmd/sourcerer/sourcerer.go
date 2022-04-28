@@ -25,7 +25,7 @@ func (*UpdateLeepPackageCommand) Node() *command.Node {
 	pkg := "PACKAGE"
 	return command.SerialNodes(
 		command.Description("gg updates go packages from the github.com/leep-frog repository"),
-		command.ListArg[string](pkg, "Package name", 0, command.UnboundedList),
+		command.ListArg[string](pkg, "Package name", 1, command.UnboundedList),
 		command.ExecutableNode(func(o command.Output, d *command.Data) ([]string, error) {
 			var r []string
 			for _, p := range d.StringList(pkg) {
