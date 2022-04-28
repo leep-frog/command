@@ -2,7 +2,9 @@ package command
 
 import (
 	"fmt"
+	"io/ioutil"
 	"regexp"
+	"strings"
 )
 
 type Data struct {
@@ -14,6 +16,23 @@ func (d *Data) Set(k string, i interface{}) {
 		d.Values = map[string]interface{}{}
 	}
 	d.Values[k] = i
+}
+
+func (d *Data) SetupOutputFile() string {
+	return d.String(SetupArgName)
+}
+
+func (d *Data) SetupOutputString() (string, error) {
+	b, err := ioutil.ReadFile(d.String(SetupArgName))
+	if err != nil {
+		return "", fmt.Errorf("failed to read setup file: %v", err)
+	}
+	return strings.TrimSpace(string(b)), nil
+}
+
+func (d *Data) SetupOutputContents() ([]string, error) {
+	s, err := d.SetupOutputString()
+	return strings.Split(s, "\n"), err
 }
 
 func GetData[T any](d *Data, k string) T {
