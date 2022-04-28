@@ -26,12 +26,25 @@ var (
 		"popd > /dev/null",
 	}, "\n")
 
-	// AutocompleteFunction defines a bash function for CLI autocompletion.
-	AutocompleteFunction = strings.Join([]string{
+	// autocompleteFunction defines a bash function for CLI autocompletion.
+	autocompleteFunction = strings.Join([]string{
 		"function _custom_autocomplete_%s {",
 		`  tFile=$(mktemp)`,
 		// The last argument is for extra passthrough arguments to be passed for aliaser autocompletes.
-		`  $GOPATH/bin/_%s_runner autocomplete ${COMP_WORDS[0]} $COMP_POINT "$COMP_LINE" %s > $tFile`,
+		`  $GOPATH/bin/_%s_runner autocomplete ${COMP_WORDS[0]} $COMP_POINT "$COMP_LINE" > $tFile`,
+		`  local IFS=$'\n'`,
+		`  COMPREPLY=( $(cat $tFile) )`,
+		`  rm $tFile`,
+		"}",
+	}, "\n")
+
+	// AutocompleteForAliasFunction defines a bash function for CLI autocompletion for aliased commands.
+	// See AliaserCommand.
+	AutocompleteForAliasFunction = strings.Join([]string{
+		"function _custom_autocomplete_for_alias_%s {",
+		`  tFile=$(mktemp)`,
+		// The last argument is for extra passthrough arguments to be passed for aliaser autocompletes.
+		`  $GOPATH/bin/_%s_runner autocomplete %s $COMP_POINT "$COMP_LINE" %s > $tFile`,
 		`  local IFS=$'\n'`,
 		`  COMPREPLY=( $(cat $tFile) )`,
 		`  rm $tFile`,
@@ -329,7 +342,7 @@ func (s *sourcerer) generateFile(o command.Output, d *command.Data) {
 	o.Stdoutf(generateBinary, s.sl, filename)
 
 	// define the autocomplete function
-	o.Stdoutf(AutocompleteFunction, filename, filename, "")
+	o.Stdoutf(autocompleteFunction, filename, filename)
 
 	// define the execute function
 	o.Stdoutf(executeFunction, filename, filename)
