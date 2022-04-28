@@ -146,9 +146,9 @@ func (s *sourcerer) executeExecutor(output command.Output, d *command.Data) erro
 		return nil
 	}
 
-	for i, line := range eData.Executable {
+	/*for i, line := range eData.Executable {
 		eData.Executable[i] = strings.ReplaceAll(line, `\`, `\\`)
-	}
+	}*/
 
 	f, err := os.OpenFile(executeFile, os.O_WRONLY, 0644)
 	if err != nil {
