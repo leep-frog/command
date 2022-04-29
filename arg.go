@@ -65,7 +65,7 @@ func (an *ArgNode[T]) Usage(u *Usage) {
 }
 
 func (an *ArgNode[T]) Execute(i *Input, o Output, data *Data, eData *ExecuteData) error {
-	an.aliasCheck(i, false)
+	an.shortcutCheck(i, false)
 
 	sl, enough := i.PopN(an.minN, an.optionalN, an.opt.breaker)
 
@@ -98,7 +98,7 @@ func (an *ArgNode[T]) Execute(i *Input, o Output, data *Data, eData *ExecuteData
 		}
 	}
 
-	// Copy values into returned list (required for aliasing)
+	// Copy values into returned list (required for shortcutting)
 	newSl := op.toArgs(v)
 	for i := 0; i < len(sl); i++ {
 		*sl[i] = newSl[i]
@@ -151,18 +151,18 @@ func (ne *notEnoughArgs) Error() string {
 	return fmt.Sprintf("Argument %q requires at least %d argument%s, got %d", ne.name, ne.req, plural, ne.got)
 }
 
-func (an *ArgNode[T]) aliasCheck(input *Input, complete bool) {
-	if an.opt != nil && an.opt.alias != nil {
+func (an *ArgNode[T]) shortcutCheck(input *Input, complete bool) {
+	if an.opt != nil && an.opt.shortcut != nil {
 		if an.optionalN == UnboundedList {
-			input.CheckAliases(len(input.remaining), an.opt.alias.AliasCLI, an.opt.alias.AliasName, complete)
+			input.CheckShortcuts(len(input.remaining), an.opt.shortcut.ShortcutCLI, an.opt.shortcut.ShortcutName, complete)
 		} else {
-			input.CheckAliases(an.minN+an.optionalN, an.opt.alias.AliasCLI, an.opt.alias.AliasName, complete)
+			input.CheckShortcuts(an.minN+an.optionalN, an.opt.shortcut.ShortcutCLI, an.opt.shortcut.ShortcutName, complete)
 		}
 	}
 }
 
 func (an *ArgNode[T]) Complete(input *Input, data *Data) (*Completion, error) {
-	an.aliasCheck(input, true)
+	an.shortcutCheck(input, true)
 
 	sl, enough := input.PopN(an.minN, an.optionalN, an.opt.breaker)
 
@@ -230,15 +230,15 @@ func (an *ArgNode[T]) complete(sl []*string, enough bool, input *Input, data *Da
 }
 
 func Arg[T any](name, desc string, opts ...ArgOpt[T]) *ArgNode[T] {
-	return listNode[T](name, desc, 1, 0, opts...)
+	return listNode(name, desc, 1, 0, opts...)
 }
 
 func OptionalArg[T any](name, desc string, opts ...ArgOpt[T]) *ArgNode[T] {
-	return listNode[T](name, desc, 0, 1, opts...)
+	return listNode(name, desc, 0, 1, opts...)
 }
 
 func ListArg[T any](name, desc string, minN, optionalN int, opts ...ArgOpt[[]T]) *ArgNode[[]T] {
-	return listNode[[]T](name, desc, minN, optionalN, opts...)
+	return listNode(name, desc, minN, optionalN, opts...)
 }
 
 func BoolNode(name, desc string) *ArgNode[bool] {

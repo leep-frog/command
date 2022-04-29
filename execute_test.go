@@ -93,7 +93,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "Uses default if no arg provided",
 			etc: &ExecuteTestCase{
-				Node:      SerialNodes(OptionalArg[string]("s", testDesc, Default[string]("settled"))),
+				Node:      SerialNodes(OptionalArg("s", testDesc, Default("settled"))),
 				wantInput: &Input{},
 				WantData: &Data{Values: map[string]interface{}{
 					"s": "settled",
@@ -105,11 +105,11 @@ func TestExecute(t *testing.T) {
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
 					NewFlagNode(
-						NewFlag[string]("s", 's', testDesc, Default[string]("defStr")),
-						NewFlag[string]("s2", '2', testDesc, Default[string]("defStrTwo")),
-						NewFlag[int]("it", 't', testDesc, Default[int](-456)),
-						NewFlag[int]("i", 'i', testDesc, Default[int](123)),
-						NewFlag[[]float64]("fs", 'f', testDesc, Default[[]float64]([]float64{1.2, 3.4, -5.6})),
+						NewFlag("s", 's', testDesc, Default("defStr")),
+						NewFlag("s2", '2', testDesc, Default("defStrTwo")),
+						NewFlag("it", 't', testDesc, Default(-456)),
+						NewFlag("i", 'i', testDesc, Default(123)),
+						NewFlag("fs", 'f', testDesc, Default([]float64{1.2, 3.4, -5.6})),
 					),
 				),
 				Args: []string{"--it", "7", "-2", "dos"},
@@ -133,7 +133,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "Default doesn't fill in required argument",
 			etc: &ExecuteTestCase{
-				Node:       SerialNodes(Arg[string]("s", testDesc, Default[string]("settled"))),
+				Node:       SerialNodes(Arg("s", testDesc, Default("settled"))),
 				wantInput:  &Input{},
 				WantStderr: []string{`Argument "s" requires at least 1 argument, got 0`},
 				WantErr:    fmt.Errorf(`Argument "s" requires at least 1 argument, got 0`),
@@ -578,7 +578,7 @@ func TestExecute(t *testing.T) {
 			name: "string dne works",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: Arg[string]("strArg", testDesc, NEQ[string]("bad")),
+					Processor: Arg[string]("strArg", testDesc, NEQ("bad")),
 				},
 				Args: []string{"good"},
 				wantInput: &Input{
@@ -595,7 +595,7 @@ func TestExecute(t *testing.T) {
 			name: "string dne fails",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: Arg[string]("strArg", testDesc, NEQ[string]("bad")),
+					Processor: Arg[string]("strArg", testDesc, NEQ("bad")),
 				},
 				Args: []string{"bad"},
 				wantInput: &Input{
@@ -1252,7 +1252,7 @@ func TestExecute(t *testing.T) {
 			name: "IntEQ works",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: Arg[int]("Arg[int]", testDesc, EQ[int](24)),
+					Processor: Arg[int]("Arg[int]", testDesc, EQ(24)),
 				},
 				Args: []string{"24"},
 				wantInput: &Input{
@@ -1269,7 +1269,7 @@ func TestExecute(t *testing.T) {
 			name: "IntEQ fails",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: Arg[int]("Arg[int]", testDesc, EQ[int](24)),
+					Processor: Arg[int]("Arg[int]", testDesc, EQ(24)),
 				},
 				Args: []string{"25"},
 				wantInput: &Input{
@@ -1289,7 +1289,7 @@ func TestExecute(t *testing.T) {
 			name: "IntNE works",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: Arg[int]("Arg[int]", testDesc, NEQ[int](24)),
+					Processor: Arg[int]("Arg[int]", testDesc, NEQ(24)),
 				},
 				Args: []string{"25"},
 				wantInput: &Input{
@@ -1306,7 +1306,7 @@ func TestExecute(t *testing.T) {
 			name: "IntNE fails",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: Arg[int]("Arg[int]", testDesc, NEQ[int](24)),
+					Processor: Arg[int]("Arg[int]", testDesc, NEQ(24)),
 				},
 				Args: []string{"24"},
 				wantInput: &Input{
@@ -1326,7 +1326,7 @@ func TestExecute(t *testing.T) {
 			name: "IntLT works when less than",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: Arg[int]("Arg[int]", testDesc, LT[int](25)),
+					Processor: Arg[int]("Arg[int]", testDesc, LT(25)),
 				},
 				Args: []string{"24"},
 				wantInput: &Input{
@@ -1343,7 +1343,7 @@ func TestExecute(t *testing.T) {
 			name: "IntLT fails when equal to",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: Arg[int]("Arg[int]", testDesc, LT[int](25)),
+					Processor: Arg[int]("Arg[int]", testDesc, LT(25)),
 				},
 				Args: []string{"25"},
 				wantInput: &Input{
@@ -1362,7 +1362,7 @@ func TestExecute(t *testing.T) {
 			name: "IntLT fails when greater than",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: Arg[int]("Arg[int]", testDesc, LT[int](25)),
+					Processor: Arg[int]("Arg[int]", testDesc, LT(25)),
 				},
 				Args: []string{"26"},
 				wantInput: &Input{
@@ -1382,7 +1382,7 @@ func TestExecute(t *testing.T) {
 			name: "IntLTE works when less than",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: Arg[int]("Arg[int]", testDesc, LTE[int](25)),
+					Processor: Arg[int]("Arg[int]", testDesc, LTE(25)),
 				},
 				Args: []string{"24"},
 				wantInput: &Input{
@@ -1399,7 +1399,7 @@ func TestExecute(t *testing.T) {
 			name: "IntLTE works when equal to",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: Arg[int]("Arg[int]", testDesc, LTE[int](25)),
+					Processor: Arg[int]("Arg[int]", testDesc, LTE(25)),
 				},
 				Args: []string{"25"},
 				wantInput: &Input{
@@ -1416,7 +1416,7 @@ func TestExecute(t *testing.T) {
 			name: "IntLTE fails when greater than",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: Arg[int]("Arg[int]", testDesc, LTE[int](25)),
+					Processor: Arg[int]("Arg[int]", testDesc, LTE(25)),
 				},
 				Args: []string{"26"},
 				wantInput: &Input{
@@ -1436,7 +1436,7 @@ func TestExecute(t *testing.T) {
 			name: "IntGT fails when less than",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: Arg[int]("Arg[int]", testDesc, GT[int](25)),
+					Processor: Arg[int]("Arg[int]", testDesc, GT(25)),
 				},
 				Args: []string{"24"},
 				wantInput: &Input{
@@ -1455,7 +1455,7 @@ func TestExecute(t *testing.T) {
 			name: "IntGT fails when equal to",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: Arg[int]("Arg[int]", testDesc, GT[int](25)),
+					Processor: Arg[int]("Arg[int]", testDesc, GT(25)),
 				},
 				Args: []string{"25"},
 				wantInput: &Input{
@@ -1474,7 +1474,7 @@ func TestExecute(t *testing.T) {
 			name: "IntGT works when greater than",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: Arg[int]("Arg[int]", testDesc, GT[int](25)),
+					Processor: Arg[int]("Arg[int]", testDesc, GT(25)),
 				},
 				Args: []string{"26"},
 				wantInput: &Input{
@@ -1492,7 +1492,7 @@ func TestExecute(t *testing.T) {
 			name: "IntGTE fails when less than",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: Arg[int]("Arg[int]", testDesc, GTE[int](25)),
+					Processor: Arg[int]("Arg[int]", testDesc, GTE(25)),
 				},
 				Args: []string{"24"},
 				wantInput: &Input{
@@ -1511,7 +1511,7 @@ func TestExecute(t *testing.T) {
 			name: "IntGTE works when equal to",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: Arg[int]("Arg[int]", testDesc, GTE[int](25)),
+					Processor: Arg[int]("Arg[int]", testDesc, GTE(25)),
 				},
 				Args: []string{"25"},
 				wantInput: &Input{
@@ -1528,7 +1528,7 @@ func TestExecute(t *testing.T) {
 			name: "IntGTE works when greater than",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: Arg[int]("Arg[int]", testDesc, GTE[int](25)),
+					Processor: Arg[int]("Arg[int]", testDesc, GTE(25)),
 				},
 				Args: []string{"26"},
 				wantInput: &Input{
@@ -1712,7 +1712,7 @@ func TestExecute(t *testing.T) {
 			name: "FloatEQ works",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: Arg[float64]("flArg", testDesc, EQ[float64](2.4)),
+					Processor: Arg[float64]("flArg", testDesc, EQ(2.4)),
 				},
 				Args: []string{"2.4"},
 				wantInput: &Input{
@@ -1729,7 +1729,7 @@ func TestExecute(t *testing.T) {
 			name: "FloatEQ fails",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: Arg[float64]("flArg", testDesc, EQ[float64](2.4)),
+					Processor: Arg[float64]("flArg", testDesc, EQ(2.4)),
 				},
 				Args: []string{"2.5"},
 				wantInput: &Input{
@@ -1749,7 +1749,7 @@ func TestExecute(t *testing.T) {
 			name: "FloatNE works",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: Arg[float64]("flArg", testDesc, NEQ[float64](2.4)),
+					Processor: Arg[float64]("flArg", testDesc, NEQ(2.4)),
 				},
 				Args: []string{"2.5"},
 				wantInput: &Input{
@@ -1766,7 +1766,7 @@ func TestExecute(t *testing.T) {
 			name: "FloatNE fails",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: Arg[float64]("flArg", testDesc, NEQ[float64](2.4)),
+					Processor: Arg[float64]("flArg", testDesc, NEQ(2.4)),
 				},
 				Args: []string{"2.4"},
 				wantInput: &Input{
@@ -1786,7 +1786,7 @@ func TestExecute(t *testing.T) {
 			name: "FloatLT works when less than",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: Arg[float64]("flArg", testDesc, LT[float64](2.5)),
+					Processor: Arg[float64]("flArg", testDesc, LT(2.5)),
 				},
 				Args: []string{"2.4"},
 				wantInput: &Input{
@@ -1803,7 +1803,7 @@ func TestExecute(t *testing.T) {
 			name: "FloatLT fails when equal to",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: Arg[float64]("flArg", testDesc, LT[float64](2.5)),
+					Processor: Arg[float64]("flArg", testDesc, LT(2.5)),
 				},
 				Args: []string{"2.5"},
 				wantInput: &Input{
@@ -1822,7 +1822,7 @@ func TestExecute(t *testing.T) {
 			name: "FloatLT fails when greater than",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: Arg[float64]("flArg", testDesc, LT[float64](2.5)),
+					Processor: Arg[float64]("flArg", testDesc, LT(2.5)),
 				},
 				Args: []string{"2.6"},
 				wantInput: &Input{
@@ -1842,7 +1842,7 @@ func TestExecute(t *testing.T) {
 			name: "FloatLTE works when less than",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: Arg[float64]("flArg", testDesc, LTE[float64](2.5)),
+					Processor: Arg[float64]("flArg", testDesc, LTE(2.5)),
 				},
 				Args: []string{"2.4"},
 				wantInput: &Input{
@@ -1859,7 +1859,7 @@ func TestExecute(t *testing.T) {
 			name: "FloatLTE works when equal to",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: Arg[float64]("flArg", testDesc, LTE[float64](2.5)),
+					Processor: Arg[float64]("flArg", testDesc, LTE(2.5)),
 				},
 				Args: []string{"2.5"},
 				wantInput: &Input{
@@ -1876,7 +1876,7 @@ func TestExecute(t *testing.T) {
 			name: "FloatLTE fails when greater than",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: Arg[float64]("flArg", testDesc, LTE[float64](2.5)),
+					Processor: Arg[float64]("flArg", testDesc, LTE(2.5)),
 				},
 				Args: []string{"2.6"},
 				wantInput: &Input{
@@ -1896,7 +1896,7 @@ func TestExecute(t *testing.T) {
 			name: "FloatGT fails when less than",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: Arg[float64]("flArg", testDesc, GT[float64](2.5)),
+					Processor: Arg[float64]("flArg", testDesc, GT(2.5)),
 				},
 				Args: []string{"2.4"},
 				wantInput: &Input{
@@ -1915,7 +1915,7 @@ func TestExecute(t *testing.T) {
 			name: "FloatGT fails when equal to",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: Arg[float64]("flArg", testDesc, GT[float64](2.5)),
+					Processor: Arg[float64]("flArg", testDesc, GT(2.5)),
 				},
 				Args: []string{"2.5"},
 				wantInput: &Input{
@@ -1934,7 +1934,7 @@ func TestExecute(t *testing.T) {
 			name: "FloatGT works when greater than",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: Arg[float64]("flArg", testDesc, GT[float64](2.5)),
+					Processor: Arg[float64]("flArg", testDesc, GT(2.5)),
 				},
 				Args: []string{"2.6"},
 				wantInput: &Input{
@@ -1952,7 +1952,7 @@ func TestExecute(t *testing.T) {
 			name: "FloatGTE fails when less than",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: Arg[float64]("flArg", testDesc, GTE[float64](2.5)),
+					Processor: Arg[float64]("flArg", testDesc, GTE(2.5)),
 				},
 				Args: []string{"2.4"},
 				wantInput: &Input{
@@ -1971,7 +1971,7 @@ func TestExecute(t *testing.T) {
 			name: "FloatGTE works when equal to",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: Arg[float64]("flArg", testDesc, GTE[float64](2.5)),
+					Processor: Arg[float64]("flArg", testDesc, GTE(2.5)),
 				},
 				Args: []string{"2.5"},
 				wantInput: &Input{
@@ -1988,7 +1988,7 @@ func TestExecute(t *testing.T) {
 			name: "FloatGTE works when greater than",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: Arg[float64]("flArg", testDesc, GTE[float64](2.5)),
+					Processor: Arg[float64]("flArg", testDesc, GTE(2.5)),
 				},
 				Args: []string{"2.6"},
 				wantInput: &Input{
@@ -2597,10 +2597,10 @@ func TestExecute(t *testing.T) {
 			name: "args get transformed",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					Arg[string]("strArg", testDesc, NewTransformer[string](func(v string) (string, error) {
+					Arg[string]("strArg", testDesc, NewTransformer(func(v string) (string, error) {
 						return strings.ToUpper(v), nil
 					}, false)),
-					Arg[int]("intArg", testDesc, NewTransformer[int](func(v int) (int, error) {
+					Arg[int]("intArg", testDesc, NewTransformer(func(v int) (int, error) {
 						return 10 * v, nil
 					}, false)),
 				),
@@ -2711,13 +2711,13 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "branch node forwards to alias",
+			name: "branch node forwards to synonym",
 			etc: &ExecuteTestCase{
 				Args: []string{"B"},
 				Node: BranchNode(map[string]*Node{
 					"h": printNode("hello"),
 					"b": printNode("goodbye"),
-				}, printNode("default"), BranchAliases(map[string][]string{
+				}, printNode("default"), BranchSynonyms(map[string][]string{
 					"b": {"bee", "B", "Be"},
 				})),
 				wantInput: &Input{
@@ -2729,13 +2729,13 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "branch node fails if alias to unknown command",
+			name: "branch node fails if synonym to unknown command",
 			etc: &ExecuteTestCase{
 				Args: []string{"uh"},
 				Node: BranchNode(map[string]*Node{
 					"h": printNode("hello"),
 					"b": printNode("goodbye"),
-				}, nil, BranchAliases(map[string][]string{
+				}, nil, BranchSynonyms(map[string][]string{
 					"o": {"uh"},
 				})),
 				wantInput: &Input{
@@ -2749,13 +2749,13 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "branch node forwards to default if alias to unknown command",
+			name: "branch node forwards to default if synonym to unknown command",
 			etc: &ExecuteTestCase{
 				Args: []string{"uh"},
 				Node: BranchNode(map[string]*Node{
 					"h": printNode("hello"),
 					"b": printNode("goodbye"),
-				}, SerialNodes(ListArg[string]("sl", testDesc, 0, UnboundedList), printArgsNode().Processor), BranchAliases(map[string][]string{
+				}, SerialNodes(ListArg[string]("sl", testDesc, 0, UnboundedList), printArgsNode().Processor), BranchSynonyms(map[string][]string{
 					"o": {"uh"},
 				})),
 				wantInput: &Input{
@@ -2772,7 +2772,7 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "branch node forwards to spaced alias",
+			name: "branch node forwards to spaced synonym",
 			etc: &ExecuteTestCase{
 				Args: []string{"bee"},
 				Node: BranchNode(map[string]*Node{
@@ -3308,7 +3308,7 @@ func TestExecute(t *testing.T) {
 
 func abc() *Node {
 	return BranchNode(map[string]*Node{
-		"t": AliasNode("TEST_ALIAS", nil,
+		"t": ShortcutNode("TEST_SHORTCUT", nil,
 			CacheNode("TEST_CACHE", nil, SerialNodes(
 				&tt{},
 				Arg[string]("PATH", testDesc, SimpleCompletor[string]("clh111", "abcd111")),
@@ -3508,7 +3508,7 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
 					Arg[string]("PATH", "dd", &Completor[string]{
-						SuggestionFetcher: SimpleFetcher[string](func(string, *Data) (*Completion, error) {
+						SuggestionFetcher: SimpleFetcher(func(string, *Data) (*Completion, error) {
 							return nil, nil
 						}),
 					}),
@@ -3525,7 +3525,7 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
 					Arg[string]("PATH", "dd", &Completor[string]{
-						SuggestionFetcher: SimpleFetcher[string](func(string, *Data) (*Completion, error) {
+						SuggestionFetcher: SimpleFetcher(func(string, *Data) (*Completion, error) {
 							return nil, fmt.Errorf("ruh-roh")
 						}),
 					}),
@@ -3726,7 +3726,7 @@ func TestComplete(t *testing.T) {
 		{
 			name: "transformer does transform value when ForComplete is true",
 			ctc: &CompleteTestCase{
-				Node: SerialNodes(Arg[string]("strArg", testDesc, NewTransformer[string](func(string) (string, error) { return "newStuff", nil }, true))),
+				Node: SerialNodes(Arg[string]("strArg", testDesc, NewTransformer(func(string) (string, error) { return "newStuff", nil }, true))),
 				Args: "cmd abc",
 				WantData: &Data{Values: map[string]interface{}{
 					"strArg": "newStuff",
@@ -3777,7 +3777,7 @@ func TestComplete(t *testing.T) {
 			filepathAbs: filepath.Join("abso", "lutely"),
 			ctc: &CompleteTestCase{
 				Node: &Node{
-					Processor: ListArg[string]("slArg", testDesc, 1, 2, NewTransformer[[]string](func(sl []string) ([]string, error) {
+					Processor: ListArg[string]("slArg", testDesc, 1, 2, NewTransformer(func(sl []string) ([]string, error) {
 						var r []string
 						for _, s := range sl {
 							r = append(r, fmt.Sprintf("_%s_", s))
@@ -4318,7 +4318,7 @@ func printArgsNode() *Node {
 
 func sampleRepeaterNode(minN, optionalN int) Processor {
 	return NodeRepeater(SerialNodes(
-		Arg[string]("KEY", testDesc, CustomSetter[string](func(v string, d *Data) {
+		Arg[string]("KEY", testDesc, CustomSetter(func(v string, d *Data) {
 			if !d.Has("keys") {
 				d.Set("keys", []string{v})
 			} else {

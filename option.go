@@ -8,7 +8,7 @@ type argOpt[T any] struct {
 	validators   []*ValidatorOption[T]
 	completor    *Completor[T]
 	transformers []*Transformer[T]
-	alias        *aliasOpt[T]
+	shortcut     *shortcutOpt[T]
 	customSet    customSetter[T]
 	_default     *T
 	breaker      *ListBreaker
@@ -24,20 +24,20 @@ func newArgOpt[T any](opts ...ArgOpt[T]) *argOpt[T] {
 	return ao
 }
 
-func AliasOpt[T any](name string, ac AliasCLI) ArgOpt[T] {
-	return &aliasOpt[T]{
-		AliasName: name,
-		AliasCLI:  ac,
+func ShortcutOpt[T any](name string, ac ShortcutCLI) ArgOpt[T] {
+	return &shortcutOpt[T]{
+		ShortcutName: name,
+		ShortcutCLI:  ac,
 	}
 }
 
-type aliasOpt[T any] struct {
-	AliasName string
-	AliasCLI  AliasCLI
+type shortcutOpt[T any] struct {
+	ShortcutName string
+	ShortcutCLI  ShortcutCLI
 }
 
-func (ao *aliasOpt[T]) modifyArgOpt(argO *argOpt[T]) {
-	argO.alias = ao
+func (so *shortcutOpt[T]) modifyArgOpt(argO *argOpt[T]) {
+	argO.shortcut = so
 }
 
 func CustomSetter[T any](f func(T, *Data)) ArgOpt[T] {

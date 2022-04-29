@@ -12,44 +12,44 @@ const (
 	testDesc = "test desc"
 )
 
-func TestAliasExecute(t *testing.T) {
-	ac := &simpleAliasCLI{}
+func TestShortcutExecute(t *testing.T) {
+	sc := &simpleShortcutCLIT{}
 	for _, test := range []struct {
 		name   string
 		etc    *ExecuteTestCase
 		am     map[string]map[string][]string
-		wantAC *simpleAliasCLI
+		wantAC *simpleShortcutCLIT
 	}{
 		{
-			name: "alias requires arg",
+			name: "shortcut requires arg",
 			etc: &ExecuteTestCase{
-				Node:       AliasNode("pioneer", ac, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
+				Node:       ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
 				WantErr:    fmt.Errorf(`Argument "sl" requires at least 1 argument, got 0`),
 				WantStderr: []string{`Argument "sl" requires at least 1 argument, got 0`},
 			},
 		},
-		// Add alias tests.
+		// Add shortcut tests.
 		{
-			name: "requires an alias value",
+			name: "requires an shortcut value",
 			etc: &ExecuteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
+				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
 				Args: []string{"a"},
 				wantInput: &Input{
 					args: []*inputArg{
 						{value: "a"},
 					},
 				},
-				WantErr:    fmt.Errorf(`Argument "ALIAS" requires at least 1 argument, got 0`),
-				WantStderr: []string{`Argument "ALIAS" requires at least 1 argument, got 0`},
+				WantErr:    fmt.Errorf(`Argument "SHORTCUT" requires at least 1 argument, got 0`),
+				WantStderr: []string{`Argument "SHORTCUT" requires at least 1 argument, got 0`},
 			},
 		},
 		{
-			name: "requires a non-empty alias value",
+			name: "requires a non-empty shortcut value",
 			etc: &ExecuteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
+				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
 				Args: []string{"a", ""},
 				WantData: &Data{Values: map[string]interface{}{
-					"ALIAS": "",
+					"SHORTCUT": "",
 				}},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -64,10 +64,10 @@ func TestAliasExecute(t *testing.T) {
 		{
 			name: "doesn't override add command",
 			etc: &ExecuteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
+				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
 				Args: []string{"a", "a", "hello"},
 				WantData: &Data{Values: map[string]interface{}{
-					"ALIAS": "a",
+					"SHORTCUT": "a",
 				}},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -77,17 +77,17 @@ func TestAliasExecute(t *testing.T) {
 					},
 					remaining: []int{2},
 				},
-				WantErr:    fmt.Errorf("cannot create alias for reserved value"),
-				WantStderr: []string{"cannot create alias for reserved value"},
+				WantErr:    fmt.Errorf("cannot create shortcut for reserved value"),
+				WantStderr: []string{"cannot create shortcut for reserved value"},
 			},
 		},
 		{
 			name: "doesn't override delete command",
 			etc: &ExecuteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
+				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
 				Args: []string{"a", "d"},
 				WantData: &Data{Values: map[string]interface{}{
-					"ALIAS": "d",
+					"SHORTCUT": "d",
 				}},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -95,8 +95,8 @@ func TestAliasExecute(t *testing.T) {
 						{value: "d"},
 					},
 				},
-				WantErr:    fmt.Errorf("cannot create alias for reserved value"),
-				WantStderr: []string{"cannot create alias for reserved value"},
+				WantErr:    fmt.Errorf("cannot create shortcut for reserved value"),
+				WantStderr: []string{"cannot create shortcut for reserved value"},
 			},
 		},
 		// We don't really need to test other overrides (like we do for add and
@@ -105,7 +105,7 @@ func TestAliasExecute(t *testing.T) {
 		{
 			name: "ignores execute data from children nodes",
 			etc: &ExecuteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(Arg[string]("s", testDesc), SimpleProcessor(func(i *Input, o Output, d *Data, ed *ExecuteData) error {
+				Node: ShortcutNode("pioneer", sc, SerialNodes(Arg[string]("s", testDesc), SimpleProcessor(func(i *Input, o Output, d *Data, ed *ExecuteData) error {
 					ed.Executable = []string{
 						"ab cd",
 						"",
@@ -119,8 +119,8 @@ func TestAliasExecute(t *testing.T) {
 				}, nil), nil)),
 				Args: []string{"a", "b", "c"},
 				WantData: &Data{Values: map[string]interface{}{
-					"ALIAS": "b",
-					"s":     "c",
+					"SHORTCUT": "b",
+					"s":        "c",
 				}},
 				wantInput: &Input{
 					snapshotCount: 1,
@@ -131,7 +131,7 @@ func TestAliasExecute(t *testing.T) {
 					},
 				},
 			},
-			wantAC: &simpleAliasCLI{
+			wantAC: &simpleShortcutCLIT{
 				changed: true,
 				mp: map[string]map[string][]string{
 					"pioneer": {
@@ -141,12 +141,12 @@ func TestAliasExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "errors on empty alias",
+			name: "errors on empty shortcut",
 			etc: &ExecuteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
+				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
 				Args: []string{"a", ""},
 				WantData: &Data{Values: map[string]interface{}{
-					"ALIAS": "",
+					"SHORTCUT": "",
 				}},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -161,11 +161,11 @@ func TestAliasExecute(t *testing.T) {
 		{
 			name: "errors on too many values",
 			etc: &ExecuteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
+				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
 				Args: []string{"a", "overload", "five", "four", "three", "two", "one"},
 				WantData: &Data{Values: map[string]interface{}{
-					"ALIAS": "overload",
-					"sl":    []string{"five", "four", "three"},
+					"SHORTCUT": "overload",
+					"sl":       []string{"five", "four", "three"},
 				}},
 				wantInput: &Input{
 					snapshotCount: 1,
@@ -185,15 +185,15 @@ func TestAliasExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "fails to add empty alias list",
+			name: "fails to add empty shortcut list",
 			etc: &ExecuteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
+				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
 				Args: []string{"a", "empty"},
 				WantData: &Data{Values: map[string]interface{}{
-					"ALIAS": "empty",
+					"SHORTCUT": "empty",
 				}},
-				WantErr:    fmt.Errorf(`Argument "ALIAS" requires at least 1 argument, got 0`),
-				WantStderr: []string{`Argument "ALIAS" requires at least 1 argument, got 0`},
+				WantErr:    fmt.Errorf(`Argument "SHORTCUT" requires at least 1 argument, got 0`),
+				WantStderr: []string{`Argument "SHORTCUT" requires at least 1 argument, got 0`},
 				wantInput: &Input{
 					snapshotCount: 1,
 					args: []*inputArg{
@@ -204,13 +204,13 @@ func TestAliasExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "adds alias list when just enough",
+			name: "adds shortcut list when just enough",
 			etc: &ExecuteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
+				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
 				Args: []string{"a", "bearMinimum", "grizzly"},
 				WantData: &Data{Values: map[string]interface{}{
-					"ALIAS": "bearMinimum",
-					"sl":    []string{"grizzly"},
+					"SHORTCUT": "bearMinimum",
+					"sl":       []string{"grizzly"},
 				}},
 				wantInput: &Input{
 					snapshotCount: 1,
@@ -221,7 +221,7 @@ func TestAliasExecute(t *testing.T) {
 					},
 				},
 			},
-			wantAC: &simpleAliasCLI{
+			wantAC: &simpleShortcutCLIT{
 				changed: true,
 				mp: map[string]map[string][]string{
 					"pioneer": {
@@ -231,17 +231,17 @@ func TestAliasExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "fails if alias already exists",
+			name: "fails if shortcut already exists",
 			am: map[string]map[string][]string{
 				"pioneer": {
 					"bearMinimum": nil,
 				},
 			},
 			etc: &ExecuteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
+				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
 				Args: []string{"a", "bearMinimum", "grizzly"},
 				WantData: &Data{Values: map[string]interface{}{
-					"ALIAS": "bearMinimum",
+					"SHORTCUT": "bearMinimum",
 				}},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -251,18 +251,18 @@ func TestAliasExecute(t *testing.T) {
 					},
 					remaining: []int{2},
 				},
-				WantStderr: []string{`Alias "bearMinimum" already exists`},
-				WantErr:    fmt.Errorf(`Alias "bearMinimum" already exists`),
+				WantStderr: []string{`Shortcut "bearMinimum" already exists`},
+				WantErr:    fmt.Errorf(`Shortcut "bearMinimum" already exists`),
 			},
 		},
 		{
-			name: "adds alias list when maximum amount",
+			name: "adds shortcut list when maximum amount",
 			etc: &ExecuteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
+				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
 				Args: []string{"a", "bearMinimum", "grizzly", "teddy", "brown"},
 				WantData: &Data{Values: map[string]interface{}{
-					"ALIAS": "bearMinimum",
-					"sl":    []string{"grizzly", "teddy", "brown"},
+					"SHORTCUT": "bearMinimum",
+					"sl":       []string{"grizzly", "teddy", "brown"},
 				}},
 				wantInput: &Input{
 					snapshotCount: 1,
@@ -275,7 +275,7 @@ func TestAliasExecute(t *testing.T) {
 					},
 				},
 			},
-			wantAC: &simpleAliasCLI{
+			wantAC: &simpleShortcutCLIT{
 				changed: true,
 				mp: map[string]map[string][]string{
 					"pioneer": {
@@ -285,15 +285,15 @@ func TestAliasExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "adds alias for multiple nodes",
+			name: "adds shortcut for multiple nodes",
 			etc: &ExecuteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(ListArg[string]("sl", testDesc, 1, 2), Arg[int]("i", testDesc), ListArg[float64]("fl", testDesc, 10, 0))),
+				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2), Arg[int]("i", testDesc), ListArg[float64]("fl", testDesc, 10, 0))),
 				Args: []string{"a", "bearMinimum", "grizzly", "teddy", "brown", "3", "2.2", "-1.1"},
 				WantData: &Data{Values: map[string]interface{}{
-					"ALIAS": "bearMinimum",
-					"sl":    []string{"grizzly", "teddy", "brown"},
-					"i":     3,
-					"fl":    []float64{2.2, -1.1},
+					"SHORTCUT": "bearMinimum",
+					"sl":       []string{"grizzly", "teddy", "brown"},
+					"i":        3,
+					"fl":       []float64{2.2, -1.1},
 				}},
 				wantInput: &Input{
 					snapshotCount: 1,
@@ -309,7 +309,7 @@ func TestAliasExecute(t *testing.T) {
 					},
 				},
 			},
-			wantAC: &simpleAliasCLI{
+			wantAC: &simpleShortcutCLIT{
 				changed: true,
 				mp: map[string]map[string][]string{
 					"pioneer": {
@@ -319,13 +319,13 @@ func TestAliasExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "adds alias when doesn't reach nodes",
+			name: "adds shortcut when doesn't reach nodes",
 			etc: &ExecuteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(ListArg[string]("sl", testDesc, 1, 2), Arg[int]("i", testDesc), ListArg[float64]("fl", testDesc, 10, 0))),
+				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2), Arg[int]("i", testDesc), ListArg[float64]("fl", testDesc, 10, 0))),
 				Args: []string{"a", "bearMinimum", "grizzly"},
 				WantData: &Data{Values: map[string]interface{}{
-					"ALIAS": "bearMinimum",
-					"sl":    []string{"grizzly"},
+					"SHORTCUT": "bearMinimum",
+					"sl":       []string{"grizzly"},
 				}},
 				wantInput: &Input{
 					snapshotCount: 1,
@@ -336,7 +336,7 @@ func TestAliasExecute(t *testing.T) {
 					},
 				},
 			},
-			wantAC: &simpleAliasCLI{
+			wantAC: &simpleShortcutCLIT{
 				changed: true,
 				mp: map[string]map[string][]string{
 					"pioneer": {
@@ -346,13 +346,13 @@ func TestAliasExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "adds alias for unbounded list",
+			name: "adds shortcut for unbounded list",
 			etc: &ExecuteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(ListArg[string]("sl", testDesc, 1, UnboundedList), Arg[int]("i", testDesc), ListArg[float64]("fl", testDesc, 10, 0))),
+				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, UnboundedList), Arg[int]("i", testDesc), ListArg[float64]("fl", testDesc, 10, 0))),
 				Args: []string{"a", "bearMinimum", "grizzly", "teddy", "brown", "3", "2.2", "-1.1"},
 				WantData: &Data{Values: map[string]interface{}{
-					"ALIAS": "bearMinimum",
-					"sl":    []string{"grizzly", "teddy", "brown", "3", "2.2", "-1.1"},
+					"SHORTCUT": "bearMinimum",
+					"sl":       []string{"grizzly", "teddy", "brown", "3", "2.2", "-1.1"},
 				}},
 				wantInput: &Input{
 					snapshotCount: 1,
@@ -368,7 +368,7 @@ func TestAliasExecute(t *testing.T) {
 					},
 				},
 			},
-			wantAC: &simpleAliasCLI{
+			wantAC: &simpleShortcutCLIT{
 				changed: true,
 				mp: map[string]map[string][]string{
 					"pioneer": {
@@ -381,14 +381,14 @@ func TestAliasExecute(t *testing.T) {
 		{
 			name: "adds transformed arguments",
 			etc: &ExecuteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(ListArg[string]("sl", testDesc, 1, 2,
-					NewTransformer[[]string](func([]string) ([]string, error) {
+				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2,
+					NewTransformer(func([]string) ([]string, error) {
 						return []string{"papa", "mama", "baby"}, nil
 					}, false)))),
 				Args: []string{"a", "bearMinimum", "grizzly", "teddy", "brown"},
 				WantData: &Data{Values: map[string]interface{}{
-					"ALIAS": "bearMinimum",
-					"sl":    []string{"papa", "mama", "baby"},
+					"SHORTCUT": "bearMinimum",
+					"sl":       []string{"papa", "mama", "baby"},
 				}},
 				wantInput: &Input{
 					snapshotCount: 1,
@@ -401,7 +401,7 @@ func TestAliasExecute(t *testing.T) {
 					},
 				},
 			},
-			wantAC: &simpleAliasCLI{
+			wantAC: &simpleShortcutCLIT{
 				changed: true,
 				mp: map[string]map[string][]string{
 					"pioneer": {
@@ -413,13 +413,13 @@ func TestAliasExecute(t *testing.T) {
 		{
 			name: "fails if transform error",
 			etc: &ExecuteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(ListArg[string]("sl", testDesc, 1, 2,
-					NewTransformer[[]string](func([]string) ([]string, error) {
+				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2,
+					NewTransformer(func([]string) ([]string, error) {
 						return nil, fmt.Errorf("bad news bears")
 					}, false)))),
 				Args: []string{"a", "bearMinimum", "grizzly", "teddy", "brown"},
 				WantData: &Data{Values: map[string]interface{}{
-					"ALIAS": "bearMinimum",
+					"SHORTCUT": "bearMinimum",
 				}},
 				wantInput: &Input{
 					snapshotCount: 1,
@@ -437,17 +437,17 @@ func TestAliasExecute(t *testing.T) {
 		},
 		// Executing node tests.
 		{
-			name: "Fails to replace alias with empty value",
+			name: "Fails to replace shortcut with empty value",
 			am: map[string]map[string][]string{
 				"pioneer": {
 					"t": []string{},
 				},
 			},
 			etc: &ExecuteTestCase{
-				Node:       AliasNode("pioneer", ac, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
+				Node:       ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
 				Args:       []string{"t", "grizzly", "other"},
-				WantErr:    fmt.Errorf("alias has empty value"),
-				WantStderr: []string{"alias has empty value"},
+				WantErr:    fmt.Errorf("shortcut has empty value"),
+				WantStderr: []string{"shortcut has empty value"},
 				wantInput: &Input{
 					args: []*inputArg{
 						{value: "t"},
@@ -459,14 +459,14 @@ func TestAliasExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "Replaces alias with value",
+			name: "Replaces shortcut with value",
 			am: map[string]map[string][]string{
 				"pioneer": {
 					"t": []string{"teddy"},
 				},
 			},
 			etc: &ExecuteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
+				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
 				Args: []string{"t"},
 				WantData: &Data{Values: map[string]interface{}{
 					"sl": []string{"teddy"},
@@ -479,14 +479,14 @@ func TestAliasExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "Ignores non-alias values",
+			name: "Ignores non-shortcut values",
 			am: map[string]map[string][]string{
 				"pioneer": {
 					"t": []string{"teddy"},
 				},
 			},
 			etc: &ExecuteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
+				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
 				Args: []string{"tee"},
 				WantData: &Data{Values: map[string]interface{}{
 					"sl": []string{"tee"},
@@ -499,14 +499,14 @@ func TestAliasExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "Replaces only alias value",
+			name: "Replaces only shortcut value",
 			am: map[string]map[string][]string{
 				"pioneer": {
 					"t": []string{"teddy"},
 				},
 			},
 			etc: &ExecuteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
+				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
 				Args: []string{"t", "grizzly"},
 				WantData: &Data{Values: map[string]interface{}{
 					"sl": []string{"teddy", "grizzly"},
@@ -527,7 +527,7 @@ func TestAliasExecute(t *testing.T) {
 				},
 			},
 			etc: &ExecuteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
+				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
 				Args: []string{"t", "grizzly"},
 				WantData: &Data{Values: map[string]interface{}{
 					"sl": []string{"teddy", "brown", "grizzly"},
@@ -549,7 +549,7 @@ func TestAliasExecute(t *testing.T) {
 				},
 			},
 			etc: &ExecuteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(ListArg[string]("sl", testDesc, 1, 2, UpperCaseTransformer()))),
+				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg("sl", testDesc, 1, 2, UpperCaseTransformer()))),
 				Args: []string{"t", "grizzly"},
 				WantData: &Data{Values: map[string]interface{}{
 					"sl": []string{"TEDDY", "BROWN", "GRIZZLY"},
@@ -563,11 +563,11 @@ func TestAliasExecute(t *testing.T) {
 				},
 			},
 		},
-		// Arg with alias opt tests
+		// Arg with shortcut opt tests
 		{
-			name: "alias opt works with no aliases",
+			name: "shortcut opt works with no shortcuts",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(ListArg[string]("sl", testDesc, 1, 2, AliasOpt[[]string]("pioneer", ac))),
+				Node: SerialNodes(ListArg("sl", testDesc, 1, 2, ShortcutOpt[[]string]("pioneer", sc))),
 				Args: []string{"zero"},
 				WantData: &Data{Values: map[string]interface{}{
 					"sl": []string{"zero"},
@@ -580,14 +580,14 @@ func TestAliasExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "alias opt replaces last argument",
+			name: "shortcut opt replaces last argument",
 			am: map[string]map[string][]string{
 				"pioneer": {
 					"dee": []string{"d"},
 				},
 			},
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(ListArg[string]("sl", testDesc, 1, 2, AliasOpt[[]string]("pioneer", ac))),
+				Node: SerialNodes(ListArg("sl", testDesc, 1, 2, ShortcutOpt[[]string]("pioneer", sc))),
 				Args: []string{"hello", "dee"},
 				WantData: &Data{Values: map[string]interface{}{
 					"sl": []string{"hello", "d"},
@@ -601,7 +601,7 @@ func TestAliasExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "alias opt suggests args after replacement",
+			name: "shortcut opt suggests args after replacement",
 			am: map[string]map[string][]string{
 				"pioneer": {
 					"dee": []string{"d"},
@@ -610,7 +610,7 @@ func TestAliasExecute(t *testing.T) {
 			},
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(ListArg[string]("sl", testDesc, 1, 2,
-					AliasOpt[[]string]("pioneer", ac),
+					ShortcutOpt[[]string]("pioneer", sc),
 					&Completor[[]string]{
 						SuggestionFetcher: &ListFetcher[[]string]{[]string{"un", "deux", "trois"}},
 					})),
@@ -628,7 +628,7 @@ func TestAliasExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "alias opt replaces multiple aliases with more than one value",
+			name: "shortcut opt replaces multiple shortcuts with more than one value",
 			am: map[string]map[string][]string{
 				"pioneer": {
 					"dee": []string{"two", "deux"},
@@ -638,7 +638,7 @@ func TestAliasExecute(t *testing.T) {
 			},
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(ListArg[string]("sl", testDesc, 1, UnboundedList,
-					AliasOpt[[]string]("pioneer", ac),
+					ShortcutOpt[[]string]("pioneer", sc),
 					&Completor[[]string]{
 						Distinct:          true,
 						SuggestionFetcher: &ListFetcher[[]string]{[]string{"un", "deux", "trois"}},
@@ -657,7 +657,7 @@ func TestAliasExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "alias opt replaces values across multiple args",
+			name: "shortcut opt replaces values across multiple args",
 			am: map[string]map[string][]string{
 				"pioneer": {
 					"dee": []string{"two", "deux"},
@@ -668,9 +668,9 @@ func TestAliasExecute(t *testing.T) {
 			},
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					ListArg[string]("sl", testDesc, 1, 2, AliasOpt[[]string]("pioneer", ac)),
-					Arg[string]("s", testDesc, AliasOpt[string]("pioneer", ac)),
-					OptionalArg[string]("o", testDesc, AliasOpt[string]("pioneer", ac)),
+					ListArg("sl", testDesc, 1, 2, ShortcutOpt[[]string]("pioneer", sc)),
+					Arg("s", testDesc, ShortcutOpt[string]("pioneer", sc)),
+					OptionalArg("o", testDesc, ShortcutOpt[string]("pioneer", sc)),
 				),
 				Args: []string{"un", "dee", "z", "f"},
 				WantData: &Data{Values: map[string]interface{}{
@@ -690,7 +690,7 @@ func TestAliasExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "alias opt replaces multiple aliases intertwined with regular args more than one value",
+			name: "shortcut opt replaces multiple shortcuts intertwined with regular args more than one value",
 			am: map[string]map[string][]string{
 				"pioneer": {
 					"dee":  []string{"two", "deux"},
@@ -701,7 +701,7 @@ func TestAliasExecute(t *testing.T) {
 				},
 			},
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(ListArg[string]("sl", testDesc, 1, UnboundedList, AliasOpt[[]string]("pioneer", ac),
+				Node: SerialNodes(ListArg[string]("sl", testDesc, 1, UnboundedList, ShortcutOpt[[]string]("pioneer", sc),
 					&Completor[[]string]{
 						Distinct:          true,
 						SuggestionFetcher: &ListFetcher[[]string]{[]string{"un", "deux", "trois", "five", "six"}},
@@ -732,7 +732,7 @@ func TestAliasExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "alias opt replaces last value",
+			name: "shortcut opt replaces last value",
 			am: map[string]map[string][]string{
 				"pioneer": {
 					"dee":  []string{"two", "deux"},
@@ -743,7 +743,7 @@ func TestAliasExecute(t *testing.T) {
 				},
 			},
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(ListArg[string]("sl", testDesc, 1, UnboundedList, AliasOpt[[]string]("pioneer", ac))),
+				Node: SerialNodes(ListArg("sl", testDesc, 1, UnboundedList, ShortcutOpt[[]string]("pioneer", sc))),
 				Args: []string{"f", "zero", "n1", "t"},
 				WantData: &Data{Values: map[string]interface{}{
 					"sl": []string{"four", "0", "n1", "three", "trois", "tres"},
@@ -761,7 +761,7 @@ func TestAliasExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "alias happens before transform",
+			name: "shortcut happens before transform",
 			am: map[string]map[string][]string{
 				"pioneer": {
 					"dee":  []string{"two", "deux"},
@@ -772,7 +772,7 @@ func TestAliasExecute(t *testing.T) {
 				},
 			},
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(ListArg[string]("sl", testDesc, 1, UnboundedList, AliasOpt[[]string]("pioneer", ac),
+				Node: SerialNodes(ListArg("sl", testDesc, 1, UnboundedList, ShortcutOpt[[]string]("pioneer", sc),
 					UpperCaseTransformer(),
 				)),
 				Args: []string{"f", "zero", "n1", "t"},
@@ -792,14 +792,14 @@ func TestAliasExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "fails if alias doesn't add enough args",
+			name: "fails if shortcut doesn't add enough args",
 			am: map[string]map[string][]string{
 				"pioneer": {
 					"dee": []string{"two", "deux"},
 				},
 			},
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(ListArg[string]("sl", testDesc, 3, UnboundedList, AliasOpt[[]string]("pioneer", ac))),
+				Node: SerialNodes(ListArg("sl", testDesc, 3, UnboundedList, ShortcutOpt[[]string]("pioneer", sc))),
 				Args: []string{"dee"},
 				WantData: &Data{Values: map[string]interface{}{
 					"sl": []string{"two", "deux"},
@@ -815,14 +815,14 @@ func TestAliasExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "works if alias adds enough args",
+			name: "works if shortcut adds enough args",
 			am: map[string]map[string][]string{
 				"pioneer": {
 					"t": []string{"three", "trois", "tres"},
 				},
 			},
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(ListArg[string]("sl", testDesc, 3, UnboundedList, AliasOpt[[]string]("pioneer", ac))),
+				Node: SerialNodes(ListArg("sl", testDesc, 3, UnboundedList, ShortcutOpt[[]string]("pioneer", sc))),
 				Args: []string{"t"},
 				WantData: &Data{Values: map[string]interface{}{
 					"sl": []string{"three", "trois", "tres"},
@@ -837,14 +837,14 @@ func TestAliasExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "alias values bleed over into next argument",
+			name: "shortcut values bleed over into next argument",
 			am: map[string]map[string][]string{
 				"pioneer": {
 					"t": []string{"three", "trois", "tres", "III", "3"},
 				},
 			},
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(ListArg[string]("sl", testDesc, 3, 0, AliasOpt[[]string]("pioneer", ac)), Arg[string]("s", testDesc), OptionalArg[int]("i", testDesc)),
+				Node: SerialNodes(ListArg("sl", testDesc, 3, 0, ShortcutOpt[[]string]("pioneer", sc)), Arg[string]("s", testDesc), OptionalArg[int]("i", testDesc)),
 				Args: []string{"t"},
 				WantData: &Data{Values: map[string]interface{}{
 					"sl": []string{"three", "trois", "tres"},
@@ -863,14 +863,14 @@ func TestAliasExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "don't alias for later args",
+			name: "don't shortcut for later args",
 			am: map[string]map[string][]string{
 				"pioneer": {
 					"t": []string{"three", "trois", "tres"},
 				},
 			},
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(ListArg[string]("sl", testDesc, 3, 0, AliasOpt[[]string]("pioneer", ac)), Arg[string]("s", testDesc), OptionalArg[int]("i", testDesc)),
+				Node: SerialNodes(ListArg("sl", testDesc, 3, 0, ShortcutOpt[[]string]("pioneer", sc)), Arg[string]("s", testDesc), OptionalArg[int]("i", testDesc)),
 				Args: []string{"I", "II", "III", "t"},
 				WantData: &Data{Values: map[string]interface{}{
 					"sl": []string{"I", "II", "III"},
@@ -886,14 +886,14 @@ func TestAliasExecute(t *testing.T) {
 				},
 			},
 		},
-		// Get alias tests.
+		// Get shortcut tests.
 		{
-			name: "Get alias requires argument",
+			name: "Get shortcut requires argument",
 			etc: &ExecuteTestCase{
-				Node:       AliasNode("pioneer", ac, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
+				Node:       ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
 				Args:       []string{"g"},
-				WantErr:    fmt.Errorf(`Argument "ALIAS" requires at least 1 argument, got 0`),
-				WantStderr: []string{`Argument "ALIAS" requires at least 1 argument, got 0`},
+				WantErr:    fmt.Errorf(`Argument "SHORTCUT" requires at least 1 argument, got 0`),
+				WantStderr: []string{`Argument "SHORTCUT" requires at least 1 argument, got 0`},
 				wantInput: &Input{
 					args: []*inputArg{
 						{value: "g"},
@@ -902,15 +902,15 @@ func TestAliasExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "Get alias handles missing alias type",
+			name: "Get shortcut handles missing shortcut type",
 			etc: &ExecuteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
+				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
 				Args: []string{"g", "h"},
 				WantData: &Data{Values: map[string]interface{}{
-					"ALIAS": []string{"h"},
+					"SHORTCUT": []string{"h"},
 				}},
-				WantErr:    fmt.Errorf(`No aliases exist for alias type "pioneer"`),
-				WantStderr: []string{`No aliases exist for alias type "pioneer"`},
+				WantErr:    fmt.Errorf(`No shortcuts exist for shortcut type "pioneer"`),
+				WantStderr: []string{`No shortcuts exist for shortcut type "pioneer"`},
 				wantInput: &Input{
 					args: []*inputArg{
 						{value: "g"},
@@ -920,7 +920,7 @@ func TestAliasExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "Gets alias",
+			name: "Gets shortcut",
 			am: map[string]map[string][]string{
 				"pioneer": {
 					"h": nil,
@@ -931,14 +931,14 @@ func TestAliasExecute(t *testing.T) {
 				},
 			},
 			etc: &ExecuteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
+				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
 				Args: []string{"g", "h", "i", "j", "k", "l", "m"},
 				WantData: &Data{Values: map[string]interface{}{
-					"ALIAS": []string{"h", "i", "j", "k", "l", "m"},
+					"SHORTCUT": []string{"h", "i", "j", "k", "l", "m"},
 				}},
 				WantStderr: []string{
-					`Alias "j" does not exist`,
-					`Alias "l" does not exist`,
+					`Shortcut "j" does not exist`,
+					`Shortcut "l" does not exist`,
 				},
 				WantStdout: []string{
 					"h: ",
@@ -959,11 +959,11 @@ func TestAliasExecute(t *testing.T) {
 				},
 			},
 		},
-		// List aliases
+		// List shortcuts
 		{
-			name: "lists alias handles unset map",
+			name: "lists shortcut handles unset map",
 			etc: &ExecuteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
+				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
 				Args: []string{"l"},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -973,7 +973,7 @@ func TestAliasExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "lists aliases",
+			name: "lists shortcuts",
 			am: map[string]map[string][]string{
 				"pioneer": {
 					"h": nil,
@@ -984,7 +984,7 @@ func TestAliasExecute(t *testing.T) {
 				},
 			},
 			etc: &ExecuteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
+				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
 				Args: []string{"l"},
 				WantStdout: []string{
 					"h: ",
@@ -1000,11 +1000,11 @@ func TestAliasExecute(t *testing.T) {
 				},
 			},
 		},
-		// Search alias tests.
+		// Search shortcut tests.
 		{
-			name: "search alias requires argument",
+			name: "search shortcut requires argument",
 			etc: &ExecuteTestCase{
-				Node:       AliasNode("pioneer", ac, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
+				Node:       ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
 				Args:       []string{"s"},
 				WantStderr: []string{`Argument "regexp" requires at least 1 argument, got 0`},
 				WantErr:    fmt.Errorf(`Argument "regexp" requires at least 1 argument, got 0`),
@@ -1016,9 +1016,9 @@ func TestAliasExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "search alias fails on invalid regexp",
+			name: "search shortcut fails on invalid regexp",
 			etc: &ExecuteTestCase{
-				Node:       AliasNode("pioneer", ac, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
+				Node:       ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
 				Args:       []string{"s", ":)"},
 				WantStderr: []string{"validation failed: [IsRegex] value \":)\" isn't a valid regex: error parsing regexp: unexpected ): `:)`"},
 				WantErr:    fmt.Errorf("validation failed: [IsRegex] value \":)\" isn't a valid regex: error parsing regexp: unexpected ): `:)`"),
@@ -1034,7 +1034,7 @@ func TestAliasExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "searches through aliases",
+			name: "searches through shortcuts",
 			am: map[string]map[string][]string{
 				"pioneer": {
 					"h": nil,
@@ -1048,7 +1048,7 @@ func TestAliasExecute(t *testing.T) {
 				},
 			},
 			etc: &ExecuteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
+				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
 				Args: []string{"s", "ga$"},
 				WantData: &Data{Values: map[string]interface{}{
 					"regexp": []string{"ga$"},
@@ -1066,7 +1066,7 @@ func TestAliasExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "searches through aliases with multiple",
+			name: "searches through shortcuts with multiple",
 			am: map[string]map[string][]string{
 				"pioneer": {
 					"h": nil,
@@ -1080,7 +1080,7 @@ func TestAliasExecute(t *testing.T) {
 				},
 			},
 			etc: &ExecuteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
+				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
 				Args: []string{"s", "a$", "^.: [aeiou]"},
 				WantData: &Data{Values: map[string]interface{}{
 					"regexp": []string{"a$", "^.: [aeiou]"},
@@ -1098,14 +1098,14 @@ func TestAliasExecute(t *testing.T) {
 				},
 			},
 		},
-		// Delete alias tests.
+		// Delete shortcut tests.
 		{
 			name: "Delete requires argument",
 			etc: &ExecuteTestCase{
-				Node:       AliasNode("pioneer", ac, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
+				Node:       ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
 				Args:       []string{"d"},
-				WantErr:    fmt.Errorf(`Argument "ALIAS" requires at least 1 argument, got 0`),
-				WantStderr: []string{`Argument "ALIAS" requires at least 1 argument, got 0`},
+				WantErr:    fmt.Errorf(`Argument "SHORTCUT" requires at least 1 argument, got 0`),
+				WantStderr: []string{`Argument "SHORTCUT" requires at least 1 argument, got 0`},
 				wantInput: &Input{
 					args: []*inputArg{
 						{value: "d"},
@@ -1114,15 +1114,15 @@ func TestAliasExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "Delete returns error if alias group does not exist",
+			name: "Delete returns error if shortcut group does not exist",
 			etc: &ExecuteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
+				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
 				Args: []string{"d", "e"},
 				WantData: &Data{Values: map[string]interface{}{
-					"ALIAS": []string{"e"},
+					"SHORTCUT": []string{"e"},
 				}},
-				WantErr:    fmt.Errorf("Alias group has no aliases yet."),
-				WantStderr: []string{"Alias group has no aliases yet."},
+				WantErr:    fmt.Errorf("Shortcut group has no shortcuts yet."),
+				WantStderr: []string{"Shortcut group has no shortcuts yet."},
 				wantInput: &Input{
 					args: []*inputArg{
 						{value: "d"},
@@ -1132,17 +1132,17 @@ func TestAliasExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "Delete prints error if alias does not exist",
+			name: "Delete prints error if shortcut does not exist",
 			am: map[string]map[string][]string{
 				"pioneer": {
 					"t": []string{"teddy", "grizzly"},
 				},
 			},
 			etc: &ExecuteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
+				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
 				Args: []string{"d", "tee"},
 				WantData: &Data{Values: map[string]interface{}{
-					"ALIAS": []string{"tee"},
+					"SHORTCUT": []string{"tee"},
 				}},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -1150,21 +1150,21 @@ func TestAliasExecute(t *testing.T) {
 						{value: "tee"},
 					},
 				},
-				WantStderr: []string{`Alias "tee" does not exist`},
+				WantStderr: []string{`Shortcut "tee" does not exist`},
 			},
 		},
 		{
-			name: "Deletes an alias",
+			name: "Deletes an shortcut",
 			am: map[string]map[string][]string{
 				"pioneer": {
 					"t": []string{"teddy", "grizzly"},
 				},
 			},
 			etc: &ExecuteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
+				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
 				Args: []string{"d", "t"},
 				WantData: &Data{Values: map[string]interface{}{
-					"ALIAS": []string{"t"},
+					"SHORTCUT": []string{"t"},
 				}},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -1173,7 +1173,7 @@ func TestAliasExecute(t *testing.T) {
 					},
 				},
 			},
-			wantAC: &simpleAliasCLI{
+			wantAC: &simpleShortcutCLIT{
 				changed: true,
 				mp: map[string]map[string][]string{
 					"pioneer": {},
@@ -1181,7 +1181,7 @@ func TestAliasExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "Delete deletes multiple aliases",
+			name: "Delete deletes multiple shortcuts",
 			am: map[string]map[string][]string{
 				"pioneer": {
 					"p":      []string{"polar", "pooh"},
@@ -1191,14 +1191,14 @@ func TestAliasExecute(t *testing.T) {
 				},
 			},
 			etc: &ExecuteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
+				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
 				Args: []string{"d", "t", "penguin", "colors", "bare"},
 				WantData: &Data{Values: map[string]interface{}{
-					"ALIAS": []string{"t", "penguin", "colors", "bare"},
+					"SHORTCUT": []string{"t", "penguin", "colors", "bare"},
 				}},
 				WantStderr: []string{
-					`Alias "penguin" does not exist`,
-					`Alias "bare" does not exist`,
+					`Shortcut "penguin" does not exist`,
+					`Shortcut "bare" does not exist`,
 				},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -1210,7 +1210,7 @@ func TestAliasExecute(t *testing.T) {
 					},
 				},
 			},
-			wantAC: &simpleAliasCLI{
+			wantAC: &simpleShortcutCLIT{
 				changed: true,
 				mp: map[string]map[string][]string{
 					"pioneer": {
@@ -1230,18 +1230,18 @@ func TestAliasExecute(t *testing.T) {
 					originalMP[k1][k2] = v
 				}
 			}
-			ac.changed = false
-			ac.mp = test.am
+			sc.changed = false
+			sc.mp = test.am
 
 			test.etc.testInput = true
 			ExecuteTest(t, test.etc)
-			ChangeTest(t, test.wantAC, ac, cmp.AllowUnexported(simpleAliasCLI{}))
+			ChangeTest(t, test.wantAC, sc, cmp.AllowUnexported(simpleShortcutCLIT{}))
 		})
 	}
 }
 
 func TestAliasComplete(t *testing.T) {
-	ac := &simpleAliasCLI{}
+	sc := &simpleShortcutCLIT{}
 	for _, test := range []struct {
 		name string
 		ctc  *CompleteTestCase
@@ -1250,7 +1250,7 @@ func TestAliasComplete(t *testing.T) {
 		{
 			name: "suggests arg suggestions, but not command names",
 			ctc: &CompleteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(ListArg[string]("sl", testDesc, 1, 2,
+				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2,
 					&Completor[[]string]{
 						SuggestionFetcher: &ListFetcher[[]string]{[]string{"un", "deux", "trois"}},
 					}))),
@@ -1261,69 +1261,69 @@ func TestAliasComplete(t *testing.T) {
 				Want: []string{"deux", "trois", "un"},
 			},
 		},
-		// Add alias test
+		// Add shortcut test
 		{
-			name: "suggests nothing for alias",
+			name: "suggests nothing for shortcut",
 			ctc: &CompleteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(ListArg[string]("sl", testDesc, 1, 2,
+				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2,
 					&Completor[[]string]{
 						SuggestionFetcher: &ListFetcher[[]string]{[]string{"un", "deux", "trois"}},
 					}))),
 				Args: "cmd a ",
 				WantData: &Data{Values: map[string]interface{}{
-					aliasArgName: "",
+					shortcutArgName: "",
 				}},
 			},
 		},
 		{
-			name: "fails if empty alias",
+			name: "fails if empty shortcut",
 			mp: map[string]map[string][]string{
 				"pioneer": {
 					"alpha": nil,
 				},
 			},
 			ctc: &CompleteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(ListArg[string]("sl", testDesc, 1, 2,
+				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2,
 					&Completor[[]string]{
 						SuggestionFetcher: &ListFetcher[[]string]{[]string{"un", "deux", "trois"}},
 					}))),
 				Args:    "cmd alpha b ",
-				WantErr: fmt.Errorf("alias has empty value"),
+				WantErr: fmt.Errorf("shortcut has empty value"),
 			},
 		},
 		{
-			name: "suggests regular things after alias",
+			name: "suggests regular things after shortcut",
 			ctc: &CompleteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(ListArg[string]("sl", testDesc, 1, 2,
+				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2,
 					&Completor[[]string]{
 						SuggestionFetcher: &ListFetcher[[]string]{[]string{"un", "deux", "trois"}},
 					}))),
 				Args: "cmd a b ",
 				WantData: &Data{Values: map[string]interface{}{
-					aliasArgName: "b",
-					"sl":         []string{""},
+					shortcutArgName: "b",
+					"sl":            []string{""},
 				}},
 				Want: []string{"deux", "trois", "un"},
 			},
 		},
 		{
-			name: "suggests regular things after alias",
+			name: "suggests regular things after shortcut",
 			ctc: &CompleteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(ListArg[string]("sl", testDesc, 1, 2,
+				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2,
 					&Completor[[]string]{
 						SuggestionFetcher: &ListFetcher[[]string]{[]string{"un", "deux", "trois"}},
 					}))),
 				Args: "cmd a b ",
 				WantData: &Data{Values: map[string]interface{}{
-					aliasArgName: "b",
-					"sl":         []string{""},
+					shortcutArgName: "b",
+					"sl":            []string{""},
 				}},
 				Want: []string{"deux", "trois", "un"},
 			},
 		},
-		// Get alias test
+		// Get shortcut test
 		{
-			name: "get alias makes suggestions",
+			name: "get shortcut makes suggestions",
 			mp: map[string]map[string][]string{
 				"pioneer": {
 					"alpha":   nil,
@@ -1334,16 +1334,16 @@ func TestAliasComplete(t *testing.T) {
 				},
 			},
 			ctc: &CompleteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
+				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
 				Args: "cmd g ",
 				WantData: &Data{Values: map[string]interface{}{
-					aliasArgName: []string{""},
+					shortcutArgName: []string{""},
 				}},
 				Want: []string{"alpha", "alright", "any", "balloon", "bear"},
 			},
 		},
 		{
-			name: "get alias makes partial suggestions",
+			name: "get shortcut makes partial suggestions",
 			mp: map[string]map[string][]string{
 				"pioneer": {
 					"alpha":   nil,
@@ -1354,16 +1354,16 @@ func TestAliasComplete(t *testing.T) {
 				},
 			},
 			ctc: &CompleteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
+				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
 				Args: "cmd g b",
 				WantData: &Data{Values: map[string]interface{}{
-					aliasArgName: []string{"b"},
+					shortcutArgName: []string{"b"},
 				}},
 				Want: []string{"balloon", "bear"},
 			},
 		},
 		{
-			name: "get alias makes unique suggestions",
+			name: "get shortcut makes unique suggestions",
 			mp: map[string]map[string][]string{
 				"pioneer": {
 					"alpha":   nil,
@@ -1374,17 +1374,17 @@ func TestAliasComplete(t *testing.T) {
 				},
 			},
 			ctc: &CompleteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
+				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
 				Args: "cmd g alright balloon ",
 				WantData: &Data{Values: map[string]interface{}{
-					aliasArgName: []string{"alright", "balloon", ""},
+					shortcutArgName: []string{"alright", "balloon", ""},
 				}},
 				Want: []string{"alpha", "any", "bear"},
 			},
 		},
-		// Delete alias test
+		// Delete shortcut test
 		{
-			name: "get alias makes suggestions",
+			name: "get shortcut makes suggestions",
 			mp: map[string]map[string][]string{
 				"pioneer": {
 					"alpha":   nil,
@@ -1395,16 +1395,16 @@ func TestAliasComplete(t *testing.T) {
 				},
 			},
 			ctc: &CompleteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
+				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
 				Args: "cmd d ",
 				WantData: &Data{Values: map[string]interface{}{
-					aliasArgName: []string{""},
+					shortcutArgName: []string{""},
 				}},
 				Want: []string{"alpha", "alright", "any", "balloon", "bear"},
 			},
 		},
 		{
-			name: "get alias makes partial suggestions",
+			name: "get shortcut makes partial suggestions",
 			mp: map[string]map[string][]string{
 				"pioneer": {
 					"alpha":   nil,
@@ -1415,16 +1415,16 @@ func TestAliasComplete(t *testing.T) {
 				},
 			},
 			ctc: &CompleteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
+				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
 				Args: "cmd d b",
 				WantData: &Data{Values: map[string]interface{}{
-					aliasArgName: []string{"b"},
+					shortcutArgName: []string{"b"},
 				}},
 				Want: []string{"balloon", "bear"},
 			},
 		},
 		{
-			name: "get alias makes unique suggestions",
+			name: "get shortcut makes unique suggestions",
 			mp: map[string]map[string][]string{
 				"pioneer": {
 					"alpha":   nil,
@@ -1435,19 +1435,19 @@ func TestAliasComplete(t *testing.T) {
 				},
 			},
 			ctc: &CompleteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
+				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
 				Args: "cmd d alright balloon ",
 				WantData: &Data{Values: map[string]interface{}{
-					aliasArgName: []string{"alright", "balloon", ""},
+					shortcutArgName: []string{"alright", "balloon", ""},
 				}},
 				Want: []string{"alpha", "any", "bear"},
 			},
 		},
-		// Execute alias tests
+		// Execute shortcut tests
 		{
 			name: "suggests regular things for regular command",
 			ctc: &CompleteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(ListArg[string]("sl", testDesc, 1, 2,
+				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2,
 					&Completor[[]string]{
 						SuggestionFetcher: &ListFetcher[[]string]{[]string{"un", "deux", "trois"}},
 					}))),
@@ -1461,7 +1461,7 @@ func TestAliasComplete(t *testing.T) {
 		{
 			name: "doesn't replace last argument if it's one",
 			ctc: &CompleteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(ListArg[string]("sl", testDesc, 1, 2,
+				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2,
 					&Completor[[]string]{
 						SuggestionFetcher: &ListFetcher[[]string]{[]string{"un", "deux", "trois"}},
 					}))),
@@ -1479,7 +1479,7 @@ func TestAliasComplete(t *testing.T) {
 				},
 			},
 			ctc: &CompleteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(ListArg[string]("sl", testDesc, 1, 2,
+				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2,
 					&Completor[[]string]{
 						SuggestionFetcher: &ListFetcher[[]string]{[]string{"un", "deux", "trois"}},
 					}))),
@@ -1498,7 +1498,7 @@ func TestAliasComplete(t *testing.T) {
 				},
 			},
 			ctc: &CompleteTestCase{
-				Node: AliasNode("pioneer", ac, SerialNodes(ListArg[string]("sl", testDesc, 1, 2,
+				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2,
 					&Completor[[]string]{
 						Distinct:          true,
 						SuggestionFetcher: &ListFetcher[[]string]{[]string{"un", "deux", "trois"}},
@@ -1510,11 +1510,11 @@ func TestAliasComplete(t *testing.T) {
 				Want: []string{"trois", "un"},
 			},
 		},
-		// Arg with alias opt tests
+		// Arg with shortcut opt tests
 		{
-			name: "alias opt suggests regular things for regular command",
+			name: "shortcut opt suggests regular things for regular command",
 			ctc: &CompleteTestCase{
-				Node: SerialNodes(ListArg[string]("sl", testDesc, 1, 2, AliasOpt[[]string]("pioneer", ac),
+				Node: SerialNodes(ListArg[string]("sl", testDesc, 1, 2, ShortcutOpt[[]string]("pioneer", sc),
 					&Completor[[]string]{
 						SuggestionFetcher: &ListFetcher[[]string]{[]string{"un", "deux", "trois"}},
 					})),
@@ -1526,14 +1526,14 @@ func TestAliasComplete(t *testing.T) {
 			},
 		},
 		{
-			name: "alias opt doesn't replace last argument if it's one",
+			name: "shortcut opt doesn't replace last argument if it's one",
 			mp: map[string]map[string][]string{
 				"pioneer": {
 					"dee": []string{"d"},
 				},
 			},
 			ctc: &CompleteTestCase{
-				Node: SerialNodes(ListArg[string]("sl", testDesc, 1, 2, AliasOpt[[]string]("pioneer", ac),
+				Node: SerialNodes(ListArg[string]("sl", testDesc, 1, 2, ShortcutOpt[[]string]("pioneer", sc),
 					&Completor[[]string]{
 						SuggestionFetcher: &ListFetcher[[]string]{[]string{"un", "deux", "trois"}},
 					})),
@@ -1544,14 +1544,14 @@ func TestAliasComplete(t *testing.T) {
 			},
 		},
 		{
-			name: "alias opt suggests args after replacement",
+			name: "shortcut opt suggests args after replacement",
 			mp: map[string]map[string][]string{
 				"pioneer": {
 					"dee": []string{"d"},
 				},
 			},
 			ctc: &CompleteTestCase{
-				Node: SerialNodes(ListArg[string]("sl", testDesc, 1, 2, AliasOpt[[]string]("pioneer", ac),
+				Node: SerialNodes(ListArg[string]("sl", testDesc, 1, 2, ShortcutOpt[[]string]("pioneer", sc),
 					&Completor[[]string]{
 						SuggestionFetcher: &ListFetcher[[]string]{[]string{"un", "deux", "trois"}},
 					})),
@@ -1563,14 +1563,14 @@ func TestAliasComplete(t *testing.T) {
 			},
 		},
 		{
-			name: "alias opt replaced args are considered in distinct ops",
+			name: "shortcut opt replaced args are considered in distinct ops",
 			mp: map[string]map[string][]string{
 				"pioneer": {
 					"dee": []string{"deux"},
 				},
 			},
 			ctc: &CompleteTestCase{
-				Node: SerialNodes(ListArg[string]("sl", testDesc, 1, 2, AliasOpt[[]string]("pioneer", ac),
+				Node: SerialNodes(ListArg[string]("sl", testDesc, 1, 2, ShortcutOpt[[]string]("pioneer", sc),
 					&Completor[[]string]{
 						Distinct:          true,
 						SuggestionFetcher: &ListFetcher[[]string]{[]string{"un", "deux", "trois"}},
@@ -1583,7 +1583,7 @@ func TestAliasComplete(t *testing.T) {
 			},
 		},
 		{
-			name: "alias opt replaces multiple args",
+			name: "shortcut opt replaces multiple args",
 			mp: map[string]map[string][]string{
 				"pioneer": {
 					"dee": []string{"deux"},
@@ -1591,7 +1591,7 @@ func TestAliasComplete(t *testing.T) {
 				},
 			},
 			ctc: &CompleteTestCase{
-				Node: SerialNodes(ListArg[string]("sl", testDesc, 1, 2, AliasOpt[[]string]("pioneer", ac),
+				Node: SerialNodes(ListArg[string]("sl", testDesc, 1, 2, ShortcutOpt[[]string]("pioneer", sc),
 					&Completor[[]string]{
 						Distinct:          true,
 						SuggestionFetcher: &ListFetcher[[]string]{[]string{"un", "deux", "trois"}},
@@ -1604,7 +1604,7 @@ func TestAliasComplete(t *testing.T) {
 			},
 		},
 		{
-			name: "alias opt replaces multiple aliases with more than one value",
+			name: "shortcut opt replaces multiple shortcuts with more than one value",
 			mp: map[string]map[string][]string{
 				"pioneer": {
 					"dee": []string{"two", "deux"},
@@ -1613,7 +1613,7 @@ func TestAliasComplete(t *testing.T) {
 				},
 			},
 			ctc: &CompleteTestCase{
-				Node: SerialNodes(ListArg[string]("sl", testDesc, 1, UnboundedList, AliasOpt[[]string]("pioneer", ac),
+				Node: SerialNodes(ListArg[string]("sl", testDesc, 1, UnboundedList, ShortcutOpt[[]string]("pioneer", sc),
 					&Completor[[]string]{
 						Distinct:          true,
 						SuggestionFetcher: &ListFetcher[[]string]{[]string{"un", "deux", "trois"}},
@@ -1626,7 +1626,7 @@ func TestAliasComplete(t *testing.T) {
 			},
 		},
 		{
-			name: "alias opt replaces multiple aliases intertwined with regular args more than one value",
+			name: "shortcut opt replaces multiple shortcuts intertwined with regular args more than one value",
 			mp: map[string]map[string][]string{
 				"pioneer": {
 					"dee":  []string{"two", "deux"},
@@ -1637,7 +1637,7 @@ func TestAliasComplete(t *testing.T) {
 				},
 			},
 			ctc: &CompleteTestCase{
-				Node: SerialNodes(ListArg[string]("sl", testDesc, 1, UnboundedList, AliasOpt[[]string]("pioneer", ac),
+				Node: SerialNodes(ListArg[string]("sl", testDesc, 1, UnboundedList, ShortcutOpt[[]string]("pioneer", sc),
 					&Completor[[]string]{
 						Distinct:          true,
 						SuggestionFetcher: &ListFetcher[[]string]{[]string{"un", "deux", "trois", "five", "six"}},
@@ -1650,7 +1650,7 @@ func TestAliasComplete(t *testing.T) {
 			},
 		},
 		{
-			name: "alias opt doesn't replace last value",
+			name: "shortcut opt doesn't replace last value",
 			mp: map[string]map[string][]string{
 				"pioneer": {
 					"dee":  []string{"two", "deux"},
@@ -1661,7 +1661,7 @@ func TestAliasComplete(t *testing.T) {
 				},
 			},
 			ctc: &CompleteTestCase{
-				Node: SerialNodes(ListArg[string]("sl", testDesc, 1, UnboundedList, AliasOpt[[]string]("pioneer", ac),
+				Node: SerialNodes(ListArg[string]("sl", testDesc, 1, UnboundedList, ShortcutOpt[[]string]("pioneer", sc),
 					&Completor[[]string]{
 						Distinct:          true,
 						SuggestionFetcher: &ListFetcher[[]string]{[]string{"un", "deux", "trois", "five", "six"}},
@@ -1674,14 +1674,14 @@ func TestAliasComplete(t *testing.T) {
 			},
 		},
 		{
-			name: "alias values bleed over into next argument for suggestion",
+			name: "shortcut values bleed over into next argument for suggestion",
 			mp: map[string]map[string][]string{
 				"pioneer": {
 					"t": []string{"three", "trois", "tres", "III"},
 				},
 			},
 			ctc: &CompleteTestCase{
-				Node: SerialNodes(ListArg[string]("sl", testDesc, 3, 0, AliasOpt[[]string]("pioneer", ac)), Arg[string]("s", testDesc), Arg[string]("i", testDesc, SimpleCompletor[string]("alpha", "beta"))),
+				Node: SerialNodes(ListArg("sl", testDesc, 3, 0, ShortcutOpt[[]string]("pioneer", sc)), Arg[string]("s", testDesc), Arg[string]("i", testDesc, SimpleCompletor[string]("alpha", "beta"))),
 				Args: "cmd t ",
 				WantData: &Data{Values: map[string]interface{}{
 					"sl": []string{"three", "trois", "tres"},
@@ -1692,14 +1692,14 @@ func TestAliasComplete(t *testing.T) {
 			},
 		},
 		{
-			name: "don't alias for later args",
+			name: "don't shortcut for later args",
 			mp: map[string]map[string][]string{
 				"pioneer": {
 					"t": []string{"three", "trois", "tres", "III"},
 				},
 			},
 			ctc: &CompleteTestCase{
-				Node: SerialNodes(ListArg[string]("sl", testDesc, 3, 0, AliasOpt[[]string]("pioneer", ac)), Arg[string]("s", testDesc), Arg[string]("i", testDesc, SimpleCompletor[string]("alpha", "beta"))),
+				Node: SerialNodes(ListArg("sl", testDesc, 3, 0, ShortcutOpt[[]string]("pioneer", sc)), Arg[string]("s", testDesc), Arg[string]("i", testDesc, SimpleCompletor[string]("alpha", "beta"))),
 				Args: "cmd I II III t ",
 				WantData: &Data{Values: map[string]interface{}{
 					"sl": []string{"I", "II", "III"},
@@ -1711,34 +1711,34 @@ func TestAliasComplete(t *testing.T) {
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			ac.mp = test.mp
+			sc.mp = test.mp
 			CompleteTest(t, test.ctc)
 		})
 	}
 }
 
-type simpleAliasCLI struct {
+type simpleShortcutCLIT struct {
 	mp      map[string]map[string][]string
 	changed bool
 }
 
-func (sac *simpleAliasCLI) AliasMap() map[string]map[string][]string {
-	if sac.mp == nil {
-		sac.mp = map[string]map[string][]string{}
+func (ssc *simpleShortcutCLIT) ShortcutMap() map[string]map[string][]string {
+	if ssc.mp == nil {
+		ssc.mp = map[string]map[string][]string{}
 	}
-	return sac.mp
+	return ssc.mp
 }
 
-func (sac *simpleAliasCLI) Changed() bool {
-	return sac.changed
+func (ssc *simpleShortcutCLIT) Changed() bool {
+	return ssc.changed
 }
 
-func (sac *simpleAliasCLI) MarkChanged() {
-	sac.changed = true
+func (ssc *simpleShortcutCLIT) MarkChanged() {
+	ssc.changed = true
 }
 
-func newSimpleAlias(existing map[string]map[string][]string) AliasCLI {
-	return &simpleAliasCLI{
+func newSimpleShortcut(existing map[string]map[string][]string) ShortcutCLI {
+	return &simpleShortcutCLIT{
 		mp: existing,
 	}
 }
@@ -1751,5 +1751,5 @@ func UpperCaseTransformer() ArgOpt[[]string] {
 		}
 		return r, nil
 	}
-	return NewTransformer[[]string](f, false)
+	return NewTransformer(f, false)
 }

@@ -74,7 +74,7 @@ func TestCompletors(t *testing.T) {
 			args:    "cmd A",
 			wantErr: fmt.Errorf("bad news bears"),
 			c: &Completor[[]string]{
-				SuggestionFetcher: SimpleFetcher[[]string](func([]string, *Data) (*Completion, error) {
+				SuggestionFetcher: SimpleFetcher(func([]string, *Data) (*Completion, error) {
 					return &Completion{
 						Suggestions: []string{"abc", "Abc", "ABC", "def", "Def", "DEF"},
 					}, fmt.Errorf("bad news bears")
@@ -85,7 +85,7 @@ func TestCompletors(t *testing.T) {
 			name: "completes only matching cases",
 			args: "cmd A",
 			c: &Completor[[]string]{
-				SuggestionFetcher: SimpleFetcher[[]string](func([]string, *Data) (*Completion, error) {
+				SuggestionFetcher: SimpleFetcher(func([]string, *Data) (*Completion, error) {
 					return &Completion{
 						Suggestions: []string{"abc", "Abc", "ABC", "def", "Def", "DEF"},
 					}, nil
@@ -97,7 +97,7 @@ func TestCompletors(t *testing.T) {
 			name: "completes all cases if completor.CaseInsensitive and upper",
 			args: "cmd A",
 			c: &Completor[[]string]{
-				SuggestionFetcher: SimpleFetcher[[]string](func([]string, *Data) (*Completion, error) {
+				SuggestionFetcher: SimpleFetcher(func([]string, *Data) (*Completion, error) {
 					return &Completion{
 						CaseInsensitive: true,
 						Suggestions:     []string{"abc", "Abc", "ABC", "def", "Def", "DEF"},
@@ -110,7 +110,7 @@ func TestCompletors(t *testing.T) {
 			name: "completes all cases if completor.CaseInsensitive and lower",
 			args: "cmd a",
 			c: &Completor[[]string]{
-				SuggestionFetcher: SimpleFetcher[[]string](func([]string, *Data) (*Completion, error) {
+				SuggestionFetcher: SimpleFetcher(func([]string, *Data) (*Completion, error) {
 					return &Completion{
 						CaseInsensitive: true,
 						Suggestions:     []string{"abc", "Abc", "ABC", "def", "Def", "DEF"},

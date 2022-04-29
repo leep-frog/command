@@ -17,9 +17,9 @@ import (
 )
 
 const (
-	AliasDesc  = "  *: Start of new aliasable section"
-	CacheDesc  = "  ^: Start of new cachable section"
-	BranchDesc = "  <: Start of subcommand branches"
+	ShortcutDesc = "  *: Start of new shortcut-able section"
+	CacheDesc    = "  ^: Start of new cachable section"
+	BranchDesc   = "  <: Start of subcommand branches"
 )
 
 type UsageTestCase struct {

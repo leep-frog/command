@@ -88,8 +88,8 @@ func ExecutorNode(f func(Output, *Data)) Processor {
 
 type branchNode struct {
 	branches map[string]*Node
-	// Map from alias to branch name
-	aliases      map[string]string
+	// Map from branch code to synonyms
+	synonyms     map[string]string
 	def          *Node
 	next         *Node
 	nextErr      error
@@ -148,7 +148,7 @@ func (bn *branchNode) getNext(input *Input, data *Data) error {
 		return nil
 	}
 
-	if n, ok := bn.branches[bn.aliases[s]]; ok {
+	if n, ok := bn.branches[bn.synonyms[s]]; ok {
 		input.Pop()
 		bn.next = n
 		return nil
@@ -206,14 +206,14 @@ func (bn *branchNode) Usage(u *Usage) {
 	}
 	sort.Strings(names)
 
-	branchToAlias := map[string][]string{}
-	for k, v := range bn.aliases {
-		branchToAlias[v] = append(branchToAlias[v], k)
+	branchToSynonyms := map[string][]string{}
+	for k, v := range bn.synonyms {
+		branchToSynonyms[v] = append(branchToSynonyms[v], k)
 	}
 
 	for _, name := range names {
 		su := GetUsage(bn.branches[name])
-		if as := branchToAlias[name]; len(as) > 0 {
+		if as := branchToSynonyms[name]; len(as) > 0 {
 			var r []string
 			for _, a := range as {
 				r = append(r, a)
@@ -240,15 +240,15 @@ func HideBranchUsage() BranchNodeOption {
 	}
 }
 
-func BranchAliases(aliases map[string][]string) BranchNodeOption {
+func BranchSynonyms(synonyms map[string][]string) BranchNodeOption {
 	m := map[string]string{}
-	for k, vs := range aliases {
+	for k, vs := range synonyms {
 		for _, v := range vs {
 			m[v] = k
 		}
 	}
 	return func(bn *branchNode) {
-		bn.aliases = m
+		bn.synonyms = m
 	}
 }
 
@@ -256,18 +256,18 @@ func BranchNode(branches map[string]*Node, dflt *Node, opts ...BranchNodeOption)
 	if branches == nil {
 		branches = map[string]*Node{}
 	}
-	aliases := map[string]string{}
+	synonyms := map[string]string{}
 	ob := map[string]*Node{}
 	for str, v := range branches {
 		ks := strings.Split(str, " ")
 		ob[ks[0]] = v
 		for _, k := range ks[1:] {
-			aliases[k] = ks[0]
+			synonyms[k] = ks[0]
 		}
 	}
 	bn := &branchNode{
 		branches:     ob,
-		aliases:      aliases,
+		synonyms:     synonyms,
 		def:          dflt,
 		scCompletion: true,
 	}
@@ -418,7 +418,7 @@ func ListBreakerUsage(uf func(*Usage)) ListBreakerOption {
 }
 
 func ListUntilSymbol(symbol string, opts ...ListBreakerOption) *ListBreaker {
-	return ListUntil(NEQ[string](symbol)).AddOptions(append(opts, ListBreakerUsage(func(u *Usage) {
+	return ListUntil(NEQ(symbol)).AddOptions(append(opts, ListBreakerUsage(func(u *Usage) {
 		u.Usage = append(u.Usage, symbol)
 		u.UsageSection.Add(SymbolSection, symbol, "List breaker")
 	}))...)
@@ -465,10 +465,10 @@ func (lb *ListBreaker) Usage(u *Usage) {
 // StringListListNode parses a two-dimensional slice of strings, with each slice being separated by `breakSymbol`
 func StringListListNode(name, desc, breakSymbol string, minN, optionalN int, opts ...ArgOpt[[]string]) Processor {
 	n := &Node{
-		Processor: ListArg[string](name, desc, 0, UnboundedList,
+		Processor: ListArg(name, desc, 0, UnboundedList,
 			append(opts,
 				ListUntilSymbol(breakSymbol, DiscardBreaker()),
-				CustomSetter[[]string](func(sl []string, d *Data) {
+				CustomSetter(func(sl []string, d *Data) {
 					if len(sl) > 0 {
 						if !d.Has(name) {
 							d.Set(name, [][]string{sl})

@@ -93,21 +93,21 @@ func (i *Input) get(j int) *inputArg {
 	return i.args[i.remaining[j]]
 }
 
-func (i *Input) CheckAliases(upTo int, ac AliasCLI, name string, complete bool) error {
+func (i *Input) CheckShortcuts(upTo int, sc ShortcutCLI, name string, complete bool) error {
 	k := 0
 	if complete {
 		k = -1
 	}
 
 	for j := i.offset; j < len(i.remaining)+k && j < i.offset+upTo; {
-		sl, ok := getAlias(ac, name, i.get(j).value)
+		sl, ok := getShortcut(sc, name, i.get(j).value)
 		if !ok {
 			j++
 			continue
 		}
 
 		if len(sl) == 0 {
-			return fmt.Errorf("alias has empty value")
+			return fmt.Errorf("shortcut has empty value")
 		}
 		end := len(sl) - 1
 		i.get(j).value = sl[end]

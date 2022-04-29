@@ -6,7 +6,7 @@ import (
 )
 
 var (
-	cacheHistoryFlag     = NewFlag[int]("cache-len", 'n', "Number of historical elements to display from the cache", Default[int](1))
+	cacheHistoryFlag     = NewFlag("cache-len", 'n', "Number of historical elements to display from the cache", Default(1))
 	cachePrintPrefixFlag = BoolFlag("cache-prefix", 'p', "Include prefix arguments in print statement")
 	cachePrefixData      = "CACHE_PREFIX_DATA"
 	defaultHistory       = 100
@@ -54,7 +54,7 @@ func CacheNode(name string, c CachableCLI, n *Node, opts ...CacheOption) *Node {
 			),
 			SimpleProcessor(cc.history, nil),
 		),
-	}, ccN, HideBranchUsage(), DontCompleteSubcommands(), BranchAliases(map[string][]string{"history": []string{"h"}}))
+	}, ccN, HideBranchUsage(), DontCompleteSubcommands(), BranchSynonyms(map[string][]string{"history": {"h"}}))
 }
 
 type CacheOption interface {

@@ -6,83 +6,78 @@ import (
 	"strings"
 )
 
-// TODO: Change to something other than alias. That's conflated with bash alias builtin
 var (
-	aliasArgName = "ALIAS"
-	aliasArg     = Arg[string](aliasArgName, "TODO alias desc", MinLength(1))
+	shortcutArgName = "SHORTCUT"
+	shortcutArg     = Arg[string](shortcutArgName, "TODO shortcut desc", MinLength(1))
 )
 
-type aliasedArg struct {
-	Processor
-}
-
-type AliasCLI interface {
-	// AliasMap returns a map from "alias type" to "alias name" to an array of "aliased".
-	// This structure easily allows for one CLI to have multiple alias types.
-	AliasMap() map[string]map[string][]string
-	// MarkChanged is called when a change has been made to the alias map.
+type ShortcutCLI interface {
+	// ShortcutMap returns a map from "shortcut type" to "shortcut name" to an array of "shortcut expansion".
+	// This structure easily allows for one CLI to have multiple shortcut commands.
+	ShortcutMap() map[string]map[string][]string
+	// MarkChanged is called when a change has been made to the shortcut map.
 	MarkChanged()
 }
 
-func getAliasMap(ac AliasCLI, name string) map[string][]string {
-	got, ok := ac.AliasMap()[name]
+func getShortcutMap(sc ShortcutCLI, name string) map[string][]string {
+	got, ok := sc.ShortcutMap()[name]
 	if !ok {
 		return nil
 	}
 	return got
 }
 
-func getAlias(ac AliasCLI, name, alias string) ([]string, bool) {
-	got := getAliasMap(ac, name)
+func getShortcut(sc ShortcutCLI, name, shortcut string) ([]string, bool) {
+	got := getShortcutMap(sc, name)
 	if got == nil {
 		return nil, false
 	}
-	v, ok := got[alias]
+	v, ok := got[shortcut]
 	return v, ok
 }
 
-func deleteAlias(ac AliasCLI, name, alias string) error {
-	m, _ := ac.AliasMap()[name]
-	if _, ok := m[alias]; !ok {
-		return fmt.Errorf("Alias %q does not exist", alias)
+func deleteShortcut(sc ShortcutCLI, name, shortcut string) error {
+	m, _ := sc.ShortcutMap()[name]
+	if _, ok := m[shortcut]; !ok {
+		return fmt.Errorf("Shortcut %q does not exist", shortcut)
 	}
-	ac.MarkChanged()
-	delete(m, alias)
+	sc.MarkChanged()
+	delete(m, shortcut)
 	return nil
 }
 
-func setAlias(ac AliasCLI, name, alias string, value []string) {
-	ac.MarkChanged()
-	m, ok := ac.AliasMap()[name]
+func setShortcut(sc ShortcutCLI, name, shortcut string, value []string) {
+	sc.MarkChanged()
+	m, ok := sc.ShortcutMap()[name]
 	if !ok {
 		m = map[string][]string{}
-		ac.AliasMap()[name] = m
+		sc.ShortcutMap()[name] = m
 	}
-	m[alias] = value
+	m[shortcut] = value
 }
 
-func aliasMap(name string, ac AliasCLI, n *Node) map[string]*Node {
-	adder := SerialNodes(aliasArg, &addAlias{node: n, ac: ac, name: name})
+func shortcutMap(name string, sc ShortcutCLI, n *Node) map[string]*Node {
+	adder := SerialNodes(shortcutArg, &addShortcut{node: n, sc: sc, name: name})
 	return map[string]*Node{
 		"a": adder,
-		"d": aliasDeleter(name, ac, n),
-		"g": aliasGetter(name, ac, n),
-		"l": aliasLister(name, ac, n),
-		"s": aliasSearcher(name, ac, n),
+		"d": shortcutDeleter(name, sc, n),
+		"g": shortcutGetter(name, sc, n),
+		"l": shortcutLister(name, sc, n),
+		"s": shortcutSearcher(name, sc, n),
 	}
 }
 
-func AliasNode(name string, ac AliasCLI, n *Node) *Node {
-	executor := SerialNodesTo(n, &executeAlias{node: n, ac: ac, name: name})
-	return BranchNode(aliasMap(name, ac, n), executor, HideBranchUsage(), DontCompleteSubcommands())
+func ShortcutNode(name string, sc ShortcutCLI, n *Node) *Node {
+	executor := SerialNodesTo(n, &executeShortcut{node: n, sc: sc, name: name})
+	return BranchNode(shortcutMap(name, sc, n), executor, HideBranchUsage(), DontCompleteSubcommands())
 }
 
-func aliasCompletor(name string, ac AliasCLI) *Completor[string] {
+func shortcutCompletor(name string, sc ShortcutCLI) *Completor[string] {
 	return &Completor[string]{
 		Distinct: true,
-		SuggestionFetcher: SimpleFetcher[string](func(v string, d *Data) (*Completion, error) {
+		SuggestionFetcher: SimpleFetcher(func(v string, d *Data) (*Completion, error) {
 			s := []string{}
-			for k := range getAliasMap(ac, name) {
+			for k := range getShortcutMap(sc, name) {
 				s = append(s, k)
 			}
 			return &Completion{
@@ -96,17 +91,17 @@ const (
 	hiddenNodeDesc = "hidden_node"
 )
 
-func aliasListArg(name string, ac AliasCLI) Processor {
-	return ListArg[string](aliasArgName, hiddenNodeDesc, 1, UnboundedList, CompletorList(aliasCompletor(name, ac)))
+func shortcutListArg(name string, sc ShortcutCLI) Processor {
+	return ListArg[string](shortcutArgName, hiddenNodeDesc, 1, UnboundedList, CompletorList(shortcutCompletor(name, sc)))
 }
 
-func aliasSearcher(name string, ac AliasCLI, n *Node) *Node {
+func shortcutSearcher(name string, sc ShortcutCLI, n *Node) *Node {
 	regexArg := ListArg[string]("regexp", hiddenNodeDesc, 1, UnboundedList, ValidatorList(IsRegex()))
 	return SerialNodes(regexArg, ExecutorNode(func(output Output, data *Data) {
 		rs := data.RegexpList("regexp")
 		var as []string
-		for k, v := range getAliasMap(ac, name) {
-			as = append(as, aliasStr(k, v))
+		for k, v := range getShortcutMap(sc, name) {
+			as = append(as, shortcutStr(k, v))
 		}
 		sort.Strings(as)
 		for _, a := range as {
@@ -124,11 +119,11 @@ func aliasSearcher(name string, ac AliasCLI, n *Node) *Node {
 	}))
 }
 
-func aliasLister(name string, ac AliasCLI, n *Node) *Node {
+func shortcutLister(name string, sc ShortcutCLI, n *Node) *Node {
 	return SerialNodes(ExecutorNode(func(output Output, data *Data) {
 		var r []string
-		for k, v := range getAliasMap(ac, name) {
-			r = append(r, aliasStr(k, v))
+		for k, v := range getShortcutMap(sc, name) {
+			r = append(r, shortcutStr(k, v))
 		}
 		sort.Strings(r)
 		for _, v := range r {
@@ -137,13 +132,13 @@ func aliasLister(name string, ac AliasCLI, n *Node) *Node {
 	}))
 }
 
-func aliasDeleter(name string, ac AliasCLI, n *Node) *Node {
-	return SerialNodes(aliasListArg(name, ac), ExecuteErrNode(func(output Output, data *Data) error {
-		if len(getAliasMap(ac, name)) == 0 {
-			return output.Stderr("Alias group has no aliases yet.")
+func shortcutDeleter(name string, sc ShortcutCLI, n *Node) *Node {
+	return SerialNodes(shortcutListArg(name, sc), ExecuteErrNode(func(output Output, data *Data) error {
+		if len(getShortcutMap(sc, name)) == 0 {
+			return output.Stderr("Shortcut group has no shortcuts yet.")
 		}
-		for _, a := range data.StringList(aliasArgName) {
-			if err := deleteAlias(ac, name, a); err != nil {
+		for _, a := range data.StringList(shortcutArgName) {
+			if err := deleteShortcut(sc, name, a); err != nil {
 				output.Err(err)
 			}
 		}
@@ -151,68 +146,68 @@ func aliasDeleter(name string, ac AliasCLI, n *Node) *Node {
 	}))
 }
 
-func aliasStr(alias string, values []string) string {
-	return fmt.Sprintf("%s: %s", alias, strings.Join(values, " "))
+func shortcutStr(shortcut string, values []string) string {
+	return fmt.Sprintf("%s: %s", shortcut, strings.Join(values, " "))
 }
 
-func aliasGetter(name string, ac AliasCLI, n *Node) *Node {
-	return SerialNodes(aliasListArg(name, ac), ExecuteErrNode(func(output Output, data *Data) error {
-		if getAliasMap(ac, name) == nil {
-			return output.Stderrf("No aliases exist for alias type %q", name)
+func shortcutGetter(name string, sc ShortcutCLI, n *Node) *Node {
+	return SerialNodes(shortcutListArg(name, sc), ExecuteErrNode(func(output Output, data *Data) error {
+		if getShortcutMap(sc, name) == nil {
+			return output.Stderrf("No shortcuts exist for shortcut type %q", name)
 		}
 
-		for _, alias := range data.StringList(aliasArgName) {
-			if v, ok := getAlias(ac, name, alias); ok {
-				output.Stdout(aliasStr(alias, v))
+		for _, shortcut := range data.StringList(shortcutArgName) {
+			if v, ok := getShortcut(sc, name, shortcut); ok {
+				output.Stdout(shortcutStr(shortcut, v))
 			} else {
-				output.Stderrf("Alias %q does not exist", alias)
+				output.Stderrf("Shortcut %q does not exist", shortcut)
 			}
 		}
 		return nil
 	}))
 }
 
-type executeAlias struct {
+type executeShortcut struct {
 	node *Node
-	ac   AliasCLI
+	sc   ShortcutCLI
 	name string
 }
 
-func (ea *executeAlias) Usage(u *Usage) {
-	u.UsageSection.Add(SymbolSection, "*", "Start of new aliasable section")
-	// TODO: show alias subcommands on --help
+func (ea *executeShortcut) Usage(u *Usage) {
+	u.UsageSection.Add(SymbolSection, "*", "Start of new shortcut-able section")
+	// TODO: show shortcut subcommands on --help
 	u.Usage = append(u.Usage, "*")
 }
 
-func (ea *executeAlias) Execute(input *Input, output Output, data *Data, eData *ExecuteData) error {
-	return output.Err(input.CheckAliases(1, ea.ac, ea.name, false))
+func (ea *executeShortcut) Execute(input *Input, output Output, data *Data, eData *ExecuteData) error {
+	return output.Err(input.CheckShortcuts(1, ea.sc, ea.name, false))
 }
 
-func (ea *executeAlias) Complete(input *Input, data *Data) (*Completion, error) {
-	if err := input.CheckAliases(1, ea.ac, ea.name, true); err != nil {
+func (ea *executeShortcut) Complete(input *Input, data *Data) (*Completion, error) {
+	if err := input.CheckShortcuts(1, ea.sc, ea.name, true); err != nil {
 		return nil, err
 	}
 	return nil, nil
 }
 
-type addAlias struct {
+type addShortcut struct {
 	node *Node
-	ac   AliasCLI
+	sc   ShortcutCLI
 	name string
 }
 
-func (aa *addAlias) Usage(*Usage) {
+func (as *addShortcut) Usage(*Usage) {
 	return
 }
 
-func (aa *addAlias) Execute(input *Input, output Output, data *Data, _ *ExecuteData) error {
-	alias := data.String(aliasArgName)
-	am := aliasMap(aa.name, aa.ac, aa.node)
-	if _, ok := am[alias]; ok {
-		return output.Stderr("cannot create alias for reserved value")
+func (as *addShortcut) Execute(input *Input, output Output, data *Data, _ *ExecuteData) error {
+	shortcut := data.String(shortcutArgName)
+	sm := shortcutMap(as.name, as.sc, as.node)
+	if _, ok := sm[shortcut]; ok {
+		return output.Stderr("cannot create shortcut for reserved value")
 	}
-	if _, ok := getAlias(aa.ac, aa.name, alias); ok {
-		return output.Stderrf("Alias %q already exists", alias)
+	if _, ok := getShortcut(as.sc, as.name, shortcut); ok {
+		return output.Stderrf("Shortcut %q already exists", shortcut)
 	}
 
 	snapshot := input.Snapshot()
@@ -220,21 +215,21 @@ func (aa *addAlias) Execute(input *Input, output Output, data *Data, _ *ExecuteD
 	// We don't want the executor to run, so we pass fakeEData to children nodes.
 	fakeEData := &ExecuteData{}
 	// We don't want to output not enough args error, because we actually
-	// don't mind those when adding aliases.
+	// don't mind those when adding shortcuts.
 	ieo := NewIgnoreErrOutput(output, IsNotEnoughArgsError)
-	err := iterativeExecute(aa.node, input, ieo, data, fakeEData)
+	err := iterativeExecute(as.node, input, ieo, data, fakeEData)
 	if err != nil && !IsNotEnoughArgsError(err) {
 		return err
 	}
 
 	sl := input.GetSnapshot(snapshot)
 	if len(sl) == 0 {
-		return output.Err(NotEnoughArgs(aliasArgName, 1, 0))
+		return output.Err(NotEnoughArgs(shortcutArgName, 1, 0))
 	}
-	setAlias(aa.ac, aa.name, alias, sl)
+	setShortcut(as.sc, as.name, shortcut, sl)
 	return nil
 }
 
-func (aa *addAlias) Complete(input *Input, data *Data) (*Completion, error) {
-	return getCompleteData(aa.node, input, data)
+func (as *addShortcut) Complete(input *Input, data *Data) (*Completion, error) {
+	return getCompleteData(as.node, input, data)
 }

@@ -55,7 +55,7 @@ func TestBashNode(t *testing.T) {
 		{
 			name: "bash command hides stderr on error",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(BashCommand[string]("s", []string{"echo hello"}, HideStderr[string]())),
+				Node: SerialNodes(BashCommand("s", []string{"echo hello"}, HideStderr[string]())),
 				WantRunContents: [][]string{{
 					"set -e",
 					"set -o pipefail",
@@ -130,7 +130,7 @@ func TestBashNode(t *testing.T) {
 		{
 			name: "successful command hides stderr",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(BashCommand[string]("s", []string{"echo hello"}, HideStderr[string]())),
+				Node: SerialNodes(BashCommand("s", []string{"echo hello"}, HideStderr[string]())),
 				WantRunContents: [][]string{{
 					"set -e",
 					"set -o pipefail",
@@ -170,7 +170,7 @@ func TestBashNode(t *testing.T) {
 		{
 			name: "bash node for string list forwards stdout",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(BashCommand[[]string]("s", []string{"echo hello"}, ForwardStdout[[]string]())),
+				Node: SerialNodes(BashCommand("s", []string{"echo hello"}, ForwardStdout[[]string]())),
 				WantRunContents: [][]string{{
 					"set -e",
 					"set -o pipefail",
