@@ -2,11 +2,17 @@
 
 `command` is a package for writing custom bash commands in go. Some of the most useful benefits of this package include:
 
- - Simple autocomplete implementation
+ - [Simple autocomplete implementation](#bash-autocompletion)
+
+ - [Built-in CLI usage documentation](#cli-usage-text)
  
- - Allow subcommand aliasing (TODO: add more in-depth section on this)
+ - [Command shortcuts](#shortcuts)
  
- - Allow subcommand caching (TODO: add more in-depth section on this)
+ - [Caching previous command executions](#execution-caching)
+
+ - [Built-in persistent command data](#persistent-cli-data)
+
+ - [Testing command execution, completion, and usage](#command-testing)
 
 ## Setup
 
@@ -77,3 +83,29 @@ sourcerer /path/to/clis my_custom_clis
 ```
 
 6. Restart your shell and use your commands!
+
+## Benefits
+
+### Bash Autocompletion
+
+TODO
+
+### CLI Usage Text
+
+TODO
+
+### Shortcuts
+
+TODO
+
+### Execution Caching
+
+TODO
+
+### Persistent CLI Data
+
+TODO
+
+### Command Testing
+
+TODO
