@@ -232,7 +232,7 @@ type FileFetcher[T any] struct {
 	// IgnoreDirectories indicates whether we should only consider files.
 	IgnoreDirectories bool
 	// IgnoreFunc is a custom function that returns the set of strings to ignore.
-	// TODO: should this just return a boolean and have string as an input?
+	// TODO: should this just return a boolean and have []string as an input?
 	IgnoreFunc func(T, *Data) []string
 }
 
