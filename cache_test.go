@@ -867,7 +867,7 @@ func TestCacheComplete(t *testing.T) {
 				Node: CacheNode("money", cc, SerialNodes(
 					ListArg[string]("sl", testDesc, 1, 2,
 						&Completor[[]string]{
-							SuggestionFetcher: &ListFetcher[[]string]{
+							Fetcher: &ListFetcher[[]string]{
 								Options: []string{"buck", "dollar", "dollHairs", "dinero", "usd"},
 							},
 						},

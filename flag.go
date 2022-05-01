@@ -166,10 +166,12 @@ func (f *flag[T]) ShortName() rune {
 	return f.shortName
 }
 
+// NewFlag creates a `Flag` from argument info.
 func NewFlag[T any](name string, shortName rune, desc string, opts ...ArgOpt[T]) Flag {
 	return listFlag(name, desc, shortName, 1, 0, opts...)
 }
 
+// BoolFlag creates a `Flag` for a booean argument.
 func BoolFlag(name string, shortName rune, desc string) Flag {
 	return &boolFlag{
 		name:      name,
@@ -217,6 +219,7 @@ func (bf *boolFlag) Execute(_ *Input, _ Output, data *Data, _ *ExecuteData) erro
 	return nil
 }
 
+// NewListFlag creates a `Flag` from list argument info.
 func NewListFlag[T any](name string, shortName rune, desc string, minN, optionalN int, opts ...ArgOpt[[]T]) Flag {
 	return listFlag(name, desc, shortName, minN, optionalN, opts...)
 }

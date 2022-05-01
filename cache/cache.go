@@ -18,27 +18,29 @@ const (
 	keyRegex = `^([a-zA-Z0-9_\.-]+)$`
 )
 
+// Cache is a type for caching data in JSON files. It implements the `sourcerer.CLI` interface.
 type Cache struct {
+	// Dir is the location for storing the cache data.
 	Dir     string
 	changed bool
 }
 
+// Name returns the name of the cache CLI.
 func (c *Cache) Name() string {
 	return "cash"
 }
 
+// Changed returns whether or not the `Cache` object (not cache data) has changed.
 func (c *Cache) Changed() bool {
 	return c.changed
 }
+
+// Setup fulfills the `sourcerer.CLI` interface.
 func (c *Cache) Setup() []string { return nil }
-func (c *Cache) Load(jsn string) error {
-	if err := json.Unmarshal([]byte(jsn), c); err != nil {
-		return fmt.Errorf("failed to unmarshal cache json: %v", err)
-	}
-	return nil
-}
+
+// Node returns the `command.Node` for the cache CLI.
 func (c *Cache) Node() *command.Node {
-	arg := command.Arg[string]("KEY", "Key of the data to get", command.MatchesRegex(keyRegex), &command.Completor[string]{SuggestionFetcher: &fetcher{c}})
+	arg := command.Arg[string]("KEY", "Key of the data to get", command.MatchesRegex(keyRegex), &command.Completor[string]{Fetcher: &fetcher{c}})
 	return command.BranchNode(map[string]*command.Node{
 		"setdir": command.SerialNodes(
 			command.FileNode("DIR", "Directory in which to store data", command.IsDir()),
@@ -106,6 +108,7 @@ func (f *fetcher) Fetch(string, *command.Data) (*command.Completion, error) {
 	}, nil
 }
 
+// NewTestCache is a function useful for stubbing out caches in tests.
 func NewTestCache(t *testing.T) *Cache {
 	t.Helper()
 	dir, err := ioutil.TempDir("", "test-leep-frog-command-cache")
@@ -122,7 +125,7 @@ func NewTestCache(t *testing.T) *Cache {
 	}
 }
 
-// Creates a new cache from an environment variable
+// New creates a new cache from an environment variable.
 func New(e string) (*Cache, error) {
 	c := &Cache{
 		Dir: os.Getenv(e),
@@ -133,6 +136,7 @@ func New(e string) (*Cache, error) {
 	return c, nil
 }
 
+// Put puts data in the cache.
 func (c *Cache) Put(key, data string) error {
 	filename, err := c.fileFromKey(key)
 	if err != nil {
@@ -144,6 +148,7 @@ func (c *Cache) Put(key, data string) error {
 	return nil
 }
 
+// List lists all cache keys.
 func (c *Cache) List() ([]string, error) {
 	dir, err := c.getCacheDir()
 	if err != nil {
@@ -160,6 +165,7 @@ func (c *Cache) List() ([]string, error) {
 	return r, nil
 }
 
+// Delete deletes data from the cache.
 func (c *Cache) Delete(key string) error {
 	filename, err := c.fileFromKey(key)
 	if err != nil {
@@ -171,7 +177,7 @@ func (c *Cache) Delete(key string) error {
 	return nil
 }
 
-// Returns data, whether the file exists, and any error encountered.
+// GetBytes returns data, whether the file exists, and any error encountered.
 func (c *Cache) GetBytes(key string) ([]byte, bool, error) {
 	filename, err := c.fileFromKey(key)
 	if err != nil {
@@ -189,11 +195,13 @@ func (c *Cache) GetBytes(key string) ([]byte, bool, error) {
 	return data, true, nil
 }
 
+// Get retrieves data from the cache and returns the data (as a string), whether the file exists, and any error encountered.
 func (c *Cache) Get(key string) (string, bool, error) {
 	s, b, e := c.GetBytes(key)
 	return string(s), b, e
 }
 
+// PutStruct json-deserializes the provided struct and stores the data in the cache.
 func (c *Cache) PutStruct(key string, i interface{}) error {
 	b, err := json.MarshalIndent(i, "", "  ")
 	if err != nil {

@@ -9,31 +9,53 @@ import (
 	"sync"
 )
 
+// Node is a type containing the relevant processing that should be done
+// when the node is reached (`Processor`) as well as what `Node` should be
+// visited next (`Edge`).
 type Node struct {
+	// Processor is used to process the node when it is visited.
 	Processor Processor
-	Edge      Edge
+	// Edge determines the next node to visit.
+	Edge Edge
 }
 
 const (
-	ArgSection    = "Arguments"
-	FlagSection   = "Flags"
+	// ArgSection is the title of the arguments usage section.
+	ArgSection = "Arguments"
+	// FlagSection is the title of the flags usage section.
+	FlagSection = "Flags"
+	// SymbolSection is the title of the symbols usage section.
 	SymbolSection = "Symbols"
-
-	UsageDepth = 0
 )
 
+// Usage contains all data needed for constructing a command's usage text.
 type Usage struct {
-	// Sections is a map from section name to phrase for that section to description for that key.
-	// Only displayed when --help flag is provided
+	// UsageSection is a map from section name to key phrase for that section to description for that key.
+	// TODO: Only displayed when --help flag is provided
 	UsageSection *UsageSection
-	// Description is the usage doc for the command
+	// Description is the usage doc for the command.
 	Description string
-	Usage       []string
-	Flags       []string
+	// Usage is arg usage string.
+	Usage []string
+	// Flags is the flag usage string.
+	Flags []string
 
+	// Subsections is a set of `Usage` objects that are indented from the current `Usage` object.
 	SubSections []*Usage
 }
 
+// UsageSection is a map from section name to key phrase for that section to description for that key.
+type UsageSection map[string]map[string]string
+
+// Add adds a usage section.
+func (us *UsageSection) Add(section, key, value string) {
+	if (*us)[section] == nil {
+		(*us)[section] = map[string]string{}
+	}
+	(*us)[section][key] = value
+}
+
+// String crates the full usage text as a single string.
 func (u *Usage) String() string {
 	var r []string
 	r = u.string(r, 0)
@@ -99,23 +121,16 @@ func (u *Usage) string(r []string, depth int) []string {
 	return r
 }
 
-type UsageSection map[string]map[string]string
-
-func (us *UsageSection) Add(section, key, value string) {
-	if (*us)[section] == nil {
-		(*us)[section] = map[string]string{}
-	}
-	(*us)[section][key] = value
-}
-
 type descNode struct {
 	desc string
 }
 
+// Description creates a `Processor` that adds a command description to the usage text.
 func Description(desc string) Processor {
 	return &descNode{desc}
 }
 
+// Descriptionf is like `Description`, but with formatting options.
 func Descriptionf(s string, a ...interface{}) Processor {
 	return &descNode{fmt.Sprintf(s, a...)}
 }
@@ -132,17 +147,44 @@ func (dn *descNode) Complete(*Input, *Data) (*Completion, error) {
 	return nil, nil
 }
 
+// ExecuteData contains operations to resolve after all nodes have been processed.
+// This separation is needed for caching and shortcuts nodes.
+type ExecuteData struct {
+	// Executable is a list of bash commands to run after all nodes have been processed.
+	Executable []string
+	// Executor is a set of functions to run after all nodes have been processed.
+	Executor []func(Output, *Data) error
+}
+
+// Processor is the interface for nodes in the command graph.
 type Processor interface {
+	// Execute is the function called when a command graph is
+	// being executed.
 	Execute(*Input, Output, *Data, *ExecuteData) error
+	// Complete is the function called when a command graph is
+	// being autocompleted. If it returns a non-nil `Completion` object,
+	// then the graph traversal stops and uses the returned object
+	// to construct the command completion suggestions.
 	Complete(*Input, *Data) (*Completion, error)
+	// Usage is the function called when the usage data for a command
+	// graph is being constructed. The input `Usage` object should be
+	// updated for each `Node`.
 	Usage(*Usage)
 }
 
+// Edge is the interface for edges in the command graph.
 type Edge interface {
+	// Next fetches the next node in the command graph based on
+	// the provided `Input` and `Data`.
 	Next(*Input, *Data) (*Node, error)
+	// UsageNext fetches the next node in the command graph when
+	// command graph usage is being constructed. This is separate from
+	// the `Next` function because `Next` is input-dependent whereas `UsageNext`
+	// receives no input arguments.
 	UsageNext() *Node
 }
 
+// GetUsage constructs a `Usage` object from the head `Node` of a command graph.
 func GetUsage(n *Node) *Usage {
 	u := &Usage{
 		UsageSection: &UsageSection{},
@@ -159,6 +201,7 @@ func GetUsage(n *Node) *Usage {
 	return u
 }
 
+// Execute executes a node with the provided `Input` and `Output`.
 func Execute(n *Node, input *Input, output Output) (*ExecuteData, error) {
 	return execute(n, input, output, &Data{})
 }
@@ -175,7 +218,9 @@ func RunNodes(n *Node) error {
 }
 
 const (
-	PassthroughArgs = "PASSTHROUGH_ARGS"
+	// passthroughArgs is the argument name for args that are passed through
+	// to autocomplete. Used for `aliaser` command.
+	passthroughArgs = "PASSTHROUGH_ARGS"
 )
 
 // Separate method for testing purposes.
@@ -201,9 +246,9 @@ func runNodes(n *Node, o Output, d *Data, args []string) error {
 		),
 		"autocomplete": SerialNodes(
 			// Don't need comp point because input will have already been trimmed by goleep processing.
-			Arg[string](PassthroughArgs, ""),
+			Arg[string](passthroughArgs, ""),
 			ExecutorNode(func(o Output, d *Data) {
-				for _, s := range Autocomplete(n, d.String(PassthroughArgs), nil) {
+				for _, s := range Autocomplete(n, d.String(passthroughArgs), nil) {
 					o.Stdout(s)
 				}
 			})),
@@ -281,6 +326,7 @@ func iterativeExecute(n *Node, input *Input, output Output, data *Data, eData *E
 	return nil
 }
 
+// ExtraArgsErr returns an error for when too many arguments are provided to a command.
 func ExtraArgsErr(input *Input) error {
 	return &extraArgsErr{input}
 }
@@ -293,6 +339,8 @@ func (eae *extraArgsErr) Error() string {
 	return fmt.Sprintf("Unprocessed extra args: %v", eae.input.Remaining())
 }
 
+// IsExtraArgs returns whether or not the provided error is an `ExtraArgsErr`.
+// TODO: error.go file.
 func IsExtraArgsError(err error) bool {
 	_, ok := err.(*extraArgsErr)
 	return ok

@@ -3,6 +3,7 @@ package command
 import "fmt"
 
 const (
+	// UnboundedList is used to indicate that an argument list should allow an unbounded amount of arguments.
 	UnboundedList = -1
 )
 

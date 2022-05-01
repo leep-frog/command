@@ -31,7 +31,7 @@ func TestCompletors(t *testing.T) {
 			name: "doesn't complete if case mismatch with upper",
 			args: "cmd A",
 			c: &Completor[[]string]{
-				SuggestionFetcher: &ListFetcher[[]string]{
+				Fetcher: &ListFetcher[[]string]{
 					Options: []string{"abc", "Abc", "ABC"},
 				},
 			},
@@ -41,7 +41,7 @@ func TestCompletors(t *testing.T) {
 			name: "doesn't complete if case mismatch with lower",
 			args: "cmd a",
 			c: &Completor[[]string]{
-				SuggestionFetcher: &ListFetcher[[]string]{
+				Fetcher: &ListFetcher[[]string]{
 					Options: []string{"abc", "Abc", "ABC"},
 				},
 			},
@@ -52,7 +52,7 @@ func TestCompletors(t *testing.T) {
 			args: "cmd A",
 			c: &Completor[[]string]{
 				CaseInsensitive: true,
-				SuggestionFetcher: &ListFetcher[[]string]{
+				Fetcher: &ListFetcher[[]string]{
 					Options: []string{"abc", "Abc", "ABC", "def", "Def", "DEF"},
 				},
 			},
@@ -63,7 +63,7 @@ func TestCompletors(t *testing.T) {
 			args: "cmd a",
 			c: &Completor[[]string]{
 				CaseInsensitive: true,
-				SuggestionFetcher: &ListFetcher[[]string]{
+				Fetcher: &ListFetcher[[]string]{
 					Options: []string{"abc", "Abc", "ABC", "def", "Def", "DEF"},
 				},
 			},
@@ -74,7 +74,7 @@ func TestCompletors(t *testing.T) {
 			args:    "cmd A",
 			wantErr: fmt.Errorf("bad news bears"),
 			c: &Completor[[]string]{
-				SuggestionFetcher: SimpleFetcher(func([]string, *Data) (*Completion, error) {
+				Fetcher: SimpleFetcher(func([]string, *Data) (*Completion, error) {
 					return &Completion{
 						Suggestions: []string{"abc", "Abc", "ABC", "def", "Def", "DEF"},
 					}, fmt.Errorf("bad news bears")
@@ -85,7 +85,7 @@ func TestCompletors(t *testing.T) {
 			name: "completes only matching cases",
 			args: "cmd A",
 			c: &Completor[[]string]{
-				SuggestionFetcher: SimpleFetcher(func([]string, *Data) (*Completion, error) {
+				Fetcher: SimpleFetcher(func([]string, *Data) (*Completion, error) {
 					return &Completion{
 						Suggestions: []string{"abc", "Abc", "ABC", "def", "Def", "DEF"},
 					}, nil
@@ -97,7 +97,7 @@ func TestCompletors(t *testing.T) {
 			name: "completes all cases if completor.CaseInsensitive and upper",
 			args: "cmd A",
 			c: &Completor[[]string]{
-				SuggestionFetcher: SimpleFetcher(func([]string, *Data) (*Completion, error) {
+				Fetcher: SimpleFetcher(func([]string, *Data) (*Completion, error) {
 					return &Completion{
 						CaseInsensitive: true,
 						Suggestions:     []string{"abc", "Abc", "ABC", "def", "Def", "DEF"},
@@ -110,7 +110,7 @@ func TestCompletors(t *testing.T) {
 			name: "completes all cases if completor.CaseInsensitive and lower",
 			args: "cmd a",
 			c: &Completor[[]string]{
-				SuggestionFetcher: SimpleFetcher(func([]string, *Data) (*Completion, error) {
+				Fetcher: SimpleFetcher(func([]string, *Data) (*Completion, error) {
 					return &Completion{
 						CaseInsensitive: true,
 						Suggestions:     []string{"abc", "Abc", "ABC", "def", "Def", "DEF"},
@@ -535,7 +535,7 @@ func TestParseAndComplete(t *testing.T) {
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			c := &Completor[[]string]{
-				SuggestionFetcher: &ListFetcher[[]string]{
+				Fetcher: &ListFetcher[[]string]{
 					Options: test.suggestions,
 				},
 			}
@@ -602,14 +602,14 @@ func (test *fetcherTest[T]) run(t *testing.T) {
 		var got []string
 		if test.singleF != nil {
 			completor := &Completor[T]{
-				SuggestionFetcher: test.singleF,
-				Distinct:          test.distinct,
+				Fetcher:  test.singleF,
+				Distinct: test.distinct,
 			}
 			got = Autocomplete(SerialNodes(Arg[T]("test", testDesc, completor)), test.args, test.ptArgs)
 		} else {
 			completor := &Completor[[]T]{
-				SuggestionFetcher: test.f,
-				Distinct:          test.distinct,
+				Fetcher:  test.f,
+				Distinct: test.distinct,
 			}
 			got = Autocomplete(SerialNodes(ListArg[T]("test", testDesc, 2, 5, completor)), test.args, test.ptArgs)
 		}

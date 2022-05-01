@@ -105,7 +105,7 @@ func (vo *ValidatorOption[T]) modifyArgOpt(ao *argOpt[T]) {
 	ao.validators = append(ao.validators, vo)
 }
 
-func (vo *ValidatorOption[T]) modifyBashNode(bn *bashCommand[T]) {
+func (vo *ValidatorOption[T]) modifyBashNode(bn *BashCommand[T]) {
 	bn.validators = append(bn.validators, vo)
 }
 
@@ -113,7 +113,11 @@ func (vo *ValidatorOption[T]) Validate(v T) error {
 	return vo.validate(v)
 }
 
-// Default arg option
+// Default is an `ArgOpt` that sets a default value for an `Arg` node.
+func Default[T any](v T) ArgOpt[T] {
+	return &defaultArgOpt[T]{v}
+}
+
 type defaultArgOpt[T any] struct {
 	v T
 }
@@ -122,6 +126,13 @@ func (dao *defaultArgOpt[T]) modifyArgOpt(ao *argOpt[T]) {
 	ao._default = &dao.v
 }
 
-func Default[T any](v T) ArgOpt[T] {
-	return &defaultArgOpt[T]{v}
+// HiddenArg is an `ArgOpt` that hides an argument from a command's usage text.
+func HiddenArg[T any]() ArgOpt[T] {
+	return &hiddenArg[T]{}
+}
+
+type hiddenArg[T any] struct{}
+
+func (ha *hiddenArg[T]) modifyArgOpt(ao *argOpt[T]) {
+	ao.hiddenUsage = true
 }

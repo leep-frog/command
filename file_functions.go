@@ -13,6 +13,7 @@ var (
 	fileRoot = ""
 )
 
+// FileTransformer returns a transformer that transforms a string into its full file-path.
 func FileTransformer() *Transformer[string] {
 	return &Transformer[string]{
 		t: func(s string) (string, error) {
@@ -23,6 +24,8 @@ func FileTransformer() *Transformer[string] {
 		},
 	}
 }
+
+// TODO: remove everything below this line??
 
 func relFile(name string) string {
 	return filepath.Join(fileRoot, name)

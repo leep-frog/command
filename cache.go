@@ -12,7 +12,7 @@ var (
 	defaultHistory       = 100
 )
 
-// CachableCLI
+// CachableCLI is an interface for CLIs that can store cached executions.
 type CachableCLI interface {
 	// GetCache returns a map from cache name to the last commands run for the CLI.
 	Cache() map[string][][]string
@@ -20,6 +20,9 @@ type CachableCLI interface {
 	MarkChanged()
 }
 
+// CacheNode returns a node that caches any execution of downstream commands.
+// A `CacheNode` introduces new branches, hence the requirement for it to be a `Node`
+// and not just a `Processor`.
 func CacheNode(name string, c CachableCLI, n *Node, opts ...CacheOption) *Node {
 	cc := &commandCache{
 		name: name,
@@ -57,10 +60,12 @@ func CacheNode(name string, c CachableCLI, n *Node, opts ...CacheOption) *Node {
 	}, ccN, HideBranchUsage(), DontCompleteSubcommands(), BranchSynonyms(map[string][]string{"history": {"h"}}))
 }
 
+// CacheOption is an option interface for modifying `CacheNode` objects.
 type CacheOption interface {
 	modifyCache(*commandCache)
 }
 
+// CacheHistory is a `CacheOption` for specifying the number of command executions that should be saved.
 func CacheHistory(n int) CacheOption {
 	return &cacheHistory{n}
 }

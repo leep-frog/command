@@ -612,7 +612,7 @@ func TestShortcutExecute(t *testing.T) {
 				Node: SerialNodes(ListArg[string]("sl", testDesc, 1, 2,
 					ShortcutOpt[[]string]("pioneer", sc),
 					&Completor[[]string]{
-						SuggestionFetcher: &ListFetcher[[]string]{[]string{"un", "deux", "trois"}},
+						Fetcher: &ListFetcher[[]string]{[]string{"un", "deux", "trois"}},
 					})),
 				Args: []string{"hello", "dee", "trois"},
 				WantData: &Data{Values: map[string]interface{}{
@@ -640,8 +640,8 @@ func TestShortcutExecute(t *testing.T) {
 				Node: SerialNodes(ListArg[string]("sl", testDesc, 1, UnboundedList,
 					ShortcutOpt[[]string]("pioneer", sc),
 					&Completor[[]string]{
-						Distinct:          true,
-						SuggestionFetcher: &ListFetcher[[]string]{[]string{"un", "deux", "trois"}},
+						Distinct: true,
+						Fetcher:  &ListFetcher[[]string]{[]string{"un", "deux", "trois"}},
 					})),
 				Args: []string{"f", "dee"},
 				WantData: &Data{Values: map[string]interface{}{
@@ -703,8 +703,8 @@ func TestShortcutExecute(t *testing.T) {
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(ListArg[string]("sl", testDesc, 1, UnboundedList, ShortcutOpt[[]string]("pioneer", sc),
 					&Completor[[]string]{
-						Distinct:          true,
-						SuggestionFetcher: &ListFetcher[[]string]{[]string{"un", "deux", "trois", "five", "six"}},
+						Distinct: true,
+						Fetcher:  &ListFetcher[[]string]{[]string{"un", "deux", "trois", "five", "six"}},
 					})),
 				Args: []string{"f", "zero", "zero", "n1", "dee", "n2", "n3", "t", "u", "n4", "n5", ""},
 				WantData: &Data{Values: map[string]interface{}{
@@ -1252,7 +1252,7 @@ func TestAliasComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2,
 					&Completor[[]string]{
-						SuggestionFetcher: &ListFetcher[[]string]{[]string{"un", "deux", "trois"}},
+						Fetcher: &ListFetcher[[]string]{[]string{"un", "deux", "trois"}},
 					}))),
 				Args: "cmd ",
 				WantData: &Data{Values: map[string]interface{}{
@@ -1267,7 +1267,7 @@ func TestAliasComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2,
 					&Completor[[]string]{
-						SuggestionFetcher: &ListFetcher[[]string]{[]string{"un", "deux", "trois"}},
+						Fetcher: &ListFetcher[[]string]{[]string{"un", "deux", "trois"}},
 					}))),
 				Args: "cmd a ",
 				WantData: &Data{Values: map[string]interface{}{
@@ -1285,7 +1285,7 @@ func TestAliasComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2,
 					&Completor[[]string]{
-						SuggestionFetcher: &ListFetcher[[]string]{[]string{"un", "deux", "trois"}},
+						Fetcher: &ListFetcher[[]string]{[]string{"un", "deux", "trois"}},
 					}))),
 				Args:    "cmd alpha b ",
 				WantErr: fmt.Errorf("shortcut has empty value"),
@@ -1296,7 +1296,7 @@ func TestAliasComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2,
 					&Completor[[]string]{
-						SuggestionFetcher: &ListFetcher[[]string]{[]string{"un", "deux", "trois"}},
+						Fetcher: &ListFetcher[[]string]{[]string{"un", "deux", "trois"}},
 					}))),
 				Args: "cmd a b ",
 				WantData: &Data{Values: map[string]interface{}{
@@ -1311,7 +1311,7 @@ func TestAliasComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2,
 					&Completor[[]string]{
-						SuggestionFetcher: &ListFetcher[[]string]{[]string{"un", "deux", "trois"}},
+						Fetcher: &ListFetcher[[]string]{[]string{"un", "deux", "trois"}},
 					}))),
 				Args: "cmd a b ",
 				WantData: &Data{Values: map[string]interface{}{
@@ -1449,7 +1449,7 @@ func TestAliasComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2,
 					&Completor[[]string]{
-						SuggestionFetcher: &ListFetcher[[]string]{[]string{"un", "deux", "trois"}},
+						Fetcher: &ListFetcher[[]string]{[]string{"un", "deux", "trois"}},
 					}))),
 				Args: "cmd zero ",
 				WantData: &Data{Values: map[string]interface{}{
@@ -1463,7 +1463,7 @@ func TestAliasComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2,
 					&Completor[[]string]{
-						SuggestionFetcher: &ListFetcher[[]string]{[]string{"un", "deux", "trois"}},
+						Fetcher: &ListFetcher[[]string]{[]string{"un", "deux", "trois"}},
 					}))),
 				Args: "cmd dee",
 				WantData: &Data{Values: map[string]interface{}{
@@ -1481,7 +1481,7 @@ func TestAliasComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2,
 					&Completor[[]string]{
-						SuggestionFetcher: &ListFetcher[[]string]{[]string{"un", "deux", "trois"}},
+						Fetcher: &ListFetcher[[]string]{[]string{"un", "deux", "trois"}},
 					}))),
 				Args: "cmd dee t",
 				WantData: &Data{Values: map[string]interface{}{
@@ -1500,8 +1500,8 @@ func TestAliasComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2,
 					&Completor[[]string]{
-						Distinct:          true,
-						SuggestionFetcher: &ListFetcher[[]string]{[]string{"un", "deux", "trois"}},
+						Distinct: true,
+						Fetcher:  &ListFetcher[[]string]{[]string{"un", "deux", "trois"}},
 					}))),
 				Args: "cmd dee ",
 				WantData: &Data{Values: map[string]interface{}{
@@ -1516,7 +1516,7 @@ func TestAliasComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(ListArg[string]("sl", testDesc, 1, 2, ShortcutOpt[[]string]("pioneer", sc),
 					&Completor[[]string]{
-						SuggestionFetcher: &ListFetcher[[]string]{[]string{"un", "deux", "trois"}},
+						Fetcher: &ListFetcher[[]string]{[]string{"un", "deux", "trois"}},
 					})),
 				Args: "cmd zero ",
 				WantData: &Data{Values: map[string]interface{}{
@@ -1535,7 +1535,7 @@ func TestAliasComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(ListArg[string]("sl", testDesc, 1, 2, ShortcutOpt[[]string]("pioneer", sc),
 					&Completor[[]string]{
-						SuggestionFetcher: &ListFetcher[[]string]{[]string{"un", "deux", "trois"}},
+						Fetcher: &ListFetcher[[]string]{[]string{"un", "deux", "trois"}},
 					})),
 				Args: "cmd hello dee",
 				WantData: &Data{Values: map[string]interface{}{
@@ -1553,7 +1553,7 @@ func TestAliasComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(ListArg[string]("sl", testDesc, 1, 2, ShortcutOpt[[]string]("pioneer", sc),
 					&Completor[[]string]{
-						SuggestionFetcher: &ListFetcher[[]string]{[]string{"un", "deux", "trois"}},
+						Fetcher: &ListFetcher[[]string]{[]string{"un", "deux", "trois"}},
 					})),
 				Args: "cmd hello dee t",
 				WantData: &Data{Values: map[string]interface{}{
@@ -1572,8 +1572,8 @@ func TestAliasComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(ListArg[string]("sl", testDesc, 1, 2, ShortcutOpt[[]string]("pioneer", sc),
 					&Completor[[]string]{
-						Distinct:          true,
-						SuggestionFetcher: &ListFetcher[[]string]{[]string{"un", "deux", "trois"}},
+						Distinct: true,
+						Fetcher:  &ListFetcher[[]string]{[]string{"un", "deux", "trois"}},
 					})),
 				Args: "cmd dee ",
 				WantData: &Data{Values: map[string]interface{}{
@@ -1593,8 +1593,8 @@ func TestAliasComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(ListArg[string]("sl", testDesc, 1, 2, ShortcutOpt[[]string]("pioneer", sc),
 					&Completor[[]string]{
-						Distinct:          true,
-						SuggestionFetcher: &ListFetcher[[]string]{[]string{"un", "deux", "trois"}},
+						Distinct: true,
+						Fetcher:  &ListFetcher[[]string]{[]string{"un", "deux", "trois"}},
 					})),
 				Args: "cmd dee t ",
 				WantData: &Data{Values: map[string]interface{}{
@@ -1615,8 +1615,8 @@ func TestAliasComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(ListArg[string]("sl", testDesc, 1, UnboundedList, ShortcutOpt[[]string]("pioneer", sc),
 					&Completor[[]string]{
-						Distinct:          true,
-						SuggestionFetcher: &ListFetcher[[]string]{[]string{"un", "deux", "trois"}},
+						Distinct: true,
+						Fetcher:  &ListFetcher[[]string]{[]string{"un", "deux", "trois"}},
 					})),
 				Args: "cmd f dee ",
 				WantData: &Data{Values: map[string]interface{}{
@@ -1639,8 +1639,8 @@ func TestAliasComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(ListArg[string]("sl", testDesc, 1, UnboundedList, ShortcutOpt[[]string]("pioneer", sc),
 					&Completor[[]string]{
-						Distinct:          true,
-						SuggestionFetcher: &ListFetcher[[]string]{[]string{"un", "deux", "trois", "five", "six"}},
+						Distinct: true,
+						Fetcher:  &ListFetcher[[]string]{[]string{"un", "deux", "trois", "five", "six"}},
 					})),
 				Args: "cmd f zero zero n1 dee n2 n3 t u n4 n5 ",
 				WantData: &Data{Values: map[string]interface{}{
@@ -1663,8 +1663,8 @@ func TestAliasComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(ListArg[string]("sl", testDesc, 1, UnboundedList, ShortcutOpt[[]string]("pioneer", sc),
 					&Completor[[]string]{
-						Distinct:          true,
-						SuggestionFetcher: &ListFetcher[[]string]{[]string{"un", "deux", "trois", "five", "six"}},
+						Distinct: true,
+						Fetcher:  &ListFetcher[[]string]{[]string{"un", "deux", "trois", "five", "six"}},
 					})),
 				Args: "cmd f zero n1 t",
 				WantData: &Data{Values: map[string]interface{}{

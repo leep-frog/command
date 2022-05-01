@@ -24,7 +24,7 @@ var (
 		"Directory of package to run",
 		command.IsDir(),
 		&command.Completor[string]{
-			SuggestionFetcher: &command.FileFetcher[string]{
+			Fetcher: &command.FileFetcher[string]{
 				IgnoreFiles: true,
 			},
 		},
@@ -69,7 +69,7 @@ func (gl *GoLeep) Node() *command.Node {
 	)
 
 	passAlongArgs.AddOptions(&command.Completor[[]string]{
-		SuggestionFetcher: &goleepFetcher{gl},
+		Fetcher: &goleepFetcher{gl},
 	})
 
 	exNode := command.SerialNodes(
@@ -85,7 +85,7 @@ func (gl *GoLeep) Node() *command.Node {
 			// Run the command
 			// Need to use ToSlash because mingw
 			cmd := gl.runCommand(d, "execute", append([]string{filepath.ToSlash(f.Name())}, d.StringList(passAlongArgs.Name())...))
-			bc := command.BashCommand("BASH_OUTPUT", cmd, command.ForwardStdout[[]string]())
+			bc := command.NewBashCommand("BASH_OUTPUT", cmd, command.ForwardStdout[[]string]())
 			if _, err := bc.Run(o); err != nil {
 				return o.Stderrf("failed to run bash script: %v", err)
 			}
@@ -125,7 +125,7 @@ func (glf *goleepFetcher) Fetch(v []string, data *command.Data) (*command.Comple
 		// Need the extra "unusedCmd" arg because autocompletion throws away the first arg (because it assumes it's the command)
 		fmt.Sprintf("%q", strings.Join(data.StringList(passAlongArgs.Name()), " ")),
 	}
-	bc := command.BashCommand("BASH_OUTPUT", glf.gl.runCommand(data, "autocomplete", extraArgs), command.HideStderr[[]string]())
+	bc := command.NewBashCommand("BASH_OUTPUT", glf.gl.runCommand(data, "autocomplete", extraArgs), command.HideStderr[[]string]())
 	o := command.NewFakeOutput()
 	v, err := bc.Run(o)
 	o.Close()

@@ -7,10 +7,12 @@ import (
 )
 
 const (
+	// SetupArgName is the argument name for `SetupArg`
 	SetupArgName = "SETUP_FILE"
 )
 
 var (
+	// SetupArg is an argument that points to the filename containing the output of the Setup command.
 	SetupArg = FileNode(SetupArgName, "file used to run setup for command", HiddenArg[string]())
 )
 
@@ -26,6 +28,7 @@ func (se *simpleEdge) UsageNext() *Node {
 	return se.n
 }
 
+// SimpleEdge returns an edge that points to the provided node.
 func SimpleEdge(n *Node) Edge {
 	if n == nil {
 		return nil
@@ -35,11 +38,13 @@ func SimpleEdge(n *Node) Edge {
 	}
 }
 
-// SerialNodes returns a graph that iterates serially over the provided processors.
+// SerialNodes returns a graph that iterates serially over the provided `Processors`.
 func SerialNodes(p Processor, ps ...Processor) *Node {
 	return SerialNodesTo(nil, p, ps...)
 }
 
+// SerialNodesTo returns a graph that iterates serially over the provided `Processors`.
+// The last `Processor` then has an edge to the provided `to` node.
 func SerialNodesTo(to *Node, p Processor, ps ...Processor) *Node {
 	root := &Node{
 		Processor: p,
@@ -73,12 +78,14 @@ func (e *executor) Usage(u *Usage) {
 	return
 }
 
+// ExecuteErrNode creates a simple execution node from the provided error-able function.
 func ExecuteErrNode(f func(Output, *Data) error) Processor {
 	return &executor{
 		executor: f,
 	}
 }
 
+// ExecturoNode creates a simple execution node from the provided no-error function.
 func ExecutorNode(f func(Output, *Data)) Processor {
 	return ExecuteErrNode(func(o Output, d *Data) error {
 		f(o, d)
@@ -179,6 +186,7 @@ func newBranchingErr(bn *branchNode) error {
 	return &branchingErr{bn}
 }
 
+// IsBranchingError returns whether or not the provided error is a branching error.
 func IsBranchingError(err error) bool {
 	_, ok := err.(*branchingErr)
 	return ok
@@ -226,20 +234,27 @@ func (bn *branchNode) Usage(u *Usage) {
 	}
 }
 
+// BranchNodeOption is an option type for modifying a `BranchNode`.
 type BranchNodeOption func(*branchNode)
 
+// DontCompleteSubcommands is a `BranchNodeOption` that prevents
+// subcommands from being included in autocompletion.
 func DontCompleteSubcommands() BranchNodeOption {
 	return func(bn *branchNode) {
 		bn.scCompletion = false
 	}
 }
 
+// HideBranchUsage is a `BranchNodeOption` that prevents `BranchNode` usage
+// from showing up in the command's usage text.
 func HideBranchUsage() BranchNodeOption {
 	return func(bn *branchNode) {
 		bn.hideUsage = true
 	}
 }
 
+// BranchSynonyms is a `BranchNodeOption` to specify synonyms for branches in a
+// `BranchNode`.
 func BranchSynonyms(synonyms map[string][]string) BranchNodeOption {
 	m := map[string]string{}
 	for k, vs := range synonyms {
@@ -252,6 +267,8 @@ func BranchSynonyms(synonyms map[string][]string) BranchNodeOption {
 	}
 }
 
+// BranchNode returns a node that branches on specific string arguments.
+// If the argument does not match any branch, then the `dflt` node is traversed.
 func BranchNode(branches map[string]*Node, dflt *Node, opts ...BranchNodeOption) *Node {
 	if branches == nil {
 		branches = map[string]*Node{}
@@ -280,6 +297,7 @@ func BranchNode(branches map[string]*Node, dflt *Node, opts ...BranchNodeOption)
 	}
 }
 
+// SimpleProcessor creates a `Processor` from execution and completion functions.
 func SimpleProcessor(e func(*Input, Output, *Data, *ExecuteData) error, c func(*Input, *Data) (*Completion, error)) Processor {
 	return &simpleProcessor{
 		e: e,
@@ -395,28 +413,33 @@ func (sp *simpleProcessor) Complete(i *Input, d *Data) (*Completion, error) {
 	return sp.c(i, d)
 }
 
+// StringMenu returns an `Arg` that is required to be one of the provided choices.
 func StringMenu(name, desc string, choices ...string) *ArgNode[string] {
 	return Arg[string](name, desc, SimpleCompletor[string](choices...), InList(choices...))
 }
 
+// ListBreakerOption is an option type for the `ListBreaker` type.
 type ListBreakerOption func(*ListBreaker)
 
 func newBreakerOpt(f func(*ListBreaker)) ListBreakerOption {
 	return f
 }
 
+// DiscardBreaker is a `ListBreakerOption` that removes the breaker argument from the input (rather than keeping it for the next node to parse).
 func DiscardBreaker() ListBreakerOption {
 	return newBreakerOpt(func(lb *ListBreaker) {
 		lb.discard = true
 	})
 }
 
+// ListBreakerUsage is a `ListBreakerOption` that inlcudes usage info in the command's usage text.
 func ListBreakerUsage(uf func(*Usage)) ListBreakerOption {
 	return newBreakerOpt(func(lb *ListBreaker) {
 		lb.u = uf
 	})
 }
 
+// ListUntilSymbol returns an unbounded list node that ends when a specific symbol is parsed.
 func ListUntilSymbol(symbol string, opts ...ListBreakerOption) *ListBreaker {
 	return ListUntil(NEQ(symbol)).AddOptions(append(opts, ListBreakerUsage(func(u *Usage) {
 		u.Usage = append(u.Usage, symbol)
@@ -424,6 +447,7 @@ func ListUntilSymbol(symbol string, opts ...ListBreakerOption) *ListBreaker {
 	}))...)
 }
 
+// AddOptions adds `ListBreakerOptions` to a `ListBreaker` object.
 func (lb *ListBreaker) AddOptions(opts ...ListBreakerOption) *ListBreaker {
 	for _, opt := range opts {
 		opt(lb)
@@ -431,12 +455,14 @@ func (lb *ListBreaker) AddOptions(opts ...ListBreakerOption) *ListBreaker {
 	return lb
 }
 
+// ListUntil returns a `ListBreaker` node that breaks when any of the provided `ValidatorOptions` are not satisfied.
 func ListUntil(validators ...*ValidatorOption[string]) *ListBreaker {
 	return &ListBreaker{
 		validators: validators,
 	}
 }
 
+// ListBreaker is an `ArgOpt` for breaking out of lists with an optional number of arguments.
 // TODO: this should be ListBreaker[T any, ST []T]
 type ListBreaker struct {
 	validators []*ValidatorOption[string]
@@ -448,14 +474,17 @@ func (lb *ListBreaker) modifyArgOpt(ao *argOpt[[]string]) {
 	ao.breaker = lb
 }
 
+// Validators returns the `ListBreaker`'s validators.
 func (lb *ListBreaker) Validators() []*ValidatorOption[string] {
 	return lb.validators
 }
 
+// DiscardBreak indicates whether the `ListBreaker` discards the argument that breaks the list.
 func (lb *ListBreaker) DiscardBreak() bool {
 	return lb.discard
 }
 
+// Usage updates the provided `Usage` object.
 func (lb *ListBreaker) Usage(u *Usage) {
 	if lb.u != nil {
 		lb.u(u)
@@ -483,16 +512,6 @@ func StringListListNode(name, desc, breakSymbol string, minN, optionalN int, opt
 	return NodeRepeater(n, minN, optionalN)
 }
 
-type hiddenArg[T any] struct{}
-
-func (ha *hiddenArg[T]) modifyArgOpt(ao *argOpt[T]) {
-	ao.hiddenUsage = true
-}
-
-func HiddenArg[T any]() ArgOpt[T] {
-	return &hiddenArg[T]{}
-}
-
 type executableAppender struct {
 	f func(Output, *Data) ([]string, error)
 }
@@ -512,10 +531,12 @@ func (ea *executableAppender) Complete(*Input, *Data) (*Completion, error) {
 
 func (ea *executableAppender) Usage(*Usage) {}
 
+// SimpleExecutableNode returns a `Processor` that adds to the command's `Executable`.
 func SimpleExecutableNode(sl ...string) Processor {
 	return ExecutableNode(func(_ Output, d *Data) ([]string, error) { return sl, nil })
 }
 
+// ExecutableNode returns a `Processor` that adds to the command's `Executable`
 func ExecutableNode(f func(Output, *Data) ([]string, error)) Processor {
 	return &executableAppender{f}
 }

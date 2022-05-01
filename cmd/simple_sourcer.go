@@ -151,13 +151,13 @@ func (f *fetcher) Fetch(value string, data *command.Data) (*command.Completion, 
 
 func (tl *Todo) Node() *command.Node {
 	pf := &command.Completor[string]{
-		SuggestionFetcher: &fetcher{
+		Fetcher: &fetcher{
 			List:    tl,
 			Primary: true,
 		},
 	}
 	sf := &command.Completor[string]{
-		SuggestionFetcher: &fetcher{List: tl},
+		Fetcher: &fetcher{List: tl},
 	}
 	return command.BranchNode(
 		map[string]*command.Node{

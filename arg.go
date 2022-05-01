@@ -2,6 +2,8 @@ package command
 
 import "fmt"
 
+// ArgNode is a type that implements `Processor`. It can be
+// created via `Arg[T]` and `ListArg[T]` functions.
 type ArgNode[T any] struct {
 	name      string
 	desc      string
@@ -12,6 +14,7 @@ type ArgNode[T any] struct {
 	flag      bool
 }
 
+// AddOptions adds options to an `ArgNode`.
 func (an *ArgNode[T]) AddOptions(opts ...ArgOpt[T]) *ArgNode[T] {
 	for _, o := range opts {
 		o.modifyArgOpt(an.opt)
@@ -19,14 +22,17 @@ func (an *ArgNode[T]) AddOptions(opts ...ArgOpt[T]) *ArgNode[T] {
 	return an
 }
 
+// Name returns the name of the argument.
 func (an *ArgNode[T]) Name() string {
 	return an.name
 }
 
+// Desc returns the description of the argument.
 func (an *ArgNode[T]) Desc() string {
 	return an.desc
 }
 
+// Set sets the argument key in the given `Data` object.
 func (an *ArgNode[T]) Set(v T, data *Data) {
 	if an.opt != nil && an.opt.customSet != nil {
 		an.opt.customSet(v, data)
@@ -35,6 +41,7 @@ func (an *ArgNode[T]) Set(v T, data *Data) {
 	}
 }
 
+// Usage adds the command info to the provided `Usage` object.
 func (an *ArgNode[T]) Usage(u *Usage) {
 	if an.opt != nil && an.opt.hiddenUsage {
 		return
@@ -64,6 +71,7 @@ func (an *ArgNode[T]) Usage(u *Usage) {
 	}
 }
 
+// Execute fulfills the `Processor` interface for `ArgNode`.
 func (an *ArgNode[T]) Execute(i *Input, o Output, data *Data, eData *ExecuteData) error {
 	an.shortcutCheck(i, false)
 
@@ -124,15 +132,20 @@ func (an *ArgNode[T]) notEnoughErr(got int) error {
 	return NotEnoughArgs(an.name, an.minN, got)
 }
 
+// IsNotEnoughArgsError returns whether or not the provided error
+// is a `NotEnoughArgs` error.
 func IsNotEnoughArgsError(err error) bool {
 	_, ok := err.(*notEnoughArgs)
 	return ok
 }
 
+// IsUsageError returns whether or not the provided error
+// is a usage-related error.
 func IsUsageError(err error) bool {
 	return IsNotEnoughArgsError(err) || IsExtraArgsError(err) || IsBranchingError(err)
 }
 
+// NotEnoughArgs returns a custom error for when not enough arguments are provided to the command.
 func NotEnoughArgs(name string, req, got int) error {
 	return &notEnoughArgs{name, req, got}
 }
@@ -161,6 +174,7 @@ func (an *ArgNode[T]) shortcutCheck(input *Input, complete bool) {
 	}
 }
 
+// Complete fulfills the `Processor` interface for `ArgNode`.
 func (an *ArgNode[T]) Complete(input *Input, data *Data) (*Completion, error) {
 	an.shortcutCheck(input, true)
 
@@ -229,18 +243,24 @@ func (an *ArgNode[T]) complete(sl []*string, enough bool, input *Input, data *Da
 	return an.opt.completor.Complete(lastArg, v, data)
 }
 
+// Arg creates an argument node that requires exactly one input.
 func Arg[T any](name, desc string, opts ...ArgOpt[T]) *ArgNode[T] {
 	return listNode(name, desc, 1, 0, opts...)
 }
 
+// OptionalArg creates an argument node that accepts zero or one input arguments.
 func OptionalArg[T any](name, desc string, opts ...ArgOpt[T]) *ArgNode[T] {
 	return listNode(name, desc, 0, 1, opts...)
 }
 
+// ListArg creates a list argument that requires at least `minN` arguments and
+// at most `minN`+`optionalN` arguments. Use UnboundedList for `optionalN` to
+// allow an unlimited number of arguments.
 func ListArg[T any](name, desc string, minN, optionalN int, opts ...ArgOpt[[]T]) *ArgNode[[]T] {
 	return listNode(name, desc, minN, optionalN, opts...)
 }
 
+// BoolNode creates a boolean argument.
 func BoolNode(name, desc string) *ArgNode[bool] {
 	return listNode[bool](name, desc, 1, 0, BoolCompletor())
 }
@@ -252,6 +272,5 @@ func listNode[T any](name, desc string, minN, optionalN int, opts ...ArgOpt[T]) 
 		minN:      minN,
 		optionalN: optionalN,
 		opt:       newArgOpt(opts...),
-		//transform: transformer,
 	}
 }

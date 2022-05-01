@@ -465,7 +465,7 @@ func TestSourcerer(t *testing.T) {
 						command.ListArg[string]()
 						command.Arg[string]("s", "desc",
 							&command.Completor[string]{
-								SuggestionFetcher: command.SimpleFetcher(func(t string, d *command.Data) (*command.Completion, error) {
+								Fetcher: command.SimpleFetcher(func(t string, d *command.Data) (*command.Completion, error) {
 									return nil, nil
 								}),
 							},

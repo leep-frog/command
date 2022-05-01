@@ -22,20 +22,33 @@ const (
 	BranchDesc   = "  <: Start of subcommand branches"
 )
 
+// UsageTestCase is a test case object for testing command usage.
 type UsageTestCase struct {
-	Node       *Node
+	// Node is the root `Node` of the command to test.
+	Node *Node
+	// WantString is the expected usage output.
 	WantString []string
 }
 
+// ExecuteTestCase is a test case object for testing command execution.
 type ExecuteTestCase struct {
+	// Node is the root `Node` of the command to test.
 	Node *Node
+	// Args is the list of arguments provided to the command.
 	Args []string
 
-	WantData        *Data
+	// WantData is the `Data` object that should be constructed.
+	WantData *Data
+	// SkipDataCheck skips the check on `WantData`.
+	SkipDataCheck bool
+	// WantExecuteData is the `ExecuteData` object that should be constructed.
 	WantExecuteData *ExecuteData
-	WantStdout      []string
-	WantStderr      []string
-	WantErr         error
+	// WantStdout is the data that should be sent to stdout.
+	WantStdout []string
+	// WantStderr is the data that should be sent to stderr.
+	WantStderr []string
+	// WantErr is the error that should be returned.
+	WantErr error
 
 	// Whether or not to test actual input against wantInput.
 	testInput bool
@@ -46,13 +59,11 @@ type ExecuteTestCase struct {
 
 	// RequiresSetup indicates whether or not the command requires setup
 	RequiresSetup bool
+	// SetupContents is the contents of the setup file provided to the command.
 	SetupContents []string
 
 	// RunResponses are the stubbed responses to return from exec.Cmd.Run.
 	RunResponses []*FakeRun
-
-	// Options to skip checks
-	SkipDataCheck bool
 
 	// File stuff
 	InitFiles     []*FakeFile
@@ -61,6 +72,7 @@ type ExecuteTestCase struct {
 	StubFiles     bool
 }
 
+// FakeRun is a fake bash run.
 type FakeRun struct {
 	Stdout []string
 	Stderr []string
@@ -82,6 +94,7 @@ func setupForTest(t *testing.T, contents []string) string {
 	return f.Name()
 }
 
+// UsageTest runs a test on command usage.
 func UsageTest(t *testing.T, utc *UsageTestCase) {
 	t.Helper()
 
@@ -94,6 +107,7 @@ func UsageTest(t *testing.T, utc *UsageTestCase) {
 	}
 }
 
+// TODO: remove this?
 type RunNodeTestCase struct {
 	Node *Node
 
@@ -176,6 +190,7 @@ func RunNodeTest(t *testing.T, rtc *RunNodeTestCase) {
 	}
 }
 
+// ExecuteTest runs a command execution test.
 func ExecuteTest(t *testing.T, etc *ExecuteTestCase) {
 	t.Helper()
 
@@ -229,11 +244,14 @@ func write(t *testing.T, iow io.Writer, contents []string) {
 	}
 }
 
+// Changeable is an interface for commands that can be changed.
+// Note: this is really just using a function from the `sourcerer.CLI` interface.
 type Changeable interface {
+	// Changed returns whether or not the undelrying command object has changed.
 	Changed() bool
 }
 
-// ChangeTest tests if an object has changed.
+// ChangeTest tests if a command object has changed properly.
 func ChangeTest(t *testing.T, want, original Changeable, opts ...cmp.Option) {
 	wantChanged := want != nil && !reflect.ValueOf(want).IsNil()
 	if original.Changed() != wantChanged {
@@ -251,16 +269,24 @@ func ChangeTest(t *testing.T, want, original Changeable, opts ...cmp.Option) {
 	}
 }
 
+// CompleteTestCase is a test case object for testing command autocompletion.
 type CompleteTestCase struct {
+	// Node is the root `Node` of the command to test.
 	Node *Node
+	// Args is the list of arguments provided to the command.
 	// Remember that args requires a dummy command argument (e.g. "cmd ")
-	Args            string
+	// since `COMP_LINE` includes that.
+	Args string
+	// PassthroughArgs are the passthrough args provided to the command autocompletion.
 	PassthroughArgs []string
 
-	Want     []string
-	WantErr  error
+	// Want is the expected set of completion suggestions.
+	Want []string
+	// WantErr is the error that should be returned.
+	WantErr error
+	// WantData is the `Data` object that should be constructed.
 	WantData *Data
-
+	// SkipDataCheck skips the check on `WantData`.
 	SkipDataCheck bool
 
 	// RunResponses are the stubbed responses to return from exec.Cmd.Run.
@@ -276,6 +302,7 @@ type CompleteTestCase struct {
 	StubFiles     bool
 }
 
+// CompleteTest runs a test on command autocompletion.
 func CompleteTest(t *testing.T, ctc *CompleteTestCase) {
 	t.Helper()
 

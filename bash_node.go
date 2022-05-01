@@ -17,12 +17,16 @@ var (
 	}
 )
 
+// BashCompletor creates a completor object that completes a command graph
+// with the output from the provided bash `command`.
 func BashCompletor[T any](command ...string) *Completor[T] {
 	return &Completor[T]{
-		SuggestionFetcher: BashFetcher[T](command...),
+		Fetcher: BashFetcher[T](command...),
 	}
 }
 
+// BashFetcher creates a fetcher object that fetches the output
+// of the provided bash `command`.
 func BashFetcher[T any](command ...string) Fetcher[T] {
 	return &bashFetcher[T]{command}
 }
@@ -32,7 +36,7 @@ type bashFetcher[T any] struct {
 }
 
 func (bf *bashFetcher[T]) Fetch(T, *Data) (*Completion, error) {
-	resp, err := BashCommand[T]("", bf.command).Run(nil)
+	resp, err := NewBashCommand[T]("", bf.command).Run(nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch autocomplete suggestions with bash command: %v", err)
 	}
@@ -41,10 +45,10 @@ func (bf *bashFetcher[T]) Fetch(T, *Data) (*Completion, error) {
 	}, nil
 }
 
-// BashCommand runs the provided command in bash and stores the response as
-// a value in data as a value with the provided type and argument name.
-func BashCommand[T any](argName string, command []string, opts ...BashOption[T]) *bashCommand[T] {
-	bc := &bashCommand[T]{
+// NewBashCommand runs the provided command in bash and stores the response as
+// a value in data with the provided type and argument name.
+func NewBashCommand[T any](argName string, command []string, opts ...BashOption[T]) *BashCommand[T] {
+	bc := &BashCommand[T]{
 		argName:  argName,
 		contents: command,
 	}
@@ -56,25 +60,28 @@ func BashCommand[T any](argName string, command []string, opts ...BashOption[T])
 
 type hideStderr[T any] struct{}
 
-func (*hideStderr[T]) modifyBashNode(bc *bashCommand[T]) {
+func (*hideStderr[T]) modifyBashNode(bc *BashCommand[T]) {
 	bc.hideStderr = true
 }
 
+// HideStderr is a `BashOption` that hides stderr output when
+// running the bash command.
 func HideStderr[T any]() BashOption[T] {
 	return &hideStderr[T]{}
 }
 
 type forwardStdout[T any] struct{}
 
-func (*forwardStdout[T]) modifyBashNode(bc *bashCommand[T]) {
+func (*forwardStdout[T]) modifyBashNode(bc *BashCommand[T]) {
 	bc.forwardStdout = true
 }
 
+// ForwardStdout is a `BashOption` that forwards stdout to the terminal (rather than just parsing it).
 func ForwardStdout[T any]() BashOption[T] {
 	return &forwardStdout[T]{}
 }
 
-type bashCommand[T any] struct {
+type BashCommand[T any] struct {
 	argName  string
 	contents []string
 	desc     string
@@ -84,27 +91,32 @@ type bashCommand[T any] struct {
 	forwardStdout bool
 }
 
+// BashOption is an option type for modifying `BashNode` objects
 type BashOption[T any] interface {
-	modifyBashNode(*bashCommand[T])
+	modifyBashNode(*BashCommand[T])
 }
 
-func (bn *bashCommand[T]) Get(d *Data) T {
+// Get fetches the relevant bash output from the provided `Data` object.
+func (bn *BashCommand[T]) Get(d *Data) T {
 	return GetData[T](d, bn.argName)
 }
 
-func (bn *bashCommand[T]) Complete(input *Input, data *Data) (*Completion, error) {
+// Complete fulfills the `Processor` interface for `BashCommand`.
+func (bn *BashCommand[T]) Complete(input *Input, data *Data) (*Completion, error) {
 	return nil, nil
 }
 
-func (bn *bashCommand[T]) Usage(u *Usage) {
+// Usage fulfills the `Processor` interface for `BashCommand`.
+func (bn *BashCommand[T]) Usage(u *Usage) {
 	u.Description = bn.desc
 }
 
-func (bn *bashCommand[T]) set(v T, d *Data) {
+func (bn *BashCommand[T]) set(v T, d *Data) {
 	d.Set(bn.argName, v)
 }
 
-func (bn *bashCommand[T]) Execute(input *Input, output Output, data *Data, eData *ExecuteData) error {
+// Execute fulfills the `Processor` interface for `BashCommand`.
+func (bn *BashCommand[T]) Execute(input *Input, output Output, data *Data, eData *ExecuteData) error {
 	err := bn.execute(input, output, data, eData)
 	if bn.hideStderr {
 		return err
@@ -112,7 +124,7 @@ func (bn *bashCommand[T]) Execute(input *Input, output Output, data *Data, eData
 	return output.Err(err)
 }
 
-func (bn *bashCommand[T]) execute(input *Input, output Output, data *Data, eData *ExecuteData) error {
+func (bn *BashCommand[T]) execute(input *Input, output Output, data *Data, eData *ExecuteData) error {
 	v, err := bn.Run(output)
 	if err != nil {
 		return err
@@ -122,11 +134,14 @@ func (bn *bashCommand[T]) execute(input *Input, output Output, data *Data, eData
 	return nil
 }
 
+// DebugMode returns whether or not debug mode is active.
+// TODO: Separate debug.go file that contains all info like this.
 func DebugMode() bool {
 	return os.Getenv("LEEP_FROG_DEBUG") != ""
 }
 
-func (bn *bashCommand[T]) Run(output Output) (T, error) {
+// Run runs the `BashCommand` with the provided `Output` object.
+func (bn *BashCommand[T]) Run(output Output) (T, error) {
 	var nill T
 	// Create temp file.
 	f, err := ioutil.TempFile("", "leepFrogCommandExecution")

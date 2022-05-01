@@ -1,5 +1,8 @@
 package command
 
+// Execute executes a node with the provided `Input` and `Output`.
+// Autocomplete returns the completion suggestions for the provided node, `COMP_LINE`,
+// and `passthroughArgs` (`passthroughArgs` are used for `Aliaser` statements).
 func Autocomplete(n *Node, compLine string, passthroughArgs []string) []string {
 	// Printing things out in autocomplete mode isn't feasible, so the error
 	// is only really used for testing purposes, hence why it is ignored here.

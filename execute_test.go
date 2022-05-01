@@ -3508,7 +3508,7 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
 					Arg[string]("PATH", "dd", &Completor[string]{
-						SuggestionFetcher: SimpleFetcher(func(string, *Data) (*Completion, error) {
+						Fetcher: SimpleFetcher(func(string, *Data) (*Completion, error) {
 							return nil, nil
 						}),
 					}),
@@ -3525,7 +3525,7 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
 					Arg[string]("PATH", "dd", &Completor[string]{
-						SuggestionFetcher: SimpleFetcher(func(string, *Data) (*Completion, error) {
+						Fetcher: SimpleFetcher(func(string, *Data) (*Completion, error) {
 							return nil, fmt.Errorf("ruh-roh")
 						}),
 					}),

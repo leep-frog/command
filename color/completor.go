@@ -14,8 +14,8 @@ func (f *fetcher) Fetch(value string, data *command.Data) (*command.Completion, 
 
 func Completor() *command.Completor[string] {
 	return &command.Completor[string]{
-		Distinct:          true,
-		SuggestionFetcher: &fetcher{},
+		Distinct: true,
+		Fetcher:  &fetcher{},
 	}
 }
 
