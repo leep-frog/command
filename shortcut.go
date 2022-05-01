@@ -11,6 +11,7 @@ var (
 	shortcutArg     = Arg[string](shortcutArgName, "TODO shortcut desc", MinLength(1))
 )
 
+// ShortcutCLI is the interface required for integrating with shortcut nodes.
 type ShortcutCLI interface {
 	// ShortcutMap returns a map from "shortcut type" to "shortcut name" to an array of "shortcut expansion".
 	// This structure easily allows for one CLI to have multiple shortcut commands.
@@ -67,6 +68,7 @@ func shortcutMap(name string, sc ShortcutCLI, n *Node) map[string]*Node {
 	}
 }
 
+// ShortcutNode wraps the provided node with a shortcut node.
 func ShortcutNode(name string, sc ShortcutCLI, n *Node) *Node {
 	executor := SerialNodesTo(n, &executeShortcut{node: n, sc: sc, name: name})
 	return BranchNode(shortcutMap(name, sc, n), executor, HideBranchUsage(), DontCompleteSubcommands())

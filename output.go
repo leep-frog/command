@@ -55,14 +55,17 @@ func (ow *outputWriter) Write(b []byte) (int, error) {
 	return len(b), nil
 }
 
+// DevNull returns an io.Writer that ignores all output.
 func DevNull() io.Writer {
 	return &outputWriter{}
 }
 
+// StdoutWriter returns an io.Writer that writes to stdout.
 func StdoutWriter(o Output) io.Writer {
 	return &outputWriter{o.Stdout}
 }
 
+// StderrWriter returns an io.Writer that writes to stderr.
 func StderrWriter(o Output) io.Writer {
 	return &outputWriter{func(s string) { o.Stderr(s) }}
 }
@@ -205,6 +208,8 @@ func osFromChan(so, se func(string)) Output {
 	}
 }
 
+// NewIgnoreErrOutput is an output that ignores errors that satisfy any
+// of the provided functions.
 func NewIgnoreErrOutput(o Output, fs ...func(error) bool) Output {
 	return &ignoreErrOutput{o, fs}
 }
@@ -228,6 +233,7 @@ func (ieo *ignoreErrOutput) Err(err error) error {
 	return ieo.fo.Err(err)
 }
 
+// FakeOutput is a fake `Output` object that can be used for testing.
 type FakeOutput struct {
 	fo
 	stdout []string
@@ -235,6 +241,7 @@ type FakeOutput struct {
 	closed bool
 }
 
+// NewFakeOutput returns a new `FakeOutput` object.
 func NewFakeOutput() *FakeOutput {
 	tcos := &FakeOutput{}
 	so := func(s string) {
@@ -248,6 +255,7 @@ func NewFakeOutput() *FakeOutput {
 	return tcos
 }
 
+// Close closes the fake output channel.
 func (fo *FakeOutput) Close() {
 	if !fo.closed {
 		fo.fo.Close()
@@ -255,11 +263,13 @@ func (fo *FakeOutput) Close() {
 	}
 }
 
+// GetStdout returns all of the data that was written to the stdout channel.
 func (fo *FakeOutput) GetStdout() []string {
 	fo.Close()
 	return fo.stdout
 }
 
+// GetStderr returns all of the data that was written to the stderr channel.
 func (fo *FakeOutput) GetStderr() []string {
 	fo.Close()
 	return fo.stderr

@@ -9,10 +9,12 @@ import (
 	"golang.org/x/exp/constraints"
 )
 
+// Option creates a `ValidatorOption` from the provided function.
 func Option[T any](f func(T) error) *ValidatorOption[T] {
 	return &ValidatorOption[T]{f}
 }
 
+// Contains [`ValidatorOption`] validates an argument contains the provided string.
 func Contains(s string) *ValidatorOption[string] {
 	return Option(
 		func(vs string) error {
@@ -24,6 +26,7 @@ func Contains(s string) *ValidatorOption[string] {
 	)
 }
 
+// MatchesRegex [`ValidatorOption`] validates an argument matches the provided regexes.
 func MatchesRegex(pattern ...string) *ValidatorOption[string] {
 	var rs []*regexp.Regexp
 	for _, p := range pattern {
@@ -41,6 +44,7 @@ func MatchesRegex(pattern ...string) *ValidatorOption[string] {
 	)
 }
 
+// IsRegex [`ValidatorOption`] validates an argument is a valid regex.
 func IsRegex() *ValidatorOption[string] {
 	return Option(
 		func(s string) error {
@@ -52,6 +56,7 @@ func IsRegex() *ValidatorOption[string] {
 	)
 }
 
+// InList [`ValidatorOption`] validates an argument is one of the provided choices.
 func InList[T comparable](choices ...T) *ValidatorOption[T] {
 	return Option(
 		func(vs T) error {
@@ -65,7 +70,7 @@ func InList[T comparable](choices ...T) *ValidatorOption[T] {
 	)
 }
 
-// TODO: can this be generic? Is there an interface for len?
+// MinLength [`ValidatorOption`] validates an argument is at least `length` long.
 func MinLength(length int) *ValidatorOption[string] {
 	var plural string
 	if length != 1 {
@@ -92,6 +97,7 @@ func fileExists(vName, s string) (os.FileInfo, error) {
 	return fi, nil
 }
 
+// FileExists [`ValidatorOption`] validates the file or directory exists.
 func FileExists() *ValidatorOption[string] {
 	return Option(
 		func(s string) error {
@@ -112,6 +118,7 @@ func isDir(vName, s string) error {
 	return nil
 }
 
+// IsDir [`ValidatorOption`] validates an argument is a directory.
 func IsDir() *ValidatorOption[string] {
 	return Option(
 		func(s string) error {
@@ -131,6 +138,7 @@ func isFile(vName, s string) error {
 	return nil
 }
 
+// IsFile [`ValidatorOption`] validates an argument is a file.
 func IsFile() *ValidatorOption[string] {
 	return Option(
 		func(s string) error {
@@ -140,6 +148,8 @@ func IsFile() *ValidatorOption[string] {
 }
 
 // Ordered options
+
+// EQ [`ValidatorOption`] validates an argument equals `n`.
 func EQ[T constraints.Ordered](n T) *ValidatorOption[T] {
 	return Option(
 		func(v T) error {
@@ -151,6 +161,7 @@ func EQ[T constraints.Ordered](n T) *ValidatorOption[T] {
 	)
 }
 
+// NEQ [`ValidatorOption`] validates an argument does not equal `n`.
 func NEQ[T constraints.Ordered](n T) *ValidatorOption[T] {
 	return Option(
 		func(v T) error {
@@ -162,6 +173,7 @@ func NEQ[T constraints.Ordered](n T) *ValidatorOption[T] {
 	)
 }
 
+// LT [`ValidatorOption`] validates an argument is less than `n`.
 func LT[T constraints.Ordered](n T) *ValidatorOption[T] {
 	return Option(
 		func(v T) error {
@@ -173,6 +185,7 @@ func LT[T constraints.Ordered](n T) *ValidatorOption[T] {
 	)
 }
 
+// LTE [`ValidatorOption`] validates an argument is less than or equal to `n`.
 func LTE[T constraints.Ordered](n T) *ValidatorOption[T] {
 	return Option(
 		func(v T) error {
@@ -184,6 +197,7 @@ func LTE[T constraints.Ordered](n T) *ValidatorOption[T] {
 	)
 }
 
+// GT [`ValidatorOption`] validates an argument is greater than `n`.
 func GT[T constraints.Ordered](n T) *ValidatorOption[T] {
 	return Option(
 		func(v T) error {
@@ -195,6 +209,7 @@ func GT[T constraints.Ordered](n T) *ValidatorOption[T] {
 	)
 }
 
+// GTE [`ValidatorOption`] validates an argument is greater than or equal to `n`.
 func GTE[T constraints.Ordered](n T) *ValidatorOption[T] {
 	return Option(
 		func(v T) error {
@@ -206,6 +221,7 @@ func GTE[T constraints.Ordered](n T) *ValidatorOption[T] {
 	)
 }
 
+// Positive [`ValidatorOption`] validates an argument is positive.
 func Positive[T constraints.Ordered]() *ValidatorOption[T] {
 	return Option(
 		func(v T) error {
@@ -218,6 +234,7 @@ func Positive[T constraints.Ordered]() *ValidatorOption[T] {
 	)
 }
 
+// NonNegative [`ValidatorOption`] validates an argument is non-negative.
 func NonNegative[T constraints.Ordered]() *ValidatorOption[T] {
 	return Option(
 		func(v T) error {
@@ -230,6 +247,7 @@ func NonNegative[T constraints.Ordered]() *ValidatorOption[T] {
 	)
 }
 
+// Negative [`ValidatorOption`] validates an argument is negative.
 func Negative[T constraints.Ordered]() *ValidatorOption[T] {
 	return Option(
 		func(v T) error {

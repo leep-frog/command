@@ -1,5 +1,6 @@
 package command
 
+// ArgOpt is a type for modifying `Arg` nodes.
 type ArgOpt[T any] interface {
 	modifyArgOpt(*argOpt[T])
 }
@@ -24,6 +25,7 @@ func newArgOpt[T any](opts ...ArgOpt[T]) *argOpt[T] {
 	return ao
 }
 
+// ShortcutOpt is an `ArgOpt` that checks for shortcut substitution.
 func ShortcutOpt[T any](name string, ac ShortcutCLI) ArgOpt[T] {
 	return &shortcutOpt[T]{
 		ShortcutName: name,
@@ -40,6 +42,8 @@ func (so *shortcutOpt[T]) modifyArgOpt(argO *argOpt[T]) {
 	argO.shortcut = so
 }
 
+// CustomSetter is an `ArgOpt` to specify a custom setting function when setting
+// argument data.
 func CustomSetter[T any](f func(T, *Data)) ArgOpt[T] {
 	cs := customSetter[T](f)
 	return &cs
@@ -51,6 +55,8 @@ func (cs *customSetter[T]) modifyArgOpt(ao *argOpt[T]) {
 	ao.customSet = *cs
 }
 
+// Transformer is an `ArgOpt` that transforms an argument.
+// TODO: make from and to different types?
 type Transformer[T any] struct {
 	t func(T) (T, error)
 	// forComplete is whether or not the value
@@ -62,7 +68,7 @@ func (t *Transformer[T]) modifyArgOpt(ao *argOpt[T]) {
 	ao.transformers = append(ao.transformers, t)
 }
 
-//func (t *Transformer[T]) ForList() *Transformer[[]T] {
+// TransformerList changes a single-arg transformer (`Transformer[T]`) to a list-arg transformer (`Transformer[[]T]`).
 func TransformerList[T any](t *Transformer[T]) *Transformer[[]T] {
 	return NewTransformer(func(vs []T) ([]T, error) {
 		l := make([]T, 0, len(vs))
@@ -77,6 +83,7 @@ func TransformerList[T any](t *Transformer[T]) *Transformer[[]T] {
 	}, t.forComplete)
 }
 
+// NewTransformer creates a new `Transformer`.
 func NewTransformer[T any](f func(T) (T, error), forComplete bool) *Transformer[T] {
 	return &Transformer[T]{
 		t:           f,
@@ -84,10 +91,12 @@ func NewTransformer[T any](f func(T) (T, error), forComplete bool) *Transformer[
 	}
 }
 
+// ValidatorOption is an `ArgOpt` for validating arguments.
 type ValidatorOption[T any] struct {
 	validate func(T) error
 }
 
+// ValidatorList changes a single-arg validator (`Validator[T]`) to a list-arg validator (`Validator[[]T]`).
 func ValidatorList[T any](vo *ValidatorOption[T]) *ValidatorOption[[]T] {
 	return &ValidatorOption[[]T]{
 		validate: func(ts []T) error {
@@ -109,6 +118,7 @@ func (vo *ValidatorOption[T]) modifyBashNode(bn *BashCommand[T]) {
 	bn.validators = append(bn.validators, vo)
 }
 
+// Validate validates the argument and returns an error if the validation fails.
 func (vo *ValidatorOption[T]) Validate(v T) error {
 	return vo.validate(v)
 }

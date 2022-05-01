@@ -18,31 +18,35 @@ var (
 	}
 )
 
-type InputSnapshot int
+type inputSnapshot int
 
+// Input is a type that tracks the entire input and how much of the input
+// has been parsed. It also takes care of input snapshots (i.e. snapshots for
+// shortcuts and caching purposes).
 type Input struct {
 	args          []*inputArg
 	remaining     []int
 	delimiter     *rune
 	offset        int
-	snapshotCount InputSnapshot
+	snapshotCount inputSnapshot
 }
 
 type inputArg struct {
 	value     string
-	snapshots map[InputSnapshot]bool
+	snapshots map[inputSnapshot]bool
 }
 
-func (ia *inputArg) addSnapshots(is ...InputSnapshot) {
+func (ia *inputArg) addSnapshots(is ...inputSnapshot) {
 	if ia.snapshots == nil {
-		ia.snapshots = map[InputSnapshot]bool{}
+		ia.snapshots = map[inputSnapshot]bool{}
 	}
 	for _, i := range is {
 		ia.snapshots[i] = true
 	}
 }
 
-func (i *Input) Snapshot() InputSnapshot {
+// Snapshot takes a snapshot of the remaining input arguments.
+func (i *Input) Snapshot() inputSnapshot {
 	i.snapshotCount++
 	for j := i.offset; j < len(i.remaining); j++ {
 		i.get(j).addSnapshots(i.snapshotCount)
@@ -50,7 +54,8 @@ func (i *Input) Snapshot() InputSnapshot {
 	return i.snapshotCount
 }
 
-func (i *Input) GetSnapshot(is InputSnapshot) []string {
+// GetSnapshot retrieves the snapshot.
+func (i *Input) GetSnapshot(is inputSnapshot) []string {
 	var r []string
 	for _, arg := range i.args {
 		if arg.snapshots[is] {
@@ -60,10 +65,12 @@ func (i *Input) GetSnapshot(is InputSnapshot) []string {
 	return r
 }
 
+// FullyProcessed returns whether or not the input has been fully processed.
 func (i *Input) FullyProcessed() bool {
 	return i.offset >= len(i.remaining)
 }
 
+// Remaining returns the remaining arguments.
 func (i *Input) Remaining() []string {
 	r := make([]string, 0, len(i.remaining))
 	for _, v := range i.remaining {
@@ -72,6 +79,7 @@ func (i *Input) Remaining() []string {
 	return r
 }
 
+// Used returns the input arguments that have already been processed.
 func (i *Input) Used() []string {
 	r := map[int]bool{}
 	for _, v := range i.remaining {
@@ -86,6 +94,7 @@ func (i *Input) Used() []string {
 	return v
 }
 
+// Peek returns the next argument and whether or not there is another argument.
 func (i *Input) Peek() (string, bool) {
 	return i.PeekAt(0)
 }
@@ -94,6 +103,7 @@ func (i *Input) get(j int) *inputArg {
 	return i.args[i.remaining[j]]
 }
 
+// CheckShortcuts checks if the next argument is a shortcut and replaces it.
 func (i *Input) CheckShortcuts(upTo int, sc ShortcutCLI, name string, complete bool) error {
 	k := 0
 	if complete {
@@ -118,20 +128,22 @@ func (i *Input) CheckShortcuts(upTo int, sc ShortcutCLI, name string, complete b
 	return nil
 }
 
+// PushFront pushes arguments to the front of the remaining input.
 func (i *Input) PushFront(sl ...string) {
 	i.PushFrontAt(0, sl...)
 }
 
+// PushFrontAt pushes arguments starting at a specific spot in the remaining arguments.
 func (i *Input) PushFrontAt(idx int, sl ...string) {
 	tmpOffset := i.offset + idx
 	// Update remaining.
 	startIdx := len(i.args)
-	var snapshots map[InputSnapshot]bool
+	var snapshots map[inputSnapshot]bool
 	if len(i.remaining) > 0 && tmpOffset < len(i.remaining) {
 		startIdx = i.remaining[tmpOffset]
 
 		if len(i.args[startIdx].snapshots) > 0 {
-			snapshots = map[InputSnapshot]bool{}
+			snapshots = map[inputSnapshot]bool{}
 			for s := range i.args[startIdx].snapshots {
 				snapshots[s] = true
 			}
@@ -140,9 +152,9 @@ func (i *Input) PushFrontAt(idx int, sl ...string) {
 
 	ial := make([]*inputArg, len(sl))
 	for j := 0; j < len(sl); j++ {
-		var sCopy map[InputSnapshot]bool
+		var sCopy map[inputSnapshot]bool
 		if snapshots != nil {
-			sCopy = map[InputSnapshot]bool{}
+			sCopy = map[inputSnapshot]bool{}
 			for s := range snapshots {
 				sCopy[s] = true
 			}
@@ -165,6 +177,7 @@ func (i *Input) PushFrontAt(idx int, sl ...string) {
 	i.remaining = append(i.remaining[:tmpOffset], append(insert, i.remaining[tmpOffset:]...)...)
 }
 
+// PeekAt peeks at a specific argument and returns whether or not there are at least that many arguments.
 func (i *Input) PeekAt(idx int) (string, bool) {
 	if idx < 0 || idx >= len(i.remaining) {
 		return "", false
@@ -172,6 +185,7 @@ func (i *Input) PeekAt(idx int) (string, bool) {
 	return i.get(idx).value, true
 }
 
+// Pop removes the next argument from the input and returns if there is at least one more argument.
 func (i *Input) Pop() (string, bool) {
 	sl, ok := i.PopN(1, 0, nil)
 	if !ok {
@@ -180,6 +194,7 @@ func (i *Input) Pop() (string, bool) {
 	return *sl[0], true
 }
 
+// PopN pops the next `n` arguments from the input and returns whether or not there are enough arguments left.
 func (i *Input) PopN(n, optN int, breaker *ListBreaker) ([]*string, bool) {
 	shift := n + optN
 	if optN == UnboundedList || shift+i.offset > len(i.remaining) {
@@ -363,17 +378,18 @@ func ParseCompLine(compLine string, passthroughArgs []string) *Input {
 	return NewInput(append(passthroughArgs, args[1:]...), state.delimiter())
 }
 
+// NewInput creates a new `Input` object from a set of args and quote delimiter.
 func NewInput(args []string, delimiter *rune) *Input {
 	i := ParseExecuteArgs(args)
 	i.delimiter = delimiter
 	return i
 }
 
-func snapshotsMap(iss ...InputSnapshot) map[InputSnapshot]bool {
+func snapshotsMap(iss ...inputSnapshot) map[inputSnapshot]bool {
 	if len(iss) == 0 {
 		return nil
 	}
-	m := map[InputSnapshot]bool{}
+	m := map[inputSnapshot]bool{}
 	for _, is := range iss {
 		m[is] = true
 	}

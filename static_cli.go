@@ -1,5 +1,6 @@
 package command
 
+// StaticCLIs returns a set of static CLIs.
 func StaticCLIs(m map[string][]string) []*staticCLI {
 	r := make([]*staticCLI, 0, len(m))
 	for k, v := range m {
@@ -8,6 +9,7 @@ func StaticCLIs(m map[string][]string) []*staticCLI {
 	return r
 }
 
+// StaticCLI returns a static CLI.
 func StaticCLI(name string, commands ...string) *staticCLI {
 	return &staticCLI{
 		name:     name,
@@ -22,9 +24,6 @@ type staticCLI struct {
 
 func (sc *staticCLI) Name() string {
 	return sc.name
-}
-func (sc *staticCLI) Load(string) error {
-	return nil
 }
 func (sc *staticCLI) Changed() bool   { return false }
 func (sc *staticCLI) Setup() []string { return nil }

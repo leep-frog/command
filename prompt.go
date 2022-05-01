@@ -5,6 +5,7 @@ import (
 	"os"
 )
 
+// Prompt prompts the user for input.
 func Prompt(output Output, question string) chan string {
 	reader := bufio.NewReader(os.Stdin)
 	output.Stdout(question)

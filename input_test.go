@@ -119,7 +119,7 @@ func TestPop(t *testing.T) {
 
 func TestSnapshots(t *testing.T) {
 	input := ParseExecuteArgs([]string{"one", "two", "three"})
-	var snapshots []InputSnapshot
+	var snapshots []inputSnapshot
 	var wantValues [][]string
 	for _, test := range []struct {
 		f            func()
