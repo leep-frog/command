@@ -20,6 +20,12 @@ type Flag interface {
 	ProcessMissing(d *Data)
 }
 
+type FlagWithType[T any] interface {
+	Flag
+	// Get returns the flags value from a `Data` object.
+	Get(*Data) T
+}
+
 func flagName(f Flag) string {
 	return fmt.Sprintf("--%s", f.Name())
 }
@@ -166,13 +172,17 @@ func (f *flag[T]) ShortName() rune {
 	return f.shortName
 }
 
+func (f *flag[T]) Get(d *Data) T {
+	return GetData[T](d, f.name)
+}
+
 // NewFlag creates a `Flag` from argument info.
-func NewFlag[T any](name string, shortName rune, desc string, opts ...ArgOpt[T]) Flag {
+func NewFlag[T any](name string, shortName rune, desc string, opts ...ArgOpt[T]) FlagWithType[T] {
 	return listFlag(name, desc, shortName, 1, 0, opts...)
 }
 
 // BoolFlag creates a `Flag` for a booean argument.
-func BoolFlag(name string, shortName rune, desc string) Flag {
+func BoolFlag(name string, shortName rune, desc string) FlagWithType[bool] {
 	return &boolFlag{
 		name:      name,
 		desc:      desc,
@@ -219,12 +229,16 @@ func (bf *boolFlag) Execute(_ *Input, _ Output, data *Data, _ *ExecuteData) erro
 	return nil
 }
 
+func (bf *boolFlag) Get(d *Data) bool {
+	return GetData[bool](d, bf.name)
+}
+
 // NewListFlag creates a `Flag` from list argument info.
-func NewListFlag[T any](name string, shortName rune, desc string, minN, optionalN int, opts ...ArgOpt[[]T]) Flag {
+func NewListFlag[T any](name string, shortName rune, desc string, minN, optionalN int, opts ...ArgOpt[[]T]) FlagWithType[[]T] {
 	return listFlag(name, desc, shortName, minN, optionalN, opts...)
 }
 
-func listFlag[T any](name, desc string, shortName rune, minN, optionalN int, opts ...ArgOpt[T]) Flag {
+func listFlag[T any](name, desc string, shortName rune, minN, optionalN int, opts ...ArgOpt[T]) FlagWithType[T] {
 	return &flag[T]{
 		name:      name,
 		desc:      desc,

@@ -32,6 +32,11 @@ func (an *ArgNode[T]) Desc() string {
 	return an.desc
 }
 
+// Get fetches the arguments value from the `Data` object.
+func (an *ArgNode[T]) Get(data *Data) T {
+	return GetData[T](data, an.name)
+}
+
 // Set sets the argument key in the given `Data` object.
 func (an *ArgNode[T]) Set(v T, data *Data) {
 	if an.opt != nil && an.opt.customSet != nil {
