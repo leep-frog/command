@@ -98,7 +98,7 @@ func (an *ArgNode[T]) Execute(i *Input, o Output, data *Data, eData *ExecuteData
 	// Run custom transformer.
 	if an.opt != nil {
 		for _, transformer := range an.opt.transformers {
-			newV, err := transformer.t(v)
+			newV, err := transformer.t(v, data)
 			if err != nil {
 				return o.Stderrf("Custom transformer failed: %v", err)
 			}
@@ -212,7 +212,7 @@ func (an *ArgNode[T]) complete(sl []*string, enough bool, input *Input, data *Da
 		for _, transformer := range an.opt.transformers {
 			if transformer.forComplete {
 				// Don't return an error because this may not be the last one.
-				newV, err := transformer.t(v)
+				newV, err := transformer.t(v, data)
 				if err == nil {
 					v = newV
 				} else {

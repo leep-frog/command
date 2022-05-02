@@ -149,7 +149,7 @@ func TestCacheExecution(t *testing.T) {
 			etc: &ExecuteTestCase{
 				Node: CacheNode("money", cc, SerialNodes(
 					Arg[string]("s", testDesc,
-						NewTransformer(func(string) (string, error) {
+						NewTransformer(func(string, *Data) (string, error) {
 							return "usd", nil
 						}, false),
 					))),
@@ -383,7 +383,7 @@ func TestCacheExecution(t *testing.T) {
 			etc: &ExecuteTestCase{
 				Node: CacheNode("money", cc, SerialNodes(
 					Arg[string]("s", testDesc,
-						NewTransformer(func(string) (string, error) {
+						NewTransformer(func(string, *Data) (string, error) {
 							return "usd", nil
 						}, false),
 					),
@@ -412,13 +412,13 @@ func TestCacheExecution(t *testing.T) {
 				Node: CacheNode("money", cc, SerialNodes(
 					Arg[int]("i", testDesc),
 					Arg[string]("s", testDesc,
-						NewTransformer(func(string) (string, error) {
+						NewTransformer(func(string, *Data) (string, error) {
 							return "usd", nil
 						}, false),
 					),
 					ListArg[float64]("fl", testDesc, 2, 0),
 					ListArg[string]("sl", testDesc, 1, 2,
-						NewTransformer(func(v []string) ([]string, error) {
+						NewTransformer(func(v []string, d *Data) ([]string, error) {
 							var newSL []string
 							for _, s := range v {
 								newSL = append(newSL, fmt.Sprintf("$%s", s))
@@ -799,7 +799,7 @@ func TestCacheExecution(t *testing.T) {
 					ListArg[int]("il", testDesc, 2, 0),
 					ListArg[float64]("fl", testDesc, 1, 3),
 				)),
-					Arg[string]("beforeStr", testDesc, NewTransformer(func(s string) (string, error) {
+					Arg[string]("beforeStr", testDesc, NewTransformer(func(s string, d *Data) (string, error) {
 						return fmt.Sprintf("TRANSFORM(%s)", s), nil
 					}, false)),
 					Arg[int]("beforeInt", testDesc),

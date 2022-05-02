@@ -382,7 +382,7 @@ func TestShortcutExecute(t *testing.T) {
 			name: "adds transformed arguments",
 			etc: &ExecuteTestCase{
 				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2,
-					NewTransformer(func([]string) ([]string, error) {
+					NewTransformer(func([]string, *Data) ([]string, error) {
 						return []string{"papa", "mama", "baby"}, nil
 					}, false)))),
 				Args: []string{"a", "bearMinimum", "grizzly", "teddy", "brown"},
@@ -414,7 +414,7 @@ func TestShortcutExecute(t *testing.T) {
 			name: "fails if transform error",
 			etc: &ExecuteTestCase{
 				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2,
-					NewTransformer(func([]string) ([]string, error) {
+					NewTransformer(func([]string, *Data) ([]string, error) {
 						return nil, fmt.Errorf("bad news bears")
 					}, false)))),
 				Args: []string{"a", "bearMinimum", "grizzly", "teddy", "brown"},
@@ -1744,7 +1744,7 @@ func newSimpleShortcut(existing map[string]map[string][]string) ShortcutCLI {
 }
 
 func UpperCaseTransformer() ArgOpt[[]string] {
-	f := func(sl []string) ([]string, error) {
+	f := func(sl []string, d *Data) ([]string, error) {
 		r := make([]string, 0, len(sl))
 		for _, v := range sl {
 			r = append(r, strings.ToUpper(v))

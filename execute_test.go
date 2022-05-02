@@ -2597,10 +2597,10 @@ func TestExecute(t *testing.T) {
 			name: "args get transformed",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					Arg[string]("strArg", testDesc, NewTransformer(func(v string) (string, error) {
+					Arg[string]("strArg", testDesc, NewTransformer(func(v string, d *Data) (string, error) {
 						return strings.ToUpper(v), nil
 					}, false)),
-					Arg[int]("intArg", testDesc, NewTransformer(func(v int) (int, error) {
+					Arg[int]("intArg", testDesc, NewTransformer(func(v int, d *Data) (int, error) {
 						return 10 * v, nil
 					}, false)),
 				),
@@ -3726,7 +3726,7 @@ func TestComplete(t *testing.T) {
 		{
 			name: "transformer does transform value when ForComplete is true",
 			ctc: &CompleteTestCase{
-				Node: SerialNodes(Arg[string]("strArg", testDesc, NewTransformer(func(string) (string, error) { return "newStuff", nil }, true))),
+				Node: SerialNodes(Arg[string]("strArg", testDesc, NewTransformer(func(string, *Data) (string, error) { return "newStuff", nil }, true))),
 				Args: "cmd abc",
 				WantData: &Data{Values: map[string]interface{}{
 					"strArg": "newStuff",
@@ -3777,7 +3777,7 @@ func TestComplete(t *testing.T) {
 			filepathAbs: filepath.Join("abso", "lutely"),
 			ctc: &CompleteTestCase{
 				Node: &Node{
-					Processor: ListArg[string]("slArg", testDesc, 1, 2, NewTransformer(func(sl []string) ([]string, error) {
+					Processor: ListArg[string]("slArg", testDesc, 1, 2, NewTransformer(func(sl []string, d *Data) ([]string, error) {
 						var r []string
 						for _, s := range sl {
 							r = append(r, fmt.Sprintf("_%s_", s))

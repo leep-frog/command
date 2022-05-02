@@ -218,9 +218,9 @@ func RunNodes(n *Node) error {
 }
 
 const (
-	// passthroughArgs is the argument name for args that are passed through
+	// PassthroughArgs is the argument name for args that are passed through
 	// to autocomplete. Used for `aliaser` command.
-	passthroughArgs = "PASSTHROUGH_ARGS"
+	PassthroughArgs = "PASSTHROUGH_ARGS"
 )
 
 // Separate method for testing purposes.
@@ -246,9 +246,9 @@ func runNodes(n *Node, o Output, d *Data, args []string) error {
 		),
 		"autocomplete": SerialNodes(
 			// Don't need comp point because input will have already been trimmed by goleep processing.
-			Arg[string](passthroughArgs, ""),
+			Arg[string](PassthroughArgs, ""),
 			ExecutorNode(func(o Output, d *Data) {
-				for _, s := range Autocomplete(n, d.String(passthroughArgs), nil) {
+				for _, s := range Autocomplete(n, d.String(PassthroughArgs), nil) {
 					o.Stdout(s)
 				}
 			})),

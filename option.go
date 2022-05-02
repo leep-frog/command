@@ -58,7 +58,7 @@ func (cs *customSetter[T]) modifyArgOpt(ao *argOpt[T]) {
 // Transformer is an `ArgOpt` that transforms an argument.
 // TODO: make from and to different types?
 type Transformer[T any] struct {
-	t func(T) (T, error)
+	t func(T, *Data) (T, error)
 	// forComplete is whether or not the value
 	// should be transformed during completions.
 	forComplete bool
@@ -70,10 +70,10 @@ func (t *Transformer[T]) modifyArgOpt(ao *argOpt[T]) {
 
 // TransformerList changes a single-arg transformer (`Transformer[T]`) to a list-arg transformer (`Transformer[[]T]`).
 func TransformerList[T any](t *Transformer[T]) *Transformer[[]T] {
-	return NewTransformer(func(vs []T) ([]T, error) {
+	return NewTransformer(func(vs []T, data *Data) ([]T, error) {
 		l := make([]T, 0, len(vs))
 		for i, v := range vs {
-			nv, err := t.t(v)
+			nv, err := t.t(v, data)
 			if err != nil {
 				return append(l, vs[i:]...), err
 			}
@@ -84,7 +84,7 @@ func TransformerList[T any](t *Transformer[T]) *Transformer[[]T] {
 }
 
 // NewTransformer creates a new `Transformer`.
-func NewTransformer[T any](f func(T) (T, error), forComplete bool) *Transformer[T] {
+func NewTransformer[T any](f func(T, *Data) (T, error), forComplete bool) *Transformer[T] {
 	return &Transformer[T]{
 		t:           f,
 		forComplete: forComplete,
