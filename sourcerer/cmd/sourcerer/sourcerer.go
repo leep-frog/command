@@ -158,10 +158,10 @@ func (*SourcererCommand) Node() *command.Node {
 }
 
 func main() {
-	os.Exit(sourcerer.Source(
+	os.Exit(sourcerer.Source([]sourcerer.CLI{
 		&SourcererCommand{},
 		&UpdateLeepPackageCommand{},
 		&UsageCommand{},
 		&AliaserCommand{},
-	))
+	}))
 }
