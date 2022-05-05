@@ -29,6 +29,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 		clis         []CLI
 		args         []string
 		ignoreNosort bool
+		opts         []Option
 		wantOutput   []string
 	}{
 		{
@@ -57,6 +58,40 @@ func TestGenerateBinaryNode(t *testing.T) {
 				`    echo $tmpFile`,
 				`  fi`,
 				`}`,
+			},
+		},
+		{
+			name: "adds aliasers at the end",
+			opts: []Option{
+				Aliaser("a1", "do", "some", "stuff"),
+				Aliaser("otherAlias", "all args --at once"),
+			},
+			wantOutput: []string{
+				`pushd . > /dev/null`,
+				`cd "$(dirname /fake/source/location)"`,
+				`go build -o $GOPATH/bin/_leep-frog-source_runner`,
+				`popd > /dev/null`,
+				`function _custom_autocomplete_leep-frog-source {`,
+				`  tFile=$(mktemp)`,
+				`  $GOPATH/bin/_leep-frog-source_runner autocomplete ${COMP_WORDS[0]} $COMP_POINT "$COMP_LINE" > $tFile`,
+				`  local IFS=$'\n'`,
+				`  COMPREPLY=( $(cat $tFile) )`,
+				`  rm $tFile`,
+				`}`,
+				`function _custom_execute_leep-frog-source {`,
+				`  # tmpFile is the file to which we write ExecuteData.Executable`,
+				`  tmpFile=$(mktemp)`,
+				`  $GOPATH/bin/_leep-frog-source_runner execute $tmpFile "$@"`,
+				`  source $tmpFile`,
+				`  if [ -z "$LEEP_FROG_DEBUG" ]`,
+				`  then`,
+				`    rm $tmpFile`,
+				`  else`,
+				`    echo $tmpFile`,
+				`  fi`,
+				`}`,
+				`aliaser a1 do some stuff`,
+				`aliaser otherAlias all args --at once`,
 			},
 		},
 		{
@@ -181,7 +216,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 				defer func() { NosortString = old }()
 			}
 			o := command.NewFakeOutput()
-			source(test.clis, test.args, o)
+			source(test.clis, test.args, o, test.opts...)
 			o.Close()
 
 			if o.GetStderr() != nil {

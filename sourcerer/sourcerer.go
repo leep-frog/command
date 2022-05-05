@@ -230,6 +230,7 @@ type sourcerer struct {
 	clis              []CLI
 	sl                string
 	printedUsageError bool
+	opts              *compiledOpts
 }
 
 func (*sourcerer) UnmarshalJSON(jsn []byte) error { return nil }
@@ -291,25 +292,44 @@ func (s *sourcerer) usageExecutor(o command.Output, d *command.Data) error {
 	return nil
 }
 
+type Option func(*compiledOpts)
+
+func Aliaser(alias string, values ...string) Option {
+	return func(o *compiledOpts) { o.aliasers[alias] = values }
+}
+
+type compiledOpts struct {
+	aliasers map[string][]string
+}
+
 // Source generates the bash source file for a list of CLIs.
-func Source(clis ...CLI) int {
+func Source(clis []CLI, opts ...Option) int {
 	o := command.NewOutput()
 	defer o.Close()
-	if source(clis, os.Args[1:], o) != nil {
+	if source(clis, os.Args[1:], o, opts...) != nil {
 		return 1
 	}
 	return 0
 }
 
 // Separate method used for testing.
-func source(clis []CLI, osArgs []string, o command.Output) error {
+func source(clis []CLI, osArgs []string, o command.Output, opts ...Option) error {
 	sl, err := getSourceLoc()
 	if err != nil {
 		return o.Annotate(err, "failed to get source location")
 	}
+
+	cos := &compiledOpts{
+		aliasers: map[string][]string{},
+	}
+	for _, oi := range opts {
+		oi(cos)
+	}
+
 	s := &sourcerer{
 		clis: clis,
 		sl:   sl,
+		opts: cos,
 	}
 
 	// Sourcerer is always executed. Its execution branches into the relevant CLI's
@@ -366,6 +386,10 @@ func (s *sourcerer) generateFile(o command.Output, d *command.Data) {
 
 		// We sort ourselves, hence the no sort.
 		o.Stdoutf("complete -F _custom_autocomplete_%s %s %s", filename, NosortString(), alias)
+	}
+
+	for alias, values := range s.opts.aliasers {
+		o.Stdoutf("aliaser %s %s", alias, strings.Join(values, " "))
 	}
 }
 
