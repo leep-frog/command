@@ -365,9 +365,20 @@ func (s *sourcerer) generateFile(o command.Output, d *command.Data) {
 		o.Stdout(aliasCommand)
 
 		// We sort ourselves, hence the no sort.
-		o.Stdoutf("complete -F _custom_autocomplete_%s -o nosort %s", filename, alias)
+		o.Stdoutf("complete -F _custom_autocomplete_%s %s %s", filename, NosortString(), alias)
 	}
 }
+
+var (
+	// NosortString returns the complete option to ignore sorting.
+	// It returns nothing if the IGNORE_NOSORT environment variable is set.
+	NosortString = func() string {
+		if _, ignore := os.LookupEnv("IGNORE_NOSORT"); ignore {
+			return ""
+		}
+		return "-o nosort"
+	}
+)
 
 func save(c CLI) error {
 	ck := cacheKey(c)

@@ -122,7 +122,7 @@ func (*AliaserCommand) Node() *command.Node {
 				`fi`,
 				fmt.Sprintf("alias %s=%q", alias, aliasTo),
 				fmt.Sprintf(sourcerer.AutocompleteForAliasFunction, alias, cli, cli, quotedArgs),
-				fmt.Sprintf("complete -F _custom_autocomplete_for_alias_%s -o nosort %s", alias, alias),
+				fmt.Sprintf("complete -F _custom_autocomplete_for_alias_%s %s %s", alias, sourcerer.NosortString(), alias),
 			}, nil
 		}),
 	)

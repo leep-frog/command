@@ -25,10 +25,11 @@ func TestGenerateBinaryNode(t *testing.T) {
 	defer func() { getSourceLoc = oldGSL }()
 
 	for _, test := range []struct {
-		name       string
-		clis       []CLI
-		args       []string
-		wantOutput []string
+		name         string
+		clis         []CLI
+		args         []string
+		ignoreNosort bool
+		wantOutput   []string
 	}{
 		{
 			name: "generates source file when no CLIs",
@@ -129,8 +130,56 @@ func TestGenerateBinaryNode(t *testing.T) {
 				"complete -F _custom_autocomplete_leep-frog-source -o nosort x",
 			},
 		},
+		{
+			name: "generates source file with CLIs ignoring nosort",
+			clis: append(SimpleCommands(map[string]string{
+				"x": "exit",
+				"l": "ls -la",
+			}), &testCLI{name: "basic", setup: []string{"his", "story"}}),
+			ignoreNosort: true,
+			wantOutput: []string{
+				`pushd . > /dev/null`,
+				`cd "$(dirname /fake/source/location)"`,
+				`go build -o $GOPATH/bin/_leep-frog-source_runner`,
+				`popd > /dev/null`,
+				`function _custom_autocomplete_leep-frog-source {`,
+				`  tFile=$(mktemp)`,
+				`  $GOPATH/bin/_leep-frog-source_runner autocomplete ${COMP_WORDS[0]} $COMP_POINT "$COMP_LINE" > $tFile`,
+				`  local IFS=$'\n'`,
+				`  COMPREPLY=( $(cat $tFile) )`,
+				`  rm $tFile`,
+				`}`,
+				`function _custom_execute_leep-frog-source {`,
+				`  # tmpFile is the file to which we write ExecuteData.Executable`,
+				`  tmpFile=$(mktemp)`,
+				`  $GOPATH/bin/_leep-frog-source_runner execute $tmpFile "$@"`,
+				`  source $tmpFile`,
+				`  if [ -z "$LEEP_FROG_DEBUG" ]`,
+				`  then`,
+				`    rm $tmpFile`,
+				`  else`,
+				`    echo $tmpFile`,
+				`  fi`,
+				`}`,
+				`function _setup_for_basic_cli {`,
+				`  his  `,
+				`  story`,
+				`}`,
+				`alias basic='o=$(mktemp) && _setup_for_basic_cli > $o && _custom_execute_leep-frog-source basic $o'`,
+				"complete -F _custom_autocomplete_leep-frog-source  basic",
+				`alias l='_custom_execute_leep-frog-source l'`,
+				"complete -F _custom_autocomplete_leep-frog-source  l",
+				"alias x='_custom_execute_leep-frog-source x'",
+				"complete -F _custom_autocomplete_leep-frog-source  x",
+			},
+		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
+			if test.ignoreNosort {
+				old := NosortString
+				NosortString = func() string { return "" }
+				defer func() { NosortString = old }()
+			}
 			o := command.NewFakeOutput()
 			source(test.clis, test.args, o)
 			o.Close()
