@@ -60,13 +60,17 @@ var (
 		`  # tmpFile is the file to which we write ExecuteData.Executable`,
 		`  tmpFile=$(mktemp)`,
 		`  $GOPATH/bin/_%s_runner execute $tmpFile "$@"`,
+		`  cat STARTING OUTPUT ------------ >> tempFile.txt`,
+		`  cat $tmpFile >> tempFile.txt`,
 		`  source $tmpFile`,
 		`  if [ -z "$LEEP_FROG_DEBUG" ]`,
 		`  then`,
-		`    rm $tmpFile || echo oops`,
+		`    echo trying to remove $tmpFile >> tempFile.txt`,
+		//`    rm $tmpFile || echo oops`,
 		`  else`,
 		`    echo $tmpFile`,
 		`  fi`,
+		`  cat ENDING OUTPUT ------------ >> tempFile.txt`,
 		`}`,
 	}, "\n")
 
