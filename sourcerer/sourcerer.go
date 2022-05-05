@@ -390,7 +390,7 @@ func (s *sourcerer) generateFile(o command.Output, d *command.Data) {
 
 	o.Stdoutf("type aliaser")
 	for alias, values := range s.opts.aliasers {
-		o.Stdoutf("echo aliaser %s %s", alias, strings.Join(values, " "))
+		o.Stdoutf("aliaser %s %s", alias, strings.Join(values, " "))
 	}
 }
 
