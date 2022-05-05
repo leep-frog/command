@@ -116,14 +116,19 @@ func (*AliaserCommand) Node() *command.Node {
 			aliasTo := fmt.Sprintf("%s %s", cli, quotedArgs)
 			return []string{
 				// TODO: check that it's a leep-frog command
+				"echo Begin aliaser",
 				getFile(cli),
+				"echo got file $file",
 				`if [ -z "$file" ]; then`,
 				`  echo Provided CLI is not a CLI generated with github.com/leep-frog/command`,
 				`  echo oopsie 2`,
 				`  return 1`,
 				`fi`,
+				fmt.Sprintf("echo aliasing %q %q", alias, aliasTo),
 				fmt.Sprintf("alias %s=%q", alias, aliasTo),
+				fmt.Sprintf("closer"),
 				fmt.Sprintf(sourcerer.AutocompleteForAliasFunction, alias, cli, cli, quotedArgs),
+				fmt.Sprintf("almost there"),
 				fmt.Sprintf("complete -F _custom_autocomplete_for_alias_%s %s %s", alias, sourcerer.NosortString(), alias),
 			}, nil
 		}),
