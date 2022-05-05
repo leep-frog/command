@@ -80,7 +80,7 @@ func (*UsageCommand) Node() *command.Node {
 				getFile(cli),
 				`if [ -z "$file" ]; then`,
 				fmt.Sprintf(`  echo %s is not a CLI generated via github.com/leep-frog/command`, cli),
-				`  exit 1`,
+				`  return 1`,
 				`fi`,
 				fmt.Sprintf(`  "$GOPATH/bin/_${file}_runner" usage %s`, cli),
 			}, nil
@@ -118,7 +118,7 @@ func (*AliaserCommand) Node() *command.Node {
 				getFile(cli),
 				`if [ -z "$file" ]; then`,
 				`  echo Provided CLI is not a CLI generated with github.com/leep-frog/command`,
-				`  exit 1`,
+				`  return 1`,
 				`fi`,
 				fmt.Sprintf("alias %s=%q", alias, aliasTo),
 				fmt.Sprintf(sourcerer.AutocompleteForAliasFunction, alias, cli, cli, quotedArgs),

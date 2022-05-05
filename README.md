@@ -55,6 +55,7 @@ import (
 
 func main() {
 	acs := []sourcerer.CLI{
+    cd.DotCLI(),
 		grep.RecursiveCLI(),
 		grep.HistoryCLI(),
 		grep.FilenameCLI(),
@@ -67,12 +68,13 @@ func main() {
 		&cache.Cache{},
 	}
 
-	for i := 0; i < 10; i++ {
-		acs = append(acs, cd.DotCLI(i))
+  opts := []sourcerer.Option{}
+	for i := 2; i <= 10; i++ {
+		opts = append(opts, cd.DotAliaser(i))
 	}
 
   // sourcerer.Source returns the exit code of the operation.
-	os.Exit(sourcerer.Source(acs...))
+  os.Exit(sourcerer.Source(acs, opts...))
 }
 ```
 
