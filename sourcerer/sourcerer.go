@@ -388,6 +388,7 @@ func (s *sourcerer) generateFile(o command.Output, d *command.Data) {
 		o.Stdoutf("complete -F _custom_autocomplete_%s %s %s", filename, NosortString(), alias)
 	}
 
+	o.Stdoutf("type aliaser")
 	for alias, values := range s.opts.aliasers {
 		o.Stdoutf("echo aliaser %s %s", alias, strings.Join(values, " "))
 	}
