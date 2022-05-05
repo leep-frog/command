@@ -60,13 +60,10 @@ var (
 		`  # tmpFile is the file to which we write ExecuteData.Executable`,
 		`  tmpFile=$(mktemp)`,
 		`  $GOPATH/bin/_%s_runner execute $tmpFile "$@"`,
-		`  echo echo START OF FILE ==================`,
-		`  cat $tmpFile`,
 		`  source $tmpFile`,
-		`  echo echo END OF FILE ====================`,
 		`  if [ -z "$LEEP_FROG_DEBUG" ]`,
 		`  then`,
-		`    rm $tmpFile`,
+		`    rm $tmpFile || echo oops`,
 		`  else`,
 		`    echo $tmpFile`,
 		`  fi`,
@@ -391,7 +388,6 @@ func (s *sourcerer) generateFile(o command.Output, d *command.Data) {
 		o.Stdoutf("complete -F _custom_autocomplete_%s %s %s", filename, NosortString(), alias)
 	}
 
-	o.Stdoutf("type aliaser")
 	for alias, values := range s.opts.aliasers {
 		o.Stdoutf("aliaser %s %s", alias, strings.Join(values, " "))
 	}

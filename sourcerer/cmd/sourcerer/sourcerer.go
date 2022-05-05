@@ -80,7 +80,6 @@ func (*UsageCommand) Node() *command.Node {
 				getFile(cli),
 				`if [ -z "$file" ]; then`,
 				fmt.Sprintf(`  echo %s is not a CLI generated via github.com/leep-frog/command`, cli),
-				`  echo oopsie`,
 				`  return 1`,
 				`fi`,
 				fmt.Sprintf(`  "$GOPATH/bin/_${file}_runner" usage %s`, cli),
@@ -116,21 +115,14 @@ func (*AliaserCommand) Node() *command.Node {
 			aliasTo := fmt.Sprintf("%s %s", cli, quotedArgs)
 			return []string{
 				// TODO: check that it's a leep-frog command
-				"echo Begin aliaser",
 				getFile(cli),
-				"echo got file $file",
 				`if [ -z "$file" ]; then`,
 				`  echo Provided CLI is not a CLI generated with github.com/leep-frog/command`,
-				`  echo oopsie 2`,
 				`  return 1`,
 				`fi`,
-				fmt.Sprintf("echo aliasing %q %q", alias, aliasTo),
 				fmt.Sprintf("alias %s=%q", alias, aliasTo),
-				fmt.Sprintf("echo closer"),
 				fmt.Sprintf(sourcerer.AutocompleteForAliasFunction, alias, cli, cli, quotedArgs),
-				fmt.Sprintf("echo almost there"),
 				fmt.Sprintf("complete -F _custom_autocomplete_for_alias_%s %s %s", alias, sourcerer.NosortString(), alias),
-				fmt.Sprintf("echo donzo!!"),
 			}, nil
 		}),
 	)
