@@ -572,7 +572,6 @@ type fetcherTest[T any] struct {
 	name          string
 	f             Fetcher[[]T]
 	singleF       Fetcher[T]
-	distinct      bool
 	args          string
 	ptArgs        []string
 	setup         func(*testing.T)
@@ -602,14 +601,12 @@ func (test *fetcherTest[T]) run(t *testing.T) {
 		var got []string
 		if test.singleF != nil {
 			completor := &Completor[T]{
-				Fetcher:  test.singleF,
-				Distinct: test.distinct,
+				Fetcher: test.singleF,
 			}
 			got = Autocomplete(SerialNodes(Arg[T]("test", testDesc, completor)), test.args, test.ptArgs)
 		} else {
 			completor := &Completor[[]T]{
-				Fetcher:  test.f,
-				Distinct: test.distinct,
+				Fetcher: test.f,
 			}
 			got = Autocomplete(SerialNodes(ListArg[T]("test", testDesc, 2, 5, completor)), test.args, test.ptArgs)
 		}
@@ -710,8 +707,7 @@ var (
 			},
 		},
 		{
-			name:     "file fetcher works when distinct",
-			distinct: true,
+			name: "file fetcher works when distinct",
 			f: &FileFetcher[[]string]{
 				Distinct: true,
 			},
@@ -1140,10 +1136,11 @@ var (
 			},
 		},
 		{
-			name:     "file fetcher returns complete match if distinct",
-			f:        &FileFetcher[[]string]{},
-			distinct: true,
-			args:     "cmd testing/metadata_/m1",
+			name: "file fetcher returns complete match if distinct",
+			f: &FileFetcher[[]string]{
+				Distinct: true,
+			},
+			args: "cmd testing/metadata_/m1",
 			want: []string{
 				"testing/metadata_/m1",
 			},

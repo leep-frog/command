@@ -76,7 +76,6 @@ func ShortcutNode(name string, sc ShortcutCLI, n *Node) *Node {
 
 func shortcutCompletor(name string, sc ShortcutCLI) *Completor[string] {
 	return &Completor[string]{
-		Distinct: true,
 		Fetcher: SimpleFetcher(func(v string, d *Data) (*Completion, error) {
 			s := []string{}
 			for k := range getShortcutMap(sc, name) {
@@ -84,6 +83,7 @@ func shortcutCompletor(name string, sc ShortcutCLI) *Completor[string] {
 			}
 			return &Completion{
 				Suggestions: s,
+				Distinct:    true,
 			}, nil
 		}),
 	}

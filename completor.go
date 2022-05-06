@@ -30,19 +30,24 @@ func SimpleCompletor[T any](s ...string) *Completor[T] {
 
 // ListFetcher is a fetcher that suggests a static set of strings.
 type ListFetcher[T any] struct {
-	Options []string
+	Options         []string
+	distinct        bool
+	caseInsensitive bool
 }
 
 func (lf *ListFetcher[T]) Fetch(T, *Data) (*Completion, error) {
-	return &Completion{Suggestions: lf.Options}, nil
+	return &Completion{
+		Distinct:    lf.distinct,
+		Suggestions: lf.Options,
+	}, nil
 }
 
 // SimpleDistinctCompletor is the same as `SimpleCompletor` except it requires distinct arguments.
 func SimpleDistinctCompletor[T any](s ...string) *Completor[T] {
 	return &Completor[T]{
-		Distinct: true,
 		Fetcher: &ListFetcher[T]{
-			Options: s,
+			distinct: true,
+			Options:  s,
 		},
 	}
 }
@@ -50,7 +55,6 @@ func SimpleDistinctCompletor[T any](s ...string) *Completor[T] {
 // CompletorList changes a single arg completor (`Completor[T]`) into a list arg completor (`Completor[[]T]`).
 func CompletorList[T any](c *Completor[T]) *Completor[[]T] {
 	return &Completor[[]T]{
-		c.Distinct,
 		c.CaseInsensitive,
 		SimpleFetcher(func(ts []T, d *Data) (*Completion, error) {
 			var t T
@@ -82,8 +86,6 @@ type Fetcher[T any] interface {
 
 // Completor is an autocompletion object that can be used as an `ArgOpt`.
 type Completor[T any] struct {
-	// Distinct is whether or not we should return only distinct suggestions (specifically to prevent duplicates in list args).
-	Distinct bool
 	// CaseInsensitve is whether or not case should be considered when filtering out suggestions.
 	CaseInsensitive bool
 	// Fetcher is object that fetches all of the suggestions.
@@ -108,6 +110,8 @@ type Completion struct {
 	CaseInsensitiveSort bool
 	// CaseInsensitve is whether or not case should be considered when filtering out suggestions.
 	CaseInsensitive bool
+	// Distinct is whether or not we should return only distinct suggestions (specifically to prevent duplicates in list args).
+	Distinct bool
 }
 
 // BoolCompletor is a completor for all boolean strings.
@@ -142,7 +146,7 @@ func (c *Completor[T]) Complete(rawValue string, value T, data *Data) (*Completi
 
 	op := getOperator[T]()
 
-	if c.Distinct {
+	if completion.Distinct {
 		existingValues := map[string]bool{}
 		// Don't include the last element because sometimes we want to just add a
 		// a space to the command. For example,
@@ -294,9 +298,9 @@ func (ff *FileFetcher[T]) Fetch(value T, data *Data) (*Completion, error) {
 	}
 	// Remove any non-distinct matches, if relevant.
 	if ff.Distinct {
-		// TODO: should this just go up to everything but the last value?
-		for _, v := range op.toArgs(value) {
-			ignorable[v] = true
+		args := op.toArgs(value)
+		for i := 0; i < len(args)-1; i++ {
+			ignorable[args[i]] = true
 		}
 	}
 
