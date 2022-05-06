@@ -61,12 +61,13 @@ var (
 		`  local tmpFile=$(mktemp)`,
 		`  $GOPATH/bin/_%s_runner execute $tmpFile "$@"`,
 		`  source $tmpFile`,
-		`  if [ -z "$LEEP_FROG_DEBUG" ]`,
-		`  then`,
+		`  local errorCode=$?`,
+		`  if [ -z "$LEEP_FROG_DEBUG" ]; then`,
 		`    rm $tmpFile`,
 		`  else`,
 		`    echo $tmpFile`,
 		`  fi`,
+		`  return $errorCode`,
 		`}`,
 	}, "\n")
 
