@@ -536,7 +536,11 @@ func SimpleExecutableNode(sl ...string) Processor {
 	return ExecutableNode(func(_ Output, d *Data) ([]string, error) { return sl, nil })
 }
 
-// ExecutableNode returns a `Processor` that adds to the command's `Executable`
+// ExecutableNode returns a `Processor` that adds to the command's `Executable`.
+// Below are some tips when writing bash outputs for this:
+// 1. Be sure to initialize variables with `local` to avoid overriding variables used in
+// sourcerer scripts.
+// 2. Use `return` rather than `exit` when terminating a session early.
 func ExecutableNode(f func(Output, *Data) ([]string, error)) Processor {
 	return &executableAppender{f}
 }

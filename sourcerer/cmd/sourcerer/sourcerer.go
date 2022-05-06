@@ -43,7 +43,7 @@ func (*UpdateLeepPackageCommand) Node() *command.Node {
 			var r []string
 			for _, p := range d.StringList(pkg) {
 				r = append(r,
-					fmt.Sprintf(`commitSha="$(git ls-remote git@github.com:leep-frog/%s.git | grep ma[is][nt] | awk '{print $1}')"`, p),
+					fmt.Sprintf(`local commitSha="$(git ls-remote git@github.com:leep-frog/%s.git | grep ma[is][nt] | awk '{print $1}')"`, p),
 					fmt.Sprintf(`go get -v "github.com/leep-frog/%s@$commitSha"`, p),
 					// else:
 					// fmt.Sprintf(`go get -u "github.com/leep-frog/%s"`, p),
@@ -55,7 +55,7 @@ func (*UpdateLeepPackageCommand) Node() *command.Node {
 }
 
 func getFile(cli string) string {
-	return fmt.Sprintf(`file="$(type %s | head -n 1 | grep "is aliased to.*_custom_execute_" | grep "_custom_execute_[^[:space:]]*" -o | sed s/_custom_execute_//g)"`, cli)
+	return fmt.Sprintf(`local file="$(type %s | head -n 1 | grep "is aliased to.*_custom_execute_" | grep "_custom_execute_[^[:space:]]*" -o | sed s/_custom_execute_//g)"`, cli)
 }
 
 // UsageCommand is a CLI for printing out usage info for a CLI.
@@ -149,7 +149,8 @@ func (*SourcererCommand) Node() *command.Node {
 			return []string{
 				"pushd . > /dev/null",
 				fmt.Sprintf("cd %s", dir),
-				`tmpFile="$(mktemp)"`,
+				// TODO: resolve issue with overlapping variable names (tmpFile here and in other places for example)
+				`local tmpFile="$(mktemp)"`,
 				fmt.Sprintf("go run . %s > $tmpFile && source $tmpFile ", d.String(bsName)),
 				"popd > /dev/null",
 			}, nil
