@@ -37,8 +37,9 @@ type ListFetcher[T any] struct {
 
 func (lf *ListFetcher[T]) Fetch(T, *Data) (*Completion, error) {
 	return &Completion{
-		Distinct:    lf.distinct,
-		Suggestions: lf.Options,
+		Distinct:        lf.distinct,
+		Suggestions:     lf.Options,
+		CaseInsensitive: lf.caseInsensitive,
 	}, nil
 }
 
@@ -55,7 +56,6 @@ func SimpleDistinctCompletor[T any](s ...string) *Completor[T] {
 // CompletorList changes a single arg completor (`Completor[T]`) into a list arg completor (`Completor[[]T]`).
 func CompletorList[T any](c *Completor[T]) *Completor[[]T] {
 	return &Completor[[]T]{
-		c.CaseInsensitive,
 		SimpleFetcher(func(ts []T, d *Data) (*Completion, error) {
 			var t T
 			if len(ts) > 0 {
@@ -86,8 +86,6 @@ type Fetcher[T any] interface {
 
 // Completor is an autocompletion object that can be used as an `ArgOpt`.
 type Completor[T any] struct {
-	// CaseInsensitve is whether or not case should be considered when filtering out suggestions.
-	CaseInsensitive bool
 	// Fetcher is object that fetches all of the suggestions.
 	Fetcher Fetcher[T]
 }
@@ -164,8 +162,6 @@ func (c *Completor[T]) Complete(rawValue string, value T, data *Data) (*Completi
 		}
 		completion.Suggestions = filtered
 	}
-
-	completion.CaseInsensitive = completion.CaseInsensitive || c.CaseInsensitive
 
 	return completion, nil
 }

@@ -51,9 +51,9 @@ func TestCompletors(t *testing.T) {
 			name: "completes all cases if completor.CaseInsensitive and upper",
 			args: "cmd A",
 			c: &Completor[[]string]{
-				CaseInsensitive: true,
 				Fetcher: &ListFetcher[[]string]{
-					Options: []string{"abc", "Abc", "ABC", "def", "Def", "DEF"},
+					caseInsensitive: true,
+					Options:         []string{"abc", "Abc", "ABC", "def", "Def", "DEF"},
 				},
 			},
 			want: []string{"ABC", "Abc", "abc"},
@@ -62,9 +62,9 @@ func TestCompletors(t *testing.T) {
 			name: "completes all cases if completor.CaseInsensitive and lower",
 			args: "cmd a",
 			c: &Completor[[]string]{
-				CaseInsensitive: true,
 				Fetcher: &ListFetcher[[]string]{
-					Options: []string{"abc", "Abc", "ABC", "def", "Def", "DEF"},
+					caseInsensitive: true,
+					Options:         []string{"abc", "Abc", "ABC", "def", "Def", "DEF"},
 				},
 			},
 			want: []string{"ABC", "Abc", "abc"},
