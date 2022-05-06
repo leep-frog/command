@@ -441,7 +441,7 @@ func save(c CLI) error {
 }
 
 func cacheKey(cli CLI) string {
-	return fmt.Sprintf("leep-frog-cache-key-%s", cli.Name())
+	return fmt.Sprintf("leep-frog-cache-key-%s.json", cli.Name())
 }
 
 // TODO: add these to clis.go and look into (potential) performance issues
