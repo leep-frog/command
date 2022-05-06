@@ -14,6 +14,7 @@ import (
 
 	"github.com/leep-frog/command"
 	"github.com/leep-frog/command/cache"
+	"golang.org/x/exp/slices"
 )
 
 var (
@@ -299,6 +300,22 @@ func Aliaser(alias string, values ...string) Option {
 	return func(o *compiledOpts) { o.aliasers[alias] = values }
 }
 
+func Aliasers(m map[string][]string) Option {
+	var opts []Option
+	for a, vs := range m {
+		opts = append(opts, Aliaser(a, vs...))
+	}
+	return multiOpts(opts...)
+}
+
+func multiOpts(opts ...Option) Option {
+	return func(co *compiledOpts) {
+		for _, o := range opts {
+			o(co)
+		}
+	}
+}
+
 type compiledOpts struct {
 	aliasers map[string][]string
 }
@@ -389,8 +406,13 @@ func (s *sourcerer) generateFile(o command.Output, d *command.Data) {
 		o.Stdoutf("complete -F _custom_autocomplete_%s %s %s", filename, NosortString(), alias)
 	}
 
-	for alias, values := range s.opts.aliasers {
-		o.Stdoutf("aliaser %s %s", alias, strings.Join(values, " "))
+	var aliases []string
+	for alias := range s.opts.aliasers {
+		aliases = append(aliases, alias)
+	}
+	slices.Sort(aliases)
+	for _, alias := range aliases {
+		o.Stdoutf("aliaser %s %s", alias, strings.Join(s.opts.aliasers[alias], " "))
 	}
 }
 
