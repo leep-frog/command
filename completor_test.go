@@ -739,8 +739,8 @@ var (
 			name: "file completor ignores things from IgnoreFunc",
 			c: &FileCompletor[[]string]{
 				Directory: "testing/dir1",
-				IgnoreFunc: func([]string, *Data) []string {
-					return []string{"third.go", "other", "fourth.py"}
+				IgnoreFunc: func(fp, s string, data *Data) bool {
+					return s == "third.go" || s == "other" || s == "fourth.py"
 				},
 			},
 			want: []string{

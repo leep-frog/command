@@ -230,9 +230,8 @@ type FileCompletor[T any] struct {
 	IgnoreFiles bool
 	// IgnoreDirectories indicates whether we should only consider files.
 	IgnoreDirectories bool
-	// IgnoreFunc is a custom function that returns the set of strings to ignore.
-	// TODO: should this just return a boolean and have []string as an input?
-	IgnoreFunc func(T, *Data) []string
+	// IgnoreFunc is a function that indicates whether a suggestion should be ignored.
+	IgnoreFunc func(fullPath string, basename string, data *Data) bool
 }
 
 func (ff *FileCompletor[T]) modifyArgOpt(ao *argOpt[T]) {
@@ -289,25 +288,26 @@ func (ff *FileCompletor[T]) Complete(value T, data *Data) (*Completion, error) {
 		return nil, nil
 	}
 
-	ignorable := map[string]bool{}
-	if ff.IgnoreFunc != nil {
-		for _, s := range ff.IgnoreFunc(value, data) {
-			ignorable[s] = true
-		}
-	}
-	// Remove any non-distinct matches, if relevant.
+	// Ignore any non-distinct matches, if relevant.
+	argSet := map[string]bool{}
 	if ff.Distinct {
 		args := op.toArgs(value)
 		for i := 0; i < len(args)-1; i++ {
-			ignorable[args[i]] = true
+			argSet[args[i]] = true
 		}
 	}
-
 	relevantSuggestions := make([]string, 0, len(suggestions))
 	for _, s := range suggestions {
-		if !ignorable[fmt.Sprintf("%s%s", laDir, s)] {
-			relevantSuggestions = append(relevantSuggestions, s)
+		fullPath := fmt.Sprintf("%s%s", laDir, s)
+		if argSet[fullPath] {
+			continue
 		}
+
+		if ff.IgnoreFunc != nil && ff.IgnoreFunc(fullPath, s, data) {
+			continue
+		}
+
+		relevantSuggestions = append(relevantSuggestions, s)
 	}
 	if len(relevantSuggestions) == 0 {
 		return nil, nil
