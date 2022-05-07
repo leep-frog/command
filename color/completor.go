@@ -4,19 +4,8 @@ import (
 	"github.com/leep-frog/command"
 )
 
-type fetcher struct{}
-
-func (f *fetcher) Fetch(value string, data *command.Data) (*command.Completion, error) {
-	return &command.Completion{
-		Suggestions: Attributes(),
-	}, nil
-}
-
-func Completor() *command.Completor[string] {
-	return &command.Completor[string]{
-		Distinct: true,
-		Fetcher:  &fetcher{},
-	}
+func Completor() command.Completor[string] {
+	return command.SimpleDistinctCompletor[string](Attributes()...)
 }
 
 var (

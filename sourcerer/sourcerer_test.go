@@ -545,7 +545,7 @@ func TestSourcerer(t *testing.T) {
 			),
 		},
 		/*{
-			name: "autocomplete doesn't complet passthrough args",
+			name: "autocomplete doesn't complete passthrough args",
 			args: []string{"autocomplete", "basic", "0", "", "al"},
 			clis: []CLI{
 				&testCLI{

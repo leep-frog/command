@@ -23,11 +23,7 @@ var (
 		'd',
 		"Directory of package to run",
 		command.IsDir(),
-		&command.Completor[string]{
-			Fetcher: &command.FileFetcher[string]{
-				IgnoreFiles: true,
-			},
-		},
+		&command.FileCompletor[string]{IgnoreFiles: true},
 		command.Default("."),
 	)
 	passAlongArgs = command.ListArg[string](command.PassthroughArgs, "Args to pass through to the command", 0, command.UnboundedList)
@@ -68,9 +64,7 @@ func (gl *GoLeep) Node() *command.Node {
 		}, nil),
 	)
 
-	passAlongArgs.AddOptions(&command.Completor[[]string]{
-		Fetcher: &goleepFetcher{gl},
-	})
+	passAlongArgs.AddOptions(completor(gl))
 
 	exNode := command.SerialNodes(
 		command.Description("Execute the provided go files"),
@@ -116,23 +110,21 @@ func (gl *GoLeep) Node() *command.Node {
 	}, exNode, command.DontCompleteSubcommands())
 }
 
-type goleepFetcher struct {
-	gl *GoLeep
-}
-
-func (glf *goleepFetcher) Fetch(v []string, data *command.Data) (*command.Completion, error) {
-	extraArgs := []string{
-		// Need the extra "unusedCmd" arg because autocompletion throws away the first arg (because it assumes it's the command)
-		fmt.Sprintf("%q", strings.Join(data.StringList(passAlongArgs.Name()), " ")),
-	}
-	bc := command.NewBashCommand("BASH_OUTPUT", glf.gl.runCommand(data, "autocomplete", extraArgs), command.HideStderr[[]string]())
-	o := command.NewFakeOutput()
-	v, err := bc.Run(o)
-	o.Close()
-	if err != nil {
-		return nil, err
-	}
-	return &command.Completion{
-		Suggestions: v,
-	}, nil
+func completor(gl *GoLeep) command.Completor[[]string] {
+	return command.CompletorFromFunc(func(s []string, data *command.Data) (*command.Completion, error) {
+		extraArgs := []string{
+			// Need the extra "unusedCmd" arg because autocompletion throws away the first arg (because it assumes it's the command)
+			fmt.Sprintf("%q", strings.Join(data.StringList(passAlongArgs.Name()), " ")),
+		}
+		bc := command.NewBashCommand("BASH_OUTPUT", gl.runCommand(data, "autocomplete", extraArgs), command.HideStderr[[]string]())
+		o := command.NewFakeOutput()
+		v, err := bc.Run(o)
+		o.Close()
+		if err != nil {
+			return nil, err
+		}
+		return &command.Completion{
+			Suggestions: v,
+		}, nil
+	})
 }

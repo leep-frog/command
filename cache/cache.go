@@ -40,7 +40,7 @@ func (c *Cache) Setup() []string { return nil }
 
 // Node returns the `command.Node` for the cache CLI.
 func (c *Cache) Node() *command.Node {
-	arg := command.Arg[string]("KEY", "Key of the data to get", command.MatchesRegex(keyRegex), &command.Completor[string]{Fetcher: &fetcher{c}})
+	arg := command.Arg[string]("KEY", "Key of the data to get", command.MatchesRegex(keyRegex), completor(c))
 	return command.BranchNode(map[string]*command.Node{
 		"setdir": command.SerialNodes(
 			command.FileNode("DIR", "Directory in which to store data", command.IsDir()),
@@ -94,18 +94,16 @@ func (c *Cache) Node() *command.Node {
 	}, nil)
 }
 
-type fetcher struct {
-	c *Cache
-}
-
-func (f *fetcher) Fetch(string, *command.Data) (*command.Completion, error) {
-	r, err := f.c.List()
-	if err != nil {
-		return nil, fmt.Errorf("failed to list files: %v", err)
-	}
-	return &command.Completion{
-		Suggestions: r,
-	}, nil
+func completor(c *Cache) command.Completor[string] {
+	return command.CompletorFromFunc(func(s string, d *command.Data) (*command.Completion, error) {
+		r, err := c.List()
+		if err != nil {
+			return nil, fmt.Errorf("failed to list files: %v", err)
+		}
+		return &command.Completion{
+			Suggestions: r,
+		}, nil
+	})
 }
 
 // NewTestCache is a function useful for stubbing out caches in tests.

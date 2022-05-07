@@ -865,13 +865,7 @@ func TestCacheComplete(t *testing.T) {
 			name: "defers completion to provided node",
 			ctc: &CompleteTestCase{
 				Node: CacheNode("money", cc, SerialNodes(
-					ListArg[string]("sl", testDesc, 1, 2,
-						&Completor[[]string]{
-							Fetcher: &ListFetcher[[]string]{
-								Options: []string{"buck", "dollar", "dollHairs", "dinero", "usd"},
-							},
-						},
-					),
+					ListArg[string]("sl", testDesc, 1, 2, SimpleCompletor[[]string]("buck", "dollar", "dollHairs", "dinero", "usd")),
 				)),
 				Args: "cmd $ d",
 				Want: []string{"dinero", "dollHairs", "dollar"},

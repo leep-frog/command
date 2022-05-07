@@ -3,19 +3,19 @@ package command
 import "strconv"
 
 var (
-	boolStringMap = map[string]bool{
-		"1":     true,
-		"t":     true,
-		"T":     true,
-		"true":  true,
-		"TRUE":  true,
-		"True":  true,
-		"0":     false,
-		"f":     false,
-		"F":     false,
-		"false": false,
-		"FALSE": false,
-		"False": false,
+	boolStringValues = []string{
+		"1",
+		"t",
+		"T",
+		"true",
+		"TRUE",
+		"True",
+		"0",
+		"f",
+		"F",
+		"false",
+		"FALSE",
+		"False",
 	}
 )
 

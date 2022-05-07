@@ -19,30 +19,16 @@ var (
 
 // BashCompletor creates a completor object that completes a command graph
 // with the output from the provided bash `command`.
-func BashCompletor[T any](command ...string) *Completor[T] {
-	return &Completor[T]{
-		Fetcher: BashFetcher[T](command...),
-	}
-}
-
-// BashFetcher creates a fetcher object that fetches the output
-// of the provided bash `command`.
-func BashFetcher[T any](command ...string) Fetcher[T] {
-	return &bashFetcher[T]{command}
-}
-
-type bashFetcher[T any] struct {
-	command []string
-}
-
-func (bf *bashFetcher[T]) Fetch(T, *Data) (*Completion, error) {
-	resp, err := NewBashCommand[T]("", bf.command).Run(nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to fetch autocomplete suggestions with bash command: %v", err)
-	}
-	return &Completion{
-		Suggestions: getOperator[T]().toArgs(resp),
-	}, nil
+func BashCompletor[T any](opts *Completion, command ...string) Completor[T] {
+	return &simpleCompletor[T]{func(t T, d *Data) (*Completion, error) {
+		resp, err := NewBashCommand[T]("", command).Run(nil)
+		if err != nil {
+			return nil, fmt.Errorf("failed to fetch autocomplete suggestions with bash command: %v", err)
+		}
+		c := opts.Clone()
+		c.Suggestions = getOperator[T]().toArgs(resp)
+		return c, nil
+	}}
 }
 
 // NewBashCommand runs the provided command in bash and stores the response as

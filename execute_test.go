@@ -3507,11 +3507,7 @@ func TestComplete(t *testing.T) {
 			name: "stop iterating if a completion returns nil",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					Arg[string]("PATH", "dd", &Completor[string]{
-						Fetcher: SimpleFetcher(func(string, *Data) (*Completion, error) {
-							return nil, nil
-						}),
-					}),
+					Arg[string]("PATH", "dd", SimpleCompletor[string]()),
 					ListArg[string]("SUB_PATH", "stc", 0, UnboundedList, SimpleCompletor[[]string]("un", "deux", "trois")),
 				),
 				Args: "cmd p",
@@ -3524,11 +3520,9 @@ func TestComplete(t *testing.T) {
 			name: "stop iterating if a completion returns an error",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					Arg[string]("PATH", "dd", &Completor[string]{
-						Fetcher: SimpleFetcher(func(string, *Data) (*Completion, error) {
-							return nil, fmt.Errorf("ruh-roh")
-						}),
-					}),
+					Arg[string]("PATH", "dd", CompletorFromFunc[string](func(string, *Data) (*Completion, error) {
+						return nil, fmt.Errorf("ruh-roh")
+					})),
 					ListArg[string]("SUB_PATH", "stc", 0, UnboundedList, SimpleCompletor[[]string]("un", "deux", "trois")),
 				),
 				Args:    "cmd p",

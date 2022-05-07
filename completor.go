@@ -20,81 +20,61 @@ const (
 )
 
 // SimpleCompletor returns a completor that suggests the provided strings for command autocompletion.
-func SimpleCompletor[T any](s ...string) *Completor[T] {
-	return &Completor[T]{
-		Fetcher: &ListFetcher[T]{
-			Options: s,
+func SimpleCompletor[T any](s ...string) Completor[T] {
+	return AsCompletor[T](
+		&Completion{
+			Suggestions: s,
 		},
-	}
+	)
 }
 
-// ListFetcher is a fetcher that suggests a static set of strings.
-type ListFetcher[T any] struct {
-	Options         []string
-	distinct        bool
-	caseInsensitive bool
-}
-
-func (lf *ListFetcher[T]) Fetch(T, *Data) (*Completion, error) {
-	return &Completion{
-		Distinct:        lf.distinct,
-		Suggestions:     lf.Options,
-		CaseInsensitive: lf.caseInsensitive,
-	}, nil
-}
-
-// SimpleDistinctCompletor is the same as `SimpleCompletor` except it requires distinct arguments.
-func SimpleDistinctCompletor[T any](s ...string) *Completor[T] {
-	return &Completor[T]{
-		Fetcher: &ListFetcher[T]{
-			distinct: true,
-			Options:  s,
+// SimpleDistinctCompletor returns a completor that distinctly suggests the provided strings for command autocompletion.
+func SimpleDistinctCompletor[T any](s ...string) Completor[T] {
+	return AsCompletor[T](
+		&Completion{
+			Distinct:    true,
+			Suggestions: s,
 		},
-	}
+	)
 }
 
 // CompletorList changes a single arg completor (`Completor[T]`) into a list arg completor (`Completor[[]T]`).
-func CompletorList[T any](c *Completor[T]) *Completor[[]T] {
-	return &Completor[[]T]{
-		SimpleFetcher(func(ts []T, d *Data) (*Completion, error) {
+func CompletorList[T any](c Completor[T]) Completor[[]T] {
+	return &simpleCompletor[[]T]{
+		f: func(ts []T, d *Data) (*Completion, error) {
 			var t T
 			if len(ts) > 0 {
 				t = ts[len(ts)-1]
 			}
-			return c.Fetcher.Fetch(t, d)
-		}),
+			return c.Complete(t, d)
+		},
 	}
 }
 
-type simpleFetcher[T any] struct {
+// CompletorFromFunc returns a `Completor` object from the provided function.
+func CompletorFromFunc[T any](f func(T, *Data) (*Completion, error)) Completor[T] {
+	return &simpleCompletor[T]{f}
+}
+
+type simpleCompletor[T any] struct {
 	f func(T, *Data) (*Completion, error)
 }
 
-func (sf *simpleFetcher[T]) Fetch(v T, d *Data) (*Completion, error) {
-	return sf.f(v, d)
+func (sc *simpleCompletor[T]) Complete(t T, d *Data) (*Completion, error) {
+	return sc.f(t, d)
 }
 
-// SimpleFetcher creates a `Fetcher` object from the provided function.
-func SimpleFetcher[T any](f func(T, *Data) (*Completion, error)) Fetcher[T] {
-	return &simpleFetcher[T]{f: f}
-}
-
-// Fetcher is an interface for fetching command suggestions.
-type Fetcher[T any] interface {
-	Fetch(T, *Data) (*Completion, error)
+func (sc *simpleCompletor[T]) modifyArgOpt(ao *argOpt[T]) {
+	ao.completor = sc
 }
 
 // Completor is an autocompletion object that can be used as an `ArgOpt`.
-type Completor[T any] struct {
-	// Fetcher is object that fetches all of the suggestions.
-	Fetcher Fetcher[T]
+type Completor[T any] interface {
+	Complete(T, *Data) (*Completion, error)
+	modifyArgOpt(*argOpt[T])
 }
 
-func (c *Completor[T]) modifyArgOpt(ao *argOpt[T]) {
-	ao.completor = c
-}
-
-// Completion is the object returned by a fetcher.
+// Completion is the object constructed by a completor.
 type Completion struct {
 	// Suggestions is the set of autocomplete suggestions.
 	Suggestions []string
@@ -112,32 +92,51 @@ type Completion struct {
 	Distinct bool
 }
 
-// BoolCompletor is a completor for all boolean strings.
-func BoolCompletor() *Completor[bool] {
-	return &Completor[bool]{
-		Fetcher: &boolFetcher{},
-	}
-}
-
-type boolFetcher struct{}
-
-func (*boolFetcher) Fetch(bool, *Data) (*Completion, error) {
-	var keys []string
-	for k := range boolStringMap {
-		keys = append(keys, k)
-	}
+func (c *Completion) Clone() *Completion {
 	return &Completion{
-		Suggestions: keys,
-	}, nil
+		c.Suggestions,
+		c.IgnoreFilter,
+		c.DontComplete,
+		c.CaseInsensitiveSort,
+		c.CaseInsensitive,
+		c.Distinct,
+	}
 }
 
-// Complete generates the `Completion` object from the provided inputs.
-func (c *Completor[T]) Complete(rawValue string, value T, data *Data) (*Completion, error) {
-	if c == nil || c.Fetcher == nil {
+// AsCompletor converts the `Completion` object into a `Completor` interface.
+// This function is useful for constructing simple completors. To create a simple list,
+// for example:
+// ```go
+// &Completion{Suggestions: []{"abc", "def", ...}}.AsCompletor
+// ```
+func AsCompletor[T any](c *Completion) Completor[T] {
+	return &completionCompletor[T]{c}
+}
+
+type completionCompletor[T any] struct {
+	c *Completion
+}
+
+func (sc *completionCompletor[T]) Complete(t T, d *Data) (*Completion, error) {
+	return sc.c, nil
+}
+
+func (sc *completionCompletor[T]) modifyArgOpt(c *argOpt[T]) {
+	c.completor = sc
+}
+
+// BoolCompletor is a completor for all boolean strings.
+func BoolCompletor() Completor[bool] {
+	return SimpleCompletor[bool](boolStringValues...)
+}
+
+// RunCompletion generates the `Completion` object from the provided inputs.
+func RunCompletion[T any](c Completor[T], rawValue string, value T, data *Data) (*Completion, error) {
+	if c == nil {
 		return nil, nil
 	}
 
-	completion, err := c.Fetcher.Fetch(value, data)
+	completion, err := c.Complete(value, data)
 	if completion == nil || err != nil {
 		return nil, err
 	}
@@ -214,14 +213,14 @@ func (c *Completion) Process(input *Input) []string {
 	return results
 }
 
-// FileFetcher is a `Fetcher` implementer specific to file fetching.
-type FileFetcher[T any] struct {
+// FileCompletor is a `Completor` implementer specifically for file args.
+type FileCompletor[T any] struct {
 	// Regexp is the regexp that all suggested files must satisfy.
 	Regexp *regexp.Regexp
 	// Directory is the directory in which to search for files.
 	Directory string
 	// Distinct is whether or not each argument has to be unique.
-	// Separate from Completor.Distinct because file fetching
+	// Separate from Completion.Distinct because file completion
 	// does more complicated custom logic (like only comparing
 	// base names even though other arguments may have folder paths too).
 	Distinct bool
@@ -236,8 +235,12 @@ type FileFetcher[T any] struct {
 	IgnoreFunc func(T, *Data) []string
 }
 
-// Fetch fetches the set of files for autocompletion.
-func (ff *FileFetcher[T]) Fetch(value T, data *Data) (*Completion, error) {
+func (ff *FileCompletor[T]) modifyArgOpt(ao *argOpt[T]) {
+	ao.completor = ff
+}
+
+// Complete creates a `Completion` object with the relevant set of files.
+func (ff *FileCompletor[T]) Complete(value T, data *Data) (*Completion, error) {
 	var lastArg string
 	op := getOperator[T]()
 	if args := op.toArgs(value); len(args) > 0 {
@@ -397,7 +400,7 @@ func getAutofillLetters(laFile string, suggestions []string) (string, bool) {
 // FileNode creates an `Arg` node for a file object.
 func FileNode(argName, desc string, opts ...ArgOpt[string]) *ArgNode[string] {
 	opts = append(opts,
-		&Completor[string]{Fetcher: &FileFetcher[string]{}},
+		&FileCompletor[string]{},
 		FileTransformer(),
 		FileExists(),
 	)
@@ -407,7 +410,7 @@ func FileNode(argName, desc string, opts ...ArgOpt[string]) *ArgNode[string] {
 // FileListNode creates an `ArgList` node for file objects.
 func FileListNode(argName, desc string, minN, optionalN int, opts ...ArgOpt[[]string]) *ArgNode[[]string] {
 	opts = append(opts,
-		&Completor[[]string]{Fetcher: &FileFetcher[[]string]{}},
+		&FileCompletor[[]string]{},
 		TransformerList(FileTransformer()),
 	)
 	return ListArg(argName, desc, minN, optionalN, opts...)

@@ -14,7 +14,7 @@ import (
 func TestCompletors(t *testing.T) {
 	type testCase struct {
 		name    string
-		c       *Completor[[]string]
+		c       Completor[[]string]
 		args    string
 		want    []string
 		wantErr error
@@ -24,99 +24,71 @@ func TestCompletors(t *testing.T) {
 			name: "nil completor returns nil",
 		},
 		{
-			name: "nil fetcher returns nil",
-			c:    &Completor[[]string]{},
+			name: "nil completor returns nil",
+			c:    SimpleCompletor[[]string](),
 		},
 		{
 			name: "doesn't complete if case mismatch with upper",
 			args: "cmd A",
-			c: &Completor[[]string]{
-				Fetcher: &ListFetcher[[]string]{
-					Options: []string{"abc", "Abc", "ABC"},
-				},
-			},
+			c:    SimpleCompletor[[]string]("abc", "Abc", "ABC"),
 			want: []string{"ABC", "Abc"},
 		},
 		{
 			name: "doesn't complete if case mismatch with lower",
 			args: "cmd a",
-			c: &Completor[[]string]{
-				Fetcher: &ListFetcher[[]string]{
-					Options: []string{"abc", "Abc", "ABC"},
-				},
-			},
+			c:    SimpleCompletor[[]string]("abc", "Abc", "ABC"),
 			want: []string{"abc"},
 		},
 		{
 			name: "completes all cases if completor.CaseInsensitive and upper",
 			args: "cmd A",
-			c: &Completor[[]string]{
-				Fetcher: &ListFetcher[[]string]{
-					caseInsensitive: true,
-					Options:         []string{"abc", "Abc", "ABC", "def", "Def", "DEF"},
-				},
-			},
+			c: AsCompletor[[]string](&Completion{
+				CaseInsensitive: true,
+				Suggestions:     []string{"abc", "Abc", "ABC", "def", "Def", "DEF"},
+			}),
 			want: []string{"ABC", "Abc", "abc"},
 		},
 		{
 			name: "completes all cases if completor.CaseInsensitive and lower",
 			args: "cmd a",
-			c: &Completor[[]string]{
-				Fetcher: &ListFetcher[[]string]{
-					caseInsensitive: true,
-					Options:         []string{"abc", "Abc", "ABC", "def", "Def", "DEF"},
-				},
-			},
+			c: AsCompletor[[]string](&Completion{
+				CaseInsensitive: true,
+				Suggestions:     []string{"abc", "Abc", "ABC", "def", "Def", "DEF"},
+			}),
 			want: []string{"ABC", "Abc", "abc"},
 		},
 		{
 			name:    "returns error",
 			args:    "cmd A",
 			wantErr: fmt.Errorf("bad news bears"),
-			c: &Completor[[]string]{
-				Fetcher: SimpleFetcher(func([]string, *Data) (*Completion, error) {
-					return &Completion{
-						Suggestions: []string{"abc", "Abc", "ABC", "def", "Def", "DEF"},
-					}, fmt.Errorf("bad news bears")
-				}),
-			},
+			c: CompletorFromFunc(func([]string, *Data) (*Completion, error) {
+				return &Completion{
+					Suggestions: []string{"abc", "Abc", "ABC", "def", "Def", "DEF"},
+				}, fmt.Errorf("bad news bears")
+			}),
 		},
 		{
 			name: "completes only matching cases",
 			args: "cmd A",
-			c: &Completor[[]string]{
-				Fetcher: SimpleFetcher(func([]string, *Data) (*Completion, error) {
-					return &Completion{
-						Suggestions: []string{"abc", "Abc", "ABC", "def", "Def", "DEF"},
-					}, nil
-				}),
-			},
+			c:    SimpleCompletor[[]string]("abc", "Abc", "ABC", "def", "Def", "DEF"),
 			want: []string{"ABC", "Abc"},
 		},
 		{
 			name: "completes all cases if completor.CaseInsensitive and upper",
 			args: "cmd A",
-			c: &Completor[[]string]{
-				Fetcher: SimpleFetcher(func([]string, *Data) (*Completion, error) {
-					return &Completion{
-						CaseInsensitive: true,
-						Suggestions:     []string{"abc", "Abc", "ABC", "def", "Def", "DEF"},
-					}, nil
-				}),
-			},
+			c: AsCompletor[[]string](&Completion{
+				CaseInsensitive: true,
+				Suggestions:     []string{"abc", "Abc", "ABC", "def", "Def", "DEF"},
+			}),
 			want: []string{"ABC", "Abc", "abc"},
 		},
 		{
 			name: "completes all cases if completor.CaseInsensitive and lower",
 			args: "cmd a",
-			c: &Completor[[]string]{
-				Fetcher: SimpleFetcher(func([]string, *Data) (*Completion, error) {
-					return &Completion{
-						CaseInsensitive: true,
-						Suggestions:     []string{"abc", "Abc", "ABC", "def", "Def", "DEF"},
-					}, nil
-				}),
-			},
+			c: AsCompletor[[]string](&Completion{
+				CaseInsensitive: true,
+				Suggestions:     []string{"abc", "Abc", "ABC", "def", "Def", "DEF"},
+			}),
 			want: []string{"ABC", "Abc", "abc"},
 		},
 		{
@@ -140,8 +112,12 @@ func TestCompletors(t *testing.T) {
 		},*/
 	} {
 		t.Run(test.name, func(t *testing.T) {
+			opts := []ArgOpt[[]string]{}
+			if test.c != nil {
+				opts = append(opts, test.c)
+			}
 			CompleteTest(t, &CompleteTestCase{
-				Node:          SerialNodes(ListArg[string]("test", testDesc, 2, 5, test.c)),
+				Node:          SerialNodes(ListArg("test", testDesc, 2, 5, opts...)),
 				Args:          test.args,
 				Want:          test.want,
 				WantErr:       test.wantErr,
@@ -534,11 +510,7 @@ func TestParseAndComplete(t *testing.T) {
 		/* Useful for commenting out tests */
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			c := &Completor[[]string]{
-				Fetcher: &ListFetcher[[]string]{
-					Options: test.suggestions,
-				},
-			}
+			c := SimpleCompletor[[]string](test.suggestions...)
 			n := SerialNodes(ListArg[string]("sl", testDesc, 0, UnboundedList, c))
 
 			data := &Data{}
@@ -568,10 +540,10 @@ func TestParseAndComplete(t *testing.T) {
 	}
 }
 
-type fetcherTest[T any] struct {
+type completorTest[T any] struct {
 	name          string
-	f             Fetcher[[]T]
-	singleF       Fetcher[T]
+	c             Completor[[]T]
+	singleC       Completor[T]
 	args          string
 	ptArgs        []string
 	setup         func(*testing.T)
@@ -581,7 +553,7 @@ type fetcherTest[T any] struct {
 	want          []string
 }
 
-func (test *fetcherTest[T]) run(t *testing.T) {
+func (test *completorTest[T]) run(t *testing.T) {
 	t.Run(test.name, func(t *testing.T) {
 		if test.setup != nil {
 			test.setup(t)
@@ -599,16 +571,10 @@ func (test *fetcherTest[T]) run(t *testing.T) {
 		defer func() { filepathAbs = oldAbs }()
 
 		var got []string
-		if test.singleF != nil {
-			completor := &Completor[T]{
-				Fetcher: test.singleF,
-			}
-			got = Autocomplete(SerialNodes(Arg[T]("test", testDesc, completor)), test.args, test.ptArgs)
+		if test.singleC != nil {
+			got = Autocomplete(SerialNodes(Arg[T]("test", testDesc, test.singleC)), test.args, test.ptArgs)
 		} else {
-			completor := &Completor[[]T]{
-				Fetcher: test.f,
-			}
-			got = Autocomplete(SerialNodes(ListArg[T]("test", testDesc, 2, 5, completor)), test.args, test.ptArgs)
+			got = Autocomplete(SerialNodes(ListArg[T]("test", testDesc, 2, 5, test.c)), test.args, test.ptArgs)
 		}
 
 		if diff := cmp.Diff(test.want, got); diff != "" {
@@ -618,11 +584,11 @@ func (test *fetcherTest[T]) run(t *testing.T) {
 }
 
 var (
-	boolFetcherCases = []*fetcherTest[bool]{
-		// BoolFetcher
+	boolCompletorCases = []*completorTest[bool]{
+		// BoolCompletor
 		{
-			name:    "bool fetcher returns value",
-			singleF: &boolFetcher{},
+			name:    "bool completor returns value",
+			singleC: BoolCompletor(),
 			want: []string{
 				"0",
 				"1",
@@ -639,33 +605,25 @@ var (
 			},
 		},
 	}
-	stringFetcherCases = []*fetcherTest[string]{
+	stringCompletorCases = []*completorTest[string]{
 		{
-			name: "list fetcher returns nil",
-			f:    &ListFetcher[[]string]{},
+			name: "list completor returns nil",
+			c:    SimpleCompletor[[]string](),
 		},
 		{
-			name: "list fetcher returns empty list",
-			f: &ListFetcher[[]string]{
-				Options: []string{},
-			},
-		},
-		{
-			name: "list fetcher returns list",
-			f: &ListFetcher[[]string]{
-				Options: []string{"first", "second", "third"},
-			},
+			name: "list completor returns list",
+			c:    SimpleCompletor[[]string]("first", "second", "third"),
 			want: []string{"first", "second", "third"},
 		},
-		// FileFetcher tests
+		// FileCompletor tests
 		{
-			name:   "file fetcher returns nil if failure fetching current directory",
-			f:      &FileFetcher[[]string]{},
+			name:   "file completor returns nil if failure completing current directory",
+			c:      &FileCompletor[[]string]{},
 			absErr: fmt.Errorf("failed to fetch directory"),
 		},
 		{
-			name: "file fetcher returns files with file types and directories",
-			singleF: &FileFetcher[string]{
+			name: "file completor returns files with file types and directories",
+			singleC: &FileCompletor[string]{
 				FileTypes: []string{".mod", ".sum"},
 			},
 			args: "cmd ",
@@ -683,8 +641,8 @@ var (
 			},
 		},
 		{
-			name: "file fetcher handles empty directory",
-			f:    &FileFetcher[[]string]{},
+			name: "file completor handles empty directory",
+			c:    &FileCompletor[[]string]{},
 			args: "cmd testing/empty/",
 			setup: func(t *testing.T) {
 				if err := os.Mkdir("testing/empty", 0644); err != nil {
@@ -698,8 +656,8 @@ var (
 			},
 		},
 		{
-			name: "file fetcher works with string list arg",
-			f:    &FileFetcher[[]string]{},
+			name: "file completor works with string list arg",
+			c:    &FileCompletor[[]string]{},
 			args: "cmd execu",
 			want: []string{
 				"execute",
@@ -707,8 +665,8 @@ var (
 			},
 		},
 		{
-			name: "file fetcher works when distinct",
-			f: &FileFetcher[[]string]{
+			name: "file completor works when distinct",
+			c: &FileCompletor[[]string]{
 				Distinct: true,
 			},
 			args: "cmd execute.go execu",
@@ -717,8 +675,8 @@ var (
 			},
 		},
 		{
-			name:    "file fetcher works with string arg",
-			singleF: &FileFetcher[string]{},
+			name:    "file completor works with string arg",
+			singleC: &FileCompletor[string]{},
 			args:    "cmd execu",
 			want: []string{
 				"execute",
@@ -726,14 +684,14 @@ var (
 			},
 		},
 		{
-			name: "file fetcher returns nil if failure listing directory",
-			f: &FileFetcher[[]string]{
+			name: "file completor returns nil if failure listing directory",
+			c: &FileCompletor[[]string]{
 				Directory: "does/not/exist",
 			},
 		},
 		{
-			name: "file fetcher returns files in the specified directory",
-			f: &FileFetcher[[]string]{
+			name: "file completor returns files in the specified directory",
+			c: &FileCompletor[[]string]{
 				Directory: "testing",
 			},
 			setup: func(t *testing.T) {
@@ -765,8 +723,8 @@ var (
 			},
 		},
 		{
-			name: "file fetcher returns files in the specified directory",
-			f: &FileFetcher[[]string]{
+			name: "file completor returns files in the specified directory",
+			c: &FileCompletor[[]string]{
 				Directory: "testing/dir1",
 			},
 			want: []string{
@@ -778,8 +736,8 @@ var (
 			},
 		},
 		{
-			name: "file fetcher ignores things from IgnoreFunc",
-			f: &FileFetcher[[]string]{
+			name: "file completor ignores things from IgnoreFunc",
+			c: &FileCompletor[[]string]{
 				Directory: "testing/dir1",
 				IgnoreFunc: func([]string, *Data) []string {
 					return []string{"third.go", "other", "fourth.py"}
@@ -792,8 +750,8 @@ var (
 			},
 		},
 		{
-			name: "file fetcher returns files matching regex",
-			f: &FileFetcher[[]string]{
+			name: "file completor returns files matching regex",
+			c: &FileCompletor[[]string]{
 				Directory: "testing/dir1",
 				Regexp:    regexp.MustCompile(".*.py$"),
 			},
@@ -804,8 +762,8 @@ var (
 			},
 		},
 		{
-			name: "file fetcher requires prefix",
-			f: &FileFetcher[[]string]{
+			name: "file completor requires prefix",
+			c: &FileCompletor[[]string]{
 				Directory: "testing/dir3",
 			},
 			args: "cmd th",
@@ -816,8 +774,8 @@ var (
 			},
 		},
 		{
-			name: "file fetcher ignores directories",
-			f: &FileFetcher[[]string]{
+			name: "file completor ignores directories",
+			c: &FileCompletor[[]string]{
 				Directory:         "testing/dir2",
 				IgnoreDirectories: true,
 			},
@@ -827,8 +785,8 @@ var (
 			},
 		},
 		{
-			name: "file fetcher ignores files",
-			f: &FileFetcher[[]string]{
+			name: "file completor ignores files",
+			c: &FileCompletor[[]string]{
 				Directory:   "testing/dir2",
 				IgnoreFiles: true,
 			},
@@ -841,8 +799,8 @@ var (
 			},
 		},
 		{
-			name: "file fetcher completes to directory",
-			f:    &FileFetcher[[]string]{},
+			name: "file completor completes to directory",
+			c:    &FileCompletor[[]string]{},
 			args: "cmd testing/dir1",
 			want: []string{
 				"testing/dir1/",
@@ -850,8 +808,8 @@ var (
 			},
 		},
 		{
-			name: "file fetcher completes to directory when starting dir specified",
-			f: &FileFetcher[[]string]{
+			name: "file completor completes to directory when starting dir specified",
+			c: &FileCompletor[[]string]{
 				Directory: "testing",
 			},
 			args: "cmd dir1",
@@ -861,8 +819,8 @@ var (
 			},
 		},
 		{
-			name: "file fetcher shows contents of directory when ending with a separator",
-			f:    &FileFetcher[[]string]{},
+			name: "file completor shows contents of directory when ending with a separator",
+			c:    &FileCompletor[[]string]{},
 			args: "cmd testing/dir1/",
 			want: []string{
 				"first.txt",
@@ -873,8 +831,8 @@ var (
 			},
 		},
 		{
-			name: "file fetcher completes to directory when ending with a separator and when starting dir specified",
-			f: &FileFetcher[[]string]{
+			name: "file completor completes to directory when ending with a separator and when starting dir specified",
+			c: &FileCompletor[[]string]{
 				Directory: "testing",
 			},
 			args: "cmd dir1/",
@@ -887,8 +845,8 @@ var (
 			},
 		},
 		{
-			name: "file fetcher only shows basenames when multiple options with different next letter",
-			f:    &FileFetcher[[]string]{},
+			name: "file completor only shows basenames when multiple options with different next letter",
+			c:    &FileCompletor[[]string]{},
 			args: "cmd testing/dir",
 			want: []string{
 				"dir1/",
@@ -899,8 +857,8 @@ var (
 			},
 		},
 		{
-			name: "file fetcher shows full names when multiple options with same next letter",
-			f:    &FileFetcher[[]string]{},
+			name: "file completor shows full names when multiple options with same next letter",
+			c:    &FileCompletor[[]string]{},
 			args: "cmd testing/d",
 			want: []string{
 				"testing/dir",
@@ -908,8 +866,8 @@ var (
 			},
 		},
 		{
-			name: "file fetcher only shows basenames when multiple options and starting dir",
-			f: &FileFetcher[[]string]{
+			name: "file completor only shows basenames when multiple options and starting dir",
+			c: &FileCompletor[[]string]{
 				Directory: "testing/dir1",
 			},
 			args: "cmd f",
@@ -920,8 +878,8 @@ var (
 			},
 		},
 		{
-			name: "file fetcher handles directories with spaces",
-			f:    &FileFetcher[[]string]{},
+			name: "file completor handles directories with spaces",
+			c:    &FileCompletor[[]string]{},
 			args: `cmd testing/dir4/folder\ wit`,
 			want: []string{
 				`testing/dir4/folder\ with\ spaces/`,
@@ -929,8 +887,8 @@ var (
 			},
 		},
 		{
-			name: "file fetcher handles directories with spaces when same argument",
-			f:    &FileFetcher[[]string]{},
+			name: "file completor handles directories with spaces when same argument",
+			c:    &FileCompletor[[]string]{},
 			args: `cmd testing/dir4/folder\ wit`,
 			want: []string{
 				`testing/dir4/folder\ with\ spaces/`,
@@ -938,8 +896,8 @@ var (
 			},
 		},
 		{
-			name: "file fetcher can dive into folder with spaces",
-			f:    &FileFetcher[[]string]{},
+			name: "file completor can dive into folder with spaces",
+			c:    &FileCompletor[[]string]{},
 			args: `cmd testing/dir4/folder\ with\ spaces/`,
 			want: []string{
 				"goodbye.go",
@@ -948,8 +906,8 @@ var (
 			},
 		},
 		{
-			name: "file fetcher can dive into folder with spaces when combined args",
-			f:    &FileFetcher[[]string]{},
+			name: "file completor can dive into folder with spaces when combined args",
+			c:    &FileCompletor[[]string]{},
 			args: `cmd testing/dir4/folder\ with\ spaces/`,
 			want: []string{
 				"goodbye.go",
@@ -959,7 +917,7 @@ var (
 		},
 		{
 			name: "autocomplete fills in letters that are the same for all options",
-			f:    &FileFetcher[[]string]{},
+			c:    &FileCompletor[[]string]{},
 			args: `cmd testing/dir4/fo`,
 			want: []string{
 				"testing/dir4/folder",
@@ -967,8 +925,8 @@ var (
 			},
 		},
 		{
-			name:          "file fetcher doesn't get filtered out when part of a CommandBranch",
-			f:             &FileFetcher[[]string]{},
+			name:          "file completor doesn't get filtered out when part of a CommandBranch",
+			c:             &FileCompletor[[]string]{},
 			commandBranch: true,
 			args:          "cmd testing/dir",
 			want: []string{
@@ -980,8 +938,8 @@ var (
 			},
 		},
 		{
-			name:          "file fetcher handles multiple options in directory",
-			f:             &FileFetcher[[]string]{},
+			name:          "file completor handles multiple options in directory",
+			c:             &FileCompletor[[]string]{},
 			commandBranch: true,
 			args:          "cmd testing/dir1/f",
 			want: []string{
@@ -992,7 +950,7 @@ var (
 		},
 		{
 			name:          "case insensitive gets letters autofilled",
-			f:             &FileFetcher[[]string]{},
+			c:             &FileCompletor[[]string]{},
 			commandBranch: true,
 			args:          "cmd testing/dI",
 			want: []string{
@@ -1002,7 +960,7 @@ var (
 		},
 		{
 			name:          "case insensitive recommends all without complete",
-			f:             &FileFetcher[[]string]{},
+			c:             &FileCompletor[[]string]{},
 			commandBranch: true,
 			args:          "cmd testing/DiR",
 			want: []string{
@@ -1014,8 +972,8 @@ var (
 			},
 		},
 		{
-			name:          "file fetcher ignores case",
-			f:             &FileFetcher[[]string]{},
+			name:          "file completor ignores case",
+			c:             &FileCompletor[[]string]{},
 			commandBranch: true,
 			args:          "cmd testing/cases/abc",
 			want: []string{
@@ -1024,8 +982,8 @@ var (
 			},
 		},
 		{
-			name:          "file fetcher sorting ignores cases when no file",
-			f:             &FileFetcher[[]string]{},
+			name:          "file completor sorting ignores cases when no file",
+			c:             &FileCompletor[[]string]{},
 			commandBranch: true,
 			args:          "cmd testing/moreCases/",
 			want: []string{
@@ -1034,8 +992,8 @@ var (
 			},
 		},
 		{
-			name:          "file fetcher sorting ignores cases when autofilling",
-			f:             &FileFetcher[[]string]{},
+			name:          "file completor sorting ignores cases when autofilling",
+			c:             &FileCompletor[[]string]{},
 			commandBranch: true,
 			args:          "cmd testing/moreCases/q",
 			want: []string{
@@ -1044,8 +1002,8 @@ var (
 			},
 		},
 		{
-			name:          "file fetcher sorting ignores cases when not autofilling",
-			f:             &FileFetcher[[]string]{},
+			name:          "file completor sorting ignores cases when not autofilling",
+			c:             &FileCompletor[[]string]{},
 			commandBranch: true,
 			args:          "cmd testing/moreCases/qW_t",
 			want: []string{
@@ -1056,8 +1014,8 @@ var (
 			},
 		},
 		{
-			name: "file fetcher completes to case matched completion",
-			f:    &FileFetcher[[]string]{},
+			name: "file completor completes to case matched completion",
+			c:    &FileCompletor[[]string]{},
 			args: "cmd testing/meta",
 			want: []string{
 				"testing/metadata",
@@ -1065,8 +1023,8 @@ var (
 			},
 		},
 		{
-			name: "file fetcher completes to case matched completion",
-			f:    &FileFetcher[[]string]{},
+			name: "file completor completes to case matched completion",
+			c:    &FileCompletor[[]string]{},
 			args: "cmd testing/ME",
 			want: []string{
 				"testing/METADATA",
@@ -1074,8 +1032,8 @@ var (
 			},
 		},
 		{
-			name: "file fetcher completes to something when no cases match",
-			f:    &FileFetcher[[]string]{},
+			name: "file completor completes to something when no cases match",
+			c:    &FileCompletor[[]string]{},
 			args: "cmd testing/MeTa",
 			want: []string{
 				"testing/METADATA",
@@ -1083,8 +1041,8 @@ var (
 			},
 		},
 		{
-			name: "file fetcher completes to case matched completion in current directory",
-			f: &FileFetcher[[]string]{
+			name: "file completor completes to case matched completion in current directory",
+			c: &FileCompletor[[]string]{
 				Directory: "testing",
 			},
 			args: "cmd meta",
@@ -1094,8 +1052,8 @@ var (
 			},
 		},
 		{
-			name: "file fetcher completes to case matched completion in current directory",
-			f: &FileFetcher[[]string]{
+			name: "file completor completes to case matched completion in current directory",
+			c: &FileCompletor[[]string]{
 				Directory: "testing",
 			},
 			args: "cmd MET",
@@ -1105,8 +1063,8 @@ var (
 			},
 		},
 		{
-			name: "file fetcher completes to something when no cases match in current directory",
-			f: &FileFetcher[[]string]{
+			name: "file completor completes to something when no cases match in current directory",
+			c: &FileCompletor[[]string]{
 				Directory: "testing",
 			},
 			args: "cmd meTA",
@@ -1116,8 +1074,8 @@ var (
 			},
 		},
 		{
-			name: "file fetcher doesn't complete when matches a prefix",
-			f:    &FileFetcher[[]string]{},
+			name: "file completor doesn't complete when matches a prefix",
+			c:    &FileCompletor[[]string]{},
 			args: "cmd testing/METADATA",
 			want: []string{
 				"METADATA",
@@ -1126,8 +1084,8 @@ var (
 			},
 		},
 		{
-			name: "file fetcher doesn't complete when matches a prefix file",
-			f:    &FileFetcher[[]string]{},
+			name: "file completor doesn't complete when matches a prefix file",
+			c:    &FileCompletor[[]string]{},
 			args: "cmd testing/metadata_/m",
 			want: []string{
 				"m1",
@@ -1136,8 +1094,8 @@ var (
 			},
 		},
 		{
-			name: "file fetcher returns complete match if distinct",
-			f: &FileFetcher[[]string]{
+			name: "file completor returns complete match if distinct",
+			c: &FileCompletor[[]string]{
 				Distinct: true,
 			},
 			args: "cmd testing/metadata_/m1",
@@ -1145,39 +1103,39 @@ var (
 				"testing/metadata_/m1",
 			},
 		},
-		// Distinct file fetchers.
+		// Distinct file completors.
 		{
-			name: "file fetcher returns repeats if not distinct",
-			f:    &FileFetcher[[]string]{},
+			name: "file completor returns repeats if not distinct",
+			c:    &FileCompletor[[]string]{},
 			args: "cmd testing/three.txt testing/t",
 			want: []string{"three.txt", "two.txt", " "},
 		},
 		{
-			name: "file fetcher returns distinct",
-			f: &FileFetcher[[]string]{
+			name: "file completor returns distinct",
+			c: &FileCompletor[[]string]{
 				Distinct: true,
 			},
 			args: "cmd testing/three.txt testing/t",
 			want: []string{"testing/two.txt"},
 		},
 		{
-			name: "file fetcher handles non with distinct",
-			f: &FileFetcher[[]string]{
+			name: "file completor handles non with distinct",
+			c: &FileCompletor[[]string]{
 				Distinct: true,
 			},
 			args: "cmd testing/three.txt testing/two.txt testing/t",
 		},
 		{
-			name: "file fetcher first level distinct partially completes",
-			f: &FileFetcher[[]string]{
+			name: "file completor first level distinct partially completes",
+			c: &FileCompletor[[]string]{
 				Distinct: true,
 			},
 			args: "cmd comp",
 			want: []string{"completor", "completor_"},
 		},
 		{
-			name: "file fetcher first level distinct returns all options",
-			f: &FileFetcher[[]string]{
+			name: "file completor first level distinct returns all options",
+			c: &FileCompletor[[]string]{
 				Distinct: true,
 			},
 			args: "cmd c",
@@ -1195,8 +1153,8 @@ var (
 			},
 		},
 		{
-			name: "file fetcher first level distinct completes partial",
-			f: &FileFetcher[[]string]{
+			name: "file completor first level distinct completes partial",
+			c: &FileCompletor[[]string]{
 				Distinct: true,
 			},
 			args: "cmd custom_nodes.go comp",
@@ -1206,8 +1164,8 @@ var (
 			},
 		},
 		{
-			name: "file fetcher first level distinct suggests remaining",
-			f: &FileFetcher[[]string]{
+			name: "file completor first level distinct suggests remaining",
+			c: &FileCompletor[[]string]{
 				Distinct: true,
 			},
 			args: "cmd completor.go c",
@@ -1224,8 +1182,8 @@ var (
 			},
 		},
 		{
-			name: "file fetcher first level distinct completes partial",
-			f: &FileFetcher[[]string]{
+			name: "file completor first level distinct completes partial",
+			c: &FileCompletor[[]string]{
 				Distinct: true,
 			},
 			args: "cmd completor.go completor_test.go c",
@@ -1244,11 +1202,11 @@ var (
 	}
 )
 
-func TestFetchers(t *testing.T) {
-	for _, test := range stringFetcherCases {
+func TestTypedCompletors(t *testing.T) {
+	for _, test := range stringCompletorCases {
 		test.run(t)
 	}
-	for _, test := range boolFetcherCases {
+	for _, test := range boolCompletorCases {
 		test.run(t)
 	}
 }
