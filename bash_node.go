@@ -19,14 +19,26 @@ var (
 
 // BashCompletor creates a completor object that completes a command graph
 // with the output from the provided bash `command`.
-func BashCompletor[T any](opts *Completion, command ...string) Completor[T] {
+func BashCompletor[T any](command ...string) Completor[T] {
+	return BashCompletorWithOpts[T](nil, command...)
+}
+
+// BashCompletorWithOpts creates a completor object that completes a command graph
+// with the output from the provided bash `command`.
+func BashCompletorWithOpts[T any](opts *Completion, command ...string) Completor[T] {
 	return &simpleCompletor[T]{func(t T, d *Data) (*Completion, error) {
 		resp, err := NewBashCommand[T]("", command).Run(nil)
 		if err != nil {
 			return nil, fmt.Errorf("failed to fetch autocomplete suggestions with bash command: %v", err)
 		}
+		ss := getOperator[T]().toArgs(resp)
+		if opts == nil {
+			return &Completion{
+				Suggestions: ss,
+			}, nil
+		}
 		c := opts.Clone()
-		c.Suggestions = getOperator[T]().toArgs(resp)
+		c.Suggestions = ss
 		return c, nil
 	}}
 }
