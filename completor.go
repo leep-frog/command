@@ -2,6 +2,7 @@ package command
 
 import (
 	"fmt"
+	"io/fs"
 	"io/ioutil"
 	"path/filepath"
 	"regexp"
@@ -264,7 +265,8 @@ func (ff *FileCompletor[T]) Complete(value T, data *Data) (*Completion, error) {
 		allowedFileTypes[ft] = true
 	}
 	for _, f := range files {
-		if (f.Mode().IsDir() && ff.IgnoreDirectories) || (f.Mode().IsRegular() && ff.IgnoreFiles) {
+		isDir := f.IsDir() || f.Mode() == fs.ModeSymlink
+		if (isDir && ff.IgnoreDirectories) || (!isDir && ff.IgnoreFiles) {
 			continue
 		}
 
@@ -276,7 +278,7 @@ func (ff *FileCompletor[T]) Complete(value T, data *Data) (*Completion, error) {
 			continue
 		}
 
-		if f.Mode().IsDir() {
+		if isDir {
 			suggestions = append(suggestions, fmt.Sprintf("%s/", f.Name()))
 		} else if len(allowedFileTypes) == 0 || allowedFileTypes[filepath.Ext(f.Name())] {
 			onlyDir = false

@@ -637,6 +637,7 @@ var (
 				"go.sum",
 				"sourcerer/",
 				"testing/",
+				"testing_symlink/",
 				" ",
 			},
 		},
