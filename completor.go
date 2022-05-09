@@ -265,7 +265,7 @@ func (ff *FileCompletor[T]) Complete(value T, data *Data) (*Completion, error) {
 		allowedFileTypes[ft] = true
 	}
 	for _, f := range files {
-		isDir := f.IsDir() || f.Mode() == fs.ModeSymlink
+		isDir := f.IsDir() || (f.Mode()&fs.ModeSymlink != 0)
 		if (isDir && ff.IgnoreDirectories) || (!isDir && ff.IgnoreFiles) {
 			continue
 		}
