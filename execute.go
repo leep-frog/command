@@ -22,11 +22,22 @@ type Node struct {
 }
 
 func (n *Node) Execute(input *Input, output Output, data *Data, exData *ExecuteData) error {
-	return iterativeExecute(n, input, output, data, exData)
+	// TODO: maybe the caller (sourcerer) should be required to check
+	// if the input has been fully processed or not?
+	ieo := NewIgnoreErrOutput(output, IsExtraArgsError)
+	err := iterativeExecute(n, input, ieo, data, exData)
+	if IsExtraArgsError(err) {
+		return nil
+	}
+	return err
 }
 
 func (n *Node) Complete(input *Input, data *Data) (*Completion, error) {
-	return getCompleteData(n, input, data)
+	c, err := getCompleteData(n, input, data)
+	if IsExtraArgsError(err) {
+		return c, nil
+	}
+	return c, err
 }
 
 func (n *Node) Usage(usage *Usage) {
