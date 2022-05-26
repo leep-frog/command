@@ -406,6 +406,7 @@ func NewInputTransformer[T any](f func(Output, *Data, string) (T, error), upTo i
 }
 
 // TODO: have cache and shortcuts use this!
+// TODO: potentially merge with CheckShortcuts or delete one of the two functions
 type inputTransformer[T any] struct {
 	f func(Output, *Data, string) (T, error)
 	// TODO: check inputs changes up to this spot.
@@ -417,7 +418,7 @@ func (it *inputTransformer[T]) Execute(i *Input, o Output, data *Data, eData *Ex
 }
 
 func (it *inputTransformer[T]) Transform(input *Input, output Output, data *Data) error {
-	s, ok := input.Pop()
+	s, ok := input.Peek()
 	if !ok {
 		return nil
 	}
@@ -427,7 +428,13 @@ func (it *inputTransformer[T]) Transform(input *Input, output Output, data *Data
 		return err
 	}
 
-	input.PushFront(getOperator[T]().toArgs(t)...)
+	args := getOperator[T]().toArgs(t)
+	if len(args) == 0 {
+		input.Pop()
+		return nil
+	}
+	input.get(input.offset).value = args[0]
+	input.PushFrontAt(1, args[1:]...)
 	return nil
 }
 
