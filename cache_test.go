@@ -751,13 +751,14 @@ func TestCacheExecution(t *testing.T) {
 				},
 			},
 			etc: &ExecuteTestCase{
-				Node: SerialNodesTo(CacheNode("money", cc, SerialNodes(
-					Arg[string]("s", testDesc),
-					ListArg[int]("il", testDesc, 2, 0),
-					ListArg[float64]("fl", testDesc, 1, 3),
-				)),
+				Node: SerialNodes(
 					Arg[string]("beforeStr", testDesc),
 					Arg[int]("beforeInt", testDesc),
+					CacheNode("money", cc, SerialNodes(
+						Arg[string]("s", testDesc),
+						ListArg[int]("il", testDesc, 2, 0),
+						ListArg[float64]("fl", testDesc, 1, 3),
+					)),
 				),
 				Args: []string{"hello", "123", "history", "-n", "33", "-p"},
 				wantInput: &Input{
@@ -794,15 +795,16 @@ func TestCacheExecution(t *testing.T) {
 				},
 			},
 			etc: &ExecuteTestCase{
-				Node: SerialNodesTo(CacheNode("money", cc, SerialNodes(
-					Arg[string]("s", testDesc),
-					ListArg[int]("il", testDesc, 2, 0),
-					ListArg[float64]("fl", testDesc, 1, 3),
-				)),
+				Node: SerialNodes(
 					Arg[string]("beforeStr", testDesc, NewTransformer(func(s string, d *Data) (string, error) {
 						return fmt.Sprintf("TRANSFORM(%s)", s), nil
 					}, false)),
 					Arg[int]("beforeInt", testDesc),
+					CacheNode("money", cc, SerialNodes(
+						Arg[string]("s", testDesc),
+						ListArg[int]("il", testDesc, 2, 0),
+						ListArg[float64]("fl", testDesc, 1, 3),
+					)),
 				),
 				Args: []string{"hello", "123", "history", "-n", "33", "-p"},
 				wantInput: &Input{

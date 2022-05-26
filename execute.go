@@ -11,12 +11,26 @@ import (
 
 // Node is a type containing the relevant processing that should be done
 // when the node is reached (`Processor`) as well as what `Node` should be
-// visited next (`Edge`).
+// visited next (`Edge`). `Node` also implements the `Processor` interface,
+// so a single root `Node` (and its entire underlying graph) can also be treated
+// as an individual `Processor` element.
 type Node struct {
 	// Processor is used to process the node when it is visited.
 	Processor Processor
 	// Edge determines the next node to visit.
 	Edge Edge
+}
+
+func (n *Node) Execute(input *Input, output Output, data *Data, exData *ExecuteData) error {
+	return iterativeExecute(n, input, output, data, exData)
+}
+
+func (n *Node) Complete(input *Input, data *Data) (*Completion, error) {
+	return getCompleteData(n, input, data)
+}
+
+func (n *Node) Usage(usage *Usage) {
+	getUsage(n, usage)
 }
 
 const (
@@ -186,9 +200,12 @@ type Edge interface {
 
 // GetUsage constructs a `Usage` object from the head `Node` of a command graph.
 func GetUsage(n *Node) *Usage {
-	u := &Usage{
+	return getUsage(n, &Usage{
 		UsageSection: &UsageSection{},
-	}
+	})
+}
+
+func getUsage(n *Node, u *Usage) *Usage {
 	for n != nil {
 		n.Processor.Usage(u)
 
@@ -229,12 +246,13 @@ func runNodes(n *Node, o Output, d *Data, args []string) error {
 	// is better because "go run main.go autocomplete" won't work as expected.
 	var filename string
 	nrf := "NODE_RUNNER_FILE"
-	exNode := SerialNodesTo(n,
+	exNode := SerialNodes(
 		FileNode(nrf, "Temporary file for execution"),
 		SimpleProcessor(func(i *Input, o Output, d *Data, ed *ExecuteData) error {
 			filename = d.String(nrf)
 			return nil
 		}, nil),
+		n,
 	)
 
 	bn := BranchNode(map[string]*Node{

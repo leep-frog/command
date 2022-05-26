@@ -524,7 +524,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "executes with proper data",
 			etc: &ExecuteTestCase{
-				Node: SerialNodesTo(printArgsNode(), ListArg[int]("il", testDesc, 2, 0), Arg[string]("s", testDesc), ListArg[float64]("fl", testDesc, 1, 2)),
+				Node: SerialNodes(ListArg[int]("il", testDesc, 2, 0), Arg[string]("s", testDesc), ListArg[float64]("fl", testDesc, 1, 2), printArgsNode()),
 				Args: []string{"0", "1", "two", "0.3", "-4"},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -3520,7 +3520,7 @@ func TestComplete(t *testing.T) {
 			name: "stop iterating if a completion returns an error",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					Arg[string]("PATH", "dd", CompletorFromFunc[string](func(string, *Data) (*Completion, error) {
+					Arg[string]("PATH", "dd", CompletorFromFunc(func(string, *Data) (*Completion, error) {
 						return nil, fmt.Errorf("ruh-roh")
 					})),
 					ListArg[string]("SUB_PATH", "stc", 0, UnboundedList, SimpleCompletor[[]string]("un", "deux", "trois")),

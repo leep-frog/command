@@ -285,7 +285,7 @@ func TestUsage(t *testing.T) {
 		{
 			name: "works with flags",
 			utc: &UsageTestCase{
-				Node: SerialNodesTo(nil, NewFlagNode(
+				Node: SerialNodes(NewFlagNode(
 					BoolFlag("new", 'n', "new files"),
 					BoolFlag("debug", 'd', "debug stuff"),
 				)),
@@ -301,7 +301,7 @@ func TestUsage(t *testing.T) {
 		{
 			name: "flags go at the end",
 			utc: &UsageTestCase{
-				Node: SerialNodesTo(nil,
+				Node: SerialNodes(
 					NewFlagNode(
 						BoolFlag("new", 'n', "new files"),
 						BoolFlag("debug", 'd', "debug stuff"),
@@ -323,7 +323,7 @@ func TestUsage(t *testing.T) {
 		{
 			name: "flags are sorted by full name, not short flag",
 			utc: &UsageTestCase{
-				Node: SerialNodesTo(nil,
+				Node: SerialNodes(
 					NewFlagNode(
 						BoolFlag("first", 'b', "un"),
 						BoolFlag("second", 'a', "deux"),
