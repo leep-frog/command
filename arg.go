@@ -205,7 +205,7 @@ func (an *ArgNode[T]) complete(sl []*string, enough bool, input *Input, data *Da
 			if len(sl) > 0 {
 				lastArg = *sl[len(sl)-1]
 			}
-			return RunCompletion[T](an.opt.completor, lastArg, v, data)
+			return RunCompletion(an.opt.completor, lastArg, v, data)
 		}
 
 		return nil, err
@@ -245,7 +245,7 @@ func (an *ArgNode[T]) complete(sl []*string, enough bool, input *Input, data *Da
 	if len(ta) > 0 {
 		lastArg = ta[len(ta)-1]
 	}
-	return RunCompletion[T](an.opt.completor, lastArg, v, data)
+	return RunCompletion(an.opt.completor, lastArg, v, data)
 }
 
 // Arg creates an argument node that requires exactly one input.

@@ -214,6 +214,11 @@ func NewIgnoreErrOutput(o Output, fs ...func(error) bool) Output {
 	return &ignoreErrOutput{o, fs}
 }
 
+// NewIgnoreAllOutput is an output that ignores all output.
+func NewIgnoreAllOutput() Output {
+	return osFromChan(func(s string) {}, func(s string) {})
+}
+
 // so it can be a field name in Output wrapper implementors
 type fo Output
 

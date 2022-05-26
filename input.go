@@ -70,6 +70,10 @@ func (i *Input) FullyProcessed() bool {
 	return i.offset >= len(i.remaining)
 }
 
+func (i *Input) NumRemaining() int {
+	return len(i.remaining)
+}
+
 // Remaining returns the remaining arguments.
 func (i *Input) Remaining() []string {
 	r := make([]string, 0, len(i.remaining))
@@ -395,3 +399,45 @@ func snapshotsMap(iss ...inputSnapshot) map[inputSnapshot]bool {
 	}
 	return m
 }
+
+// NewInputTransformer returns a processor that checks the
+func NewInputTransformer[T any](f func(Output, *Data, string) (T, error), upTo int) Processor {
+	return &inputTransformer[T]{f, upTo}
+}
+
+// TODO: have cache and shortcuts use this!
+type inputTransformer[T any] struct {
+	f func(Output, *Data, string) (T, error)
+	// TODO: check inputs changes up to this spot.
+	upTo int
+}
+
+func (it *inputTransformer[T]) Execute(i *Input, o Output, data *Data, eData *ExecuteData) error {
+	return it.Transform(i, o, data)
+}
+
+func (it *inputTransformer[T]) Transform(input *Input, output Output, data *Data) error {
+	s, ok := input.Pop()
+	if !ok {
+		return nil
+	}
+
+	t, err := it.f(output, data, s)
+	if err != nil {
+		return err
+	}
+
+	input.PushFront(getOperator[T]().toArgs(t)...)
+	return nil
+}
+
+func (it *inputTransformer[T]) Complete(input *Input, data *Data) (*Completion, error) {
+	// If at arg to autocomplete, return.
+	if input.NumRemaining() <= 1 {
+		return nil, nil
+	}
+
+	return nil, it.Transform(input, NewIgnoreAllOutput(), data)
+}
+
+func (it *inputTransformer[T]) Usage(*Usage) {}
