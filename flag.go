@@ -214,7 +214,8 @@ func (bf *boolFlag) Processor() Processor {
 
 func (bf *boolFlag) ProcessMissing(*Data) {}
 
-func (bf *boolFlag) Complete(*Input, *Data) (*Completion, error) {
+func (bf *boolFlag) Complete(input *Input, data *Data) (*Completion, error) {
+	data.Set(bf.name, true)
 	return nil, nil
 }
 

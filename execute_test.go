@@ -3534,6 +3534,88 @@ func TestComplete(t *testing.T) {
 		},
 		// Flag completion
 		{
+			name: "bool flag gets set if not last one",
+			ctc: &CompleteTestCase{
+				Node: SerialNodes(
+					NewFlagNode(
+						NewFlag[string]("greeting", 'h', testDesc, SimpleCompletor[string]("hey", "hi")),
+						NewListFlag[string]("names", 'n', testDesc, 1, 2, SimpleCompletor[[]string]("ralph", "johnny", "renee")),
+						BoolFlag("good", 'g', testDesc),
+					),
+					Arg[int]("i", testDesc, SimpleCompletor[int]("1", "2")),
+				),
+				Args: "cmd -g ",
+				Want: []string{"1", "2"},
+				WantData: &Data{
+					Values: map[string]interface{}{
+						"good": true,
+					},
+				},
+			},
+		},
+		{
+			name: "arg flag gets set if not last one",
+			ctc: &CompleteTestCase{
+				Node: SerialNodes(
+					NewFlagNode(
+						NewFlag[string]("greeting", 'h', testDesc, SimpleCompletor[string]("hey", "hi")),
+						NewListFlag[string]("names", 'n', testDesc, 1, 2, SimpleCompletor[[]string]("ralph", "johnny", "renee")),
+						BoolFlag("good", 'g', testDesc),
+					),
+					Arg[int]("i", testDesc, SimpleCompletor[int]("1", "2")),
+				),
+				Args: "cmd --greeting howdy ",
+				Want: []string{"1", "2"},
+				WantData: &Data{
+					Values: map[string]interface{}{
+						"greeting": "howdy",
+					},
+				},
+			},
+		},
+		{
+			name: "list arg flag gets set if not last one",
+			ctc: &CompleteTestCase{
+				Node: SerialNodes(
+					NewFlagNode(
+						NewFlag[string]("greeting", 'h', testDesc, SimpleCompletor[string]("hey", "hi")),
+						NewListFlag[string]("names", 'n', testDesc, 1, 2, SimpleCompletor[[]string]("ralph", "johnny", "renee")),
+						BoolFlag("good", 'g', testDesc),
+					),
+					Arg[int]("i", testDesc, SimpleCompletor[int]("1", "2")),
+				),
+				Args: "cmd --names alice bob charlie ",
+				Want: []string{"1", "2"},
+				WantData: &Data{
+					Values: map[string]interface{}{
+						"names": []string{"alice", "bob", "charlie"},
+					},
+				},
+			},
+		},
+		{
+			name: "multiple flags get set if not last one",
+			ctc: &CompleteTestCase{
+				Node: SerialNodes(
+					NewFlagNode(
+						NewFlag[string]("greeting", 'h', testDesc, SimpleCompletor[string]("hey", "hi")),
+						NewListFlag[string]("names", 'n', testDesc, 1, 2, SimpleCompletor[[]string]("ralph", "johnny", "renee")),
+						BoolFlag("good", 'g', testDesc),
+					),
+					Arg[int]("i", testDesc, SimpleCompletor[int]("1", "2")),
+				),
+				Args: "cmd -n alice bob charlie --good -h howdy ",
+				Want: []string{"1", "2"},
+				WantData: &Data{
+					Values: map[string]interface{}{
+						"names":    []string{"alice", "bob", "charlie"},
+						"good":     true,
+						"greeting": "howdy",
+					},
+				},
+			},
+		},
+		{
 			name: "flag name gets completed if single hyphen at end",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
