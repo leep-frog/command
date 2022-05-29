@@ -16,6 +16,14 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 )
 
+func StubValue[T any](t *testing.T, originalValue *T, newValue T) {
+	oldValue := *originalValue
+	*originalValue = newValue
+	t.Cleanup(func() {
+		*originalValue = oldValue
+	})
+}
+
 const (
 	ShortcutDesc = "  *: Start of new shortcut-able section"
 	CacheDesc    = "  ^: Start of new cachable section"
@@ -87,7 +95,7 @@ func setupForTest(t *testing.T, contents []string) string {
 	if err != nil {
 		t.Fatalf(`ioutil.TempFile("", "command_test_setup") returned error: %v`, err)
 	}
-	defer f.Close()
+	t.Cleanup(func() { f.Close() })
 	for _, s := range contents {
 		fmt.Fprintln(f, s)
 	}
@@ -156,7 +164,7 @@ func RunNodeTest(t *testing.T, rtc *RunNodeTestCase) {
 		data: &Data{},
 		fo:   NewFakeOutput(),
 	}
-	defer tc.fo.Close()
+	t.Cleanup(tc.fo.Close)
 
 	testers := []commandTester{
 		&outputTester{rtc.WantStdout, rtc.WantStderr},
@@ -206,7 +214,7 @@ func ExecuteTest(t *testing.T, etc *ExecuteTestCase) {
 		data: &Data{},
 		fo:   NewFakeOutput(),
 	}
-	defer tc.fo.Close()
+	t.Cleanup(tc.fo.Close)
 	args := etc.Args
 	if etc.RequiresSetup {
 		setupFile := setupForTest(t, etc.SetupContents)

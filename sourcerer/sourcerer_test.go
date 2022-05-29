@@ -18,11 +18,9 @@ const (
 )
 
 func TestGenerateBinaryNode(t *testing.T) {
-	oldGSL := getSourceLoc
-	getSourceLoc = func() (string, error) {
+	command.StubValue(t, &getSourceLoc, func() (string, error) {
 		return "/fake/source/location", nil
-	}
-	defer func() { getSourceLoc = oldGSL }()
+	})
 
 	for _, test := range []struct {
 		name         string
@@ -216,9 +214,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			if test.ignoreNosort {
-				old := NosortString
-				NosortString = func() string { return "" }
-				defer func() { NosortString = old }()
+				command.StubValue(t, &NosortString, func() string { return "" })
 			}
 			o := command.NewFakeOutput()
 			source(test.clis, test.args, o, test.opts...)
@@ -679,11 +675,9 @@ func TestSourcerer(t *testing.T) {
 
 			// Stub out real cache
 			cash := cache.NewTestCache(t)
-			ogc := getCache
-			getCache = func() (*cache.Cache, error) {
+			command.StubValue(t, &getCache, func() (*cache.Cache, error) {
 				return cash, nil
-			}
-			defer func() { getCache = ogc }()
+			})
 
 			// Run source command
 			o := command.NewFakeOutput()

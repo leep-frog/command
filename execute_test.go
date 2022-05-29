@@ -4346,12 +4346,9 @@ func TestComplete(t *testing.T) {
 		/* Useful comment for commenting out tests */
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			oldAbs := filepathAbs
-			filepathAbs = func(s string) (string, error) {
+			StubValue(t, &filepathAbs, func(s string) (string, error) {
 				return filepath.Join(test.filepathAbs, s), test.filepathAbsErr
-			}
-			defer func() { filepathAbs = oldAbs }()
-
+			})
 			CompleteTest(t, test.ctc)
 		})
 	}

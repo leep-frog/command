@@ -559,16 +559,14 @@ func (test *completorTest[T]) run(t *testing.T) {
 			test.setup(t)
 		}
 		if test.cleanup != nil {
-			defer test.cleanup(t)
+			t.Cleanup(func() { test.cleanup(t) })
 		}
-		oldAbs := filepathAbs
-		filepathAbs = func(rel string) (string, error) {
+		StubValue(t, &filepathAbs, func(rel string) (string, error) {
 			if test.absErr != nil {
 				return "", test.absErr
 			}
 			return filepath.Abs(rel)
-		}
-		defer func() { filepathAbs = oldAbs }()
+		})
 
 		var got []string
 		if test.singleC != nil {

@@ -176,10 +176,9 @@ func TestNodeRunner(t *testing.T) {
 			if err != nil {
 				t.Fatalf("failed to create tmp file: %v", err)
 			}
-			oldGet := getTmpFile
-			getTmpFile = func() (*os.File, error) {
+			command.StubValue(t, &getTmpFile, func() (*os.File, error) {
 				return f, nil
-			}
+			})
 
 			if test.writeToFile != nil {
 				if err := ioutil.WriteFile(f.Name(), []byte(strings.Join(test.writeToFile, "\n")), 0644); err != nil {
@@ -187,7 +186,6 @@ func TestNodeRunner(t *testing.T) {
 				}
 			}
 
-			defer func() { getTmpFile = oldGet }()
 			for _, sets := range test.etc.WantRunContents {
 				for i, line := range sets {
 					sets[i] = strings.ReplaceAll(line, "TMP_FILE", filepath.ToSlash(f.Name()))
