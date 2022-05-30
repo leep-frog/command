@@ -16,7 +16,7 @@ const (
 )
 
 func main() {
-	os.Exit(sourcerer.Source(&Todo{}))
+	os.Exit(sourcerer.Source([]sourcerer.CLI{&Todo{}}))
 }
 
 type Todo struct {
@@ -127,38 +127,33 @@ type fetcher struct {
 	Primary bool
 }
 
-func (f *fetcher) Fetch(value string, data *command.Data) (*command.Completion, error) {
-	if f.Primary {
-		primaries := make([]string, 0, len(f.List.Items))
-		for p := range f.List.Items {
-			primaries = append(primaries, p)
+func Completor(list *Todo, primary bool) command.Completor[string] {
+	return command.CompletorFromFunc(func(t string, data *command.Data) (*command.Completion, error) {
+		if primary {
+			primaries := make([]string, 0, len(list.Items))
+			for p := range list.Items {
+				primaries = append(primaries, p)
+			}
+			return &command.Completion{
+				Suggestions: primaries,
+			}, nil
+		}
+
+		p := data.String(primaryArg)
+		sMap := list.Items[p]
+		secondaries := make([]string, 0, len(sMap))
+		for s := range sMap {
+			secondaries = append(secondaries, s)
 		}
 		return &command.Completion{
-			Suggestions: primaries,
+			Suggestions: secondaries,
 		}, nil
-	}
-
-	p := data.String(primaryArg)
-	sMap := f.List.Items[p]
-	secondaries := make([]string, 0, len(sMap))
-	for s := range sMap {
-		secondaries = append(secondaries, s)
-	}
-	return &command.Completion{
-		Suggestions: secondaries,
-	}, nil
+	})
 }
 
 func (tl *Todo) Node() *command.Node {
-	pf := &command.Completor[string]{
-		Fetcher: &fetcher{
-			List:    tl,
-			Primary: true,
-		},
-	}
-	sf := &command.Completor[string]{
-		Fetcher: &fetcher{List: tl},
-	}
+	pf := Completor(tl, true)
+	sf := Completor(tl, false)
 	return command.BranchNode(
 		map[string]*command.Node{
 			"a": command.SerialNodes(

@@ -7,5 +7,5 @@ import (
 )
 
 func main() {
-	os.Exit(sourcerer.Source(&sourcerer.GoLeep{}))
+	os.Exit(sourcerer.Source([]sourcerer.CLI{&sourcerer.GoLeep{}}))
 }

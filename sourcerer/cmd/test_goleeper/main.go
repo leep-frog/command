@@ -26,8 +26,8 @@ goleep main.go
 
 func main() {
 	command.RunNodes(command.SerialNodes(
-		command.ListArg[string]("SL", "", 1, 2, command.SimpleCompletor("un", "deux", "trois")),
-		command.ExecutorNode(func(o command.Output, d *command.Data) error {
+		command.ListArg[string]("SL", "", 1, 2, command.SimpleCompletor[[]string]("un", "deux", "trois")),
+		command.ExecuteErrNode(func(o command.Output, d *command.Data) error {
 			o.Stdoutf("%v", d.StringList("SL"))
 			return nil
 		}),

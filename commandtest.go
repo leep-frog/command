@@ -427,9 +427,18 @@ type runResponseTester struct {
 	gotRunContents [][]string
 }
 
+var (
+	allowedCmdPaths = map[string]bool{
+		"bash":                            true,
+		"C:\\msys64\\usr\\bin\\bash.exe":  true,
+		"C:\\Windows\\system32\\bash.exe": true,
+		"C:\\WINDOWS\\system32\\bash.exe": true,
+	}
+)
+
 func (rrt *runResponseTester) stubRunResponses(t *testing.T) func(cmd *exec.Cmd) error {
 	return func(cmd *exec.Cmd) error {
-		if cmd.Path != "bash" && cmd.Path != "C:\\msys64\\usr\\bin\\bash.exe" && cmd.Path != "C:\\Windows\\system32\\bash.exe" {
+		if !allowedCmdPaths[cmd.Path] {
 			t.Fatalf(`expected cmd path to be "bash"; got %q`, cmd.Path)
 		}
 		if len(cmd.Args) != 2 {

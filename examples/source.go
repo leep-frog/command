@@ -10,7 +10,7 @@ import (
 )
 
 func main() {
-	os.Exit(sourcerer.Source(&SimpleCLI{}))
+	os.Exit(sourcerer.Source([]sourcerer.CLI{&SimpleCLI{}}))
 }
 
 type SimpleCLI struct {
