@@ -7,8 +7,8 @@ import (
 )
 
 var (
-	shortcutArgName = "SHORTCUT"
-	shortcutArg     = Arg[string](shortcutArgName, "TODO shortcut desc", MinLength(1))
+	// ShortcutArg is the `Arg` used to check for shortcuts.
+	ShortcutArg = Arg[string]("SHORTCUT", "TODO shortcut desc", MinLength(1))
 )
 
 // ShortcutCLI is the interface required for integrating with shortcut nodes.
@@ -58,7 +58,7 @@ func setShortcut(sc ShortcutCLI, name, shortcut string, value []string) {
 }
 
 func shortcutMap(name string, sc ShortcutCLI, n *Node) map[string]*Node {
-	adder := SerialNodes(shortcutArg, &addShortcut{node: n, sc: sc, name: name})
+	adder := SerialNodes(ShortcutArg, &addShortcut{node: n, sc: sc, name: name})
 	return map[string]*Node{
 		"a": adder,
 		"d": shortcutDeleter(name, sc, n),
@@ -93,7 +93,7 @@ const (
 )
 
 func shortcutListArg(name string, sc ShortcutCLI) Processor {
-	return ListArg[string](shortcutArgName, hiddenNodeDesc, 1, UnboundedList, CompletorList(shortcutCompletor(name, sc)))
+	return ListArg[string](ShortcutArg.Name(), hiddenNodeDesc, 1, UnboundedList, CompletorList(shortcutCompletor(name, sc)))
 }
 
 func shortcutSearcher(name string, sc ShortcutCLI, n *Node) *Node {
@@ -138,7 +138,7 @@ func shortcutDeleter(name string, sc ShortcutCLI, n *Node) *Node {
 		if len(getShortcutMap(sc, name)) == 0 {
 			return output.Stderr("Shortcut group has no shortcuts yet.")
 		}
-		for _, a := range data.StringList(shortcutArgName) {
+		for _, a := range data.StringList(ShortcutArg.Name()) {
 			if err := deleteShortcut(sc, name, a); err != nil {
 				output.Err(err)
 			}
@@ -157,7 +157,7 @@ func shortcutGetter(name string, sc ShortcutCLI, n *Node) *Node {
 			return output.Stderrf("No shortcuts exist for shortcut type %q", name)
 		}
 
-		for _, shortcut := range data.StringList(shortcutArgName) {
+		for _, shortcut := range data.StringList(ShortcutArg.Name()) {
 			if v, ok := getShortcut(sc, name, shortcut); ok {
 				output.Stdout(shortcutStr(shortcut, v))
 			} else {
@@ -202,7 +202,7 @@ func (as *addShortcut) Usage(*Usage) {
 }
 
 func (as *addShortcut) Execute(input *Input, output Output, data *Data, _ *ExecuteData) error {
-	shortcut := data.String(shortcutArgName)
+	shortcut := data.String(ShortcutArg.Name())
 	sm := shortcutMap(as.name, as.sc, as.node)
 	if _, ok := sm[shortcut]; ok {
 		return output.Stderr("cannot create shortcut for reserved value")
@@ -225,7 +225,7 @@ func (as *addShortcut) Execute(input *Input, output Output, data *Data, _ *Execu
 
 	sl := input.GetSnapshot(snapshot)
 	if len(sl) == 0 {
-		return output.Err(NotEnoughArgs(shortcutArgName, 1, 0))
+		return output.Err(NotEnoughArgs(ShortcutArg.Name(), 1, 0))
 	}
 	setShortcut(as.sc, as.name, shortcut, sl)
 	return nil

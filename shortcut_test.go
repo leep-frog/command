@@ -1264,7 +1264,7 @@ func TestAliasComplete(t *testing.T) {
 				))),
 				Args: "cmd a ",
 				WantData: &Data{Values: map[string]interface{}{
-					shortcutArgName: "",
+					ShortcutArg.Name(): "",
 				}},
 			},
 		},
@@ -1291,8 +1291,8 @@ func TestAliasComplete(t *testing.T) {
 				))),
 				Args: "cmd a b ",
 				WantData: &Data{Values: map[string]interface{}{
-					shortcutArgName: "b",
-					"sl":            []string{""},
+					ShortcutArg.Name(): "b",
+					"sl":               []string{""},
 				}},
 				Want: []string{"deux", "trois", "un"},
 			},
@@ -1305,8 +1305,8 @@ func TestAliasComplete(t *testing.T) {
 				))),
 				Args: "cmd a b ",
 				WantData: &Data{Values: map[string]interface{}{
-					shortcutArgName: "b",
-					"sl":            []string{""},
+					ShortcutArg.Name(): "b",
+					"sl":               []string{""},
 				}},
 				Want: []string{"deux", "trois", "un"},
 			},
@@ -1327,7 +1327,7 @@ func TestAliasComplete(t *testing.T) {
 				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
 				Args: "cmd g ",
 				WantData: &Data{Values: map[string]interface{}{
-					shortcutArgName: []string{""},
+					ShortcutArg.Name(): []string{""},
 				}},
 				Want: []string{"alpha", "alright", "any", "balloon", "bear"},
 			},
@@ -1347,7 +1347,7 @@ func TestAliasComplete(t *testing.T) {
 				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
 				Args: "cmd g b",
 				WantData: &Data{Values: map[string]interface{}{
-					shortcutArgName: []string{"b"},
+					ShortcutArg.Name(): []string{"b"},
 				}},
 				Want: []string{"balloon", "bear"},
 			},
@@ -1367,7 +1367,7 @@ func TestAliasComplete(t *testing.T) {
 				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
 				Args: "cmd g alright balloon ",
 				WantData: &Data{Values: map[string]interface{}{
-					shortcutArgName: []string{"alright", "balloon", ""},
+					ShortcutArg.Name(): []string{"alright", "balloon", ""},
 				}},
 				Want: []string{"alpha", "any", "bear"},
 			},
@@ -1388,7 +1388,7 @@ func TestAliasComplete(t *testing.T) {
 				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
 				Args: "cmd d ",
 				WantData: &Data{Values: map[string]interface{}{
-					shortcutArgName: []string{""},
+					ShortcutArg.Name(): []string{""},
 				}},
 				Want: []string{"alpha", "alright", "any", "balloon", "bear"},
 			},
@@ -1408,7 +1408,7 @@ func TestAliasComplete(t *testing.T) {
 				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
 				Args: "cmd d b",
 				WantData: &Data{Values: map[string]interface{}{
-					shortcutArgName: []string{"b"},
+					ShortcutArg.Name(): []string{"b"},
 				}},
 				Want: []string{"balloon", "bear"},
 			},
@@ -1428,7 +1428,7 @@ func TestAliasComplete(t *testing.T) {
 				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
 				Args: "cmd d alright balloon ",
 				WantData: &Data{Values: map[string]interface{}{
-					shortcutArgName: []string{"alright", "balloon", ""},
+					ShortcutArg.Name(): []string{"alright", "balloon", ""},
 				}},
 				Want: []string{"alpha", "any", "bear"},
 			},
