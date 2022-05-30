@@ -899,14 +899,14 @@ func TestExecute(t *testing.T) {
 				Node: &Node{
 					Processor: Arg[string]("S", testDesc, IsDir()),
 				},
-				Args: []string{"testing"},
+				Args: []string{"testdata"},
 				wantInput: &Input{
 					args: []*inputArg{
-						{value: "testing"},
+						{value: "testdata"},
 					},
 				},
 				WantData: &Data{Values: map[string]interface{}{
-					"S": "testing",
+					"S": "testdata",
 				}},
 			},
 		},
@@ -954,15 +954,15 @@ func TestExecute(t *testing.T) {
 				Node: &Node{
 					Processor: ListArg[string]("SL", testDesc, 1, 3, ValidatorList(IsDir())),
 				},
-				Args: []string{"testing", "cache"},
+				Args: []string{"testdata", "cache"},
 				wantInput: &Input{
 					args: []*inputArg{
-						{value: "testing"},
+						{value: "testdata"},
 						{value: "cache"},
 					},
 				},
 				WantData: &Data{Values: map[string]interface{}{
-					"SL": []string{"testing", "cache"},
+					"SL": []string{"testdata", "cache"},
 				}},
 			},
 		},
@@ -972,15 +972,15 @@ func TestExecute(t *testing.T) {
 				Node: &Node{
 					Processor: ListArg[string]("SL", testDesc, 1, 3, ValidatorList(IsDir())),
 				},
-				Args: []string{"testing", "cash"},
+				Args: []string{"testdata", "cash"},
 				wantInput: &Input{
 					args: []*inputArg{
-						{value: "testing"},
+						{value: "testdata"},
 						{value: "cash"},
 					},
 				},
 				WantData: &Data{Values: map[string]interface{}{
-					"SL": []string{"testing", "cash"},
+					"SL": []string{"testdata", "cash"},
 				}},
 				WantErr:    fmt.Errorf(`validation failed: [IsDir] file "cash" does not exist`),
 				WantStderr: []string{`validation failed: [IsDir] file "cash" does not exist`},
@@ -992,15 +992,15 @@ func TestExecute(t *testing.T) {
 				Node: &Node{
 					Processor: ListArg[string]("SL", testDesc, 1, 3, ValidatorList(IsDir())),
 				},
-				Args: []string{"testing", "execute.go"},
+				Args: []string{"testdata", "execute.go"},
 				wantInput: &Input{
 					args: []*inputArg{
-						{value: "testing"},
+						{value: "testdata"},
 						{value: "execute.go"},
 					},
 				},
 				WantData: &Data{Values: map[string]interface{}{
-					"SL": []string{"testing", "execute.go"},
+					"SL": []string{"testdata", "execute.go"},
 				}},
 				WantErr:    fmt.Errorf(`validation failed: [IsDir] argument "execute.go" is a file`),
 				WantStderr: []string{`validation failed: [IsDir] argument "execute.go" is a file`},
@@ -1049,17 +1049,17 @@ func TestExecute(t *testing.T) {
 				Node: &Node{
 					Processor: Arg[string]("S", testDesc, IsFile()),
 				},
-				Args: []string{"testing"},
+				Args: []string{"testdata"},
 				wantInput: &Input{
 					args: []*inputArg{
-						{value: "testing"},
+						{value: "testdata"},
 					},
 				},
 				WantData: &Data{Values: map[string]interface{}{
-					"S": "testing",
+					"S": "testdata",
 				}},
-				WantErr:    fmt.Errorf(`validation failed: [IsFile] argument "testing" is a directory`),
-				WantStderr: []string{`validation failed: [IsFile] argument "testing" is a directory`},
+				WantErr:    fmt.Errorf(`validation failed: [IsFile] argument "testdata" is a directory`),
+				WantStderr: []string{`validation failed: [IsFile] argument "testdata" is a directory`},
 			},
 		},
 		{
@@ -1106,18 +1106,18 @@ func TestExecute(t *testing.T) {
 				Node: &Node{
 					Processor: ListArg[string]("SL", testDesc, 1, 3, ValidatorList(IsFile())),
 				},
-				Args: []string{"execute.go", "testing"},
+				Args: []string{"execute.go", "testdata"},
 				wantInput: &Input{
 					args: []*inputArg{
 						{value: "execute.go"},
-						{value: "testing"},
+						{value: "testdata"},
 					},
 				},
 				WantData: &Data{Values: map[string]interface{}{
-					"SL": []string{"execute.go", "testing"},
+					"SL": []string{"execute.go", "testdata"},
 				}},
-				WantErr:    fmt.Errorf(`validation failed: [IsFile] argument "testing" is a directory`),
-				WantStderr: []string{`validation failed: [IsFile] argument "testing" is a directory`},
+				WantErr:    fmt.Errorf(`validation failed: [IsFile] argument "testdata" is a directory`),
+				WantStderr: []string{`validation failed: [IsFile] argument "testdata" is a directory`},
 			},
 		},
 		// InList & string menu
@@ -3228,10 +3228,10 @@ func TestExecute(t *testing.T) {
 			name: "file gets read properly",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(FileContents("FILE", testDesc)),
-				Args: []string{filepath.Join("testing", "one.txt")},
+				Args: []string{filepath.Join("testdata", "one.txt")},
 				wantInput: &Input{
 					args: []*inputArg{
-						{value: FilepathAbs(t, "testing", "one.txt")},
+						{value: FilepathAbs(t, "testdata", "one.txt")},
 					},
 				},
 				WantData: &Data{
