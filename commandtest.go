@@ -16,6 +16,15 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 )
 
+func TempFile(t *testing.T, pattern string) *os.File {
+	tmp, err := ioutil.TempFile("", pattern)
+	if err != nil {
+		t.Fatalf("failed to create temp file: %v", err)
+	}
+	t.Cleanup(func() { tmp.Close() })
+	return tmp
+}
+
 func StubValue[T any](t *testing.T, originalValue *T, newValue T) {
 	oldValue := *originalValue
 	*originalValue = newValue

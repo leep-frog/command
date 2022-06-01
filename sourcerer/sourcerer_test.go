@@ -23,27 +23,19 @@ func TestGenerateBinaryNode(t *testing.T) {
 	})
 
 	for _, test := range []struct {
-		name         string
-		clis         []CLI
-		args         []string
-		ignoreNosort bool
-		opts         []Option
-		wantOutput   []string
+		name            string
+		clis            []CLI
+		args            []string
+		ignoreNosort    bool
+		opts            []Option
+		getSourceLocErr error
+		wantStdout      []string
+		wantStderr      []string
+		wantExecuteFile []string
 	}{
 		{
 			name: "generates source file when no CLIs",
-			wantOutput: []string{
-				`pushd . > /dev/null`,
-				`cd "$(dirname /fake/source/location)"`,
-				`go build -o $GOPATH/bin/_leep-frog-source_runner`,
-				`popd > /dev/null`,
-				`function _custom_autocomplete_leep-frog-source {`,
-				`  local tFile=$(mktemp)`,
-				`  $GOPATH/bin/_leep-frog-source_runner autocomplete ${COMP_WORDS[0]} $COMP_POINT "$COMP_LINE" > $tFile`,
-				`  local IFS=$'\n'`,
-				`  COMPREPLY=( $(cat $tFile) )`,
-				`  rm $tFile`,
-				`}`,
+			wantExecuteFile: []string{
 				`function _custom_execute_leep-frog-source {`,
 				`  # tmpFile is the file to which we write ExecuteData.Executable`,
 				`  local tmpFile=$(mktemp)`,
@@ -63,6 +55,21 @@ func TestGenerateBinaryNode(t *testing.T) {
 				`    echo $tmpFile`,
 				`  fi`,
 				`  return $errorCode`,
+				`}`,
+				`_custom_execute_leep-frog-source "$@"`,
+				``,
+			},
+			wantStdout: []string{
+				`pushd . > /dev/null`,
+				`cd "$(dirname /fake/source/location)"`,
+				`go build -o $GOPATH/bin/_leep-frog-source_runner`,
+				`popd > /dev/null`,
+				`function _custom_autocomplete_leep-frog-source {`,
+				`  local tFile=$(mktemp)`,
+				`  $GOPATH/bin/_leep-frog-source_runner autocomplete ${COMP_WORDS[0]} $COMP_POINT "$COMP_LINE" > $tFile`,
+				`  local IFS=$'\n'`,
+				`  COMPREPLY=( $(cat $tFile) )`,
+				`  rm $tFile`,
 				`}`,
 			},
 		},
@@ -72,18 +79,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 				Aliaser("a1", "do", "some", "stuff"),
 				Aliaser("otherAlias", "all args --at once"),
 			},
-			wantOutput: []string{
-				`pushd . > /dev/null`,
-				`cd "$(dirname /fake/source/location)"`,
-				`go build -o $GOPATH/bin/_leep-frog-source_runner`,
-				`popd > /dev/null`,
-				`function _custom_autocomplete_leep-frog-source {`,
-				`  local tFile=$(mktemp)`,
-				`  $GOPATH/bin/_leep-frog-source_runner autocomplete ${COMP_WORDS[0]} $COMP_POINT "$COMP_LINE" > $tFile`,
-				`  local IFS=$'\n'`,
-				`  COMPREPLY=( $(cat $tFile) )`,
-				`  rm $tFile`,
-				`}`,
+			wantExecuteFile: []string{
 				`function _custom_execute_leep-frog-source {`,
 				`  # tmpFile is the file to which we write ExecuteData.Executable`,
 				`  local tmpFile=$(mktemp)`,
@@ -104,6 +100,21 @@ func TestGenerateBinaryNode(t *testing.T) {
 				`  fi`,
 				`  return $errorCode`,
 				`}`,
+				`_custom_execute_leep-frog-source "$@"`,
+				``,
+			},
+			wantStdout: []string{
+				`pushd . > /dev/null`,
+				`cd "$(dirname /fake/source/location)"`,
+				`go build -o $GOPATH/bin/_leep-frog-source_runner`,
+				`popd > /dev/null`,
+				`function _custom_autocomplete_leep-frog-source {`,
+				`  local tFile=$(mktemp)`,
+				`  $GOPATH/bin/_leep-frog-source_runner autocomplete ${COMP_WORDS[0]} $COMP_POINT "$COMP_LINE" > $tFile`,
+				`  local IFS=$'\n'`,
+				`  COMPREPLY=( $(cat $tFile) )`,
+				`  rm $tFile`,
+				`}`,
 				`aliaser a1 do some stuff`,
 				`aliaser otherAlias all args --at once`,
 			},
@@ -111,18 +122,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 		{
 			name: "generates source file with custom filename",
 			args: []string{"custom-output_file"},
-			wantOutput: []string{
-				`pushd . > /dev/null`,
-				`cd "$(dirname /fake/source/location)"`,
-				`go build -o $GOPATH/bin/_custom-output_file_runner`,
-				`popd > /dev/null`,
-				`function _custom_autocomplete_custom-output_file {`,
-				`  local tFile=$(mktemp)`,
-				`  $GOPATH/bin/_custom-output_file_runner autocomplete ${COMP_WORDS[0]} $COMP_POINT "$COMP_LINE" > $tFile`,
-				`  local IFS=$'\n'`,
-				`  COMPREPLY=( $(cat $tFile) )`,
-				`  rm $tFile`,
-				`}`,
+			wantExecuteFile: []string{
 				`function _custom_execute_custom-output_file {`,
 				`  # tmpFile is the file to which we write ExecuteData.Executable`,
 				`  local tmpFile=$(mktemp)`,
@@ -143,6 +143,21 @@ func TestGenerateBinaryNode(t *testing.T) {
 				`  fi`,
 				`  return $errorCode`,
 				`}`,
+				`_custom_execute_custom-output_file "$@"`,
+				``,
+			},
+			wantStdout: []string{
+				`pushd . > /dev/null`,
+				`cd "$(dirname /fake/source/location)"`,
+				`go build -o $GOPATH/bin/_custom-output_file_runner`,
+				`popd > /dev/null`,
+				`function _custom_autocomplete_custom-output_file {`,
+				`  local tFile=$(mktemp)`,
+				`  $GOPATH/bin/_custom-output_file_runner autocomplete ${COMP_WORDS[0]} $COMP_POINT "$COMP_LINE" > $tFile`,
+				`  local IFS=$'\n'`,
+				`  COMPREPLY=( $(cat $tFile) )`,
+				`  rm $tFile`,
+				`}`,
 			},
 		},
 		{
@@ -151,18 +166,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 				"x": "exit",
 				"l": "ls -la",
 			}), &testCLI{name: "basic", setup: []string{"his", "story"}}),
-			wantOutput: []string{
-				`pushd . > /dev/null`,
-				`cd "$(dirname /fake/source/location)"`,
-				`go build -o $GOPATH/bin/_leep-frog-source_runner`,
-				`popd > /dev/null`,
-				`function _custom_autocomplete_leep-frog-source {`,
-				`  local tFile=$(mktemp)`,
-				`  $GOPATH/bin/_leep-frog-source_runner autocomplete ${COMP_WORDS[0]} $COMP_POINT "$COMP_LINE" > $tFile`,
-				`  local IFS=$'\n'`,
-				`  COMPREPLY=( $(cat $tFile) )`,
-				`  rm $tFile`,
-				`}`,
+			wantExecuteFile: []string{
 				`function _custom_execute_leep-frog-source {`,
 				`  # tmpFile is the file to which we write ExecuteData.Executable`,
 				`  local tmpFile=$(mktemp)`,
@@ -183,15 +187,30 @@ func TestGenerateBinaryNode(t *testing.T) {
 				`  fi`,
 				`  return $errorCode`,
 				`}`,
+				`_custom_execute_leep-frog-source "$@"`,
+				``,
+			},
+			wantStdout: []string{
+				`pushd . > /dev/null`,
+				`cd "$(dirname /fake/source/location)"`,
+				`go build -o $GOPATH/bin/_leep-frog-source_runner`,
+				`popd > /dev/null`,
+				`function _custom_autocomplete_leep-frog-source {`,
+				`  local tFile=$(mktemp)`,
+				`  $GOPATH/bin/_leep-frog-source_runner autocomplete ${COMP_WORDS[0]} $COMP_POINT "$COMP_LINE" > $tFile`,
+				`  local IFS=$'\n'`,
+				`  COMPREPLY=( $(cat $tFile) )`,
+				`  rm $tFile`,
+				`}`,
 				`function _setup_for_basic_cli {`,
 				`  his  `,
 				`  story`,
 				`}`,
-				`alias basic='o=$(mktemp) && _setup_for_basic_cli > $o && _custom_execute_leep-frog-source basic $o'`,
+				`alias basic='o=$(mktemp) && _setup_for_basic_cli > $o && source $GOPATH/bin/_custom_execute_leep-frog-source basic $o'`,
 				"complete -F _custom_autocomplete_leep-frog-source -o nosort basic",
-				`alias l='_custom_execute_leep-frog-source l'`,
+				`alias l='source $GOPATH/bin/_custom_execute_leep-frog-source l'`,
 				"complete -F _custom_autocomplete_leep-frog-source -o nosort l",
-				"alias x='_custom_execute_leep-frog-source x'",
+				"alias x='source $GOPATH/bin/_custom_execute_leep-frog-source x'",
 				"complete -F _custom_autocomplete_leep-frog-source -o nosort x",
 			},
 		},
@@ -202,18 +221,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 				"l": "ls -la",
 			}), &testCLI{name: "basic", setup: []string{"his", "story"}}),
 			ignoreNosort: true,
-			wantOutput: []string{
-				`pushd . > /dev/null`,
-				`cd "$(dirname /fake/source/location)"`,
-				`go build -o $GOPATH/bin/_leep-frog-source_runner`,
-				`popd > /dev/null`,
-				`function _custom_autocomplete_leep-frog-source {`,
-				`  local tFile=$(mktemp)`,
-				`  $GOPATH/bin/_leep-frog-source_runner autocomplete ${COMP_WORDS[0]} $COMP_POINT "$COMP_LINE" > $tFile`,
-				`  local IFS=$'\n'`,
-				`  COMPREPLY=( $(cat $tFile) )`,
-				`  rm $tFile`,
-				`}`,
+			wantExecuteFile: []string{
 				`function _custom_execute_leep-frog-source {`,
 				`  # tmpFile is the file to which we write ExecuteData.Executable`,
 				`  local tmpFile=$(mktemp)`,
@@ -234,20 +242,39 @@ func TestGenerateBinaryNode(t *testing.T) {
 				`  fi`,
 				`  return $errorCode`,
 				`}`,
+				`_custom_execute_leep-frog-source "$@"`,
+				``,
+			},
+			wantStdout: []string{
+				`pushd . > /dev/null`,
+				`cd "$(dirname /fake/source/location)"`,
+				`go build -o $GOPATH/bin/_leep-frog-source_runner`,
+				`popd > /dev/null`,
+				`function _custom_autocomplete_leep-frog-source {`,
+				`  local tFile=$(mktemp)`,
+				`  $GOPATH/bin/_leep-frog-source_runner autocomplete ${COMP_WORDS[0]} $COMP_POINT "$COMP_LINE" > $tFile`,
+				`  local IFS=$'\n'`,
+				`  COMPREPLY=( $(cat $tFile) )`,
+				`  rm $tFile`,
+				`}`,
 				`function _setup_for_basic_cli {`,
 				`  his  `,
 				`  story`,
 				`}`,
-				`alias basic='o=$(mktemp) && _setup_for_basic_cli > $o && _custom_execute_leep-frog-source basic $o'`,
+				`alias basic='o=$(mktemp) && _setup_for_basic_cli > $o && source $GOPATH/bin/_custom_execute_leep-frog-source basic $o'`,
 				"complete -F _custom_autocomplete_leep-frog-source  basic",
-				`alias l='_custom_execute_leep-frog-source l'`,
+				`alias l='source $GOPATH/bin/_custom_execute_leep-frog-source l'`,
 				"complete -F _custom_autocomplete_leep-frog-source  l",
-				"alias x='_custom_execute_leep-frog-source x'",
+				"alias x='source $GOPATH/bin/_custom_execute_leep-frog-source x'",
 				"complete -F _custom_autocomplete_leep-frog-source  x",
 			},
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
+			tmp := command.TempFile(t, "leep-frog-sourcerer-test")
+			command.StubValue(t, &getExecuteFile, func(string) string {
+				return tmp.Name()
+			})
 			if test.ignoreNosort {
 				command.StubValue(t, &NosortString, func() string { return "" })
 			}
@@ -264,9 +291,14 @@ func TestGenerateBinaryNode(t *testing.T) {
 			for _, line := range out {
 				modified = append(modified, strings.Split(line, "\n")...)
 			}
-			if diff := cmp.Diff(test.wantOutput, modified); diff != "" {
-				t.Errorf("source(%v) returned incorrect output (-wamt, +got):\n%s", test.args, diff)
+			if diff := cmp.Diff(test.wantStdout, modified); diff != "" {
+				t.Errorf("source(%v) sent incorrect data to stdout (-wamt, +got):\n%s", test.args, diff)
 			}
+			if diff := cmp.Diff(test.wantStderr, o.GetStderr()); diff != "" {
+				t.Errorf("source(%v) sent incorrect data to stderr (-wamt, +got):\n%s", test.args, diff)
+			}
+
+			cmpFile(t, fmt.Sprintf("source(%v) created incorrect execute file", test.args), tmp.Name(), test.wantExecuteFile)
 		})
 	}
 }

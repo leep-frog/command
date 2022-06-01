@@ -130,7 +130,7 @@ func (s *sourcerer) executeExecutor(output command.Output, d *command.Data) erro
 		return output.Err(err)
 	}
 
-	executeFile := d.String(fileArg.Name())
+	sourcingFile := d.String(fileArg.Name())
 	args := d.StringList(passthroughArgs.Name())
 
 	eData, err := command.Execute(cli.Node(), command.ParseExecuteArgs(args), output)
@@ -162,18 +162,12 @@ func (s *sourcerer) executeExecutor(output command.Output, d *command.Data) erro
 			eData.Executable[i] = strings.ReplaceAll(line, `\`, `\\`)
 		} */
 
-	f, err := os.OpenFile(executeFile, os.O_WRONLY|os.O_CREATE, 0644)
+	f, err := os.OpenFile(sourcingFile, os.O_WRONLY|os.O_CREATE, 0644)
 	if err != nil {
 		return output.Stderrf("failed to open file: %v", err)
 	}
 
-	if command.DebugMode() {
-		return output.Stderrf("# Executable Contents")
-	}
 	v := strings.Join(eData.Executable, "\n")
-	if command.DebugMode() {
-		output.Stderr(v)
-	}
 
 	if _, err := f.WriteString(v); err != nil {
 		return output.Stderrf("failed to write to execute file: %v", err)
@@ -197,19 +191,6 @@ func (s *sourcerer) autocompleteExecutor(o command.Output, d *command.Data) erro
 		o.Stdoutf("%s\n", strings.Join(g, "\n"))
 	}
 
-	if len(os.Getenv("LEEP_FROG_DEBUG")) > 0 {
-		debugFile, err := os.Create("leepFrogDebug.txt")
-		if err != nil {
-			return o.Stderrf("Unable to create file: %v", err)
-		}
-		if _, err := debugFile.WriteString(fmt.Sprintf("%d %s\n", len(args), strings.ReplaceAll(args, " ", "_"))); err != nil {
-			return o.Stderrf("Unable to write to file: %v", err)
-		}
-		if _, err := debugFile.WriteString(fmt.Sprintf("%d %s\n", len(g), strings.Join(g, "_"))); err != nil {
-			return o.Stderrf("Unable to write to file: %v", err)
-		}
-		debugFile.Close()
-	}
 	return nil
 }
 
@@ -383,6 +364,14 @@ var (
 	}
 )
 
+var (
+	// getExecuteFile returns the name of the file to which execute file logic is written.
+	// It is a separte function so it can be stubbed out for testing.
+	getExecuteFile = func(filename string) string {
+		return fmt.Sprintf("%s/bin/_custom_execute_%s", os.Getenv("GOPATH"), filename)
+	}
+)
+
 func (s *sourcerer) generateFile(o command.Output, d *command.Data) error {
 	filename := "leep-frog-source"
 	if d.Has(targetNameArg.Name()) {
@@ -399,7 +388,7 @@ func (s *sourcerer) generateFile(o command.Output, d *command.Data) error {
 	// bash environments that don't actually source sourcerer-related commands.
 	efc := fmt.Sprintf(executeFileContents, filename, filename, filename)
 
-	f, err := os.OpenFile(fmt.Sprintf("%s/bin/_custom_execute_%s", os.Getenv("GOPATH"), filename), os.O_WRONLY|os.O_CREATE, 0644)
+	f, err := os.OpenFile(getExecuteFile(filename), os.O_WRONLY|os.O_CREATE, 0644)
 	if err != nil {
 		return o.Stderrf("failed to open execute function file: %v", err)
 	}
