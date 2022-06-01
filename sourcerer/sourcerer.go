@@ -60,7 +60,14 @@ var (
 		`function _custom_execute_%s {`,
 		`  # tmpFile is the file to which we write ExecuteData.Executable`,
 		`  local tmpFile=$(mktemp)`,
+		``,
+		`  # Run the go-only code`,
 		`  $GOPATH/bin/_%s_runner execute $tmpFile "$@"`,
+		`  # Return the error code if go code terminated with an error`,
+		`  local errorCode=$?`,
+		`  if [ $errorCode -neq 0 ]; then return $errorCode; fi`,
+		``,
+		`  # Otherwise, run the ExecuteData.Executable data`,
 		`  source $tmpFile`,
 		`  local errorCode=$?`,
 		`  if [ -z "$LEEP_FROG_DEBUG" ]; then`,
@@ -133,7 +140,6 @@ func (s *sourcerer) executeExecutor(output command.Output, d *command.Data) erro
 		}
 		// Commands are responsible for printing out error messages so
 		// we just return if there are any issues here
-		fmt.Println("command returning error:", err)
 		return err
 	}
 
@@ -326,10 +332,8 @@ func Source(clis []CLI, opts ...Option) int {
 	o := command.NewOutput()
 	defer o.Close()
 	if source(clis, os.Args[1:], o, opts...) != nil {
-		fmt.Println("# source res 1")
 		return 1
 	}
-	fmt.Println("# source res 0")
 	return 0
 }
 
@@ -363,9 +367,7 @@ func source(clis []CLI, osArgs []string, o command.Output, opts ...Option) error
 		},
 	}
 
-	err = s.executeExecutor(o, d)
-	fmt.Println("# execute err:", err)
-	return err
+	return s.executeExecutor(o, d)
 }
 
 var (
