@@ -153,7 +153,7 @@ func (*SourcererCommand) Node() *command.Node {
 				`local tmpFile="$(mktemp)"`,
 				fmt.Sprintf("go run . %s > $tmpFile && source $tmpFile ", d.String(bsName)),
 				`echo "# here we are $tmpFile"`,
-				`ls $tmpFile"`,
+				`echo "# $(ls $tmpFile)"`,
 				"popd > /dev/null",
 			}, nil
 		}),
