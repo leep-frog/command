@@ -404,7 +404,7 @@ func (s *sourcerer) generateFile(o command.Output, d *command.Data) {
 	// define the execute function
 	//o.Stdoutf(executeFunction, filename, efc)
 
-	o.Stdoutf("echo %q > $GOPATH/bin/_custom_execute_%s", efc, filename)
+	o.Stdoutf("echo %s > $GOPATH/bin/_custom_execute_%s", efc, filename)
 	o.Stdoutf("chmod +x $GOPATH/bin/_custom_execute_%s", filename)
 
 	sort.SliceStable(s.clis, func(i, j int) bool { return s.clis[i].Name() < s.clis[j].Name() })
