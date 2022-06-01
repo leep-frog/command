@@ -404,7 +404,7 @@ func (s *sourcerer) generateFile(o command.Output, d *command.Data) error {
 	// bash environments that don't actually source sourcerer-related commands.
 	efc := fmt.Sprintf(executeFunctionContents, filename, filename, filename)
 
-	f, err := os.OpenFile(fmt.Sprintf("$GOPATH/bin/_custom_execute_%s", filename), os.O_WRONLY, 0644)
+	f, err := os.OpenFile(fmt.Sprintf("%s/bin/_custom_execute_%s", os.Getenv("GOPATH"), filename), os.O_WRONLY, 0644)
 	if err != nil {
 		return o.Stderrf("failed to open execute function file: %v", err)
 	}
