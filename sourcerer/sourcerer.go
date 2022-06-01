@@ -155,7 +155,7 @@ func (s *sourcerer) executeExecutor(output command.Output, d *command.Data) erro
 		return nil
 	}
 
-	/* TODO: This was removed on 4/28. If you don't notice any issues after a while, remove it
+	/* TODO: This was removed on 4/28/22. If you don't notice any issues after a while, remove it
 	  for i, line := range eData.Executable {
 			eData.Executable[i] = strings.ReplaceAll(line, `\`, `\\`)
 		} */
@@ -395,6 +395,8 @@ func (s *sourcerer) generateFile(o command.Output, d *command.Data) {
 
 	// define the execute function
 	o.Stdoutf(executeFunction, filename, filename)
+
+	o.Stdoutf("echo haha! > $GOPATH/bin/test.txt")
 
 	sort.SliceStable(s.clis, func(i, j int) bool { return s.clis[i].Name() < s.clis[j].Name() })
 	for _, cli := range s.clis {
