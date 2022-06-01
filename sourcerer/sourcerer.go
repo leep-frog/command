@@ -95,9 +95,9 @@ var (
 	}, "\n")
 
 	// aliasWithSetupFormat is an alias definition template for commands that require a setup function.
-	aliasWithSetupFormat = "alias %s='o=$(mktemp) && %s > $o && $GOPATH/bin/_custom_execute_%s %s $o'"
+	aliasWithSetupFormat = "alias %s='o=$(mktemp) && %s > $o && source $GOPATH/bin/_custom_execute_%s %s $o'"
 	// aliasFormat is an alias definition template for commands that don't require a setup function.
-	aliasFormat = "alias %s='$GOPATH/bin/_custom_execute_%s %s'"
+	aliasFormat = "alias %s='source $GOPATH/bin/_custom_execute_%s %s'"
 )
 
 var (
