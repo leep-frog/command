@@ -63,6 +63,7 @@ var (
 	}, "\n")*/
 
 	executeFunctionContents = strings.Join([]string{
+		`function _custom_execute_%s {`,
 		`  # tmpFile is the file to which we write ExecuteData.Executable`,
 		`  local tmpFile=$(mktemp)`,
 		``,
@@ -81,6 +82,8 @@ var (
 		`    echo $tmpFile`,
 		`  fi`,
 		`  return $errorCode`,
+		`}`,
+		`_custom_execute_%s "$@"`,
 	}, "\n")
 
 	// setupFunctionFormat is used to run setup functions prior to a CLI command execution.
@@ -272,7 +275,7 @@ func (s *sourcerer) getCLI(cli string) (CLI, error) {
 func (s *sourcerer) Node() *command.Node {
 	generateBinaryNode := command.SerialNodes(
 		targetNameArg,
-		command.ExecutorNode(s.generateFile),
+		command.ExecuteErrNode(s.generateFile),
 	)
 
 	return command.BranchNode(map[string]*command.Node{
@@ -385,7 +388,7 @@ var (
 	}
 )
 
-func (s *sourcerer) generateFile(o command.Output, d *command.Data) {
+func (s *sourcerer) generateFile(o command.Output, d *command.Data) error {
 	filename := "leep-frog-source"
 	if d.Has(targetNameArg.Name()) {
 		filename = d.String(targetNameArg.Name())
@@ -399,13 +402,18 @@ func (s *sourcerer) generateFile(o command.Output, d *command.Data) {
 
 	// The execute logic is put in an actual file so it can be used by other
 	// bash environments that don't actually source sourcerer-related commands.
-	efc := fmt.Sprintf(executeFunctionContents, filename)
+	efc := fmt.Sprintf(executeFunctionContents, filename, filename, filename)
 
+	f, err := os.OpenFile(fmt.Sprintf("$GOPATH/bin/_custom_execute_%s", filename), os.O_WRONLY, 0644)
+	if err != nil {
+		return o.Stderrf("failed to open execute function file: %v", err)
+	}
+
+	if _, err := f.WriteString(efc); err != nil {
+		return o.Stderrf("failed to write to execute function file: %v", err)
+	}
 	// define the execute function
 	//o.Stdoutf(executeFunction, filename, efc)
-
-	o.Stdoutf("echo %s > $GOPATH/bin/_custom_execute_%s", efc, filename)
-	o.Stdoutf("chmod +x $GOPATH/bin/_custom_execute_%s", filename)
 
 	sort.SliceStable(s.clis, func(i, j int) bool { return s.clis[i].Name() < s.clis[j].Name() })
 	for _, cli := range s.clis {
@@ -432,6 +440,8 @@ func (s *sourcerer) generateFile(o command.Output, d *command.Data) {
 	for _, alias := range aliases {
 		o.Stdoutf("aliaser %s %s", alias, strings.Join(s.opts.aliasers[alias], " "))
 	}
+
+	return nil
 }
 
 var (
