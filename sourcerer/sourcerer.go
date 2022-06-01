@@ -65,7 +65,7 @@ var (
 		`  $GOPATH/bin/_%s_runner execute $tmpFile "$@"`,
 		`  # Return the error code if go code terminated with an error`,
 		`  local errorCode=$?`,
-		`  if [ $errorCode -neq 0 ]; then return $errorCode; fi`,
+		`  if [ $errorCode -ne 0 ]; then return $errorCode; fi`,
 		``,
 		`  # Otherwise, run the ExecuteData.Executable data`,
 		`  source $tmpFile`,
