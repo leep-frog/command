@@ -14,6 +14,7 @@ var (
 		"cd",
 		"command",
 		"emacs",
+		"gocli",
 		"grep",
 		"labelmaker",
 		"pdf",
