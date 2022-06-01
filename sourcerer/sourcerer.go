@@ -56,8 +56,13 @@ var (
 	}, "\n")
 
 	// executeFunction defines a bash function for CLI execution.
-	executeFunction = strings.Join([]string{
+	/*executeFunction = strings.Join([]string{
 		`function _custom_execute_%s {`,
+		`%s`,
+		`}`,
+	}, "\n")*/
+
+	executeFunctionContents = strings.Join([]string{
 		`  # tmpFile is the file to which we write ExecuteData.Executable`,
 		`  local tmpFile=$(mktemp)`,
 		``,
@@ -76,7 +81,6 @@ var (
 		`    echo $tmpFile`,
 		`  fi`,
 		`  return $errorCode`,
-		`}`,
 	}, "\n")
 
 	// setupFunctionFormat is used to run setup functions prior to a CLI command execution.
@@ -87,9 +91,9 @@ var (
 	}, "\n")
 
 	// aliasWithSetupFormat is an alias definition template for commands that require a setup function.
-	aliasWithSetupFormat = "alias %s='o=$(mktemp) && %s > $o && _custom_execute_%s %s $o'"
+	aliasWithSetupFormat = "alias %s='o=$(mktemp) && %s > $o && $GOPATH/bin/_custom_execute_%s %s $o'"
 	// aliasFormat is an alias definition template for commands that don't require a setup function.
-	aliasFormat = "alias %s='_custom_execute_%s %s'"
+	aliasFormat = "alias %s='$GOPATH/bin/_custom_execute_%s %s'"
 )
 
 var (
@@ -393,10 +397,15 @@ func (s *sourcerer) generateFile(o command.Output, d *command.Data) {
 	// define the autocomplete function
 	o.Stdoutf(autocompleteFunction, filename, filename)
 
-	// define the execute function
-	o.Stdoutf(executeFunction, filename, filename)
+	// The execute logic is put in an actual file so it can be used by other
+	// bash environments that don't actually source sourcerer-related commands.
+	efc := fmt.Sprintf(executeFunctionContents, filename)
 
-	o.Stdoutf("echo haha! > $GOPATH/bin/test.txt")
+	// define the execute function
+	//o.Stdoutf(executeFunction, filename, efc)
+
+	o.Stdoutf("echo %q > $GOPATH/bin/_custom_execute_%s", efc, filename)
+	o.Stdoutf("chmod +x $GOPATH/bin/_custom_execute_%s", filename)
 
 	sort.SliceStable(s.clis, func(i, j int) bool { return s.clis[i].Name() < s.clis[j].Name() })
 	for _, cli := range s.clis {
