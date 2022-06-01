@@ -55,14 +55,8 @@ var (
 		"}",
 	}, "\n")
 
-	// executeFunction defines a bash function for CLI execution.
-	/*executeFunction = strings.Join([]string{
-		`function _custom_execute_%s {`,
-		`%s`,
-		`}`,
-	}, "\n")*/
-
-	executeFunctionContents = strings.Join([]string{
+	// executeFileContents defines a bash function for CLI execution.
+	executeFileContents = strings.Join([]string{
 		`function _custom_execute_%s {`,
 		`  # tmpFile is the file to which we write ExecuteData.Executable`,
 		`  local tmpFile=$(mktemp)`,
@@ -403,7 +397,7 @@ func (s *sourcerer) generateFile(o command.Output, d *command.Data) error {
 
 	// The execute logic is put in an actual file so it can be used by other
 	// bash environments that don't actually source sourcerer-related commands.
-	efc := fmt.Sprintf(executeFunctionContents, filename, filename, filename)
+	efc := fmt.Sprintf(executeFileContents, filename, filename, filename)
 
 	f, err := os.OpenFile(fmt.Sprintf("%s/bin/_custom_execute_%s", os.Getenv("GOPATH"), filename), os.O_WRONLY|os.O_CREATE, 0644)
 	if err != nil {
@@ -413,8 +407,6 @@ func (s *sourcerer) generateFile(o command.Output, d *command.Data) error {
 	if _, err := f.WriteString(efc); err != nil {
 		return o.Stderrf("failed to write to execute function file: %v", err)
 	}
-	// define the execute function
-	//o.Stdoutf(executeFunction, filename, efc)
 
 	sort.SliceStable(s.clis, func(i, j int) bool { return s.clis[i].Name() < s.clis[j].Name() })
 	for _, cli := range s.clis {

@@ -152,8 +152,6 @@ func (*SourcererCommand) Node() *command.Node {
 				fmt.Sprintf("cd %s", dir),
 				`local tmpFile="$(mktemp)"`,
 				fmt.Sprintf("go run . %s > $tmpFile && source $tmpFile ", d.String(bsName)),
-				`echo "# here we are $tmpFile"`,
-				`cat $tmpFile > /c/Users/gleep/OneDrive/Desktop/Coding/go/cmd/clis/tmp.sh`,
 				"popd > /dev/null",
 			}, nil
 		}),
