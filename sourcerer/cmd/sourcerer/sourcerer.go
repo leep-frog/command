@@ -150,9 +150,9 @@ func (*SourcererCommand) Node() *command.Node {
 			return []string{
 				"pushd . > /dev/null",
 				fmt.Sprintf("cd %s", dir),
-				// TODO: resolve issue with overlapping variable names (tmpFile here and in other places for example)
 				`local tmpFile="$(mktemp)"`,
 				fmt.Sprintf("go run . %s > $tmpFile && source $tmpFile ", d.String(bsName)),
+				`echo "# here we are $tmpFile"`,
 				"popd > /dev/null",
 			}, nil
 		}),
