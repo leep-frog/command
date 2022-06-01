@@ -84,6 +84,7 @@ var (
 		`  return $errorCode`,
 		`}`,
 		`_custom_execute_%s "$@"`,
+		``,
 	}, "\n")
 
 	// setupFunctionFormat is used to run setup functions prior to a CLI command execution.
@@ -167,7 +168,7 @@ func (s *sourcerer) executeExecutor(output command.Output, d *command.Data) erro
 			eData.Executable[i] = strings.ReplaceAll(line, `\`, `\\`)
 		} */
 
-	f, err := os.OpenFile(executeFile, os.O_WRONLY, 0644)
+	f, err := os.OpenFile(executeFile, os.O_WRONLY|os.O_CREATE, 0644)
 	if err != nil {
 		return output.Stderrf("failed to open file: %v", err)
 	}
@@ -404,7 +405,7 @@ func (s *sourcerer) generateFile(o command.Output, d *command.Data) error {
 	// bash environments that don't actually source sourcerer-related commands.
 	efc := fmt.Sprintf(executeFunctionContents, filename, filename, filename)
 
-	f, err := os.OpenFile(fmt.Sprintf("%s/bin/_custom_execute_%s", os.Getenv("GOPATH"), filename), os.O_WRONLY, 0644)
+	f, err := os.OpenFile(fmt.Sprintf("%s/bin/_custom_execute_%s", os.Getenv("GOPATH"), filename), os.O_WRONLY|os.O_CREATE, 0644)
 	if err != nil {
 		return o.Stderrf("failed to open execute function file: %v", err)
 	}
