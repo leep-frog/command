@@ -326,8 +326,10 @@ func Source(clis []CLI, opts ...Option) int {
 	o := command.NewOutput()
 	defer o.Close()
 	if source(clis, os.Args[1:], o, opts...) != nil {
+		fmt.Println("# source res 1")
 		return 1
 	}
+	fmt.Println("# source res 0")
 	return 0
 }
 
@@ -362,7 +364,7 @@ func source(clis []CLI, osArgs []string, o command.Output, opts ...Option) error
 	}
 
 	err = s.executeExecutor(o, d)
-	command.NewBashCommand("", []string{fmt.Sprintf("echo ee err: %v > help.txt", err)}, command.HideStderr[string]()).Run(nil)
+	fmt.Println("# execute err:", err)
 	return err
 }
 
