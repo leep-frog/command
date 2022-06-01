@@ -133,6 +133,7 @@ func (s *sourcerer) executeExecutor(output command.Output, d *command.Data) erro
 		}
 		// Commands are responsible for printing out error messages so
 		// we just return if there are any issues here
+		fmt.Println("command returning error:", err)
 		return err
 	}
 
