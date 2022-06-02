@@ -104,7 +104,7 @@ func (*AliaserCommand) Node() *command.Node {
 	pts := "PASSTHROUGH_ARG"
 	return command.SerialNodes(
 		command.Description("Alias a command to a cli with some args included"),
-		command.Arg[string](a, "Alias of new command"),
+		command.Arg[string](a, "Alias of new command", command.MinLength(1)),
 		command.Arg[string](c, "CLI of new command"),
 		command.ListArg[string](pts, "Args to passthrough with alias", 0, command.UnboundedList),
 		command.ExecutableNode(func(_ command.Output, d *command.Data) ([]string, error) {
@@ -123,7 +123,7 @@ func (*AliaserCommand) Node() *command.Node {
 				`  echo Provided CLI is not a CLI generated with github.com/leep-frog/command`,
 				`  return 1`,
 				`fi`,
-				fmt.Sprintf("alias %s=%q", alias, aliasTo),
+				fmt.Sprintf("alias -- %s=%q", alias, aliasTo),
 				fmt.Sprintf(sourcerer.AutocompleteForAliasFunction, alias, cli, cli, quotedArgs),
 				fmt.Sprintf("complete -F _custom_autocomplete_for_alias_%s %s %s", alias, sourcerer.NosortString(), alias),
 			}, nil
