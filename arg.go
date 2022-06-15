@@ -93,26 +93,30 @@ func (an *ArgNode[T]) Execute(i *Input, o Output, data *Data, eData *ExecuteData
 		return nil
 	}
 
-	// Transform from string to value.
-	op := getOperator[T]()
-	v, err := op.fromArgs(sl)
+	if an.opt != nil && an.opt.completeForExecute && i.FullyProcessed() {
+		// Now get the list with the last element
+		v, err := an.convertStringValue(sl, data)
+		compl, err := RunCompletion(an.opt.completor, *sl[len(sl)-1], v, data)
+		if err != nil {
+			return o.Annotatef(err, "[CompleteForExecute] failed to fetch completion")
+		}
+		if compl == nil {
+			return o.Stderrf("[CompleteForExecute] nil completion returned")
+		}
+		suggestions := compl.process(*sl[len(sl)-1], nil, true)
+		if len(suggestions) != 1 {
+			return o.Stderrf("[CompleteForExecute] requires exactly one suggestion to be returned, got %d: %v", len(suggestions), suggestions)
+		}
+		*sl[len(sl)-1] = suggestions[0]
+	}
+
+	v, err := an.convertStringValue(sl, data)
 	if err != nil {
 		return o.Err(err)
 	}
 
-	// Run custom transformer.
-	if an.opt != nil {
-		for _, transformer := range an.opt.transformers {
-			newV, err := transformer.t(v, data)
-			if err != nil {
-				return o.Stderrf("Custom transformer failed: %v", err)
-			}
-			v = newV
-		}
-	}
-
 	// Copy values into returned list (required for shortcutting)
-	newSl := op.toArgs(v)
+	newSl := getOperator[T]().toArgs(v)
 	for i := 0; i < len(sl); i++ {
 		*sl[i] = newSl[i]
 	}
@@ -131,6 +135,28 @@ func (an *ArgNode[T]) Execute(i *Input, o Output, data *Data, eData *ExecuteData
 		return o.Err(an.notEnoughErr(len(sl)))
 	}
 	return nil
+}
+
+func (an *ArgNode[T]) convertStringValue(sl []*string, data *Data) (T, error) {
+	var nill T
+	// Transform from string to value.
+	op := getOperator[T]()
+	v, err := op.fromArgs(sl)
+	if err != nil {
+		return nill, err
+	}
+
+	// Run custom transformer.
+	if an.opt != nil {
+		for _, transformer := range an.opt.transformers {
+			newV, err := transformer.t(v, data)
+			if err != nil {
+				return nill, fmt.Errorf("Custom transformer failed: %v", err)
+			}
+			v = newV
+		}
+	}
+	return v, nil
 }
 
 func (an *ArgNode[T]) notEnoughErr(got int) error {

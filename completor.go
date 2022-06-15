@@ -166,12 +166,18 @@ func RunCompletion[T any](c Completor[T], rawValue string, value T, data *Data) 
 	return completion, nil
 }
 
-// Process processes a `Completion` object against a given input.
-func (c *Completion) Process(input *Input) []string {
+// ProcessInput processes a `Completion` object against a given `Input` object.
+func (c *Completion) ProcessInput(input *Input) []string {
 	var lastArg string
 	if input != nil && len(input.args) > 0 {
 		lastArg = input.args[len(input.args)-1].value
 	}
+	return c.process(lastArg, input.delimiter, false)
+}
+
+// process processes a `Completion` object using the provided `lastArg` and `delimiter`.
+// If skipDelimiter is true, then no delimiter changes are done.
+func (c *Completion) process(lastArg string, delimiter *rune, skipDelimiter bool) []string {
 	results := c.Suggestions
 
 	// Filter out prefixes.
@@ -198,12 +204,14 @@ func (c *Completion) Process(input *Input) []string {
 		sort.Strings(results)
 	}
 
-	for i, result := range results {
-		if strings.Contains(result, " ") {
-			if input.delimiter == nil {
-				results[i] = strings.ReplaceAll(result, " ", "\\ ")
-			} else {
-				results[i] = fmt.Sprintf("%s%s%s", string(*input.delimiter), result, string(*input.delimiter))
+	if !skipDelimiter {
+		for i, result := range results {
+			if strings.Contains(result, " ") {
+				if delimiter == nil {
+					results[i] = strings.ReplaceAll(result, " ", "\\ ")
+				} else {
+					results[i] = fmt.Sprintf("%s%s%s", string(*delimiter), result, string(*delimiter))
+				}
 			}
 		}
 	}

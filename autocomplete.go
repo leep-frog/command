@@ -17,7 +17,7 @@ func autocomplete(n *Node, compLine string, passthroughArgs []string, data *Data
 
 	var r []string
 	if c != nil {
-		r = c.Process(input)
+		r = c.ProcessInput(input)
 	}
 	return r, err
 }

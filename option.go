@@ -6,15 +6,27 @@ type ArgOpt[T any] interface {
 }
 
 type argOpt[T any] struct {
-	validators   []*ValidatorOption[T]
-	completor    Completor[T]
-	transformers []*Transformer[T]
-	shortcut     *shortcutOpt[T]
-	customSet    customSetter[T]
-	_default     *T
-	breaker      *ListBreaker
+	validators         []*ValidatorOption[T]
+	completor          Completor[T]
+	transformers       []*Transformer[T]
+	shortcut           *shortcutOpt[T]
+	customSet          customSetter[T]
+	_default           *T
+	breaker            *ListBreaker
+	completeForExecute bool
 
 	hiddenUsage bool
+}
+
+type simpleArgOpt[T any] func(*argOpt[T])
+
+func (sao *simpleArgOpt[T]) modifyArgOpt(ao *argOpt[T]) {
+	(*sao)(ao)
+}
+
+func newArgOpt[T any](f func(*argOpt[T])) ArgOpt[T] {
+	sao := simpleArgOpt[T](f)
+	return &sao
 }
 
 func multiArgOpts[T any](opts ...ArgOpt[T]) *argOpt[T] {
@@ -53,6 +65,16 @@ type customSetter[T any] func(T, *Data)
 
 func (cs *customSetter[T]) modifyArgOpt(ao *argOpt[T]) {
 	ao.customSet = *cs
+}
+
+// CompleteForExecute is an arg option for arg execution.
+// If a command execution is run, then the last value for this arg
+// will be completed using its `Complete` logic. Exactly one suggestion
+// must be returned.
+func CompleteForExecute[T any]() ArgOpt[T] {
+	return newArgOpt(func(ao *argOpt[T]) {
+		ao.completeForExecute = true
+	})
 }
 
 // Transformer is an `ArgOpt` that transforms an argument.

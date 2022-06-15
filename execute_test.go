@@ -89,6 +89,435 @@ func TestExecute(t *testing.T) {
 				WantStderr: []string{`Argument "f" requires at least 1 argument, got 0`},
 			},
 		},
+		// CompleteForExecute tests for single Arg
+		{
+			name: "CompleteForExecute for Arg fails if no arg provided",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(Arg[int]("is", testDesc, CompleteForExecute[int](), CompletorFromFunc(func(i int, d *Data) (*Completion, error) {
+					return nil, fmt.Errorf("oopsie")
+				}))),
+				WantErr:    fmt.Errorf(`Argument "is" requires at least 1 argument, got 0`),
+				WantStderr: []string{`Argument "is" requires at least 1 argument, got 0`},
+			},
+		},
+		{
+			name: "CompleteForExecute for Arg fails completor returns error",
+			etc: &ExecuteTestCase{
+				Args: []string{""},
+				Node: SerialNodes(Arg[int]("is", testDesc, CompleteForExecute[int](), CompletorFromFunc(func(i int, d *Data) (*Completion, error) {
+					return nil, fmt.Errorf("oopsie")
+				}))),
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: ""},
+					},
+				},
+				WantErr: fmt.Errorf("[CompleteForExecute] failed to fetch completion: oopsie"),
+				WantStderr: []string{
+					"[CompleteForExecute] failed to fetch completion: oopsie",
+				},
+			},
+		},
+		{
+			name: "CompleteForExecute for Arg fails if returned completion is nil",
+			etc: &ExecuteTestCase{
+				Args: []string{""},
+				Node: SerialNodes(Arg[int]("is", testDesc, CompleteForExecute[int](), CompletorFromFunc(func(i int, d *Data) (*Completion, error) {
+					return nil, nil
+				}))),
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: ""},
+					},
+				},
+				WantErr: fmt.Errorf("[CompleteForExecute] nil completion returned"),
+				WantStderr: []string{
+					"[CompleteForExecute] nil completion returned",
+				},
+			},
+		},
+		{
+			name: "CompleteForExecute for Arg fails if 0 suggestions",
+			etc: &ExecuteTestCase{
+				Args: []string{""},
+				Node: SerialNodes(Arg[int]("is", testDesc, CompleteForExecute[int](), CompletorFromFunc(func(i int, d *Data) (*Completion, error) {
+					return &Completion{}, nil
+				}))),
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: ""},
+					},
+				},
+				WantErr: fmt.Errorf("[CompleteForExecute] requires exactly one suggestion to be returned, got 0: []"),
+				WantStderr: []string{
+					"[CompleteForExecute] requires exactly one suggestion to be returned, got 0: []",
+				},
+			},
+		},
+		{
+			name: "CompleteForExecute for Arg fails if multiple suggestions",
+			etc: &ExecuteTestCase{
+				Args: []string{""},
+				Node: SerialNodes(Arg[int]("is", testDesc, CompleteForExecute[int](), CompletorFromFunc(func(i int, d *Data) (*Completion, error) {
+					return &Completion{
+						Suggestions: []string{"1", "4"},
+					}, nil
+				}))),
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: ""},
+					},
+				},
+				WantErr: fmt.Errorf("[CompleteForExecute] requires exactly one suggestion to be returned, got 2: [1 4]"),
+				WantStderr: []string{
+					"[CompleteForExecute] requires exactly one suggestion to be returned, got 2: [1 4]",
+				},
+			},
+		},
+		{
+			name: "CompleteForExecute for Arg fails if suggestions is wrong type",
+			etc: &ExecuteTestCase{
+				Args: []string{""},
+				Node: SerialNodes(Arg[int]("is", testDesc, CompleteForExecute[int](), CompletorFromFunc(func(i int, d *Data) (*Completion, error) {
+					return &Completion{
+						Suggestions: []string{"someString"},
+					}, nil
+				}))),
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "someString"},
+					},
+				},
+				WantErr: fmt.Errorf(`strconv.Atoi: parsing "someString": invalid syntax`),
+				WantStderr: []string{
+					`strconv.Atoi: parsing "someString": invalid syntax`,
+				},
+			},
+		},
+		{
+			name: "CompleteForExecute for Arg works if one suggestion",
+			etc: &ExecuteTestCase{
+				Args: []string{""},
+				Node: SerialNodes(Arg[int]("is", testDesc, CompleteForExecute[int](), CompletorFromFunc(func(i int, d *Data) (*Completion, error) {
+					return &Completion{
+						Suggestions: []string{"123"},
+					}, nil
+				}))),
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "123"},
+					},
+				},
+				WantData: &Data{
+					Values: map[string]interface{}{
+						"is": 123,
+					},
+				},
+			},
+		},
+		{
+			name: "CompleteForExecute for Arg works when only one prefix matches",
+			etc: &ExecuteTestCase{
+				Args: []string{"4"},
+				Node: SerialNodes(Arg[int]("is", testDesc, CompleteForExecute[int](), CompletorFromFunc(func(i int, d *Data) (*Completion, error) {
+					return &Completion{
+						Suggestions: []string{"123", "234", "345", "456", "567"},
+					}, nil
+				}))),
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "456"},
+					},
+				},
+				WantData: &Data{
+					Values: map[string]interface{}{
+						"is": 456,
+					},
+				},
+			},
+		},
+		{
+			name: "CompleteForExecute for Arg fails if multiple completions",
+			etc: &ExecuteTestCase{
+				Args: []string{"f"},
+				Node: SerialNodes(Arg[string]("s", testDesc, CompleteForExecute[string](), CompletorFromFunc(func(i string, d *Data) (*Completion, error) {
+					return &Completion{
+						Suggestions: []string{"one", "two", "three", "four", "five", "six"},
+					}, nil
+				}))),
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "f"},
+					},
+				},
+				WantErr: fmt.Errorf("[CompleteForExecute] requires exactly one suggestion to be returned, got 2: [five four]"),
+				WantStderr: []string{
+					"[CompleteForExecute] requires exactly one suggestion to be returned, got 2: [five four]",
+				},
+			},
+		},
+		{
+			name: "CompleteForExecute for Arg works for string",
+			etc: &ExecuteTestCase{
+				Args: []string{"fi"},
+				Node: SerialNodes(Arg[string]("s", testDesc, CompleteForExecute[string](), CompletorFromFunc(func(i string, d *Data) (*Completion, error) {
+					return &Completion{
+						Suggestions: []string{"one", "two", "three", "four", "five", "six"},
+					}, nil
+				}))),
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "five"},
+					},
+				},
+				WantData: &Data{
+					Values: map[string]interface{}{
+						"s": "five",
+					},
+				},
+			},
+		},
+		// CompleteForExecute tests for ListArg
+		{
+			name: "CompleteForExecute for ListArg fails if no arg provided",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, CompleteForExecute[[]string](), CompletorFromFunc(func(sl []string, d *Data) (*Completion, error) {
+					return nil, fmt.Errorf("oopsie")
+				}))),
+				WantErr:    fmt.Errorf(`Argument "sl" requires at least 2 arguments, got 0`),
+				WantStderr: []string{`Argument "sl" requires at least 2 arguments, got 0`},
+			},
+		},
+		{
+			name: "CompleteForExecute for ListArg fails completor returns error",
+			etc: &ExecuteTestCase{
+				Args: []string{""},
+				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, CompleteForExecute[[]string](), CompletorFromFunc(func(sl []string, d *Data) (*Completion, error) {
+					return nil, fmt.Errorf("oopsie")
+				}))),
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: ""},
+					},
+				},
+				WantErr: fmt.Errorf("[CompleteForExecute] failed to fetch completion: oopsie"),
+				WantStderr: []string{
+					"[CompleteForExecute] failed to fetch completion: oopsie",
+				},
+			},
+		},
+		{
+			name: "CompleteForExecute for ListArg fails if returned completion is nil",
+			etc: &ExecuteTestCase{
+				Args: []string{""},
+				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, CompleteForExecute[[]string](), CompletorFromFunc(func(sl []string, d *Data) (*Completion, error) {
+					return nil, nil
+				}))),
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: ""},
+					},
+				},
+				WantErr: fmt.Errorf("[CompleteForExecute] nil completion returned"),
+				WantStderr: []string{
+					"[CompleteForExecute] nil completion returned",
+				},
+			},
+		},
+		{
+			name: "CompleteForExecute for ListArg fails if 0 suggestions",
+			etc: &ExecuteTestCase{
+				Args: []string{""},
+				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, CompleteForExecute[[]string](), CompletorFromFunc(func(sl []string, d *Data) (*Completion, error) {
+					return &Completion{}, nil
+				}))),
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: ""},
+					},
+				},
+				WantErr: fmt.Errorf("[CompleteForExecute] requires exactly one suggestion to be returned, got 0: []"),
+				WantStderr: []string{
+					"[CompleteForExecute] requires exactly one suggestion to be returned, got 0: []",
+				},
+			},
+		},
+		{
+			name: "CompleteForExecute for Arg fails if multiple suggestions",
+			etc: &ExecuteTestCase{
+				Args: []string{""},
+				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, CompleteForExecute[[]string](), CompletorFromFunc(func(sl []string, d *Data) (*Completion, error) {
+					return &Completion{
+						Suggestions: []string{"alpha", "bravo"},
+					}, nil
+				}))),
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: ""},
+					},
+				},
+				WantErr: fmt.Errorf("[CompleteForExecute] requires exactly one suggestion to be returned, got 2: [alpha bravo]"),
+				WantStderr: []string{
+					"[CompleteForExecute] requires exactly one suggestion to be returned, got 2: [alpha bravo]",
+				},
+			},
+		},
+		{
+			name: "CompleteForExecute for ListArg fails if suggestions is wrong type",
+			etc: &ExecuteTestCase{
+				Args: []string{""},
+				Node: SerialNodes(ListArg[int]("il", testDesc, 2, 3, CompleteForExecute[[]int](), CompletorFromFunc(func(sl []int, d *Data) (*Completion, error) {
+					return &Completion{
+						Suggestions: []string{"alpha"},
+					}, nil
+				}))),
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "alpha"},
+					},
+				},
+				WantErr: fmt.Errorf(`strconv.Atoi: parsing "alpha": invalid syntax`),
+				WantStderr: []string{
+					`strconv.Atoi: parsing "alpha": invalid syntax`,
+				},
+			},
+		},
+		{
+			name: "CompleteForExecute for ListArg fails if still not enough args",
+			etc: &ExecuteTestCase{
+				Args: []string{"alpha", ""},
+				Node: SerialNodes(ListArg[string]("sl", testDesc, 3, 3, CompleteForExecute[[]string](), CompletorFromFunc(func(sl []string, d *Data) (*Completion, error) {
+					return &Completion{
+						Suggestions: []string{"charlie"},
+					}, nil
+				}))),
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "alpha"},
+						{value: "charlie"},
+					},
+				},
+				WantErr:    fmt.Errorf(`Argument "sl" requires at least 3 arguments, got 2`),
+				WantStderr: []string{`Argument "sl" requires at least 3 arguments, got 2`},
+				WantData: &Data{
+					Values: map[string]interface{}{
+						"sl": []string{"alpha", "charlie"},
+					},
+				},
+			},
+		},
+		{
+			name: "CompleteForExecute for ListArg works if one suggestion",
+			etc: &ExecuteTestCase{
+				Args: []string{"alpha", "bravo", ""},
+				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, CompleteForExecute[[]string](), CompletorFromFunc(func(sl []string, d *Data) (*Completion, error) {
+					return &Completion{
+						Suggestions: []string{"charlie"},
+					}, nil
+				}))),
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "alpha"},
+						{value: "bravo"},
+						{value: "charlie"},
+					},
+				},
+				WantData: &Data{
+					Values: map[string]interface{}{
+						"sl": []string{"alpha", "bravo", "charlie"},
+					},
+				},
+			},
+		},
+		{
+			name: "CompleteForExecute for ListArg works when only one prefix matches",
+			etc: &ExecuteTestCase{
+				Args: []string{"alpha", "bravo", "c"},
+				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, CompleteForExecute[[]string](), CompletorFromFunc(func(sl []string, d *Data) (*Completion, error) {
+					return &Completion{
+						Suggestions: []string{"charlie", "delta", "epsilon"},
+					}, nil
+				}))),
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "alpha"},
+						{value: "bravo"},
+						{value: "charlie"},
+					},
+				},
+				WantData: &Data{
+					Values: map[string]interface{}{
+						"sl": []string{"alpha", "bravo", "charlie"},
+					},
+				},
+			},
+		},
+		{
+			name: "CompleteForExecute for ListArg fails if no distinct filter",
+			etc: &ExecuteTestCase{
+				Args: []string{"alpha", "bravo", ""},
+				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, CompleteForExecute[[]string](), CompletorFromFunc(func(sl []string, d *Data) (*Completion, error) {
+					return &Completion{
+						Suggestions: []string{"alpha", "bravo", "charlie"},
+					}, nil
+				}))),
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "alpha"},
+						{value: "bravo"},
+						{value: ""},
+					},
+				},
+				WantErr: fmt.Errorf("[CompleteForExecute] requires exactly one suggestion to be returned, got 3: [alpha bravo charlie]"),
+				WantStderr: []string{
+					"[CompleteForExecute] requires exactly one suggestion to be returned, got 3: [alpha bravo charlie]",
+				},
+			},
+		},
+		{
+			name: "CompleteForExecute for ListArg works with distinct filter",
+			etc: &ExecuteTestCase{
+				Args: []string{"alpha", "bravo", ""},
+				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, CompleteForExecute[[]string](), CompletorFromFunc(func(sl []string, d *Data) (*Completion, error) {
+					return &Completion{
+						Distinct:    true,
+						Suggestions: []string{"alpha", "bravo", "charlie"},
+					}, nil
+				}))),
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "alpha"},
+						{value: "bravo"},
+						{value: "charlie"},
+					},
+				},
+				WantData: &Data{
+					Values: map[string]interface{}{
+						"sl": []string{"alpha", "bravo", "charlie"},
+					},
+				},
+			},
+		},
+		{
+			name: "CompleteForExecute for ListArg fails if multiple completions",
+			etc: &ExecuteTestCase{
+				Args: []string{"f"},
+				Node: SerialNodes(Arg[string]("s", testDesc, CompleteForExecute[string](), CompletorFromFunc(func(i string, d *Data) (*Completion, error) {
+					return &Completion{
+						Suggestions: []string{"one", "two", "three", "four", "five", "six"},
+					}, nil
+				}))),
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "f"},
+					},
+				},
+				WantErr: fmt.Errorf("[CompleteForExecute] requires exactly one suggestion to be returned, got 2: [five four]"),
+				WantStderr: []string{
+					"[CompleteForExecute] requires exactly one suggestion to be returned, got 2: [five four]",
+				},
+			},
+		},
 		// Default value tests
 		{
 			name: "Uses default if no arg provided",
@@ -2614,6 +3043,28 @@ func TestExecute(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "list arg get transformed with TransformerList",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					ListArg[string]("sl", testDesc, 2, 3, TransformerList(NewTransformer(func(v string, d *Data) (string, error) {
+						return strings.ToUpper(v), nil
+					}, false))),
+				),
+				Args: []string{"hello", "there", "general", "kenobi"},
+				WantData: &Data{Values: map[string]interface{}{
+					"sl": []string{"HELLO", "THERE", "GENERAL", "KENOBI"},
+				}},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "HELLO"},
+						{value: "THERE"},
+						{value: "GENERAL"},
+						{value: "KENOBI"},
+					},
+				},
+			},
+		},
 		// Stdoutln tests
 		{
 			name: "stdoutln works",
@@ -3765,10 +4216,10 @@ func TestComplete(t *testing.T) {
 					),
 					ListArg[string]("i", testDesc, 1, 2, SimpleCompletor[[]string]("hey", "ooo")),
 				),
-				Args: "cmd 1 -h hello beta --names ralph renee johnny ",
+				Args: "cmd 1 -h hello bravo --names ralph renee johnny ",
 				Want: []string{"hey", "ooo"},
 				WantData: &Data{Values: map[string]interface{}{
-					"i":        []string{"1", "beta", ""},
+					"i":        []string{"1", "bravo", ""},
 					"greeting": "hello",
 					"names":    []string{"ralph", "renee", "johnny"},
 				}},
