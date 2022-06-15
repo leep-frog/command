@@ -276,6 +276,6 @@ func listNode[T any](name, desc string, minN, optionalN int, opts ...ArgOpt[T]) 
 		desc:      desc,
 		minN:      minN,
 		optionalN: optionalN,
-		opt:       newArgOpt(opts...),
+		opt:       multiArgOpts(opts...),
 	}
 }

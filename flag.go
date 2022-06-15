@@ -249,7 +249,7 @@ func listFlag[T any](name, desc string, shortName rune, minN, optionalN int, opt
 			name:      name,
 			minN:      minN,
 			optionalN: optionalN,
-			opt:       newArgOpt(opts...),
+			opt:       multiArgOpts(opts...),
 		},
 	}
 }

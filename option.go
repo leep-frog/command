@@ -17,7 +17,7 @@ type argOpt[T any] struct {
 	hiddenUsage bool
 }
 
-func newArgOpt[T any](opts ...ArgOpt[T]) *argOpt[T] {
+func multiArgOpts[T any](opts ...ArgOpt[T]) *argOpt[T] {
 	ao := &argOpt[T]{}
 	for _, opt := range opts {
 		opt.modifyArgOpt(ao)
