@@ -4760,6 +4760,128 @@ func TestComplete(t *testing.T) {
 				},
 			},
 		},
+		// BashCompletor
+		{
+			name: "BashCompletor doesn't complete if bash failure",
+			ctc: &CompleteTestCase{
+				Node: SerialNodes(
+					Arg[string]("s", testDesc, BashCompletor[string]("echo abc def ghi")),
+				),
+				RunResponses: []*FakeRun{{
+					Err: fmt.Errorf("oopsie"),
+				}},
+				WantRunContents: [][]string{{
+					"set -e",
+					"set -o pipefail",
+					"echo abc def ghi",
+				}},
+				WantErr:  fmt.Errorf("failed to fetch autocomplete suggestions with bash command: failed to execute bash command: oopsie"),
+				WantData: &Data{Values: map[string]interface{}{"s": ""}},
+			},
+		},
+		{
+			name: "BashCompletor completes even if wrong type returned (since just fetches string list)",
+			ctc: &CompleteTestCase{
+				Node: SerialNodes(
+					Arg[int]("i", testDesc, BashCompletor[int]("echo abc def ghi")),
+				),
+				RunResponses: []*FakeRun{{
+					Stdout: []string{
+						"abc",
+						"def",
+						"ghi",
+					},
+				}},
+				Want: []string{
+					"abc",
+					"def",
+					"ghi",
+				},
+				WantRunContents: [][]string{{
+					"set -e",
+					"set -o pipefail",
+					"echo abc def ghi",
+				}},
+				WantData: &Data{Values: map[string]interface{}{}},
+			},
+		},
+		{
+			name: "BashCompletor completes arg",
+			ctc: &CompleteTestCase{
+				Node: SerialNodes(
+					Arg[string]("s", testDesc, BashCompletor[string]("echo abc def ghi")),
+				),
+				RunResponses: []*FakeRun{{
+					Stdout: []string{
+						"abc",
+						"def",
+						"ghi",
+					},
+				}},
+				Want: []string{
+					"abc",
+					"def",
+					"ghi",
+				},
+				WantRunContents: [][]string{{
+					"set -e",
+					"set -o pipefail",
+					"echo abc def ghi",
+				}},
+				//WantErr: fmt.Errorf(`failed to fetch autocomplete suggestions with bash command: strconv.Atoi: parsing "abc def ghi": invalid syntax`),
+				WantData: &Data{Values: map[string]interface{}{"s": ""}},
+			},
+		},
+		{
+			name: "BashCompletor completes arg with partial completion",
+			ctc: &CompleteTestCase{
+				Args: "cmd d",
+				Node: SerialNodes(
+					Arg[string]("s", testDesc, BashCompletor[string]("echo abc def ghi")),
+				),
+				RunResponses: []*FakeRun{{
+					Stdout: []string{
+						"abc",
+						"def",
+						"ghi",
+					},
+				}},
+				Want: []string{
+					"def",
+				},
+				WantRunContents: [][]string{{
+					"set -e",
+					"set -o pipefail",
+					"echo abc def ghi",
+				}},
+				WantData: &Data{Values: map[string]interface{}{"s": "d"}},
+			},
+		},
+		{
+			name: "BashCompletor completes arg with opts",
+			ctc: &CompleteTestCase{
+				Args: "cmd abc ghi ",
+				Node: SerialNodes(
+					ListArg[string]("sl", testDesc, 1, 2, BashCompletorWithOpts[[]string](&Completion{Distinct: true}, "echo abc def ghi")),
+				),
+				RunResponses: []*FakeRun{{
+					Stdout: []string{
+						"abc",
+						"def",
+						"ghi",
+					},
+				}},
+				Want: []string{
+					"def",
+				},
+				WantRunContents: [][]string{{
+					"set -e",
+					"set -o pipefail",
+					"echo abc def ghi",
+				}},
+				WantData: &Data{Values: map[string]interface{}{"sl": []string{"abc", "ghi", ""}}},
+			},
+		},
 		// File functions
 		{
 			name: "verify that files are created and deleted",
