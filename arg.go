@@ -93,22 +93,30 @@ func (an *ArgNode[T]) Execute(i *Input, o Output, data *Data, eData *ExecuteData
 		return nil
 	}
 
-	if an.opt != nil && an.opt.completeForExecute && i.FullyProcessed() {
+	if an.opt != nil && an.opt.completeForExecute != nil && an.opt.completeForExecute.enabled && i.FullyProcessed() {
+		strict := an.opt.completeForExecute.strict
 		// Now get the list with the last element
 		v, err := an.convertStringValue(sl, data)
 		compl, err := RunCompletion(an.opt.completor, *sl[len(sl)-1], v, data)
 		if err != nil {
-			return o.Annotatef(err, "[CompleteForExecute] failed to fetch completion")
-		}
-		if compl == nil {
-			return o.Stderrf("[CompleteForExecute] nil completion returned")
+			if strict {
+				return o.Annotatef(err, "[CompleteForExecute] failed to fetch completion")
+			}
+			goto CFE_END
+		} else if compl == nil {
+			if strict {
+				return o.Stderrf("[CompleteForExecute] nil completion returned")
+			}
+			goto CFE_END
 		}
 		suggestions := compl.process(*sl[len(sl)-1], nil, true)
-		if len(suggestions) != 1 {
+		if len(suggestions) == 1 {
+			*sl[len(sl)-1] = suggestions[0]
+		} else if strict {
 			return o.Stderrf("[CompleteForExecute] requires exactly one suggestion to be returned, got %d: %v", len(suggestions), suggestions)
 		}
-		*sl[len(sl)-1] = suggestions[0]
 	}
+CFE_END:
 
 	v, err := an.convertStringValue(sl, data)
 	if err != nil {

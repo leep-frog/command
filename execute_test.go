@@ -216,6 +216,105 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
+			name: "CompleteForExecute for Arg completes on best effort",
+			etc: &ExecuteTestCase{
+				Args: []string{""},
+				Node: SerialNodes(Arg[int]("is", testDesc, CompleteForExecute[int](CompleteForExecuteBestEffort()), CompletorFromFunc(func(i int, d *Data) (*Completion, error) {
+					return &Completion{
+						Suggestions: []string{"123"},
+					}, nil
+				}))),
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "123"},
+					},
+				},
+				WantData: &Data{
+					Values: map[string]interface{}{
+						"is": 123,
+					},
+				},
+			},
+		},
+		{
+			name: "CompleteForExecute for Arg doesn't complete or error on best effort if no suggestions",
+			etc: &ExecuteTestCase{
+				Args: []string{"h"},
+				Node: SerialNodes(Arg[string]("s", testDesc, CompleteForExecute[string](CompleteForExecuteBestEffort()), CompletorFromFunc(func(i string, d *Data) (*Completion, error) {
+					return &Completion{}, nil
+				}))),
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "h"},
+					},
+				},
+				WantData: &Data{
+					Values: map[string]interface{}{
+						"s": "h",
+					},
+				},
+			},
+		},
+		{
+			name: "CompleteForExecute for Arg doesn't complete or error on best effort if multiple suggestions",
+			etc: &ExecuteTestCase{
+				Args: []string{"h"},
+				Node: SerialNodes(Arg[string]("s", testDesc, CompleteForExecute[string](CompleteForExecuteBestEffort()), CompletorFromFunc(func(i string, d *Data) (*Completion, error) {
+					return &Completion{
+						Suggestions: []string{"hey", "hi"},
+					}, nil
+				}))),
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "h"},
+					},
+				},
+				WantData: &Data{
+					Values: map[string]interface{}{
+						"s": "h",
+					},
+				},
+			},
+		},
+		{
+			name: "CompleteForExecute for Arg doesn't complete or error on best effort if error",
+			etc: &ExecuteTestCase{
+				Args: []string{"h"},
+				Node: SerialNodes(Arg[string]("s", testDesc, CompleteForExecute[string](CompleteForExecuteBestEffort()), CompletorFromFunc(func(i string, d *Data) (*Completion, error) {
+					return nil, fmt.Errorf("oopsie")
+				}))),
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "h"},
+					},
+				},
+				WantData: &Data{
+					Values: map[string]interface{}{
+						"s": "h",
+					},
+				},
+			},
+		},
+		{
+			name: "CompleteForExecute for Arg doesn't complete or error on best effort if nil Completion",
+			etc: &ExecuteTestCase{
+				Args: []string{"h"},
+				Node: SerialNodes(Arg[string]("s", testDesc, CompleteForExecute[string](CompleteForExecuteBestEffort()), CompletorFromFunc(func(i string, d *Data) (*Completion, error) {
+					return nil, nil
+				}))),
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "h"},
+					},
+				},
+				WantData: &Data{
+					Values: map[string]interface{}{
+						"s": "h",
+					},
+				},
+			},
+		},
+		{
 			name: "CompleteForExecute for Arg works when only one prefix matches",
 			etc: &ExecuteTestCase{
 				Args: []string{"4"},

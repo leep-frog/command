@@ -13,7 +13,7 @@ type argOpt[T any] struct {
 	customSet          customSetter[T]
 	_default           *T
 	breaker            *ListBreaker
-	completeForExecute bool
+	completeForExecute *completeForExecute
 
 	hiddenUsage bool
 }
@@ -71,10 +71,29 @@ func (cs *customSetter[T]) modifyArgOpt(ao *argOpt[T]) {
 // If a command execution is run, then the last value for this arg
 // will be completed using its `Complete` logic. Exactly one suggestion
 // must be returned.
-func CompleteForExecute[T any]() ArgOpt[T] {
+func CompleteForExecute[T any](opts ...CompleteForExecuteOption) ArgOpt[T] {
+	cfe := &completeForExecute{
+		enabled: true,
+		strict:  true,
+	}
+	for _, o := range opts {
+		o(cfe)
+	}
 	return newArgOpt(func(ao *argOpt[T]) {
-		ao.completeForExecute = true
+		ao.completeForExecute = cfe
 	})
+}
+
+type CompleteForExecuteOption func(*completeForExecute)
+
+type completeForExecute struct {
+	// Whether or not to actually complete it
+	enabled bool
+	strict  bool
+}
+
+func CompleteForExecuteBestEffort() CompleteForExecuteOption {
+	return func(cfe *completeForExecute) { cfe.strict = false }
 }
 
 // Transformer is an `ArgOpt` that transforms an argument.
