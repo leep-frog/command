@@ -119,7 +119,7 @@ type CLI interface {
 	Changed() bool
 	// Setup describes a set of commands that will be run in bash prior to the CLI.
 	// The output from the commands will be stored in a file whose name will be
-	// passed in as data[command.SetupArgName]
+	// stored in the `Data` object (see `Data.SetupOutputFile()`).
 	Setup() []string
 }
 
@@ -133,11 +133,18 @@ func (s *sourcerer) executeExecutor(output command.Output, d *command.Data) erro
 	sourcingFile := d.String(fileArg.Name())
 	args := d.StringList(passthroughArgs.Name())
 
-	eData, err := command.Execute(cli.Node(), command.ParseExecuteArgs(args), output)
+	n := cli.Node()
+
+	// Add the setup arg if relevant
+	if len(cli.Setup()) > 0 {
+		n = command.SerialNodes(command.SetupArg, n)
+	}
+
+	eData, err := command.Execute(n, command.ParseExecuteArgs(args), output)
 	if err != nil {
 		if command.IsUsageError(err) && !s.printedUsageError {
 			s.printedUsageError = true
-			u := command.GetUsage(cli.Node())
+			u := command.GetUsage(n)
 			output.Stderr(u.String())
 		}
 		// Commands are responsible for printing out error messages so

@@ -539,6 +539,75 @@ func TestSourcerer(t *testing.T) {
 				"there",
 			},
 		},
+		// CLI with setup:
+		{
+			name: "SetupArg node is automatically added as required arg",
+			clis: []CLI{
+				&testCLI{
+					name:  "basic",
+					setup: []string{"his", "story"},
+					f: func(tc *testCLI, i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
+						o.Stdoutf("stdout: %v", d)
+						return nil
+					},
+				},
+			},
+			args: []string{
+				"execute", fakeFile, "basic",
+			},
+			wantErr:    fmt.Errorf(`Argument "SETUP_FILE" requires at least 1 argument, got 0`),
+			wantStderr: []string{`Argument "SETUP_FILE" requires at least 1 argument, got 0`, ""},
+		},
+		{
+			name: "SetupArg is properly populated",
+			clis: []CLI{
+				&testCLI{
+					name:  "basic",
+					setup: []string{"his", "story"},
+					f: func(tc *testCLI, i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
+						o.Stdoutf("stdout: %v", d)
+						return nil
+					},
+				},
+			},
+			args: []string{
+				"execute",
+				fakeFile,
+				"basic",
+				// SetupArg needs to be a real file, hence why it's this.
+				"sourcerer.go",
+			},
+			wantStdout: []string{
+				fmt.Sprintf(`stdout: &{map[SETUP_FILE:%s]}`, command.FilepathAbs(t, "sourcerer.go")),
+			},
+		},
+		{
+			name: "args after SetupArg are properly populated",
+			clis: []CLI{
+				&testCLI{
+					name:  "basic",
+					setup: []string{"his", "story"},
+					processors: []command.Processor{
+						command.Arg[int]("i", "desc"),
+					},
+					f: func(tc *testCLI, i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
+						o.Stdoutf("stdout: %v", d)
+						return nil
+					},
+				},
+			},
+			args: []string{
+				"execute",
+				fakeFile,
+				"basic",
+				// SetupArg needs to be a real file, hence why it's this.
+				"sourcerer.go",
+				"5",
+			},
+			wantStdout: []string{
+				fmt.Sprintf(`stdout: &{map[SETUP_FILE:%s i:5]}`, command.FilepathAbs(t, "sourcerer.go")),
+			},
+		},
 		// Usage printing tests
 		{
 			name: "prints command usage for missing branch error",

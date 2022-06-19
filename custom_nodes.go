@@ -6,14 +6,9 @@ import (
 	"strings"
 )
 
-const (
-	// SetupArgName is the argument name for `SetupArg`
-	SetupArgName = "SETUP_FILE"
-)
-
 var (
 	// SetupArg is an argument that points to the filename containing the output of the Setup command.
-	SetupArg = FileNode(SetupArgName, "file used to run setup for command", HiddenArg[string]())
+	SetupArg = FileNode("SETUP_FILE", "file used to run setup for command", HiddenArg[string]())
 )
 
 type simpleEdge struct {

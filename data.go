@@ -23,7 +23,7 @@ func (d *Data) Set(k string, i interface{}) {
 
 // SetupOutputFile returns the name of the setup file for the command.
 func (d *Data) SetupOutputFile() string {
-	return d.String(SetupArgName)
+	return d.String(SetupArg.Name())
 }
 
 // SetupOutputString returns the file contents, as a string, of the setup file for the command.
