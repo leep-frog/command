@@ -119,7 +119,10 @@ type CLI interface {
 	Changed() bool
 	// Setup describes a set of commands that will be run in bash prior to the CLI.
 	// The output from the commands will be stored in a file whose name will be
-	// stored in the `Data` object (see `Data.SetupOutputFile()`).
+	// stored in the `Data` object. See the following methods:
+	// `Data.SetupOutputFile()` returns the file name.
+	// `Data.SetupOutputString()` returns the file contents as a string.
+	// `Data.SetupOutputContents()` returns the file contents as a string slice.
 	Setup() []string
 }
 
