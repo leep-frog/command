@@ -136,11 +136,11 @@ func (s *sourcerer) executeExecutor(output command.Output, d *command.Data) erro
 	sourcingFile := d.String(fileArg.Name())
 	args := d.StringList(passthroughArgs.Name())
 
+	// Add the setup arg if relevant. This should be identical to
+	// setup in commandtest.go.
 	n := cli.Node()
-
-	// Add the setup arg if relevant
 	if len(cli.Setup()) > 0 {
-		n = command.SerialNodes(command.SetupArg, n)
+		n = command.PreprendSetupArg(n)
 	}
 
 	eData, err := command.Execute(n, command.ParseExecuteArgs(args), output)

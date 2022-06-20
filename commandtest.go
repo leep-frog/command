@@ -207,6 +207,11 @@ func RunNodeTest(t *testing.T, rtc *RunNodeTestCase) {
 	}
 }
 
+// PrependSetupArg prepends the SetupArg node to the given node.
+func PreprendSetupArg(n *Node) *Node {
+	return SerialNodes(SetupArg, n)
+}
+
 // ExecuteTest runs a command execution test.
 func ExecuteTest(t *testing.T, etc *ExecuteTestCase) {
 	t.Helper()
@@ -245,6 +250,11 @@ func ExecuteTest(t *testing.T, etc *ExecuteTestCase) {
 
 	for _, tester := range testers {
 		tester.setup(t, tc)
+	}
+
+	n := etc.Node
+	if etc.RequiresSetup {
+		n = PreprendSetupArg(n)
 	}
 
 	tc.eData, tc.err = execute(etc.Node, tc.input, tc.fo, tc.data)
