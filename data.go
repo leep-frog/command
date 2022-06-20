@@ -121,7 +121,6 @@ func getOperator[T any]() operator[T] {
 	var f interface{}
 	switch any(t).(type) {
 	case string:
-		// TODO: cache these
 		f = &stringOperator{}
 	case []string:
 		f = &stringListOperator{}

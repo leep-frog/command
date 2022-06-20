@@ -85,7 +85,6 @@ type Completion struct {
 	// This is achieved by adding a " " suggestion.
 	DontComplete bool
 	// CaseInsensitiveSort returns whether or not we should sort irrespective of case.
-	// TODO: do we need this?
 	CaseInsensitiveSort bool
 	// CaseInsensitve is whether or not case should be considered when filtering out suggestions.
 	CaseInsensitive bool
