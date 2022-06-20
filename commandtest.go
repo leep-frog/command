@@ -257,7 +257,7 @@ func ExecuteTest(t *testing.T, etc *ExecuteTestCase) {
 		n = PreprendSetupArg(n)
 	}
 
-	tc.eData, tc.err = execute(etc.Node, tc.input, tc.fo, tc.data)
+	tc.eData, tc.err = execute(n, tc.input, tc.fo, tc.data)
 
 	prefix := fmt.Sprintf("Execute(%v)", etc.Args)
 	for _, tester := range testers {
