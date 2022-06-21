@@ -124,7 +124,6 @@ func UsageTest(t *testing.T, utc *UsageTestCase) {
 	}
 }
 
-// TODO: remove this?
 type RunNodeTestCase struct {
 	Node *Node
 

@@ -236,8 +236,8 @@ func Execute(n *Node, input *Input, output Output) (*ExecuteData, error) {
 
 // RunNodes executes the provided node. This function can be used when nodes
 // aren't used for CLI tools (such as in regular main.go files that are
-// executed via "go run").
-// TODO: remove this since goleep takes care of "go run" use case
+// executed via "go run"). Using in this in conjunction with the `goleep`
+// command is incredibly useful.
 func RunNodes(n *Node) error {
 	o := NewOutput()
 	err := runNodes(n, o, &Data{}, os.Args[1:])

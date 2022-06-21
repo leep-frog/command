@@ -210,7 +210,7 @@ func (gl *GoLeep) Node() *command.Node {
 		}, nil),
 	)
 
-	passAlongArgs.AddOptions(completor(gl))
+	passAlongArgs.AddOptions(gl.completor())
 
 	exNode := command.SerialNodes(
 		command.Description("Execute the provided go files"),
@@ -256,16 +256,13 @@ func (gl *GoLeep) Node() *command.Node {
 	}, exNode, command.DontCompleteSubcommands())
 }
 
-func completor(gl *GoLeep) command.Completor[[]string] {
+func (gl *GoLeep) completor() command.Completor[[]string] {
 	return command.CompletorFromFunc(func(s []string, data *command.Data) (*command.Completion, error) {
 		extraArgs := []string{
-			// Need the extra "unusedCmd" arg because autocompletion throws away the first arg (because it assumes it's the command)
-			fmt.Sprintf("%q", strings.Join(data.StringList(passAlongArgs.Name()), " ")),
+			fmt.Sprintf("%q", strings.Join(passAlongArgs.Get(data), " ")),
 		}
 		bc := command.NewBashCommand("BASH_OUTPUT", gl.runCommand(data, "autocomplete", extraArgs), command.HideStderr[[]string]())
-		o := command.NewFakeOutput()
-		v, err := bc.Run(o)
-		o.Close()
+		v, err := bc.Run(nil)
 		if err != nil {
 			return nil, err
 		}
