@@ -164,6 +164,8 @@ func (bn *BashCommand[T]) Run(output Output) (T, error) {
 	}
 
 	if DebugMode() {
+		// TODO: global "mode" variable (execute, complete, usage)
+		//       maybe store it in data?
 		output.Stdoutf("Bash execution file: %s\n", f.Name())
 	}
 
@@ -171,12 +173,12 @@ func (bn *BashCommand[T]) Run(output Output) (T, error) {
 	var rawOut bytes.Buffer
 	// msys/mingw doesn't work if "bash" is excluded.
 	cmd := exec.Command("bash", f.Name())
-	if bn.forwardStdout {
-		cmd.Stdout = io.MultiWriter(StdoutWriter(output), &rawOut)
-	} else {
+	if !bn.forwardStdout || output == nil {
 		cmd.Stdout = &rawOut
+	} else {
+		cmd.Stdout = io.MultiWriter(StdoutWriter(output), &rawOut)
 	}
-	if bn.hideStderr {
+	if bn.hideStderr || output == nil {
 		cmd.Stderr = DevNull()
 	} else {
 		cmd.Stderr = StderrWriter(output)
