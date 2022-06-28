@@ -94,7 +94,7 @@ type BashOption[T any] interface {
 }
 
 // Name returns the arg name of the `BashCommand`
-func (bn *BashCommand[T]) Name(d *Data) string {
+func (bn *BashCommand[T]) Name() string {
 	return bn.argName
 }
 
