@@ -93,6 +93,11 @@ type BashOption[T any] interface {
 	modifyBashNode(*BashCommand[T])
 }
 
+// Name returns the arg name of the `BashCommand`
+func (bn *BashCommand[T]) Name(d *Data) string {
+	return bn.argName
+}
+
 // Get fetches the relevant bash output from the provided `Data` object.
 func (bn *BashCommand[T]) Get(d *Data) T {
 	return GetData[T](d, bn.argName)
