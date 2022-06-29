@@ -74,11 +74,10 @@ func (fn *flagNode) Complete(input *Input, data *Data) (*Completion, error) {
 		// Remove flag argument (e.g. --flagName).
 		input.Pop()
 		c, err := f.Processor().Complete(input, data)
+		input.offset = 0
 		if c != nil || err != nil {
-			input.offset = 0
 			return c, err
 		}
-		input.offset = 0
 	}
 
 	if lastArg, ok := input.PeekAt(len(input.remaining) - 1); ok && len(lastArg) > 0 && lastArg[0] == '-' {
@@ -116,11 +115,11 @@ func (fn *flagNode) Execute(input *Input, output Output, data *Data, eData *Exec
 		input.offset = i
 		// Remove flag argument (e.g. --flagName).
 		input.Pop()
-		if err := f.Processor().Execute(input, output, data, eData); err != nil {
-			input.offset = 0
+		err := f.Processor().Execute(input, output, data, eData)
+		input.offset = 0
+		if err != nil {
 			return err
 		}
-		input.offset = 0
 	}
 
 	// Sort keys for deterministic behavior
@@ -199,7 +198,13 @@ func NewFlag[T any](name string, shortName rune, desc string, opts ...ArgOpt[T])
 	return listFlag(name, desc, shortName, 1, 0, opts...)
 }
 
-// BoolFlag creates a `Flag` for a booean argument.
+// BoolValueFlag
+// TODO: Do this after Multiple bool flag stuff works (ie "-n -p" == "-np")
+/*func BoolValueFlag[T any](name string, shortName rune, desc string, falseVal, trueVal T) {
+
+}*/
+
+// BoolFlag creates a `Flag` for a boolean argument.
 func BoolFlag(name string, shortName rune, desc string) FlagWithType[bool] {
 	return &boolFlag{
 		name:      name,
