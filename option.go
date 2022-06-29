@@ -11,7 +11,7 @@ type argOpt[T any] struct {
 	transformers       []*Transformer[T]
 	shortcut           *shortcutOpt[T]
 	customSet          customSetter[T]
-	_default           *T
+	_default           *defaultArgOpt[T]
 	breaker            *ListBreaker
 	completeForExecute *completeForExecute
 
@@ -166,15 +166,22 @@ func (vo *ValidatorOption[T]) Validate(v T) error {
 
 // Default is an `ArgOpt` that sets a default value for an `Arg` node.
 func Default[T any](v T) ArgOpt[T] {
-	return &defaultArgOpt[T]{v}
+	return DefaultFunc(func(d *Data) (T, error) { return v, nil })
 }
 
+// DefaultFunc is an `ArgOpt` that sets a default value (obtained from the provided function) for an `Arg` node.
+func DefaultFunc[T any](f defaultFunc[T]) ArgOpt[T] {
+	return &defaultArgOpt[T]{f}
+}
+
+type defaultFunc[T any] func(d *Data) (T, error)
+
 type defaultArgOpt[T any] struct {
-	v T
+	f defaultFunc[T]
 }
 
 func (dao *defaultArgOpt[T]) modifyArgOpt(ao *argOpt[T]) {
-	ao._default = &dao.v
+	ao._default = dao
 }
 
 // HiddenArg is an `ArgOpt` that hides an argument from a command's usage text.

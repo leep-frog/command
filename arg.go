@@ -88,7 +88,11 @@ func (an *ArgNode[T]) Execute(i *Input, o Output, data *Data, eData *ExecuteData
 			return o.Err(an.notEnoughErr(len(sl)))
 		}
 		if an.opt != nil && an.opt._default != nil {
-			an.Set(*an.opt._default, data)
+			def, err := an.opt._default.f(data)
+			if err != nil {
+				return o.Annotatef(err, "failed to get default")
+			}
+			an.Set(def, data)
 		}
 		return nil
 	}

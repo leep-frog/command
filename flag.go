@@ -3,6 +3,9 @@ package command
 import (
 	"fmt"
 	"sort"
+
+	"golang.org/x/exp/maps"
+	"golang.org/x/exp/slices"
 )
 
 // Flag defines a flag argument that is parsed regardless of it's position in
@@ -17,7 +20,7 @@ type Flag interface {
 	// Processor returns a node processor that processes arguments after the flag indicator.
 	Processor() Processor
 	// ProcessMissing processes the flag when it is not provided
-	ProcessMissing(d *Data)
+	ProcessMissing(d *Data) error
 }
 
 type FlagWithType[T any] interface {
@@ -89,7 +92,9 @@ func (fn *flagNode) Complete(input *Input, data *Data) (*Completion, error) {
 		}, nil
 	}
 	for _, f := range unprocessed {
-		f.ProcessMissing(data)
+		if err := f.ProcessMissing(data); err != nil {
+			return nil, err
+		}
 	}
 	return nil, nil
 }
@@ -117,8 +122,14 @@ func (fn *flagNode) Execute(input *Input, output Output, data *Data, eData *Exec
 		}
 		input.offset = 0
 	}
-	for _, f := range unprocessed {
-		f.ProcessMissing(data)
+
+	// Sort keys for deterministic behavior
+	keys := maps.Keys(unprocessed)
+	slices.Sort(keys)
+	for _, k := range keys {
+		if err := unprocessed[k].ProcessMissing(data); err != nil {
+			return output.Annotatef(err, "failed to get default")
+		}
 	}
 	return nil
 }
@@ -158,10 +169,17 @@ func (f *flag[T]) Processor() Processor {
 	return f.argNode
 }
 
-func (f *flag[T]) ProcessMissing(d *Data) {
-	if f.argNode.opt != nil && f.argNode.opt._default != nil {
-		f.argNode.Set(*f.argNode.opt._default, d)
+func (f *flag[T]) ProcessMissing(d *Data) error {
+	if f.argNode.opt == nil || f.argNode.opt._default == nil {
+		return nil
 	}
+
+	def, err := f.argNode.opt._default.f(d)
+	if err != nil {
+		return err
+	}
+	f.argNode.Set(def, d)
+	return nil
 }
 
 func (f *flag[T]) Name() string {
@@ -212,7 +230,7 @@ func (bf *boolFlag) Processor() Processor {
 	return bf
 }
 
-func (bf *boolFlag) ProcessMissing(*Data) {}
+func (bf *boolFlag) ProcessMissing(*Data) error { return nil }
 
 func (bf *boolFlag) Complete(input *Input, data *Data) (*Completion, error) {
 	data.Set(bf.name, true)

@@ -629,14 +629,43 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
+			name: "Uses DefaultFunc if no arg provided",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(OptionalArg("s", testDesc, DefaultFunc(func(d *Data) (string, error) {
+					return "heyo", nil
+				}))),
+				wantInput: &Input{},
+				WantData: &Data{Values: map[string]interface{}{
+					"s": "heyo",
+				}},
+			},
+		},
+		{
+			name: "Failure if DefaultFunc failure for arg",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(OptionalArg("s", testDesc, DefaultFunc(func(d *Data) (string, error) {
+					return "oops", fmt.Errorf("bad news bears")
+				}))),
+				wantInput: &Input{},
+				WantErr:   fmt.Errorf("failed to get default: bad news bears"),
+				WantStderr: []string{
+					"failed to get default: bad news bears",
+				},
+			},
+		},
+		{
 			name: "Flag defaults get set",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
 					NewFlagNode(
 						NewFlag("s", 's', testDesc, Default("defStr")),
-						NewFlag("s2", '2', testDesc, Default("defStrTwo")),
+						NewFlag("s2", '2', testDesc, DefaultFunc(func(d *Data) (string, error) {
+							return "dos", nil
+						})),
 						NewFlag("it", 't', testDesc, Default(-456)),
-						NewFlag("i", 'i', testDesc, Default(123)),
+						NewFlag("i", 'i', testDesc, DefaultFunc(func(d *Data) (int, error) {
+							return 123, nil
+						})),
 						NewFlag("fs", 'f', testDesc, Default([]float64{1.2, 3.4, -5.6})),
 					),
 				),
@@ -656,6 +685,44 @@ func TestExecute(t *testing.T) {
 					"i":  123,
 					"fs": []float64{1.2, 3.4, -5.6},
 				}},
+			},
+		},
+		{
+			name: "Flag defaults get set",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					NewFlagNode(
+						NewFlag("s", 's', testDesc, Default("defStr")),
+						NewFlag("s2", '2', testDesc, DefaultFunc(func(d *Data) (string, error) {
+							// This flag is set, so this error func shouldn't be run at all,
+							// hence why we don't expect to see this error.
+							return "dos", fmt.Errorf("nooooooo")
+						})),
+						NewFlag("it", 't', testDesc, Default(-456)),
+						NewFlag("i", 'i', testDesc, DefaultFunc(func(d *Data) (int, error) {
+							return 123, fmt.Errorf("uh oh")
+						})),
+						NewFlag("fs", 'f', testDesc, Default([]float64{1.2, 3.4, -5.6})),
+					),
+				),
+				Args: []string{"--it", "7", "-2", "dos"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "--it"},
+						{value: "7"},
+						{value: "-2"},
+						{value: "dos"},
+					},
+				},
+				WantData: &Data{Values: map[string]interface{}{
+					"s2": "dos",
+					"it": 7,
+					"fs": []float64{1.2, 3.4, -5.6},
+				}},
+				WantErr: fmt.Errorf("failed to get default: uh oh"),
+				WantStderr: []string{
+					"failed to get default: uh oh",
+				},
 			},
 		},
 		{
