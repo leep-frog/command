@@ -6,6 +6,8 @@ import (
 	"sort"
 	"strings"
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 type errorEdge struct {
@@ -5608,5 +5610,69 @@ func TestRunNodes(t *testing.T) {
 			test.rtc.SkipDataCheck = true
 			RunNodeTest(t, test.rtc)
 		})
+	}
+}
+
+// testBoolFlag and testBoolFlagInterface allows us to use one test
+// method with test cases that have different parameterized types.
+type testBoolFlag[T any] struct {
+	name      string
+	bf        *boolFlag[T]
+	wantTrue  T
+	wantFalse T
+}
+
+func (tbf *testBoolFlag[T]) runTest(t *testing.T) {
+	t.Run(tbf.name, func(t *testing.T) {
+		if diff := cmp.Diff(tbf.wantTrue, tbf.bf.TrueValue()); diff != "" {
+			t.Errorf("boolFlag.TrueValue() returned incorrect value (-want, +got):\n%s", diff)
+		}
+
+		if diff := cmp.Diff(tbf.wantFalse, tbf.bf.FalseValue()); diff != "" {
+			t.Errorf("boolFlag.FalseValue() returned incorrect value (-want, +got):\n%s", diff)
+		}
+	})
+}
+
+type testBoolFlagInterface interface {
+	runTest(t *testing.T)
+}
+
+func TestBoolFlag(t *testing.T) {
+	a := "asdf"
+	pa := &a
+	z := "zxcv"
+	pz := &z
+	for _, test := range []testBoolFlagInterface{
+		&testBoolFlag[string]{
+			name:      "Works for BoolValueFlag[string]",
+			bf:        BoolValueFlag("bf", 'b', testDesc, "asdf"),
+			wantTrue:  "asdf",
+			wantFalse: "",
+		},
+		&testBoolFlag[string]{
+			name:      "Works for BoolValuesFlag[string]",
+			bf:        BoolValuesFlag("bf", 'b', testDesc, "asdf", "zxcv"),
+			wantTrue:  "asdf",
+			wantFalse: "zxcv",
+		},
+		&testBoolFlag[*string]{
+			name:     "Works for BoolValueFlag[*string]",
+			bf:       BoolValueFlag("bf", 'b', testDesc, pa),
+			wantTrue: pa,
+		},
+		&testBoolFlag[*string]{
+			name:      "Works for BoolValuesFlag[*string]",
+			bf:        BoolValuesFlag("bf", 'b', testDesc, pa, pz),
+			wantTrue:  pa,
+			wantFalse: pz,
+		},
+		&testBoolFlag[*string]{
+			name:     "Works for BoolValuesFlag[*string] when false value is explicitly nil",
+			bf:       BoolValuesFlag("bf", 'b', testDesc, pa, nil),
+			wantTrue: pa,
+		},
+	} {
+		test.runTest(t)
 	}
 }

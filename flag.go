@@ -286,13 +286,13 @@ func BoolFlag(name string, shortName rune, desc string) FlagWithType[bool] {
 
 // BoolValueFlag creates a boolean `Flag` whose data value gets set to
 // `trueValue` if the flag is provided.
-func BoolValueFlag[T any](name string, shortName rune, desc string, trueValue T) FlagWithType[T] {
+func BoolValueFlag[T any](name string, shortName rune, desc string, trueValue T) *boolFlag[T] {
 	return &boolFlag[T]{name, shortName, desc, trueValue, nil}
 }
 
 // BoolValuesFlag creates a boolean `Flag` whose data value gets set to
 // `trueValue` if the flag is provided. Otherwise, it gets set to `falseValue`
-func BoolValuesFlag[T any](name string, shortName rune, desc string, trueValue, falseValue T) FlagWithType[T] {
+func BoolValuesFlag[T any](name string, shortName rune, desc string, trueValue, falseValue T) *boolFlag[T] {
 	return &boolFlag[T]{name, shortName, desc, trueValue, &falseValue}
 }
 
@@ -302,6 +302,20 @@ type boolFlag[T any] struct {
 	desc       string
 	trueValue  T
 	falseValue *T
+}
+
+// TrueValue returns the value used when the boolean flag is set.
+func (bf *boolFlag[T]) TrueValue() T {
+	return bf.trueValue
+}
+
+// FalseValue returns the value used when the boolean flag is not set.
+func (bf *boolFlag[T]) FalseValue() T {
+	var t T
+	if bf.falseValue == nil {
+		return t
+	}
+	return *bf.falseValue
 }
 
 func (bf *boolFlag[T]) Desc() string {
