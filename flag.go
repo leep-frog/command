@@ -274,67 +274,75 @@ func NewFlag[T any](name string, shortName rune, desc string, opts ...ArgOpt[T])
 	return listFlag(name, desc, shortName, 1, 0, opts...)
 }
 
-// BoolValueFlag
-// TODO: Do this after Multiple bool flag stuff works (ie "-n -p" == "-np")
-/*func BoolValueFlag[T any](name string, shortName rune, desc string, falseVal, trueVal T) {
-
-}*/
-
 // BoolFlag creates a `Flag` for a boolean argument.
 func BoolFlag(name string, shortName rune, desc string) FlagWithType[bool] {
-	return &boolFlag{
+	return &boolFlag[bool]{
 		name:      name,
 		desc:      desc,
 		shortName: shortName,
+		trueValue: true,
 	}
 }
 
-type boolFlag struct {
-	name      string
-	shortName rune
-	desc      string
+// BoolValueFlag creates a boolean `Flag` whose data value gets set to
+// `trueValue` if the flag is provided. Otherwise, it is set to `falseValue`.
+func BoolValueFlag[T any](name string, shortName rune, desc string, trueValue, falseValue T) FlagWithType[T] {
+	return &boolFlag[T]{name, shortName, desc, trueValue, &falseValue}
 }
 
-func (bf *boolFlag) Desc() string {
+type boolFlag[T any] struct {
+	name       string
+	shortName  rune
+	desc       string
+	trueValue  T
+	falseValue *T
+}
+
+func (bf *boolFlag[T]) Desc() string {
 	return bf.desc
 }
 
-func (bf *boolFlag) Name() string {
+func (bf *boolFlag[T]) Name() string {
 	return bf.name
 }
 
-func (bf *boolFlag) ShortName() rune {
+func (bf *boolFlag[T]) ShortName() rune {
 	return bf.shortName
 }
 
-func (bf *boolFlag) Processor() Processor {
+func (bf *boolFlag[T]) Processor() Processor {
 	return bf
 }
 
-func (bf *boolFlag) Combinable(*Data) bool {
+func (bf *boolFlag[T]) Combinable(*Data) bool {
 	return true
 }
 
-func (bf *boolFlag) ProcessMissing(*Data) error { return nil }
+func (bf *boolFlag[T]) ProcessMissing(d *Data) error {
+	if bf.falseValue != nil {
+		d.Set(bf.name, *bf.falseValue)
+	}
+	return nil
+}
 
-func (bf *boolFlag) Complete(input *Input, data *Data) (*Completion, error) {
-	data.Set(bf.name, true)
+func (bf *boolFlag[T]) Complete(input *Input, data *Data) (*Completion, error) {
+	data.Set(bf.name, bf.trueValue)
 	return nil, nil
 }
 
-func (bf *boolFlag) Usage(u *Usage) {
+func (bf *boolFlag[T]) Usage(u *Usage) {
 	// Since flag nodes are added at the beginning, the usage statements can be a bit awkward
 	// Instead add another row for supported flags
 	u.UsageSection.Add(FlagSection, bf.name, bf.desc)
 }
 
-func (bf *boolFlag) Execute(_ *Input, _ Output, data *Data, _ *ExecuteData) error {
-	data.Set(bf.name, true)
+func (bf *boolFlag[T]) Execute(_ *Input, _ Output, data *Data, _ *ExecuteData) error {
+	data.Set(bf.name, bf.trueValue)
 	return nil
 }
 
-func (bf *boolFlag) Get(d *Data) bool {
-	return GetData[bool](d, bf.name)
+func (bf *boolFlag[T]) Get(d *Data) T {
+	return GetData[T](d, bf.name)
 }
 
 // NewListFlag creates a `Flag` from list argument info.

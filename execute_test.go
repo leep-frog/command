@@ -3187,6 +3187,39 @@ func TestExecute(t *testing.T) {
 				}},
 			},
 		},
+		// BoolValueFlag
+		{
+			name: "BoolValueFlag works with true value",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					NewFlagNode(
+						BoolValueFlag("light", 'l', testDesc, "hello there", "general kenobi"),
+					),
+				),
+				Args: []string{"--light"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "--light"},
+					},
+				},
+				WantData: &Data{Values: map[string]interface{}{
+					"light": "hello there",
+				}},
+			},
+		},
+		{
+			name: "BoolValueFlag works with false value",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					NewFlagNode(
+						BoolValueFlag("light", 'l', testDesc, "hello there", "general kenobi"),
+					),
+				),
+				WantData: &Data{Values: map[string]interface{}{
+					"light": "general kenobi",
+				}},
+			},
+		},
 		// Multi-flag tests
 		{
 			name: "Multiple bool flags work as a multi-flag",
@@ -3195,7 +3228,7 @@ func TestExecute(t *testing.T) {
 					NewFlagNode(
 						BoolFlag("everyone", 'e', testDesc),
 						BoolFlag("quick", 'q', testDesc),
-						BoolFlag("run", 'r', testDesc),
+						BoolValueFlag("run", 'r', testDesc, "hello there", "general kenobi"),
 						BoolFlag("to", 't', testDesc),
 						BoolFlag("where", 'w', testDesc),
 					),
@@ -3210,7 +3243,7 @@ func TestExecute(t *testing.T) {
 					"quick":    true,
 					"where":    true,
 					"everyone": true,
-					"run":      true,
+					"run":      "hello there",
 				}},
 			},
 		},
