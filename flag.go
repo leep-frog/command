@@ -285,8 +285,14 @@ func BoolFlag(name string, shortName rune, desc string) FlagWithType[bool] {
 }
 
 // BoolValueFlag creates a boolean `Flag` whose data value gets set to
-// `trueValue` if the flag is provided. Otherwise, it is set to `falseValue`.
-func BoolValueFlag[T any](name string, shortName rune, desc string, trueValue, falseValue T) FlagWithType[T] {
+// `trueValue` if the flag is provided.
+func BoolValueFlag[T any](name string, shortName rune, desc string, trueValue T) FlagWithType[T] {
+	return &boolFlag[T]{name, shortName, desc, trueValue, nil}
+}
+
+// BoolValuesFlag creates a boolean `Flag` whose data value gets set to
+// `trueValue` if the flag is provided. Otherwise, it gets set to `falseValue`
+func BoolValuesFlag[T any](name string, shortName rune, desc string, trueValue, falseValue T) FlagWithType[T] {
 	return &boolFlag[T]{name, shortName, desc, trueValue, &falseValue}
 }
 

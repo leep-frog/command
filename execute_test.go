@@ -3193,7 +3193,7 @@ func TestExecute(t *testing.T) {
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
 					NewFlagNode(
-						BoolValueFlag("light", 'l', testDesc, "hello there", "general kenobi"),
+						BoolValueFlag("light", 'l', testDesc, "hello there"),
 					),
 				),
 				Args: []string{"--light"},
@@ -3212,7 +3212,36 @@ func TestExecute(t *testing.T) {
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
 					NewFlagNode(
-						BoolValueFlag("light", 'l', testDesc, "hello there", "general kenobi"),
+						BoolValueFlag("light", 'l', testDesc, "hello there"),
+					),
+				),
+			},
+		},
+		{
+			name: "BoolValuesFlag works with true value",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					NewFlagNode(
+						BoolValuesFlag("light", 'l', testDesc, "hello there", "general kenobi"),
+					),
+				),
+				Args: []string{"--light"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "--light"},
+					},
+				},
+				WantData: &Data{Values: map[string]interface{}{
+					"light": "hello there",
+				}},
+			},
+		},
+		{
+			name: "BoolValuesFlag works with false value",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					NewFlagNode(
+						BoolValuesFlag("light", 'l', testDesc, "hello there", "general kenobi"),
 					),
 				),
 				WantData: &Data{Values: map[string]interface{}{
@@ -3228,9 +3257,9 @@ func TestExecute(t *testing.T) {
 					NewFlagNode(
 						BoolFlag("everyone", 'e', testDesc),
 						BoolFlag("quick", 'q', testDesc),
-						BoolValueFlag("run", 'r', testDesc, "hello there", "general kenobi"),
-						BoolFlag("to", 't', testDesc),
-						BoolFlag("where", 'w', testDesc),
+						BoolValuesFlag("run", 'r', testDesc, "hello there", "general kenobi"),
+						BoolValueFlag("to", 't', testDesc, 123),
+						BoolValueFlag("where", 'w', testDesc, 4.56),
 					),
 				),
 				Args: []string{"-qwer"},
@@ -3241,7 +3270,7 @@ func TestExecute(t *testing.T) {
 				},
 				WantData: &Data{Values: map[string]interface{}{
 					"quick":    true,
-					"where":    true,
+					"where":    4.56,
 					"everyone": true,
 					"run":      "hello there",
 				}},
