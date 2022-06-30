@@ -2,10 +2,17 @@ package command
 
 import (
 	"fmt"
+	"regexp"
 	"sort"
 
 	"golang.org/x/exp/maps"
 	"golang.org/x/exp/slices"
+)
+
+var (
+	// MultiFlagRegex is the regex used to determine a multi-flag (`-qwer -> -q -w -e -r`).
+	// It explicitly doesn't allow short number flags.
+	MultiFlagRegex = regexp.MustCompile("^-[^-0-9]{2,}$")
 )
 
 // Flag defines a flag argument that is parsed regardless of it's position in
@@ -21,6 +28,11 @@ type Flag interface {
 	Processor() Processor
 	// ProcessMissing processes the flag when it is not provided
 	ProcessMissing(d *Data) error
+	// Combinable indicates whether or not the short flag can be combined
+	// with other flags (`-qwer` = `-q -w -e -r`, for example).
+	// When used as a combinable flag, the flag will be evaluated with
+	// an empty `Input` object.
+	Combinable(d *Data) bool
 }
 
 type FlagWithType[T any] interface {
@@ -62,21 +74,51 @@ func (fn *flagNode) Complete(input *Input, data *Data) (*Completion, error) {
 		unprocessed[f.Name()] = f
 	}
 	for i := 0; i < len(input.remaining); {
-		a, _ := input.PeekAt(i)
-		f, ok := fn.flagMap[a]
+		a, ok := input.PeekAt(i)
 		if !ok {
 			i++
 			continue
 		}
-		delete(unprocessed, f.Name())
+		// Check if combinable flag (e.g. `-qwer` -> `-q -w -e -r`).
+		if MultiFlagRegex.MatchString(a) {
+			for j := 1; j < len(a); j++ {
+				shortCode := fmt.Sprintf("-%s", string(a[j]))
+				f, ok := fn.flagMap[shortCode]
+				// Run multi-flags on a best-effort basis
+				if !ok || !f.Combinable(data) {
+					continue
+				}
+				delete(unprocessed, f.Name())
 
-		input.offset = i
-		// Remove flag argument (e.g. --flagName).
-		input.Pop()
-		c, err := f.Processor().Complete(input, data)
-		input.offset = 0
-		if c != nil || err != nil {
-			return c, err
+				// Pass an empty input so multiple flags don't compete
+				// for the remaining args. Only return if an error is returned,
+				// because all multi-flag objects should never be completed.
+				if _, err := f.Processor().Complete(NewInput(nil, nil), data); err != nil {
+					return nil, err
+				}
+			}
+
+			// This is outside of the for-loop so we only remove
+			// the multi-flag arg (not one arg per flag).
+			input.offset = i
+			input.Pop()
+			input.offset = 0
+		} else if f, ok := fn.flagMap[a]; ok {
+			// If regular flag
+
+			delete(unprocessed, f.Name())
+
+			input.offset = i
+			// Remove flag argument (e.g. --flagName).
+			input.Pop()
+			c, err := f.Processor().Complete(input, data)
+			input.offset = 0
+			if c != nil || err != nil {
+				return c, err
+			}
+		} else {
+			i++
+			continue
 		}
 	}
 
@@ -104,21 +146,51 @@ func (fn *flagNode) Execute(input *Input, output Output, data *Data, eData *Exec
 		unprocessed[f.Name()] = f
 	}
 	for i := 0; i < len(input.remaining); {
-		a, _ := input.PeekAt(i)
-		f, ok := fn.flagMap[a]
+		a, ok := input.PeekAt(i)
 		if !ok {
 			i++
 			continue
 		}
-		delete(unprocessed, f.Name())
+		// Check if combinable flag (e.g. `-qwer` -> `-q -w -e -r`).
+		if MultiFlagRegex.MatchString(a) {
+			for j := 1; j < len(a); j++ {
+				shortCode := fmt.Sprintf("-%s", string(a[j]))
+				f, ok := fn.flagMap[shortCode]
+				if !ok {
+					return output.Stderrf("Unknown flag code %q used in multi-flag", shortCode)
+				}
+				if !f.Combinable(data) {
+					return output.Stderrf("Flag %q is not combinable", f.Name())
+				}
+				delete(unprocessed, f.Name())
 
-		input.offset = i
-		// Remove flag argument (e.g. --flagName).
-		input.Pop()
-		err := f.Processor().Execute(input, output, data, eData)
-		input.offset = 0
-		if err != nil {
-			return err
+				// Pass an empty input so multiple flags don't compete
+				// for the remaining args
+				if err := f.Processor().Execute(NewInput(nil, nil), output, data, eData); err != nil {
+					return err
+				}
+			}
+
+			// This is outside of the for-loop so we only remove
+			// the multi-flag arg (not one arg per flag).
+			input.offset = i
+			input.Pop()
+			input.offset = 0
+		} else if f, ok := fn.flagMap[a]; ok {
+			// If regular flag
+			delete(unprocessed, f.Name())
+
+			input.offset = i
+			// Remove flag argument (e.g. --flagName).
+			input.Pop()
+			err := f.Processor().Execute(input, output, data, eData)
+			input.offset = 0
+			if err != nil {
+				return err
+			}
+		} else {
+			i++
+			continue
 		}
 	}
 
@@ -189,6 +261,10 @@ func (f *flag[T]) ShortName() rune {
 	return f.shortName
 }
 
+func (f *flag[T]) Combinable(*Data) bool {
+	return false
+}
+
 func (f *flag[T]) Get(d *Data) T {
 	return GetData[T](d, f.name)
 }
@@ -233,6 +309,10 @@ func (bf *boolFlag) ShortName() rune {
 
 func (bf *boolFlag) Processor() Processor {
 	return bf
+}
+
+func (bf *boolFlag) Combinable(*Data) bool {
+	return true
 }
 
 func (bf *boolFlag) ProcessMissing(*Data) error { return nil }

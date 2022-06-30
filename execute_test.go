@@ -3187,6 +3187,91 @@ func TestExecute(t *testing.T) {
 				}},
 			},
 		},
+		// Multi-flag tests
+		{
+			name: "Multiple bool flags work as a multi-flag",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					NewFlagNode(
+						BoolFlag("everyone", 'e', testDesc),
+						BoolFlag("quick", 'q', testDesc),
+						BoolFlag("run", 'r', testDesc),
+						BoolFlag("to", 't', testDesc),
+						BoolFlag("where", 'w', testDesc),
+					),
+				),
+				Args: []string{"-qwer"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "-qwer"},
+					},
+				},
+				WantData: &Data{Values: map[string]interface{}{
+					"quick":    true,
+					"where":    true,
+					"everyone": true,
+					"run":      true,
+				}},
+			},
+		},
+		{
+			name: "Multi-flag fails if unknown flag",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					NewFlagNode(
+						BoolFlag("everyone", 'e', testDesc),
+						BoolFlag("quick", 'q', testDesc),
+						BoolFlag("run", 'r', testDesc),
+						BoolFlag("to", 't', testDesc),
+						BoolFlag("where", 'w', testDesc),
+					),
+				),
+				Args: []string{"-qwy"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "-qwy"},
+					},
+					remaining: []int{0},
+				},
+				WantData: &Data{Values: map[string]interface{}{
+					"quick": true,
+					"where": true,
+				}},
+				WantStderr: []string{
+					`Unknown flag code "-y" used in multi-flag`,
+				},
+				WantErr: fmt.Errorf(`Unknown flag code "-y" used in multi-flag`),
+			},
+		},
+		{
+			name: "Multi-flag fails if uncombinable flag",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					NewFlagNode(
+						BoolFlag("everyone", 'e', testDesc),
+						BoolFlag("quick", 'q', testDesc),
+						BoolFlag("run", 'r', testDesc),
+						NewListFlag[int]("two", 't', testDesc, 0, UnboundedList),
+						BoolFlag("where", 'w', testDesc),
+					),
+				),
+				Args: []string{"-ert"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "-ert"},
+					},
+					remaining: []int{0},
+				},
+				WantData: &Data{Values: map[string]interface{}{
+					"everyone": true,
+					"run":      true,
+				}},
+				WantStderr: []string{
+					`Flag "two" is not combinable`,
+				},
+				WantErr: fmt.Errorf(`Flag "two" is not combinable`),
+			},
+		},
 		// Transformer tests.
 		{
 			name: "args get transformed",
@@ -4388,6 +4473,100 @@ func TestComplete(t *testing.T) {
 					"i":        []string{"1", "bravo", ""},
 					"greeting": "hello",
 					"names":    []string{"ralph", "renee", "johnny"},
+				}},
+			},
+		},
+		// Multi-flag tests
+		{
+			name: "Multi-flags don't get completed",
+			ctc: &CompleteTestCase{
+				Args: "cmd -qwer",
+				Node: SerialNodes(
+					NewFlagNode(
+						BoolFlag("everyone", 'e', testDesc),
+						BoolFlag("quick", 'q', testDesc),
+						BoolFlag("run", 'r', testDesc),
+						BoolFlag("to", 't', testDesc),
+						BoolFlag("where", 'w', testDesc),
+					),
+				),
+				WantData: &Data{Values: map[string]interface{}{
+					"quick":    true,
+					"where":    true,
+					"everyone": true,
+					"run":      true,
+				}},
+			},
+		},
+		{
+			name: "Args after multi-flags get completed",
+			ctc: &CompleteTestCase{
+				Args: "cmd -qwer ",
+				Node: SerialNodes(
+					NewFlagNode(
+						BoolFlag("everyone", 'e', testDesc),
+						BoolFlag("quick", 'q', testDesc),
+						BoolFlag("run", 'r', testDesc),
+						BoolFlag("to", 't', testDesc),
+						BoolFlag("where", 'w', testDesc),
+					),
+					Arg[string]("s", testDesc, SimpleCompletor[string]("abc", "def", "ghi")),
+				),
+				Want: []string{"abc", "def", "ghi"},
+				WantData: &Data{Values: map[string]interface{}{
+					"quick":    true,
+					"where":    true,
+					"everyone": true,
+					"run":      true,
+					"s":        "",
+				}},
+			},
+		},
+		{
+			name: "Args after multi-flags get completed, even if unknown flag included",
+			ctc: &CompleteTestCase{
+				Args: "cmd -qwertyuiop ",
+				Node: SerialNodes(
+					NewFlagNode(
+						BoolFlag("everyone", 'e', testDesc),
+						BoolFlag("quick", 'q', testDesc),
+						BoolFlag("run", 'r', testDesc),
+						BoolFlag("to", 't', testDesc),
+						BoolFlag("where", 'w', testDesc),
+					),
+					Arg[string]("s", testDesc, SimpleCompletor[string]("abc", "def", "ghi")),
+				),
+				Want: []string{"abc", "def", "ghi"},
+				WantData: &Data{Values: map[string]interface{}{
+					"quick":    true,
+					"where":    true,
+					"everyone": true,
+					"run":      true,
+					"to":       true,
+					"s":        "",
+				}},
+			},
+		},
+		{
+			name: "Args after multi-flags get completed, even if uncombinable flag is included",
+			ctc: &CompleteTestCase{
+				Args: "cmd -qwz ",
+				Node: SerialNodes(
+					NewFlagNode(
+						BoolFlag("everyone", 'e', testDesc),
+						BoolFlag("quick", 'q', testDesc),
+						BoolFlag("run", 'r', testDesc),
+						BoolFlag("to", 't', testDesc),
+						NewFlag[string]("zf", 'z', testDesc),
+						BoolFlag("where", 'w', testDesc),
+					),
+					Arg[string]("s", testDesc, SimpleCompletor[string]("abc", "def", "ghi")),
+				),
+				Want: []string{"abc", "def", "ghi"},
+				WantData: &Data{Values: map[string]interface{}{
+					"quick": true,
+					"where": true,
+					"s":     "",
 				}},
 			},
 		},
