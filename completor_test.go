@@ -11,6 +11,8 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 )
 
+// TODO: do something similar to TestBoolFlag so we can
+// run tests on other parameterized types.
 func TestCompletors(t *testing.T) {
 	type testCase struct {
 		name    string
