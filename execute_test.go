@@ -3336,6 +3336,122 @@ func TestExecute(t *testing.T) {
 				WantErr: fmt.Errorf(`Flag "two" is not combinable`),
 			},
 		},
+		// Duplicate flag tests
+		{
+			name: "Duplicate flags get caught in multi-flag",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					NewFlagNode(
+						BoolFlag("everyone", 'e', testDesc),
+						BoolFlag("quick", 'q', testDesc),
+						BoolValuesFlag("run", 'r', testDesc, "hello there", "general kenobi"),
+						BoolValueFlag("to", 't', testDesc, 123),
+						BoolValueFlag("where", 'w', testDesc, 4.56),
+					),
+				),
+				Args: []string{"-qwerq"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "-qwerq"},
+					},
+					remaining: []int{0},
+				},
+				WantData: &Data{Values: map[string]interface{}{
+					"quick":    true,
+					"where":    4.56,
+					"everyone": true,
+					"run":      "hello there",
+				}},
+				WantErr:    fmt.Errorf(`Flag "quick" has already been set`),
+				WantStderr: []string{`Flag "quick" has already been set`},
+			},
+		},
+		{
+			name: "Duplicate flags get caught in regular flags",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					NewFlagNode(
+						BoolFlag("everyone", 'e', testDesc),
+						BoolFlag("quick", 'q', testDesc),
+						BoolValuesFlag("run", 'r', testDesc, "hello there", "general kenobi"),
+						BoolValueFlag("to", 't', testDesc, 123),
+						BoolValueFlag("where", 'w', testDesc, 4.56),
+					),
+				),
+				Args: []string{"-q", "--quick"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "-q"},
+						{value: "--quick"},
+					},
+					remaining: []int{1},
+				},
+				WantData: &Data{Values: map[string]interface{}{
+					"quick": true,
+				}},
+				WantErr:    fmt.Errorf(`Flag "quick" has already been set`),
+				WantStderr: []string{`Flag "quick" has already been set`},
+			},
+		},
+		{
+			name: "Duplicate flags get caught when multi, then regular flag",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					NewFlagNode(
+						BoolFlag("everyone", 'e', testDesc),
+						BoolFlag("quick", 'q', testDesc),
+						BoolValuesFlag("run", 'r', testDesc, "hello there", "general kenobi"),
+						BoolValueFlag("to", 't', testDesc, 123),
+						BoolValueFlag("where", 'w', testDesc, 4.56),
+					),
+				),
+				Args: []string{"-qwer", "--quick"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "-qwer"},
+						{value: "--quick"},
+					},
+					remaining: []int{1},
+				},
+				WantData: &Data{Values: map[string]interface{}{
+					"quick":    true,
+					"where":    4.56,
+					"everyone": true,
+					"run":      "hello there",
+				}},
+				WantErr:    fmt.Errorf(`Flag "quick" has already been set`),
+				WantStderr: []string{`Flag "quick" has already been set`},
+			},
+		},
+		{
+			name: "Duplicate flags get caught when regular, then multi flag",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					NewFlagNode(
+						BoolFlag("everyone", 'e', testDesc),
+						BoolFlag("quick", 'q', testDesc),
+						BoolValuesFlag("run", 'r', testDesc, "hello there", "general kenobi"),
+						BoolValueFlag("to", 't', testDesc, 123),
+						BoolValueFlag("where", 'w', testDesc, 4.56),
+					),
+				),
+				Args: []string{"--quick", "-weqr"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "--quick"},
+						{value: "-weqr"},
+					},
+					remaining: []int{1},
+				},
+				WantData: &Data{Values: map[string]interface{}{
+					"quick":    true,
+					"where":    4.56,
+					"everyone": true,
+				}},
+				WantErr:    fmt.Errorf(`Flag "quick" has already been set`),
+				WantStderr: []string{`Flag "quick" has already been set`},
+			},
+		},
 		// Transformer tests.
 		{
 			name: "args get transformed",
@@ -4631,6 +4747,50 @@ func TestComplete(t *testing.T) {
 					"quick": true,
 					"where": true,
 					"s":     "",
+				}},
+			},
+		},
+		// Duplicate flag tests
+		{
+			name: "Repeated flag still gets completed",
+			ctc: &CompleteTestCase{
+				Args: "cmd -z firstZ -z ",
+				Node: SerialNodes(
+					NewFlagNode(
+						BoolFlag("everyone", 'e', testDesc),
+						BoolFlag("quick", 'q', testDesc),
+						BoolFlag("run", 'r', testDesc),
+						BoolFlag("to", 't', testDesc),
+						NewFlag[string]("zf", 'z', testDesc, SimpleCompletor[string]("zyx", "wvu", "tsr")),
+						BoolFlag("where", 'w', testDesc),
+					),
+				),
+				Want: []string{"tsr", "wvu", "zyx"},
+				WantData: &Data{Values: map[string]interface{}{
+					"zf": "",
+				}},
+			},
+		},
+		{
+			name: "Repeated flag still gets completed even if other repetition in multi-flags",
+			ctc: &CompleteTestCase{
+				Args: "cmd --quick -qwrqw --where -z firstZ -z ",
+				Node: SerialNodes(
+					NewFlagNode(
+						BoolFlag("everyone", 'e', testDesc),
+						BoolFlag("quick", 'q', testDesc),
+						BoolFlag("run", 'r', testDesc),
+						BoolFlag("to", 't', testDesc),
+						NewFlag[string]("zf", 'z', testDesc, SimpleCompletor[string]("zyx", "wvu", "tsr")),
+						BoolFlag("where", 'w', testDesc),
+					),
+				),
+				Want: []string{"tsr", "wvu", "zyx"},
+				WantData: &Data{Values: map[string]interface{}{
+					"quick": true,
+					"where": true,
+					"run":   true,
+					"zf":    "",
 				}},
 			},
 		},

@@ -70,6 +70,10 @@ type flagNode struct {
 
 func (fn *flagNode) Complete(input *Input, data *Data) (*Completion, error) {
 	unprocessed := map[string]Flag{}
+	// Don't define `processed := map[string]bool{}` like we do in Execute
+	// because we want to run completion on a best effort basis.
+	// Specifically, we will try to complete a flag's value even
+	// if the flag was provided twice.
 	for _, f := range fn.flagMap {
 		unprocessed[f.Name()] = f
 	}
@@ -142,6 +146,7 @@ func (fn *flagNode) Complete(input *Input, data *Data) (*Completion, error) {
 
 func (fn *flagNode) Execute(input *Input, output Output, data *Data, eData *ExecuteData) error {
 	unprocessed := map[string]Flag{}
+	processed := map[string]bool{}
 	for _, f := range fn.flagMap {
 		unprocessed[f.Name()] = f
 	}
@@ -164,6 +169,11 @@ func (fn *flagNode) Execute(input *Input, output Output, data *Data, eData *Exec
 				}
 				delete(unprocessed, f.Name())
 
+				if processed[f.Name()] {
+					return output.Stderrf("Flag %q has already been set", f.Name())
+				}
+				processed[f.Name()] = true
+
 				// Pass an empty input so multiple flags don't compete
 				// for the remaining args
 				if err := f.Processor().Execute(NewInput(nil, nil), output, data, eData); err != nil {
@@ -179,6 +189,10 @@ func (fn *flagNode) Execute(input *Input, output Output, data *Data, eData *Exec
 		} else if f, ok := fn.flagMap[a]; ok {
 			// If regular flag
 			delete(unprocessed, f.Name())
+			if processed[f.Name()] {
+				return output.Stderrf("Flag %q has already been set", f.Name())
+			}
+			processed[f.Name()] = true
 
 			input.offset = i
 			// Remove flag argument (e.g. --flagName).
