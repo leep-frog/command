@@ -1,113 +1,84 @@
 # Command
 
-`command` is a package for writing custom bash commands in go. Some of the most useful benefits of this package include:
+`github.com/leep-frog/command` is a Go package for writing custom bash commands in Go! Some of the most valuable benefits of this package include:
 
- - [Simple autocomplete implementation](#bash-autocompletion)
+ - [Simple autocomplete implementation](./docs/features/autocompletion.md)
 
- - [Built-in CLI usage documentation](#cli-usage-text)
+ - [Automatic CLI usage documentation](./docs/features/automated_documentation.md)
  
- - [Command shortcuts](#shortcuts)
- 
- - [Caching previous command executions](#execution-caching)
+ - [CLI shortcutting](./docs/features/shortcuts.md)
 
- - [Built-in persistent command data](#persistent-cli-data)
+ - [Built-in persistent data capabilities](./docs/features/persistent_data.md)
 
- - [Testing command execution, completion, and usage](#command-testing)
+ - [Testing command execution, completion, and usage](./docs/features/testing.md)
 
-## Setup
+ - [Caching previous command executions](./docs/features/caching.md)
 
-1. Create a new go package using 
+See the [`docs/features` folder](./docs/features/) for an exhaustive list of features.
 
-  ```bash
-  go mod init example.com/clis
+## Installation
+
+1. Download this repository locally:
+
+   ```bash
+   export $LEEP_INSTALLATION_PATH=/some/path
+   pushd $LEEP_INSTALLATION_PATH > /dev/null
+   git clone https://github.com/leep-frog/command.git
+   popd > /dev/null
+   ```
+
+1. Add the following to your bash profile:
+
+   ```bash
+   source $LEEP_INSTALLATION_PATH/command/sourcerer/cmd/load_sourcerer.sh
+   ```
+
+1. Reload your shell and you're done!
+
+## Writing Your Own Commands
+
+The steps from the [Installation section](#installation) will create a new bash
+CLI called `sourcerer`. You can use this command to generate entirely new bash
+CLIs written completely in Go!
+
+To get an idea of how to write your own commands, start with an example:
+
+1. Download the [example_main.go file](./cmd/example_main.go) locally and read through the file to become familiar with CLI setup (the file is thoroughly commented).
+
+1. `cd` into the local directory containing the `example_main.go` file.
+
+1. Run `sourcerer . my_custom_clis` (and
+add this line to your bash profile to automatically load this command from now on).
+
+You are now able to use the `mfc` command in your bash shell! Try out the following runs and see what happens:
+
+- ```bash
+  mfc
   ```
 
-2. Add the following lines to your bash profile to 1) set up a command cache folder and 2) allow easy installation of command CLI implementers:
-  
-```bash
-export LEEP_CLI_CACHE=/any/path/golang-cli-cache
-source /path/to/command/sourcerer/cmd/load_sourcerer.sh
-```
+- ```bash
+  mfc $USER
+  ```
 
-This will load a bash command (`gg`) that makes updating `leep-frog` cli packages much simpler:
+- ```bash
+  mfc <tab><tab>
+  ```
 
-```bash
-gg cd emacs grep # etc.
-```
+- ```bash
+  mfc B<tab><tab>
+  ```
 
-3. Install all of the CLI packages you want to use in your new package.
+- ```bash
+  mfc Br<tab>
+  ```
 
-4. Copy the following into a new file called `clis.go`:
+- ```bash
+  mfc there 10
+  ```
 
-```golang
-package main
+- ```bash
+  mfc World -f 10
+  ```
 
-import (
-	"github.com/leep-frog/cd"
-	"github.com/leep-frog/command/cache"
-	"github.com/leep-frog/command/sourcerer"
-	"github.com/leep-frog/emacs"
-	"github.com/leep-frog/grep"
-	"github.com/leep-frog/replace"
-	"github.com/leep-frog/todo"
-	"github.com/leep-frog/workspace"
-)
-
-func main() {
-	acs := []sourcerer.CLI{
-    cd.DotCLI(),
-		grep.RecursiveCLI(),
-		grep.HistoryCLI(),
-		grep.FilenameCLI(),
-		grep.StdinCLI(),
-		replace.CLI(),
-		todo.CLI(),
-		emacs.CLI(),
-		workspace.CLI(),
-		sourcerer.GoLeepCLI(),
-		&cache.Cache{},
-	}
-
-  opts := []sourcerer.Option{}
-	for i := 2; i <= 10; i++ {
-		opts = append(opts, cd.DotAliaser(i))
-	}
-
-  // sourcerer.Source returns the exit code of the operation.
-  os.Exit(sourcerer.Source(acs, opts...))
-}
-```
-
-5. Add the final line to your bash profile:
-
-```bash
-sourcerer /path/to/clis my_custom_clis
-```
-
-6. Restart your shell and use your commands!
-
-## Benefits
-
-### Bash Autocompletion
-
-TODO
-
-### CLI Usage Text
-
-TODO
-
-### Shortcuts
-
-TODO
-
-### Execution Caching
-
-TODO
-
-### Persistent CLI Data
-
-TODO
-
-### Command Testing
-
-TODO
+To explore a more thorough explanation of all this package can do,
+check out the [`docs/features` folder](./docs/features/)
