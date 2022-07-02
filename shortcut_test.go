@@ -57,8 +57,8 @@ func TestShortcutExecute(t *testing.T) {
 						{},
 					},
 				},
-				WantErr:    fmt.Errorf("validation failed: [MinLength] value must be at least 1 character"),
-				WantStderr: []string{"validation failed: [MinLength] value must be at least 1 character"},
+				WantErr:    fmt.Errorf("validation for \"SHORTCUT\" failed: [MinLength] value must be at least 1 character"),
+				WantStderr: []string{"validation for \"SHORTCUT\" failed: [MinLength] value must be at least 1 character"},
 			},
 		},
 		{
@@ -154,8 +154,8 @@ func TestShortcutExecute(t *testing.T) {
 						{value: ""},
 					},
 				},
-				WantErr:    fmt.Errorf("validation failed: [MinLength] value must be at least 1 character"),
-				WantStderr: []string{"validation failed: [MinLength] value must be at least 1 character"},
+				WantErr:    fmt.Errorf("validation for \"SHORTCUT\" failed: [MinLength] value must be at least 1 character"),
+				WantStderr: []string{"validation for \"SHORTCUT\" failed: [MinLength] value must be at least 1 character"},
 			},
 		},
 		{
@@ -1015,8 +1015,8 @@ func TestShortcutExecute(t *testing.T) {
 			etc: &ExecuteTestCase{
 				Node:       ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
 				Args:       []string{"s", ":)"},
-				WantStderr: []string{"validation failed: [IsRegex] value \":)\" isn't a valid regex: error parsing regexp: unexpected ): `:)`"},
-				WantErr:    fmt.Errorf("validation failed: [IsRegex] value \":)\" isn't a valid regex: error parsing regexp: unexpected ): `:)`"),
+				WantStderr: []string{"validation for \"regexp\" failed: [IsRegex] value \":)\" isn't a valid regex: error parsing regexp: unexpected ): `:)`"},
+				WantErr:    fmt.Errorf("validation for \"regexp\" failed: [IsRegex] value \":)\" isn't a valid regex: error parsing regexp: unexpected ): `:)`"),
 				WantData: &Data{Values: map[string]interface{}{
 					"regexp": []string{":)"},
 				}},

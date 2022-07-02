@@ -407,8 +407,8 @@ func TestBashNode(t *testing.T) {
 					"set -o pipefail",
 					"echo -1248",
 				}},
-				WantStderr: []string{"validation failed: [NonNegative] value isn't non-negative"},
-				WantErr:    fmt.Errorf("validation failed: [NonNegative] value isn't non-negative"),
+				WantStderr: []string{"validation for \"i\" failed: [NonNegative] value isn't non-negative"},
+				WantErr:    fmt.Errorf("validation for \"i\" failed: [NonNegative] value isn't non-negative"),
 
 				RunResponses: []*FakeRun{
 					{
@@ -426,7 +426,7 @@ func TestBashNode(t *testing.T) {
 					"set -o pipefail",
 					"echo -1248",
 				}},
-				WantErr: fmt.Errorf("validation failed: [NonNegative] value isn't non-negative"),
+				WantErr: fmt.Errorf("validation for \"i\" failed: [NonNegative] value isn't non-negative"),
 				RunResponses: []*FakeRun{
 					{
 						Stdout: []string{"-1248"},

@@ -99,8 +99,8 @@ func TestCacheExecution(t *testing.T) {
 					Arg[string]("s", testDesc, MinLength(100)),
 				)),
 				Args:       []string{"dollar"},
-				WantErr:    fmt.Errorf("validation failed: [MinLength] value must be at least 100 characters"),
-				WantStderr: []string{"validation failed: [MinLength] value must be at least 100 characters"},
+				WantErr:    fmt.Errorf("validation for \"s\" failed: [MinLength] value must be at least 100 characters"),
+				WantStderr: []string{"validation for \"s\" failed: [MinLength] value must be at least 100 characters"},
 				WantData: &Data{Values: map[string]interface{}{
 					"s": "dollar",
 				}},

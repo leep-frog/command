@@ -137,8 +137,8 @@ CFE_END:
 
 	if an.opt != nil {
 		for _, validator := range an.opt.validators {
-			if err := validator.Validate(v); err != nil {
-				return o.Stderrf("validation failed: %v", err)
+			if err := validator.Validate(an, v); err != nil {
+				return o.Err(err)
 			}
 		}
 	}

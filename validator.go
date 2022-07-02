@@ -9,6 +9,67 @@ import (
 	"golang.org/x/exp/constraints"
 )
 
+type validatable interface {
+	Name() string
+}
+
+// newValidationErr returns a validationErr. It is private because
+// it is only created by the `ValidatorOption` type.
+func newValidationErr(arg validatable, err error) error {
+	return &validationErr{arg.Name(), err}
+}
+
+type validationErr struct {
+	argName string
+	err     error
+}
+
+func (ve *validationErr) Error() string {
+	return fmt.Sprintf("validation for %q failed: %v", ve.argName, ve.err)
+}
+
+// IsValidationError returns whether or not the provided error
+// is a validation error.
+func IsValidationError(err error) bool {
+	_, ok := err.(*validationErr)
+	return ok
+}
+
+// ValidatorOption is an `ArgOpt` and `BashOption` for validating arguments.
+type ValidatorOption[T any] struct {
+	validate func(T) error
+}
+
+func (vo *ValidatorOption[T]) modifyArgOpt(ao *argOpt[T]) {
+	ao.validators = append(ao.validators, vo)
+}
+
+func (vo *ValidatorOption[T]) modifyBashNode(bn *BashCommand[T]) {
+	bn.validators = append(bn.validators, vo)
+}
+
+// Validate validates the argument and returns an error if the validation fails.
+func (vo *ValidatorOption[T]) Validate(arg validatable, v T) error {
+	if err := vo.validate(v); err != nil {
+		return newValidationErr(arg, err)
+	}
+	return nil
+}
+
+// ValidatorList changes a single-arg validator (`Validator[T]`) to a list-arg validator (`Validator[[]T]`).
+func ValidatorList[T any](vo *ValidatorOption[T]) *ValidatorOption[[]T] {
+	return &ValidatorOption[[]T]{
+		validate: func(ts []T) error {
+			for _, t := range ts {
+				if err := vo.validate(t); err != nil {
+					return err
+				}
+			}
+			return nil
+		},
+	}
+}
+
 // Option creates a `ValidatorOption` from the provided function.
 func Option[T any](f func(T) error) *ValidatorOption[T] {
 	return &ValidatorOption[T]{f}

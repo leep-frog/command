@@ -35,7 +35,27 @@ See the [`docs/features` folder](./docs/features/) for an exhaustive list of fea
 
 1. Reload your shell and you're done!
 
-## Writing Your Own Commands
+## Getting Started
+
+There are a couple of ways to get started. Some people love reading through a good doc, while otherwise like to just get their hands on examples right away. The following two sub-sections should hopefully satiate both of those approaches.
+
+### Building Blocks Docs
+
+To read through the building blocks of this package, see the following docs:
+
+- [Nodes, Processors, and Edges](./building_blocks/nodes_processors_edges.md)
+
+- [Arg Processors](./building_blocks/arg_processors.md)
+
+- [Flag Nodes and Processors](./building_blocks/flag_nodes_and_processors.md)
+
+- [Execution Nodes](./building_blocks/execution_nodes.md)
+
+- [Other Node Types](./building_blocks/other_nodes.md)
+
+The real building blocks of this package are `Node` objects. `Nodes` contain a `Processor` (the action taken when a `Node` is visited), and an `Edge`
+
+### Example
 
 The steps from the [Installation section](#installation) will create a new bash
 CLI called `sourcerer`. You can use this command to generate entirely new bash

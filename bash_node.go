@@ -205,8 +205,8 @@ func (bn *BashCommand[T]) Run(output Output) (T, error) {
 	}
 
 	for _, validator := range bn.validators {
-		if err := validator.Validate(v); err != nil {
-			return nill, fmt.Errorf("validation failed: %v", err)
+		if err := validator.Validate(bn, v); err != nil {
+			return nill, err
 		}
 	}
 

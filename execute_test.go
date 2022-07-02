@@ -1203,8 +1203,8 @@ func TestExecute(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"strArg": "bad",
 				}},
-				WantStderr: []string{`validation failed: [NEQ] value cannot equal bad`},
-				WantErr:    fmt.Errorf(`validation failed: [NEQ] value cannot equal bad`),
+				WantStderr: []string{`validation for "strArg" failed: [NEQ] value cannot equal bad`},
+				WantErr:    fmt.Errorf(`validation for "strArg" failed: [NEQ] value cannot equal bad`),
 			},
 		},
 		// Contains
@@ -1240,8 +1240,8 @@ func TestExecute(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"strArg": "hello",
 				}},
-				WantStderr: []string{`validation failed: [Contains] value doesn't contain substring "good"`},
-				WantErr:    fmt.Errorf(`validation failed: [Contains] value doesn't contain substring "good"`),
+				WantStderr: []string{`validation for "strArg" failed: [Contains] value doesn't contain substring "good"`},
+				WantErr:    fmt.Errorf(`validation for "strArg" failed: [Contains] value doesn't contain substring "good"`),
 			},
 		},
 		{
@@ -1259,8 +1259,8 @@ func TestExecute(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"strArg": "hello",
 				}},
-				WantStderr: []string{`validation failed: [Contains] value doesn't contain substring "good"`},
-				WantErr:    fmt.Errorf(`validation failed: [Contains] value doesn't contain substring "good"`),
+				WantStderr: []string{`validation for "strArg" failed: [Contains] value doesn't contain substring "good"`},
+				WantErr:    fmt.Errorf(`validation for "strArg" failed: [Contains] value doesn't contain substring "good"`),
 			},
 		},
 		// MatchesRegex
@@ -1296,8 +1296,8 @@ func TestExecute(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"strArg": "team",
 				}},
-				WantStderr: []string{`validation failed: [MatchesRegex] value "team" doesn't match regex "i+"`},
-				WantErr:    fmt.Errorf(`validation failed: [MatchesRegex] value "team" doesn't match regex "i+"`),
+				WantStderr: []string{`validation for "strArg" failed: [MatchesRegex] value "team" doesn't match regex "i+"`},
+				WantErr:    fmt.Errorf(`validation for "strArg" failed: [MatchesRegex] value "team" doesn't match regex "i+"`),
 			},
 		},
 		// ListMatchesRegex
@@ -1334,8 +1334,8 @@ func TestExecute(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"slArg": []string{"equiation: aabcdef", "oops"},
 				}},
-				WantStderr: []string{`validation failed: [MatchesRegex] value "oops" doesn't match regex "i+"`},
-				WantErr:    fmt.Errorf(`validation failed: [MatchesRegex] value "oops" doesn't match regex "i+"`),
+				WantStderr: []string{`validation for "slArg" failed: [MatchesRegex] value "oops" doesn't match regex "i+"`},
+				WantErr:    fmt.Errorf(`validation for "slArg" failed: [MatchesRegex] value "oops" doesn't match regex "i+"`),
 			},
 		},
 		// IsRegex
@@ -1371,8 +1371,8 @@ func TestExecute(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"strArg": "*",
 				}},
-				WantStderr: []string{"validation failed: [IsRegex] value \"*\" isn't a valid regex: error parsing regexp: missing argument to repetition operator: `*`"},
-				WantErr:    fmt.Errorf("validation failed: [IsRegex] value \"*\" isn't a valid regex: error parsing regexp: missing argument to repetition operator: `*`"),
+				WantStderr: []string{"validation for \"strArg\" failed: [IsRegex] value \"*\" isn't a valid regex: error parsing regexp: missing argument to repetition operator: `*`"},
+				WantErr:    fmt.Errorf("validation for \"strArg\" failed: [IsRegex] value \"*\" isn't a valid regex: error parsing regexp: missing argument to repetition operator: `*`"),
 			},
 		},
 		// ListIsRegex
@@ -1410,8 +1410,8 @@ func TestExecute(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"slArg": []string{".*", "+"},
 				}},
-				WantStderr: []string{"validation failed: [IsRegex] value \"+\" isn't a valid regex: error parsing regexp: missing argument to repetition operator: `+`"},
-				WantErr:    fmt.Errorf("validation failed: [IsRegex] value \"+\" isn't a valid regex: error parsing regexp: missing argument to repetition operator: `+`"),
+				WantStderr: []string{"validation for \"slArg\" failed: [IsRegex] value \"+\" isn't a valid regex: error parsing regexp: missing argument to repetition operator: `+`"},
+				WantErr:    fmt.Errorf("validation for \"slArg\" failed: [IsRegex] value \"+\" isn't a valid regex: error parsing regexp: missing argument to repetition operator: `+`"),
 			},
 		},
 		// FileExists and FilesExist
@@ -1447,8 +1447,8 @@ func TestExecute(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"S": "execute_test.gone",
 				}},
-				WantErr:    fmt.Errorf(`validation failed: [FileExists] file "execute_test.gone" does not exist`),
-				WantStderr: []string{`validation failed: [FileExists] file "execute_test.gone" does not exist`},
+				WantErr:    fmt.Errorf(`validation for "S" failed: [FileExists] file "execute_test.gone" does not exist`),
+				WantStderr: []string{`validation for "S" failed: [FileExists] file "execute_test.gone" does not exist`},
 			},
 		},
 		{
@@ -1485,8 +1485,8 @@ func TestExecute(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"SL": []string{"execute_test.go", "execute.gone"},
 				}},
-				WantErr:    fmt.Errorf(`validation failed: [FileExists] file "execute.gone" does not exist`),
-				WantStderr: []string{`validation failed: [FileExists] file "execute.gone" does not exist`},
+				WantErr:    fmt.Errorf(`validation for "SL" failed: [FileExists] file "execute.gone" does not exist`),
+				WantStderr: []string{`validation for "SL" failed: [FileExists] file "execute.gone" does not exist`},
 			},
 		},
 		// IsDir and AreDirs
@@ -1522,8 +1522,8 @@ func TestExecute(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"S": "tested",
 				}},
-				WantErr:    fmt.Errorf(`validation failed: [IsDir] file "tested" does not exist`),
-				WantStderr: []string{`validation failed: [IsDir] file "tested" does not exist`},
+				WantErr:    fmt.Errorf(`validation for "S" failed: [IsDir] file "tested" does not exist`),
+				WantStderr: []string{`validation for "S" failed: [IsDir] file "tested" does not exist`},
 			},
 		},
 		{
@@ -1541,8 +1541,8 @@ func TestExecute(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"S": "execute_test.go",
 				}},
-				WantErr:    fmt.Errorf(`validation failed: [IsDir] argument "execute_test.go" is a file`),
-				WantStderr: []string{`validation failed: [IsDir] argument "execute_test.go" is a file`},
+				WantErr:    fmt.Errorf(`validation for "S" failed: [IsDir] argument "execute_test.go" is a file`),
+				WantStderr: []string{`validation for "S" failed: [IsDir] argument "execute_test.go" is a file`},
 			},
 		},
 		{
@@ -1579,8 +1579,8 @@ func TestExecute(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"SL": []string{"testdata", "cash"},
 				}},
-				WantErr:    fmt.Errorf(`validation failed: [IsDir] file "cash" does not exist`),
-				WantStderr: []string{`validation failed: [IsDir] file "cash" does not exist`},
+				WantErr:    fmt.Errorf(`validation for "SL" failed: [IsDir] file "cash" does not exist`),
+				WantStderr: []string{`validation for "SL" failed: [IsDir] file "cash" does not exist`},
 			},
 		},
 		{
@@ -1599,8 +1599,8 @@ func TestExecute(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"SL": []string{"testdata", "execute.go"},
 				}},
-				WantErr:    fmt.Errorf(`validation failed: [IsDir] argument "execute.go" is a file`),
-				WantStderr: []string{`validation failed: [IsDir] argument "execute.go" is a file`},
+				WantErr:    fmt.Errorf(`validation for "SL" failed: [IsDir] argument "execute.go" is a file`),
+				WantStderr: []string{`validation for "SL" failed: [IsDir] argument "execute.go" is a file`},
 			},
 		},
 		// IsFile and AreFiles
@@ -1636,8 +1636,8 @@ func TestExecute(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"S": "tested",
 				}},
-				WantErr:    fmt.Errorf(`validation failed: [IsFile] file "tested" does not exist`),
-				WantStderr: []string{`validation failed: [IsFile] file "tested" does not exist`},
+				WantErr:    fmt.Errorf(`validation for "S" failed: [IsFile] file "tested" does not exist`),
+				WantStderr: []string{`validation for "S" failed: [IsFile] file "tested" does not exist`},
 			},
 		},
 		{
@@ -1655,8 +1655,8 @@ func TestExecute(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"S": "testdata",
 				}},
-				WantErr:    fmt.Errorf(`validation failed: [IsFile] argument "testdata" is a directory`),
-				WantStderr: []string{`validation failed: [IsFile] argument "testdata" is a directory`},
+				WantErr:    fmt.Errorf(`validation for "S" failed: [IsFile] argument "testdata" is a directory`),
+				WantStderr: []string{`validation for "S" failed: [IsFile] argument "testdata" is a directory`},
 			},
 		},
 		{
@@ -1693,8 +1693,8 @@ func TestExecute(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"SL": []string{"execute.go", "cash"},
 				}},
-				WantErr:    fmt.Errorf(`validation failed: [IsFile] file "cash" does not exist`),
-				WantStderr: []string{`validation failed: [IsFile] file "cash" does not exist`},
+				WantErr:    fmt.Errorf(`validation for "SL" failed: [IsFile] file "cash" does not exist`),
+				WantStderr: []string{`validation for "SL" failed: [IsFile] file "cash" does not exist`},
 			},
 		},
 		{
@@ -1713,8 +1713,8 @@ func TestExecute(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"SL": []string{"execute.go", "testdata"},
 				}},
-				WantErr:    fmt.Errorf(`validation failed: [IsFile] argument "testdata" is a directory`),
-				WantStderr: []string{`validation failed: [IsFile] argument "testdata" is a directory`},
+				WantErr:    fmt.Errorf(`validation for "SL" failed: [IsFile] argument "testdata" is a directory`),
+				WantStderr: []string{`validation for "SL" failed: [IsFile] argument "testdata" is a directory`},
 			},
 		},
 		// InList & string menu
@@ -1750,8 +1750,8 @@ func TestExecute(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"strArg": "jkl",
 				}},
-				WantStderr: []string{`validation failed: [InList] argument must be one of [abc def ghi]`},
-				WantErr:    fmt.Errorf(`validation failed: [InList] argument must be one of [abc def ghi]`),
+				WantStderr: []string{`validation for "strArg" failed: [InList] argument must be one of [abc def ghi]`},
+				WantErr:    fmt.Errorf(`validation for "strArg" failed: [InList] argument must be one of [abc def ghi]`),
 			},
 		},
 		{
@@ -1786,8 +1786,8 @@ func TestExecute(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"strArg": "jkl",
 				}},
-				WantStderr: []string{`validation failed: [InList] argument must be one of [abc def ghi]`},
-				WantErr:    fmt.Errorf(`validation failed: [InList] argument must be one of [abc def ghi]`),
+				WantStderr: []string{`validation for "strArg" failed: [InList] argument must be one of [abc def ghi]`},
+				WantErr:    fmt.Errorf(`validation for "strArg" failed: [InList] argument must be one of [abc def ghi]`),
 			},
 		},
 		// MinLength
@@ -1840,8 +1840,8 @@ func TestExecute(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"strArg": "hi",
 				}},
-				WantStderr: []string{`validation failed: [MinLength] value must be at least 3 characters`},
-				WantErr:    fmt.Errorf(`validation failed: [MinLength] value must be at least 3 characters`),
+				WantStderr: []string{`validation for "strArg" failed: [MinLength] value must be at least 3 characters`},
+				WantErr:    fmt.Errorf(`validation for "strArg" failed: [MinLength] value must be at least 3 characters`),
 			},
 		},
 		// IntEQ
@@ -1849,7 +1849,7 @@ func TestExecute(t *testing.T) {
 			name: "IntEQ works",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: Arg[int]("Arg[int]", testDesc, EQ(24)),
+					Processor: Arg[int]("i", testDesc, EQ(24)),
 				},
 				Args: []string{"24"},
 				wantInput: &Input{
@@ -1858,7 +1858,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{Values: map[string]interface{}{
-					"Arg[int]": 24,
+					"i": 24,
 				}},
 			},
 		},
@@ -1866,7 +1866,7 @@ func TestExecute(t *testing.T) {
 			name: "IntEQ fails",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: Arg[int]("Arg[int]", testDesc, EQ(24)),
+					Processor: Arg[int]("i", testDesc, EQ(24)),
 				},
 				Args: []string{"25"},
 				wantInput: &Input{
@@ -1875,10 +1875,10 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{Values: map[string]interface{}{
-					"Arg[int]": 25,
+					"i": 25,
 				}},
-				WantStderr: []string{`validation failed: [EQ] value isn't equal to 24`},
-				WantErr:    fmt.Errorf(`validation failed: [EQ] value isn't equal to 24`),
+				WantStderr: []string{`validation for "i" failed: [EQ] value isn't equal to 24`},
+				WantErr:    fmt.Errorf(`validation for "i" failed: [EQ] value isn't equal to 24`),
 			},
 		},
 		// IntNE
@@ -1886,7 +1886,7 @@ func TestExecute(t *testing.T) {
 			name: "IntNE works",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: Arg[int]("Arg[int]", testDesc, NEQ(24)),
+					Processor: Arg[int]("i", testDesc, NEQ(24)),
 				},
 				Args: []string{"25"},
 				wantInput: &Input{
@@ -1895,7 +1895,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{Values: map[string]interface{}{
-					"Arg[int]": 25,
+					"i": 25,
 				}},
 			},
 		},
@@ -1903,7 +1903,7 @@ func TestExecute(t *testing.T) {
 			name: "IntNE fails",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: Arg[int]("Arg[int]", testDesc, NEQ(24)),
+					Processor: Arg[int]("i", testDesc, NEQ(24)),
 				},
 				Args: []string{"24"},
 				wantInput: &Input{
@@ -1912,10 +1912,10 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{Values: map[string]interface{}{
-					"Arg[int]": 24,
+					"i": 24,
 				}},
-				WantStderr: []string{`validation failed: [NEQ] value cannot equal 24`},
-				WantErr:    fmt.Errorf(`validation failed: [NEQ] value cannot equal 24`),
+				WantStderr: []string{`validation for "i" failed: [NEQ] value cannot equal 24`},
+				WantErr:    fmt.Errorf(`validation for "i" failed: [NEQ] value cannot equal 24`),
 			},
 		},
 		// IntLT
@@ -1923,7 +1923,7 @@ func TestExecute(t *testing.T) {
 			name: "IntLT works when less than",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: Arg[int]("Arg[int]", testDesc, LT(25)),
+					Processor: Arg[int]("i", testDesc, LT(25)),
 				},
 				Args: []string{"24"},
 				wantInput: &Input{
@@ -1932,7 +1932,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{Values: map[string]interface{}{
-					"Arg[int]": 24,
+					"i": 24,
 				}},
 			},
 		},
@@ -1940,7 +1940,7 @@ func TestExecute(t *testing.T) {
 			name: "IntLT fails when equal to",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: Arg[int]("Arg[int]", testDesc, LT(25)),
+					Processor: Arg[int]("i", testDesc, LT(25)),
 				},
 				Args: []string{"25"},
 				wantInput: &Input{
@@ -1949,17 +1949,17 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{Values: map[string]interface{}{
-					"Arg[int]": 25,
+					"i": 25,
 				}},
-				WantStderr: []string{`validation failed: [LT] value isn't less than 25`},
-				WantErr:    fmt.Errorf(`validation failed: [LT] value isn't less than 25`),
+				WantStderr: []string{`validation for "i" failed: [LT] value isn't less than 25`},
+				WantErr:    fmt.Errorf(`validation for "i" failed: [LT] value isn't less than 25`),
 			},
 		},
 		{
 			name: "IntLT fails when greater than",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: Arg[int]("Arg[int]", testDesc, LT(25)),
+					Processor: Arg[int]("i", testDesc, LT(25)),
 				},
 				Args: []string{"26"},
 				wantInput: &Input{
@@ -1968,10 +1968,10 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{Values: map[string]interface{}{
-					"Arg[int]": 26,
+					"i": 26,
 				}},
-				WantStderr: []string{`validation failed: [LT] value isn't less than 25`},
-				WantErr:    fmt.Errorf(`validation failed: [LT] value isn't less than 25`),
+				WantStderr: []string{`validation for "i" failed: [LT] value isn't less than 25`},
+				WantErr:    fmt.Errorf(`validation for "i" failed: [LT] value isn't less than 25`),
 			},
 		},
 		// IntLTE
@@ -1979,7 +1979,7 @@ func TestExecute(t *testing.T) {
 			name: "IntLTE works when less than",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: Arg[int]("Arg[int]", testDesc, LTE(25)),
+					Processor: Arg[int]("i", testDesc, LTE(25)),
 				},
 				Args: []string{"24"},
 				wantInput: &Input{
@@ -1988,7 +1988,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{Values: map[string]interface{}{
-					"Arg[int]": 24,
+					"i": 24,
 				}},
 			},
 		},
@@ -1996,7 +1996,7 @@ func TestExecute(t *testing.T) {
 			name: "IntLTE works when equal to",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: Arg[int]("Arg[int]", testDesc, LTE(25)),
+					Processor: Arg[int]("i", testDesc, LTE(25)),
 				},
 				Args: []string{"25"},
 				wantInput: &Input{
@@ -2005,7 +2005,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{Values: map[string]interface{}{
-					"Arg[int]": 25,
+					"i": 25,
 				}},
 			},
 		},
@@ -2013,7 +2013,7 @@ func TestExecute(t *testing.T) {
 			name: "IntLTE fails when greater than",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: Arg[int]("Arg[int]", testDesc, LTE(25)),
+					Processor: Arg[int]("i", testDesc, LTE(25)),
 				},
 				Args: []string{"26"},
 				wantInput: &Input{
@@ -2022,10 +2022,10 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{Values: map[string]interface{}{
-					"Arg[int]": 26,
+					"i": 26,
 				}},
-				WantStderr: []string{`validation failed: [LTE] value isn't less than or equal to 25`},
-				WantErr:    fmt.Errorf(`validation failed: [LTE] value isn't less than or equal to 25`),
+				WantStderr: []string{`validation for "i" failed: [LTE] value isn't less than or equal to 25`},
+				WantErr:    fmt.Errorf(`validation for "i" failed: [LTE] value isn't less than or equal to 25`),
 			},
 		},
 		// IntGT
@@ -2033,7 +2033,7 @@ func TestExecute(t *testing.T) {
 			name: "IntGT fails when less than",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: Arg[int]("Arg[int]", testDesc, GT(25)),
+					Processor: Arg[int]("i", testDesc, GT(25)),
 				},
 				Args: []string{"24"},
 				wantInput: &Input{
@@ -2042,17 +2042,17 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{Values: map[string]interface{}{
-					"Arg[int]": 24,
+					"i": 24,
 				}},
-				WantStderr: []string{`validation failed: [GT] value isn't greater than 25`},
-				WantErr:    fmt.Errorf(`validation failed: [GT] value isn't greater than 25`),
+				WantStderr: []string{`validation for "i" failed: [GT] value isn't greater than 25`},
+				WantErr:    fmt.Errorf(`validation for "i" failed: [GT] value isn't greater than 25`),
 			},
 		},
 		{
 			name: "IntGT fails when equal to",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: Arg[int]("Arg[int]", testDesc, GT(25)),
+					Processor: Arg[int]("i", testDesc, GT(25)),
 				},
 				Args: []string{"25"},
 				wantInput: &Input{
@@ -2061,17 +2061,17 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{Values: map[string]interface{}{
-					"Arg[int]": 25,
+					"i": 25,
 				}},
-				WantStderr: []string{`validation failed: [GT] value isn't greater than 25`},
-				WantErr:    fmt.Errorf(`validation failed: [GT] value isn't greater than 25`),
+				WantStderr: []string{`validation for "i" failed: [GT] value isn't greater than 25`},
+				WantErr:    fmt.Errorf(`validation for "i" failed: [GT] value isn't greater than 25`),
 			},
 		},
 		{
 			name: "IntGT works when greater than",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: Arg[int]("Arg[int]", testDesc, GT(25)),
+					Processor: Arg[int]("i", testDesc, GT(25)),
 				},
 				Args: []string{"26"},
 				wantInput: &Input{
@@ -2080,7 +2080,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{Values: map[string]interface{}{
-					"Arg[int]": 26,
+					"i": 26,
 				}},
 			},
 		},
@@ -2089,7 +2089,7 @@ func TestExecute(t *testing.T) {
 			name: "IntGTE fails when less than",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: Arg[int]("Arg[int]", testDesc, GTE(25)),
+					Processor: Arg[int]("i", testDesc, GTE(25)),
 				},
 				Args: []string{"24"},
 				wantInput: &Input{
@@ -2098,17 +2098,17 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{Values: map[string]interface{}{
-					"Arg[int]": 24,
+					"i": 24,
 				}},
-				WantStderr: []string{`validation failed: [GTE] value isn't greater than or equal to 25`},
-				WantErr:    fmt.Errorf(`validation failed: [GTE] value isn't greater than or equal to 25`),
+				WantStderr: []string{`validation for "i" failed: [GTE] value isn't greater than or equal to 25`},
+				WantErr:    fmt.Errorf(`validation for "i" failed: [GTE] value isn't greater than or equal to 25`),
 			},
 		},
 		{
 			name: "IntGTE works when equal to",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: Arg[int]("Arg[int]", testDesc, GTE(25)),
+					Processor: Arg[int]("i", testDesc, GTE(25)),
 				},
 				Args: []string{"25"},
 				wantInput: &Input{
@@ -2117,7 +2117,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{Values: map[string]interface{}{
-					"Arg[int]": 25,
+					"i": 25,
 				}},
 			},
 		},
@@ -2125,7 +2125,7 @@ func TestExecute(t *testing.T) {
 			name: "IntGTE works when greater than",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: Arg[int]("Arg[int]", testDesc, GTE(25)),
+					Processor: Arg[int]("i", testDesc, GTE(25)),
 				},
 				Args: []string{"26"},
 				wantInput: &Input{
@@ -2134,7 +2134,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{Values: map[string]interface{}{
-					"Arg[int]": 26,
+					"i": 26,
 				}},
 			},
 		},
@@ -2143,7 +2143,7 @@ func TestExecute(t *testing.T) {
 			name: "IntPositive fails when negative",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: Arg[int]("Arg[int]", testDesc, Positive[int]()),
+					Processor: Arg[int]("i", testDesc, Positive[int]()),
 				},
 				Args: []string{"-1"},
 				wantInput: &Input{
@@ -2152,17 +2152,17 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{Values: map[string]interface{}{
-					"Arg[int]": -1,
+					"i": -1,
 				}},
-				WantStderr: []string{`validation failed: [Positive] value isn't positive`},
-				WantErr:    fmt.Errorf(`validation failed: [Positive] value isn't positive`),
+				WantStderr: []string{`validation for "i" failed: [Positive] value isn't positive`},
+				WantErr:    fmt.Errorf(`validation for "i" failed: [Positive] value isn't positive`),
 			},
 		},
 		{
 			name: "IntPositive fails when zero",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: Arg[int]("Arg[int]", testDesc, Positive[int]()),
+					Processor: Arg[int]("i", testDesc, Positive[int]()),
 				},
 				Args: []string{"0"},
 				wantInput: &Input{
@@ -2171,17 +2171,17 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{Values: map[string]interface{}{
-					"Arg[int]": 0,
+					"i": 0,
 				}},
-				WantStderr: []string{`validation failed: [Positive] value isn't positive`},
-				WantErr:    fmt.Errorf(`validation failed: [Positive] value isn't positive`),
+				WantStderr: []string{`validation for "i" failed: [Positive] value isn't positive`},
+				WantErr:    fmt.Errorf(`validation for "i" failed: [Positive] value isn't positive`),
 			},
 		},
 		{
 			name: "IntPositive works when positive",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: Arg[int]("Arg[int]", testDesc, Positive[int]()),
+					Processor: Arg[int]("i", testDesc, Positive[int]()),
 				},
 				Args: []string{"1"},
 				wantInput: &Input{
@@ -2190,7 +2190,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{Values: map[string]interface{}{
-					"Arg[int]": 1,
+					"i": 1,
 				}},
 			},
 		},
@@ -2199,7 +2199,7 @@ func TestExecute(t *testing.T) {
 			name: "IntNegative works when negative",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: Arg[int]("Arg[int]", testDesc, Negative[int]()),
+					Processor: Arg[int]("i", testDesc, Negative[int]()),
 				},
 				Args: []string{"-1"},
 				wantInput: &Input{
@@ -2208,7 +2208,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{Values: map[string]interface{}{
-					"Arg[int]": -1,
+					"i": -1,
 				}},
 			},
 		},
@@ -2216,7 +2216,7 @@ func TestExecute(t *testing.T) {
 			name: "IntNegative fails when zero",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: Arg[int]("Arg[int]", testDesc, Negative[int]()),
+					Processor: Arg[int]("i", testDesc, Negative[int]()),
 				},
 				Args: []string{"0"},
 				wantInput: &Input{
@@ -2225,17 +2225,17 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{Values: map[string]interface{}{
-					"Arg[int]": 0,
+					"i": 0,
 				}},
-				WantStderr: []string{`validation failed: [Negative] value isn't negative`},
-				WantErr:    fmt.Errorf(`validation failed: [Negative] value isn't negative`),
+				WantStderr: []string{`validation for "i" failed: [Negative] value isn't negative`},
+				WantErr:    fmt.Errorf(`validation for "i" failed: [Negative] value isn't negative`),
 			},
 		},
 		{
 			name: "IntNegative fails when positive",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: Arg[int]("Arg[int]", testDesc, Negative[int]()),
+					Processor: Arg[int]("i", testDesc, Negative[int]()),
 				},
 				Args: []string{"1"},
 				wantInput: &Input{
@@ -2244,10 +2244,10 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{Values: map[string]interface{}{
-					"Arg[int]": 1,
+					"i": 1,
 				}},
-				WantStderr: []string{`validation failed: [Negative] value isn't negative`},
-				WantErr:    fmt.Errorf(`validation failed: [Negative] value isn't negative`),
+				WantStderr: []string{`validation for "i" failed: [Negative] value isn't negative`},
+				WantErr:    fmt.Errorf(`validation for "i" failed: [Negative] value isn't negative`),
 			},
 		},
 		// IntNonNegative
@@ -2255,7 +2255,7 @@ func TestExecute(t *testing.T) {
 			name: "IntNonNegative fails when negative",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: Arg[int]("Arg[int]", testDesc, NonNegative[int]()),
+					Processor: Arg[int]("i", testDesc, NonNegative[int]()),
 				},
 				Args: []string{"-1"},
 				wantInput: &Input{
@@ -2264,17 +2264,17 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{Values: map[string]interface{}{
-					"Arg[int]": -1,
+					"i": -1,
 				}},
-				WantStderr: []string{`validation failed: [NonNegative] value isn't non-negative`},
-				WantErr:    fmt.Errorf(`validation failed: [NonNegative] value isn't non-negative`),
+				WantStderr: []string{`validation for "i" failed: [NonNegative] value isn't non-negative`},
+				WantErr:    fmt.Errorf(`validation for "i" failed: [NonNegative] value isn't non-negative`),
 			},
 		},
 		{
 			name: "IntNonNegative works when zero",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: Arg[int]("Arg[int]", testDesc, NonNegative[int]()),
+					Processor: Arg[int]("i", testDesc, NonNegative[int]()),
 				},
 				Args: []string{"0"},
 				wantInput: &Input{
@@ -2283,7 +2283,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{Values: map[string]interface{}{
-					"Arg[int]": 0,
+					"i": 0,
 				}},
 			},
 		},
@@ -2291,7 +2291,7 @@ func TestExecute(t *testing.T) {
 			name: "IntNonNegative works when positive",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: Arg[int]("Arg[int]", testDesc, NonNegative[int]()),
+					Processor: Arg[int]("i", testDesc, NonNegative[int]()),
 				},
 				Args: []string{"1"},
 				wantInput: &Input{
@@ -2300,7 +2300,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{Values: map[string]interface{}{
-					"Arg[int]": 1,
+					"i": 1,
 				}},
 			},
 		},
@@ -2337,8 +2337,8 @@ func TestExecute(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"flArg": 2.5,
 				}},
-				WantStderr: []string{`validation failed: [EQ] value isn't equal to 2.4`},
-				WantErr:    fmt.Errorf(`validation failed: [EQ] value isn't equal to 2.4`),
+				WantStderr: []string{`validation for "flArg" failed: [EQ] value isn't equal to 2.4`},
+				WantErr:    fmt.Errorf(`validation for "flArg" failed: [EQ] value isn't equal to 2.4`),
 			},
 		},
 		// FloatNE
@@ -2374,8 +2374,8 @@ func TestExecute(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"flArg": 2.4,
 				}},
-				WantStderr: []string{`validation failed: [NEQ] value cannot equal 2.4`},
-				WantErr:    fmt.Errorf(`validation failed: [NEQ] value cannot equal 2.4`),
+				WantStderr: []string{`validation for "flArg" failed: [NEQ] value cannot equal 2.4`},
+				WantErr:    fmt.Errorf(`validation for "flArg" failed: [NEQ] value cannot equal 2.4`),
 			},
 		},
 		// FloatLT
@@ -2411,8 +2411,8 @@ func TestExecute(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"flArg": 2.5,
 				}},
-				WantStderr: []string{`validation failed: [LT] value isn't less than 2.5`},
-				WantErr:    fmt.Errorf(`validation failed: [LT] value isn't less than 2.5`),
+				WantStderr: []string{`validation for "flArg" failed: [LT] value isn't less than 2.5`},
+				WantErr:    fmt.Errorf(`validation for "flArg" failed: [LT] value isn't less than 2.5`),
 			},
 		},
 		{
@@ -2430,8 +2430,8 @@ func TestExecute(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"flArg": 2.6,
 				}},
-				WantStderr: []string{`validation failed: [LT] value isn't less than 2.5`},
-				WantErr:    fmt.Errorf(`validation failed: [LT] value isn't less than 2.5`),
+				WantStderr: []string{`validation for "flArg" failed: [LT] value isn't less than 2.5`},
+				WantErr:    fmt.Errorf(`validation for "flArg" failed: [LT] value isn't less than 2.5`),
 			},
 		},
 		// FloatLTE
@@ -2484,8 +2484,8 @@ func TestExecute(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"flArg": 2.6,
 				}},
-				WantStderr: []string{`validation failed: [LTE] value isn't less than or equal to 2.5`},
-				WantErr:    fmt.Errorf(`validation failed: [LTE] value isn't less than or equal to 2.5`),
+				WantStderr: []string{`validation for "flArg" failed: [LTE] value isn't less than or equal to 2.5`},
+				WantErr:    fmt.Errorf(`validation for "flArg" failed: [LTE] value isn't less than or equal to 2.5`),
 			},
 		},
 		// FloatGT
@@ -2504,8 +2504,8 @@ func TestExecute(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"flArg": 2.4,
 				}},
-				WantStderr: []string{`validation failed: [GT] value isn't greater than 2.5`},
-				WantErr:    fmt.Errorf(`validation failed: [GT] value isn't greater than 2.5`),
+				WantStderr: []string{`validation for "flArg" failed: [GT] value isn't greater than 2.5`},
+				WantErr:    fmt.Errorf(`validation for "flArg" failed: [GT] value isn't greater than 2.5`),
 			},
 		},
 		{
@@ -2523,8 +2523,8 @@ func TestExecute(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"flArg": 2.5,
 				}},
-				WantStderr: []string{`validation failed: [GT] value isn't greater than 2.5`},
-				WantErr:    fmt.Errorf(`validation failed: [GT] value isn't greater than 2.5`),
+				WantStderr: []string{`validation for "flArg" failed: [GT] value isn't greater than 2.5`},
+				WantErr:    fmt.Errorf(`validation for "flArg" failed: [GT] value isn't greater than 2.5`),
 			},
 		},
 		{
@@ -2560,8 +2560,8 @@ func TestExecute(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"flArg": 2.4,
 				}},
-				WantStderr: []string{`validation failed: [GTE] value isn't greater than or equal to 2.5`},
-				WantErr:    fmt.Errorf(`validation failed: [GTE] value isn't greater than or equal to 2.5`),
+				WantStderr: []string{`validation for "flArg" failed: [GTE] value isn't greater than or equal to 2.5`},
+				WantErr:    fmt.Errorf(`validation for "flArg" failed: [GTE] value isn't greater than or equal to 2.5`),
 			},
 		},
 		{
@@ -2614,8 +2614,8 @@ func TestExecute(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"flArg": -0.1,
 				}},
-				WantStderr: []string{`validation failed: [Positive] value isn't positive`},
-				WantErr:    fmt.Errorf(`validation failed: [Positive] value isn't positive`),
+				WantStderr: []string{`validation for "flArg" failed: [Positive] value isn't positive`},
+				WantErr:    fmt.Errorf(`validation for "flArg" failed: [Positive] value isn't positive`),
 			},
 		},
 		{
@@ -2633,8 +2633,8 @@ func TestExecute(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"flArg": 0.0,
 				}},
-				WantStderr: []string{`validation failed: [Positive] value isn't positive`},
-				WantErr:    fmt.Errorf(`validation failed: [Positive] value isn't positive`),
+				WantStderr: []string{`validation for "flArg" failed: [Positive] value isn't positive`},
+				WantErr:    fmt.Errorf(`validation for "flArg" failed: [Positive] value isn't positive`),
 			},
 		},
 		{
@@ -2687,8 +2687,8 @@ func TestExecute(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"flArg": 0.0,
 				}},
-				WantStderr: []string{`validation failed: [Negative] value isn't negative`},
-				WantErr:    fmt.Errorf(`validation failed: [Negative] value isn't negative`),
+				WantStderr: []string{`validation for "flArg" failed: [Negative] value isn't negative`},
+				WantErr:    fmt.Errorf(`validation for "flArg" failed: [Negative] value isn't negative`),
 			},
 		},
 		{
@@ -2706,8 +2706,8 @@ func TestExecute(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"flArg": 0.1,
 				}},
-				WantStderr: []string{`validation failed: [Negative] value isn't negative`},
-				WantErr:    fmt.Errorf(`validation failed: [Negative] value isn't negative`),
+				WantStderr: []string{`validation for "flArg" failed: [Negative] value isn't negative`},
+				WantErr:    fmt.Errorf(`validation for "flArg" failed: [Negative] value isn't negative`),
 			},
 		},
 		// FloatNonNegative
@@ -2726,8 +2726,8 @@ func TestExecute(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"flArg": -0.1,
 				}},
-				WantStderr: []string{`validation failed: [NonNegative] value isn't non-negative`},
-				WantErr:    fmt.Errorf(`validation failed: [NonNegative] value isn't non-negative`),
+				WantStderr: []string{`validation for "flArg" failed: [NonNegative] value isn't non-negative`},
+				WantErr:    fmt.Errorf(`validation for "flArg" failed: [NonNegative] value isn't non-negative`),
 			},
 		},
 		{
@@ -4134,9 +4134,9 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantStderr: []string{
-					fmt.Sprintf("validation failed: [FileExists] file %q does not exist", FilepathAbs(t, "uh")),
+					fmt.Sprintf(`validation for "FILE" failed: [FileExists] file %q does not exist`, FilepathAbs(t, "uh")),
 				},
-				WantErr: fmt.Errorf("validation failed: [FileExists] file %q does not exist", FilepathAbs(t, "uh")),
+				WantErr: fmt.Errorf(`validation for "FILE" failed: [FileExists] file %q does not exist`, FilepathAbs(t, "uh")),
 				WantData: &Data{
 					Values: map[string]interface{}{
 						"FILE": FilepathAbs(t, "uh"),

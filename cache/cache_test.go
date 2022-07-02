@@ -228,8 +228,8 @@ func TestExecute(t *testing.T) {
 			name: "Get requires valid key",
 			etc: &command.ExecuteTestCase{
 				Args:       []string{"get", ".?,"},
-				WantErr:    fmt.Errorf(`validation failed: [MatchesRegex] value ".?," doesn't match regex %q`, keyRegex),
-				WantStderr: []string{fmt.Sprintf(`validation failed: [MatchesRegex] value ".?," doesn't match regex %q`, keyRegex)},
+				WantErr:    fmt.Errorf(`validation for "KEY" failed: [MatchesRegex] value ".?," doesn't match regex %q`, keyRegex),
+				WantStderr: []string{fmt.Sprintf(`validation for "KEY" failed: [MatchesRegex] value ".?," doesn't match regex %q`, keyRegex)},
 			},
 		},
 		{
@@ -267,8 +267,8 @@ func TestExecute(t *testing.T) {
 			name: "Put requires valid key",
 			etc: &command.ExecuteTestCase{
 				Args:       []string{"put", ".?,"},
-				WantErr:    fmt.Errorf(`validation failed: [MatchesRegex] value ".?," doesn't match regex %q`, keyRegex),
-				WantStderr: []string{fmt.Sprintf(`validation failed: [MatchesRegex] value ".?," doesn't match regex %q`, keyRegex)},
+				WantErr:    fmt.Errorf(`validation for "KEY" failed: [MatchesRegex] value ".?," doesn't match regex %q`, keyRegex),
+				WantStderr: []string{fmt.Sprintf(`validation for "KEY" failed: [MatchesRegex] value ".?," doesn't match regex %q`, keyRegex)},
 			},
 		},
 		{
@@ -342,8 +342,8 @@ func TestExecute(t *testing.T) {
 			name: "Delete requires valid key",
 			etc: &command.ExecuteTestCase{
 				Args:       []string{"delete", ".?,"},
-				WantErr:    fmt.Errorf(`validation failed: [MatchesRegex] value ".?," doesn't match regex %q`, keyRegex),
-				WantStderr: []string{fmt.Sprintf(`validation failed: [MatchesRegex] value ".?," doesn't match regex %q`, keyRegex)},
+				WantErr:    fmt.Errorf(`validation for "KEY" failed: [MatchesRegex] value ".?," doesn't match regex %q`, keyRegex),
+				WantStderr: []string{fmt.Sprintf(`validation for "KEY" failed: [MatchesRegex] value ".?," doesn't match regex %q`, keyRegex)},
 			},
 		},
 		{
@@ -380,16 +380,16 @@ func TestExecute(t *testing.T) {
 			name: "setdir requires an existing file",
 			etc: &command.ExecuteTestCase{
 				Args:       []string{"setdir", "uh"},
-				WantErr:    fmt.Errorf("validation failed: [IsDir] file %q does not exist", command.FilepathAbs(t, "uh")),
-				WantStderr: []string{fmt.Sprintf("validation failed: [IsDir] file %q does not exist", command.FilepathAbs(t, "uh"))},
+				WantErr:    fmt.Errorf("validation for \"DIR\" failed: [IsDir] file %q does not exist", command.FilepathAbs(t, "uh")),
+				WantStderr: []string{fmt.Sprintf("validation for \"DIR\" failed: [IsDir] file %q does not exist", command.FilepathAbs(t, "uh"))},
 			},
 		},
 		{
 			name: "setdir doesn't allow files",
 			etc: &command.ExecuteTestCase{
 				Args:       []string{"setdir", "cache.go"},
-				WantErr:    fmt.Errorf("validation failed: [IsDir] argument %q is a file", command.FilepathAbs(t, "cache.go")),
-				WantStderr: []string{fmt.Sprintf("validation failed: [IsDir] argument %q is a file", command.FilepathAbs(t, "cache.go"))},
+				WantErr:    fmt.Errorf("validation for \"DIR\" failed: [IsDir] argument %q is a file", command.FilepathAbs(t, "cache.go")),
+				WantStderr: []string{fmt.Sprintf("validation for \"DIR\" failed: [IsDir] argument %q is a file", command.FilepathAbs(t, "cache.go"))},
 			},
 		},
 		{

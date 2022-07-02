@@ -633,6 +633,7 @@ var (
 				"cache/",
 				"cmd/",
 				"color/",
+				"docs/",
 				"examples/",
 				"go.mod",
 				"go.sum",

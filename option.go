@@ -132,38 +132,6 @@ func NewTransformer[T any](f func(T, *Data) (T, error), forComplete bool) *Trans
 	}
 }
 
-// ValidatorOption is an `ArgOpt` for validating arguments.
-type ValidatorOption[T any] struct {
-	validate func(T) error
-}
-
-// ValidatorList changes a single-arg validator (`Validator[T]`) to a list-arg validator (`Validator[[]T]`).
-func ValidatorList[T any](vo *ValidatorOption[T]) *ValidatorOption[[]T] {
-	return &ValidatorOption[[]T]{
-		validate: func(ts []T) error {
-			for _, t := range ts {
-				if err := vo.validate(t); err != nil {
-					return err
-				}
-			}
-			return nil
-		},
-	}
-}
-
-func (vo *ValidatorOption[T]) modifyArgOpt(ao *argOpt[T]) {
-	ao.validators = append(ao.validators, vo)
-}
-
-func (vo *ValidatorOption[T]) modifyBashNode(bn *BashCommand[T]) {
-	bn.validators = append(bn.validators, vo)
-}
-
-// Validate validates the argument and returns an error if the validation fails.
-func (vo *ValidatorOption[T]) Validate(v T) error {
-	return vo.validate(v)
-}
-
 // Default is an `ArgOpt` that sets a default value for an `Arg` node.
 func Default[T any](v T) ArgOpt[T] {
 	return DefaultFunc(func(d *Data) (T, error) { return v, nil })
