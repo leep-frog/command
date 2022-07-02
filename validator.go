@@ -35,6 +35,8 @@ func IsValidationError(err error) bool {
 	return ok
 }
 
+// TODO: Have Validator option update docs
+
 // ValidatorOption is an `ArgOpt` and `BashOption` for validating arguments.
 type ValidatorOption[T any] struct {
 	validate func(T) error
