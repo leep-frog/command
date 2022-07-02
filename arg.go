@@ -109,7 +109,7 @@ func (an *ArgNode[T]) Execute(i *Input, o Output, data *Data, eData *ExecuteData
 			goto CFE_END
 		} else if compl == nil {
 			if strict {
-				return o.Stderrf("[CompleteForExecute] nil completion returned")
+				return o.Stderrf("[CompleteForExecute] nil completion returned\n")
 			}
 			goto CFE_END
 		}
@@ -117,7 +117,7 @@ func (an *ArgNode[T]) Execute(i *Input, o Output, data *Data, eData *ExecuteData
 		if len(suggestions) == 1 {
 			*sl[len(sl)-1] = suggestions[0]
 		} else if strict {
-			return o.Stderrf("[CompleteForExecute] requires exactly one suggestion to be returned, got %d: %v", len(suggestions), suggestions)
+			return o.Stderrf("[CompleteForExecute] requires exactly one suggestion to be returned, got %d: %v\n", len(suggestions), suggestions)
 		}
 	}
 CFE_END:

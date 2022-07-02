@@ -7,22 +7,23 @@ import (
 	"log"
 	"os"
 	"runtime"
+	"strings"
 	"sync"
 )
 
 // Output defines methods for writing output.
 type Output interface {
-	// Writes a line to stdout.
+	// Writes the provided text to stdout.
 	Stdout(string)
-	// Writes a line to stderr and returns an error with the same message.
+	// Writes the provided text to stderr and returns an error with the same message.
 	Stderr(string) error
-	// Writes a formatted line to stdout.
+	// Writes a formatted string to stdout.
 	Stdoutf(string, ...interface{})
-	// Writes a formatted line to stderr and returns an error with the same message.
+	// Writes a formatted string to stderr and returns an error with the same message.
 	Stderrf(string, ...interface{}) error
-	// Writes interfaces to stdout.
+	// Writes interfaces to stdout and appends a newline.
 	Stdoutln(...interface{})
-	// Writes interfaces to stderr.
+	// Writes interfaces to stderr and appends a newline.
 	Stderrln(...interface{}) error
 	// Writes the provided error to stderr and returns the provided error.
 	Err(err error) error
@@ -86,9 +87,7 @@ func (o *output) Stdoutf(s string, a ...interface{}) {
 }
 
 func (o *output) Stdoutln(a ...interface{}) {
-	// Trim newline
-	s := fmt.Sprintln(a...)
-	o.stdoutChan <- s[:len(s)-1]
+	o.stdoutChan <- fmt.Sprintln(a...)
 }
 
 func (o *output) Stderr(s string) error {
@@ -99,24 +98,22 @@ func (o *output) Stderrf(s string, a ...interface{}) error {
 	return o.writeStderr(fmt.Sprintf(s, a...))
 }
 
+func (o *output) Stderrln(a ...interface{}) error {
+	return o.writeStderr(fmt.Sprintln(a...))
+}
+
 func (o *output) Annotate(err error, s string) error {
 	if err == nil {
 		return nil
 	}
-	return o.writeStderr(fmt.Sprintf("%s: %v", s, err))
+	return o.Stderrf("%s: %v\n", s, err)
 }
 
 func (o *output) Annotatef(err error, s string, a ...interface{}) error {
 	if err == nil {
 		return nil
 	}
-	return o.writeStderr(fmt.Sprintf("%s: %v", fmt.Sprintf(s, a...), err))
-}
-
-func (o *output) Stderrln(a ...interface{}) error {
-	// Trim newline
-	s := fmt.Sprintln(a...)
-	return o.writeStderr(s[:len(s)-1])
+	return o.Stderrf("%s: %v\n", fmt.Sprintf(s, a...), err)
 }
 
 func (o *output) Terminate(err error) {
@@ -151,14 +148,13 @@ func (o *output) terminateError() error {
 }
 
 func (o *output) writeStderr(s string) error {
-	err := errors.New(s)
 	o.stderrChan <- s
-	return err
+	return errors.New(strings.TrimSpace(s))
 }
 
 func (o *output) Err(err error) error {
 	if err != nil {
-		o.Stderr(err.Error())
+		o.Stderrf("%s\n", err.Error())
 	}
 	return err
 }
@@ -174,10 +170,10 @@ func NewOutput() Output {
 	stdout := log.New(os.Stdout, "", 0)
 	stderr := log.New(os.Stderr, "", 0)
 	so := func(s string) {
-		stdout.Println(s)
+		stdout.Print(s)
 	}
 	se := func(s string) {
-		stderr.Println(s)
+		stderr.Print(s)
 	}
 	return osFromChan(so, se)
 }
@@ -269,13 +265,13 @@ func (fo *FakeOutput) Close() {
 }
 
 // GetStdout returns all of the data that was written to the stdout channel.
-func (fo *FakeOutput) GetStdout() []string {
+func (fo *FakeOutput) GetStdout() string {
 	fo.Close()
-	return fo.stdout
+	return strings.Join(fo.stdout, "")
 }
 
 // GetStderr returns all of the data that was written to the stderr channel.
-func (fo *FakeOutput) GetStderr() []string {
+func (fo *FakeOutput) GetStderr() string {
 	fo.Close()
-	return fo.stderr
+	return strings.Join(fo.stderr, "")
 }

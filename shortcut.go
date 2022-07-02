@@ -114,7 +114,7 @@ func shortcutSearcher(name string, sc ShortcutCLI, n *Node) *Node {
 				}
 			}
 			if matches {
-				output.Stdout(a)
+				output.Stdoutln(a)
 			}
 		}
 	}))
@@ -128,7 +128,7 @@ func shortcutLister(name string, sc ShortcutCLI, n *Node) *Node {
 		}
 		sort.Strings(r)
 		for _, v := range r {
-			output.Stdout(v)
+			output.Stdoutln(v)
 		}
 	}))
 }
@@ -136,7 +136,7 @@ func shortcutLister(name string, sc ShortcutCLI, n *Node) *Node {
 func shortcutDeleter(name string, sc ShortcutCLI, n *Node) *Node {
 	return SerialNodes(shortcutListArg(name, sc), ExecuteErrNode(func(output Output, data *Data) error {
 		if len(getShortcutMap(sc, name)) == 0 {
-			return output.Stderr("Shortcut group has no shortcuts yet.")
+			return output.Stderrln("Shortcut group has no shortcuts yet.")
 		}
 		for _, a := range data.StringList(ShortcutArg.Name()) {
 			if err := deleteShortcut(sc, name, a); err != nil {
@@ -154,14 +154,14 @@ func shortcutStr(shortcut string, values []string) string {
 func shortcutGetter(name string, sc ShortcutCLI, n *Node) *Node {
 	return SerialNodes(shortcutListArg(name, sc), ExecuteErrNode(func(output Output, data *Data) error {
 		if getShortcutMap(sc, name) == nil {
-			return output.Stderrf("No shortcuts exist for shortcut type %q", name)
+			return output.Stderrf("No shortcuts exist for shortcut type %q\n", name)
 		}
 
 		for _, shortcut := range data.StringList(ShortcutArg.Name()) {
 			if v, ok := getShortcut(sc, name, shortcut); ok {
-				output.Stdout(shortcutStr(shortcut, v))
+				output.Stdoutln(shortcutStr(shortcut, v))
 			} else {
-				output.Stderrf("Shortcut %q does not exist", shortcut)
+				output.Stderrf("Shortcut %q does not exist\n", shortcut)
 			}
 		}
 		return nil
@@ -205,10 +205,10 @@ func (as *addShortcut) Execute(input *Input, output Output, data *Data, _ *Execu
 	shortcut := data.String(ShortcutArg.Name())
 	sm := shortcutMap(as.name, as.sc, as.node)
 	if _, ok := sm[shortcut]; ok {
-		return output.Stderr("cannot create shortcut for reserved value")
+		return output.Stderrln("cannot create shortcut for reserved value")
 	}
 	if _, ok := getShortcut(as.sc, as.name, shortcut); ok {
-		return output.Stderrf("Shortcut %q already exists", shortcut)
+		return output.Stderrf("Shortcut %q already exists\n", shortcut)
 	}
 
 	snapshot := input.Snapshot()

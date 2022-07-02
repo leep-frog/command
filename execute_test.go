@@ -36,7 +36,7 @@ func TestExecute(t *testing.T) {
 			etc: &ExecuteTestCase{
 				Args:       []string{"hello"},
 				WantErr:    fmt.Errorf("Unprocessed extra args: [hello]"),
-				WantStderr: []string{"Unprocessed extra args: [hello]"},
+				WantStderr: "Unprocessed extra args: [hello]\n",
 				wantInput: &Input{
 					args: []*inputArg{
 						{value: "hello"},
@@ -51,7 +51,7 @@ func TestExecute(t *testing.T) {
 			etc: &ExecuteTestCase{
 				Node:       SerialNodes(Arg[string]("s", testDesc)),
 				WantErr:    fmt.Errorf(`Argument "s" requires at least 1 argument, got 0`),
-				WantStderr: []string{`Argument "s" requires at least 1 argument, got 0`},
+				WantStderr: "Argument \"s\" requires at least 1 argument, got 0\n",
 			},
 		},
 		{
@@ -80,7 +80,7 @@ func TestExecute(t *testing.T) {
 			etc: &ExecuteTestCase{
 				Node:       SerialNodes(Arg[int]("i", testDesc)),
 				WantErr:    fmt.Errorf(`Argument "i" requires at least 1 argument, got 0`),
-				WantStderr: []string{`Argument "i" requires at least 1 argument, got 0`},
+				WantStderr: "Argument \"i\" requires at least 1 argument, got 0\n",
 			},
 		},
 		{
@@ -88,7 +88,7 @@ func TestExecute(t *testing.T) {
 			etc: &ExecuteTestCase{
 				Node:       SerialNodes(Arg[float64]("f", testDesc)),
 				WantErr:    fmt.Errorf(`Argument "f" requires at least 1 argument, got 0`),
-				WantStderr: []string{`Argument "f" requires at least 1 argument, got 0`},
+				WantStderr: "Argument \"f\" requires at least 1 argument, got 0\n",
 			},
 		},
 		// CompleteForExecute tests for single Arg
@@ -99,7 +99,7 @@ func TestExecute(t *testing.T) {
 					return nil, fmt.Errorf("oopsie")
 				}))),
 				WantErr:    fmt.Errorf(`Argument "is" requires at least 1 argument, got 0`),
-				WantStderr: []string{`Argument "is" requires at least 1 argument, got 0`},
+				WantStderr: "Argument \"is\" requires at least 1 argument, got 0\n",
 			},
 		},
 		{
@@ -114,10 +114,8 @@ func TestExecute(t *testing.T) {
 						{value: ""},
 					},
 				},
-				WantErr: fmt.Errorf("[CompleteForExecute] failed to fetch completion: oopsie"),
-				WantStderr: []string{
-					"[CompleteForExecute] failed to fetch completion: oopsie",
-				},
+				WantErr:    fmt.Errorf("[CompleteForExecute] failed to fetch completion: oopsie"),
+				WantStderr: "[CompleteForExecute] failed to fetch completion: oopsie\n",
 			},
 		},
 		{
@@ -132,10 +130,8 @@ func TestExecute(t *testing.T) {
 						{value: ""},
 					},
 				},
-				WantErr: fmt.Errorf("[CompleteForExecute] nil completion returned"),
-				WantStderr: []string{
-					"[CompleteForExecute] nil completion returned",
-				},
+				WantErr:    fmt.Errorf("[CompleteForExecute] nil completion returned"),
+				WantStderr: "[CompleteForExecute] nil completion returned\n",
 			},
 		},
 		{
@@ -150,10 +146,8 @@ func TestExecute(t *testing.T) {
 						{value: ""},
 					},
 				},
-				WantErr: fmt.Errorf("[CompleteForExecute] requires exactly one suggestion to be returned, got 0: []"),
-				WantStderr: []string{
-					"[CompleteForExecute] requires exactly one suggestion to be returned, got 0: []",
-				},
+				WantErr:    fmt.Errorf("[CompleteForExecute] requires exactly one suggestion to be returned, got 0: []"),
+				WantStderr: "[CompleteForExecute] requires exactly one suggestion to be returned, got 0: []\n",
 			},
 		},
 		{
@@ -170,10 +164,8 @@ func TestExecute(t *testing.T) {
 						{value: ""},
 					},
 				},
-				WantErr: fmt.Errorf("[CompleteForExecute] requires exactly one suggestion to be returned, got 2: [1 4]"),
-				WantStderr: []string{
-					"[CompleteForExecute] requires exactly one suggestion to be returned, got 2: [1 4]",
-				},
+				WantErr:    fmt.Errorf("[CompleteForExecute] requires exactly one suggestion to be returned, got 2: [1 4]"),
+				WantStderr: "[CompleteForExecute] requires exactly one suggestion to be returned, got 2: [1 4]\n",
 			},
 		},
 		{
@@ -190,10 +182,8 @@ func TestExecute(t *testing.T) {
 						{value: "someString"},
 					},
 				},
-				WantErr: fmt.Errorf(`strconv.Atoi: parsing "someString": invalid syntax`),
-				WantStderr: []string{
-					`strconv.Atoi: parsing "someString": invalid syntax`,
-				},
+				WantErr:    fmt.Errorf(`strconv.Atoi: parsing "someString": invalid syntax`),
+				WantStderr: "strconv.Atoi: parsing \"someString\": invalid syntax\n",
 			},
 		},
 		{
@@ -351,10 +341,8 @@ func TestExecute(t *testing.T) {
 						{value: "f"},
 					},
 				},
-				WantErr: fmt.Errorf("[CompleteForExecute] requires exactly one suggestion to be returned, got 2: [five four]"),
-				WantStderr: []string{
-					"[CompleteForExecute] requires exactly one suggestion to be returned, got 2: [five four]",
-				},
+				WantErr:    fmt.Errorf("[CompleteForExecute] requires exactly one suggestion to be returned, got 2: [five four]"),
+				WantStderr: "[CompleteForExecute] requires exactly one suggestion to be returned, got 2: [five four]\n",
 			},
 		},
 		{
@@ -386,7 +374,7 @@ func TestExecute(t *testing.T) {
 					return nil, fmt.Errorf("oopsie")
 				}))),
 				WantErr:    fmt.Errorf(`Argument "sl" requires at least 2 arguments, got 0`),
-				WantStderr: []string{`Argument "sl" requires at least 2 arguments, got 0`},
+				WantStderr: "Argument \"sl\" requires at least 2 arguments, got 0\n",
 			},
 		},
 		{
@@ -401,10 +389,8 @@ func TestExecute(t *testing.T) {
 						{value: ""},
 					},
 				},
-				WantErr: fmt.Errorf("[CompleteForExecute] failed to fetch completion: oopsie"),
-				WantStderr: []string{
-					"[CompleteForExecute] failed to fetch completion: oopsie",
-				},
+				WantErr:    fmt.Errorf("[CompleteForExecute] failed to fetch completion: oopsie"),
+				WantStderr: "[CompleteForExecute] failed to fetch completion: oopsie\n",
 			},
 		},
 		{
@@ -419,10 +405,8 @@ func TestExecute(t *testing.T) {
 						{value: ""},
 					},
 				},
-				WantErr: fmt.Errorf("[CompleteForExecute] nil completion returned"),
-				WantStderr: []string{
-					"[CompleteForExecute] nil completion returned",
-				},
+				WantErr:    fmt.Errorf("[CompleteForExecute] nil completion returned"),
+				WantStderr: "[CompleteForExecute] nil completion returned\n",
 			},
 		},
 		{
@@ -437,10 +421,8 @@ func TestExecute(t *testing.T) {
 						{value: ""},
 					},
 				},
-				WantErr: fmt.Errorf("[CompleteForExecute] requires exactly one suggestion to be returned, got 0: []"),
-				WantStderr: []string{
-					"[CompleteForExecute] requires exactly one suggestion to be returned, got 0: []",
-				},
+				WantErr:    fmt.Errorf("[CompleteForExecute] requires exactly one suggestion to be returned, got 0: []"),
+				WantStderr: "[CompleteForExecute] requires exactly one suggestion to be returned, got 0: []\n",
 			},
 		},
 		{
@@ -457,10 +439,8 @@ func TestExecute(t *testing.T) {
 						{value: ""},
 					},
 				},
-				WantErr: fmt.Errorf("[CompleteForExecute] requires exactly one suggestion to be returned, got 2: [alpha bravo]"),
-				WantStderr: []string{
-					"[CompleteForExecute] requires exactly one suggestion to be returned, got 2: [alpha bravo]",
-				},
+				WantErr:    fmt.Errorf("[CompleteForExecute] requires exactly one suggestion to be returned, got 2: [alpha bravo]"),
+				WantStderr: "[CompleteForExecute] requires exactly one suggestion to be returned, got 2: [alpha bravo]\n",
 			},
 		},
 		{
@@ -477,10 +457,8 @@ func TestExecute(t *testing.T) {
 						{value: "alpha"},
 					},
 				},
-				WantErr: fmt.Errorf(`strconv.Atoi: parsing "alpha": invalid syntax`),
-				WantStderr: []string{
-					`strconv.Atoi: parsing "alpha": invalid syntax`,
-				},
+				WantErr:    fmt.Errorf(`strconv.Atoi: parsing "alpha": invalid syntax`),
+				WantStderr: "strconv.Atoi: parsing \"alpha\": invalid syntax\n",
 			},
 		},
 		{
@@ -499,7 +477,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantErr:    fmt.Errorf(`Argument "sl" requires at least 3 arguments, got 2`),
-				WantStderr: []string{`Argument "sl" requires at least 3 arguments, got 2`},
+				WantStderr: "Argument \"sl\" requires at least 3 arguments, got 2\n",
 				WantData: &Data{
 					Values: map[string]interface{}{
 						"sl": []string{"alpha", "charlie"},
@@ -569,10 +547,8 @@ func TestExecute(t *testing.T) {
 						{value: ""},
 					},
 				},
-				WantErr: fmt.Errorf("[CompleteForExecute] requires exactly one suggestion to be returned, got 3: [alpha bravo charlie]"),
-				WantStderr: []string{
-					"[CompleteForExecute] requires exactly one suggestion to be returned, got 3: [alpha bravo charlie]",
-				},
+				WantErr:    fmt.Errorf("[CompleteForExecute] requires exactly one suggestion to be returned, got 3: [alpha bravo charlie]"),
+				WantStderr: "[CompleteForExecute] requires exactly one suggestion to be returned, got 3: [alpha bravo charlie]\n",
 			},
 		},
 		{
@@ -613,10 +589,8 @@ func TestExecute(t *testing.T) {
 						{value: "f"},
 					},
 				},
-				WantErr: fmt.Errorf("[CompleteForExecute] requires exactly one suggestion to be returned, got 2: [five four]"),
-				WantStderr: []string{
-					"[CompleteForExecute] requires exactly one suggestion to be returned, got 2: [five four]",
-				},
+				WantErr:    fmt.Errorf("[CompleteForExecute] requires exactly one suggestion to be returned, got 2: [five four]"),
+				WantStderr: "[CompleteForExecute] requires exactly one suggestion to be returned, got 2: [five four]\n",
 			},
 		},
 		// Default value tests
@@ -648,11 +622,9 @@ func TestExecute(t *testing.T) {
 				Node: SerialNodes(OptionalArg("s", testDesc, DefaultFunc(func(d *Data) (string, error) {
 					return "oops", fmt.Errorf("bad news bears")
 				}))),
-				wantInput: &Input{},
-				WantErr:   fmt.Errorf("failed to get default: bad news bears"),
-				WantStderr: []string{
-					"failed to get default: bad news bears",
-				},
+				wantInput:  &Input{},
+				WantErr:    fmt.Errorf("failed to get default: bad news bears"),
+				WantStderr: "failed to get default: bad news bears\n",
 			},
 		},
 		{
@@ -721,10 +693,8 @@ func TestExecute(t *testing.T) {
 					"it": 7,
 					"fs": []float64{1.2, 3.4, -5.6},
 				}},
-				WantErr: fmt.Errorf("failed to get default: uh oh"),
-				WantStderr: []string{
-					"failed to get default: uh oh",
-				},
+				WantErr:    fmt.Errorf("failed to get default: uh oh"),
+				WantStderr: "failed to get default: uh oh\n",
 			},
 		},
 		{
@@ -732,7 +702,7 @@ func TestExecute(t *testing.T) {
 			etc: &ExecuteTestCase{
 				Node:       SerialNodes(Arg("s", testDesc, Default("settled"))),
 				wantInput:  &Input{},
-				WantStderr: []string{`Argument "s" requires at least 1 argument, got 0`},
+				WantStderr: "Argument \"s\" requires at least 1 argument, got 0\n",
 				WantErr:    fmt.Errorf(`Argument "s" requires at least 1 argument, got 0`),
 			},
 		},
@@ -778,7 +748,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantErr:    fmt.Errorf(`strconv.Atoi: parsing "12.3": invalid syntax`),
-				WantStderr: []string{`strconv.Atoi: parsing "12.3": invalid syntax`},
+				WantStderr: "strconv.Atoi: parsing \"12.3\": invalid syntax\n",
 			},
 		},
 		{
@@ -807,7 +777,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantErr:    fmt.Errorf(`strconv.ParseFloat: parsing "twelve": invalid syntax`),
-				WantStderr: []string{`strconv.ParseFloat: parsing "twelve": invalid syntax`},
+				WantStderr: "strconv.ParseFloat: parsing \"twelve\": invalid syntax\n",
 			},
 		},
 		// List args
@@ -828,7 +798,7 @@ func TestExecute(t *testing.T) {
 					"sl": []string{"hello", "there"},
 				}},
 				WantErr:    fmt.Errorf("Unprocessed extra args: [sir]"),
-				WantStderr: []string{"Unprocessed extra args: [sir]"},
+				WantStderr: "Unprocessed extra args: [sir]\n",
 			},
 		},
 		{
@@ -895,7 +865,7 @@ func TestExecute(t *testing.T) {
 					"sl": []string{"hello", "there", "kenobi"},
 				}},
 				WantErr:    fmt.Errorf(`Argument "sl" requires at least 4 arguments, got 3`),
-				WantStderr: []string{`Argument "sl" requires at least 4 arguments, got 3`},
+				WantStderr: "Argument \"sl\" requires at least 4 arguments, got 3\n",
 			},
 		},
 		{
@@ -959,7 +929,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantErr:    fmt.Errorf(`strconv.Atoi: parsing "four": invalid syntax`),
-				WantStderr: []string{`strconv.Atoi: parsing "four": invalid syntax`},
+				WantStderr: "strconv.Atoi: parsing \"four\": invalid syntax\n",
 			},
 		},
 		{
@@ -991,7 +961,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantErr:    fmt.Errorf(`strconv.ParseFloat: parsing "four": invalid syntax`),
-				WantStderr: []string{`strconv.ParseFloat: parsing "four": invalid syntax`},
+				WantStderr: "strconv.ParseFloat: parsing \"four\": invalid syntax\n",
 			},
 		},
 		// Multiple args
@@ -1039,7 +1009,7 @@ func TestExecute(t *testing.T) {
 					"fl": []float64{0.3, -4, 0.5},
 				}},
 				WantErr:    fmt.Errorf("Unprocessed extra args: [6]"),
-				WantStderr: []string{"Unprocessed extra args: [6]"},
+				WantStderr: "Unprocessed extra args: [6]\n",
 			},
 		},
 		// Executor tests.
@@ -1058,14 +1028,14 @@ func TestExecute(t *testing.T) {
 				Node: SerialNodes(
 					ListArg[string]("SL", "", 0, UnboundedList),
 					ExecutableNode(func(o Output, d *Data) ([]string, error) {
-						o.Stdout("hello")
+						o.Stdoutln("hello")
 						o.Stderr("there")
 						return d.StringList("SL"), nil
 					}),
 				),
 				Args:       []string{"abc", "def"},
-				WantStdout: []string{"hello"},
-				WantStderr: []string{"there"},
+				WantStdout: "hello\n",
+				WantStderr: "there",
 				WantExecuteData: &ExecuteData{
 					Executable: []string{"abc", "def"},
 				},
@@ -1137,18 +1107,19 @@ func TestExecute(t *testing.T) {
 					"s":  "two",
 					"fl": []float64{0.3, -4},
 				}},
-				WantStdout: []string{
+				WantStdout: strings.Join([]string{
 					"fl: [0.3 -4]",
 					"il: [0 1]",
 					`s: two`,
-				},
+					"",
+				}, "\n"),
 			},
 		},
 		{
 			name: "executor error is returned",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(ListArg[int]("il", testDesc, 2, 0), Arg[string]("s", testDesc), ListArg[float64]("fl", testDesc, 1, 2), ExecuteErrNode(func(o Output, d *Data) error {
-					return o.Stderr("bad news bears")
+					return o.Stderrf("bad news bears")
 				})),
 				Args: []string{"0", "1", "two", "0.3", "-4"},
 				wantInput: &Input{
@@ -1165,7 +1136,7 @@ func TestExecute(t *testing.T) {
 					"s":  "two",
 					"fl": []float64{0.3, -4},
 				}},
-				WantStderr: []string{"bad news bears"},
+				WantStderr: "bad news bears",
 				WantErr:    fmt.Errorf("bad news bears"),
 			},
 		},
@@ -1203,7 +1174,7 @@ func TestExecute(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"strArg": "bad",
 				}},
-				WantStderr: []string{`validation for "strArg" failed: [NEQ] value cannot equal bad`},
+				WantStderr: "validation for \"strArg\" failed: [NEQ] value cannot equal bad\n",
 				WantErr:    fmt.Errorf(`validation for "strArg" failed: [NEQ] value cannot equal bad`),
 			},
 		},
@@ -1240,7 +1211,7 @@ func TestExecute(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"strArg": "hello",
 				}},
-				WantStderr: []string{`validation for "strArg" failed: [Contains] value doesn't contain substring "good"`},
+				WantStderr: "validation for \"strArg\" failed: [Contains] value doesn't contain substring \"good\"\n",
 				WantErr:    fmt.Errorf(`validation for "strArg" failed: [Contains] value doesn't contain substring "good"`),
 			},
 		},
@@ -1259,7 +1230,7 @@ func TestExecute(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"strArg": "hello",
 				}},
-				WantStderr: []string{`validation for "strArg" failed: [Contains] value doesn't contain substring "good"`},
+				WantStderr: "validation for \"strArg\" failed: [Contains] value doesn't contain substring \"good\"\n",
 				WantErr:    fmt.Errorf(`validation for "strArg" failed: [Contains] value doesn't contain substring "good"`),
 			},
 		},
@@ -1296,7 +1267,7 @@ func TestExecute(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"strArg": "team",
 				}},
-				WantStderr: []string{`validation for "strArg" failed: [MatchesRegex] value "team" doesn't match regex "i+"`},
+				WantStderr: "validation for \"strArg\" failed: [MatchesRegex] value \"team\" doesn't match regex \"i+\"\n",
 				WantErr:    fmt.Errorf(`validation for "strArg" failed: [MatchesRegex] value "team" doesn't match regex "i+"`),
 			},
 		},
@@ -1334,7 +1305,7 @@ func TestExecute(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"slArg": []string{"equiation: aabcdef", "oops"},
 				}},
-				WantStderr: []string{`validation for "slArg" failed: [MatchesRegex] value "oops" doesn't match regex "i+"`},
+				WantStderr: "validation for \"slArg\" failed: [MatchesRegex] value \"oops\" doesn't match regex \"i+\"\n",
 				WantErr:    fmt.Errorf(`validation for "slArg" failed: [MatchesRegex] value "oops" doesn't match regex "i+"`),
 			},
 		},
@@ -1371,7 +1342,7 @@ func TestExecute(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"strArg": "*",
 				}},
-				WantStderr: []string{"validation for \"strArg\" failed: [IsRegex] value \"*\" isn't a valid regex: error parsing regexp: missing argument to repetition operator: `*`"},
+				WantStderr: "validation for \"strArg\" failed: [IsRegex] value \"*\" isn't a valid regex: error parsing regexp: missing argument to repetition operator: `*`\n",
 				WantErr:    fmt.Errorf("validation for \"strArg\" failed: [IsRegex] value \"*\" isn't a valid regex: error parsing regexp: missing argument to repetition operator: `*`"),
 			},
 		},
@@ -1410,7 +1381,7 @@ func TestExecute(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"slArg": []string{".*", "+"},
 				}},
-				WantStderr: []string{"validation for \"slArg\" failed: [IsRegex] value \"+\" isn't a valid regex: error parsing regexp: missing argument to repetition operator: `+`"},
+				WantStderr: "validation for \"slArg\" failed: [IsRegex] value \"+\" isn't a valid regex: error parsing regexp: missing argument to repetition operator: `+`\n",
 				WantErr:    fmt.Errorf("validation for \"slArg\" failed: [IsRegex] value \"+\" isn't a valid regex: error parsing regexp: missing argument to repetition operator: `+`"),
 			},
 		},
@@ -1448,7 +1419,7 @@ func TestExecute(t *testing.T) {
 					"S": "execute_test.gone",
 				}},
 				WantErr:    fmt.Errorf(`validation for "S" failed: [FileExists] file "execute_test.gone" does not exist`),
-				WantStderr: []string{`validation for "S" failed: [FileExists] file "execute_test.gone" does not exist`},
+				WantStderr: "validation for \"S\" failed: [FileExists] file \"execute_test.gone\" does not exist\n",
 			},
 		},
 		{
@@ -1486,7 +1457,7 @@ func TestExecute(t *testing.T) {
 					"SL": []string{"execute_test.go", "execute.gone"},
 				}},
 				WantErr:    fmt.Errorf(`validation for "SL" failed: [FileExists] file "execute.gone" does not exist`),
-				WantStderr: []string{`validation for "SL" failed: [FileExists] file "execute.gone" does not exist`},
+				WantStderr: "validation for \"SL\" failed: [FileExists] file \"execute.gone\" does not exist\n",
 			},
 		},
 		// IsDir and AreDirs
@@ -1523,7 +1494,7 @@ func TestExecute(t *testing.T) {
 					"S": "tested",
 				}},
 				WantErr:    fmt.Errorf(`validation for "S" failed: [IsDir] file "tested" does not exist`),
-				WantStderr: []string{`validation for "S" failed: [IsDir] file "tested" does not exist`},
+				WantStderr: "validation for \"S\" failed: [IsDir] file \"tested\" does not exist\n",
 			},
 		},
 		{
@@ -1542,7 +1513,7 @@ func TestExecute(t *testing.T) {
 					"S": "execute_test.go",
 				}},
 				WantErr:    fmt.Errorf(`validation for "S" failed: [IsDir] argument "execute_test.go" is a file`),
-				WantStderr: []string{`validation for "S" failed: [IsDir] argument "execute_test.go" is a file`},
+				WantStderr: "validation for \"S\" failed: [IsDir] argument \"execute_test.go\" is a file\n",
 			},
 		},
 		{
@@ -1580,7 +1551,7 @@ func TestExecute(t *testing.T) {
 					"SL": []string{"testdata", "cash"},
 				}},
 				WantErr:    fmt.Errorf(`validation for "SL" failed: [IsDir] file "cash" does not exist`),
-				WantStderr: []string{`validation for "SL" failed: [IsDir] file "cash" does not exist`},
+				WantStderr: "validation for \"SL\" failed: [IsDir] file \"cash\" does not exist\n",
 			},
 		},
 		{
@@ -1600,7 +1571,7 @@ func TestExecute(t *testing.T) {
 					"SL": []string{"testdata", "execute.go"},
 				}},
 				WantErr:    fmt.Errorf(`validation for "SL" failed: [IsDir] argument "execute.go" is a file`),
-				WantStderr: []string{`validation for "SL" failed: [IsDir] argument "execute.go" is a file`},
+				WantStderr: "validation for \"SL\" failed: [IsDir] argument \"execute.go\" is a file\n",
 			},
 		},
 		// IsFile and AreFiles
@@ -1637,7 +1608,7 @@ func TestExecute(t *testing.T) {
 					"S": "tested",
 				}},
 				WantErr:    fmt.Errorf(`validation for "S" failed: [IsFile] file "tested" does not exist`),
-				WantStderr: []string{`validation for "S" failed: [IsFile] file "tested" does not exist`},
+				WantStderr: "validation for \"S\" failed: [IsFile] file \"tested\" does not exist\n",
 			},
 		},
 		{
@@ -1656,7 +1627,7 @@ func TestExecute(t *testing.T) {
 					"S": "testdata",
 				}},
 				WantErr:    fmt.Errorf(`validation for "S" failed: [IsFile] argument "testdata" is a directory`),
-				WantStderr: []string{`validation for "S" failed: [IsFile] argument "testdata" is a directory`},
+				WantStderr: "validation for \"S\" failed: [IsFile] argument \"testdata\" is a directory\n",
 			},
 		},
 		{
@@ -1694,7 +1665,7 @@ func TestExecute(t *testing.T) {
 					"SL": []string{"execute.go", "cash"},
 				}},
 				WantErr:    fmt.Errorf(`validation for "SL" failed: [IsFile] file "cash" does not exist`),
-				WantStderr: []string{`validation for "SL" failed: [IsFile] file "cash" does not exist`},
+				WantStderr: "validation for \"SL\" failed: [IsFile] file \"cash\" does not exist\n",
 			},
 		},
 		{
@@ -1714,7 +1685,7 @@ func TestExecute(t *testing.T) {
 					"SL": []string{"execute.go", "testdata"},
 				}},
 				WantErr:    fmt.Errorf(`validation for "SL" failed: [IsFile] argument "testdata" is a directory`),
-				WantStderr: []string{`validation for "SL" failed: [IsFile] argument "testdata" is a directory`},
+				WantStderr: "validation for \"SL\" failed: [IsFile] argument \"testdata\" is a directory\n",
 			},
 		},
 		// InList & string menu
@@ -1750,7 +1721,7 @@ func TestExecute(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"strArg": "jkl",
 				}},
-				WantStderr: []string{`validation for "strArg" failed: [InList] argument must be one of [abc def ghi]`},
+				WantStderr: "validation for \"strArg\" failed: [InList] argument must be one of [abc def ghi]\n",
 				WantErr:    fmt.Errorf(`validation for "strArg" failed: [InList] argument must be one of [abc def ghi]`),
 			},
 		},
@@ -1786,7 +1757,7 @@ func TestExecute(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"strArg": "jkl",
 				}},
-				WantStderr: []string{`validation for "strArg" failed: [InList] argument must be one of [abc def ghi]`},
+				WantStderr: "validation for \"strArg\" failed: [InList] argument must be one of [abc def ghi]\n",
 				WantErr:    fmt.Errorf(`validation for "strArg" failed: [InList] argument must be one of [abc def ghi]`),
 			},
 		},
@@ -1840,7 +1811,7 @@ func TestExecute(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"strArg": "hi",
 				}},
-				WantStderr: []string{`validation for "strArg" failed: [MinLength] value must be at least 3 characters`},
+				WantStderr: "validation for \"strArg\" failed: [MinLength] value must be at least 3 characters\n",
 				WantErr:    fmt.Errorf(`validation for "strArg" failed: [MinLength] value must be at least 3 characters`),
 			},
 		},
@@ -1877,7 +1848,7 @@ func TestExecute(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"i": 25,
 				}},
-				WantStderr: []string{`validation for "i" failed: [EQ] value isn't equal to 24`},
+				WantStderr: "validation for \"i\" failed: [EQ] value isn't equal to 24\n",
 				WantErr:    fmt.Errorf(`validation for "i" failed: [EQ] value isn't equal to 24`),
 			},
 		},
@@ -1914,7 +1885,7 @@ func TestExecute(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"i": 24,
 				}},
-				WantStderr: []string{`validation for "i" failed: [NEQ] value cannot equal 24`},
+				WantStderr: "validation for \"i\" failed: [NEQ] value cannot equal 24\n",
 				WantErr:    fmt.Errorf(`validation for "i" failed: [NEQ] value cannot equal 24`),
 			},
 		},
@@ -1951,7 +1922,7 @@ func TestExecute(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"i": 25,
 				}},
-				WantStderr: []string{`validation for "i" failed: [LT] value isn't less than 25`},
+				WantStderr: "validation for \"i\" failed: [LT] value isn't less than 25\n",
 				WantErr:    fmt.Errorf(`validation for "i" failed: [LT] value isn't less than 25`),
 			},
 		},
@@ -1970,7 +1941,7 @@ func TestExecute(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"i": 26,
 				}},
-				WantStderr: []string{`validation for "i" failed: [LT] value isn't less than 25`},
+				WantStderr: "validation for \"i\" failed: [LT] value isn't less than 25\n",
 				WantErr:    fmt.Errorf(`validation for "i" failed: [LT] value isn't less than 25`),
 			},
 		},
@@ -2024,7 +1995,7 @@ func TestExecute(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"i": 26,
 				}},
-				WantStderr: []string{`validation for "i" failed: [LTE] value isn't less than or equal to 25`},
+				WantStderr: "validation for \"i\" failed: [LTE] value isn't less than or equal to 25\n",
 				WantErr:    fmt.Errorf(`validation for "i" failed: [LTE] value isn't less than or equal to 25`),
 			},
 		},
@@ -2044,7 +2015,7 @@ func TestExecute(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"i": 24,
 				}},
-				WantStderr: []string{`validation for "i" failed: [GT] value isn't greater than 25`},
+				WantStderr: "validation for \"i\" failed: [GT] value isn't greater than 25\n",
 				WantErr:    fmt.Errorf(`validation for "i" failed: [GT] value isn't greater than 25`),
 			},
 		},
@@ -2063,7 +2034,7 @@ func TestExecute(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"i": 25,
 				}},
-				WantStderr: []string{`validation for "i" failed: [GT] value isn't greater than 25`},
+				WantStderr: "validation for \"i\" failed: [GT] value isn't greater than 25\n",
 				WantErr:    fmt.Errorf(`validation for "i" failed: [GT] value isn't greater than 25`),
 			},
 		},
@@ -2100,7 +2071,7 @@ func TestExecute(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"i": 24,
 				}},
-				WantStderr: []string{`validation for "i" failed: [GTE] value isn't greater than or equal to 25`},
+				WantStderr: "validation for \"i\" failed: [GTE] value isn't greater than or equal to 25\n",
 				WantErr:    fmt.Errorf(`validation for "i" failed: [GTE] value isn't greater than or equal to 25`),
 			},
 		},
@@ -2154,7 +2125,7 @@ func TestExecute(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"i": -1,
 				}},
-				WantStderr: []string{`validation for "i" failed: [Positive] value isn't positive`},
+				WantStderr: "validation for \"i\" failed: [Positive] value isn't positive\n",
 				WantErr:    fmt.Errorf(`validation for "i" failed: [Positive] value isn't positive`),
 			},
 		},
@@ -2173,7 +2144,7 @@ func TestExecute(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"i": 0,
 				}},
-				WantStderr: []string{`validation for "i" failed: [Positive] value isn't positive`},
+				WantStderr: "validation for \"i\" failed: [Positive] value isn't positive\n",
 				WantErr:    fmt.Errorf(`validation for "i" failed: [Positive] value isn't positive`),
 			},
 		},
@@ -2227,7 +2198,7 @@ func TestExecute(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"i": 0,
 				}},
-				WantStderr: []string{`validation for "i" failed: [Negative] value isn't negative`},
+				WantStderr: "validation for \"i\" failed: [Negative] value isn't negative\n",
 				WantErr:    fmt.Errorf(`validation for "i" failed: [Negative] value isn't negative`),
 			},
 		},
@@ -2246,7 +2217,7 @@ func TestExecute(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"i": 1,
 				}},
-				WantStderr: []string{`validation for "i" failed: [Negative] value isn't negative`},
+				WantStderr: "validation for \"i\" failed: [Negative] value isn't negative\n",
 				WantErr:    fmt.Errorf(`validation for "i" failed: [Negative] value isn't negative`),
 			},
 		},
@@ -2266,7 +2237,7 @@ func TestExecute(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"i": -1,
 				}},
-				WantStderr: []string{`validation for "i" failed: [NonNegative] value isn't non-negative`},
+				WantStderr: "validation for \"i\" failed: [NonNegative] value isn't non-negative\n",
 				WantErr:    fmt.Errorf(`validation for "i" failed: [NonNegative] value isn't non-negative`),
 			},
 		},
@@ -2337,7 +2308,7 @@ func TestExecute(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"flArg": 2.5,
 				}},
-				WantStderr: []string{`validation for "flArg" failed: [EQ] value isn't equal to 2.4`},
+				WantStderr: "validation for \"flArg\" failed: [EQ] value isn't equal to 2.4\n",
 				WantErr:    fmt.Errorf(`validation for "flArg" failed: [EQ] value isn't equal to 2.4`),
 			},
 		},
@@ -2374,7 +2345,7 @@ func TestExecute(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"flArg": 2.4,
 				}},
-				WantStderr: []string{`validation for "flArg" failed: [NEQ] value cannot equal 2.4`},
+				WantStderr: "validation for \"flArg\" failed: [NEQ] value cannot equal 2.4\n",
 				WantErr:    fmt.Errorf(`validation for "flArg" failed: [NEQ] value cannot equal 2.4`),
 			},
 		},
@@ -2411,7 +2382,7 @@ func TestExecute(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"flArg": 2.5,
 				}},
-				WantStderr: []string{`validation for "flArg" failed: [LT] value isn't less than 2.5`},
+				WantStderr: "validation for \"flArg\" failed: [LT] value isn't less than 2.5\n",
 				WantErr:    fmt.Errorf(`validation for "flArg" failed: [LT] value isn't less than 2.5`),
 			},
 		},
@@ -2430,7 +2401,7 @@ func TestExecute(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"flArg": 2.6,
 				}},
-				WantStderr: []string{`validation for "flArg" failed: [LT] value isn't less than 2.5`},
+				WantStderr: "validation for \"flArg\" failed: [LT] value isn't less than 2.5\n",
 				WantErr:    fmt.Errorf(`validation for "flArg" failed: [LT] value isn't less than 2.5`),
 			},
 		},
@@ -2484,7 +2455,7 @@ func TestExecute(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"flArg": 2.6,
 				}},
-				WantStderr: []string{`validation for "flArg" failed: [LTE] value isn't less than or equal to 2.5`},
+				WantStderr: "validation for \"flArg\" failed: [LTE] value isn't less than or equal to 2.5\n",
 				WantErr:    fmt.Errorf(`validation for "flArg" failed: [LTE] value isn't less than or equal to 2.5`),
 			},
 		},
@@ -2504,7 +2475,7 @@ func TestExecute(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"flArg": 2.4,
 				}},
-				WantStderr: []string{`validation for "flArg" failed: [GT] value isn't greater than 2.5`},
+				WantStderr: "validation for \"flArg\" failed: [GT] value isn't greater than 2.5\n",
 				WantErr:    fmt.Errorf(`validation for "flArg" failed: [GT] value isn't greater than 2.5`),
 			},
 		},
@@ -2523,7 +2494,7 @@ func TestExecute(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"flArg": 2.5,
 				}},
-				WantStderr: []string{`validation for "flArg" failed: [GT] value isn't greater than 2.5`},
+				WantStderr: "validation for \"flArg\" failed: [GT] value isn't greater than 2.5\n",
 				WantErr:    fmt.Errorf(`validation for "flArg" failed: [GT] value isn't greater than 2.5`),
 			},
 		},
@@ -2560,7 +2531,7 @@ func TestExecute(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"flArg": 2.4,
 				}},
-				WantStderr: []string{`validation for "flArg" failed: [GTE] value isn't greater than or equal to 2.5`},
+				WantStderr: "validation for \"flArg\" failed: [GTE] value isn't greater than or equal to 2.5\n",
 				WantErr:    fmt.Errorf(`validation for "flArg" failed: [GTE] value isn't greater than or equal to 2.5`),
 			},
 		},
@@ -2614,7 +2585,7 @@ func TestExecute(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"flArg": -0.1,
 				}},
-				WantStderr: []string{`validation for "flArg" failed: [Positive] value isn't positive`},
+				WantStderr: "validation for \"flArg\" failed: [Positive] value isn't positive\n",
 				WantErr:    fmt.Errorf(`validation for "flArg" failed: [Positive] value isn't positive`),
 			},
 		},
@@ -2633,7 +2604,7 @@ func TestExecute(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"flArg": 0.0,
 				}},
-				WantStderr: []string{`validation for "flArg" failed: [Positive] value isn't positive`},
+				WantStderr: "validation for \"flArg\" failed: [Positive] value isn't positive\n",
 				WantErr:    fmt.Errorf(`validation for "flArg" failed: [Positive] value isn't positive`),
 			},
 		},
@@ -2687,7 +2658,7 @@ func TestExecute(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"flArg": 0.0,
 				}},
-				WantStderr: []string{`validation for "flArg" failed: [Negative] value isn't negative`},
+				WantStderr: "validation for \"flArg\" failed: [Negative] value isn't negative\n",
 				WantErr:    fmt.Errorf(`validation for "flArg" failed: [Negative] value isn't negative`),
 			},
 		},
@@ -2706,7 +2677,7 @@ func TestExecute(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"flArg": 0.1,
 				}},
-				WantStderr: []string{`validation for "flArg" failed: [Negative] value isn't negative`},
+				WantStderr: "validation for \"flArg\" failed: [Negative] value isn't negative\n",
 				WantErr:    fmt.Errorf(`validation for "flArg" failed: [Negative] value isn't negative`),
 			},
 		},
@@ -2726,7 +2697,7 @@ func TestExecute(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"flArg": -0.1,
 				}},
-				WantStderr: []string{`validation for "flArg" failed: [NonNegative] value isn't non-negative`},
+				WantStderr: "validation for \"flArg\" failed: [NonNegative] value isn't non-negative\n",
 				WantErr:    fmt.Errorf(`validation for "flArg" failed: [NonNegative] value isn't non-negative`),
 			},
 		},
@@ -2782,7 +2753,7 @@ func TestExecute(t *testing.T) {
 			etc: &ExecuteTestCase{
 				Node:       &Node{Processor: NewFlagNode(NewFlag[string]("strFlag", 'f', testDesc))},
 				Args:       []string{"--strFlag"},
-				WantStderr: []string{`Argument "strFlag" requires at least 1 argument, got 0`},
+				WantStderr: "Argument \"strFlag\" requires at least 1 argument, got 0\n",
 				WantErr:    fmt.Errorf(`Argument "strFlag" requires at least 1 argument, got 0`),
 				wantInput: &Input{
 					args: []*inputArg{
@@ -2909,7 +2880,7 @@ func TestExecute(t *testing.T) {
 					},
 					remaining: []int{0, 1, 4},
 				},
-				WantStderr: []string{`strconv.Atoi: parsing "trois": invalid syntax`},
+				WantStderr: "strconv.Atoi: parsing \"trois\": invalid syntax\n",
 				WantErr:    fmt.Errorf(`strconv.Atoi: parsing "trois": invalid syntax`),
 			},
 		},
@@ -2951,7 +2922,7 @@ func TestExecute(t *testing.T) {
 					},
 					remaining: []int{2},
 				},
-				WantStderr: []string{`strconv.ParseFloat: parsing "twelve": invalid syntax`},
+				WantStderr: "strconv.ParseFloat: parsing \"twelve\": invalid syntax\n",
 				WantErr:    fmt.Errorf(`strconv.ParseFloat: parsing "twelve": invalid syntax`),
 			},
 		},
@@ -3037,7 +3008,7 @@ func TestExecute(t *testing.T) {
 					},
 					remaining: []int{0},
 				},
-				WantStderr: []string{`Argument "slFlag" requires at least 2 arguments, got 1`},
+				WantStderr: "Argument \"slFlag\" requires at least 2 arguments, got 1\n",
 				WantErr:    fmt.Errorf(`Argument "slFlag" requires at least 2 arguments, got 1`),
 				WantData: &Data{Values: map[string]interface{}{
 					"slFlag": []string{"hello"},
@@ -3092,7 +3063,7 @@ func TestExecute(t *testing.T) {
 					},
 					remaining: []int{0, 7},
 				},
-				WantStderr: []string{`strconv.Atoi: parsing "16.0": invalid syntax`},
+				WantStderr: "strconv.Atoi: parsing \"16.0\": invalid syntax\n",
 				WantErr:    fmt.Errorf(`strconv.Atoi: parsing "16.0": invalid syntax`),
 			},
 		},
@@ -3144,7 +3115,7 @@ func TestExecute(t *testing.T) {
 					},
 					remaining: []int{0, 5, 6, 7},
 				},
-				WantStderr: []string{`strconv.ParseFloat: parsing "eight": invalid syntax`},
+				WantStderr: "strconv.ParseFloat: parsing \"eight\": invalid syntax\n",
 				WantErr:    fmt.Errorf(`strconv.ParseFloat: parsing "eight": invalid syntax`),
 			},
 		},
@@ -3301,10 +3272,8 @@ func TestExecute(t *testing.T) {
 					"quick": true,
 					"where": true,
 				}},
-				WantStderr: []string{
-					`Unknown flag code "-y" used in multi-flag`,
-				},
-				WantErr: fmt.Errorf(`Unknown flag code "-y" used in multi-flag`),
+				WantStderr: "Unknown flag code \"-y\" used in multi-flag\n",
+				WantErr:    fmt.Errorf(`Unknown flag code "-y" used in multi-flag`),
 			},
 		},
 		{
@@ -3330,10 +3299,8 @@ func TestExecute(t *testing.T) {
 					"everyone": true,
 					"run":      true,
 				}},
-				WantStderr: []string{
-					`Flag "two" is not combinable`,
-				},
-				WantErr: fmt.Errorf(`Flag "two" is not combinable`),
+				WantStderr: "Flag \"two\" is not combinable\n",
+				WantErr:    fmt.Errorf(`Flag "two" is not combinable`),
 			},
 		},
 		// Duplicate flag tests
@@ -3363,7 +3330,7 @@ func TestExecute(t *testing.T) {
 					"run":      "hello there",
 				}},
 				WantErr:    fmt.Errorf(`Flag "quick" has already been set`),
-				WantStderr: []string{`Flag "quick" has already been set`},
+				WantStderr: "Flag \"quick\" has already been set\n",
 			},
 		},
 		{
@@ -3390,7 +3357,7 @@ func TestExecute(t *testing.T) {
 					"quick": true,
 				}},
 				WantErr:    fmt.Errorf(`Flag "quick" has already been set`),
-				WantStderr: []string{`Flag "quick" has already been set`},
+				WantStderr: "Flag \"quick\" has already been set\n",
 			},
 		},
 		{
@@ -3420,7 +3387,7 @@ func TestExecute(t *testing.T) {
 					"run":      "hello there",
 				}},
 				WantErr:    fmt.Errorf(`Flag "quick" has already been set`),
-				WantStderr: []string{`Flag "quick" has already been set`},
+				WantStderr: "Flag \"quick\" has already been set\n",
 			},
 		},
 		{
@@ -3449,7 +3416,7 @@ func TestExecute(t *testing.T) {
 					"everyone": true,
 				}},
 				WantErr:    fmt.Errorf(`Flag "quick" has already been set`),
-				WantStderr: []string{`Flag "quick" has already been set`},
+				WantStderr: "Flag \"quick\" has already been set\n",
 			},
 		},
 		// Transformer tests.
@@ -3500,20 +3467,16 @@ func TestExecute(t *testing.T) {
 		{
 			name: "stdoutln works",
 			etc: &ExecuteTestCase{
-				Node: printlnNode(true, "one", 2, 3.0),
-				WantStdout: []string{
-					"one 2 3",
-				},
+				Node:       printlnNode(true, "one", 2, 3.0),
+				WantStdout: "one 2 3\n",
 			},
 		},
 		{
 			name: "stderrln works",
 			etc: &ExecuteTestCase{
-				Node: printlnNode(false, "uh", 0),
-				WantStderr: []string{
-					"uh 0",
-				},
-				WantErr: fmt.Errorf("uh 0"),
+				Node:       printlnNode(false, "uh", 0),
+				WantStderr: "uh 0\n",
+				WantErr:    fmt.Errorf("uh 0"),
 			},
 		},
 		// BranchNode tests
@@ -3524,7 +3487,7 @@ func TestExecute(t *testing.T) {
 					"h": printNode("hello"),
 					"b": printNode("goodbye"),
 				}, nil),
-				WantStderr: []string{"Branching argument must be one of [b h]"},
+				WantStderr: "Branching argument must be one of [b h]\n",
 				WantErr:    fmt.Errorf("Branching argument must be one of [b h]"),
 			},
 		},
@@ -3536,7 +3499,7 @@ func TestExecute(t *testing.T) {
 					"b": printNode("goodbye"),
 				}, nil),
 				Args:       []string{"uh"},
-				WantStderr: []string{"Branching argument must be one of [b h]"},
+				WantStderr: "Branching argument must be one of [b h]\n",
 				WantErr:    fmt.Errorf("Branching argument must be one of [b h]"),
 				wantInput: &Input{
 					args: []*inputArg{
@@ -3554,7 +3517,7 @@ func TestExecute(t *testing.T) {
 					"b": printNode("goodbye"),
 				}, nil),
 				Args:       []string{"h"},
-				WantStdout: []string{"hello"},
+				WantStdout: "hello",
 				wantInput: &Input{
 					args: []*inputArg{
 						{value: "h"},
@@ -3569,7 +3532,7 @@ func TestExecute(t *testing.T) {
 					"h": printNode("hello"),
 					"b": printNode("goodbye"),
 				}, printNode("default")),
-				WantStdout: []string{"default"},
+				WantStdout: "default",
 			},
 		},
 		{
@@ -3580,7 +3543,7 @@ func TestExecute(t *testing.T) {
 					"b": printNode("goodbye"),
 				}, SerialNodes(ListArg[string]("sl", testDesc, 0, UnboundedList), printArgsNode().Processor)),
 				Args:       []string{"good", "morning"},
-				WantStdout: []string{`sl: [good morning]`},
+				WantStdout: "sl: [good morning]\n",
 				WantData: &Data{Values: map[string]interface{}{
 					"sl": []string{"good", "morning"},
 				}},
@@ -3607,7 +3570,7 @@ func TestExecute(t *testing.T) {
 						{value: "B"},
 					},
 				},
-				WantStdout: []string{"goodbye"},
+				WantStdout: "goodbye",
 			},
 		},
 		{
@@ -3626,7 +3589,7 @@ func TestExecute(t *testing.T) {
 					},
 					remaining: []int{0},
 				},
-				WantStderr: []string{"Branching argument must be one of [b h]"},
+				WantStderr: "Branching argument must be one of [b h]\n",
 				WantErr:    fmt.Errorf("Branching argument must be one of [b h]"),
 			},
 		},
@@ -3650,7 +3613,7 @@ func TestExecute(t *testing.T) {
 						"sl": []string{"uh"},
 					},
 				},
-				WantStdout: []string{`sl: [uh]`},
+				WantStdout: "sl: [uh]\n",
 			},
 		},
 		{
@@ -3666,7 +3629,7 @@ func TestExecute(t *testing.T) {
 						{value: "bee"},
 					},
 				},
-				WantStdout: []string{"goodbye"},
+				WantStdout: "goodbye",
 			},
 		},
 		// NodeRepeater tests
@@ -3688,7 +3651,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantErr:    fmt.Errorf(`Argument "KEY" requires at least 1 argument, got 0`),
-				WantStderr: []string{`Argument "KEY" requires at least 1 argument, got 0`},
+				WantStderr: "Argument \"KEY\" requires at least 1 argument, got 0\n",
 			},
 		},
 		{
@@ -3708,7 +3671,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantErr:    fmt.Errorf(`Argument "VALUE" requires at least 1 argument, got 0`),
-				WantStderr: []string{`Argument "VALUE" requires at least 1 argument, got 0`},
+				WantStderr: "Argument \"VALUE\" requires at least 1 argument, got 0\n",
 			},
 		},
 		{
@@ -3730,7 +3693,7 @@ func TestExecute(t *testing.T) {
 					remaining: []int{2, 3},
 				},
 				WantErr:    fmt.Errorf(`Unprocessed extra args: [k2 200]`),
-				WantStderr: []string{`Unprocessed extra args: [k2 200]`},
+				WantStderr: "Unprocessed extra args: [k2 200]\n",
 			},
 		},
 		{
@@ -3889,7 +3852,7 @@ func TestExecute(t *testing.T) {
 					"SL": []string{"abc", "def"},
 				}},
 				WantErr:    fmt.Errorf(`Argument "SL" requires at least 3 arguments, got 2`),
-				WantStderr: []string{`Argument "SL" requires at least 3 arguments, got 2`},
+				WantStderr: "Argument \"SL\" requires at least 3 arguments, got 2\n",
 				wantInput: &Input{
 					args: []*inputArg{
 						{value: "abc"},
@@ -3956,7 +3919,7 @@ func TestExecute(t *testing.T) {
 					"SL": []string{"abc", "def", "ghif", "jkl"},
 				}},
 				WantErr:    fmt.Errorf(`Argument "SL2" requires at least 1 argument, got 0`),
-				WantStderr: []string{`Argument "SL2" requires at least 1 argument, got 0`},
+				WantStderr: "Argument \"SL2\" requires at least 1 argument, got 0\n",
 				wantInput: &Input{
 					args: []*inputArg{
 						{value: "abc"},
@@ -4102,7 +4065,7 @@ func TestExecute(t *testing.T) {
 					remaining: []int{8, 9},
 				},
 				WantErr:    fmt.Errorf("Unprocessed extra args: [other stuff]"),
-				WantStderr: []string{"Unprocessed extra args: [other stuff]"},
+				WantStderr: "Unprocessed extra args: [other stuff]\n",
 			},
 		},
 		// FileContents test
@@ -4133,10 +4096,8 @@ func TestExecute(t *testing.T) {
 						{value: FilepathAbs(t, "uh")},
 					},
 				},
-				WantStderr: []string{
-					fmt.Sprintf(`validation for "FILE" failed: [FileExists] file %q does not exist`, FilepathAbs(t, "uh")),
-				},
-				WantErr: fmt.Errorf(`validation for "FILE" failed: [FileExists] file %q does not exist`, FilepathAbs(t, "uh")),
+				WantStderr: fmt.Sprintf("validation for \"FILE\" failed: [FileExists] file %q does not exist\n", FilepathAbs(t, "uh")),
+				WantErr:    fmt.Errorf(`validation for "FILE" failed: [FileExists] file %q does not exist`, FilepathAbs(t, "uh")),
 				WantData: &Data{
 					Values: map[string]interface{}{
 						"FILE": FilepathAbs(t, "uh"),
@@ -5525,7 +5486,7 @@ func printArgsNode() *Node {
 			}
 			sort.Strings(keys)
 			for _, k := range keys {
-				output.Stdoutf("%s: %v", k, data.Values[k])
+				output.Stdoutf("%s: %v\n", k, data.Values[k])
 			}
 		}),
 	}
@@ -5568,10 +5529,11 @@ func TestRunNodes(t *testing.T) {
 			name: "no keyword requires arguments",
 			rtc: &RunNodeTestCase{
 				Node: sum,
-				WantStderr: []string{
+				WantStderr: strings.Join([]string{
 					`Argument "A" requires at least 1 argument, got 0`,
 					fmt.Sprintf("\n======= Command Usage =======\n%s", GetUsage(sum).String()),
-				},
+					"",
+				}, "\n"),
 				WantErr: fmt.Errorf(`Argument "A" requires at least 1 argument, got 0`),
 			},
 		},
@@ -5580,21 +5542,20 @@ func TestRunNodes(t *testing.T) {
 			rtc: &RunNodeTestCase{
 				Node: sum,
 				Args: []string{"5", "7", "9"},
-				WantStderr: []string{
+				WantStderr: strings.Join([]string{
 					`Unprocessed extra args: [9]`,
 					fmt.Sprintf("\n======= Command Usage =======\n%s", GetUsage(sum).String()),
-				},
+					"",
+				}, "\n"),
 				WantErr: fmt.Errorf(`Unprocessed extra args: [9]`),
 			},
 		},
 		{
-			name: "successfully runs node",
+			name: "successfully runs node if no keyword provided",
 			rtc: &RunNodeTestCase{
-				Node: sum,
-				Args: []string{"5", "7"},
-				WantStdout: []string{
-					"12",
-				},
+				Node:       sum,
+				Args:       []string{"5", "7"},
+				WantStdout: "12\n",
 			},
 		},
 		// execute tests with keyword
@@ -5603,10 +5564,11 @@ func TestRunNodes(t *testing.T) {
 			rtc: &RunNodeTestCase{
 				Node: sum,
 				Args: []string{"execute", "TMP_FILE"},
-				WantStderr: []string{
+				WantStderr: strings.Join([]string{
 					`Argument "A" requires at least 1 argument, got 0`,
 					fmt.Sprintf("\n======= Command Usage =======\n%s", GetUsage(sum).String()),
-				},
+					"",
+				}, "\n"),
 				WantErr: fmt.Errorf(`Argument "A" requires at least 1 argument, got 0`),
 			},
 		},
@@ -5615,21 +5577,20 @@ func TestRunNodes(t *testing.T) {
 			rtc: &RunNodeTestCase{
 				Node: sum,
 				Args: []string{"execute", "TMP_FILE", "5", "7", "9"},
-				WantStderr: []string{
+				WantStderr: strings.Join([]string{
 					`Unprocessed extra args: [9]`,
 					fmt.Sprintf("\n======= Command Usage =======\n%s", GetUsage(sum).String()),
-				},
+					"",
+				}, "\n"),
 				WantErr: fmt.Errorf(`Unprocessed extra args: [9]`),
 			},
 		},
 		{
-			name: "successfully runs node",
+			name: "successfully runs node via execute keyword",
 			rtc: &RunNodeTestCase{
-				Node: sum,
-				Args: []string{"execute", "TMP_FILE", "5", "7"},
-				WantStdout: []string{
-					"12",
-				},
+				Node:       sum,
+				Args:       []string{"execute", "TMP_FILE", "5", "7"},
+				WantStdout: "12\n",
 			},
 		},
 		{
@@ -5656,12 +5617,13 @@ func TestRunNodes(t *testing.T) {
 					ListArg[string]("SL_ARG", "", 1, UnboundedList, SimpleCompletor[[]string]("one", "two", "three", "four")),
 				),
 				Args: []string{"autocomplete", ""},
-				WantStdout: []string{
+				WantStdout: strings.Join([]string{
 					"four",
 					"one",
 					"three",
 					"two",
-				},
+					"",
+				}, "\n"),
 			},
 		},
 		{
@@ -5671,12 +5633,13 @@ func TestRunNodes(t *testing.T) {
 					ListArg[string]("SL_ARG", "", 1, UnboundedList, SimpleCompletor[[]string]("one", "two", "three", "four")),
 				),
 				Args: []string{"autocomplete", "cmd "},
-				WantStdout: []string{
+				WantStdout: strings.Join([]string{
 					"four",
 					"one",
 					"three",
 					"two",
-				},
+					"",
+				}, "\n"),
 			},
 		},
 		{
@@ -5686,10 +5649,11 @@ func TestRunNodes(t *testing.T) {
 					ListArg[string]("SL_ARG", "", 1, UnboundedList, SimpleCompletor[[]string]("one", "two", "three", "four")),
 				),
 				Args: []string{"autocomplete", "cmd t"},
-				WantStdout: []string{
+				WantStdout: strings.Join([]string{
 					"three",
 					"two",
-				},
+					"",
+				}, "\n"),
 			},
 		},
 		{
@@ -5698,10 +5662,8 @@ func TestRunNodes(t *testing.T) {
 				Node: SerialNodes(
 					ListArg[string]("SL_ARG", "", 1, UnboundedList, SimpleCompletor[[]string]("one", "two", "three", "four")),
 				),
-				Args: []string{"autocomplete", "cmd three f"},
-				WantStdout: []string{
-					"four",
-				},
+				Args:       []string{"autocomplete", "cmd three f"},
+				WantStdout: "four\n",
 			},
 		},
 		{
@@ -5717,11 +5679,9 @@ func TestRunNodes(t *testing.T) {
 		{
 			name: "prints usage",
 			rtc: &RunNodeTestCase{
-				Node: sum,
-				Args: []string{"usage"},
-				WantStdout: []string{
-					GetUsage(sum).String(),
-				},
+				Node:       sum,
+				Args:       []string{"usage"},
+				WantStdout: GetUsage(sum).String() + "\n",
 			},
 		},
 		// File functions

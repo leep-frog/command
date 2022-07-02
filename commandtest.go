@@ -61,9 +61,9 @@ type ExecuteTestCase struct {
 	// WantExecuteData is the `ExecuteData` object that should be constructed.
 	WantExecuteData *ExecuteData
 	// WantStdout is the data that should be sent to stdout.
-	WantStdout []string
+	WantStdout string
 	// WantStderr is the data that should be sent to stderr.
-	WantStderr []string
+	WantStderr string
 	// WantErr is the error that should be returned.
 	WantErr error
 
@@ -131,8 +131,8 @@ type RunNodeTestCase struct {
 	WantData *Data
 	WantErr  error
 
-	WantStdout []string
-	WantStderr []string
+	WantStdout string
+	WantStderr string
 
 	WantFileContents []string
 
@@ -409,8 +409,8 @@ func (dt *dataTester) check(t *testing.T, prefix string, tc *testContext) {
 }
 
 type outputTester struct {
-	wantStdout []string
-	wantStderr []string
+	wantStdout string
+	wantStderr string
 }
 
 func (*outputTester) setup(t *testing.T, tc *testContext) {}

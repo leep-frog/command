@@ -21,7 +21,7 @@ func TestNodeRunner(t *testing.T) {
 			name: "requires go-dir arg",
 			etc: &command.ExecuteTestCase{
 				Args:       []string{"--go-dir"},
-				WantStderr: []string{`Argument "go-dir" requires at least 1 argument, got 0`},
+				WantStderr: "Argument \"go-dir\" requires at least 1 argument, got 0\n",
 				WantErr:    fmt.Errorf(`Argument "go-dir" requires at least 1 argument, got 0`),
 			},
 		},
@@ -85,12 +85,8 @@ func TestNodeRunner(t *testing.T) {
 						"general Grevious",
 					},
 				}},
-				WantStdout: []string{
-					"hello there\ngeneral Kenobi",
-				},
-				WantStderr: []string{
-					"goodbye then\ngeneral Grevious",
-				},
+				WantStdout: "hello there\ngeneral Kenobi",
+				WantStderr: "goodbye then\ngeneral Grevious",
 				WantRunContents: [][]string{{
 					"set -e",
 					"set -o pipefail",
@@ -112,13 +108,11 @@ func TestNodeRunner(t *testing.T) {
 						"general Grevious",
 					},
 				}},
-				WantStdout: []string{
-					"hello there\ngeneral Kenobi",
-				},
-				WantStderr: []string{
+				WantStdout: "hello there\ngeneral Kenobi",
+				WantStderr: strings.Join([]string{
 					"goodbye then\ngeneral Grevious",
 					"failed to run bash script: failed to execute bash command: bad news bears",
-				},
+				}, ""),
 				WantErr: fmt.Errorf("failed to run bash script: failed to execute bash command: bad news bears"),
 				WantRunContents: [][]string{{
 					"set -e",

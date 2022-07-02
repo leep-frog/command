@@ -25,7 +25,7 @@ func TestShortcutExecute(t *testing.T) {
 			etc: &ExecuteTestCase{
 				Node:       ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
 				WantErr:    fmt.Errorf(`Argument "sl" requires at least 1 argument, got 0`),
-				WantStderr: []string{`Argument "sl" requires at least 1 argument, got 0`},
+				WantStderr: "Argument \"sl\" requires at least 1 argument, got 0\n",
 			},
 		},
 		// Add shortcut tests.
@@ -40,7 +40,7 @@ func TestShortcutExecute(t *testing.T) {
 					},
 				},
 				WantErr:    fmt.Errorf(`Argument "SHORTCUT" requires at least 1 argument, got 0`),
-				WantStderr: []string{`Argument "SHORTCUT" requires at least 1 argument, got 0`},
+				WantStderr: "Argument \"SHORTCUT\" requires at least 1 argument, got 0\n",
 			},
 		},
 		{
@@ -58,7 +58,7 @@ func TestShortcutExecute(t *testing.T) {
 					},
 				},
 				WantErr:    fmt.Errorf("validation for \"SHORTCUT\" failed: [MinLength] value must be at least 1 character"),
-				WantStderr: []string{"validation for \"SHORTCUT\" failed: [MinLength] value must be at least 1 character"},
+				WantStderr: "validation for \"SHORTCUT\" failed: [MinLength] value must be at least 1 character\n",
 			},
 		},
 		{
@@ -78,7 +78,7 @@ func TestShortcutExecute(t *testing.T) {
 					remaining: []int{2},
 				},
 				WantErr:    fmt.Errorf("cannot create shortcut for reserved value"),
-				WantStderr: []string{"cannot create shortcut for reserved value"},
+				WantStderr: "cannot create shortcut for reserved value\n",
 			},
 		},
 		{
@@ -96,7 +96,7 @@ func TestShortcutExecute(t *testing.T) {
 					},
 				},
 				WantErr:    fmt.Errorf("cannot create shortcut for reserved value"),
-				WantStderr: []string{"cannot create shortcut for reserved value"},
+				WantStderr: "cannot create shortcut for reserved value\n",
 			},
 		},
 		// We don't really need to test other overrides (like we do for add and
@@ -155,7 +155,7 @@ func TestShortcutExecute(t *testing.T) {
 					},
 				},
 				WantErr:    fmt.Errorf("validation for \"SHORTCUT\" failed: [MinLength] value must be at least 1 character"),
-				WantStderr: []string{"validation for \"SHORTCUT\" failed: [MinLength] value must be at least 1 character"},
+				WantStderr: "validation for \"SHORTCUT\" failed: [MinLength] value must be at least 1 character\n",
 			},
 		},
 		{
@@ -181,7 +181,7 @@ func TestShortcutExecute(t *testing.T) {
 					remaining: []int{5, 6},
 				},
 				WantErr:    fmt.Errorf("Unprocessed extra args: [two one]"),
-				WantStderr: []string{"Unprocessed extra args: [two one]"},
+				WantStderr: "Unprocessed extra args: [two one]\n",
 			},
 		},
 		{
@@ -193,7 +193,7 @@ func TestShortcutExecute(t *testing.T) {
 					"SHORTCUT": "empty",
 				}},
 				WantErr:    fmt.Errorf(`Argument "SHORTCUT" requires at least 1 argument, got 0`),
-				WantStderr: []string{`Argument "SHORTCUT" requires at least 1 argument, got 0`},
+				WantStderr: "Argument \"SHORTCUT\" requires at least 1 argument, got 0\n",
 				wantInput: &Input{
 					snapshotCount: 1,
 					args: []*inputArg{
@@ -251,7 +251,7 @@ func TestShortcutExecute(t *testing.T) {
 					},
 					remaining: []int{2},
 				},
-				WantStderr: []string{`Shortcut "bearMinimum" already exists`},
+				WantStderr: "Shortcut \"bearMinimum\" already exists\n",
 				WantErr:    fmt.Errorf(`Shortcut "bearMinimum" already exists`),
 			},
 		},
@@ -431,7 +431,7 @@ func TestShortcutExecute(t *testing.T) {
 						{value: "brown", snapshots: snapshotsMap(1)},
 					},
 				},
-				WantStderr: []string{"Custom transformer failed: bad news bears"},
+				WantStderr: "Custom transformer failed: bad news bears\n",
 				WantErr:    fmt.Errorf("Custom transformer failed: bad news bears"),
 			},
 		},
@@ -447,7 +447,7 @@ func TestShortcutExecute(t *testing.T) {
 				Node:       ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
 				Args:       []string{"t", "grizzly", "other"},
 				WantErr:    fmt.Errorf("shortcut has empty value"),
-				WantStderr: []string{"shortcut has empty value"},
+				WantStderr: "shortcut has empty value\n",
 				wantInput: &Input{
 					args: []*inputArg{
 						{value: "t"},
@@ -806,7 +806,7 @@ func TestShortcutExecute(t *testing.T) {
 					},
 				},
 				WantErr:    fmt.Errorf(`Argument "sl" requires at least 3 arguments, got 2`),
-				WantStderr: []string{`Argument "sl" requires at least 3 arguments, got 2`},
+				WantStderr: "Argument \"sl\" requires at least 3 arguments, got 2\n",
 			},
 		},
 		{
@@ -888,7 +888,7 @@ func TestShortcutExecute(t *testing.T) {
 				Node:       ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
 				Args:       []string{"g"},
 				WantErr:    fmt.Errorf(`Argument "SHORTCUT" requires at least 1 argument, got 0`),
-				WantStderr: []string{`Argument "SHORTCUT" requires at least 1 argument, got 0`},
+				WantStderr: "Argument \"SHORTCUT\" requires at least 1 argument, got 0\n",
 				wantInput: &Input{
 					args: []*inputArg{
 						{value: "g"},
@@ -905,7 +905,7 @@ func TestShortcutExecute(t *testing.T) {
 					"SHORTCUT": []string{"h"},
 				}},
 				WantErr:    fmt.Errorf(`No shortcuts exist for shortcut type "pioneer"`),
-				WantStderr: []string{`No shortcuts exist for shortcut type "pioneer"`},
+				WantStderr: "No shortcuts exist for shortcut type \"pioneer\"\n",
 				wantInput: &Input{
 					args: []*inputArg{
 						{value: "g"},
@@ -931,16 +931,18 @@ func TestShortcutExecute(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"SHORTCUT": []string{"h", "i", "j", "k", "l", "m"},
 				}},
-				WantStderr: []string{
-					`Shortcut "j" does not exist`,
-					`Shortcut "l" does not exist`,
-				},
-				WantStdout: []string{
+				WantStderr: strings.Join([]string{
+					"Shortcut \"j\" does not exist",
+					"Shortcut \"l\" does not exist",
+					"",
+				}, "\n"),
+				WantStdout: strings.Join([]string{
 					"h: ",
 					"i: ",
 					"k: alpha",
 					"m: one two three",
-				},
+					"",
+				}, "\n"),
 				wantInput: &Input{
 					args: []*inputArg{
 						{value: "g"},
@@ -981,13 +983,14 @@ func TestShortcutExecute(t *testing.T) {
 			etc: &ExecuteTestCase{
 				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
 				Args: []string{"l"},
-				WantStdout: []string{
+				WantStdout: strings.Join([]string{
 					"h: ",
 					"i: ",
 					"k: alpha",
 					"m: one two three",
 					"z: omega",
-				},
+					"",
+				}, "\n"),
 				wantInput: &Input{
 					args: []*inputArg{
 						{value: "l"},
@@ -1001,7 +1004,7 @@ func TestShortcutExecute(t *testing.T) {
 			etc: &ExecuteTestCase{
 				Node:       ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
 				Args:       []string{"s"},
-				WantStderr: []string{`Argument "regexp" requires at least 1 argument, got 0`},
+				WantStderr: "Argument \"regexp\" requires at least 1 argument, got 0\n",
 				WantErr:    fmt.Errorf(`Argument "regexp" requires at least 1 argument, got 0`),
 				wantInput: &Input{
 					args: []*inputArg{
@@ -1015,7 +1018,7 @@ func TestShortcutExecute(t *testing.T) {
 			etc: &ExecuteTestCase{
 				Node:       ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
 				Args:       []string{"s", ":)"},
-				WantStderr: []string{"validation for \"regexp\" failed: [IsRegex] value \":)\" isn't a valid regex: error parsing regexp: unexpected ): `:)`"},
+				WantStderr: "validation for \"regexp\" failed: [IsRegex] value \":)\" isn't a valid regex: error parsing regexp: unexpected ): `:)`\n",
 				WantErr:    fmt.Errorf("validation for \"regexp\" failed: [IsRegex] value \":)\" isn't a valid regex: error parsing regexp: unexpected ): `:)`"),
 				WantData: &Data{Values: map[string]interface{}{
 					"regexp": []string{":)"},
@@ -1048,10 +1051,11 @@ func TestShortcutExecute(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"regexp": []string{"ga$"},
 				}},
-				WantStdout: []string{
+				WantStdout: strings.Join([]string{
 					"j: bazzinga",
 					"z: omega",
-				},
+					"",
+				}, "\n"),
 				wantInput: &Input{
 					args: []*inputArg{
 						{value: "s"},
@@ -1080,10 +1084,11 @@ func TestShortcutExecute(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"regexp": []string{"a$", "^.: [aeiou]"},
 				}},
-				WantStdout: []string{
+				WantStdout: strings.Join([]string{
 					"k: alpha",
 					"z: omega",
-				},
+					"",
+				}, "\n"),
 				wantInput: &Input{
 					args: []*inputArg{
 						{value: "s"},
@@ -1100,7 +1105,7 @@ func TestShortcutExecute(t *testing.T) {
 				Node:       ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
 				Args:       []string{"d"},
 				WantErr:    fmt.Errorf(`Argument "SHORTCUT" requires at least 1 argument, got 0`),
-				WantStderr: []string{`Argument "SHORTCUT" requires at least 1 argument, got 0`},
+				WantStderr: "Argument \"SHORTCUT\" requires at least 1 argument, got 0\n",
 				wantInput: &Input{
 					args: []*inputArg{
 						{value: "d"},
@@ -1117,7 +1122,7 @@ func TestShortcutExecute(t *testing.T) {
 					"SHORTCUT": []string{"e"},
 				}},
 				WantErr:    fmt.Errorf("Shortcut group has no shortcuts yet."),
-				WantStderr: []string{"Shortcut group has no shortcuts yet."},
+				WantStderr: "Shortcut group has no shortcuts yet.\n",
 				wantInput: &Input{
 					args: []*inputArg{
 						{value: "d"},
@@ -1145,7 +1150,7 @@ func TestShortcutExecute(t *testing.T) {
 						{value: "tee"},
 					},
 				},
-				WantStderr: []string{`Shortcut "tee" does not exist`},
+				WantStderr: "Shortcut \"tee\" does not exist\n",
 			},
 		},
 		{
@@ -1191,10 +1196,11 @@ func TestShortcutExecute(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"SHORTCUT": []string{"t", "penguin", "colors", "bare"},
 				}},
-				WantStderr: []string{
-					`Shortcut "penguin" does not exist`,
-					`Shortcut "bare" does not exist`,
-				},
+				WantStderr: strings.Join([]string{
+					"Shortcut \"penguin\" does not exist",
+					"Shortcut \"bare\" does not exist",
+					"",
+				}, "\n"),
 				wantInput: &Input{
 					args: []*inputArg{
 						{value: "d"},

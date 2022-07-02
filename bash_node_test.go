@@ -2,6 +2,7 @@ package command
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 )
 
@@ -21,7 +22,7 @@ func TestBashNode(t *testing.T) {
 					"echo hello",
 				}},
 				WantErr:    fmt.Errorf("failed to execute bash command: oops"),
-				WantStderr: []string{"failed to execute bash command: oops"},
+				WantStderr: "failed to execute bash command: oops\n",
 				RunResponses: []*FakeRun{
 					{
 						Err: fmt.Errorf("oops"),
@@ -39,10 +40,10 @@ func TestBashNode(t *testing.T) {
 					"echo hello",
 				}},
 				WantErr: fmt.Errorf("failed to execute bash command: oops"),
-				WantStderr: []string{
+				WantStderr: strings.Join([]string{
 					"un\ndeux\ntrois",
-					"failed to execute bash command: oops",
-				},
+					"failed to execute bash command: oops\n",
+				}, ""),
 				RunResponses: []*FakeRun{
 					{
 						Stdout: []string{"one", "two", "three"},
@@ -118,7 +119,7 @@ func TestBashNode(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"s": "aloha",
 				}},
-				WantStderr: []string{"ahola"},
+				WantStderr: "ahola",
 				RunResponses: []*FakeRun{
 					{
 						Stdout: []string{"aloha"},
@@ -176,9 +177,7 @@ func TestBashNode(t *testing.T) {
 					"set -o pipefail",
 					"echo hello",
 				}},
-				WantStdout: []string{
-					"aloha\nhello there\nhowdy",
-				},
+				WantStdout: "aloha\nhello there\nhowdy",
 				WantData: &Data{Values: map[string]interface{}{
 					"s": []string{"aloha", "hello there", "howdy"},
 				}},
@@ -253,7 +252,7 @@ func TestBashNode(t *testing.T) {
 					"echo two",
 				}},
 				WantErr:    fmt.Errorf(`strconv.Atoi: parsing "two": invalid syntax`),
-				WantStderr: []string{`strconv.Atoi: parsing "two": invalid syntax`},
+				WantStderr: "strconv.Atoi: parsing \"two\": invalid syntax\n",
 				RunResponses: []*FakeRun{
 					{
 						Stdout: []string{"two"},
@@ -291,7 +290,7 @@ func TestBashNode(t *testing.T) {
 					"echo two",
 				}},
 				WantErr:    fmt.Errorf(`strconv.Atoi: parsing "two": invalid syntax`),
-				WantStderr: []string{`strconv.Atoi: parsing "two": invalid syntax`},
+				WantStderr: "strconv.Atoi: parsing \"two\": invalid syntax\n",
 				RunResponses: []*FakeRun{
 					{
 						Stdout: []string{"2", "two", "200"},
@@ -329,7 +328,7 @@ func TestBashNode(t *testing.T) {
 					"echo two",
 				}},
 				WantErr:    fmt.Errorf(`strconv.Atoi: parsing "two": invalid syntax`),
-				WantStderr: []string{`strconv.Atoi: parsing "two": invalid syntax`},
+				WantStderr: "strconv.Atoi: parsing \"two\": invalid syntax\n",
 				RunResponses: []*FakeRun{
 					{
 						Stdout: []string{"two"},
@@ -367,7 +366,7 @@ func TestBashNode(t *testing.T) {
 					"echo two",
 				}},
 				WantErr:    fmt.Errorf(`strconv.Atoi: parsing "two": invalid syntax`),
-				WantStderr: []string{`strconv.Atoi: parsing "two": invalid syntax`},
+				WantStderr: "strconv.Atoi: parsing \"two\": invalid syntax\n",
 				RunResponses: []*FakeRun{
 					{
 						Stdout: []string{"2", "two", "200"},
@@ -407,7 +406,7 @@ func TestBashNode(t *testing.T) {
 					"set -o pipefail",
 					"echo -1248",
 				}},
-				WantStderr: []string{"validation for \"i\" failed: [NonNegative] value isn't non-negative"},
+				WantStderr: "validation for \"i\" failed: [NonNegative] value isn't non-negative\n",
 				WantErr:    fmt.Errorf("validation for \"i\" failed: [NonNegative] value isn't non-negative"),
 
 				RunResponses: []*FakeRun{

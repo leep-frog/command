@@ -2,6 +2,7 @@ package command
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -46,7 +47,7 @@ func TestCacheExecution(t *testing.T) {
 					Arg[string]("s", testDesc),
 				)),
 				WantErr:    fmt.Errorf(`Argument "s" requires at least 1 argument, got 0`),
-				WantStderr: []string{`Argument "s" requires at least 1 argument, got 0`},
+				WantStderr: "Argument \"s\" requires at least 1 argument, got 0\n",
 			},
 		},
 		{
@@ -57,7 +58,7 @@ func TestCacheExecution(t *testing.T) {
 				)),
 				Args:       []string{"dollar", "bills"},
 				WantErr:    fmt.Errorf("Unprocessed extra args: [bills]"),
-				WantStderr: []string{"Unprocessed extra args: [bills]"},
+				WantStderr: "Unprocessed extra args: [bills]\n",
 				WantData: &Data{Values: map[string]interface{}{
 					"s": "dollar",
 				}},
@@ -79,7 +80,7 @@ func TestCacheExecution(t *testing.T) {
 				)),
 				Args:       []string{"dollar", "bills"},
 				WantErr:    fmt.Errorf(`Argument "sl" requires at least 3 arguments, got 2`),
-				WantStderr: []string{`Argument "sl" requires at least 3 arguments, got 2`},
+				WantStderr: "Argument \"sl\" requires at least 3 arguments, got 2\n",
 				WantData: &Data{Values: map[string]interface{}{
 					"sl": []string{"dollar", "bills"},
 				}},
@@ -100,7 +101,7 @@ func TestCacheExecution(t *testing.T) {
 				)),
 				Args:       []string{"dollar"},
 				WantErr:    fmt.Errorf("validation for \"s\" failed: [MinLength] value must be at least 100 characters"),
-				WantStderr: []string{"validation for \"s\" failed: [MinLength] value must be at least 100 characters"},
+				WantStderr: "validation for \"s\" failed: [MinLength] value must be at least 100 characters\n",
 				WantData: &Data{Values: map[string]interface{}{
 					"s": "dollar",
 				}},
@@ -464,7 +465,7 @@ func TestCacheExecution(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"s": "dollar",
 				}},
-				WantStdout: []string{"We made it!"},
+				WantStdout: "We made it!",
 				wantInput: &Input{
 					args: []*inputArg{
 						{value: "dollar", snapshots: snapshotsMap(1)},
@@ -598,7 +599,7 @@ func TestCacheExecution(t *testing.T) {
 					cacheHistoryFlag.Name(): 1,
 					cachePrefixData:         "",
 				}},
-				WantStdout: []string{"usd 1 2 4"},
+				WantStdout: "usd 1 2 4\n",
 			},
 		},
 		{
@@ -628,10 +629,10 @@ func TestCacheExecution(t *testing.T) {
 					cacheHistoryFlag.Name(): 2,
 					cachePrefixData:         "",
 				}},
-				WantStdout: []string{
+				WantStdout: strings.Join([]string{
 					"second 2",
-					"usd 1 2 4",
-				},
+					"usd 1 2 4\n",
+				}, "\n"),
 			},
 		},
 		{
@@ -661,11 +662,11 @@ func TestCacheExecution(t *testing.T) {
 					cacheHistoryFlag.Name(): 3,
 					cachePrefixData:         "",
 				}},
-				WantStdout: []string{
+				WantStdout: strings.Join([]string{
 					"first 1",
 					"second 2",
-					"usd 1 2 4",
-				},
+					"usd 1 2 4\n",
+				}, "\n"),
 			},
 		},
 		{
@@ -695,11 +696,11 @@ func TestCacheExecution(t *testing.T) {
 					cacheHistoryFlag.Name(): 33,
 					cachePrefixData:         "",
 				}},
-				WantStdout: []string{
+				WantStdout: strings.Join([]string{
 					"first 1",
 					"second 2",
-					"usd 1 2 4",
-				},
+					"usd 1 2 4\n",
+				}, "\n"),
 			},
 		},
 		// History prefix
@@ -732,11 +733,12 @@ func TestCacheExecution(t *testing.T) {
 					cachePrefixData:             "",
 					cachePrintPrefixFlag.Name(): true,
 				}},
-				WantStdout: []string{
+				WantStdout: strings.Join([]string{
 					"first 1",
 					"second 2",
 					"usd 1 2 4",
-				},
+					"",
+				}, "\n"),
 			},
 		},
 		{
@@ -776,11 +778,11 @@ func TestCacheExecution(t *testing.T) {
 					"beforeStr":                 "hello",
 					"beforeInt":                 123,
 				}},
-				WantStdout: []string{
+				WantStdout: strings.Join([]string{
 					"hello 123 first 1",
 					"hello 123 second 2",
-					"hello 123 usd 1 2 4",
-				},
+					"hello 123 usd 1 2 4\n",
+				}, "\n"),
 			},
 		},
 		{
@@ -822,11 +824,11 @@ func TestCacheExecution(t *testing.T) {
 					"beforeStr":                 "TRANSFORM(hello)",
 					"beforeInt":                 123,
 				}},
-				WantStdout: []string{
+				WantStdout: strings.Join([]string{
 					"TRANSFORM(hello) 123 first 1",
 					"TRANSFORM(hello) 123 second 2",
-					"TRANSFORM(hello) 123 usd 1 2 4",
-				},
+					"TRANSFORM(hello) 123 usd 1 2 4\n",
+				}, "\n"),
 			},
 		},
 		/* Useful for commenting out tests. */

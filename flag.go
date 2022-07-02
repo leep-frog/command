@@ -162,15 +162,15 @@ func (fn *flagNode) Execute(input *Input, output Output, data *Data, eData *Exec
 				shortCode := fmt.Sprintf("-%s", string(a[j]))
 				f, ok := fn.flagMap[shortCode]
 				if !ok {
-					return output.Stderrf("Unknown flag code %q used in multi-flag", shortCode)
+					return output.Stderrf("Unknown flag code %q used in multi-flag\n", shortCode)
 				}
 				if !f.Combinable(data) {
-					return output.Stderrf("Flag %q is not combinable", f.Name())
+					return output.Stderrf("Flag %q is not combinable\n", f.Name())
 				}
 				delete(unprocessed, f.Name())
 
 				if processed[f.Name()] {
-					return output.Stderrf("Flag %q has already been set", f.Name())
+					return output.Stderrf("Flag %q has already been set\n", f.Name())
 				}
 				processed[f.Name()] = true
 
@@ -190,7 +190,7 @@ func (fn *flagNode) Execute(input *Input, output Output, data *Data, eData *Exec
 			// If regular flag
 			delete(unprocessed, f.Name())
 			if processed[f.Name()] {
-				return output.Stderrf("Flag %q has already been set", f.Name())
+				return output.Stderrf("Flag %q has already been set\n", f.Name())
 			}
 			processed[f.Name()] = true
 

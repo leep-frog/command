@@ -57,7 +57,7 @@ func (c *Cache) Node() *command.Node {
 					return o.Err(err)
 				}
 				if !ok {
-					o.Stderr("key not found")
+					o.Stderrln("key not found")
 				} else {
 					o.Stdoutln(s)
 				}

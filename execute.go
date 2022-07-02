@@ -276,7 +276,7 @@ func runNodes(n *Node, o Output, d *Data, args []string) error {
 		"execute": exNode,
 		"usage": SerialNodes(
 			ExecutorNode(func(o Output, d *Data) {
-				o.Stdout(GetUsage(n).String())
+				o.Stdoutln(GetUsage(n).String())
 			}),
 		),
 		"autocomplete": SerialNodes(
@@ -284,7 +284,7 @@ func runNodes(n *Node, o Output, d *Data, args []string) error {
 			Arg[string](PassthroughArgs, ""),
 			ExecutorNode(func(o Output, d *Data) {
 				for _, s := range Autocomplete(n, d.String(PassthroughArgs), nil) {
-					o.Stdout(s)
+					o.Stdoutln(s)
 				}
 			})),
 	}, n, DontCompleteSubcommands())
@@ -292,13 +292,13 @@ func runNodes(n *Node, o Output, d *Data, args []string) error {
 	eData, err := execute(bn, ParseExecuteArgs(args), o, d)
 	if err != nil {
 		if IsUsageError(err) {
-			o.Stderr(ShowUsageAfterError(n))
+			o.Stderrln(ShowUsageAfterError(n))
 		}
 		return err
 	}
 	if filename != "" && len(eData.Executable) > 0 {
 		if err := ioutil.WriteFile(filename, []byte(strings.Join(eData.Executable, "\n")), 0644); err != nil {
-			return o.Stderrf("failed to write eData.Executable to file: %v", err)
+			return o.Stderrf("failed to write eData.Executable to file: %v\n", err)
 		}
 	}
 	return nil

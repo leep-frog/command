@@ -2,6 +2,7 @@ package command
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -28,16 +29,17 @@ func TestOutput(t *testing.T) {
 					o.Annotate(fmt.Errorf("bad news bears %%s"), "attention animals")
 					o.Annotatef(fmt.Errorf("rough news rabbits %%s"), "attention %d dalmations", 101)
 				})),
-				WantStdout: []string{
+				WantStdout: strings.Join([]string{
 					"hello %s",
 					"hello there",
-				},
-				WantStderr: []string{
+				}, ""),
+				WantStderr: strings.Join([]string{
 					"general %s",
 					"general kenobi",
-					"attention animals: bad news bears %s",
-					"attention 101 dalmations: rough news rabbits %s",
-				},
+					"attention animals: bad news bears %s\n",
+					"attention 101 dalmations: rough news rabbits %s\n",
+					"",
+				}, ""),
 			},
 		},
 		{
@@ -57,15 +59,15 @@ func TestOutput(t *testing.T) {
 					o.Stdout("ignore")
 					o.Stderr("this")
 				})),
-				WantStdout: []string{
+				WantStdout: strings.Join([]string{
 					"hello",
 					"general",
-				},
-				WantStderr: []string{
+				}, ""),
+				WantStderr: strings.Join([]string{
 					"there",
 					"kenobi",
 					"donzo",
-				},
+				}, ""),
 				WantErr: fmt.Errorf("donzo"),
 			},
 		},
@@ -81,14 +83,9 @@ func TestOutput(t *testing.T) {
 					o.Stdout("general")
 					o.Stderr("kenobi")
 				})),
-				WantStdout: []string{
-					"hello",
-				},
-				WantStderr: []string{
-					"there",
-					"ahoy matey",
-				},
-				WantErr: fmt.Errorf("ahoy matey"),
+				WantStdout: "hello",
+				WantStderr: "thereahoy matey",
+				WantErr:    fmt.Errorf("ahoy matey"),
 			},
 		},
 		{
@@ -108,16 +105,9 @@ func TestOutput(t *testing.T) {
 					o.Stdout("ignore")
 					o.Stderr("us")
 				})),
-				WantStdout: []string{
-					"hello",
-					"general",
-				},
-				WantStderr: []string{
-					"there",
-					"kenobi",
-					"but: do mind me",
-				},
-				WantErr: fmt.Errorf("but: do mind me"),
+				WantStdout: "hellogeneral",
+				WantStderr: "therekenobibut: do mind me",
+				WantErr:    fmt.Errorf("but: do mind me"),
 			},
 		},
 		{
@@ -137,16 +127,9 @@ func TestOutput(t *testing.T) {
 					o.Stdout("ignore")
 					o.Stderr("us")
 				})),
-				WantStdout: []string{
-					"hello",
-					"general",
-				},
-				WantStderr: []string{
-					"there",
-					"kenobi",
-					"however: do mind me",
-				},
-				WantErr: fmt.Errorf("however: do mind me"),
+				WantStdout: "hellogeneral",
+				WantStderr: "therekenobihowever: do mind me",
+				WantErr:    fmt.Errorf("however: do mind me"),
 			},
 		},
 		/* Useful for commenting out tests. */
@@ -169,8 +152,8 @@ func TestOutputWriters(t *testing.T) {
 		t.Errorf("failed to write to stderr: %v", err)
 	}
 
-	wantStdout := []string{"output"}
-	wantStderr := []string{"errput"}
+	wantStdout := "output"
+	wantStderr := "errput"
 	if diff := cmp.Diff(wantStdout, fo.GetStdout()); diff != "" {
 		t.Errorf("Incorrect output sent to stdout writer:\n%s", diff)
 	}

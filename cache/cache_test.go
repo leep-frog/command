@@ -213,7 +213,7 @@ func TestExecute(t *testing.T) {
 			name: "Requires branching arg",
 			etc: &command.ExecuteTestCase{
 				WantErr:    fmt.Errorf("Branching argument must be one of [delete get list put setdir]"),
-				WantStderr: []string{"Branching argument must be one of [delete get list put setdir]"},
+				WantStderr: "Branching argument must be one of [delete get list put setdir]\n",
 			},
 		},
 		{
@@ -221,7 +221,7 @@ func TestExecute(t *testing.T) {
 			etc: &command.ExecuteTestCase{
 				Args:       []string{"get"},
 				WantErr:    fmt.Errorf(`Argument "KEY" requires at least 1 argument, got 0`),
-				WantStderr: []string{`Argument "KEY" requires at least 1 argument, got 0`},
+				WantStderr: "Argument \"KEY\" requires at least 1 argument, got 0\n",
 			},
 		},
 		{
@@ -229,14 +229,14 @@ func TestExecute(t *testing.T) {
 			etc: &command.ExecuteTestCase{
 				Args:       []string{"get", ".?,"},
 				WantErr:    fmt.Errorf(`validation for "KEY" failed: [MatchesRegex] value ".?," doesn't match regex %q`, keyRegex),
-				WantStderr: []string{fmt.Sprintf(`validation for "KEY" failed: [MatchesRegex] value ".?," doesn't match regex %q`, keyRegex)},
+				WantStderr: fmt.Sprintf("validation for \"KEY\" failed: [MatchesRegex] value \".?,\" doesn't match regex %q\n", keyRegex),
 			},
 		},
 		{
 			name: "Get missing key",
 			etc: &command.ExecuteTestCase{
 				Args:       []string{"get", "uh"},
-				WantStderr: []string{"key not found"},
+				WantStderr: "key not found\n",
 			},
 		},
 		{
@@ -249,7 +249,7 @@ func TestExecute(t *testing.T) {
 			},
 			etc: &command.ExecuteTestCase{
 				Args:       []string{"get", "here"},
-				WantStdout: []string{"hello\nthere"},
+				WantStdout: "hello\nthere\n",
 			},
 			want: map[string]string{
 				"here": "hello\nthere",
@@ -260,7 +260,7 @@ func TestExecute(t *testing.T) {
 			etc: &command.ExecuteTestCase{
 				Args:       []string{"put"},
 				WantErr:    fmt.Errorf(`Argument "KEY" requires at least 1 argument, got 0`),
-				WantStderr: []string{`Argument "KEY" requires at least 1 argument, got 0`},
+				WantStderr: "Argument \"KEY\" requires at least 1 argument, got 0\n",
 			},
 		},
 		{
@@ -268,7 +268,7 @@ func TestExecute(t *testing.T) {
 			etc: &command.ExecuteTestCase{
 				Args:       []string{"put", ".?,"},
 				WantErr:    fmt.Errorf(`validation for "KEY" failed: [MatchesRegex] value ".?," doesn't match regex %q`, keyRegex),
-				WantStderr: []string{fmt.Sprintf(`validation for "KEY" failed: [MatchesRegex] value ".?," doesn't match regex %q`, keyRegex)},
+				WantStderr: fmt.Sprintf("validation for \"KEY\" failed: [MatchesRegex] value \".?,\" doesn't match regex %q\n", keyRegex),
 			},
 		},
 		{
@@ -276,7 +276,7 @@ func TestExecute(t *testing.T) {
 			etc: &command.ExecuteTestCase{
 				Args:       []string{"put", "things"},
 				WantErr:    fmt.Errorf(`Argument "DATA" requires at least 1 argument, got 0`),
-				WantStderr: []string{`Argument "DATA" requires at least 1 argument, got 0`},
+				WantStderr: "Argument \"DATA\" requires at least 1 argument, got 0\n",
 				//WantStderr: []string{"key not found"},
 			},
 		},
@@ -321,7 +321,7 @@ func TestExecute(t *testing.T) {
 			},
 			etc: &command.ExecuteTestCase{
 				Args:       []string{"list"},
-				WantStdout: []string{"hello", "things", "this"},
+				WantStdout: "hello\nthings\nthis\n",
 			},
 			want: map[string]string{
 				"this":   "that",
@@ -335,7 +335,7 @@ func TestExecute(t *testing.T) {
 			etc: &command.ExecuteTestCase{
 				Args:       []string{"delete"},
 				WantErr:    fmt.Errorf(`Argument "KEY" requires at least 1 argument, got 0`),
-				WantStderr: []string{`Argument "KEY" requires at least 1 argument, got 0`},
+				WantStderr: "Argument \"KEY\" requires at least 1 argument, got 0\n",
 			},
 		},
 		{
@@ -343,7 +343,7 @@ func TestExecute(t *testing.T) {
 			etc: &command.ExecuteTestCase{
 				Args:       []string{"delete", ".?,"},
 				WantErr:    fmt.Errorf(`validation for "KEY" failed: [MatchesRegex] value ".?," doesn't match regex %q`, keyRegex),
-				WantStderr: []string{fmt.Sprintf(`validation for "KEY" failed: [MatchesRegex] value ".?," doesn't match regex %q`, keyRegex)},
+				WantStderr: fmt.Sprintf("validation for \"KEY\" failed: [MatchesRegex] value \".?,\" doesn't match regex %q\n", keyRegex),
 			},
 		},
 		{
@@ -373,7 +373,7 @@ func TestExecute(t *testing.T) {
 			etc: &command.ExecuteTestCase{
 				Args:       []string{"setdir"},
 				WantErr:    fmt.Errorf(`Argument "DIR" requires at least 1 argument, got 0`),
-				WantStderr: []string{`Argument "DIR" requires at least 1 argument, got 0`},
+				WantStderr: "Argument \"DIR\" requires at least 1 argument, got 0\n",
 			},
 		},
 		{
@@ -381,7 +381,7 @@ func TestExecute(t *testing.T) {
 			etc: &command.ExecuteTestCase{
 				Args:       []string{"setdir", "uh"},
 				WantErr:    fmt.Errorf("validation for \"DIR\" failed: [IsDir] file %q does not exist", command.FilepathAbs(t, "uh")),
-				WantStderr: []string{fmt.Sprintf("validation for \"DIR\" failed: [IsDir] file %q does not exist", command.FilepathAbs(t, "uh"))},
+				WantStderr: fmt.Sprintf("validation for \"DIR\" failed: [IsDir] file %q does not exist\n", command.FilepathAbs(t, "uh")),
 			},
 		},
 		{
@@ -389,7 +389,7 @@ func TestExecute(t *testing.T) {
 			etc: &command.ExecuteTestCase{
 				Args:       []string{"setdir", "cache.go"},
 				WantErr:    fmt.Errorf("validation for \"DIR\" failed: [IsDir] argument %q is a file", command.FilepathAbs(t, "cache.go")),
-				WantStderr: []string{fmt.Sprintf("validation for \"DIR\" failed: [IsDir] argument %q is a file", command.FilepathAbs(t, "cache.go"))},
+				WantStderr: fmt.Sprintf("validation for \"DIR\" failed: [IsDir] argument %q is a file\n", command.FilepathAbs(t, "cache.go")),
 			},
 		},
 		{

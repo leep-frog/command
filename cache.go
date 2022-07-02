@@ -109,8 +109,7 @@ func (cc *commandCache) history(input *Input, output Output, data *Data, _ *Exec
 		prefix = data.String(cachePrefixData)
 	}
 	for i := start; i < len(sls); i++ {
-		// TODO: Stdoutf shouldn't add newline?
-		output.Stdoutf("%s%s", prefix, strings.Join(sls[i], " "))
+		output.Stdoutf("%s%s\n", prefix, strings.Join(sls[i], " "))
 	}
 	return nil
 }
