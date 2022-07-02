@@ -216,6 +216,12 @@ func GetUsage(n *Node) *Usage {
 	})
 }
 
+// ShowUsageAfterError returns a string containing the the provided
+// Node's usage doc along with a prefix to separate it from the printed error.
+func ShowUsageAfterError(n *Node) string {
+	return fmt.Sprintf("\n======= Command Usage =======\n%s", GetUsage(n).String())
+}
+
 func getUsage(n *Node, u *Usage) *Usage {
 	for n != nil {
 		n.Processor.Usage(u)
@@ -286,7 +292,7 @@ func runNodes(n *Node, o Output, d *Data, args []string) error {
 	eData, err := execute(bn, ParseExecuteArgs(args), o, d)
 	if err != nil {
 		if IsUsageError(err) {
-			o.Stderr(GetUsage(n).String())
+			o.Stderr(ShowUsageAfterError(n))
 		}
 		return err
 	}

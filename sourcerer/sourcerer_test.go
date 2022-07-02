@@ -14,7 +14,8 @@ import (
 )
 
 const (
-	fakeFile = "FAKE_FILE"
+	fakeFile          = "FAKE_FILE"
+	usagePrefixString = "\n======= Command Usage ======="
 )
 
 func TestGenerateBinaryNode(t *testing.T) {
@@ -372,6 +373,7 @@ func TestSourcerer(t *testing.T) {
 		t.Fatalf("failed to create tmp file: %v", err)
 	}
 	u := command.GetUsage((&sourcerer{}).Node()).String()
+	uStr := fmt.Sprintf("%s\n%s", usagePrefixString, u)
 	for _, test := range []struct {
 		name       string
 		clis       []CLI
@@ -387,7 +389,7 @@ func TestSourcerer(t *testing.T) {
 			args: []string{"wizardry", "stuff"},
 			wantStderr: []string{
 				"Unprocessed extra args: [stuff]",
-				u,
+				uStr,
 			},
 			wantErr: fmt.Errorf("Unprocessed extra args: [stuff]"),
 		},
@@ -397,7 +399,7 @@ func TestSourcerer(t *testing.T) {
 			args: []string{"execute"},
 			wantStderr: []string{
 				`Argument "FILE" requires at least 1 argument, got 0`,
-				u,
+				uStr,
 			},
 			wantErr: fmt.Errorf(`Argument "FILE" requires at least 1 argument, got 0`),
 		},
@@ -406,7 +408,7 @@ func TestSourcerer(t *testing.T) {
 			args: []string{"execute", fakeFile},
 			wantStderr: []string{
 				`Argument "CLI" requires at least 1 argument, got 0`,
-				u,
+				uStr,
 			},
 			wantErr: fmt.Errorf(`Argument "CLI" requires at least 1 argument, got 0`),
 		},
@@ -494,6 +496,7 @@ func TestSourcerer(t *testing.T) {
 			wantStderr: []string{
 				"Unprocessed extra args: [trois quatre]",
 				strings.Join([]string{
+					usagePrefixString,
 					"SL [ SL ]",
 					"",
 					"Arguments:",
@@ -555,8 +558,11 @@ func TestSourcerer(t *testing.T) {
 			args: []string{
 				"execute", fakeFile, "basic",
 			},
-			wantErr:    fmt.Errorf(`Argument "SETUP_FILE" requires at least 1 argument, got 0`),
-			wantStderr: []string{`Argument "SETUP_FILE" requires at least 1 argument, got 0`, ""},
+			wantErr: fmt.Errorf(`Argument "SETUP_FILE" requires at least 1 argument, got 0`),
+			wantStderr: []string{
+				`Argument "SETUP_FILE" requires at least 1 argument, got 0`,
+				usagePrefixString + "\n",
+			},
 		},
 		{
 			name: "SetupArg is properly populated",
@@ -655,7 +661,7 @@ func TestSourcerer(t *testing.T) {
 			args: []string{"autocomplete"},
 			wantStderr: []string{
 				`Argument "CLI" requires at least 1 argument, got 0`,
-				u,
+				uStr,
 			},
 			wantErr: fmt.Errorf(`Argument "CLI" requires at least 1 argument, got 0`),
 		},
@@ -664,7 +670,7 @@ func TestSourcerer(t *testing.T) {
 			args: []string{"autocomplete", "idk"},
 			wantStderr: []string{
 				`Argument "COMP_POINT" requires at least 1 argument, got 0`,
-				u,
+				uStr,
 			},
 			wantErr: fmt.Errorf(`Argument "COMP_POINT" requires at least 1 argument, got 0`),
 		},
@@ -673,7 +679,7 @@ func TestSourcerer(t *testing.T) {
 			args: []string{"autocomplete", "idk", "2"},
 			wantStderr: []string{
 				`Argument "COMP_LINE" requires at least 1 argument, got 0`,
-				u,
+				uStr,
 			},
 			wantErr: fmt.Errorf(`Argument "COMP_LINE" requires at least 1 argument, got 0`),
 		},
@@ -805,7 +811,7 @@ func TestSourcerer(t *testing.T) {
 			args: []string{"usage"},
 			wantStderr: []string{
 				`Argument "CLI" requires at least 1 argument, got 0`,
-				u,
+				uStr,
 			},
 			wantErr: fmt.Errorf(`Argument "CLI" requires at least 1 argument, got 0`),
 		},
@@ -814,7 +820,7 @@ func TestSourcerer(t *testing.T) {
 			args: []string{"usage", "idk", "and"},
 			wantStderr: []string{
 				"Unprocessed extra args: [and]",
-				u,
+				uStr,
 			},
 			wantErr: fmt.Errorf("Unprocessed extra args: [and]"),
 		},
@@ -952,5 +958,5 @@ func (uec *usageErrCLI) Changed() bool   { return false }
 func (uec *usageErrCLI) Setup() []string { return nil }
 
 func uecUsage() string {
-	return command.GetUsage((&usageErrCLI{}).Node()).String()
+	return command.ShowUsageAfterError((&usageErrCLI{}).Node())
 }

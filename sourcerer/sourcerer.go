@@ -147,8 +147,7 @@ func (s *sourcerer) executeExecutor(output command.Output, d *command.Data) erro
 	if err != nil {
 		if command.IsUsageError(err) && !s.printedUsageError {
 			s.printedUsageError = true
-			u := command.GetUsage(n)
-			output.Stderr(u.String())
+			output.Stderr(command.ShowUsageAfterError(n))
 		}
 		// Commands are responsible for printing out error messages so
 		// we just return if there are any issues here

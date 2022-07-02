@@ -5570,7 +5570,7 @@ func TestRunNodes(t *testing.T) {
 				Node: sum,
 				WantStderr: []string{
 					`Argument "A" requires at least 1 argument, got 0`,
-					GetUsage(sum).String(),
+					fmt.Sprintf("\n======= Command Usage =======\n%s", GetUsage(sum).String()),
 				},
 				WantErr: fmt.Errorf(`Argument "A" requires at least 1 argument, got 0`),
 			},
@@ -5582,7 +5582,7 @@ func TestRunNodes(t *testing.T) {
 				Args: []string{"5", "7", "9"},
 				WantStderr: []string{
 					`Unprocessed extra args: [9]`,
-					GetUsage(sum).String(),
+					fmt.Sprintf("\n======= Command Usage =======\n%s", GetUsage(sum).String()),
 				},
 				WantErr: fmt.Errorf(`Unprocessed extra args: [9]`),
 			},
@@ -5605,7 +5605,7 @@ func TestRunNodes(t *testing.T) {
 				Args: []string{"execute", "TMP_FILE"},
 				WantStderr: []string{
 					`Argument "A" requires at least 1 argument, got 0`,
-					GetUsage(sum).String(),
+					fmt.Sprintf("\n======= Command Usage =======\n%s", GetUsage(sum).String()),
 				},
 				WantErr: fmt.Errorf(`Argument "A" requires at least 1 argument, got 0`),
 			},
@@ -5617,7 +5617,7 @@ func TestRunNodes(t *testing.T) {
 				Args: []string{"execute", "TMP_FILE", "5", "7", "9"},
 				WantStderr: []string{
 					`Unprocessed extra args: [9]`,
-					GetUsage(sum).String(),
+					fmt.Sprintf("\n======= Command Usage =======\n%s", GetUsage(sum).String()),
 				},
 				WantErr: fmt.Errorf(`Unprocessed extra args: [9]`),
 			},
