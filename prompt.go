@@ -8,7 +8,7 @@ import (
 // Prompt prompts the user for input.
 func Prompt(output Output, question string) chan string {
 	reader := bufio.NewReader(os.Stdin)
-	output.Stdout(question)
+	output.Stdoutln(question)
 	c := make(chan string)
 
 	go func() {
@@ -18,7 +18,7 @@ func Prompt(output Output, question string) chan string {
 				c <- text
 				return
 			}
-			output.Stderrf("failed to read prompt input (%v); trying again", err)
+			output.Stderrf("failed to read prompt input (%v); trying again\n", err)
 		}
 	}()
 

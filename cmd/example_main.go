@@ -47,7 +47,7 @@ func (mfc *myFirstCommand) Node() *command.Node {
 	nArg := command.OptionalArg[int](
 		"N", "Number of times to say hello",
 		command.Positive[int](),
-		command.Default[int](1),
+		command.Default(1),
 	)
 
 	// SerialNodes runs a list of processors in sequence.
@@ -68,9 +68,9 @@ func (mfc *myFirstCommand) Node() *command.Node {
 			n := nArg.Get(d)
 			for i := 0; i < n; i++ {
 				if formalFlag.Get(d) {
-					o.Stdoutf("Greetings, %s.", name)
+					o.Stdoutf("Greetings, %s.\n", name)
 				} else {
-					o.Stdoutf("Hello, %s.", name)
+					o.Stdoutf("Hello, %s.\n", name)
 				}
 			}
 		}),

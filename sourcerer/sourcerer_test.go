@@ -331,19 +331,15 @@ func TestGenerateBinaryNode(t *testing.T) {
 			source(test.clis, test.args, o, test.opts...)
 			o.Close()
 
-			if o.GetStderr() != nil {
-				t.Errorf("source(%v) produced stderr when none was expected:\n%v", test.args, o.GetStderr())
+			if o.GetStderrByCalls() != nil {
+				t.Errorf("source(%v) produced stderr when none was expected:\n%v", test.args, o.GetStderrByCalls())
 			}
 
-			out := o.GetStdout()
-			var modified []string
-			for _, line := range out {
-				modified = append(modified, strings.Split(line, "\n")...)
-			}
-			if diff := cmp.Diff(test.wantStdout, modified); diff != "" {
+			// append to add a final newline (which should *always* be present).
+			if diff := cmp.Diff(strings.Join(append(test.wantStdout, ""), "\n"), o.GetStdout()); diff != "" {
 				t.Errorf("source(%v) sent incorrect data to stdout (-wamt, +got):\n%s", test.args, diff)
 			}
-			if diff := cmp.Diff(test.wantStderr, o.GetStderr()); diff != "" {
+			if diff := cmp.Diff(strings.Join(test.wantStderr, "\n"), o.GetStderr()); diff != "" {
 				t.Errorf("source(%v) sent incorrect data to stderr (-wamt, +got):\n%s", test.args, diff)
 			}
 
@@ -431,9 +427,9 @@ func TestSourcerer(t *testing.T) {
 							keys = append(keys, k)
 						}
 						sort.Strings(keys)
-						o.Stdout("Output:")
+						o.Stdoutln("Output:")
 						for _, k := range keys {
-							o.Stdoutf("%s: %s", k, d.Values[k])
+							o.Stdoutf("%s: %s\f", k, d.Values[k])
 						}
 						return nil
 					},
@@ -448,7 +444,7 @@ func TestSourcerer(t *testing.T) {
 				&testCLI{
 					name: "basic",
 					f: func(tc *testCLI, i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
-						return o.Stderr("oops")
+						return o.Stderrln("oops")
 					},
 				},
 			},
@@ -470,9 +466,9 @@ func TestSourcerer(t *testing.T) {
 							keys = append(keys, k)
 						}
 						sort.Strings(keys)
-						o.Stdout("Output:")
+						o.Stdoutln("Output:")
 						for _, k := range keys {
-							o.Stdoutf("%s: %s", k, d.Values[k])
+							o.Stdoutf("%s: %s\n", k, d.Values[k])
 						}
 						return nil
 					},
@@ -550,7 +546,7 @@ func TestSourcerer(t *testing.T) {
 					name:  "basic",
 					setup: []string{"his", "story"},
 					f: func(tc *testCLI, i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
-						o.Stdoutf("stdout: %v", d)
+						o.Stdoutf("stdout: %v\n", d)
 						return nil
 					},
 				},
@@ -571,7 +567,7 @@ func TestSourcerer(t *testing.T) {
 					name:  "basic",
 					setup: []string{"his", "story"},
 					f: func(tc *testCLI, i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
-						o.Stdoutf("stdout: %v", d)
+						o.Stdoutf("stdout: %v\n", d)
 						return nil
 					},
 				},
@@ -597,7 +593,7 @@ func TestSourcerer(t *testing.T) {
 						command.Arg[int]("i", "desc"),
 					},
 					f: func(tc *testCLI, i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
-						o.Stdoutf("stdout: %v", d)
+						o.Stdoutf("stdout: %v\n", d)
 						return nil
 					},
 				},
@@ -876,10 +872,10 @@ func TestSourcerer(t *testing.T) {
 			o.Close()
 
 			// Check outputs
-			if diff := cmp.Diff(test.wantStdout, o.GetStdout()); diff != "" {
+			if diff := cmp.Diff(strings.Join(append(test.wantStdout, ""), "\n"), o.GetStdout()); diff != "" {
 				t.Errorf("source(%v) sent incorrect stdout (-want, +got):\n%s", test.args, diff)
 			}
-			if diff := cmp.Diff(test.wantStderr, o.GetStderr()); diff != "" {
+			if diff := cmp.Diff(strings.Join(append(test.wantStderr, ""), "\n"), o.GetStderr()); diff != "" {
 				t.Errorf("source(%v) sent incorrect stderr (-want, +got):\n%s", test.args, diff)
 			}
 
@@ -938,7 +934,7 @@ func (tc *testCLI) Setup() []string { return tc.setup }
 
 func autocompleteSuggestions(s ...string) []string {
 	sort.Strings(s)
-	return []string{strings.Join(s, "\n") + "\n"}
+	return s
 }
 
 type usageErrCLI struct{}

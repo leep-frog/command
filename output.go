@@ -270,8 +270,20 @@ func (fo *FakeOutput) GetStdout() string {
 	return strings.Join(fo.stdout, "")
 }
 
+// GetStdoutByCalls returns all of the individual calls made to stdout.
+func (fo *FakeOutput) GetStdoutByCalls() []string {
+	fo.Close()
+	return fo.stdout
+}
+
 // GetStderr returns all of the data that was written to the stderr channel.
 func (fo *FakeOutput) GetStderr() string {
 	fo.Close()
 	return strings.Join(fo.stderr, "")
+}
+
+// GetStderrByCalls returns all of the individual calls made to stdout.
+func (fo *FakeOutput) GetStderrByCalls() []string {
+	fo.Close()
+	return fo.stderr
 }

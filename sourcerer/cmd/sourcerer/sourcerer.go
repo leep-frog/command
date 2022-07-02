@@ -219,7 +219,7 @@ func (gl *GoLeep) Node() *command.Node {
 		command.SimpleProcessor(func(i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
 			f, err := getTmpFile()
 			if err != nil {
-				return o.Stderrf("failed to create tmp file: %v", err)
+				return o.Stderrf("failed to create tmp file: %v\n", err)
 			}
 
 			// Run the command
@@ -227,13 +227,13 @@ func (gl *GoLeep) Node() *command.Node {
 			cmd := gl.runCommand(d, "execute", append([]string{filepath.ToSlash(f.Name())}, d.StringList(passAlongArgs.Name())...))
 			bc := command.NewBashCommand("BASH_OUTPUT", cmd, command.ForwardStdout[[]string]())
 			if _, err := bc.Run(o); err != nil {
-				return o.Stderrf("failed to run bash script: %v", err)
+				return o.Stderrf("failed to run bash script: %v\n", err)
 			}
 
 			b, err := ioutil.ReadFile(f.Name())
 			f.Close()
 			if err != nil {
-				return o.Stderrf("failed to read temporary file: %v", err)
+				return o.Stderrf("failed to read temporary file: %v\n", err)
 			}
 
 			// Add the eData from the previous file to this one's
@@ -244,7 +244,7 @@ func (gl *GoLeep) Node() *command.Node {
 			}
 
 			if err := os.Remove(f.Name()); err != nil {
-				o.Stderrf("failed to delete temporary file: %v", err)
+				o.Stderrf("failed to delete temporary file: %v\n", err)
 			}
 
 			return nil

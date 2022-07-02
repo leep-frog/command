@@ -634,7 +634,6 @@ var (
 				"cmd/",
 				"color/",
 				"docs/",
-				"examples/",
 				"go.mod",
 				"go.sum",
 				"sourcerer/",

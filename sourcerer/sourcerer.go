@@ -25,6 +25,7 @@ var (
 		`cd "$(dirname %s)"`,
 		"go build -o $GOPATH/bin/_%s_runner",
 		"popd > /dev/null",
+		"",
 	}, "\n")
 
 	// autocompleteFunction defines a bash function for CLI autocompletion.
@@ -37,6 +38,7 @@ var (
 		`  COMPREPLY=( $(cat $tFile) )`,
 		`  rm $tFile`,
 		"}",
+		"",
 	}, "\n")
 
 	// AutocompleteForAliasFunction defines a bash function for CLI autocompletion for aliased commands.
@@ -53,6 +55,7 @@ var (
 		`  COMPREPLY=( $(cat $tFile) )`,
 		`  rm $tFile`,
 		"}",
+		"",
 	}, "\n")
 
 	// executeFileContents defines a bash function for CLI execution.
@@ -86,6 +89,7 @@ var (
 		`function %s {`,
 		`  %s`,
 		"}",
+		"",
 	}, "\n")
 
 	// aliasWithSetupFormat is an alias definition template for commands that require a setup function.
@@ -147,7 +151,7 @@ func (s *sourcerer) executeExecutor(output command.Output, d *command.Data) erro
 	if err != nil {
 		if command.IsUsageError(err) && !s.printedUsageError {
 			s.printedUsageError = true
-			output.Stderr(command.ShowUsageAfterError(n))
+			output.Stderrln(command.ShowUsageAfterError(n))
 		}
 		// Commands are responsible for printing out error messages so
 		// we just return if there are any issues here
@@ -157,7 +161,7 @@ func (s *sourcerer) executeExecutor(output command.Output, d *command.Data) erro
 	// Save the CLI if it has changed.
 	if cli.Changed() {
 		if err := save(cli); err != nil {
-			return output.Stderrf("failed to save cli data: %v", err)
+			return output.Stderrf("failed to save cli data: %v\n", err)
 		}
 	}
 
@@ -173,13 +177,13 @@ func (s *sourcerer) executeExecutor(output command.Output, d *command.Data) erro
 
 	f, err := os.OpenFile(sourcingFile, os.O_WRONLY|os.O_CREATE, 0644)
 	if err != nil {
-		return output.Stderrf("failed to open file: %v", err)
+		return output.Stderrf("failed to open file: %v\n", err)
 	}
 
 	v := strings.Join(eData.Executable, "\n")
 
 	if _, err := f.WriteString(v); err != nil {
-		return output.Stderrf("failed to write to execute file: %v", err)
+		return output.Stderrf("failed to write to execute file: %v\n", err)
 	}
 
 	return nil
@@ -289,7 +293,7 @@ func (s *sourcerer) usageExecutor(o command.Output, d *command.Data) error {
 	if err != nil {
 		return o.Err(err)
 	}
-	o.Stdout(command.GetUsage(cli.Node()).String())
+	o.Stdoutln(command.GetUsage(cli.Node()).String())
 	return nil
 }
 
@@ -399,11 +403,11 @@ func (s *sourcerer) generateFile(o command.Output, d *command.Data) error {
 
 	f, err := os.OpenFile(getExecuteFile(filename), os.O_WRONLY|os.O_CREATE, 0644)
 	if err != nil {
-		return o.Stderrf("failed to open execute function file: %v", err)
+		return o.Stderrf("failed to open execute function file: %v\n", err)
 	}
 
 	if _, err := f.WriteString(efc); err != nil {
-		return o.Stderrf("failed to write to execute function file: %v", err)
+		return o.Stderrf("failed to write to execute function file: %v\n", err)
 	}
 
 	sort.SliceStable(s.clis, func(i, j int) bool { return s.clis[i].Name() < s.clis[j].Name() })
@@ -417,10 +421,10 @@ func (s *sourcerer) generateFile(o command.Output, d *command.Data) error {
 			aliasCommand = fmt.Sprintf(aliasWithSetupFormat, alias, setupFunctionName, filename, alias)
 		}
 
-		o.Stdout(aliasCommand)
+		o.Stdoutln(aliasCommand)
 
 		// We sort ourselves, hence the no sort.
-		o.Stdoutf("complete -F _custom_autocomplete_%s %s %s", filename, NosortString(), alias)
+		o.Stdoutf("complete -F _custom_autocomplete_%s %s %s\n", filename, NosortString(), alias)
 	}
 
 	var aliases []string
@@ -429,7 +433,7 @@ func (s *sourcerer) generateFile(o command.Output, d *command.Data) error {
 	}
 	slices.Sort(aliases)
 	for _, alias := range aliases {
-		o.Stdoutf("aliaser %s %s", alias, strings.Join(s.opts.aliasers[alias], " "))
+		o.Stdoutf("aliaser %s %s\n", alias, strings.Join(s.opts.aliasers[alias], " "))
 	}
 
 	return nil

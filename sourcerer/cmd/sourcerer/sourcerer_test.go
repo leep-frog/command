@@ -41,13 +41,13 @@ func TestNodeRunner(t *testing.T) {
 			etc: &command.ExecuteTestCase{
 				Args: []string{
 					"-d",
-					"../../../examples",
+					"../../../testdata",
 				},
 				RunResponses: []*command.FakeRun{{}},
 				WantRunContents: [][]string{{
 					"set -e",
 					"set -o pipefail",
-					`go run ../../../examples execute TMP_FILE`,
+					`go run ../../../testdata execute TMP_FILE`,
 				}},
 			},
 		},
@@ -111,7 +111,7 @@ func TestNodeRunner(t *testing.T) {
 				WantStdout: "hello there\ngeneral Kenobi",
 				WantStderr: strings.Join([]string{
 					"goodbye then\ngeneral Grevious",
-					"failed to run bash script: failed to execute bash command: bad news bears",
+					"failed to run bash script: failed to execute bash command: bad news bears\n",
 				}, ""),
 				WantErr: fmt.Errorf("failed to run bash script: failed to execute bash command: bad news bears"),
 				WantRunContents: [][]string{{
