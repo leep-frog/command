@@ -66,7 +66,7 @@ func TestOutput(t *testing.T) {
 				WantStderr: strings.Join([]string{
 					"there",
 					"kenobi",
-					"donzo",
+					"donzo\n",
 				}, ""),
 				WantErr: fmt.Errorf("donzo"),
 			},
@@ -106,7 +106,7 @@ func TestOutput(t *testing.T) {
 					o.Stderr("us")
 				})),
 				WantStdout: "hellogeneral",
-				WantStderr: "therekenobibut: do mind me",
+				WantStderr: "therekenobibut: do mind me\n",
 				WantErr:    fmt.Errorf("but: do mind me"),
 			},
 		},
@@ -128,7 +128,7 @@ func TestOutput(t *testing.T) {
 					o.Stderr("us")
 				})),
 				WantStdout: "hellogeneral",
-				WantStderr: "therekenobihowever: do mind me",
+				WantStderr: "therekenobihowever: do mind me\n",
 				WantErr:    fmt.Errorf("however: do mind me"),
 			},
 		},

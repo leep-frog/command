@@ -118,7 +118,7 @@ func (o *output) Annotatef(err error, s string, a ...interface{}) error {
 
 func (o *output) Terminate(err error) {
 	if err != nil {
-		o.terminate(o.Stderr(err.Error()))
+		o.terminate(o.Stderrln(err.Error()))
 	}
 }
 
