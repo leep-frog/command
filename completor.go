@@ -335,7 +335,8 @@ func (ff *FileCompletor[T]) Complete(value T, data *Data) (*Completion, error) {
 		// Note: we can't use filepath.Join here because it cleans up the path
 		c.Suggestions[0] = fmt.Sprintf("%s%s", laDir, c.Suggestions[0])
 
-		if onlyDir {
+		// If completing for execute, then just complete to the directory
+		if onlyDir && !data.completeForExecute {
 			// This does "dir1/" and "dir1/_" so that the user's command is
 			// autocompleted to "dir1/" without a space after it.
 			c.Suggestions = append(c.Suggestions, fmt.Sprintf("%s%s", c.Suggestions[0], suffixChar))

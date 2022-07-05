@@ -490,6 +490,95 @@ func TestExecute(t *testing.T) {
 				}},
 			},
 		},
+		// FileCompletor with CompleteForExecute
+		{
+			name: "FileCompletor with CompleteForExecute properly completes a single directory",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(FileNode("s", testDesc, CompleteForExecute[string]())),
+				Args: []string{"do"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: FilepathAbs(t, "docs")},
+					},
+				},
+				WantData: &Data{Values: map[string]interface{}{
+					"s": FilepathAbs(t, "docs"),
+				}},
+			},
+		},
+		{
+			name: "FileCompletor with CompleteForExecute properly completes nested directory",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(FileNode("s", testDesc, CompleteForExecute[string]())),
+				Args: []string{filepath.Join("sourcerer", "c")},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: FilepathAbs(t, "sourcerer", "cmd")},
+					},
+				},
+				WantData: &Data{Values: map[string]interface{}{
+					"s": FilepathAbs(t, "sourcerer", "cmd"),
+				}},
+			},
+		},
+		{
+			name: "FileCompletor with CompleteForExecute properly completes nested file",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(FileNode("s", testDesc, CompleteForExecute[string]())),
+				Args: []string{filepath.Join("sourcerer", "cmd", "l")},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: FilepathAbs(t, "sourcerer", "cmd", "load_sourcerer.sh")},
+					},
+				},
+				WantData: &Data{Values: map[string]interface{}{
+					"s": FilepathAbs(t, "sourcerer", "cmd", "load_sourcerer.sh"),
+				}},
+			},
+		},
+		{
+			name: "FileCompletor with CompleteForExecute properly completes a single file",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(FileNode("s", testDesc, CompleteForExecute[string]())),
+				Args: []string{"v"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: FilepathAbs(t, "validator.go")},
+					},
+				},
+				WantData: &Data{Values: map[string]interface{}{
+					"s": FilepathAbs(t, "validator.go"),
+				}},
+			},
+		},
+		{
+			name: "FileCompletor with CompleteForExecute fails if multiple options",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(FileNode("s", testDesc, CompleteForExecute[string]())),
+				Args: []string{"ca"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "ca"},
+					},
+				},
+				WantStderr: "[CompleteForExecute] requires exactly one suggestion to be returned, got 2: [cache cache_]\n",
+				WantErr:    fmt.Errorf("[CompleteForExecute] requires exactly one suggestion to be returned, got 2: [cache cache_]"),
+			},
+		},
+		{
+			name: "FileCompletor with CompleteForExecute fails if no options",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(FileNode("s", testDesc, CompleteForExecute[string]())),
+				Args: []string{"uhhh"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "uhhh"},
+					},
+				},
+				WantStderr: "[CompleteForExecute] nil completion returned\n",
+				WantErr:    fmt.Errorf("[CompleteForExecute] nil completion returned"),
+			},
+		},
 		// CompleteForExecute tests for ListArg
 		{
 			name: "CompleteForExecute for ListArg fails if no arg provided",
