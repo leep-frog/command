@@ -384,7 +384,7 @@ func TestShortcutExecute(t *testing.T) {
 				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2,
 					NewTransformer(func([]string, *Data) ([]string, error) {
 						return []string{"papa", "mama", "baby"}, nil
-					}, false)))),
+					})))),
 				Args: []string{"a", "bearMinimum", "grizzly", "teddy", "brown"},
 				WantData: &Data{Values: map[string]interface{}{
 					"SHORTCUT": "bearMinimum",
@@ -416,7 +416,7 @@ func TestShortcutExecute(t *testing.T) {
 				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2,
 					NewTransformer(func([]string, *Data) ([]string, error) {
 						return nil, fmt.Errorf("bad news bears")
-					}, false)))),
+					})))),
 				Args: []string{"a", "bearMinimum", "grizzly", "teddy", "brown"},
 				WantData: &Data{Values: map[string]interface{}{
 					"SHORTCUT": "bearMinimum",
@@ -1728,5 +1728,5 @@ func UpperCaseTransformer() ArgOpt[[]string] {
 		}
 		return r, nil
 	}
-	return NewTransformer(f, false)
+	return NewTransformer(f)
 }

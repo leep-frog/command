@@ -100,9 +100,6 @@ func CompleteForExecuteBestEffort() CompleteForExecuteOption {
 // TODO: make from and to different types?
 type Transformer[T any] struct {
 	t func(T, *Data) (T, error)
-	// forComplete is whether or not the value
-	// should be transformed during completions.
-	forComplete bool
 }
 
 func (t *Transformer[T]) modifyArgOpt(ao *argOpt[T]) {
@@ -121,14 +118,13 @@ func TransformerList[T any](t *Transformer[T]) *Transformer[[]T] {
 			l = append(l, nv)
 		}
 		return l, nil
-	}, t.forComplete)
+	})
 }
 
 // NewTransformer creates a new `Transformer`.
-func NewTransformer[T any](f func(T, *Data) (T, error), forComplete bool) *Transformer[T] {
+func NewTransformer[T any](f func(T, *Data) (T, error)) *Transformer[T] {
 	return &Transformer[T]{
-		t:           f,
-		forComplete: forComplete,
+		t: f,
 	}
 }
 

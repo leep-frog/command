@@ -150,7 +150,7 @@ func TestCacheExecution(t *testing.T) {
 					Arg[string]("s", testDesc,
 						NewTransformer(func(string, *Data) (string, error) {
 							return "usd", nil
-						}, false),
+						}),
 					))),
 				Args: []string{"dollar"},
 				WantData: &Data{Values: map[string]interface{}{
@@ -384,7 +384,7 @@ func TestCacheExecution(t *testing.T) {
 					Arg[string]("s", testDesc,
 						NewTransformer(func(string, *Data) (string, error) {
 							return "usd", nil
-						}, false),
+						}),
 					),
 				)),
 				Args: []string{"dollar"},
@@ -413,7 +413,7 @@ func TestCacheExecution(t *testing.T) {
 					Arg[string]("s", testDesc,
 						NewTransformer(func(string, *Data) (string, error) {
 							return "usd", nil
-						}, false),
+						}),
 					),
 					ListArg[float64]("fl", testDesc, 2, 0),
 					ListArg[string]("sl", testDesc, 1, 2,
@@ -423,7 +423,7 @@ func TestCacheExecution(t *testing.T) {
 								newSL = append(newSL, fmt.Sprintf("$%s", s))
 							}
 							return newSL, nil
-						}, false),
+						}),
 					),
 				)),
 				Args: []string{"123", "dollar", "3.4", "4.5", "six", "7"},
@@ -798,7 +798,7 @@ func TestCacheExecution(t *testing.T) {
 				Node: SerialNodes(
 					Arg[string]("beforeStr", testDesc, NewTransformer(func(s string, d *Data) (string, error) {
 						return fmt.Sprintf("TRANSFORM(%s)", s), nil
-					}, false)),
+					})),
 					Arg[int]("beforeInt", testDesc),
 					CacheNode("money", cc, SerialNodes(
 						Arg[string]("s", testDesc),

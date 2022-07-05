@@ -100,7 +100,7 @@ func (an *ArgNode[T]) Execute(i *Input, o Output, data *Data, eData *ExecuteData
 	if an.opt != nil && an.opt.completeForExecute != nil && an.opt.completeForExecute.enabled && i.FullyProcessed() {
 		strict := an.opt.completeForExecute.strict
 		// Now get the list with the last element
-		v, err := an.convertStringValue(sl, data)
+		v, err := an.convertStringValue(sl, data, false)
 		compl, err := RunCompletion(an.opt.completor, *sl[len(sl)-1], v, data)
 		if err != nil {
 			if strict {
@@ -122,7 +122,7 @@ func (an *ArgNode[T]) Execute(i *Input, o Output, data *Data, eData *ExecuteData
 	}
 CFE_END:
 
-	v, err := an.convertStringValue(sl, data)
+	v, err := an.convertStringValue(sl, data, true)
 	if err != nil {
 		return o.Err(err)
 	}
@@ -149,7 +149,7 @@ CFE_END:
 	return nil
 }
 
-func (an *ArgNode[T]) convertStringValue(sl []*string, data *Data) (T, error) {
+func (an *ArgNode[T]) convertStringValue(sl []*string, data *Data, transform bool) (T, error) {
 	var nill T
 	// Transform from string to value.
 	op := getOperator[T]()
@@ -158,15 +158,17 @@ func (an *ArgNode[T]) convertStringValue(sl []*string, data *Data) (T, error) {
 		return nill, err
 	}
 
-	// Run custom transformer.
-	if an.opt != nil {
-		for _, transformer := range an.opt.transformers {
-			newV, err := transformer.t(v, data)
-			if err != nil {
-				return nill, fmt.Errorf("Custom transformer failed: %v", err)
-			}
-			v = newV
+	// Run custom transformer if relevant
+	if an.opt == nil || !transform {
+		return v, nil
+	}
+
+	for _, transformer := range an.opt.transformers {
+		newV, err := transformer.t(v, data)
+		if err != nil {
+			return nill, fmt.Errorf("Custom transformer failed: %v", err)
 		}
+		v = newV
 	}
 	return v, nil
 }
@@ -249,11 +251,15 @@ func (an *ArgNode[T]) complete(sl []*string, enough bool, input *Input, data *Da
 		return nil, err
 	}
 
-	// Run custom transformer on a best effor basis (i.e. if the transformer fails,
-	// then we just continue with the original value).
-	if an.opt != nil {
-		for _, transformer := range an.opt.transformers {
-			if transformer.forComplete {
+	// Don't run validations when completing.
+
+	// If we have enough and more needs to be processed, then nothing should
+	// be completed, and we should process the arg as if we were executing.
+	if enough && !input.FullyProcessed() {
+		// Run custom transformer on a best effor basis (i.e. if the transformer fails,
+		// then we just continue with the original value).
+		if an.opt != nil {
+			for _, transformer := range an.opt.transformers {
 				// Don't return an error because this may not be the last one.
 				newV, err := transformer.t(v, data)
 				if err == nil {
@@ -263,21 +269,20 @@ func (an *ArgNode[T]) complete(sl []*string, enough bool, input *Input, data *Da
 				}
 			}
 		}
-	}
 
-	an.Set(v, data)
-
-	// Don't run validations when completing.
-
-	// If we have enough and more needs to be processed.
-	if enough && !input.FullyProcessed() {
+		an.Set(v, data)
 		return nil, nil
 	}
 
+	// Otherwise, we are on the last value and should complete it.
+	an.Set(v, data)
+
+	// If there isn't a completor, then no work to be done.
 	if an.opt == nil || an.opt.completor == nil {
 		return nil, nil
 	}
 
+	// Otherwise, try to complete arg.
 	var lastArg string
 	ta := op.toArgs(v)
 	if len(ta) > 0 {

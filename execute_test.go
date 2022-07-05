@@ -366,6 +366,111 @@ func TestExecute(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "CompleteForExecute for Arg transforms last arg *after* CompleteForExecute",
+			etc: &ExecuteTestCase{
+				Args: []string{""},
+				Node: SerialNodes(Arg[string]("s", testDesc,
+					CompleteForExecute[string](),
+					CompletorFromFunc(func(s string, d *Data) (*Completion, error) {
+						return &Completion{
+							Suggestions: []string{"abc"},
+						}, nil
+					}),
+					NewTransformer(func(s string, d *Data) (string, error) {
+						return s + "?", nil
+					}),
+				)),
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "abc?"},
+					},
+				},
+				WantData: &Data{
+					Values: map[string]interface{}{
+						"s": "abc?",
+					},
+				},
+			},
+		},
+		{
+			name: "CompleteForExecute for Arg transforms last arg *after* CompleteForExecute and sub completion",
+			etc: &ExecuteTestCase{
+				Args: []string{"bra"},
+				Node: SerialNodes(Arg[string]("s", testDesc,
+					CompleteForExecute[string](),
+					CompletorFromFunc(func(s string, d *Data) (*Completion, error) {
+						return &Completion{
+							Suggestions: []string{"alpha", "bravo", "charlie", "brown"},
+						}, nil
+					}),
+					NewTransformer(func(s string, d *Data) (string, error) {
+						return s + "?", nil
+					}),
+				)),
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "bravo?"},
+					},
+				},
+				WantData: &Data{
+					Values: map[string]interface{}{
+						"s": "bravo?",
+					},
+				},
+			},
+		},
+		{
+			name: "CompleteForExecute for Arg with transformer fails if no match",
+			etc: &ExecuteTestCase{
+				Args: []string{"br"},
+				Node: SerialNodes(Arg[string]("s", testDesc,
+					CompleteForExecute[string](),
+					CompletorFromFunc(func(s string, d *Data) (*Completion, error) {
+						return &Completion{
+							Suggestions: []string{"alpha", "bravo", "charlie", "brown"},
+						}, nil
+					}),
+					NewTransformer(func(s string, d *Data) (string, error) {
+						return s + "?", nil
+					}),
+				)),
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "br"},
+					},
+				},
+				WantStderr: "[CompleteForExecute] requires exactly one suggestion to be returned, got 2: [bravo brown]\n",
+				WantErr:    fmt.Errorf("[CompleteForExecute] requires exactly one suggestion to be returned, got 2: [bravo brown]"),
+			},
+		},
+		{
+			name: "CompleteForExecute for Arg transforms last arg if CompleteForExecute fails with best effort",
+			etc: &ExecuteTestCase{
+				Args: []string{"br"},
+				Node: SerialNodes(Arg[string]("s", testDesc,
+					CompleteForExecute[string](CompleteForExecuteBestEffort()),
+					CompletorFromFunc(func(s string, d *Data) (*Completion, error) {
+						return &Completion{
+							Suggestions: []string{"alpha", "bravo", "charlie", "brown"},
+						}, nil
+					}),
+					NewTransformer(func(s string, d *Data) (string, error) {
+						return s + "?", nil
+					}),
+				)),
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "br?"},
+					},
+				},
+				WantData: &Data{
+					Values: map[string]interface{}{
+						"s": "br?",
+					},
+				},
+			},
+		},
 		// CompleteForExecute tests for ListArg
 		{
 			name: "CompleteForExecute for ListArg fails if no arg provided",
@@ -3426,10 +3531,10 @@ func TestExecute(t *testing.T) {
 				Node: SerialNodes(
 					Arg[string]("strArg", testDesc, NewTransformer(func(v string, d *Data) (string, error) {
 						return strings.ToUpper(v), nil
-					}, false)),
+					})),
 					Arg[int]("intArg", testDesc, NewTransformer(func(v int, d *Data) (int, error) {
 						return 10 * v, nil
-					}, false)),
+					})),
 				),
 				Args: []string{"hello", "12"},
 				WantData: &Data{Values: map[string]interface{}{
@@ -3447,7 +3552,7 @@ func TestExecute(t *testing.T) {
 				Node: SerialNodes(
 					ListArg[string]("sl", testDesc, 2, 3, TransformerList(NewTransformer(func(v string, d *Data) (string, error) {
 						return strings.ToUpper(v), nil
-					}, false))),
+					}))),
 				),
 				Args: []string{"hello", "there", "general", "kenobi"},
 				WantData: &Data{Values: map[string]interface{}{
@@ -4781,12 +4886,15 @@ func TestComplete(t *testing.T) {
 			},
 		},
 		{
-			name: "transformer does transform value when ForComplete is true",
+			name: "transformer doesn't transform value during completion",
 			ctc: &CompleteTestCase{
-				Node: SerialNodes(Arg[string]("strArg", testDesc, NewTransformer(func(string, *Data) (string, error) { return "newStuff", nil }, true))),
+				Node: SerialNodes(Arg[string]("strArg", testDesc,
+					NewTransformer(func(string, *Data) (string, error) {
+						return "newStuff", nil
+					}))),
 				Args: "cmd abc",
 				WantData: &Data{Values: map[string]interface{}{
-					"strArg": "newStuff",
+					"strArg": "abc",
 				}},
 			},
 		},
@@ -4830,7 +4938,7 @@ func TestComplete(t *testing.T) {
 			},
 		},
 		{
-			name:        "transformer list transforms values",
+			name:        "transformer list doesn't transforms values during completion",
 			filepathAbs: filepath.Join("abso", "lutely"),
 			ctc: &CompleteTestCase{
 				Node: &Node{
@@ -4840,14 +4948,70 @@ func TestComplete(t *testing.T) {
 							r = append(r, fmt.Sprintf("_%s_", s))
 						}
 						return r, nil
-					}, true)),
+					})),
 				},
 				Args: "cmd uno dos",
+				WantData: &Data{Values: map[string]interface{}{
+					"slArg": []string{
+						"uno",
+						"dos",
+					},
+				}},
+			},
+		},
+		{
+			name:        "transformer list transforms values that aren't at the end",
+			filepathAbs: filepath.Join("abso", "lutely"),
+			ctc: &CompleteTestCase{
+				Node: SerialNodes(
+					ListArg[string]("slArg", testDesc, 1, 1, NewTransformer(func(sl []string, d *Data) ([]string, error) {
+						var r []string
+						for _, s := range sl {
+							r = append(r, fmt.Sprintf("_%s_", s))
+						}
+						return r, nil
+					})),
+					Arg[string]("sArg", testDesc, NewTransformer(func(s string, d *Data) (string, error) {
+						return s + "!", nil
+					})),
+				),
+				Args: "cmd uno dos t",
 				WantData: &Data{Values: map[string]interface{}{
 					"slArg": []string{
 						"_uno_",
 						"_dos_",
 					},
+					"sArg": "t",
+				}},
+			},
+		},
+		{
+			name:        "transformer list transforms values on a best effort basis",
+			filepathAbs: filepath.Join("abso", "lutely"),
+			ctc: &CompleteTestCase{
+				Node: SerialNodes(
+					ListArg[string]("slArg", testDesc, 1, 1, NewTransformer(func(sl []string, d *Data) ([]string, error) {
+						var r []string
+						for _, s := range sl {
+							r = append(r, fmt.Sprintf("_%s_", s))
+						}
+						return r, nil
+					})),
+					Arg[string]("sArg", testDesc, NewTransformer(func(s string, d *Data) (string, error) {
+						return "oh", fmt.Errorf("Nooooooo")
+					})),
+					Arg[string]("sArg2", testDesc, NewTransformer(func(s string, d *Data) (string, error) {
+						return "oh yea", fmt.Errorf("nope")
+					})),
+				),
+				Args: "cmd uno dos tres q",
+				WantData: &Data{Values: map[string]interface{}{
+					"slArg": []string{
+						"_uno_",
+						"_dos_",
+					},
+					"sArg":  "tres",
+					"sArg2": "q",
 				}},
 			},
 		},
