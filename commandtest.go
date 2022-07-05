@@ -403,7 +403,7 @@ func (dt *dataTester) check(t *testing.T, prefix string, tc *testContext) {
 		dt.want = &Data{}
 	}
 
-	if diff := cmp.Diff(dt.want, tc.data, cmpopts.EquateEmpty()); diff != "" {
+	if diff := cmp.Diff(dt.want, tc.data, cmpopts.EquateEmpty(), cmpopts.IgnoreUnexported(Data{})); diff != "" {
 		t.Errorf("%s produced incorrect Data (-want, +got):\n%s", prefix, diff)
 	}
 }

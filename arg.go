@@ -101,7 +101,9 @@ func (an *ArgNode[T]) Execute(i *Input, o Output, data *Data, eData *ExecuteData
 		strict := an.opt.completeForExecute.strict
 		// Now get the list with the last element
 		v, err := an.convertStringValue(sl, data, false)
+		data.completeForExecute = true
 		compl, err := RunCompletion(an.opt.completor, *sl[len(sl)-1], v, data)
+		data.completeForExecute = false
 		if err != nil {
 			if strict {
 				return o.Annotatef(err, "[CompleteForExecute] failed to fetch completion")

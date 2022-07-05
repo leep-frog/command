@@ -535,7 +535,7 @@ func TestParseAndComplete(t *testing.T) {
 			if wantData == nil {
 				wantData = &Data{}
 			}
-			if diff := cmp.Diff(wantData, data, cmpopts.EquateEmpty()); diff != "" {
+			if diff := cmp.Diff(wantData, data, cmpopts.EquateEmpty(), cmpopts.IgnoreUnexported(Data{})); diff != "" {
 				t.Errorf("Autocomplete(%s) improperly parsed args (-want, +got)\n:%s", test.args, diff)
 			}
 		})

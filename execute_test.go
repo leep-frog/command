@@ -471,6 +471,25 @@ func TestExecute(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "CompleteForExecute is properly set in data",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(Arg[string]("s", testDesc, CompleteForExecute[string](), CompletorFromFunc(func(s string, d *Data) (*Completion, error) {
+					d.Set("CFE", d.completeForExecute)
+					return &Completion{Suggestions: []string{"abcde"}}, nil
+				}))),
+				Args: []string{"ab"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "abcde"},
+					},
+				},
+				WantData: &Data{Values: map[string]interface{}{
+					"CFE": true,
+					"s":   "abcde",
+				}},
+			},
+		},
 		// CompleteForExecute tests for ListArg
 		{
 			name: "CompleteForExecute for ListArg fails if no arg provided",

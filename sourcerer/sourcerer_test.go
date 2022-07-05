@@ -580,7 +580,8 @@ func TestSourcerer(t *testing.T) {
 				"sourcerer.go",
 			},
 			wantStdout: []string{
-				fmt.Sprintf(`stdout: &{map[SETUP_FILE:%s]}`, command.FilepathAbs(t, "sourcerer.go")),
+				// false is for data.completeForExecute
+				fmt.Sprintf(`stdout: &{map[SETUP_FILE:%s] false}`, command.FilepathAbs(t, "sourcerer.go")),
 			},
 		},
 		{
@@ -607,7 +608,8 @@ func TestSourcerer(t *testing.T) {
 				"5",
 			},
 			wantStdout: []string{
-				fmt.Sprintf(`stdout: &{map[SETUP_FILE:%s i:5]}`, command.FilepathAbs(t, "sourcerer.go")),
+				// false is for data.completeForExecute
+				fmt.Sprintf(`stdout: &{map[SETUP_FILE:%s i:5] false}`, command.FilepathAbs(t, "sourcerer.go")),
 			},
 		},
 		// Usage printing tests

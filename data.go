@@ -11,6 +11,8 @@ import (
 type Data struct {
 	// Values is a map from argument name to the data for that argument.
 	Values map[string]interface{}
+	// completeForExecute indictes whether we are running CompleteForExecute logic.
+	completeForExecute bool
 }
 
 // Set sets the provided key-value pair in the `Data` object.
