@@ -367,6 +367,107 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
+			name: "CompleteForExecute for Arg works for multiple, independent args",
+			etc: &ExecuteTestCase{
+				Args: []string{"fi", "tr"},
+				Node: SerialNodes(
+					Arg[string]("s", testDesc, CompleteForExecute[string](), CompletorFromFunc(func(i string, d *Data) (*Completion, error) {
+						return &Completion{
+							Suggestions: []string{"one", "two", "three", "four", "five", "six"},
+						}, nil
+					})),
+					Arg[string]("s2", testDesc, CompleteForExecute[string](), CompletorFromFunc(func(i string, d *Data) (*Completion, error) {
+						return &Completion{
+							Suggestions: []string{"un", "deux", "trois", "quatre"},
+						}, nil
+					})),
+				),
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "five"},
+						{value: "trois"},
+					},
+				},
+				WantData: &Data{
+					Values: map[string]interface{}{
+						"s":  "five",
+						"s2": "trois",
+					},
+				},
+			},
+		},
+		{
+			name: "CompleteForExecute for Arg fails if one of completions fails for independent args",
+			etc: &ExecuteTestCase{
+				Args: []string{"fi", "mouse", "tr"},
+				Node: SerialNodes(
+					Arg[string]("s", testDesc, CompleteForExecute[string](), CompletorFromFunc(func(i string, d *Data) (*Completion, error) {
+						return &Completion{
+							Suggestions: []string{"one", "two", "three", "four", "five", "six"},
+						}, nil
+					})),
+					Arg[string]("s2", testDesc, CompleteForExecute[string](), CompletorFromFunc(func(i string, d *Data) (*Completion, error) {
+						return nil, fmt.Errorf("rats")
+					})),
+					Arg[string]("s3", testDesc, CompleteForExecute[string](), CompletorFromFunc(func(i string, d *Data) (*Completion, error) {
+						return &Completion{
+							Suggestions: []string{"un", "deux", "trois", "quatre"},
+						}, nil
+					})),
+				),
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "five"},
+						{value: "mouse"},
+						{value: "tr"},
+					},
+					remaining: []int{2},
+				},
+				WantData: &Data{
+					Values: map[string]interface{}{
+						"s": "five",
+					},
+				},
+				WantStderr: "[CompleteForExecute] failed to fetch completion for \"s2\": rats\n",
+				WantErr:    fmt.Errorf("[CompleteForExecute] failed to fetch completion for \"s2\": rats"),
+			},
+		},
+		{
+			name: "CompleteForExecute for Arg works if one of completions fails on best effort for independent args",
+			etc: &ExecuteTestCase{
+				Args: []string{"fi", "mouse", "tr"},
+				Node: SerialNodes(
+					Arg[string]("s", testDesc, CompleteForExecute[string](), CompletorFromFunc(func(i string, d *Data) (*Completion, error) {
+						return &Completion{
+							Suggestions: []string{"one", "two", "three", "four", "five", "six"},
+						}, nil
+					})),
+					Arg[string]("s2", testDesc, CompleteForExecute[string](CompleteForExecuteBestEffort()), CompletorFromFunc(func(i string, d *Data) (*Completion, error) {
+						return nil, fmt.Errorf("rats")
+					})),
+					Arg[string]("s3", testDesc, CompleteForExecute[string](), CompletorFromFunc(func(i string, d *Data) (*Completion, error) {
+						return &Completion{
+							Suggestions: []string{"un", "deux", "trois", "quatre"},
+						}, nil
+					})),
+				),
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "five"},
+						{value: "mouse"},
+						{value: "trois"},
+					},
+				},
+				WantData: &Data{
+					Values: map[string]interface{}{
+						"s":  "five",
+						"s2": "mouse",
+						"s3": "trois",
+					},
+				},
+			},
+		},
+		{
 			name: "CompleteForExecute for Arg transforms last arg *after* CompleteForExecute",
 			etc: &ExecuteTestCase{
 				Args: []string{""},
@@ -639,7 +740,7 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "CompleteForExecute for Arg fails if multiple suggestions",
+			name: "CompleteForExecute for ListArg fails if multiple suggestions",
 			etc: &ExecuteTestCase{
 				Args: []string{""},
 				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, CompleteForExecute[[]string](), CompletorFromFunc(func(sl []string, d *Data) (*Completion, error) {

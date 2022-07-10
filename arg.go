@@ -97,7 +97,7 @@ func (an *ArgNode[T]) Execute(i *Input, o Output, data *Data, eData *ExecuteData
 		return nil
 	}
 
-	if an.opt != nil && an.opt.completeForExecute != nil && an.opt.completeForExecute.enabled && i.FullyProcessed() {
+	if an.opt != nil && an.opt.completeForExecute != nil && an.opt.completeForExecute.enabled {
 		strict := an.opt.completeForExecute.strict
 		// Now get the list with the last element
 		v, err := an.convertStringValue(sl, data, false)
