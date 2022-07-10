@@ -278,8 +278,8 @@ type Changeable interface {
 }
 
 // ChangeTest tests if a command object has changed properly.
-func ChangeTest(t *testing.T, want, original Changeable, opts ...cmp.Option) {
-	wantChanged := want != nil && !reflect.ValueOf(want).IsNil()
+func ChangeTest[T Changeable](t *testing.T, want, original T, opts ...cmp.Option) {
+	wantChanged := !reflect.ValueOf(want).IsNil()
 	if original.Changed() != wantChanged {
 		if wantChanged {
 			t.Errorf("object didn't change when it should have")
