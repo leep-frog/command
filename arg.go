@@ -99,30 +99,33 @@ func (an *ArgNode[T]) Execute(i *Input, o Output, data *Data, eData *ExecuteData
 
 	if an.opt != nil && an.opt.completeForExecute != nil && an.opt.completeForExecute.enabled {
 		strict := an.opt.completeForExecute.strict
-		// Now get the list with the last element
-		v, err := an.convertStringValue(sl, data, false)
-		data.completeForExecute = true
-		compl, err := RunCompletion(an.opt.completor, *sl[len(sl)-1], v, data)
-		data.completeForExecute = false
-		if err != nil {
-			if strict {
-				return o.Annotatef(err, "[CompleteForExecute] failed to fetch completion for %q", an.name)
+
+		// Iteratively complete arguments
+		for i := 1; i <= len(sl); i++ {
+			tsl := sl[:i]
+			v, err := an.convertStringValue(tsl, data, false)
+			data.completeForExecute = true
+			compl, err := RunCompletion(an.opt.completor, *tsl[len(tsl)-1], v, data)
+			data.completeForExecute = false
+			if err != nil {
+				if strict {
+					return o.Annotatef(err, "[CompleteForExecute] failed to fetch completion for %q", an.name)
+				}
+				continue
+			} else if compl == nil {
+				if strict {
+					return o.Stderrf("[CompleteForExecute] nil completion returned for %q\n", an.name)
+				}
+				continue
 			}
-			goto CFE_END
-		} else if compl == nil {
-			if strict {
-				return o.Stderrf("[CompleteForExecute] nil completion returned for %q\n", an.name)
+			suggestions := compl.process(*tsl[len(tsl)-1], nil, true)
+			if len(suggestions) == 1 {
+				*tsl[len(tsl)-1] = suggestions[0]
+			} else if strict {
+				return o.Stderrf("[CompleteForExecute] requires exactly one suggestion to be returned for %q, got %d: %v\n", an.name, len(suggestions), suggestions)
 			}
-			goto CFE_END
-		}
-		suggestions := compl.process(*sl[len(sl)-1], nil, true)
-		if len(suggestions) == 1 {
-			*sl[len(sl)-1] = suggestions[0]
-		} else if strict {
-			return o.Stderrf("[CompleteForExecute] requires exactly one suggestion to be returned for %q, got %d: %v\n", an.name, len(suggestions), suggestions)
 		}
 	}
-CFE_END:
 
 	v, err := an.convertStringValue(sl, data, true)
 	if err != nil {

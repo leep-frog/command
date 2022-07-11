@@ -781,7 +781,8 @@ func TestExecute(t *testing.T) {
 				Args: []string{"alpha", ""},
 				Node: SerialNodes(ListArg[string]("sl", testDesc, 3, 3, CompleteForExecute[[]string](), CompletorFromFunc(func(sl []string, d *Data) (*Completion, error) {
 					return &Completion{
-						Suggestions: []string{"charlie"},
+						Distinct:    true,
+						Suggestions: []string{"alpha", "charlie"},
 					}, nil
 				}))),
 				wantInput: &Input{
@@ -805,7 +806,8 @@ func TestExecute(t *testing.T) {
 				Args: []string{"alpha", "bravo", ""},
 				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, CompleteForExecute[[]string](), CompletorFromFunc(func(sl []string, d *Data) (*Completion, error) {
 					return &Completion{
-						Suggestions: []string{"charlie"},
+						Distinct:    true,
+						Suggestions: []string{"alpha", "bravo", "charlie"},
 					}, nil
 				}))),
 				wantInput: &Input{
@@ -828,7 +830,8 @@ func TestExecute(t *testing.T) {
 				Args: []string{"alpha", "bravo", "c"},
 				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, CompleteForExecute[[]string](), CompletorFromFunc(func(sl []string, d *Data) (*Completion, error) {
 					return &Completion{
-						Suggestions: []string{"charlie", "delta", "epsilon"},
+						Distinct:    true,
+						Suggestions: []string{"alpha", "bravo", "charlie", "delta", "epsilon"},
 					}, nil
 				}))),
 				wantInput: &Input{
@@ -872,6 +875,29 @@ func TestExecute(t *testing.T) {
 				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, CompleteForExecute[[]string](), CompletorFromFunc(func(sl []string, d *Data) (*Completion, error) {
 					return &Completion{
 						Distinct:    true,
+						Suggestions: []string{"alpha", "bravo", "charlie"},
+					}, nil
+				}))),
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "alpha"},
+						{value: "bravo"},
+						{value: "charlie"},
+					},
+				},
+				WantData: &Data{
+					Values: map[string]interface{}{
+						"sl": []string{"alpha", "bravo", "charlie"},
+					},
+				},
+			},
+		},
+		{
+			name: "CompleteForExecute for ListArg completes multiple args",
+			etc: &ExecuteTestCase{
+				Args: []string{"a", "br", "c"},
+				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, CompleteForExecute[[]string](), CompletorFromFunc(func(sl []string, d *Data) (*Completion, error) {
+					return &Completion{
 						Suggestions: []string{"alpha", "bravo", "charlie"},
 					}, nil
 				}))),
