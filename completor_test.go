@@ -1213,13 +1213,13 @@ func TestTypedCompletors(t *testing.T) {
 		&completorTest[string]{
 			name: "file completor works for absolute path",
 			c:    &FileCompletor[[]string]{},
-			setup: fakeReadDir("/",
+			setup: fakeReadDir(cmdos.absStart(),
 				fakeFile("file1"),
 				fakeFile("file2"),
 				fakeDir("dirA"),
 				fakeDir("dirB"),
 			),
-			args: "cmd /",
+			args: fmt.Sprintf("cmd %s", cmdos.absStart()),
 			want: []string{
 				"dirA/",
 				"dirB/",
@@ -1231,7 +1231,7 @@ func TestTypedCompletors(t *testing.T) {
 		&completorTest[string]{
 			name: "file completor partial completes dir for absolute path",
 			c:    &FileCompletor[[]string]{},
-			args: "cmd /d",
+			args: fmt.Sprintf("cmd %sd", cmdos.absStart()),
 			setup: fakeReadDir("/",
 				fakeFile("file1"),
 				fakeFile("file2"),
@@ -1246,7 +1246,7 @@ func TestTypedCompletors(t *testing.T) {
 		&completorTest[string]{
 			name: "file completor partial completes file for absolute path",
 			c:    &FileCompletor[[]string]{},
-			args: "cmd /f",
+			args: fmt.Sprintf("cmd %sf", cmdos.absStart()),
 			setup: fakeReadDir("/",
 				fakeFile("file1"),
 				fakeFile("file2"),
@@ -1260,7 +1260,7 @@ func TestTypedCompletors(t *testing.T) {
 		},
 		// Absolute file with specified directory completion tests
 		&completorTest[string]{
-			name: "file completor works for absolute path",
+			name: "file completor works for absolute path with relative dir",
 			c: &FileCompletor[[]string]{
 				Directory: "some/dir/ectory",
 			},
@@ -1280,7 +1280,7 @@ func TestTypedCompletors(t *testing.T) {
 			},
 		},
 		&completorTest[string]{
-			name: "file completor partial completes dir for absolute path",
+			name: "file completor partial completes dir for absolute path with relative dir",
 			c: &FileCompletor[[]string]{
 				Directory: "some/dir/ectory",
 			},
@@ -1297,7 +1297,7 @@ func TestTypedCompletors(t *testing.T) {
 			},
 		},
 		&completorTest[string]{
-			name: "file completor partial completes file for absolute path",
+			name: "file completor partial completes file for absolute path with relative dir",
 			c: &FileCompletor[[]string]{
 				Directory: "some/dir/ectory",
 			},
