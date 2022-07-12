@@ -196,7 +196,7 @@ func (c *Completion) process(lastArg string, delimiter *rune, skipDelimiter bool
 	}
 
 	if c.CaseInsensitiveSort {
-		sort.Slice(results, func(i, j int) bool {
+		sort.SliceStable(results, func(i, j int) bool {
 			return strings.ToLower(results[i]) < strings.ToLower(results[j])
 		})
 	} else {
@@ -246,6 +246,11 @@ func (ff *FileCompletor[T]) modifyArgOpt(ao *argOpt[T]) {
 	ao.completor = ff
 }
 
+var (
+	// ioutilReadDir is a var so it can be stubbed out for tests.
+	ioutilReadDir = ioutil.ReadDir
+)
+
 // Complete creates a `Completion` object with the relevant set of files.
 func (ff *FileCompletor[T]) Complete(value T, data *Data) (*Completion, error) {
 	var lastArg string
@@ -255,9 +260,15 @@ func (ff *FileCompletor[T]) Complete(value T, data *Data) (*Completion, error) {
 	}
 
 	laDir, laFile := filepath.Split(lastArg)
-	dir, err := filepathAbs(filepath.Join(ff.Directory, laDir))
-	if err != nil {
-		return nil, fmt.Errorf("failed to get absolute filepath: %v", err)
+	var dir string
+	if filepath.IsAbs(laDir) {
+		dir = laDir
+	} else {
+		var err error
+		dir, err = filepathAbs(filepath.Join(ff.Directory, laDir))
+		if err != nil {
+			return nil, fmt.Errorf("failed to get absolute filepath: %v", err)
+		}
 	}
 
 	if data.completeForExecute && len(laFile) == 0 {
@@ -268,7 +279,7 @@ func (ff *FileCompletor[T]) Complete(value T, data *Data) (*Completion, error) {
 		}, nil
 	}
 
-	files, err := ioutil.ReadDir(dir)
+	files, err := ioutilReadDir(dir)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read dir: %v", err)
 	}

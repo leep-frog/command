@@ -2,10 +2,12 @@ package command
 
 import (
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"regexp"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -548,6 +550,7 @@ type completorTest[T any] struct {
 	singleC       Completor[T]
 	args          string
 	ptArgs        []string
+	readDir       func(string) ([]fs.FileInfo, error)
 	setup         func(*testing.T)
 	cleanup       func(*testing.T)
 	absErr        error
@@ -569,6 +572,9 @@ func (test *completorTest[T]) run(t *testing.T) {
 			}
 			return filepath.Abs(rel)
 		})
+		if test.readDir != nil {
+			StubValue(t, &ioutilReadDir, test.readDir)
+		}
 
 		var got []string
 		if test.singleC != nil {
@@ -1202,7 +1208,82 @@ func TestTypedCompletors(t *testing.T) {
 				" ",
 			},
 		},
+		// Absolute file completion test
+		&completorTest[string]{
+			name: "file completor works for absolute path",
+			c:    &FileCompletor[[]string]{},
+			readDir: func(s string) ([]fs.FileInfo, error) {
+				return []fs.FileInfo{
+					fakeFile("file1"),
+					fakeFile("file2"),
+					fakeDir("dirA"),
+					fakeDir("dirB"),
+				}, nil
+			},
+			args: "cmd /",
+			want: []string{
+				"dirA/",
+				"dirB/",
+				"file1",
+				"file2",
+				" ",
+			},
+		},
+		&completorTest[string]{
+			name: "file completor partial completes dir for absolute path",
+			c:    &FileCompletor[[]string]{},
+			args: "cmd /d",
+			readDir: func(s string) ([]fs.FileInfo, error) {
+				return []fs.FileInfo{
+					fakeFile("file1"),
+					fakeFile("file2"),
+					fakeDir("dirA"),
+					fakeDir("dirB"),
+				}, nil
+			},
+			want: []string{
+				"/dir",
+				"/dir_",
+			},
+		},
+		&completorTest[string]{
+			name: "file completor partial completes file for absolute path",
+			c:    &FileCompletor[[]string]{},
+			args: "cmd /f",
+			readDir: func(s string) ([]fs.FileInfo, error) {
+				return []fs.FileInfo{
+					fakeFile("file1"),
+					fakeFile("file2"),
+					fakeDir("dirA"),
+					fakeDir("dirB"),
+				}, nil
+			},
+			want: []string{
+				"/file",
+				"/file_",
+			},
+		},
 	} {
 		test.run(t)
 	}
 }
+
+func fakeDir(name string) os.FileInfo {
+	return &fakeFileInfo{name, true}
+}
+
+func fakeFile(name string) os.FileInfo {
+	return &fakeFileInfo{name, false}
+}
+
+type fakeFileInfo struct {
+	name  string
+	isDir bool
+}
+
+func (fi fakeFileInfo) Name() string       { return fi.name }
+func (fi fakeFileInfo) Size() int64        { return 0 }
+func (fi fakeFileInfo) Mode() os.FileMode  { return 0 }
+func (fi fakeFileInfo) ModTime() time.Time { return time.Now() }
+func (fi fakeFileInfo) IsDir() bool        { return fi.isDir }
+func (fi fakeFileInfo) Sys() interface{}   { return nil }
