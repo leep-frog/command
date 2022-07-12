@@ -558,3 +558,21 @@ func FileContents(name, desc string, opts ...ArgOpt[string]) Processor {
 		return fc.Complete(i, d)
 	})
 }
+
+// ConditionalProcessor runs the provided processor if the function argunment returns true
+// in the relevant complete and execute contexts.
+func ConditionalProcessor(p Processor, f func(i *Input, d *Data) bool) Processor {
+	return SimpleProcessor(
+		func(i *Input, o Output, d *Data, ed *ExecuteData) error {
+			if f(i, d) {
+				return p.Execute(i, o, d, ed)
+			}
+			return nil
+		},
+		func(i *Input, d *Data) (*Completion, error) {
+			if f(i, d) {
+				return p.Complete(i, d)
+			}
+			return nil, nil
+		})
+}

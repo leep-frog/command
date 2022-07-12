@@ -4490,6 +4490,64 @@ func TestExecute(t *testing.T) {
 				SkipFileCheck: true,
 			},
 		},
+		// ConditionalProcessor tests
+		{
+			name: "ConditionalProcessor runs if function returns true",
+			etc: &ExecuteTestCase{
+				Args: []string{"abc", "def"},
+				Node: SerialNodes(
+					Arg[string]("s", testDesc),
+					ConditionalProcessor(
+						printArgsNode(),
+						func(i *Input, d *Data) bool {
+							return true
+						},
+					),
+					Arg[string]("s2", testDesc),
+				),
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "abc"},
+						{value: "def"},
+					},
+				},
+				WantStdout: strings.Join([]string{
+					"s: abc",
+					"s2: def",
+					"",
+				}, "\n"),
+				WantData: &Data{Values: map[string]interface{}{
+					"s":  "abc",
+					"s2": "def",
+				}},
+			},
+		},
+		{
+			name: "ConditionalProcessor does not run if function returns false",
+			etc: &ExecuteTestCase{
+				Args: []string{"abc", "def"},
+				Node: SerialNodes(
+					Arg[string]("s", testDesc),
+					ConditionalProcessor(
+						printArgsNode(),
+						func(i *Input, d *Data) bool {
+							return false
+						},
+					),
+					Arg[string]("s2", testDesc),
+				),
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "abc"},
+						{value: "def"},
+					},
+				},
+				WantData: &Data{Values: map[string]interface{}{
+					"s":  "abc",
+					"s2": "def",
+				}},
+			},
+		},
 		/* Useful for commenting out tests. */
 	} {
 		t.Run(test.name, func(t *testing.T) {
@@ -5856,6 +5914,49 @@ func TestComplete(t *testing.T) {
 				},
 				SkipFileCheck: true,
 				WantErr:       fmt.Errorf("Unprocessed extra args: []"),
+			},
+		},
+		// ConditionalProcessor tests
+		{
+			name: "ConditionProcessor runs if function returns true",
+			ctc: &CompleteTestCase{
+				Args: "cmd alpha ",
+				Node: SerialNodes(
+					Arg[string]("s", testDesc),
+					ConditionalProcessor(
+						Arg[string]("s2", testDesc, SimpleCompletor[string]("bravo", "charlie")),
+						func(i *Input, d *Data) bool {
+							return true
+						},
+					),
+					Arg[string]("s3", testDesc, SimpleCompletor[string]("delta", "epsilon")),
+				),
+				WantData: &Data{Values: map[string]interface{}{
+					"s":  "alpha",
+					"s2": "",
+				}},
+				Want: []string{"bravo", "charlie"},
+			},
+		},
+		{
+			name: "ConditionProcessor does not run if function returns true",
+			ctc: &CompleteTestCase{
+				Args: "cmd alpha ",
+				Node: SerialNodes(
+					Arg[string]("s", testDesc),
+					ConditionalProcessor(
+						Arg[string]("s2", testDesc, SimpleCompletor[string]("bravo", "charlie")),
+						func(i *Input, d *Data) bool {
+							return false
+						},
+					),
+					Arg[string]("s3", testDesc, SimpleCompletor[string]("delta", "epsilon")),
+				),
+				WantData: &Data{Values: map[string]interface{}{
+					"s":  "alpha",
+					"s3": "",
+				}},
+				Want: []string{"delta", "epsilon"},
 			},
 		},
 		/* Useful comment for commenting out tests */
