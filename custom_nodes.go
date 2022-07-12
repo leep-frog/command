@@ -576,3 +576,25 @@ func ConditionalProcessor(p Processor, f func(i *Input, d *Data) bool) Processor
 			return nil, nil
 		})
 }
+
+// EchoExecuteData returns a `Processor` that sends the `ExecuteData` contents
+// to stdout.
+func EchoExecuteData() Processor {
+	return SimpleProcessor(func(i *Input, o Output, d *Data, ed *ExecuteData) error {
+		for _, s := range ed.Executable {
+			o.Stdoutln(s)
+		}
+		return nil
+	}, nil)
+}
+
+// EchoExecuteDataf returns a `Processor` that sends the `ExecuteData` contents
+// to stdout with the provided format
+func EchoExecuteDataf(format string) Processor {
+	return SimpleProcessor(func(i *Input, o Output, d *Data, ed *ExecuteData) error {
+		if len(ed.Executable) > 0 {
+			o.Stdoutf(format, strings.Join(ed.Executable, "\n"))
+		}
+		return nil
+	}, nil)
+}

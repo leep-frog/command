@@ -4548,6 +4548,56 @@ func TestExecute(t *testing.T) {
 				}},
 			},
 		},
+		// EchoExecuteData
+		{
+			name: "EchoExecuteData ignores empty ExecuteData.Executable",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					EchoExecuteData(),
+				),
+			},
+		},
+		{
+			name: "EchoExecuteData outputs ExecuteData.Executable",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					SimpleExecutableNode("un", "deux", "trois"),
+					EchoExecuteData(),
+				),
+				WantExecuteData: &ExecuteData{
+					Executable: []string{"un", "deux", "trois"},
+				},
+				WantStdout: "un\ndeux\ntrois\n",
+			},
+		},
+		{
+			name: "EchoExecuteDataf ignores empty ExecuteData.Executable",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					EchoExecuteDataf("RUNNING CODE:\n%s\nDONE CODE\n"),
+				),
+			},
+		},
+		{
+			name: "EchoExecuteData outputs ExecuteData.Executable",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					SimpleExecutableNode("un", "deux", "trois"),
+					EchoExecuteDataf("RUNNING CODE:\n%s\nDONE CODE\n"),
+				),
+				WantExecuteData: &ExecuteData{
+					Executable: []string{"un", "deux", "trois"},
+				},
+				WantStdout: strings.Join([]string{
+					"RUNNING CODE:",
+					"un",
+					"deux",
+					"trois",
+					"DONE CODE",
+					"",
+				}, "\n"),
+			},
+		},
 		/* Useful for commenting out tests. */
 	} {
 		t.Run(test.name, func(t *testing.T) {
