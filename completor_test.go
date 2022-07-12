@@ -550,12 +550,15 @@ type completorTest[T any] struct {
 	singleC       Completor[T]
 	args          string
 	ptArgs        []string
-	readDir       func(string) ([]fs.FileInfo, error)
 	setup         func(*testing.T)
 	cleanup       func(*testing.T)
 	absErr        error
 	commandBranch bool
 	want          []string
+}
+
+func (test *completorTest[T]) Name() string {
+	return test.name
 }
 
 func (test *completorTest[T]) run(t *testing.T) {
@@ -572,9 +575,6 @@ func (test *completorTest[T]) run(t *testing.T) {
 			}
 			return filepath.Abs(rel)
 		})
-		if test.readDir != nil {
-			StubValue(t, &ioutilReadDir, test.readDir)
-		}
 
 		var got []string
 		if test.singleC != nil {
@@ -591,6 +591,7 @@ func (test *completorTest[T]) run(t *testing.T) {
 
 type completorTestInterface interface {
 	run(*testing.T)
+	Name() string
 }
 
 func TestTypedCompletors(t *testing.T) {
@@ -1208,18 +1209,16 @@ func TestTypedCompletors(t *testing.T) {
 				" ",
 			},
 		},
-		// Absolute file completion test
+		// Absolute file completion tests
 		&completorTest[string]{
 			name: "file completor works for absolute path",
 			c:    &FileCompletor[[]string]{},
-			readDir: func(s string) ([]fs.FileInfo, error) {
-				return []fs.FileInfo{
-					fakeFile("file1"),
-					fakeFile("file2"),
-					fakeDir("dirA"),
-					fakeDir("dirB"),
-				}, nil
-			},
+			setup: fakeReadDir("/",
+				fakeFile("file1"),
+				fakeFile("file2"),
+				fakeDir("dirA"),
+				fakeDir("dirB"),
+			),
 			args: "cmd /",
 			want: []string{
 				"dirA/",
@@ -1233,14 +1232,12 @@ func TestTypedCompletors(t *testing.T) {
 			name: "file completor partial completes dir for absolute path",
 			c:    &FileCompletor[[]string]{},
 			args: "cmd /d",
-			readDir: func(s string) ([]fs.FileInfo, error) {
-				return []fs.FileInfo{
-					fakeFile("file1"),
-					fakeFile("file2"),
-					fakeDir("dirA"),
-					fakeDir("dirB"),
-				}, nil
-			},
+			setup: fakeReadDir("/",
+				fakeFile("file1"),
+				fakeFile("file2"),
+				fakeDir("dirA"),
+				fakeDir("dirB"),
+			),
 			want: []string{
 				"/dir",
 				"/dir_",
@@ -1250,19 +1247,73 @@ func TestTypedCompletors(t *testing.T) {
 			name: "file completor partial completes file for absolute path",
 			c:    &FileCompletor[[]string]{},
 			args: "cmd /f",
-			readDir: func(s string) ([]fs.FileInfo, error) {
-				return []fs.FileInfo{
-					fakeFile("file1"),
-					fakeFile("file2"),
-					fakeDir("dirA"),
-					fakeDir("dirB"),
-				}, nil
-			},
+			setup: fakeReadDir("/",
+				fakeFile("file1"),
+				fakeFile("file2"),
+				fakeDir("dirA"),
+				fakeDir("dirB"),
+			),
 			want: []string{
 				"/file",
 				"/file_",
 			},
 		},
+		// Absolute file with specified directory completion tests
+		&completorTest[string]{
+			name: "file completor works for absolute path",
+			c: &FileCompletor[[]string]{
+				Directory: "some/dir/ectory",
+			},
+			setup: fakeReadDir("/",
+				fakeFile("file1"),
+				fakeFile("file2"),
+				fakeDir("dirA"),
+				fakeDir("dirB"),
+			),
+			args: "cmd /",
+			want: []string{
+				"dirA/",
+				"dirB/",
+				"file1",
+				"file2",
+				" ",
+			},
+		},
+		&completorTest[string]{
+			name: "file completor partial completes dir for absolute path",
+			c: &FileCompletor[[]string]{
+				Directory: "some/dir/ectory",
+			},
+			args: "cmd /d",
+			setup: fakeReadDir("/",
+				fakeFile("file1"),
+				fakeFile("file2"),
+				fakeDir("dirA"),
+				fakeDir("dirB"),
+			),
+			want: []string{
+				"/dir",
+				"/dir_",
+			},
+		},
+		&completorTest[string]{
+			name: "file completor partial completes file for absolute path",
+			c: &FileCompletor[[]string]{
+				Directory: "some/dir/ectory",
+			},
+			args: "cmd /f",
+			setup: fakeReadDir("/",
+				fakeFile("file1"),
+				fakeFile("file2"),
+				fakeDir("dirA"),
+				fakeDir("dirB"),
+			),
+			want: []string{
+				"/file",
+				"/file_",
+			},
+		},
+		/* Useful for commenting out tests. */
 	} {
 		test.run(t)
 	}
@@ -1274,6 +1325,17 @@ func fakeDir(name string) os.FileInfo {
 
 func fakeFile(name string) os.FileInfo {
 	return &fakeFileInfo{name, false}
+}
+
+func fakeReadDir(wantDir string, files ...fs.FileInfo) func(t *testing.T) {
+	return func(t *testing.T) {
+		StubValue(t, &ioutilReadDir, func(dir string) ([]fs.FileInfo, error) {
+			if diff := cmp.Diff(wantDir, dir); diff != "" {
+				t.Fatalf("ioutil.ReadDir received incorrect argument (-want, +got):\n%s", diff)
+			}
+			return files, nil
+		})
+	}
 }
 
 type fakeFileInfo struct {
