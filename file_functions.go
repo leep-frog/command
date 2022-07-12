@@ -1,7 +1,11 @@
 package command
 
 import (
+	"io/fs"
+	"io/ioutil"
+	"os"
 	"path/filepath"
+	"strings"
 )
 
 var (
@@ -19,4 +23,21 @@ func FileTransformer() *Transformer[string] {
 			return filepath.Join(fileRoot, s), nil
 		},
 	}
+}
+
+// Below are all file helper functions
+
+// ReadFile reads the file into a slice of strings
+func ReadFile(name string) ([]string, error) {
+	b, err := os.ReadFile(name)
+	if err != nil {
+		return nil, err
+	}
+	return strings.Split(strings.TrimSpace(string(b)), "\n"), nil
+}
+
+// CreateFile creates a file from the provided string slice.
+func CreateFile(name string, contents []string, ps fs.FileMode) error {
+	// TODO: Might need to change permissions throughout to 0666 on other systems (had an error with this in GCP).
+	return ioutil.WriteFile(name, []byte(strings.Join(contents, "\n")), ps)
 }
