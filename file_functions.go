@@ -41,3 +41,13 @@ func CreateFile(name string, contents []string, ps fs.FileMode) error {
 	// TODO: Might need to change permissions throughout to 0666 on other systems (had an error with this in GCP).
 	return ioutil.WriteFile(name, []byte(strings.Join(contents, "\n")), ps)
 }
+
+// Stat runs os.Stat on the provided file and returns (nil, nil) if the file
+// does not exist.
+func Stat(name string) (os.FileInfo, error) {
+	fi, err := os.Stat(name)
+	if os.IsNotExist(err) {
+		return nil, nil
+	}
+	return fi, nil
+}
