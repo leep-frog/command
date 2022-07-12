@@ -2,6 +2,7 @@ package command
 
 import (
 	"fmt"
+	"os"
 	"sort"
 	"strings"
 )
@@ -548,11 +549,11 @@ func FileContents(name, desc string, opts ...ArgOpt[string]) Processor {
 		if err := fc.Execute(i, o, d, ed); err != nil {
 			return err
 		}
-		c, err := ReadFile(d.String(name))
+		b, err := os.ReadFile(d.String(name))
 		if err != nil {
-			return o.Annotatef(err, "failed to read file")
+			return o.Annotatef(err, "failed to read fileee")
 		}
-		d.Set(name, c)
+		d.Set(name, strings.Split(strings.TrimSpace(string(b)), "\n"))
 		return nil
 	}, func(i *Input, d *Data) (*Completion, error) {
 		return fc.Complete(i, d)

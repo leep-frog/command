@@ -81,12 +81,6 @@ type ExecuteTestCase struct {
 
 	// RunResponses are the stubbed responses to return from exec.Cmd.Run.
 	RunResponses []*FakeRun
-
-	// File stuff
-	InitFiles     []*FakeFile
-	WantFiles     []*FakeFile
-	SkipFileCheck bool
-	StubFiles     bool
 }
 
 // FakeRun is a fake bash run.
@@ -137,12 +131,6 @@ type RunNodeTestCase struct {
 	WantFileContents []string
 
 	SkipDataCheck bool
-
-	// File stuff
-	InitFiles     []*FakeFile
-	WantFiles     []*FakeFile
-	SkipFileCheck bool
-	StubFiles     bool
 }
 
 func RunNodeTest(t *testing.T, rtc *RunNodeTestCase) {
@@ -178,7 +166,6 @@ func RunNodeTest(t *testing.T, rtc *RunNodeTestCase) {
 		&outputTester{rtc.WantStdout, rtc.WantStderr},
 		&errorTester{rtc.WantErr},
 		checkIf(!rtc.SkipDataCheck, &dataTester{rtc.WantData}),
-		checkIf(rtc.StubFiles || len(rtc.InitFiles) > 0 || len(rtc.WantFiles) > 0, &fileTester{rtc.InitFiles, rtc.WantFiles, rtc.SkipFileCheck}),
 	}
 
 	for _, tester := range testers {
@@ -244,7 +231,6 @@ func ExecuteTest(t *testing.T, etc *ExecuteTestCase) {
 		&runResponseTester{etc.RunResponses, etc.WantRunContents, nil},
 		checkIf(!etc.SkipDataCheck, &dataTester{etc.WantData}),
 		checkIf(etc.testInput, &inputTester{etc.wantInput}),
-		checkIf(etc.StubFiles || len(etc.InitFiles) > 0 || len(etc.WantFiles) > 0, &fileTester{etc.InitFiles, etc.WantFiles, etc.SkipFileCheck}),
 	}
 
 	for _, tester := range testers {
@@ -320,12 +306,6 @@ type CompleteTestCase struct {
 
 	// WantRunContents are the set of commands that should have been run in bash.
 	WantRunContents [][]string
-
-	// File stuff
-	InitFiles     []*FakeFile
-	WantFiles     []*FakeFile
-	SkipFileCheck bool
-	StubFiles     bool
 }
 
 // CompleteTest runs a test on command autocompletion.
@@ -345,7 +325,6 @@ func CompleteTest(t *testing.T, ctc *CompleteTestCase) {
 		&errorTester{ctc.WantErr},
 		&autocompleteTester{ctc.Want},
 		checkIf(!ctc.SkipDataCheck, &dataTester{ctc.WantData}),
-		checkIf(ctc.StubFiles || len(ctc.InitFiles) > 0 || len(ctc.WantFiles) > 0, &fileTester{ctc.InitFiles, ctc.WantFiles, ctc.SkipFileCheck}),
 	}
 
 	for _, tester := range testers {
@@ -369,8 +348,6 @@ type testContext struct {
 
 	eData                   *ExecuteData
 	autocompleteSuggestions []string
-
-	fileSetup *FakeFile
 }
 
 type commandTester interface {
@@ -557,45 +534,6 @@ func (at *autocompleteTester) check(t *testing.T, prefix string, tc *testContext
 	t.Helper()
 
 	if diff := cmp.Diff(at.want, tc.autocompleteSuggestions); diff != "" {
-		t.Errorf("%s produced incorrect completions (-want, +got):\n%s", prefix, diff)
-	}
-}
-
-type fileTester struct {
-	initFiles     []*FakeFile
-	want          []*FakeFile
-	skipFileCheck bool
-}
-
-func (ft *fileTester) setup(t *testing.T, tc *testContext) {
-	t.Helper()
-
-	dir, err := ioutil.TempDir("", "test-leep-frog-command-file-test")
-	if err != nil {
-		t.Fatalf("failed to create temp directory: %v", err)
-	}
-	old := fileRoot
-	fileRoot = dir
-	t.Cleanup(func() { fileRoot = old })
-
-	for _, f := range ft.initFiles {
-		f.create(t, nil)
-	}
-}
-
-func (ft *fileTester) check(t *testing.T, prefix string, tc *testContext) {
-	t.Helper()
-
-	if ft.skipFileCheck {
-		return
-	}
-
-	opts := []cmp.Option{
-		cmp.AllowUnexported(FakeFile{}),
-		cmpopts.SortSlices(func(this, that *FakeFile) bool { return this.name < that.name }),
-	}
-
-	if diff := cmp.Diff(ft.want, toFakeFiles(t, ".").files, opts...); diff != "" {
 		t.Errorf("%s produced incorrect completions (-want, +got):\n%s", prefix, diff)
 	}
 }

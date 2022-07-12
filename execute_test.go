@@ -4488,38 +4488,6 @@ func TestExecute(t *testing.T) {
 				},
 			},
 		},
-		// File functions
-		{
-			name: "verify that files are created and deleted",
-			etc: &ExecuteTestCase{
-				InitFiles: []*FakeFile{
-					NewFakeFile("simple.txt", []string{"hello", "there"}),
-					NewFakeDir("some-dir", []*FakeFile{
-						NewFakeDir("deeper-dir", nil),
-						NewFakeFile("other", []string{"s", "t", "u", "ff"}),
-						NewFakeFile("another", []string{""}),
-					}),
-				},
-				WantFiles: []*FakeFile{
-					NewFakeFile("simple.txt", []string{"hello", "there"}),
-					NewFakeDir("some-dir", []*FakeFile{
-						NewFakeDir("deeper-dir", nil),
-						NewFakeFile("other", []string{"s", "t", "u", "ff"}),
-						NewFakeFile("another", []string{""}),
-					}),
-				},
-			},
-		},
-		{
-			name: "verify file check can be skipped",
-			etc: &ExecuteTestCase{
-				InitFiles: []*FakeFile{
-					NewFakeFile("simple.txt", []string{"hello", "there"}),
-					NewFakeDir("some-dir", nil),
-				},
-				SkipFileCheck: true,
-			},
-		},
 		// ConditionalProcessor tests
 		{
 			name: "ConditionalProcessor runs if function returns true",
@@ -5962,40 +5930,6 @@ func TestComplete(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{"sl": []string{"abc", "ghi", ""}}},
 			},
 		},
-		// File functions
-		{
-			name: "verify that files are created and deleted",
-			ctc: &CompleteTestCase{
-				InitFiles: []*FakeFile{
-					NewFakeFile("simple.txt", []string{"hello", "there"}),
-					NewFakeDir("some-dir", []*FakeFile{
-						NewFakeDir("deeper-dir", nil),
-						NewFakeFile("other", []string{"s", "t", "u", "ff"}),
-						NewFakeFile("another", []string{""}),
-					}),
-				},
-				WantFiles: []*FakeFile{
-					NewFakeFile("simple.txt", []string{"hello", "there"}),
-					NewFakeDir("some-dir", []*FakeFile{
-						NewFakeDir("deeper-dir", nil),
-						NewFakeFile("other", []string{"s", "t", "u", "ff"}),
-						NewFakeFile("another", []string{""}),
-					}),
-				},
-				WantErr: fmt.Errorf("Unprocessed extra args: []"),
-			},
-		},
-		{
-			name: "verify file check can be skipped",
-			ctc: &CompleteTestCase{
-				InitFiles: []*FakeFile{
-					NewFakeFile("simple.txt", []string{"hello", "there"}),
-					NewFakeDir("some-dir", nil),
-				},
-				SkipFileCheck: true,
-				WantErr:       fmt.Errorf("Unprocessed extra args: []"),
-			},
-		},
 		// ConditionalProcessor tests
 		{
 			name: "ConditionProcessor runs if function returns true",
@@ -6275,46 +6209,6 @@ func TestRunNodes(t *testing.T) {
 				Node:       sum,
 				Args:       []string{"usage"},
 				WantStdout: GetUsage(sum).String() + "\n",
-			},
-		},
-		// File functions
-		{
-			name: "verify that files are created and deleted",
-			rtc: &RunNodeTestCase{
-				Node: SerialNodes(
-					ListArg[string]("SL_ARG", "", 1, UnboundedList),
-				),
-				Args: []string{"autocomplete", "cmd okay"},
-				InitFiles: []*FakeFile{
-					NewFakeFile("simple.txt", []string{"hello", "there"}),
-					NewFakeDir("some-dir", []*FakeFile{
-						NewFakeDir("deeper-dir", nil),
-						NewFakeFile("other", []string{"s", "t", "u", "ff"}),
-						NewFakeFile("another", []string{""}),
-					}),
-				},
-				WantFiles: []*FakeFile{
-					NewFakeFile("simple.txt", []string{"hello", "there"}),
-					NewFakeDir("some-dir", []*FakeFile{
-						NewFakeDir("deeper-dir", nil),
-						NewFakeFile("other", []string{"s", "t", "u", "ff"}),
-						NewFakeFile("another", []string{""}),
-					}),
-				},
-			},
-		},
-		{
-			name: "verify file check can be skipped",
-			rtc: &RunNodeTestCase{
-				Node: SerialNodes(
-					ListArg[string]("SL_ARG", "", 1, UnboundedList),
-				),
-				Args: []string{"autocomplete", "cmd okay"},
-				InitFiles: []*FakeFile{
-					NewFakeFile("simple.txt", []string{"hello", "there"}),
-					NewFakeDir("some-dir", nil),
-				},
-				SkipFileCheck: true,
 			},
 		},
 		/* Useful for commenting out tests. */
