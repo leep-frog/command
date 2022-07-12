@@ -451,6 +451,7 @@ var (
 		"C:\\msys64\\usr\\bin\\bash.exe":  true,
 		"C:\\Windows\\system32\\bash.exe": true,
 		"C:\\WINDOWS\\system32\\bash.exe": true,
+		"/usr/bin/bash":                   true,
 	}
 )
 

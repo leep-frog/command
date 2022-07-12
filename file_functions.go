@@ -49,6 +49,7 @@ func Mkdir(name string) error {
 }
 
 func CreateFile(name string, contents []string) error {
+	// TODO: Might need to change code to 0666 on other systems (had an error with this in GCP).
 	return newFileErr(ioutil.WriteFile(relFile(name), []byte(strings.Join(contents, "\n")), 0644))
 }
 
