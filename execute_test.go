@@ -608,6 +608,36 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
+			name: "FileCompletor with CompleteForExecute properly completes a full directory",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(FileNode("s", testDesc, CompleteForExecute[string]())),
+				Args: []string{"docs"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: FilepathAbs(t, "docs")},
+					},
+				},
+				WantData: &Data{Values: map[string]interface{}{
+					"s": FilepathAbs(t, "docs"),
+				}},
+			},
+		},
+		{
+			name: "FileCompletor with CompleteForExecute properly completes a full directory with trailing slash",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(FileNode("s", testDesc, CompleteForExecute[string]())),
+				Args: []string{fmt.Sprintf("docs%c", filepath.Separator)},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: FilepathAbs(t, "docs")},
+					},
+				},
+				WantData: &Data{Values: map[string]interface{}{
+					"s": FilepathAbs(t, "docs"),
+				}},
+			},
+		},
+		{
 			name: "FileCompletor with CompleteForExecute properly completes nested directory",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(FileNode("s", testDesc, CompleteForExecute[string]())),

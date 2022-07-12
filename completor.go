@@ -260,6 +260,14 @@ func (ff *FileCompletor[T]) Complete(value T, data *Data) (*Completion, error) {
 		return nil, fmt.Errorf("failed to get absolute filepath: %v", err)
 	}
 
+	if data.completeForExecute && len(laFile) == 0 {
+		// If completing for execute and we are at a full directory (no basename),
+		// then just return that.
+		return &Completion{
+			Suggestions: []string{lastArg},
+		}, nil
+	}
+
 	files, err := ioutil.ReadDir(dir)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read dir: %v", err)
