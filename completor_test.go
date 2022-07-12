@@ -583,10 +583,14 @@ func (test *completorTest[T]) run(t *testing.T) {
 	})
 }
 
-var (
-	boolCompletorCases = []*completorTest[bool]{
-		// BoolCompletor
-		{
+type completorTestInterface interface {
+	run(*testing.T)
+}
+
+func TestTypedCompletors(t *testing.T) {
+	for _, test := range []completorTestInterface{
+		// Bool completor tests
+		&completorTest[bool]{
 			name:    "bool completor returns value",
 			singleC: BoolCompletor(),
 			want: []string{
@@ -604,24 +608,23 @@ var (
 				"true",
 			},
 		},
-	}
-	stringCompletorCases = []*completorTest[string]{
-		{
+		// String completor tests
+		&completorTest[string]{
 			name: "list completor returns nil",
 			c:    SimpleCompletor[[]string](),
 		},
-		{
+		&completorTest[string]{
 			name: "list completor returns list",
 			c:    SimpleCompletor[[]string]("first", "second", "third"),
 			want: []string{"first", "second", "third"},
 		},
 		// FileCompletor tests
-		{
+		&completorTest[string]{
 			name:   "file completor returns nil if failure completing current directory",
 			c:      &FileCompletor[[]string]{},
 			absErr: fmt.Errorf("failed to fetch directory"),
 		},
-		{
+		&completorTest[string]{
 			name: "file completor returns files with file types and directories",
 			singleC: &FileCompletor[string]{
 				FileTypes: []string{".mod", ".sum"},
@@ -641,7 +644,7 @@ var (
 				" ",
 			},
 		},
-		{
+		&completorTest[string]{
 			name: "file completor handles empty directory",
 			c:    &FileCompletor[[]string]{},
 			args: "cmd testdata/empty/",
@@ -656,7 +659,7 @@ var (
 				}
 			},
 		},
-		{
+		&completorTest[string]{
 			name: "file completor works with string list arg",
 			c:    &FileCompletor[[]string]{},
 			args: "cmd execu",
@@ -665,7 +668,7 @@ var (
 				"execute_",
 			},
 		},
-		{
+		&completorTest[string]{
 			name: "file completor works when distinct",
 			c: &FileCompletor[[]string]{
 				Distinct: true,
@@ -675,7 +678,7 @@ var (
 				"execute_test.go",
 			},
 		},
-		{
+		&completorTest[string]{
 			name:    "file completor works with string arg",
 			singleC: &FileCompletor[string]{},
 			args:    "cmd execu",
@@ -684,13 +687,13 @@ var (
 				"execute_",
 			},
 		},
-		{
+		&completorTest[string]{
 			name: "file completor returns nil if failure listing directory",
 			c: &FileCompletor[[]string]{
 				Directory: "does/not/exist",
 			},
 		},
-		{
+		&completorTest[string]{
 			name: "file completor returns files in the specified directory",
 			c: &FileCompletor[[]string]{
 				Directory: "testdata",
@@ -723,7 +726,7 @@ var (
 				" ",
 			},
 		},
-		{
+		&completorTest[string]{
 			name: "file completor returns files in the specified directory",
 			c: &FileCompletor[[]string]{
 				Directory: "testdata/dir1",
@@ -736,7 +739,7 @@ var (
 				" ",
 			},
 		},
-		{
+		&completorTest[string]{
 			name: "file completor ignores things from IgnoreFunc",
 			c: &FileCompletor[[]string]{
 				Directory: "testdata/dir1",
@@ -750,7 +753,7 @@ var (
 				" ",
 			},
 		},
-		{
+		&completorTest[string]{
 			name: "file completor returns files matching regex",
 			c: &FileCompletor[[]string]{
 				Directory: "testdata/dir1",
@@ -762,7 +765,7 @@ var (
 				" ",
 			},
 		},
-		{
+		&completorTest[string]{
 			name: "file completor requires prefix",
 			c: &FileCompletor[[]string]{
 				Directory: "testdata/dir3",
@@ -774,7 +777,7 @@ var (
 				" ",
 			},
 		},
-		{
+		&completorTest[string]{
 			name: "file completor ignores directories",
 			c: &FileCompletor[[]string]{
 				Directory:         "testdata/dir2",
@@ -785,7 +788,7 @@ var (
 				"file_",
 			},
 		},
-		{
+		&completorTest[string]{
 			name: "file completor ignores files",
 			c: &FileCompletor[[]string]{
 				Directory:   "testdata/dir2",
@@ -799,7 +802,7 @@ var (
 				" ",
 			},
 		},
-		{
+		&completorTest[string]{
 			name: "file completor completes to directory",
 			c:    &FileCompletor[[]string]{},
 			args: "cmd testdata/dir1",
@@ -808,7 +811,7 @@ var (
 				"testdata/dir1/_",
 			},
 		},
-		{
+		&completorTest[string]{
 			name: "file completor completes to directory when starting dir specified",
 			c: &FileCompletor[[]string]{
 				Directory: "testdata",
@@ -819,7 +822,7 @@ var (
 				"dir1/_",
 			},
 		},
-		{
+		&completorTest[string]{
 			name: "file completor shows contents of directory when ending with a separator",
 			c:    &FileCompletor[[]string]{},
 			args: "cmd testdata/dir1/",
@@ -831,7 +834,7 @@ var (
 				" ",
 			},
 		},
-		{
+		&completorTest[string]{
 			name: "file completor completes to directory when ending with a separator and when starting dir specified",
 			c: &FileCompletor[[]string]{
 				Directory: "testdata",
@@ -845,7 +848,7 @@ var (
 				" ",
 			},
 		},
-		{
+		&completorTest[string]{
 			name: "file completor only shows basenames when multiple options with different next letter",
 			c:    &FileCompletor[[]string]{},
 			args: "cmd testdata/dir",
@@ -857,7 +860,7 @@ var (
 				" ",
 			},
 		},
-		{
+		&completorTest[string]{
 			name: "file completor shows full names when multiple options with same next letter",
 			c:    &FileCompletor[[]string]{},
 			args: "cmd testdata/d",
@@ -866,7 +869,7 @@ var (
 				"testdata/dir_",
 			},
 		},
-		{
+		&completorTest[string]{
 			name: "file completor only shows basenames when multiple options and starting dir",
 			c: &FileCompletor[[]string]{
 				Directory: "testdata/dir1",
@@ -878,7 +881,7 @@ var (
 				" ",
 			},
 		},
-		{
+		&completorTest[string]{
 			name: "file completor handles directories with spaces",
 			c:    &FileCompletor[[]string]{},
 			args: `cmd testdata/dir4/folder\ wit`,
@@ -887,7 +890,7 @@ var (
 				`testdata/dir4/folder\ with\ spaces/_`,
 			},
 		},
-		{
+		&completorTest[string]{
 			name: "file completor handles directories with spaces when same argument",
 			c:    &FileCompletor[[]string]{},
 			args: `cmd testdata/dir4/folder\ wit`,
@@ -896,7 +899,7 @@ var (
 				`testdata/dir4/folder\ with\ spaces/_`,
 			},
 		},
-		{
+		&completorTest[string]{
 			name: "file completor can dive into folder with spaces",
 			c:    &FileCompletor[[]string]{},
 			args: `cmd testdata/dir4/folder\ with\ spaces/`,
@@ -906,7 +909,7 @@ var (
 				" ",
 			},
 		},
-		{
+		&completorTest[string]{
 			name: "file completor can dive into folder with spaces when combined args",
 			c:    &FileCompletor[[]string]{},
 			args: `cmd testdata/dir4/folder\ with\ spaces/`,
@@ -916,7 +919,7 @@ var (
 				" ",
 			},
 		},
-		{
+		&completorTest[string]{
 			name: "autocomplete fills in letters that are the same for all options",
 			c:    &FileCompletor[[]string]{},
 			args: `cmd testdata/dir4/fo`,
@@ -925,7 +928,7 @@ var (
 				"testdata/dir4/folder_",
 			},
 		},
-		{
+		&completorTest[string]{
 			name:          "file completor doesn't get filtered out when part of a CommandBranch",
 			c:             &FileCompletor[[]string]{},
 			commandBranch: true,
@@ -938,7 +941,7 @@ var (
 				" ",
 			},
 		},
-		{
+		&completorTest[string]{
 			name:          "file completor handles multiple options in directory",
 			c:             &FileCompletor[[]string]{},
 			commandBranch: true,
@@ -949,7 +952,7 @@ var (
 				" ",
 			},
 		},
-		{
+		&completorTest[string]{
 			name:          "case insensitive gets letters autofilled",
 			c:             &FileCompletor[[]string]{},
 			commandBranch: true,
@@ -959,7 +962,7 @@ var (
 				"testdata/dir_",
 			},
 		},
-		{
+		&completorTest[string]{
 			name:          "case insensitive recommends all without complete",
 			c:             &FileCompletor[[]string]{},
 			commandBranch: true,
@@ -972,7 +975,7 @@ var (
 				" ",
 			},
 		},
-		{
+		&completorTest[string]{
 			name:          "file completor ignores case",
 			c:             &FileCompletor[[]string]{},
 			commandBranch: true,
@@ -982,7 +985,7 @@ var (
 				"testdata/cases/abcde_",
 			},
 		},
-		{
+		&completorTest[string]{
 			name:          "file completor sorting ignores cases when no file",
 			c:             &FileCompletor[[]string]{},
 			commandBranch: true,
@@ -992,7 +995,7 @@ var (
 				"testdata/moreCases/QW__",
 			},
 		},
-		{
+		&completorTest[string]{
 			name:          "file completor sorting ignores cases when autofilling",
 			c:             &FileCompletor[[]string]{},
 			commandBranch: true,
@@ -1002,7 +1005,7 @@ var (
 				"testdata/moreCases/qW__",
 			},
 		},
-		{
+		&completorTest[string]{
 			name:          "file completor sorting ignores cases when not autofilling",
 			c:             &FileCompletor[[]string]{},
 			commandBranch: true,
@@ -1014,7 +1017,7 @@ var (
 				" ",
 			},
 		},
-		{
+		&completorTest[string]{
 			name: "file completor completes to case matched completion",
 			c:    &FileCompletor[[]string]{},
 			args: "cmd testdata/meta",
@@ -1023,7 +1026,7 @@ var (
 				"testdata/metadata_",
 			},
 		},
-		{
+		&completorTest[string]{
 			name: "file completor completes to case matched completion",
 			c:    &FileCompletor[[]string]{},
 			args: "cmd testdata/ME",
@@ -1032,7 +1035,7 @@ var (
 				"testdata/METADATA_",
 			},
 		},
-		{
+		&completorTest[string]{
 			name: "file completor completes to something when no cases match",
 			c:    &FileCompletor[[]string]{},
 			args: "cmd testdata/MeTa",
@@ -1041,7 +1044,7 @@ var (
 				"testdata/METADATA_",
 			},
 		},
-		{
+		&completorTest[string]{
 			name: "file completor completes to case matched completion in current directory",
 			c: &FileCompletor[[]string]{
 				Directory: "testdata",
@@ -1052,7 +1055,7 @@ var (
 				"metadata_",
 			},
 		},
-		{
+		&completorTest[string]{
 			name: "file completor completes to case matched completion in current directory",
 			c: &FileCompletor[[]string]{
 				Directory: "testdata",
@@ -1063,7 +1066,7 @@ var (
 				"METADATA_",
 			},
 		},
-		{
+		&completorTest[string]{
 			name: "file completor completes to something when no cases match in current directory",
 			c: &FileCompletor[[]string]{
 				Directory: "testdata",
@@ -1074,7 +1077,7 @@ var (
 				"METADATA_",
 			},
 		},
-		{
+		&completorTest[string]{
 			name: "file completor doesn't complete when matches a prefix",
 			c:    &FileCompletor[[]string]{},
 			args: "cmd testdata/METADATA",
@@ -1084,7 +1087,7 @@ var (
 				" ",
 			},
 		},
-		{
+		&completorTest[string]{
 			name: "file completor doesn't complete when matches a prefix file",
 			c:    &FileCompletor[[]string]{},
 			args: "cmd testdata/metadata_/m",
@@ -1094,7 +1097,7 @@ var (
 				" ",
 			},
 		},
-		{
+		&completorTest[string]{
 			name: "file completor returns complete match if distinct",
 			c: &FileCompletor[[]string]{
 				Distinct: true,
@@ -1105,13 +1108,13 @@ var (
 			},
 		},
 		// Distinct file completors.
-		{
+		&completorTest[string]{
 			name: "file completor returns repeats if not distinct",
 			c:    &FileCompletor[[]string]{},
 			args: "cmd testdata/three.txt testdata/t",
 			want: []string{"three.txt", "two.txt", " "},
 		},
-		{
+		&completorTest[string]{
 			name: "file completor returns distinct",
 			c: &FileCompletor[[]string]{
 				Distinct: true,
@@ -1119,14 +1122,14 @@ var (
 			args: "cmd testdata/three.txt testdata/t",
 			want: []string{"testdata/two.txt"},
 		},
-		{
+		&completorTest[string]{
 			name: "file completor handles non with distinct",
 			c: &FileCompletor[[]string]{
 				Distinct: true,
 			},
 			args: "cmd testdata/three.txt testdata/two.txt testdata/t",
 		},
-		{
+		&completorTest[string]{
 			name: "file completor first level distinct partially completes",
 			c: &FileCompletor[[]string]{
 				Distinct: true,
@@ -1134,7 +1137,7 @@ var (
 			args: "cmd comp",
 			want: []string{"completor", "completor_"},
 		},
-		{
+		&completorTest[string]{
 			name: "file completor first level distinct returns all options",
 			c: &FileCompletor[[]string]{
 				Distinct: true,
@@ -1153,7 +1156,7 @@ var (
 				" ",
 			},
 		},
-		{
+		&completorTest[string]{
 			name: "file completor first level distinct completes partial",
 			c: &FileCompletor[[]string]{
 				Distinct: true,
@@ -1164,7 +1167,7 @@ var (
 				"completor_",
 			},
 		},
-		{
+		&completorTest[string]{
 			name: "file completor first level distinct suggests remaining",
 			c: &FileCompletor[[]string]{
 				Distinct: true,
@@ -1182,7 +1185,7 @@ var (
 				" ",
 			},
 		},
-		{
+		&completorTest[string]{
 			name: "file completor first level distinct completes partial",
 			c: &FileCompletor[[]string]{
 				Distinct: true,
@@ -1199,15 +1202,7 @@ var (
 				" ",
 			},
 		},
-		/* Useful for commenting out tests */
-	}
-)
-
-func TestTypedCompletors(t *testing.T) {
-	for _, test := range stringCompletorCases {
-		test.run(t)
-	}
-	for _, test := range boolCompletorCases {
+	} {
 		test.run(t)
 	}
 }
