@@ -1363,6 +1363,19 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
+			name: "FunctionWrap sets ExecuteData.FunctionWrap",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					SimpleExecutableNode("hello", "there"),
+					FunctionWrap(),
+				),
+				WantExecuteData: &ExecuteData{
+					Executable:   []string{"hello", "there"},
+					FunctionWrap: true,
+				},
+			},
+		},
+		{
 			name: "Sets executable with ExecutableNode",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(

@@ -538,6 +538,29 @@ func TestSourcerer(t *testing.T) {
 				"there",
 			},
 		},
+		{
+			name: "writes function wrapped execute data to file",
+			clis: []CLI{
+				&testCLI{
+					name: "basic",
+					f: func(tc *testCLI, i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
+						ed.Executable = []string{"echo", "hello", "there"}
+						ed.FunctionWrap = true
+						return nil
+					},
+				},
+			},
+			args: []string{"execute", f.Name(), "basic"},
+			wantOutput: []string{
+				"function _leep_execute_data_function_wrap {",
+				"echo",
+				"hello",
+				"there",
+				"}",
+				"_leep_execute_data_function_wrap",
+				"",
+			},
+		},
 		// CLI with setup:
 		{
 			name: "SetupArg node is automatically added as required arg",

@@ -179,6 +179,9 @@ type ExecuteData struct {
 	Executable []string
 	// Executor is a set of functions to run after all nodes have been processed.
 	Executor []func(Output, *Data) error
+	// FunctionWrap is whether or not to wrap the Executable contents
+	// in a function. This allows Executable to use things like "return" and "local".
+	FunctionWrap bool
 }
 
 // Processor is the interface for nodes in the command graph.

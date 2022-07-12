@@ -182,6 +182,16 @@ func (s *sourcerer) executeExecutor(output command.Output, d *command.Data) erro
 
 	v := strings.Join(eData.Executable, "\n")
 
+	if eData.FunctionWrap {
+		v = strings.Join([]string{
+			"function _leep_execute_data_function_wrap {",
+			v,
+			"}",
+			"_leep_execute_data_function_wrap",
+			"",
+		}, "\n")
+	}
+
 	if _, err := f.WriteString(v); err != nil {
 		return output.Stderrf("failed to write to execute file: %v\n", err)
 	}

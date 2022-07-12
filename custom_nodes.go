@@ -533,6 +533,14 @@ func ExecutableNode(f func(Output, *Data) ([]string, error)) Processor {
 	return &executableAppender{f}
 }
 
+// FunctionWrap sets ExecuteData.FunctionWrap to true.
+func FunctionWrap() Processor {
+	return SimpleProcessor(func(i *Input, o Output, d *Data, ed *ExecuteData) error {
+		ed.FunctionWrap = true
+		return nil
+	}, nil)
+}
+
 // FileContents converts a filename into the file's contents.
 func FileContents(name, desc string, opts ...ArgOpt[string]) Processor {
 	fc := FileNode(name, desc, opts...)
