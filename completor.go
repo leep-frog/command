@@ -103,6 +103,31 @@ func (c *Completion) Clone() *Completion {
 	}
 }
 
+// CompletorWithOpts sets the relevant options in the `Completion` object
+// returned by the `Completor`.
+func CompletorWithOpts[T any](cr Completor[T], cn *Completion) Completor[T] {
+	return &cmplWithOpts[T]{cr, cn}
+}
+
+type cmplWithOpts[T any] struct {
+	cr Completor[T]
+	cn *Completion
+}
+
+func (cwo *cmplWithOpts[T]) Complete(t T, d *Data) (*Completion, error) {
+	c, err := cwo.cr.Complete(t, d)
+	if c != nil {
+		s := c.Suggestions
+		c = cwo.cn.Clone()
+		c.Suggestions = s
+	}
+	return c, err
+}
+
+func (cwo *cmplWithOpts[T]) modifyArgOpt(ao *argOpt[T]) {
+	ao.completor = cwo
+}
+
 // AsCompletor converts the `Completion` object into a `Completor` interface.
 // This function is useful for constructing simple completors. To create a simple list,
 // for example:
