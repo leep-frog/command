@@ -344,16 +344,24 @@ func (ff *FileCompletor[T]) Complete(value T, data *Data) (*Completion, error) {
 
 	// Ignore any non-distinct matches, if relevant.
 	argSet := map[string]bool{}
+	absSet := map[string]bool{}
 	if ff.Distinct {
 		args := op.toArgs(value)
 		for i := 0; i < len(args)-1; i++ {
 			argSet[args[i]] = true
+			if absArg, err := filepathAbs(args[i]); err == nil {
+				absSet[absArg] = true
+			}
 		}
 	}
 	relevantSuggestions := make([]string, 0, len(suggestions))
 	for _, s := range suggestions {
 		fullPath := fmt.Sprintf("%s%s", laDir, s)
 		if argSet[fullPath] {
+			continue
+		}
+
+		if absFP, err := filepathAbs(filepath.Join(ff.Directory, fullPath)); err == nil && absSet[absFP] {
 			continue
 		}
 
