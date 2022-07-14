@@ -591,7 +591,7 @@ func TestExecute(t *testing.T) {
 				}},
 			},
 		},
-		// CompleteForExecuteAllowExactMatches tests
+		// CompleteForExecuteAllowExactMatch tests
 		{
 			name: "CompleteForExecute fails if exact match and ExactMatch option not provided",
 			etc: &ExecuteTestCase{
@@ -610,10 +610,10 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "CompleteForExecuteAllowExactMatches fails if partial match",
+			name: "CompleteForExecuteAllowExactMatch fails if partial match",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(Arg[string]("s", testDesc,
-					CompleteForExecute[string](CompleteForExecuteAllowExactMatches()),
+					CompleteForExecute[string](CompleteForExecuteAllowExactMatch()),
 					SimpleCompletor[string]("Hello", "HelloThere", "Hello!", "Goodbye"),
 				)),
 				Args: []string{"Hel"},
@@ -627,10 +627,10 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "CompleteForExecuteAllowExactMatches works if exact match",
+			name: "CompleteForExecuteAllowExactMatch works if exact match",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(Arg[string]("s", testDesc,
-					CompleteForExecute[string](CompleteForExecuteAllowExactMatches()),
+					CompleteForExecute[string](CompleteForExecuteAllowExactMatch()),
 					SimpleCompletor[string]("Hello", "HelloThere", "Hello!", "Goodbye"),
 				)),
 				Args: []string{"Hello"},
@@ -645,10 +645,10 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "CompleteForExecuteAllowExactMatches works if exact match with sub match",
+			name: "CompleteForExecuteAllowExactMatch works if exact match with sub match",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(Arg[string]("s", testDesc,
-					CompleteForExecute[string](CompleteForExecuteAllowExactMatches()),
+					CompleteForExecute[string](CompleteForExecuteAllowExactMatch()),
 					SimpleCompletor[string]("Hello", "HelloThere", "Hello!", "Goodbye"),
 				)),
 				Args: []string{"HelloThere"},
@@ -663,10 +663,10 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "CompleteForExecuteAllowExactMatches works if only sub match",
+			name: "CompleteForExecuteAllowExactMatch works if only sub match",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(Arg[string]("s", testDesc,
-					CompleteForExecute[string](CompleteForExecuteAllowExactMatches()),
+					CompleteForExecute[string](CompleteForExecuteAllowExactMatch()),
 					SimpleCompletor[string]("Hello", "HelloThere", "Hello!", "Goodbye"),
 				)),
 				Args: []string{"HelloThere!"},

@@ -99,10 +99,10 @@ func CompleteForExecuteBestEffort() CompleteForExecuteOption {
 	return func(cfe *completeForExecute) { cfe.strict = false }
 }
 
-// CompleteForExecuteAllowExactMatches allows exact matches even if multiple
+// CompleteForExecuteAllowExactMatch allows exact matches even if multiple
 // completions were returned. For example, if the arg is "Hello", and the resulting
 // completions are ["Hello", "HelloThere", "Hello!"], then we won't error.
-func CompleteForExecuteAllowExactMatches() CompleteForExecuteOption {
+func CompleteForExecuteAllowExactMatch() CompleteForExecuteOption {
 	return func(cfe *completeForExecute) { cfe.exactMatch = true }
 }
 
