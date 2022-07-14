@@ -116,6 +116,11 @@ func (t *Transformer[T]) modifyArgOpt(ao *argOpt[T]) {
 	ao.transformers = append(ao.transformers, t)
 }
 
+// Transform transforms the provided value.
+func (t *Transformer[T]) Transform(v T, d *Data) (T, error) {
+	return t.t(v, d)
+}
+
 // TransformerList changes a single-arg transformer (`Transformer[T]`) to a list-arg transformer (`Transformer[[]T]`).
 func TransformerList[T any](t *Transformer[T]) *Transformer[[]T] {
 	return NewTransformer(func(vs []T, data *Data) ([]T, error) {
