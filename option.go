@@ -88,12 +88,22 @@ type CompleteForExecuteOption func(*completeForExecute)
 
 type completeForExecute struct {
 	// Whether or not to actually complete it
-	enabled bool
-	strict  bool
+	enabled    bool
+	strict     bool
+	exactMatch bool
 }
 
+// CompleteForExecuteBestEffort runs CompleteForExecute on a best effort basis.
+// If zero or multiple completions are suggested, then the argument isn't altered.
 func CompleteForExecuteBestEffort() CompleteForExecuteOption {
 	return func(cfe *completeForExecute) { cfe.strict = false }
+}
+
+// CompleteForExecuteAllowExactMatches allows exact matches even if multiple
+// completions were returned. For example, if the arg is "Hello", and the resulting
+// completions are ["Hello", "HelloThere", "Hello!"], then we won't error.
+func CompleteForExecuteAllowExactMatches() CompleteForExecuteOption {
+	return func(cfe *completeForExecute) { cfe.exactMatch = true }
 }
 
 // Transformer is an `ArgOpt` that transforms an argument.

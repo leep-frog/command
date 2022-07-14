@@ -1,6 +1,10 @@
 package command
 
-import "fmt"
+import (
+	"fmt"
+
+	"golang.org/x/exp/slices"
+)
 
 // ArgNode is a type that implements `Processor`. It can be
 // created via `Arg[T]` and `ListArg[T]` functions.
@@ -118,8 +122,10 @@ func (an *ArgNode[T]) Execute(i *Input, o Output, data *Data, eData *ExecuteData
 				}
 				continue
 			}
-			suggestions := compl.process(*tsl[len(tsl)-1], nil, true)
-			if len(suggestions) == 1 {
+
+			lastArg := *tsl[len(tsl)-1]
+			suggestions := compl.process(lastArg, nil, true)
+			if len(suggestions) == 1 || (an.opt.completeForExecute.exactMatch && slices.Contains(suggestions, lastArg)) {
 				*tsl[len(tsl)-1] = suggestions[0]
 			} else if strict {
 				return o.Stderrf("[CompleteForExecute] requires exactly one suggestion to be returned for %q, got %d: %v\n", an.name, len(suggestions), suggestions)

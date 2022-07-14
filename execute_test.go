@@ -591,6 +591,94 @@ func TestExecute(t *testing.T) {
 				}},
 			},
 		},
+		// CompleteForExecuteAllowExactMatches tests
+		{
+			name: "CompleteForExecute fails if exact match and ExactMatch option not provided",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(Arg[string]("s", testDesc,
+					CompleteForExecute[string](),
+					SimpleCompletor[string]("Hello", "HelloThere", "Hello!", "Goodbye"),
+				)),
+				Args: []string{"Hello"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "Hello"},
+					},
+				},
+				WantStderr: "[CompleteForExecute] requires exactly one suggestion to be returned for \"s\", got 3: [Hello Hello! HelloThere]\n",
+				WantErr:    fmt.Errorf("[CompleteForExecute] requires exactly one suggestion to be returned for \"s\", got 3: [Hello Hello! HelloThere]"),
+			},
+		},
+		{
+			name: "CompleteForExecuteAllowExactMatches fails if partial match",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(Arg[string]("s", testDesc,
+					CompleteForExecute[string](CompleteForExecuteAllowExactMatches()),
+					SimpleCompletor[string]("Hello", "HelloThere", "Hello!", "Goodbye"),
+				)),
+				Args: []string{"Hel"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "Hel"},
+					},
+				},
+				WantStderr: "[CompleteForExecute] requires exactly one suggestion to be returned for \"s\", got 3: [Hello Hello! HelloThere]\n",
+				WantErr:    fmt.Errorf("[CompleteForExecute] requires exactly one suggestion to be returned for \"s\", got 3: [Hello Hello! HelloThere]"),
+			},
+		},
+		{
+			name: "CompleteForExecuteAllowExactMatches works if exact match",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(Arg[string]("s", testDesc,
+					CompleteForExecute[string](CompleteForExecuteAllowExactMatches()),
+					SimpleCompletor[string]("Hello", "HelloThere", "Hello!", "Goodbye"),
+				)),
+				Args: []string{"Hello"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "Hello"},
+					},
+				},
+				WantData: &Data{Values: map[string]interface{}{
+					"s": "Hello",
+				}},
+			},
+		},
+		{
+			name: "CompleteForExecuteAllowExactMatches works if exact match with sub match",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(Arg[string]("s", testDesc,
+					CompleteForExecute[string](CompleteForExecuteAllowExactMatches()),
+					SimpleCompletor[string]("Hello", "HelloThere", "Hello!", "Goodbye"),
+				)),
+				Args: []string{"HelloThere"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "HelloThere"},
+					},
+				},
+				WantData: &Data{Values: map[string]interface{}{
+					"s": "HelloThere",
+				}},
+			},
+		},
+		{
+			name: "CompleteForExecuteAllowExactMatches works if only sub match",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(Arg[string]("s", testDesc,
+					CompleteForExecute[string](CompleteForExecuteAllowExactMatches()),
+					SimpleCompletor[string]("Hello", "HelloThere", "Hello!", "Goodbye"),
+				)),
+				Args: []string{"HelloThere!"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "HelloThere!"},
+					},
+				},
+				WantStderr: "[CompleteForExecute] requires exactly one suggestion to be returned for \"s\", got 0: []\n",
+				WantErr:    fmt.Errorf("[CompleteForExecute] requires exactly one suggestion to be returned for \"s\", got 0: []"),
+			},
+		},
 		// FileCompletor with CompleteForExecute
 		{
 			name: "FileCompletor with CompleteForExecute properly completes a single directory",

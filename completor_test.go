@@ -107,6 +107,24 @@ func TestCompletors(t *testing.T) {
 			args: "cmd first second ",
 			want: []string{"third"},
 		},
+		// CompletorWithOpts test
+		{
+			name: "CompletorWithOpts works",
+			c: CompletorWithOpts(
+				SimpleCompletor[[]string]("one", "two", "three", "Ten", "Twelve"),
+				&Completion{
+					Distinct:            true,
+					CaseInsensitiveSort: true,
+					CaseInsensitive:     true,
+				},
+			),
+			args: "cmd Ten T",
+			want: []string{
+				"three",
+				"Twelve",
+				"two",
+			},
+		},
 		// Delimiter tests
 		/*{
 			name: "completor works with ",
