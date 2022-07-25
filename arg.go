@@ -18,7 +18,9 @@ type ArgNode[T any] struct {
 	flag      bool
 }
 
-// AddOptions adds options to an `ArgNode`.
+// AddOptions adds options to an `ArgNode`. Although chaining isn't conventional
+// in go, it is done here because args are usually declared as package-level
+// variables.
 func (an *ArgNode[T]) AddOptions(opts ...ArgOpt[T]) *ArgNode[T] {
 	for _, o := range opts {
 		o.modifyArgOpt(an.opt)
@@ -39,6 +41,14 @@ func (an *ArgNode[T]) Desc() string {
 // Get fetches the arguments value from the `Data` object.
 func (an *ArgNode[T]) Get(data *Data) T {
 	return GetData[T](data, an.name)
+}
+
+// GetOrDefault fetches the arguments value from the `Data` object.
+func (an *ArgNode[T]) GetOrDefault(data *Data, dflt T) T {
+	if data.Has(an.name) {
+		return GetData[T](data, an.name)
+	}
+	return dflt
 }
 
 // Set sets the argument key in the given `Data` object.

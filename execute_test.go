@@ -2159,7 +2159,7 @@ func TestExecute(t *testing.T) {
 				WantStderr: "validation for \"SL\" failed: [IsFile] argument \"testdata\" is a directory\n",
 			},
 		},
-		// InList & string menu
+		// InList & string menus
 		{
 			name: "InList works",
 			etc: &ExecuteTestCase{
@@ -2197,10 +2197,10 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "StringMenu works",
+			name: "MenuArg works",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: StringMenu("strArg", testDesc, "abc", "def", "ghi"),
+					Processor: MenuArg("strArg", testDesc, "abc", "def", "ghi"),
 				},
 				Args: []string{"def"},
 				wantInput: &Input{
@@ -2214,10 +2214,10 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "StringMenu fails",
+			name: "MenuArg fails if provided is not in list",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: StringMenu("strArg", testDesc, "abc", "def", "ghi"),
+					Processor: MenuArg("strArg", testDesc, "abc", "def", "ghi"),
 				},
 				Args: []string{"jkl"},
 				wantInput: &Input{
@@ -2230,6 +2230,61 @@ func TestExecute(t *testing.T) {
 				}},
 				WantStderr: "validation for \"strArg\" failed: [InList] argument must be one of [abc def ghi]\n",
 				WantErr:    fmt.Errorf(`validation for "strArg" failed: [InList] argument must be one of [abc def ghi]`),
+			},
+		},
+		{
+			name: "MenuFlag works",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					NewFlagNode(
+						MenuFlag("sf", 's', testDesc, "abc", "def", "ghi"),
+					),
+				),
+				Args: []string{"--sf", "def"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "--sf"},
+						{value: "def"},
+					},
+				},
+				WantData: &Data{Values: map[string]interface{}{
+					"sf": "def",
+				}},
+			},
+		},
+		{
+			name: "MenuFlag works with AddOptions(default)",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					NewFlagNode(
+						MenuFlag("sf", 's', testDesc, "abc", "def", "ghi", "xyz").AddOptions(Default("xyz")),
+					),
+				),
+				WantData: &Data{Values: map[string]interface{}{
+					"sf": "xyz",
+				}},
+			},
+		},
+		{
+			name: "MenuFlag fails if provided is not in list",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					NewFlagNode(
+						MenuFlag("sf", 's', testDesc, "abc", "def", "ghi"),
+					),
+				),
+				Args: []string{"-s", "jkl"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "-s"},
+						{value: "jkl"},
+					},
+				},
+				WantData: &Data{Values: map[string]interface{}{
+					"sf": "jkl",
+				}},
+				WantStderr: "validation for \"sf\" failed: [InList] argument must be one of [abc def ghi]\n",
+				WantErr:    fmt.Errorf(`validation for "sf" failed: [InList] argument must be one of [abc def ghi]`),
 			},
 		},
 		// MinLength
@@ -5600,11 +5655,11 @@ func TestComplete(t *testing.T) {
 				Want: []string{"command", "default", "opts"},
 			},
 		},
-		// StringMenu tests.
+		// MenuArg tests.
 		{
-			name: "StringMenu completes choices",
+			name: "MenuArg completes choices",
 			ctc: &CompleteTestCase{
-				Node: SerialNodes(StringMenu("sm", "desc", "abc", "def", "ghi")),
+				Node: SerialNodes(MenuArg("sm", "desc", "abc", "def", "ghi")),
 				Args: "cmd ",
 				Want: []string{"abc", "def", "ghi"},
 				WantData: &Data{Values: map[string]interface{}{
@@ -5613,13 +5668,67 @@ func TestComplete(t *testing.T) {
 			},
 		},
 		{
-			name: "StringMenu completes partial",
+			name: "MenuArg completes partial",
 			ctc: &CompleteTestCase{
-				Node: SerialNodes(StringMenu("sm", "desc", "abc", "def", "ghi")),
+				Node: SerialNodes(MenuArg("sm", "desc", "abc", "def", "ghi")),
 				Args: "cmd g",
 				Want: []string{"ghi"},
 				WantData: &Data{Values: map[string]interface{}{
 					"sm": "g",
+				}},
+			},
+		},
+		{
+			name: "MenuArg completes none if no match",
+			ctc: &CompleteTestCase{
+				Node: SerialNodes(MenuArg("sm", "desc", "abc", "def", "ghi")),
+				Args: "cmd j",
+				WantData: &Data{Values: map[string]interface{}{
+					"sm": "j",
+				}},
+			},
+		},
+		{
+			name: "MenuFlag completes choices",
+			ctc: &CompleteTestCase{
+				Node: SerialNodes(
+					NewFlagNode(
+						MenuFlag("sf", 's', testDesc, "abc", "def", "ghi"),
+					),
+				),
+				Args: "cmd --sf ",
+				Want: []string{"abc", "def", "ghi"},
+				WantData: &Data{Values: map[string]interface{}{
+					"sf": "",
+				}},
+			},
+		},
+		{
+			name: "MenuArg completes partial",
+			ctc: &CompleteTestCase{
+				Node: SerialNodes(
+					NewFlagNode(
+						MenuFlag("sf", 's', testDesc, "abc", "def", "ghi"),
+					),
+				),
+				Args: "cmd -s g",
+				Want: []string{"ghi"},
+				WantData: &Data{Values: map[string]interface{}{
+					"sf": "g",
+				}},
+			},
+		},
+		{
+			name: "MenuFlag completes none",
+			ctc: &CompleteTestCase{
+				Node: SerialNodes(
+					NewFlagNode(
+						MenuFlag("sf", 's', testDesc, "abc", "def", "ghi"),
+					),
+				),
+				Args: "cmd -s j",
+				WantData: &Data{Values: map[string]interface{}{
+					"sf": "j",
 				}},
 			},
 		},

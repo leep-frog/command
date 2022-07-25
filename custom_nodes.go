@@ -402,9 +402,24 @@ func (sp *simpleProcessor) Complete(i *Input, d *Data) (*Completion, error) {
 	return sp.c(i, d)
 }
 
-// StringMenu returns an `Arg` that is required to be one of the provided choices.
-func StringMenu(name, desc string, choices ...string) *ArgNode[string] {
-	return Arg[string](name, desc, SimpleCompletor[string](choices...), InList(choices...))
+// MenuFlag returns an `Arg` that is required to be one of the provided choices.
+func MenuFlag[T comparable](name string, shortName rune, desc string, choices ...T) FlagWithType[T] {
+	var strChoices []string
+	op := getOperator[T]()
+	for _, c := range choices {
+		strChoices = append(strChoices, op.toArgs(c)...)
+	}
+	return NewFlag[T](name, shortName, desc, SimpleCompletor[T](strChoices...), InList(choices...))
+}
+
+// MenuArg returns an `Arg` that is required to be one of the provided choices.
+func MenuArg[T comparable](name, desc string, choices ...T) *ArgNode[T] {
+	var strChoices []string
+	op := getOperator[T]()
+	for _, c := range choices {
+		strChoices = append(strChoices, op.toArgs(c)...)
+	}
+	return Arg[T](name, desc, SimpleCompletor[T](strChoices...), InList(choices...))
 }
 
 // ListBreakerOption is an option type for the `ListBreaker` type.

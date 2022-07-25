@@ -39,6 +39,10 @@ type FlagWithType[T any] interface {
 	Flag
 	// Get returns the flags value from a `Data` object.
 	Get(*Data) T
+	// AddOptions adds options to a `FlagWithType`. Although chaining isn't
+	// conventional in go, it is done here because flags are usually declared as
+	// package-level variables.
+	AddOptions(...ArgOpt[T]) FlagWithType[T]
 }
 
 func flagName(f Flag) string {
@@ -283,6 +287,13 @@ func (f *flag[T]) Get(d *Data) T {
 	return GetData[T](d, f.name)
 }
 
+func (f *flag[T]) AddOptions(opts ...ArgOpt[T]) FlagWithType[T] {
+	for _, o := range opts {
+		o.modifyArgOpt(f.argNode.opt)
+	}
+	return f
+}
+
 // NewFlag creates a `Flag` from argument info.
 func NewFlag[T any](name string, shortName rune, desc string, opts ...ArgOpt[T]) FlagWithType[T] {
 	return listFlag(name, desc, shortName, 1, 0, opts...)
@@ -377,6 +388,10 @@ func (bf *boolFlag[T]) Execute(_ *Input, _ Output, data *Data, _ *ExecuteData) e
 
 func (bf *boolFlag[T]) Get(d *Data) T {
 	return GetData[T](d, bf.name)
+}
+
+func (bf *boolFlag[T]) AddOptions(opts ...ArgOpt[T]) FlagWithType[T] {
+	panic("options cannot be added to a boolean flag")
 }
 
 // NewListFlag creates a `Flag` from list argument info.
