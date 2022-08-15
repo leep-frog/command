@@ -19,6 +19,7 @@ var (
 		"gocli",
 		"grep",
 		"labelmaker",
+		"notification",
 		"pdf",
 		"replace",
 		"sourcecontrol",
