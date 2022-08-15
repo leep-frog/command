@@ -380,8 +380,8 @@ func TestExecute(t *testing.T) {
 			name: "setdir requires an existing file",
 			etc: &command.ExecuteTestCase{
 				Args:       []string{"setdir", "uh"},
-				WantErr:    fmt.Errorf("validation for \"DIR\" failed: [IsDir] file %q does not exist", command.FilepathAbs(t, "uh")),
-				WantStderr: fmt.Sprintf("validation for \"DIR\" failed: [IsDir] file %q does not exist\n", command.FilepathAbs(t, "uh")),
+				WantErr:    fmt.Errorf("validation for \"DIR\" failed: [FileExists] file %q does not exist", command.FilepathAbs(t, "uh")),
+				WantStderr: fmt.Sprintf("validation for \"DIR\" failed: [FileExists] file %q does not exist\n", command.FilepathAbs(t, "uh")),
 			},
 		},
 		{
