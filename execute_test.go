@@ -3,6 +3,7 @@ package command
 import (
 	"fmt"
 	"path/filepath"
+	"runtime"
 	"sort"
 	"strings"
 	"testing"
@@ -5627,6 +5628,44 @@ func TestComplete(t *testing.T) {
 					"go.sum",
 					"sourcerer/",
 					"testdata/",
+					" ",
+				},
+			},
+		},
+		{
+			name:        "FileCompletor works with absolute path",
+			filepathAbs: filepath.Join("."),
+			ctc: &CompleteTestCase{
+				Node: SerialNodes(
+					Arg[string]("fn", testDesc, CompletorFromFunc(func(s string, d *Data) (*Completion, error) {
+						_, thisFile, _, ok := runtime.Caller(0)
+						if !ok {
+							return nil, fmt.Errorf("failed to get runtime caller")
+						}
+						fc := &FileCompletor[string]{
+							Directory: filepath.Join(filepath.Dir(thisFile), "testdata"),
+						}
+						return fc.Complete(s, d)
+					})),
+				),
+				Args: "cmd ",
+				WantData: &Data{Values: map[string]interface{}{
+					"fn": "",
+				}},
+				Want: []string{
+					".surprise",
+					"cases/",
+					"dir1/",
+					"dir2/",
+					"dir3/",
+					"dir4/",
+					"four.txt",
+					"METADATA",
+					"metadata_/",
+					"moreCases/",
+					"one.txt",
+					"three.txt",
+					"two.txt",
 					" ",
 				},
 			},
