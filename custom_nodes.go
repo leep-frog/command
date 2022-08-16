@@ -112,6 +112,8 @@ func (bn *branchNode) Complete(input *Input, data *Data) (*Completion, error) {
 		// Need to iterate over the remaining nodes in case the immediately next node
 		// doesn't process any args and the one after it does.
 		var newC *Completion
+		// TODO: if newC returns a completion with DontCompelete,
+		// then the branch completions aren't filtered out properly.
 		newC, defaultNodeErr = getCompleteData(bn.def, input, data)
 		if newC != nil {
 			c = newC
