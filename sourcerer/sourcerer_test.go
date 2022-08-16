@@ -19,7 +19,7 @@ const (
 )
 
 func TestGenerateBinaryNode(t *testing.T) {
-	command.StubValue(t, &osExecutable, func() (string, error) {
+	command.StubValue(t, &getSourceLoc, func() (string, error) {
 		return "/fake/source/location", nil
 	})
 
@@ -29,7 +29,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 		args            []string
 		ignoreNosort    bool
 		opts            []Option
-		osExecutableErr error
+		getSourceLocErr error
 		wantStdout      []string
 		wantStderr      []string
 		wantExecuteFile []string

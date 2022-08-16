@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"runtime"
 	"sort"
 	"strings"
 
@@ -344,7 +345,7 @@ func Source(clis []CLI, opts ...Option) int {
 
 // Separate method used for testing.
 func source(clis []CLI, osArgs []string, o command.Output, opts ...Option) error {
-	sl, err := osExecutable()
+	sl, err := getSourceLoc()
 	if err != nil {
 		return o.Annotate(err, "failed to get source location")
 	}
@@ -377,7 +378,13 @@ func source(clis []CLI, osArgs []string, o command.Output, opts ...Option) error
 
 var (
 	// Stubbed out for testing purposes
-	osExecutable = os.Executable
+	getSourceLoc = func() (string, error) {
+		_, sourceLocation, _, ok := runtime.Caller(3)
+		if !ok {
+			return "", fmt.Errorf("failed to fetch caller")
+		}
+		return sourceLocation, nil
+	}
 )
 
 var (
