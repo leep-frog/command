@@ -307,30 +307,27 @@ func (s *sourcerer) usageExecutor(o command.Output, d *command.Data) error {
 	return nil
 }
 
-type Option func(*compiledOpts)
-
-func Aliaser(alias string, values ...string) Option {
-	return func(o *compiledOpts) { o.aliasers[alias] = values }
+type Option interface {
+	modifyCompiledOpts(*compiledOpts)
 }
 
-func Aliasers(m map[string][]string) Option {
-	var opts []Option
-	for a, vs := range m {
-		opts = append(opts, Aliaser(a, vs...))
-	}
-	return multiOpts(opts...)
+type simpleOption func(*compiledOpts)
+
+func (so *simpleOption) modifyCompiledOpts(co *compiledOpts) {
+	(*so)(co)
 }
 
 func multiOpts(opts ...Option) Option {
-	return func(co *compiledOpts) {
+	so := simpleOption(func(co *compiledOpts) {
 		for _, o := range opts {
-			o(co)
+			o.modifyCompiledOpts(co)
 		}
-	}
+	})
+	return &so
 }
 
 type compiledOpts struct {
-	aliasers map[string][]string
+	aliasers map[string]*Aliaser
 }
 
 // Source generates the bash source file for a list of CLIs.
@@ -351,10 +348,10 @@ func source(clis []CLI, osArgs []string, o command.Output, opts ...Option) error
 	}
 
 	cos := &compiledOpts{
-		aliasers: map[string][]string{},
+		aliasers: map[string]*Aliaser{},
 	}
 	for _, oi := range opts {
-		oi(cos)
+		oi.modifyCompiledOpts(cos)
 	}
 
 	s := &sourcerer{
@@ -443,7 +440,7 @@ func (s *sourcerer) generateFile(o command.Output, d *command.Data) error {
 	}
 	slices.Sort(aliases)
 	for _, alias := range aliases {
-		o.Stdoutf("aliaser %s %s\n", alias, strings.Join(s.opts.aliasers[alias], " "))
+		o.Stdoutf(strings.Join(s.opts.aliasers[alias].BashContents(), "\n"))
 	}
 
 	return nil

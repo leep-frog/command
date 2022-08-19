@@ -58,10 +58,6 @@ func (*UpdateLeepPackageCommand) Node() *command.Node {
 	)
 }
 
-func getFile(cli string) string {
-	return fmt.Sprintf(`local file="$(type %s | head -n 1 | grep "is aliased to.*_custom_execute_" | grep "_custom_execute_[^[:space:]]*" -o | sed s/_custom_execute_//g)"`, cli)
-}
-
 // UsageCommand is a CLI for printing out usage info for a CLI.
 type UsageCommand struct{}
 
@@ -81,7 +77,7 @@ func (*UsageCommand) Node() *command.Node {
 			return []string{
 				// Extract the custom execute function so that this function
 				// can work regardless of file name
-				getFile(cli),
+				sourcerer.FileStringFromCLI(cli),
 				`if [ -z "$file" ]; then`,
 				fmt.Sprintf(`  echo %s is not a CLI generated via github.com/leep-frog/command`, cli),
 				`  return 1`,
@@ -111,23 +107,8 @@ func (*AliaserCommand) Node() *command.Node {
 		command.ExecutableNode(func(_ command.Output, d *command.Data) ([]string, error) {
 			alias := d.String(a)
 			cli := d.String(c)
-			var qas []string
-			for _, pt := range d.StringList(pts) {
-				qas = append(qas, fmt.Sprintf("%q", pt))
-			}
-			quotedArgs := strings.Join(qas, " ")
-			aliasTo := fmt.Sprintf("%s %s", cli, quotedArgs)
-			return []string{
-				// TODO: check that it's a leep-frog command
-				getFile(cli),
-				`if [ -z "$file" ]; then`,
-				`  echo Provided CLI is not a CLI generated with github.com/leep-frog/command`,
-				`  return 1`,
-				`fi`,
-				fmt.Sprintf("alias -- %s=%q", alias, aliasTo),
-				fmt.Sprintf(sourcerer.AutocompleteForAliasFunction, alias, cli, cli, quotedArgs),
-				fmt.Sprintf("complete -F _custom_autocomplete_for_alias_%s %s %s", alias, sourcerer.NosortString(), alias),
-			}, nil
+			aliaser := sourcerer.NewAliaser(alias, cli, d.StringList(pts)...)
+			return aliaser.BashContents(), nil
 		}),
 	)
 }
