@@ -19,6 +19,10 @@ func (a *Aliaser) modifyCompiledOpts(co *compiledOpts) {
 }
 
 func AliasSourcery(o command.Output, as ...*Aliaser) {
+	if len(as) == 0 {
+		return
+	}
+
 	slices.SortFunc(as, func(this, that *Aliaser) bool {
 		return this.alias < that.alias
 	})
