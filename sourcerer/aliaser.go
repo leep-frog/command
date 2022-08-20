@@ -24,9 +24,9 @@ func (a *Aliaser) BashContents() []string {
 	aliasTo := fmt.Sprintf("%s %s", a.cli, quotedArgs)
 	return []string{
 		// TODO: check that it's a leep-frog command
-		FileStringFromCLI(a.alias),
+		FileStringFromCLI(a.cli),
 		`if [ -z "$file" ]; then`,
-		fmt.Sprintf(`  echo Provided CLI %q is not a CLI generated with github.com/leep-frog/command`, a.alias),
+		fmt.Sprintf(`  echo Provided CLI %q is not a CLI generated with github.com/leep-frog/command`, a.cli),
 		`  return 1`,
 		`fi`,
 		fmt.Sprintf("alias -- %s=%q", a.alias, aliasTo),
