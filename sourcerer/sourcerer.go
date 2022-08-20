@@ -398,8 +398,6 @@ func (s *sourcerer) generateFile(o command.Output, d *command.Data) error {
 		filename = d.String(targetNameArg.Name())
 	}
 
-	o.Stdoutln("log_timer BEGIN GF")
-
 	// cd into the directory of the file that is actually calling this and install dependencies.
 	o.Stdoutf(generateBinary, s.sl, filename)
 
