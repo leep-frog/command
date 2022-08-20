@@ -23,6 +23,8 @@ func AliasSourcery(o command.Output, as ...*Aliaser) {
 		return this.alias < that.alias
 	})
 
+	o.Stdoutln(globalAutocompleteForAliasFunction)
+
 	verifiedCLIs := map[string]bool{}
 	for _, a := range as {
 		// Verify the CLI is a leep-frog CLI (if we haven't already).
@@ -48,7 +50,7 @@ func AliasSourcery(o command.Output, as ...*Aliaser) {
 		aliasTo := fmt.Sprintf("%s %s", a.cli, quotedArgs)
 		o.Stdoutf(strings.Join([]string{
 			fmt.Sprintf("alias -- %s=%q", a.alias, aliasTo),
-			fmt.Sprintf(AutocompleteForAliasFunction, a.alias, a.cli, a.cli, quotedArgs),
+			fmt.Sprintf(autocompleteForAliasFunction, a.alias, a.cli, quotedArgs),
 			fmt.Sprintf("complete -F _custom_autocomplete_for_alias_%s %s %s", a.alias, NosortString(), a.alias),
 			``,
 			``,

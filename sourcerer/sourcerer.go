@@ -41,19 +41,25 @@ var (
 		"",
 	}, "\n")
 
-	// AutocompleteForAliasFunction defines a bash function for CLI autocompletion for aliased commands.
-	// See AliaserCommand.
-	AutocompleteForAliasFunction = strings.Join([]string{
-		"function _custom_autocomplete_for_alias_%s {",
-		// TODO: check if `file` variable is empty
-		fmt.Sprintf("  %s", FileStringFromCLI("%s")),
+	globalAutocompleteForAliasFunction = strings.Join([]string{
+		`function _leep_frog_autocompleter {`,
+		fmt.Sprintf("  %s", FileStringFromCLI(`"$1"`)),
 		`  local tFile=$(mktemp)`,
 		// The last argument is for extra passthrough arguments to be passed for aliaser autocompletes.
-		`  $GOPATH/bin/_${file}_runner autocomplete %s $COMP_POINT "$COMP_LINE" %s > $tFile`,
+		`  $GOPATH/bin/_${file}_runner autocomplete "$1" $COMP_POINT "$COMP_LINE" "${@:2}" > $tFile`,
 		`  local IFS='`,
 		`';`,
 		`  COMPREPLY=( $(cat $tFile) )`,
 		`  rm $tFile`,
+		`}`,
+		``,
+	}, "\n")
+
+	// autocompleteForAliasFunction defines a bash function for CLI autocompletion for aliased commands.
+	// See AliaserCommand.
+	autocompleteForAliasFunction = strings.Join([]string{
+		"function _custom_autocomplete_for_alias_%s {",
+		`  _leep_frog_autocompleter %q %s`,
 		"}",
 		"",
 	}, "\n")
