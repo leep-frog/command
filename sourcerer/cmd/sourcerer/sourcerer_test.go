@@ -11,7 +11,7 @@ import (
 	"github.com/leep-frog/command"
 )
 
-func TestNodeRunner(t *testing.T) {
+func TestExecute(t *testing.T) {
 	for _, test := range []struct {
 		name        string
 		etc         *command.ExecuteTestCase
@@ -136,6 +136,7 @@ func TestNodeRunner(t *testing.T) {
 				}},
 			},
 		},
+		// Usage
 		{
 			name: "runs usage",
 			etc: &command.ExecuteTestCase{

@@ -108,7 +108,10 @@ func (*AliaserCommand) Node() *command.Node {
 			alias := d.String(a)
 			cli := d.String(c)
 			aliaser := sourcerer.NewAliaser(alias, cli, d.StringList(pts)...)
-			return aliaser.BashContents(), nil
+			fo := command.NewFakeOutput()
+			sourcerer.AliasSourcery(fo, aliaser)
+			fo.Close()
+			return []string{fo.GetStdout()}, nil
 		}),
 	)
 }

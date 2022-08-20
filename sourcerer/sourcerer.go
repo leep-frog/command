@@ -14,7 +14,7 @@ import (
 
 	"github.com/leep-frog/command"
 	"github.com/leep-frog/command/cache"
-	"golang.org/x/exp/slices"
+	"golang.org/x/exp/maps"
 )
 
 var (
@@ -434,14 +434,7 @@ func (s *sourcerer) generateFile(o command.Output, d *command.Data) error {
 		o.Stdoutf("complete -F _custom_autocomplete_%s %s %s\n", filename, NosortString(), alias)
 	}
 
-	var aliases []string
-	for alias := range s.opts.aliasers {
-		aliases = append(aliases, alias)
-	}
-	slices.Sort(aliases)
-	for _, alias := range aliases {
-		o.Stdoutf(strings.Join(s.opts.aliasers[alias].BashContents(), "\n"))
-	}
+	AliasSourcery(o, maps.Values(s.opts.aliasers)...)
 
 	return nil
 }
