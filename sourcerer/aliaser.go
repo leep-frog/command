@@ -29,8 +29,7 @@ func AliasSourcery(o command.Output, as ...*Aliaser) {
 		if _, ok := verifiedCLIs[a.cli]; !ok {
 			verifiedCLIs[a.cli] = true
 			o.Stdoutf(strings.Join([]string{
-				//`# Verify the CLI is
-				fmt.Sprintf(`local file="$(type %s | head -n 1 | grep "is aliased to.*_custom_execute_" | grep "_custom_execute_[^[:space:]]*" -o | sed s/_custom_execute_//g)"`, a.cli),
+				FileStringFromCLI(a.cli),
 				`if [ -z "$file" ]; then`,
 				fmt.Sprintf(`  echo Provided CLI %q is not a CLI generated with github.com/leep-frog/command`, a.cli),
 				`  return 1`,
