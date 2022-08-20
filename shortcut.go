@@ -74,8 +74,8 @@ func ShortcutNode(name string, sc ShortcutCLI, n *Node) *Node {
 	return BranchNode(shortcutMap(name, sc, n), executor, HideBranchUsage(), DontCompleteSubcommands())
 }
 
-func shortcutCompletor(name string, sc ShortcutCLI) Completor[string] {
-	return CompletorFromFunc(func(string, *Data) (*Completion, error) {
+func shortcutCompleter(name string, sc ShortcutCLI) Completer[string] {
+	return CompleterFromFunc(func(string, *Data) (*Completion, error) {
 		s := []string{}
 		for k := range getShortcutMap(sc, name) {
 			s = append(s, k)
@@ -93,7 +93,7 @@ const (
 )
 
 func shortcutListArg(name string, sc ShortcutCLI) Processor {
-	return ListArg[string](ShortcutArg.Name(), hiddenNodeDesc, 1, UnboundedList, CompletorList(shortcutCompletor(name, sc)))
+	return ListArg[string](ShortcutArg.Name(), hiddenNodeDesc, 1, UnboundedList, CompleterList(shortcutCompleter(name, sc)))
 }
 
 func shortcutSearcher(name string, sc ShortcutCLI, n *Node) *Node {

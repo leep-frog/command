@@ -42,7 +42,7 @@ func (mfc *myFirstCommand) Node() *command.Node {
 	// A boolean flag (set by passing `--formal` or `-f` to your command in bash).
 	formalFlag := command.BoolFlag("formal", 'f', "Whether or not the response should be formal")
 	// A required string argument that can be autocompleted!
-	nameArg := command.Arg[string]("NAME", "Your name", command.SimpleCompletor[string]("Alice", "Bob", "Bruno", "Charlie", "World"))
+	nameArg := command.Arg[string]("NAME", "Your name", command.SimpleCompleter[string]("Alice", "Bob", "Bruno", "Charlie", "World"))
 	// An optional integer argument that must be a positive number and defaults to 1.
 	nArg := command.OptionalArg[int](
 		"N", "Number of times to say hello",

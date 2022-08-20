@@ -20,18 +20,18 @@ const (
 	suffixChar = "_"
 )
 
-// SimpleCompletor returns a completor that suggests the provided strings for command autocompletion.
-func SimpleCompletor[T any](s ...string) Completor[T] {
-	return AsCompletor[T](
+// SimpleCompleter returns a completer that suggests the provided strings for command autocompletion.
+func SimpleCompleter[T any](s ...string) Completer[T] {
+	return AsCompleter[T](
 		&Completion{
 			Suggestions: s,
 		},
 	)
 }
 
-// SimpleDistinctCompletor returns a completor that distinctly suggests the provided strings for command autocompletion.
-func SimpleDistinctCompletor[T any](s ...string) Completor[T] {
-	return AsCompletor[T](
+// SimpleDistinctCompleter returns a completer that distinctly suggests the provided strings for command autocompletion.
+func SimpleDistinctCompleter[T any](s ...string) Completer[T] {
+	return AsCompleter[T](
 		&Completion{
 			Distinct:    true,
 			Suggestions: s,
@@ -39,9 +39,9 @@ func SimpleDistinctCompletor[T any](s ...string) Completor[T] {
 	)
 }
 
-// CompletorList changes a single arg completor (`Completor[T]`) into a list arg completor (`Completor[[]T]`).
-func CompletorList[T any](c Completor[T]) Completor[[]T] {
-	return &simpleCompletor[[]T]{
+// CompleterList changes a single arg completer (`Completer[T]`) into a list arg completer (`Completer[[]T]`).
+func CompleterList[T any](c Completer[T]) Completer[[]T] {
+	return &simpleCompleter[[]T]{
 		f: func(ts []T, d *Data) (*Completion, error) {
 			var t T
 			if len(ts) > 0 {
@@ -52,30 +52,30 @@ func CompletorList[T any](c Completor[T]) Completor[[]T] {
 	}
 }
 
-// CompletorFromFunc returns a `Completor` object from the provided function.
-func CompletorFromFunc[T any](f func(T, *Data) (*Completion, error)) Completor[T] {
-	return &simpleCompletor[T]{f}
+// CompleterFromFunc returns a `Completer` object from the provided function.
+func CompleterFromFunc[T any](f func(T, *Data) (*Completion, error)) Completer[T] {
+	return &simpleCompleter[T]{f}
 }
 
-type simpleCompletor[T any] struct {
+type simpleCompleter[T any] struct {
 	f func(T, *Data) (*Completion, error)
 }
 
-func (sc *simpleCompletor[T]) Complete(t T, d *Data) (*Completion, error) {
+func (sc *simpleCompleter[T]) Complete(t T, d *Data) (*Completion, error) {
 	return sc.f(t, d)
 }
 
-func (sc *simpleCompletor[T]) modifyArgOpt(ao *argOpt[T]) {
-	ao.completor = sc
+func (sc *simpleCompleter[T]) modifyArgOpt(ao *argOpt[T]) {
+	ao.completer = sc
 }
 
-// Completor is an autocompletion object that can be used as an `ArgOpt`.
-type Completor[T any] interface {
+// Completer is an autocompletion object that can be used as an `ArgOpt`.
+type Completer[T any] interface {
 	Complete(T, *Data) (*Completion, error)
 	modifyArgOpt(*argOpt[T])
 }
 
-// Completion is the object constructed by a completor.
+// Completion is the object constructed by a completer.
 type Completion struct {
 	// Suggestions is the set of autocomplete suggestions.
 	Suggestions []string
@@ -103,14 +103,14 @@ func (c *Completion) Clone() *Completion {
 	}
 }
 
-// CompletorWithOpts sets the relevant options in the `Completion` object
-// returned by the `Completor`.
-func CompletorWithOpts[T any](cr Completor[T], cn *Completion) Completor[T] {
+// CompleterWithOpts sets the relevant options in the `Completion` object
+// returned by the `Completer`.
+func CompleterWithOpts[T any](cr Completer[T], cn *Completion) Completer[T] {
 	return &cmplWithOpts[T]{cr, cn}
 }
 
 type cmplWithOpts[T any] struct {
-	cr Completor[T]
+	cr Completer[T]
 	cn *Completion
 }
 
@@ -125,38 +125,38 @@ func (cwo *cmplWithOpts[T]) Complete(t T, d *Data) (*Completion, error) {
 }
 
 func (cwo *cmplWithOpts[T]) modifyArgOpt(ao *argOpt[T]) {
-	ao.completor = cwo
+	ao.completer = cwo
 }
 
-// AsCompletor converts the `Completion` object into a `Completor` interface.
-// This function is useful for constructing simple completors. To create a simple list,
+// AsCompleter converts the `Completion` object into a `Completer` interface.
+// This function is useful for constructing simple completers. To create a simple list,
 // for example:
 // ```go
-// &Completion{Suggestions: []{"abc", "def", ...}}.AsCompletor
+// &Completion{Suggestions: []{"abc", "def", ...}}.AsCompleter
 // ```
-func AsCompletor[T any](c *Completion) Completor[T] {
-	return &completionCompletor[T]{c}
+func AsCompleter[T any](c *Completion) Completer[T] {
+	return &completionCompleter[T]{c}
 }
 
-type completionCompletor[T any] struct {
+type completionCompleter[T any] struct {
 	c *Completion
 }
 
-func (sc *completionCompletor[T]) Complete(t T, d *Data) (*Completion, error) {
+func (sc *completionCompleter[T]) Complete(t T, d *Data) (*Completion, error) {
 	return sc.c, nil
 }
 
-func (sc *completionCompletor[T]) modifyArgOpt(c *argOpt[T]) {
-	c.completor = sc
+func (sc *completionCompleter[T]) modifyArgOpt(c *argOpt[T]) {
+	c.completer = sc
 }
 
-// BoolCompletor is a completor for all boolean strings.
-func BoolCompletor() Completor[bool] {
-	return SimpleCompletor[bool](boolStringValues...)
+// BoolCompleter is a completer for all boolean strings.
+func BoolCompleter() Completer[bool] {
+	return SimpleCompleter[bool](boolStringValues...)
 }
 
 // RunCompletion generates the `Completion` object from the provided inputs.
-func RunCompletion[T any](c Completor[T], rawValue string, value T, data *Data) (*Completion, error) {
+func RunCompletion[T any](c Completer[T], rawValue string, value T, data *Data) (*Completion, error) {
 	if c == nil {
 		return nil, nil
 	}
@@ -246,8 +246,8 @@ func (c *Completion) process(lastArg string, delimiter *rune, skipDelimiter bool
 	return results
 }
 
-// FileCompletor is a `Completor` implementer specifically for file args.
-type FileCompletor[T any] struct {
+// FileCompleter is a `Completer` implementer specifically for file args.
+type FileCompleter[T any] struct {
 	// Regexp is the regexp that all suggested files must satisfy.
 	Regexp *regexp.Regexp
 	// Directory is the directory in which to search for files.
@@ -267,8 +267,8 @@ type FileCompletor[T any] struct {
 	IgnoreFunc func(fullPath string, basename string, data *Data) bool
 }
 
-func (ff *FileCompletor[T]) modifyArgOpt(ao *argOpt[T]) {
-	ao.completor = ff
+func (ff *FileCompleter[T]) modifyArgOpt(ao *argOpt[T]) {
+	ao.completer = ff
 }
 
 var (
@@ -277,7 +277,7 @@ var (
 )
 
 // Complete creates a `Completion` object with the relevant set of files.
-func (ff *FileCompletor[T]) Complete(value T, data *Data) (*Completion, error) {
+func (ff *FileCompleter[T]) Complete(value T, data *Data) (*Completion, error) {
 	var lastArg string
 	op := getOperator[T]()
 	if args := op.toArgs(value); len(args) > 0 {
@@ -464,10 +464,10 @@ func getAutofillLetters(laFile string, suggestions []string) (string, bool) {
 func FileNode(argName, desc string, opts ...ArgOpt[string]) *ArgNode[string] {
 
 	// Defaults must go first so they can be overriden by provided opts
-	// For example, the last `Completor` opt in the slice will be the one
+	// For example, the last `Completer` opt in the slice will be the one
 	// set in the `ArgOpt` object.
 	return Arg(argName, desc, append([]ArgOpt[string]{
-		&FileCompletor[string]{},
+		&FileCompleter[string]{},
 		FileTransformer(),
 		FileExists(),
 	}, opts...)...)
@@ -476,7 +476,7 @@ func FileNode(argName, desc string, opts ...ArgOpt[string]) *ArgNode[string] {
 // FileListNode creates an `ArgList` node for file objects.
 func FileListNode(argName, desc string, minN, optionalN int, opts ...ArgOpt[[]string]) *ArgNode[[]string] {
 	opts = append(opts,
-		&FileCompletor[[]string]{},
+		&FileCompleter[[]string]{},
 		TransformerList(FileTransformer()),
 	)
 	return ListArg(argName, desc, minN, optionalN, opts...)

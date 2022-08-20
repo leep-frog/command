@@ -119,7 +119,7 @@ func (an *ArgNode[T]) Execute(i *Input, o Output, data *Data, eData *ExecuteData
 			tsl := sl[:i]
 			v, err := an.convertStringValue(tsl, data, false)
 			data.completeForExecute = true
-			compl, err := RunCompletion(an.opt.completor, *tsl[len(tsl)-1], v, data)
+			compl, err := RunCompletion(an.opt.completer, *tsl[len(tsl)-1], v, data)
 			data.completeForExecute = false
 			if err != nil {
 				if strict {
@@ -266,7 +266,7 @@ func (an *ArgNode[T]) complete(sl []*string, enough bool, input *Input, data *Da
 			if len(sl) > 0 {
 				lastArg = *sl[len(sl)-1]
 			}
-			return RunCompletion(an.opt.completor, lastArg, v, data)
+			return RunCompletion(an.opt.completer, lastArg, v, data)
 		}
 
 		return nil, err
@@ -298,8 +298,8 @@ func (an *ArgNode[T]) complete(sl []*string, enough bool, input *Input, data *Da
 	// Otherwise, we are on the last value and should complete it.
 	an.Set(v, data)
 
-	// If there isn't a completor, then no work to be done.
-	if an.opt == nil || an.opt.completor == nil {
+	// If there isn't a completer, then no work to be done.
+	if an.opt == nil || an.opt.completer == nil {
 		return nil, nil
 	}
 
@@ -309,7 +309,7 @@ func (an *ArgNode[T]) complete(sl []*string, enough bool, input *Input, data *Da
 	if len(ta) > 0 {
 		lastArg = ta[len(ta)-1]
 	}
-	return RunCompletion(an.opt.completor, lastArg, v, data)
+	return RunCompletion(an.opt.completer, lastArg, v, data)
 }
 
 // Arg creates an argument node that requires exactly one input.
@@ -331,7 +331,7 @@ func ListArg[T any](name, desc string, minN, optionalN int, opts ...ArgOpt[[]T])
 
 // BoolNode creates a boolean argument.
 func BoolNode(name, desc string) *ArgNode[bool] {
-	return listNode[bool](name, desc, 1, 0, BoolCompletor())
+	return listNode[bool](name, desc, 1, 0, BoolCompleter())
 }
 
 func listNode[T any](name, desc string, minN, optionalN int, opts ...ArgOpt[T]) *ArgNode[T] {

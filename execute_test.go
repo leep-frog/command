@@ -96,7 +96,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "CompleteForExecute for Arg fails if no arg provided",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(Arg[int]("is", testDesc, CompleteForExecute[int](), CompletorFromFunc(func(i int, d *Data) (*Completion, error) {
+				Node: SerialNodes(Arg[int]("is", testDesc, CompleteForExecute[int](), CompleterFromFunc(func(i int, d *Data) (*Completion, error) {
 					return nil, fmt.Errorf("oopsie")
 				}))),
 				WantErr:    fmt.Errorf(`Argument "is" requires at least 1 argument, got 0`),
@@ -104,10 +104,10 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "CompleteForExecute for Arg fails completor returns error",
+			name: "CompleteForExecute for Arg fails completer returns error",
 			etc: &ExecuteTestCase{
 				Args: []string{""},
-				Node: SerialNodes(Arg[int]("is", testDesc, CompleteForExecute[int](), CompletorFromFunc(func(i int, d *Data) (*Completion, error) {
+				Node: SerialNodes(Arg[int]("is", testDesc, CompleteForExecute[int](), CompleterFromFunc(func(i int, d *Data) (*Completion, error) {
 					return nil, fmt.Errorf("oopsie")
 				}))),
 				wantInput: &Input{
@@ -123,7 +123,7 @@ func TestExecute(t *testing.T) {
 			name: "CompleteForExecute for Arg fails if returned completion is nil",
 			etc: &ExecuteTestCase{
 				Args: []string{""},
-				Node: SerialNodes(Arg[int]("is", testDesc, CompleteForExecute[int](), CompletorFromFunc(func(i int, d *Data) (*Completion, error) {
+				Node: SerialNodes(Arg[int]("is", testDesc, CompleteForExecute[int](), CompleterFromFunc(func(i int, d *Data) (*Completion, error) {
 					return nil, nil
 				}))),
 				wantInput: &Input{
@@ -139,7 +139,7 @@ func TestExecute(t *testing.T) {
 			name: "CompleteForExecute for Arg fails if 0 suggestions",
 			etc: &ExecuteTestCase{
 				Args: []string{""},
-				Node: SerialNodes(Arg[int]("is", testDesc, CompleteForExecute[int](), CompletorFromFunc(func(i int, d *Data) (*Completion, error) {
+				Node: SerialNodes(Arg[int]("is", testDesc, CompleteForExecute[int](), CompleterFromFunc(func(i int, d *Data) (*Completion, error) {
 					return &Completion{}, nil
 				}))),
 				wantInput: &Input{
@@ -155,7 +155,7 @@ func TestExecute(t *testing.T) {
 			name: "CompleteForExecute for Arg fails if multiple suggestions",
 			etc: &ExecuteTestCase{
 				Args: []string{""},
-				Node: SerialNodes(Arg[int]("is", testDesc, CompleteForExecute[int](), CompletorFromFunc(func(i int, d *Data) (*Completion, error) {
+				Node: SerialNodes(Arg[int]("is", testDesc, CompleteForExecute[int](), CompleterFromFunc(func(i int, d *Data) (*Completion, error) {
 					return &Completion{
 						Suggestions: []string{"1", "4"},
 					}, nil
@@ -173,7 +173,7 @@ func TestExecute(t *testing.T) {
 			name: "CompleteForExecute for Arg fails if suggestions is wrong type",
 			etc: &ExecuteTestCase{
 				Args: []string{""},
-				Node: SerialNodes(Arg[int]("is", testDesc, CompleteForExecute[int](), CompletorFromFunc(func(i int, d *Data) (*Completion, error) {
+				Node: SerialNodes(Arg[int]("is", testDesc, CompleteForExecute[int](), CompleterFromFunc(func(i int, d *Data) (*Completion, error) {
 					return &Completion{
 						Suggestions: []string{"someString"},
 					}, nil
@@ -191,7 +191,7 @@ func TestExecute(t *testing.T) {
 			name: "CompleteForExecute for Arg works if one suggestion",
 			etc: &ExecuteTestCase{
 				Args: []string{""},
-				Node: SerialNodes(Arg[int]("is", testDesc, CompleteForExecute[int](), CompletorFromFunc(func(i int, d *Data) (*Completion, error) {
+				Node: SerialNodes(Arg[int]("is", testDesc, CompleteForExecute[int](), CompleterFromFunc(func(i int, d *Data) (*Completion, error) {
 					return &Completion{
 						Suggestions: []string{"123"},
 					}, nil
@@ -212,7 +212,7 @@ func TestExecute(t *testing.T) {
 			name: "CompleteForExecute for Arg completes on best effort",
 			etc: &ExecuteTestCase{
 				Args: []string{""},
-				Node: SerialNodes(Arg[int]("is", testDesc, CompleteForExecute[int](CompleteForExecuteBestEffort()), CompletorFromFunc(func(i int, d *Data) (*Completion, error) {
+				Node: SerialNodes(Arg[int]("is", testDesc, CompleteForExecute[int](CompleteForExecuteBestEffort()), CompleterFromFunc(func(i int, d *Data) (*Completion, error) {
 					return &Completion{
 						Suggestions: []string{"123"},
 					}, nil
@@ -233,7 +233,7 @@ func TestExecute(t *testing.T) {
 			name: "CompleteForExecute for Arg doesn't complete or error on best effort if no suggestions",
 			etc: &ExecuteTestCase{
 				Args: []string{"h"},
-				Node: SerialNodes(Arg[string]("s", testDesc, CompleteForExecute[string](CompleteForExecuteBestEffort()), CompletorFromFunc(func(i string, d *Data) (*Completion, error) {
+				Node: SerialNodes(Arg[string]("s", testDesc, CompleteForExecute[string](CompleteForExecuteBestEffort()), CompleterFromFunc(func(i string, d *Data) (*Completion, error) {
 					return &Completion{}, nil
 				}))),
 				wantInput: &Input{
@@ -252,7 +252,7 @@ func TestExecute(t *testing.T) {
 			name: "CompleteForExecute for Arg doesn't complete or error on best effort if multiple suggestions",
 			etc: &ExecuteTestCase{
 				Args: []string{"h"},
-				Node: SerialNodes(Arg[string]("s", testDesc, CompleteForExecute[string](CompleteForExecuteBestEffort()), CompletorFromFunc(func(i string, d *Data) (*Completion, error) {
+				Node: SerialNodes(Arg[string]("s", testDesc, CompleteForExecute[string](CompleteForExecuteBestEffort()), CompleterFromFunc(func(i string, d *Data) (*Completion, error) {
 					return &Completion{
 						Suggestions: []string{"hey", "hi"},
 					}, nil
@@ -273,7 +273,7 @@ func TestExecute(t *testing.T) {
 			name: "CompleteForExecute for Arg doesn't complete or error on best effort if error",
 			etc: &ExecuteTestCase{
 				Args: []string{"h"},
-				Node: SerialNodes(Arg[string]("s", testDesc, CompleteForExecute[string](CompleteForExecuteBestEffort()), CompletorFromFunc(func(i string, d *Data) (*Completion, error) {
+				Node: SerialNodes(Arg[string]("s", testDesc, CompleteForExecute[string](CompleteForExecuteBestEffort()), CompleterFromFunc(func(i string, d *Data) (*Completion, error) {
 					return nil, fmt.Errorf("oopsie")
 				}))),
 				wantInput: &Input{
@@ -292,7 +292,7 @@ func TestExecute(t *testing.T) {
 			name: "CompleteForExecute for Arg doesn't complete or error on best effort if nil Completion",
 			etc: &ExecuteTestCase{
 				Args: []string{"h"},
-				Node: SerialNodes(Arg[string]("s", testDesc, CompleteForExecute[string](CompleteForExecuteBestEffort()), CompletorFromFunc(func(i string, d *Data) (*Completion, error) {
+				Node: SerialNodes(Arg[string]("s", testDesc, CompleteForExecute[string](CompleteForExecuteBestEffort()), CompleterFromFunc(func(i string, d *Data) (*Completion, error) {
 					return nil, nil
 				}))),
 				wantInput: &Input{
@@ -311,7 +311,7 @@ func TestExecute(t *testing.T) {
 			name: "CompleteForExecute for Arg works when only one prefix matches",
 			etc: &ExecuteTestCase{
 				Args: []string{"4"},
-				Node: SerialNodes(Arg[int]("is", testDesc, CompleteForExecute[int](), CompletorFromFunc(func(i int, d *Data) (*Completion, error) {
+				Node: SerialNodes(Arg[int]("is", testDesc, CompleteForExecute[int](), CompleterFromFunc(func(i int, d *Data) (*Completion, error) {
 					return &Completion{
 						Suggestions: []string{"123", "234", "345", "456", "567"},
 					}, nil
@@ -332,7 +332,7 @@ func TestExecute(t *testing.T) {
 			name: "CompleteForExecute for Arg fails if multiple completions",
 			etc: &ExecuteTestCase{
 				Args: []string{"f"},
-				Node: SerialNodes(Arg[string]("s", testDesc, CompleteForExecute[string](), CompletorFromFunc(func(i string, d *Data) (*Completion, error) {
+				Node: SerialNodes(Arg[string]("s", testDesc, CompleteForExecute[string](), CompleterFromFunc(func(i string, d *Data) (*Completion, error) {
 					return &Completion{
 						Suggestions: []string{"one", "two", "three", "four", "five", "six"},
 					}, nil
@@ -350,7 +350,7 @@ func TestExecute(t *testing.T) {
 			name: "CompleteForExecute for Arg works for string",
 			etc: &ExecuteTestCase{
 				Args: []string{"fi"},
-				Node: SerialNodes(Arg[string]("s", testDesc, CompleteForExecute[string](), CompletorFromFunc(func(i string, d *Data) (*Completion, error) {
+				Node: SerialNodes(Arg[string]("s", testDesc, CompleteForExecute[string](), CompleterFromFunc(func(i string, d *Data) (*Completion, error) {
 					return &Completion{
 						Suggestions: []string{"one", "two", "three", "four", "five", "six"},
 					}, nil
@@ -372,12 +372,12 @@ func TestExecute(t *testing.T) {
 			etc: &ExecuteTestCase{
 				Args: []string{"fi", "tr"},
 				Node: SerialNodes(
-					Arg[string]("s", testDesc, CompleteForExecute[string](), CompletorFromFunc(func(i string, d *Data) (*Completion, error) {
+					Arg[string]("s", testDesc, CompleteForExecute[string](), CompleterFromFunc(func(i string, d *Data) (*Completion, error) {
 						return &Completion{
 							Suggestions: []string{"one", "two", "three", "four", "five", "six"},
 						}, nil
 					})),
-					Arg[string]("s2", testDesc, CompleteForExecute[string](), CompletorFromFunc(func(i string, d *Data) (*Completion, error) {
+					Arg[string]("s2", testDesc, CompleteForExecute[string](), CompleterFromFunc(func(i string, d *Data) (*Completion, error) {
 						return &Completion{
 							Suggestions: []string{"un", "deux", "trois", "quatre"},
 						}, nil
@@ -402,15 +402,15 @@ func TestExecute(t *testing.T) {
 			etc: &ExecuteTestCase{
 				Args: []string{"fi", "mouse", "tr"},
 				Node: SerialNodes(
-					Arg[string]("s", testDesc, CompleteForExecute[string](), CompletorFromFunc(func(i string, d *Data) (*Completion, error) {
+					Arg[string]("s", testDesc, CompleteForExecute[string](), CompleterFromFunc(func(i string, d *Data) (*Completion, error) {
 						return &Completion{
 							Suggestions: []string{"one", "two", "three", "four", "five", "six"},
 						}, nil
 					})),
-					Arg[string]("s2", testDesc, CompleteForExecute[string](), CompletorFromFunc(func(i string, d *Data) (*Completion, error) {
+					Arg[string]("s2", testDesc, CompleteForExecute[string](), CompleterFromFunc(func(i string, d *Data) (*Completion, error) {
 						return nil, fmt.Errorf("rats")
 					})),
-					Arg[string]("s3", testDesc, CompleteForExecute[string](), CompletorFromFunc(func(i string, d *Data) (*Completion, error) {
+					Arg[string]("s3", testDesc, CompleteForExecute[string](), CompleterFromFunc(func(i string, d *Data) (*Completion, error) {
 						return &Completion{
 							Suggestions: []string{"un", "deux", "trois", "quatre"},
 						}, nil
@@ -438,15 +438,15 @@ func TestExecute(t *testing.T) {
 			etc: &ExecuteTestCase{
 				Args: []string{"fi", "mouse", "tr"},
 				Node: SerialNodes(
-					Arg[string]("s", testDesc, CompleteForExecute[string](), CompletorFromFunc(func(i string, d *Data) (*Completion, error) {
+					Arg[string]("s", testDesc, CompleteForExecute[string](), CompleterFromFunc(func(i string, d *Data) (*Completion, error) {
 						return &Completion{
 							Suggestions: []string{"one", "two", "three", "four", "five", "six"},
 						}, nil
 					})),
-					Arg[string]("s2", testDesc, CompleteForExecute[string](CompleteForExecuteBestEffort()), CompletorFromFunc(func(i string, d *Data) (*Completion, error) {
+					Arg[string]("s2", testDesc, CompleteForExecute[string](CompleteForExecuteBestEffort()), CompleterFromFunc(func(i string, d *Data) (*Completion, error) {
 						return nil, fmt.Errorf("rats")
 					})),
-					Arg[string]("s3", testDesc, CompleteForExecute[string](), CompletorFromFunc(func(i string, d *Data) (*Completion, error) {
+					Arg[string]("s3", testDesc, CompleteForExecute[string](), CompleterFromFunc(func(i string, d *Data) (*Completion, error) {
 						return &Completion{
 							Suggestions: []string{"un", "deux", "trois", "quatre"},
 						}, nil
@@ -474,7 +474,7 @@ func TestExecute(t *testing.T) {
 				Args: []string{""},
 				Node: SerialNodes(Arg[string]("s", testDesc,
 					CompleteForExecute[string](),
-					CompletorFromFunc(func(s string, d *Data) (*Completion, error) {
+					CompleterFromFunc(func(s string, d *Data) (*Completion, error) {
 						return &Completion{
 							Suggestions: []string{"abc"},
 						}, nil
@@ -501,7 +501,7 @@ func TestExecute(t *testing.T) {
 				Args: []string{"bra"},
 				Node: SerialNodes(Arg[string]("s", testDesc,
 					CompleteForExecute[string](),
-					CompletorFromFunc(func(s string, d *Data) (*Completion, error) {
+					CompleterFromFunc(func(s string, d *Data) (*Completion, error) {
 						return &Completion{
 							Suggestions: []string{"alpha", "bravo", "charlie", "brown"},
 						}, nil
@@ -528,7 +528,7 @@ func TestExecute(t *testing.T) {
 				Args: []string{"br"},
 				Node: SerialNodes(Arg[string]("s", testDesc,
 					CompleteForExecute[string](),
-					CompletorFromFunc(func(s string, d *Data) (*Completion, error) {
+					CompleterFromFunc(func(s string, d *Data) (*Completion, error) {
 						return &Completion{
 							Suggestions: []string{"alpha", "bravo", "charlie", "brown"},
 						}, nil
@@ -552,7 +552,7 @@ func TestExecute(t *testing.T) {
 				Args: []string{"br"},
 				Node: SerialNodes(Arg[string]("s", testDesc,
 					CompleteForExecute[string](CompleteForExecuteBestEffort()),
-					CompletorFromFunc(func(s string, d *Data) (*Completion, error) {
+					CompleterFromFunc(func(s string, d *Data) (*Completion, error) {
 						return &Completion{
 							Suggestions: []string{"alpha", "bravo", "charlie", "brown"},
 						}, nil
@@ -576,7 +576,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "CompleteForExecute is properly set in data",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(Arg[string]("s", testDesc, CompleteForExecute[string](), CompletorFromFunc(func(s string, d *Data) (*Completion, error) {
+				Node: SerialNodes(Arg[string]("s", testDesc, CompleteForExecute[string](), CompleterFromFunc(func(s string, d *Data) (*Completion, error) {
 					d.Set("CFE", d.completeForExecute)
 					return &Completion{Suggestions: []string{"abcde"}}, nil
 				}))),
@@ -598,7 +598,7 @@ func TestExecute(t *testing.T) {
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(Arg[string]("s", testDesc,
 					CompleteForExecute[string](),
-					SimpleCompletor[string]("Hello", "HelloThere", "Hello!", "Goodbye"),
+					SimpleCompleter[string]("Hello", "HelloThere", "Hello!", "Goodbye"),
 				)),
 				Args: []string{"Hello"},
 				wantInput: &Input{
@@ -615,7 +615,7 @@ func TestExecute(t *testing.T) {
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(Arg[string]("s", testDesc,
 					CompleteForExecute[string](CompleteForExecuteAllowExactMatch()),
-					SimpleCompletor[string]("Hello", "HelloThere", "Hello!", "Goodbye"),
+					SimpleCompleter[string]("Hello", "HelloThere", "Hello!", "Goodbye"),
 				)),
 				Args: []string{"Hel"},
 				wantInput: &Input{
@@ -632,7 +632,7 @@ func TestExecute(t *testing.T) {
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(Arg[string]("s", testDesc,
 					CompleteForExecute[string](CompleteForExecuteAllowExactMatch()),
-					SimpleCompletor[string]("Hello", "HelloThere", "Hello!", "Goodbye"),
+					SimpleCompleter[string]("Hello", "HelloThere", "Hello!", "Goodbye"),
 				)),
 				Args: []string{"Hello"},
 				wantInput: &Input{
@@ -650,7 +650,7 @@ func TestExecute(t *testing.T) {
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(Arg[string]("s", testDesc,
 					CompleteForExecute[string](CompleteForExecuteAllowExactMatch()),
-					SimpleCompletor[string]("Hello", "HelloThere", "Hello!", "Goodbye"),
+					SimpleCompleter[string]("Hello", "HelloThere", "Hello!", "Goodbye"),
 				)),
 				Args: []string{"HelloThere"},
 				wantInput: &Input{
@@ -668,7 +668,7 @@ func TestExecute(t *testing.T) {
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(Arg[string]("s", testDesc,
 					CompleteForExecute[string](CompleteForExecuteAllowExactMatch()),
-					SimpleCompletor[string]("Hello", "HelloThere", "Hello!", "Goodbye"),
+					SimpleCompleter[string]("Hello", "HelloThere", "Hello!", "Goodbye"),
 				)),
 				Args: []string{"HelloThere!"},
 				wantInput: &Input{
@@ -680,9 +680,9 @@ func TestExecute(t *testing.T) {
 				WantErr:    fmt.Errorf("[CompleteForExecute] requires exactly one suggestion to be returned for \"s\", got 0: []"),
 			},
 		},
-		// FileCompletor with CompleteForExecute
+		// FileCompleter with CompleteForExecute
 		{
-			name: "FileCompletor with CompleteForExecute properly completes a single directory",
+			name: "FileCompleter with CompleteForExecute properly completes a single directory",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(FileNode("s", testDesc, CompleteForExecute[string]())),
 				Args: []string{"do"},
@@ -697,7 +697,7 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "FileCompletor with CompleteForExecute properly completes a full directory",
+			name: "FileCompleter with CompleteForExecute properly completes a full directory",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(FileNode("s", testDesc, CompleteForExecute[string]())),
 				Args: []string{"docs"},
@@ -712,7 +712,7 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "FileCompletor with CompleteForExecute properly completes a full directory with trailing slash",
+			name: "FileCompleter with CompleteForExecute properly completes a full directory with trailing slash",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(FileNode("s", testDesc, CompleteForExecute[string]())),
 				Args: []string{fmt.Sprintf("docs%c", filepath.Separator)},
@@ -727,7 +727,7 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "FileCompletor with CompleteForExecute properly completes nested directory",
+			name: "FileCompleter with CompleteForExecute properly completes nested directory",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(FileNode("s", testDesc, CompleteForExecute[string]())),
 				Args: []string{filepath.Join("sourcerer", "c")},
@@ -742,7 +742,7 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "FileCompletor with CompleteForExecute properly completes nested file",
+			name: "FileCompleter with CompleteForExecute properly completes nested file",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(FileNode("s", testDesc, CompleteForExecute[string]())),
 				Args: []string{filepath.Join("sourcerer", "cmd", "l")},
@@ -757,7 +757,7 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "FileCompletor with CompleteForExecute properly completes a single file",
+			name: "FileCompleter with CompleteForExecute properly completes a single file",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(FileNode("s", testDesc, CompleteForExecute[string]())),
 				Args: []string{"v"},
@@ -772,7 +772,7 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "FileCompletor with CompleteForExecute fails if multiple options",
+			name: "FileCompleter with CompleteForExecute fails if multiple options",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(FileNode("s", testDesc, CompleteForExecute[string]())),
 				Args: []string{"ca"},
@@ -786,7 +786,7 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "FileCompletor with CompleteForExecute fails if no options",
+			name: "FileCompleter with CompleteForExecute fails if no options",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(FileNode("s", testDesc, CompleteForExecute[string]())),
 				Args: []string{"uhhh"},
@@ -803,7 +803,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "CompleteForExecute for ListArg fails if no arg provided",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, CompleteForExecute[[]string](), CompletorFromFunc(func(sl []string, d *Data) (*Completion, error) {
+				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, CompleteForExecute[[]string](), CompleterFromFunc(func(sl []string, d *Data) (*Completion, error) {
 					return nil, fmt.Errorf("oopsie")
 				}))),
 				WantErr:    fmt.Errorf(`Argument "sl" requires at least 2 arguments, got 0`),
@@ -811,10 +811,10 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "CompleteForExecute for ListArg fails completor returns error",
+			name: "CompleteForExecute for ListArg fails completer returns error",
 			etc: &ExecuteTestCase{
 				Args: []string{""},
-				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, CompleteForExecute[[]string](), CompletorFromFunc(func(sl []string, d *Data) (*Completion, error) {
+				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, CompleteForExecute[[]string](), CompleterFromFunc(func(sl []string, d *Data) (*Completion, error) {
 					return nil, fmt.Errorf("oopsie")
 				}))),
 				wantInput: &Input{
@@ -830,7 +830,7 @@ func TestExecute(t *testing.T) {
 			name: "CompleteForExecute for ListArg fails if returned completion is nil",
 			etc: &ExecuteTestCase{
 				Args: []string{""},
-				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, CompleteForExecute[[]string](), CompletorFromFunc(func(sl []string, d *Data) (*Completion, error) {
+				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, CompleteForExecute[[]string](), CompleterFromFunc(func(sl []string, d *Data) (*Completion, error) {
 					return nil, nil
 				}))),
 				wantInput: &Input{
@@ -846,7 +846,7 @@ func TestExecute(t *testing.T) {
 			name: "CompleteForExecute for ListArg fails if 0 suggestions",
 			etc: &ExecuteTestCase{
 				Args: []string{""},
-				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, CompleteForExecute[[]string](), CompletorFromFunc(func(sl []string, d *Data) (*Completion, error) {
+				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, CompleteForExecute[[]string](), CompleterFromFunc(func(sl []string, d *Data) (*Completion, error) {
 					return &Completion{}, nil
 				}))),
 				wantInput: &Input{
@@ -862,7 +862,7 @@ func TestExecute(t *testing.T) {
 			name: "CompleteForExecute for ListArg fails if multiple suggestions",
 			etc: &ExecuteTestCase{
 				Args: []string{""},
-				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, CompleteForExecute[[]string](), CompletorFromFunc(func(sl []string, d *Data) (*Completion, error) {
+				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, CompleteForExecute[[]string](), CompleterFromFunc(func(sl []string, d *Data) (*Completion, error) {
 					return &Completion{
 						Suggestions: []string{"alpha", "bravo"},
 					}, nil
@@ -880,7 +880,7 @@ func TestExecute(t *testing.T) {
 			name: "CompleteForExecute for ListArg fails if suggestions is wrong type",
 			etc: &ExecuteTestCase{
 				Args: []string{""},
-				Node: SerialNodes(ListArg[int]("il", testDesc, 2, 3, CompleteForExecute[[]int](), CompletorFromFunc(func(sl []int, d *Data) (*Completion, error) {
+				Node: SerialNodes(ListArg[int]("il", testDesc, 2, 3, CompleteForExecute[[]int](), CompleterFromFunc(func(sl []int, d *Data) (*Completion, error) {
 					return &Completion{
 						Suggestions: []string{"alpha"},
 					}, nil
@@ -898,7 +898,7 @@ func TestExecute(t *testing.T) {
 			name: "CompleteForExecute for ListArg fails if still not enough args",
 			etc: &ExecuteTestCase{
 				Args: []string{"alpha", ""},
-				Node: SerialNodes(ListArg[string]("sl", testDesc, 3, 3, CompleteForExecute[[]string](), CompletorFromFunc(func(sl []string, d *Data) (*Completion, error) {
+				Node: SerialNodes(ListArg[string]("sl", testDesc, 3, 3, CompleteForExecute[[]string](), CompleterFromFunc(func(sl []string, d *Data) (*Completion, error) {
 					return &Completion{
 						Distinct:    true,
 						Suggestions: []string{"alpha", "charlie"},
@@ -923,7 +923,7 @@ func TestExecute(t *testing.T) {
 			name: "CompleteForExecute for ListArg works if one suggestion",
 			etc: &ExecuteTestCase{
 				Args: []string{"alpha", "bravo", ""},
-				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, CompleteForExecute[[]string](), CompletorFromFunc(func(sl []string, d *Data) (*Completion, error) {
+				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, CompleteForExecute[[]string](), CompleterFromFunc(func(sl []string, d *Data) (*Completion, error) {
 					return &Completion{
 						Distinct:    true,
 						Suggestions: []string{"alpha", "bravo", "charlie"},
@@ -947,7 +947,7 @@ func TestExecute(t *testing.T) {
 			name: "CompleteForExecute for ListArg works when only one prefix matches",
 			etc: &ExecuteTestCase{
 				Args: []string{"alpha", "bravo", "c"},
-				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, CompleteForExecute[[]string](), CompletorFromFunc(func(sl []string, d *Data) (*Completion, error) {
+				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, CompleteForExecute[[]string](), CompleterFromFunc(func(sl []string, d *Data) (*Completion, error) {
 					return &Completion{
 						Distinct:    true,
 						Suggestions: []string{"alpha", "bravo", "charlie", "delta", "epsilon"},
@@ -971,7 +971,7 @@ func TestExecute(t *testing.T) {
 			name: "CompleteForExecute for ListArg fails if no distinct filter",
 			etc: &ExecuteTestCase{
 				Args: []string{"alpha", "bravo", ""},
-				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, CompleteForExecute[[]string](), CompletorFromFunc(func(sl []string, d *Data) (*Completion, error) {
+				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, CompleteForExecute[[]string](), CompleterFromFunc(func(sl []string, d *Data) (*Completion, error) {
 					return &Completion{
 						Suggestions: []string{"alpha", "bravo", "charlie"},
 					}, nil
@@ -991,7 +991,7 @@ func TestExecute(t *testing.T) {
 			name: "CompleteForExecute for ListArg works with distinct filter",
 			etc: &ExecuteTestCase{
 				Args: []string{"alpha", "bravo", ""},
-				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, CompleteForExecute[[]string](), CompletorFromFunc(func(sl []string, d *Data) (*Completion, error) {
+				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, CompleteForExecute[[]string](), CompleterFromFunc(func(sl []string, d *Data) (*Completion, error) {
 					return &Completion{
 						Distinct:    true,
 						Suggestions: []string{"alpha", "bravo", "charlie"},
@@ -1015,7 +1015,7 @@ func TestExecute(t *testing.T) {
 			name: "CompleteForExecute for ListArg completes multiple args",
 			etc: &ExecuteTestCase{
 				Args: []string{"a", "br", "c"},
-				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, CompleteForExecute[[]string](), CompletorFromFunc(func(sl []string, d *Data) (*Completion, error) {
+				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, CompleteForExecute[[]string](), CompleterFromFunc(func(sl []string, d *Data) (*Completion, error) {
 					return &Completion{
 						Suggestions: []string{"alpha", "bravo", "charlie"},
 					}, nil
@@ -1038,7 +1038,7 @@ func TestExecute(t *testing.T) {
 			name: "CompleteForExecute for ListArg fails if multiple completions",
 			etc: &ExecuteTestCase{
 				Args: []string{"f"},
-				Node: SerialNodes(Arg[string]("s", testDesc, CompleteForExecute[string](), CompletorFromFunc(func(i string, d *Data) (*Completion, error) {
+				Node: SerialNodes(Arg[string]("s", testDesc, CompleteForExecute[string](), CompleterFromFunc(func(i string, d *Data) (*Completion, error) {
 					return &Completion{
 						Suggestions: []string{"one", "two", "three", "four", "five", "six"},
 					}, nil
@@ -4757,9 +4757,9 @@ func abc() *Node {
 		"t": ShortcutNode("TEST_SHORTCUT", nil,
 			CacheNode("TEST_CACHE", nil, SerialNodes(
 				&tt{},
-				Arg[string]("PATH", testDesc, SimpleCompletor[string]("clh111", "abcd111")),
-				Arg[string]("TARGET", testDesc, SimpleCompletor[string]("clh222", "abcd222")),
-				Arg[string]("FUNC", testDesc, SimpleCompletor[string]("clh333", "abcd333")),
+				Arg[string]("PATH", testDesc, SimpleCompleter[string]("clh111", "abcd111")),
+				Arg[string]("TARGET", testDesc, SimpleCompleter[string]("clh222", "abcd222")),
+				Arg[string]("FUNC", testDesc, SimpleCompleter[string]("clh333", "abcd333")),
 			))),
 	}, nil, DontCompleteSubcommands())
 }
@@ -4817,9 +4817,9 @@ func TestComplete(t *testing.T) {
 			name: "returns suggestions of first node if empty",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					Arg[string]("s", testDesc, SimpleCompletor[string]("un", "deux", "trois")),
-					OptionalArg[int]("i", testDesc, SimpleCompletor[int]("2", "1")),
-					ListArg[string]("sl", testDesc, 0, 2, SimpleCompletor[[]string]("uno", "dos")),
+					Arg[string]("s", testDesc, SimpleCompleter[string]("un", "deux", "trois")),
+					OptionalArg[int]("i", testDesc, SimpleCompleter[int]("2", "1")),
+					ListArg[string]("sl", testDesc, 0, 2, SimpleCompleter[[]string]("uno", "dos")),
 				),
 				Want: []string{"deux", "trois", "un"},
 				WantData: &Data{Values: map[string]interface{}{
@@ -4831,9 +4831,9 @@ func TestComplete(t *testing.T) {
 			name: "returns suggestions of first node if up to first arg",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					Arg[string]("s", testDesc, SimpleCompletor[string]("one", "two", "three")),
-					OptionalArg[int]("i", testDesc, SimpleCompletor[int]("2", "1")),
-					ListArg[string]("sl", testDesc, 0, 2, SimpleCompletor[[]string]("uno", "dos")),
+					Arg[string]("s", testDesc, SimpleCompleter[string]("one", "two", "three")),
+					OptionalArg[int]("i", testDesc, SimpleCompleter[int]("2", "1")),
+					ListArg[string]("sl", testDesc, 0, 2, SimpleCompleter[[]string]("uno", "dos")),
 				),
 				Args: "cmd t",
 				Want: []string{"three", "two"},
@@ -4846,9 +4846,9 @@ func TestComplete(t *testing.T) {
 			name: "returns suggestions of middle node if that's where we're at",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					Arg[string]("s", testDesc, SimpleCompletor[string]("one", "two", "three")),
-					ListArg[string]("sl", testDesc, 0, 2, SimpleCompletor[[]string]("uno", "dos")),
-					OptionalArg[int]("i", testDesc, SimpleCompletor[int]("2", "1")),
+					Arg[string]("s", testDesc, SimpleCompleter[string]("one", "two", "three")),
+					ListArg[string]("sl", testDesc, 0, 2, SimpleCompleter[[]string]("uno", "dos")),
+					OptionalArg[int]("i", testDesc, SimpleCompleter[int]("2", "1")),
 				),
 				Args: "cmd three ",
 				Want: []string{"dos", "uno"},
@@ -4862,9 +4862,9 @@ func TestComplete(t *testing.T) {
 			name: "returns suggestions of middle node if partial",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					Arg[string]("s", testDesc, SimpleCompletor[string]("one", "two", "three")),
-					ListArg[string]("sl", testDesc, 0, 2, SimpleCompletor[[]string]("uno", "dos")),
-					OptionalArg[int]("i", testDesc, SimpleCompletor[int]("2", "1")),
+					Arg[string]("s", testDesc, SimpleCompleter[string]("one", "two", "three")),
+					ListArg[string]("sl", testDesc, 0, 2, SimpleCompleter[[]string]("uno", "dos")),
+					OptionalArg[int]("i", testDesc, SimpleCompleter[int]("2", "1")),
 				),
 				Args: "cmd three d",
 				Want: []string{"dos"},
@@ -4878,9 +4878,9 @@ func TestComplete(t *testing.T) {
 			name: "returns suggestions in list",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					Arg[string]("s", testDesc, SimpleCompletor[string]("one", "two", "three")),
-					ListArg[string]("sl", testDesc, 0, 2, SimpleCompletor[[]string]("uno", "dos")),
-					OptionalArg[int]("i", testDesc, SimpleCompletor[int]("2", "1")),
+					Arg[string]("s", testDesc, SimpleCompleter[string]("one", "two", "three")),
+					ListArg[string]("sl", testDesc, 0, 2, SimpleCompleter[[]string]("uno", "dos")),
+					OptionalArg[int]("i", testDesc, SimpleCompleter[int]("2", "1")),
 				),
 				Args: "cmd three dos ",
 				Want: []string{"dos", "uno"},
@@ -4894,9 +4894,9 @@ func TestComplete(t *testing.T) {
 			name: "returns suggestions for last arg",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					Arg[string]("s", testDesc, SimpleCompletor[string]("one", "two", "three")),
-					ListArg[string]("sl", testDesc, 0, 2, SimpleCompletor[[]string]("uno", "dos")),
-					OptionalArg[int]("i", testDesc, SimpleCompletor[int]("2", "1")),
+					Arg[string]("s", testDesc, SimpleCompleter[string]("one", "two", "three")),
+					ListArg[string]("sl", testDesc, 0, 2, SimpleCompleter[[]string]("uno", "dos")),
+					OptionalArg[int]("i", testDesc, SimpleCompleter[int]("2", "1")),
 				),
 				Args: "cmd three uno dos ",
 				Want: []string{"1", "2"},
@@ -4910,9 +4910,9 @@ func TestComplete(t *testing.T) {
 			name: "returns nothing if iterate through all nodes",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					Arg[string]("s", testDesc, SimpleCompletor[string]("one", "two", "three")),
-					ListArg[string]("sl", testDesc, 0, 2, SimpleCompletor[[]string]("uno", "dos")),
-					OptionalArg[int]("i", testDesc, SimpleCompletor[int]("2", "1")),
+					Arg[string]("s", testDesc, SimpleCompleter[string]("one", "two", "three")),
+					ListArg[string]("sl", testDesc, 0, 2, SimpleCompleter[[]string]("uno", "dos")),
+					OptionalArg[int]("i", testDesc, SimpleCompleter[int]("2", "1")),
 				),
 				Args: "cmd three uno dos 1 what now",
 				WantData: &Data{Values: map[string]interface{}{
@@ -4927,7 +4927,7 @@ func TestComplete(t *testing.T) {
 			name: "works if empty and list starts",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					ListArg[string]("sl", testDesc, 1, 2, SimpleCompletor[[]string]("uno", "dos")),
+					ListArg[string]("sl", testDesc, 1, 2, SimpleCompleter[[]string]("uno", "dos")),
 				),
 				Want: []string{"dos", "uno"},
 				WantData: &Data{Values: map[string]interface{}{
@@ -4939,7 +4939,7 @@ func TestComplete(t *testing.T) {
 			name: "only returns suggestions matching prefix",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					ListArg[string]("sl", testDesc, 1, 2, SimpleCompletor[[]string]("zzz-1", "zzz-2", "yyy-3", "zzz-4")),
+					ListArg[string]("sl", testDesc, 1, 2, SimpleCompleter[[]string]("zzz-1", "zzz-2", "yyy-3", "zzz-4")),
 				),
 				Args: "cmd zz",
 				Want: []string{"zzz-1", "zzz-2", "zzz-4"},
@@ -4953,8 +4953,8 @@ func TestComplete(t *testing.T) {
 			name: "stop iterating if a completion returns nil",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					Arg[string]("PATH", "dd", SimpleCompletor[string]()),
-					ListArg[string]("SUB_PATH", "stc", 0, UnboundedList, SimpleCompletor[[]string]("un", "deux", "trois")),
+					Arg[string]("PATH", "dd", SimpleCompleter[string]()),
+					ListArg[string]("SUB_PATH", "stc", 0, UnboundedList, SimpleCompleter[[]string]("un", "deux", "trois")),
 				),
 				Args: "cmd p",
 				WantData: &Data{Values: map[string]interface{}{
@@ -4966,10 +4966,10 @@ func TestComplete(t *testing.T) {
 			name: "stop iterating if a completion returns an error",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					Arg[string]("PATH", "dd", CompletorFromFunc(func(string, *Data) (*Completion, error) {
+					Arg[string]("PATH", "dd", CompleterFromFunc(func(string, *Data) (*Completion, error) {
 						return nil, fmt.Errorf("ruh-roh")
 					})),
-					ListArg[string]("SUB_PATH", "stc", 0, UnboundedList, SimpleCompletor[[]string]("un", "deux", "trois")),
+					ListArg[string]("SUB_PATH", "stc", 0, UnboundedList, SimpleCompleter[[]string]("un", "deux", "trois")),
 				),
 				Args:    "cmd p",
 				WantErr: fmt.Errorf("ruh-roh"),
@@ -4984,11 +4984,11 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
 					NewFlagNode(
-						NewFlag[string]("greeting", 'h', testDesc, SimpleCompletor[string]("hey", "hi")),
-						NewListFlag[string]("names", 'n', testDesc, 1, 2, SimpleCompletor[[]string]("ralph", "johnny", "renee")),
+						NewFlag[string]("greeting", 'h', testDesc, SimpleCompleter[string]("hey", "hi")),
+						NewListFlag[string]("names", 'n', testDesc, 1, 2, SimpleCompleter[[]string]("ralph", "johnny", "renee")),
 						BoolFlag("good", 'g', testDesc),
 					),
-					Arg[int]("i", testDesc, SimpleCompletor[int]("1", "2")),
+					Arg[int]("i", testDesc, SimpleCompleter[int]("1", "2")),
 				),
 				Args: "cmd -g ",
 				Want: []string{"1", "2"},
@@ -5004,11 +5004,11 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
 					NewFlagNode(
-						NewFlag[string]("greeting", 'h', testDesc, SimpleCompletor[string]("hey", "hi")),
-						NewListFlag[string]("names", 'n', testDesc, 1, 2, SimpleCompletor[[]string]("ralph", "johnny", "renee")),
+						NewFlag[string]("greeting", 'h', testDesc, SimpleCompleter[string]("hey", "hi")),
+						NewListFlag[string]("names", 'n', testDesc, 1, 2, SimpleCompleter[[]string]("ralph", "johnny", "renee")),
 						BoolFlag("good", 'g', testDesc),
 					),
-					Arg[int]("i", testDesc, SimpleCompletor[int]("1", "2")),
+					Arg[int]("i", testDesc, SimpleCompleter[int]("1", "2")),
 				),
 				Args: "cmd --greeting howdy ",
 				Want: []string{"1", "2"},
@@ -5024,11 +5024,11 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
 					NewFlagNode(
-						NewFlag[string]("greeting", 'h', testDesc, SimpleCompletor[string]("hey", "hi")),
-						NewListFlag[string]("names", 'n', testDesc, 1, 2, SimpleCompletor[[]string]("ralph", "johnny", "renee")),
+						NewFlag[string]("greeting", 'h', testDesc, SimpleCompleter[string]("hey", "hi")),
+						NewListFlag[string]("names", 'n', testDesc, 1, 2, SimpleCompleter[[]string]("ralph", "johnny", "renee")),
 						BoolFlag("good", 'g', testDesc),
 					),
-					Arg[int]("i", testDesc, SimpleCompletor[int]("1", "2")),
+					Arg[int]("i", testDesc, SimpleCompleter[int]("1", "2")),
 				),
 				Args: "cmd --names alice bob charlie ",
 				Want: []string{"1", "2"},
@@ -5044,11 +5044,11 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
 					NewFlagNode(
-						NewFlag[string]("greeting", 'h', testDesc, SimpleCompletor[string]("hey", "hi")),
-						NewListFlag[string]("names", 'n', testDesc, 1, 2, SimpleCompletor[[]string]("ralph", "johnny", "renee")),
+						NewFlag[string]("greeting", 'h', testDesc, SimpleCompleter[string]("hey", "hi")),
+						NewListFlag[string]("names", 'n', testDesc, 1, 2, SimpleCompleter[[]string]("ralph", "johnny", "renee")),
 						BoolFlag("good", 'g', testDesc),
 					),
-					Arg[int]("i", testDesc, SimpleCompletor[int]("1", "2")),
+					Arg[int]("i", testDesc, SimpleCompleter[int]("1", "2")),
 				),
 				Args: "cmd -n alice bob charlie --good -h howdy ",
 				Want: []string{"1", "2"},
@@ -5066,11 +5066,11 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
 					NewFlagNode(
-						NewFlag[string]("greeting", 'h', testDesc, SimpleCompletor[string]("hey", "hi")),
-						NewListFlag[string]("names", 'n', testDesc, 1, 2, SimpleCompletor[[]string]("ralph", "johnny", "renee")),
+						NewFlag[string]("greeting", 'h', testDesc, SimpleCompleter[string]("hey", "hi")),
+						NewListFlag[string]("names", 'n', testDesc, 1, 2, SimpleCompleter[[]string]("ralph", "johnny", "renee")),
 						BoolFlag("good", 'g', testDesc),
 					),
-					Arg[int]("i", testDesc, SimpleCompletor[int]("1", "2")),
+					Arg[int]("i", testDesc, SimpleCompleter[int]("1", "2")),
 				),
 				Args: "cmd -",
 				Want: []string{"--good", "--greeting", "--names", "-g", "-h", "-n"},
@@ -5081,11 +5081,11 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
 					NewFlagNode(
-						NewFlag[string]("greeting", 'h', testDesc, SimpleCompletor[string]("hey", "hi")),
-						NewListFlag[string]("names", 'n', testDesc, 1, 2, SimpleCompletor[[]string]("ralph", "johnny", "renee")),
+						NewFlag[string]("greeting", 'h', testDesc, SimpleCompleter[string]("hey", "hi")),
+						NewListFlag[string]("names", 'n', testDesc, 1, 2, SimpleCompleter[[]string]("ralph", "johnny", "renee")),
 						BoolFlag("good", 'g', testDesc),
 					),
-					Arg[int]("i", testDesc, SimpleCompletor[int]("1", "2")),
+					Arg[int]("i", testDesc, SimpleCompleter[int]("1", "2")),
 				),
 				Args: "cmd --",
 				Want: []string{"--good", "--greeting", "--names"},
@@ -5096,11 +5096,11 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
 					NewFlagNode(
-						NewFlag[string]("greeting", 'h', testDesc, SimpleCompletor[string]("hey", "hi")),
-						NewListFlag[string]("names", 'n', testDesc, 1, 2, SimpleCompletor[[]string]("ralph", "johnny", "renee")),
+						NewFlag[string]("greeting", 'h', testDesc, SimpleCompleter[string]("hey", "hi")),
+						NewListFlag[string]("names", 'n', testDesc, 1, 2, SimpleCompleter[[]string]("ralph", "johnny", "renee")),
 						BoolFlag("good", 'g', testDesc),
 					),
-					Arg[int]("i", testDesc, SimpleCompletor[int]("1", "2")),
+					Arg[int]("i", testDesc, SimpleCompleter[int]("1", "2")),
 				),
 				Args: "cmd 1 -",
 				Want: []string{"--good", "--greeting", "--names", "-g", "-h", "-n"},
@@ -5111,11 +5111,11 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
 					NewFlagNode(
-						NewFlag[string]("greeting", 'h', testDesc, SimpleCompletor[string]("hey", "hi")),
-						NewListFlag[string]("names", 'n', testDesc, 1, 2, SimpleCompletor[[]string]("ralph", "johnny", "renee")),
+						NewFlag[string]("greeting", 'h', testDesc, SimpleCompleter[string]("hey", "hi")),
+						NewListFlag[string]("names", 'n', testDesc, 1, 2, SimpleCompleter[[]string]("ralph", "johnny", "renee")),
 						BoolFlag("good", 'g', testDesc),
 					),
-					Arg[int]("i", testDesc, SimpleCompletor[int]("1", "2")),
+					Arg[int]("i", testDesc, SimpleCompleter[int]("1", "2")),
 				),
 				Args: "cmd 1 --greeting h",
 				Want: []string{"hey", "hi"},
@@ -5129,11 +5129,11 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
 					NewFlagNode(
-						NewFlag[string]("greeting", 'h', testDesc, SimpleCompletor[string]("hey", "hi")),
-						NewListFlag[string]("names", 'n', testDesc, 1, 2, SimpleCompletor[[]string]("ralph", "johnny", "renee")),
+						NewFlag[string]("greeting", 'h', testDesc, SimpleCompleter[string]("hey", "hi")),
+						NewListFlag[string]("names", 'n', testDesc, 1, 2, SimpleCompleter[[]string]("ralph", "johnny", "renee")),
 						BoolFlag("good", 'g', testDesc),
 					),
-					Arg[int]("i", testDesc, SimpleCompletor[int]("1", "2")),
+					Arg[int]("i", testDesc, SimpleCompleter[int]("1", "2")),
 				),
 				Args: "cmd 1 -h he",
 				Want: []string{"hey"},
@@ -5147,11 +5147,11 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
 					NewFlagNode(
-						NewFlag[string]("greeting", 'h', testDesc, SimpleCompletor[string]("hey", "hi")),
-						NewListFlag[string]("names", 'n', testDesc, 1, 2, SimpleCompletor[[]string]("ralph", "johnny", "renee")),
+						NewFlag[string]("greeting", 'h', testDesc, SimpleCompleter[string]("hey", "hi")),
+						NewListFlag[string]("names", 'n', testDesc, 1, 2, SimpleCompleter[[]string]("ralph", "johnny", "renee")),
 						BoolFlag("good", 'g', testDesc),
 					),
-					Arg[int]("i", testDesc, SimpleCompletor[int]("1", "2")),
+					Arg[int]("i", testDesc, SimpleCompleter[int]("1", "2")),
 				),
 				Args: "cmd 1 -h hey other --names ",
 				Want: []string{"johnny", "ralph", "renee"},
@@ -5166,11 +5166,11 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
 					NewFlagNode(
-						NewFlag[string]("greeting", 'h', testDesc, SimpleCompletor[string]("hey", "hi")),
-						NewListFlag[string]("names", 'n', testDesc, 1, 2, SimpleDistinctCompletor[[]string]("ralph", "johnny", "renee")),
+						NewFlag[string]("greeting", 'h', testDesc, SimpleCompleter[string]("hey", "hi")),
+						NewListFlag[string]("names", 'n', testDesc, 1, 2, SimpleDistinctCompleter[[]string]("ralph", "johnny", "renee")),
 						BoolFlag("good", 'g', testDesc),
 					),
-					Arg[int]("i", testDesc, SimpleCompletor[int]("1", "2")),
+					Arg[int]("i", testDesc, SimpleCompleter[int]("1", "2")),
 				),
 				Args: "cmd 1 -h hey other --names ralph ",
 				Want: []string{"johnny", "renee"},
@@ -5185,12 +5185,12 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
 					NewFlagNode(
-						NewFlag[string]("greeting", 'h', testDesc, SimpleCompletor[string]("hey", "hi")),
-						NewListFlag[string]("names", 'n', testDesc, 1, 2, SimpleDistinctCompletor[[]string]("ralph", "johnny", "renee")),
+						NewFlag[string]("greeting", 'h', testDesc, SimpleCompleter[string]("hey", "hi")),
+						NewListFlag[string]("names", 'n', testDesc, 1, 2, SimpleDistinctCompleter[[]string]("ralph", "johnny", "renee")),
 						BoolFlag("good", 'g', testDesc),
-						NewFlag[float64]("float", 'f', testDesc, SimpleCompletor[float64]("1.23", "12.3", "123.4")),
+						NewFlag[float64]("float", 'f', testDesc, SimpleCompleter[float64]("1.23", "12.3", "123.4")),
 					),
-					Arg[int]("i", testDesc, SimpleCompletor[int]("1", "2")),
+					Arg[int]("i", testDesc, SimpleCompleter[int]("1", "2")),
 				),
 				Args: "cmd 1 -h hey other --names ralph renee johnny -f ",
 				Want: []string{"1.23", "12.3", "123.4"},
@@ -5205,11 +5205,11 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
 					NewFlagNode(
-						NewFlag[string]("greeting", 'h', testDesc, SimpleCompletor[string]("hey", "hi")),
-						NewListFlag[string]("names", 'n', testDesc, 1, 2, SimpleDistinctCompletor[[]string]("ralph", "johnny", "renee")),
+						NewFlag[string]("greeting", 'h', testDesc, SimpleCompleter[string]("hey", "hi")),
+						NewListFlag[string]("names", 'n', testDesc, 1, 2, SimpleDistinctCompleter[[]string]("ralph", "johnny", "renee")),
 						BoolFlag("good", 'g', testDesc),
 					),
-					ListArg[string]("i", testDesc, 1, 2, SimpleCompletor[[]string]("hey", "ooo")),
+					ListArg[string]("i", testDesc, 1, 2, SimpleCompleter[[]string]("hey", "ooo")),
 				),
 				Args: "cmd 1 -h hello bravo --names ralph renee johnny ",
 				Want: []string{"hey", "ooo"},
@@ -5254,7 +5254,7 @@ func TestComplete(t *testing.T) {
 						BoolFlag("to", 't', testDesc),
 						BoolFlag("where", 'w', testDesc),
 					),
-					Arg[string]("s", testDesc, SimpleCompletor[string]("abc", "def", "ghi")),
+					Arg[string]("s", testDesc, SimpleCompleter[string]("abc", "def", "ghi")),
 				),
 				Want: []string{"abc", "def", "ghi"},
 				WantData: &Data{Values: map[string]interface{}{
@@ -5278,7 +5278,7 @@ func TestComplete(t *testing.T) {
 						BoolFlag("to", 't', testDesc),
 						BoolFlag("where", 'w', testDesc),
 					),
-					Arg[string]("s", testDesc, SimpleCompletor[string]("abc", "def", "ghi")),
+					Arg[string]("s", testDesc, SimpleCompleter[string]("abc", "def", "ghi")),
 				),
 				Want: []string{"abc", "def", "ghi"},
 				WantData: &Data{Values: map[string]interface{}{
@@ -5304,7 +5304,7 @@ func TestComplete(t *testing.T) {
 						NewFlag[string]("zf", 'z', testDesc),
 						BoolFlag("where", 'w', testDesc),
 					),
-					Arg[string]("s", testDesc, SimpleCompletor[string]("abc", "def", "ghi")),
+					Arg[string]("s", testDesc, SimpleCompleter[string]("abc", "def", "ghi")),
 				),
 				Want: []string{"abc", "def", "ghi"},
 				WantData: &Data{Values: map[string]interface{}{
@@ -5325,7 +5325,7 @@ func TestComplete(t *testing.T) {
 						BoolFlag("quick", 'q', testDesc),
 						BoolFlag("run", 'r', testDesc),
 						BoolFlag("to", 't', testDesc),
-						NewFlag[string]("zf", 'z', testDesc, SimpleCompletor[string]("zyx", "wvu", "tsr")),
+						NewFlag[string]("zf", 'z', testDesc, SimpleCompleter[string]("zyx", "wvu", "tsr")),
 						BoolFlag("where", 'w', testDesc),
 					),
 				),
@@ -5345,7 +5345,7 @@ func TestComplete(t *testing.T) {
 						BoolFlag("quick", 'q', testDesc),
 						BoolFlag("run", 'r', testDesc),
 						BoolFlag("to", 't', testDesc),
-						NewFlag[string]("zf", 'z', testDesc, SimpleCompletor[string]("zyx", "wvu", "tsr")),
+						NewFlag[string]("zf", 'z', testDesc, SimpleCompleter[string]("zyx", "wvu", "tsr")),
 						BoolFlag("where", 'w', testDesc),
 					),
 				),
@@ -5543,7 +5543,7 @@ func TestComplete(t *testing.T) {
 		},
 		// FileNode
 		{
-			name:        "FileNode includes a vanilla FileCompletor",
+			name:        "FileNode includes a vanilla FileCompleter",
 			filepathAbs: filepath.Join("."),
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
@@ -5567,8 +5567,8 @@ func TestComplete(t *testing.T) {
 					"cmd/",
 					"color/",
 					"commandtest.go",
-					"completor.go",
-					"completor_test.go",
+					"completer.go",
+					"completer_test.go",
 					"custom_nodes.go",
 					"data.go",
 					"data_test.go",
@@ -5605,11 +5605,11 @@ func TestComplete(t *testing.T) {
 			},
 		},
 		{
-			name:        "FileNode uses provided FileCompletor option",
+			name:        "FileNode uses provided FileCompleter option",
 			filepathAbs: filepath.Join("."),
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					FileNode("fn", testDesc, &FileCompletor[string]{
+					FileNode("fn", testDesc, &FileCompleter[string]{
 						FileTypes: []string{".sum", ".mod"},
 					}),
 				),
@@ -5633,16 +5633,16 @@ func TestComplete(t *testing.T) {
 			},
 		},
 		{
-			name:        "FileCompletor works with absolute path",
+			name:        "FileCompleter works with absolute path",
 			filepathAbs: filepath.Join("."),
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					Arg[string]("fn", testDesc, CompletorFromFunc(func(s string, d *Data) (*Completion, error) {
+					Arg[string]("fn", testDesc, CompleterFromFunc(func(s string, d *Data) (*Completion, error) {
 						_, thisFile, _, ok := runtime.Caller(0)
 						if !ok {
 							return nil, fmt.Errorf("failed to get runtime caller")
 						}
-						fc := &FileCompletor[string]{
+						fc := &FileCompleter[string]{
 							Directory: filepath.Join(filepath.Dir(thisFile), "testdata"),
 						}
 						return fc.Complete(s, d)
@@ -5676,9 +5676,9 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: BranchNode(map[string]*Node{
 					"a":     {},
-					"alpha": SerialNodes(OptionalArg[string]("hello", testDesc, SimpleCompletor[string]("other", "stuff"))),
+					"alpha": SerialNodes(OptionalArg[string]("hello", testDesc, SimpleCompleter[string]("other", "stuff"))),
 					"bravo": {},
-				}, SerialNodes(ListArg[string]("default", testDesc, 1, 3, SimpleCompletor[[]string]("default", "command", "opts")))),
+				}, SerialNodes(ListArg[string]("default", testDesc, 1, 3, SimpleCompleter[[]string]("default", "command", "opts")))),
 				Want: []string{"a", "alpha", "bravo", "command", "default", "opts"},
 				WantData: &Data{Values: map[string]interface{}{
 					"default": []string{""},
@@ -5690,9 +5690,9 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: BranchNode(map[string]*Node{
 					"a":     {},
-					"alpha": SerialNodes(OptionalArg[string]("hello", testDesc, SimpleCompletor[string]("other", "stuff"))),
+					"alpha": SerialNodes(OptionalArg[string]("hello", testDesc, SimpleCompleter[string]("other", "stuff"))),
 					"bravo": {},
-				}, SerialNodes(ListArg[string]("default", testDesc, 1, 3, SimpleCompletor[[]string]("default", "command", "opts"))), DontCompleteSubcommands()),
+				}, SerialNodes(ListArg[string]("default", testDesc, 1, 3, SimpleCompleter[[]string]("default", "command", "opts"))), DontCompleteSubcommands()),
 				Want: []string{"command", "default", "opts"},
 				WantData: &Data{Values: map[string]interface{}{
 					"default": []string{""},
@@ -5704,9 +5704,9 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: BranchNode(map[string]*Node{
 					"a":     {},
-					"alpha": SerialNodes(OptionalArg[string]("hello", testDesc, SimpleCompletor[string]("other", "stuff"))),
+					"alpha": SerialNodes(OptionalArg[string]("hello", testDesc, SimpleCompleter[string]("other", "stuff"))),
 					"bravo": {},
-				}, SerialNodes(ListArg[string]("default", testDesc, 1, 3, SimpleCompletor[[]string]("default", "command", "opts")))),
+				}, SerialNodes(ListArg[string]("default", testDesc, 1, 3, SimpleCompleter[[]string]("default", "command", "opts")))),
 				Args: "cmd alpha ",
 				Want: []string{"other", "stuff"},
 				WantData: &Data{Values: map[string]interface{}{
@@ -5719,7 +5719,7 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: BranchNode(map[string]*Node{
 					"a":     {},
-					"alpha": SerialNodes(OptionalArg[string]("hello", testDesc, SimpleCompletor[string]("other", "stuff"))),
+					"alpha": SerialNodes(OptionalArg[string]("hello", testDesc, SimpleCompleter[string]("other", "stuff"))),
 					"bravo": {},
 				}, nil),
 				Args:    "cmd some thing else",
@@ -5731,7 +5731,7 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: BranchNode(map[string]*Node{
 					"a":     {},
-					"alpha": SerialNodes(OptionalArg[string]("hello", testDesc, SimpleCompletor[string]("other", "stuff"))),
+					"alpha": SerialNodes(OptionalArg[string]("hello", testDesc, SimpleCompleter[string]("other", "stuff"))),
 					"bravo": {},
 				}, SerialNodes(SimpleProcessor(nil, func(i *Input, d *Data) (*Completion, error) {
 					return nil, fmt.Errorf("bad news bears")
@@ -5745,7 +5745,7 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: BranchNode(map[string]*Node{
 					"a":     {},
-					"alpha": SerialNodes(OptionalArg[string]("hello", testDesc, SimpleCompletor[string]("other", "stuff"))),
+					"alpha": SerialNodes(OptionalArg[string]("hello", testDesc, SimpleCompleter[string]("other", "stuff"))),
 					"bravo": {},
 				}, SerialNodes(SimpleProcessor(nil, func(i *Input, d *Data) (*Completion, error) {
 					return nil, fmt.Errorf("bad news bears")
@@ -5760,9 +5760,9 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: BranchNode(map[string]*Node{
 					"a":     {},
-					"alpha": SerialNodes(OptionalArg[string]("hello", testDesc, SimpleCompletor[string]("other", "stuff"))),
+					"alpha": SerialNodes(OptionalArg[string]("hello", testDesc, SimpleCompleter[string]("other", "stuff"))),
 					"bravo": {},
-				}, SerialNodes(ListArg[string]("default", testDesc, 1, 3, SimpleCompletor[[]string]("default", "command", "opts", "ahhhh")))),
+				}, SerialNodes(ListArg[string]("default", testDesc, 1, 3, SimpleCompleter[[]string]("default", "command", "opts", "ahhhh")))),
 				Args: "cmd a",
 				Want: []string{"a", "ahhhh", "alpha"},
 				WantData: &Data{Values: map[string]interface{}{
@@ -5775,9 +5775,9 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: BranchNode(map[string]*Node{
 					"a":     {},
-					"alpha": SerialNodes(OptionalArg[string]("hello", testDesc, SimpleCompletor[string]("other", "stuff"))),
+					"alpha": SerialNodes(OptionalArg[string]("hello", testDesc, SimpleCompleter[string]("other", "stuff"))),
 					"bravo": {},
-				}, SerialNodes(ListArg[string]("default", testDesc, 1, 3, SimpleCompletor[[]string]("default", "command", "opts")))),
+				}, SerialNodes(ListArg[string]("default", testDesc, 1, 3, SimpleCompleter[[]string]("default", "command", "opts")))),
 				Args: "cmd something ",
 				WantData: &Data{Values: map[string]interface{}{
 					"default": []string{"something", ""},
@@ -5866,7 +5866,7 @@ func TestComplete(t *testing.T) {
 		{
 			name: "int arg gets completed",
 			ctc: &CompleteTestCase{
-				Node: SerialNodes(Arg[int]("iArg", testDesc, SimpleCompletor[int]("12", "45", "456", "468", "7"))),
+				Node: SerialNodes(Arg[int]("iArg", testDesc, SimpleCompleter[int]("12", "45", "456", "468", "7"))),
 				Args: "cmd 4",
 				Want: []string{"45", "456", "468"},
 				WantData: &Data{Values: map[string]interface{}{
@@ -5877,7 +5877,7 @@ func TestComplete(t *testing.T) {
 		{
 			name: "optional int arg gets completed",
 			ctc: &CompleteTestCase{
-				Node: SerialNodes(OptionalArg[int]("iArg", testDesc, SimpleCompletor[int]("12", "45", "456", "468", "7"))),
+				Node: SerialNodes(OptionalArg[int]("iArg", testDesc, SimpleCompleter[int]("12", "45", "456", "468", "7"))),
 				Args: "cmd 4",
 				Want: []string{"45", "456", "468"},
 				WantData: &Data{Values: map[string]interface{}{
@@ -5888,7 +5888,7 @@ func TestComplete(t *testing.T) {
 		{
 			name: "int list arg gets completed",
 			ctc: &CompleteTestCase{
-				Node: SerialNodes(ListArg[int]("iArg", testDesc, 2, 3, SimpleCompletor[[]int]("12", "45", "456", "468", "7"))),
+				Node: SerialNodes(ListArg[int]("iArg", testDesc, 2, 3, SimpleCompleter[[]int]("12", "45", "456", "468", "7"))),
 				Args: "cmd 1 4",
 				Want: []string{"45", "456", "468"},
 				WantData: &Data{Values: map[string]interface{}{
@@ -5899,7 +5899,7 @@ func TestComplete(t *testing.T) {
 		{
 			name: "int list arg gets completed if previous one was invalid",
 			ctc: &CompleteTestCase{
-				Node: SerialNodes(ListArg[int]("iArg", testDesc, 2, 3, SimpleCompletor[[]int]("12", "45", "456", "468", "7"))),
+				Node: SerialNodes(ListArg[int]("iArg", testDesc, 2, 3, SimpleCompleter[[]int]("12", "45", "456", "468", "7"))),
 				Args: "cmd one 4",
 				Want: []string{"45", "456", "468"},
 			},
@@ -5907,7 +5907,7 @@ func TestComplete(t *testing.T) {
 		{
 			name: "int list arg optional args get completed",
 			ctc: &CompleteTestCase{
-				Node: SerialNodes(ListArg[int]("iArg", testDesc, 2, 3, SimpleCompletor[[]int]("12", "45", "456", "468", "7"))),
+				Node: SerialNodes(ListArg[int]("iArg", testDesc, 2, 3, SimpleCompleter[[]int]("12", "45", "456", "468", "7"))),
 				Args: "cmd 1 2 3 4",
 				Want: []string{"45", "456", "468"},
 				WantData: &Data{Values: map[string]interface{}{
@@ -5918,7 +5918,7 @@ func TestComplete(t *testing.T) {
 		{
 			name: "float arg gets completed",
 			ctc: &CompleteTestCase{
-				Node: SerialNodes(Arg[float64]("fArg", testDesc, SimpleCompletor[float64]("12", "4.5", "45.6", "468", "7"))),
+				Node: SerialNodes(Arg[float64]("fArg", testDesc, SimpleCompleter[float64]("12", "4.5", "45.6", "468", "7"))),
 				Args: "cmd 4",
 				Want: []string{"4.5", "45.6", "468"},
 				WantData: &Data{Values: map[string]interface{}{
@@ -5929,7 +5929,7 @@ func TestComplete(t *testing.T) {
 		{
 			name: "float list arg gets completed",
 			ctc: &CompleteTestCase{
-				Node:     SerialNodes(ListArg[float64]("fArg", testDesc, 1, 2, SimpleCompletor[[]float64]("12", "4.5", "45.6", "468", "7"))),
+				Node:     SerialNodes(ListArg[float64]("fArg", testDesc, 1, 2, SimpleCompleter[[]float64]("12", "4.5", "45.6", "468", "7"))),
 				Want:     []string{"12", "4.5", "45.6", "468", "7"},
 				WantData: &Data{Values: map[string]interface{}{}},
 			},
@@ -6038,7 +6038,7 @@ func TestComplete(t *testing.T) {
 		{
 			name: "NodeRepeater works if fully processed",
 			ctc: &CompleteTestCase{
-				Node: SerialNodes(sampleRepeaterNode(2, 1), Arg[string]("S", testDesc, SimpleCompletor[string]("un", "deux", "trois"))),
+				Node: SerialNodes(sampleRepeaterNode(2, 1), Arg[string]("S", testDesc, SimpleCompleter[string]("un", "deux", "trois"))),
 				Args: "cmd brown 12 charlie 21 alpha 100",
 				WantData: &Data{Values: map[string]interface{}{
 					"keys":   []string{"brown", "charlie", "alpha"},
@@ -6051,8 +6051,8 @@ func TestComplete(t *testing.T) {
 			name: "Suggests things after broken list",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					ListArg[string]("SL", testDesc, 1, UnboundedList, ListUntilSymbol("ghi"), SimpleCompletor[[]string]("un", "deux", "trois")),
-					ListArg[string]("SL2", testDesc, 0, UnboundedList, SimpleCompletor[[]string]("one", "two", "three")),
+					ListArg[string]("SL", testDesc, 1, UnboundedList, ListUntilSymbol("ghi"), SimpleCompleter[[]string]("un", "deux", "trois")),
+					ListArg[string]("SL2", testDesc, 0, UnboundedList, SimpleCompleter[[]string]("one", "two", "three")),
 				),
 				Args: "cmd abc def ghi ",
 				Want: []string{"one", "three", "two"},
@@ -6066,8 +6066,8 @@ func TestComplete(t *testing.T) {
 			name: "Suggests things after broken list with discard",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					ListArg[string]("SL", testDesc, 1, UnboundedList, ListUntilSymbol("ghi", DiscardBreaker()), SimpleCompletor[[]string]("un", "deux", "trois")),
-					ListArg[string]("SL2", testDesc, 0, UnboundedList, SimpleCompletor[[]string]("one", "two", "three")),
+					ListArg[string]("SL", testDesc, 1, UnboundedList, ListUntilSymbol("ghi", DiscardBreaker()), SimpleCompleter[[]string]("un", "deux", "trois")),
+					ListArg[string]("SL2", testDesc, 0, UnboundedList, SimpleCompleter[[]string]("one", "two", "three")),
 				),
 				Args: "cmd abc def ghi ",
 				Want: []string{"one", "three", "two"},
@@ -6081,8 +6081,8 @@ func TestComplete(t *testing.T) {
 			name: "Suggests things before list is broken",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					ListArg[string]("SL", testDesc, 1, UnboundedList, ListUntilSymbol("ghi"), SimpleCompletor[[]string]("un", "deux", "trois", "uno")),
-					ListArg[string]("SL2", testDesc, 0, UnboundedList, SimpleCompletor[[]string]("one", "two", "three")),
+					ListArg[string]("SL", testDesc, 1, UnboundedList, ListUntilSymbol("ghi"), SimpleCompleter[[]string]("un", "deux", "trois", "uno")),
+					ListArg[string]("SL2", testDesc, 0, UnboundedList, SimpleCompleter[[]string]("one", "two", "three")),
 				),
 				Args: "cmd abc def un",
 				Want: []string{"un", "uno"},
@@ -6096,7 +6096,7 @@ func TestComplete(t *testing.T) {
 			name: "StringListListNode works if no breakers",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					StringListListNode("SLL", testDesc, "|", 1, UnboundedList, SimpleCompletor[[]string]("one", "two", "three")),
+					StringListListNode("SLL", testDesc, "|", 1, UnboundedList, SimpleCompleter[[]string]("one", "two", "three")),
 				),
 				Args: "cmd abc def ghi ",
 				Want: []string{"one", "three", "two"},
@@ -6109,7 +6109,7 @@ func TestComplete(t *testing.T) {
 			name: "StringListListNode works with breakers",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					StringListListNode("SLL", testDesc, "|", 1, UnboundedList, SimpleCompletor[[]string]("one", "two", "three")),
+					StringListListNode("SLL", testDesc, "|", 1, UnboundedList, SimpleCompleter[[]string]("one", "two", "three")),
 				),
 				Args: "cmd abc def | ghi t",
 				Want: []string{"three", "two"},
@@ -6122,8 +6122,8 @@ func TestComplete(t *testing.T) {
 			name: "completes args after StringListListNode",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					StringListListNode("SLL", testDesc, "|", 1, 1, SimpleCompletor[[]string]("one", "two", "three")),
-					Arg[string]("S", testDesc, SimpleCompletor[string]("un", "deux", "trois")),
+					StringListListNode("SLL", testDesc, "|", 1, 1, SimpleCompleter[[]string]("one", "two", "three")),
+					Arg[string]("S", testDesc, SimpleCompleter[string]("un", "deux", "trois")),
 				),
 				Args: "cmd abc def | ghi | ",
 				Want: []string{"deux", "trois", "un"},
@@ -6135,12 +6135,12 @@ func TestComplete(t *testing.T) {
 				},
 			},
 		},
-		// BashCompletor
+		// BashCompleter
 		{
-			name: "BashCompletor doesn't complete if bash failure",
+			name: "BashCompleter doesn't complete if bash failure",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					Arg[string]("s", testDesc, BashCompletor[string]("echo abc def ghi")),
+					Arg[string]("s", testDesc, BashCompleter[string]("echo abc def ghi")),
 				),
 				RunResponses: []*FakeRun{{
 					Err: fmt.Errorf("oopsie"),
@@ -6155,10 +6155,10 @@ func TestComplete(t *testing.T) {
 			},
 		},
 		{
-			name: "BashCompletor completes even if wrong type returned (since just fetches string list)",
+			name: "BashCompleter completes even if wrong type returned (since just fetches string list)",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					Arg[int]("i", testDesc, BashCompletor[int]("echo abc def ghi")),
+					Arg[int]("i", testDesc, BashCompleter[int]("echo abc def ghi")),
 				),
 				RunResponses: []*FakeRun{{
 					Stdout: []string{
@@ -6181,10 +6181,10 @@ func TestComplete(t *testing.T) {
 			},
 		},
 		{
-			name: "BashCompletor completes arg",
+			name: "BashCompleter completes arg",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					Arg[string]("s", testDesc, BashCompletor[string]("echo abc def ghi")),
+					Arg[string]("s", testDesc, BashCompleter[string]("echo abc def ghi")),
 				),
 				RunResponses: []*FakeRun{{
 					Stdout: []string{
@@ -6208,11 +6208,11 @@ func TestComplete(t *testing.T) {
 			},
 		},
 		{
-			name: "BashCompletor completes arg with partial completion",
+			name: "BashCompleter completes arg with partial completion",
 			ctc: &CompleteTestCase{
 				Args: "cmd d",
 				Node: SerialNodes(
-					Arg[string]("s", testDesc, BashCompletor[string]("echo abc def ghi")),
+					Arg[string]("s", testDesc, BashCompleter[string]("echo abc def ghi")),
 				),
 				RunResponses: []*FakeRun{{
 					Stdout: []string{
@@ -6233,11 +6233,11 @@ func TestComplete(t *testing.T) {
 			},
 		},
 		{
-			name: "BashCompletor completes arg with opts",
+			name: "BashCompleter completes arg with opts",
 			ctc: &CompleteTestCase{
 				Args: "cmd abc ghi ",
 				Node: SerialNodes(
-					ListArg[string]("sl", testDesc, 1, 2, BashCompletorWithOpts[[]string](&Completion{Distinct: true}, "echo abc def ghi")),
+					ListArg[string]("sl", testDesc, 1, 2, BashCompleterWithOpts[[]string](&Completion{Distinct: true}, "echo abc def ghi")),
 				),
 				RunResponses: []*FakeRun{{
 					Stdout: []string{
@@ -6265,12 +6265,12 @@ func TestComplete(t *testing.T) {
 				Node: SerialNodes(
 					Arg[string]("s", testDesc),
 					ConditionalProcessor(
-						Arg[string]("s2", testDesc, SimpleCompletor[string]("bravo", "charlie")),
+						Arg[string]("s2", testDesc, SimpleCompleter[string]("bravo", "charlie")),
 						func(i *Input, d *Data) bool {
 							return true
 						},
 					),
-					Arg[string]("s3", testDesc, SimpleCompletor[string]("delta", "epsilon")),
+					Arg[string]("s3", testDesc, SimpleCompleter[string]("delta", "epsilon")),
 				),
 				WantData: &Data{Values: map[string]interface{}{
 					"s":  "alpha",
@@ -6286,12 +6286,12 @@ func TestComplete(t *testing.T) {
 				Node: SerialNodes(
 					Arg[string]("s", testDesc),
 					ConditionalProcessor(
-						Arg[string]("s2", testDesc, SimpleCompletor[string]("bravo", "charlie")),
+						Arg[string]("s2", testDesc, SimpleCompleter[string]("bravo", "charlie")),
 						func(i *Input, d *Data) bool {
 							return false
 						},
 					),
-					Arg[string]("s3", testDesc, SimpleCompletor[string]("delta", "epsilon")),
+					Arg[string]("s3", testDesc, SimpleCompleter[string]("delta", "epsilon")),
 				),
 				WantData: &Data{Values: map[string]interface{}{
 					"s":  "alpha",
@@ -6354,14 +6354,14 @@ func sampleRepeaterNode(minN, optionalN int) Processor {
 			} else {
 				d.Set("keys", append(d.StringList("keys"), v))
 			}
-		}), SimpleCompletor[string]("alpha", "bravo", "charlie", "brown")),
+		}), SimpleCompleter[string]("alpha", "bravo", "charlie", "brown")),
 		Arg[int]("VALUE", testDesc, CustomSetter(func(v int, d *Data) {
 			if !d.Has("values") {
 				d.Set("values", []int{v})
 			} else {
 				d.Set("values", append(d.IntList("values"), v))
 			}
-		}), SimpleCompletor[int]("1", "121", "1213121")),
+		}), SimpleCompleter[int]("1", "121", "1213121")),
 	), minN, optionalN)
 }
 
@@ -6468,7 +6468,7 @@ func TestRunNodes(t *testing.T) {
 			name: "autocompletes empty",
 			rtc: &RunNodeTestCase{
 				Node: SerialNodes(
-					ListArg[string]("SL_ARG", "", 1, UnboundedList, SimpleCompletor[[]string]("one", "two", "three", "four")),
+					ListArg[string]("SL_ARG", "", 1, UnboundedList, SimpleCompleter[[]string]("one", "two", "three", "four")),
 				),
 				Args: []string{"autocomplete", ""},
 				WantStdout: strings.Join([]string{
@@ -6484,7 +6484,7 @@ func TestRunNodes(t *testing.T) {
 			name: "autocompletes empty with command",
 			rtc: &RunNodeTestCase{
 				Node: SerialNodes(
-					ListArg[string]("SL_ARG", "", 1, UnboundedList, SimpleCompletor[[]string]("one", "two", "three", "four")),
+					ListArg[string]("SL_ARG", "", 1, UnboundedList, SimpleCompleter[[]string]("one", "two", "three", "four")),
 				),
 				Args: []string{"autocomplete", "cmd "},
 				WantStdout: strings.Join([]string{
@@ -6500,7 +6500,7 @@ func TestRunNodes(t *testing.T) {
 			name: "autocompletes partial arg",
 			rtc: &RunNodeTestCase{
 				Node: SerialNodes(
-					ListArg[string]("SL_ARG", "", 1, UnboundedList, SimpleCompletor[[]string]("one", "two", "three", "four")),
+					ListArg[string]("SL_ARG", "", 1, UnboundedList, SimpleCompleter[[]string]("one", "two", "three", "four")),
 				),
 				Args: []string{"autocomplete", "cmd t"},
 				WantStdout: strings.Join([]string{
@@ -6514,7 +6514,7 @@ func TestRunNodes(t *testing.T) {
 			name: "autocompletes later args",
 			rtc: &RunNodeTestCase{
 				Node: SerialNodes(
-					ListArg[string]("SL_ARG", "", 1, UnboundedList, SimpleCompletor[[]string]("one", "two", "three", "four")),
+					ListArg[string]("SL_ARG", "", 1, UnboundedList, SimpleCompleter[[]string]("one", "two", "three", "four")),
 				),
 				Args:       []string{"autocomplete", "cmd three f"},
 				WantStdout: "four\n",
@@ -6524,7 +6524,7 @@ func TestRunNodes(t *testing.T) {
 			name: "autocompletes nothing if past last arg",
 			rtc: &RunNodeTestCase{
 				Node: SerialNodes(
-					ListArg[string]("SL_ARG", "", 1, 0, SimpleCompletor[[]string]("one", "two", "three", "four")),
+					ListArg[string]("SL_ARG", "", 1, 0, SimpleCompleter[[]string]("one", "two", "three", "four")),
 				),
 				Args: []string{"autocomplete", "cmd three f"},
 			},

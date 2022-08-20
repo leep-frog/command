@@ -7,7 +7,7 @@ type ArgOpt[T any] interface {
 
 type argOpt[T any] struct {
 	validators         []*ValidatorOption[T]
-	completor          Completor[T]
+	completer          Completer[T]
 	transformers       []*Transformer[T]
 	shortcut           *shortcutOpt[T]
 	customSet          customSetter[T]

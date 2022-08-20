@@ -411,7 +411,7 @@ func MenuFlag[T comparable](name string, shortName rune, desc string, choices ..
 	for _, c := range choices {
 		strChoices = append(strChoices, op.toArgs(c)...)
 	}
-	return NewFlag[T](name, shortName, desc, SimpleCompletor[T](strChoices...), InList(choices...))
+	return NewFlag[T](name, shortName, desc, SimpleCompleter[T](strChoices...), InList(choices...))
 }
 
 // MenuArg returns an `Arg` that is required to be one of the provided choices.
@@ -421,7 +421,7 @@ func MenuArg[T comparable](name, desc string, choices ...T) *ArgNode[T] {
 	for _, c := range choices {
 		strChoices = append(strChoices, op.toArgs(c)...)
 	}
-	return Arg[T](name, desc, SimpleCompletor[T](strChoices...), InList(choices...))
+	return Arg[T](name, desc, SimpleCompleter[T](strChoices...), InList(choices...))
 }
 
 // ListBreakerOption is an option type for the `ListBreaker` type.

@@ -842,7 +842,7 @@ func TestSourcerer(t *testing.T) {
 				&testCLI{
 					name: "basic",
 					processors: []command.Processor{
-						command.Arg[string]("s", "desc", command.SimpleCompletor[string]("alpha", "bravo", "charlie")),
+						command.Arg[string]("s", "desc", command.SimpleCompleter[string]("alpha", "bravo", "charlie")),
 					},
 				},
 			},
@@ -859,7 +859,7 @@ func TestSourcerer(t *testing.T) {
 				&testCLI{
 					name: "basic",
 					processors: []command.Processor{
-						command.ListArg[string]("s", "desc", 0, command.UnboundedList, command.SimpleCompletor[[]string]("alpha", "bravo", "charlie")),
+						command.ListArg[string]("s", "desc", 0, command.UnboundedList, command.SimpleCompleter[[]string]("alpha", "bravo", "charlie")),
 					},
 				},
 			},
@@ -878,7 +878,7 @@ func TestSourcerer(t *testing.T) {
 					processors: []command.Processor{
 						command.ListArg[string]()
 						command.Arg[string]("s", "desc",
-							&command.Completor[string]{
+							&command.Completer[string]{
 								Fetcher: command.SimpleFetcher(func(t string, d *command.Data) (*command.Completion, error) {
 									return nil, nil
 								}),
@@ -900,7 +900,7 @@ func TestSourcerer(t *testing.T) {
 				&testCLI{
 					name: "basic",
 					processors: []command.Processor{
-						command.Arg[string]("s", "desc", command.SimpleCompletor[string]("alpha", "bravo", "charlie", "brown", "baker")),
+						command.Arg[string]("s", "desc", command.SimpleCompleter[string]("alpha", "bravo", "charlie", "brown", "baker")),
 					},
 				},
 			},
@@ -917,8 +917,8 @@ func TestSourcerer(t *testing.T) {
 				&testCLI{
 					name: "basic",
 					processors: []command.Processor{
-						command.Arg[string]("s", "desc", command.SimpleCompletor[string]("alpha", "bravo", "charlie", "brown", "baker")),
-						command.Arg[string]("z", "desz", command.SimpleCompletor[string]("un", "deux", "trois")),
+						command.Arg[string]("s", "desc", command.SimpleCompleter[string]("alpha", "bravo", "charlie", "brown", "baker")),
+						command.Arg[string]("z", "desz", command.SimpleCompleter[string]("un", "deux", "trois")),
 					},
 				},
 			},
@@ -935,8 +935,8 @@ func TestSourcerer(t *testing.T) {
 				&testCLI{
 					name: "basic",
 					processors: []command.Processor{
-						command.Arg[string]("s", "desc", command.SimpleCompletor[string]("alpha", "bravo", "charlie", "brown", "baker")),
-						command.Arg[string]("z", "desz", command.SimpleCompletor[string]("un", "deux", "trois")),
+						command.Arg[string]("s", "desc", command.SimpleCompleter[string]("alpha", "bravo", "charlie", "brown", "baker")),
+						command.Arg[string]("z", "desz", command.SimpleCompleter[string]("un", "deux", "trois")),
 					},
 				},
 			},

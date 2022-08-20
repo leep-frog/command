@@ -4,13 +4,13 @@ import (
 	"github.com/leep-frog/command"
 )
 
-func Completor() command.Completor[string] {
-	return command.SimpleDistinctCompletor[string](Attributes()...)
+func Completer() command.Completer[string] {
+	return command.SimpleDistinctCompleter[string](Attributes()...)
 }
 
 var (
 	ArgName = "format"
-	Arg     = command.ListArg[string](ArgName, "color", 1, command.UnboundedList, command.CompletorList(Completor()))
+	Arg     = command.ListArg[string](ArgName, "color", 1, command.UnboundedList, command.CompleterList(Completer()))
 )
 
 func ApplyCodes(f *Format, output command.Output, data *command.Data) (*Format, error) {

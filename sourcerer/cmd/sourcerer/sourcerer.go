@@ -42,7 +42,7 @@ func (*UpdateLeepPackageCommand) Node() *command.Node {
 	pkg := "PACKAGE"
 	return command.SerialNodes(
 		command.Description("gg updates go packages from the github.com/leep-frog repository"),
-		command.ListArg[string](pkg, "Package name", 1, command.UnboundedList, command.SimpleDistinctCompletor[[]string](RelevantPackages...)),
+		command.ListArg[string](pkg, "Package name", 1, command.UnboundedList, command.SimpleDistinctCompleter[[]string](RelevantPackages...)),
 		command.ExecutableNode(func(o command.Output, d *command.Data) ([]string, error) {
 			var r []string
 			for _, p := range d.StringList(pkg) {
@@ -69,7 +69,7 @@ func (*UsageCommand) Node() *command.Node {
 	c := "CLI"
 	return command.SerialNodes(
 		command.Description("mancli prints out usage info for any leep-frog generated CLI"),
-		command.Arg[string](c, "CLI for which usage should be fetched", command.SimpleDistinctCompletor[string](RelevantPackages...)),
+		command.Arg[string](c, "CLI for which usage should be fetched", command.SimpleDistinctCompleter[string](RelevantPackages...)),
 		// TODO: This is run before all args are processed. That's confusing if extra args are provided.
 		//       We'd expect an ExtraArgsErr, but instead get an error from this function.
 		command.ExecutableNode(func(o command.Output, d *command.Data) ([]string, error) {
@@ -154,7 +154,7 @@ var (
 		'd',
 		"Directory of package to run",
 		command.IsDir(),
-		&command.FileCompletor[string]{IgnoreFiles: true},
+		&command.FileCompleter[string]{IgnoreFiles: true},
 		command.Default("."),
 	)
 	passAlongArgs = command.ListArg[string](command.PassthroughArgs, "Args to pass through to the command", 0, command.UnboundedList)
@@ -195,7 +195,7 @@ func (gl *GoLeep) Node() *command.Node {
 		}, nil),
 	)
 
-	passAlongArgs.AddOptions(gl.completor())
+	passAlongArgs.AddOptions(gl.completer())
 
 	exNode := command.SerialNodes(
 		command.Description("Execute the provided go files"),
@@ -241,8 +241,8 @@ func (gl *GoLeep) Node() *command.Node {
 	}, exNode, command.DontCompleteSubcommands())
 }
 
-func (gl *GoLeep) completor() command.Completor[[]string] {
-	return command.CompletorFromFunc(func(s []string, data *command.Data) (*command.Completion, error) {
+func (gl *GoLeep) completer() command.Completer[[]string] {
+	return command.CompleterFromFunc(func(s []string, data *command.Data) (*command.Completion, error) {
 		extraArgs := []string{
 			fmt.Sprintf("%q", strings.Join(passAlongArgs.Get(data), " ")),
 		}
