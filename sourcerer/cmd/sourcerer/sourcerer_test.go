@@ -387,7 +387,7 @@ func TestExecute(t *testing.T) {
 				WantExecuteData: &command.ExecuteData{
 					Executable: []string{
 						"pushd . > /dev/null",
-						fmt.Sprintf(`cd %q`, strings.ReplaceAll(command.FilepathAbs(t, "..", "..", "..", "testdata"), `\`, "/")),
+						fmt.Sprintf(`cd %q`, command.FilepathAbs(t, "..", "..", "..", "testdata")),
 						`local tmpFile="$(mktemp)"`,
 						`go run . "ING" > $tmpFile && source $tmpFile `,
 						"popd > /dev/null",

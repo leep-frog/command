@@ -140,11 +140,9 @@ func (*SourcererCommand) Node() *command.Node {
 		sourcererDirArg,
 		sourcererSuffixArg,
 		command.ExecutableNode(func(_ command.Output, d *command.Data) ([]string, error) {
-			dir := strings.ReplaceAll(sourcererDirArg.Get(d), `\`, "/")
-			// TODO: try using this? filepath.FromSlash()
 			return []string{
 				"pushd . > /dev/null",
-				fmt.Sprintf("cd %q", dir),
+				fmt.Sprintf("cd %q", sourcererDirArg.Get(d)),
 				`local tmpFile="$(mktemp)"`,
 				fmt.Sprintf("go run . %q > $tmpFile && source $tmpFile ", sourcererSuffixArg.Get(d)),
 				"popd > /dev/null",

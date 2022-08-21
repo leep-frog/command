@@ -176,11 +176,6 @@ func (s *sourcerer) executeExecutor(output command.Output, d *command.Data) erro
 		return nil
 	}
 
-	/* TODO: This was removed on 4/28/22. If you don't notice any issues after a while, remove it
-	  for i, line := range eData.Executable {
-			eData.Executable[i] = strings.ReplaceAll(line, `\`, `\\`)
-		} */
-
 	f, err := os.OpenFile(sourcingFile, os.O_WRONLY|os.O_CREATE, 0644)
 	if err != nil {
 		return output.Stderrf("failed to open file: %v\n", err)
