@@ -27,7 +27,7 @@ func AliasSourcery(o command.Output, as ...*Aliaser) {
 		return this.alias < that.alias
 	})
 
-	o.Stdoutln(globalAutocompleteForAliasFunction)
+	o.Stdoutln(GlobalAutocompleteForAliasFunction)
 
 	verifiedCLIs := map[string]bool{}
 	for _, a := range as {

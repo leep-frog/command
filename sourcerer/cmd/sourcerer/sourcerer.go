@@ -38,14 +38,17 @@ func (*UpdateLeepPackageCommand) Name() string {
 	return "gg"
 }
 
+var (
+	packageArg = command.ListArg[string]("PACKAGE", "Package name", 1, command.UnboundedList, command.SimpleDistinctCompleter[[]string](RelevantPackages...))
+)
+
 func (*UpdateLeepPackageCommand) Node() *command.Node {
-	pkg := "PACKAGE"
 	return command.SerialNodes(
 		command.Description("gg updates go packages from the github.com/leep-frog repository"),
-		command.ListArg[string](pkg, "Package name", 1, command.UnboundedList, command.SimpleDistinctCompleter[[]string](RelevantPackages...)),
+		packageArg,
 		command.ExecutableNode(func(o command.Output, d *command.Data) ([]string, error) {
 			var r []string
-			for _, p := range d.StringList(pkg) {
+			for _, p := range packageArg.Get(d) {
 				r = append(r,
 					fmt.Sprintf(`local commitSha="$(git ls-remote git@github.com:leep-frog/%s.git | grep ma[is][nt] | awk '{print $1}')"`, p),
 					fmt.Sprintf(`go get -v "github.com/leep-frog/%s@$commitSha"`, p),
@@ -61,17 +64,20 @@ func (*UpdateLeepPackageCommand) Node() *command.Node {
 // UsageCommand is a CLI for printing out usage info for a CLI.
 type UsageCommand struct{}
 
+var (
+	usageCLIArg = command.Arg[string]("CLI", "CLI for which usage should be fetched", command.SimpleDistinctCompleter[string](RelevantPackages...))
+)
+
 func (*UsageCommand) Setup() []string { return nil }
 func (*UsageCommand) Changed() bool   { return false }
 func (*UsageCommand) Name() string    { return "mancli" }
 
 func (*UsageCommand) Node() *command.Node {
-	c := "CLI"
 	return command.SerialNodes(
 		command.Description("mancli prints out usage info for any leep-frog generated CLI"),
-		command.Arg[string](c, "CLI for which usage should be fetched", command.SimpleDistinctCompleter[string](RelevantPackages...)),
+		usageCLIArg,
 		command.ExecutableNode(func(o command.Output, d *command.Data) ([]string, error) {
-			cli := d.String(c)
+			cli := usageCLIArg.Get(d)
 			return []string{
 				// Extract the custom execute function so that this function
 				// can work regardless of file name
@@ -89,27 +95,28 @@ func (*UsageCommand) Node() *command.Node {
 // AliaserCommand creates an alias for another arg
 type AliaserCommand struct{}
 
+var (
+	aliasArg    = command.Arg[string]("ALIAS", "Alias of new command", command.MinLength(1))
+	aliasCLIArg = command.Arg[string]("CLI", "CLI of new command")
+	aliasPTArg  = command.ListArg[string]("PASSTHROUGH_ARGS", "Args to passthrough with alias", 0, command.UnboundedList)
+)
+
 func (*AliaserCommand) Setup() []string { return nil }
 func (*AliaserCommand) Changed() bool   { return false }
 func (*AliaserCommand) Name() string    { return "aliaser" }
 
 func (*AliaserCommand) Node() *command.Node {
-	a := "ALIAS"
-	c := "CLI"
-	pts := "PASSTHROUGH_ARG"
 	return command.SerialNodes(
 		command.Description("Alias a command to a cli with some args included"),
-		command.Arg[string](a, "Alias of new command", command.MinLength(1)),
-		command.Arg[string](c, "CLI of new command"),
-		command.ListArg[string](pts, "Args to passthrough with alias", 0, command.UnboundedList),
+		aliasArg,
+		aliasCLIArg,
+		aliasPTArg,
 		command.ExecutableNode(func(_ command.Output, d *command.Data) ([]string, error) {
-			alias := d.String(a)
-			cli := d.String(c)
-			aliaser := sourcerer.NewAliaser(alias, cli, d.StringList(pts)...)
+			aliaser := sourcerer.NewAliaser(aliasArg.Get(d), aliasCLIArg.Get(d), aliasPTArg.Get(d)...)
 			fo := command.NewFakeOutput()
 			sourcerer.AliasSourcery(fo, aliaser)
 			fo.Close()
-			return []string{fo.GetStdout()}, nil
+			return strings.Split(fo.GetStdout(), "\n"), nil
 		}),
 	)
 }
@@ -123,20 +130,23 @@ func (*SourcererCommand) Name() string {
 	return "sourcerer"
 }
 
+var (
+	sourcererDirArg    = command.FileNode("DIRECTORY", "Directory in which to create CLI", command.IsDir())
+	sourcererSuffixArg = command.Arg[string]("BINARY_SUFFIX", "Suffix for the name", command.MinLength(1))
+)
+
 func (*SourcererCommand) Node() *command.Node {
-	dName := "DIRECTORY"
-	bsName := "BINARY_SUFFIX"
 	return command.SerialNodes(
-		command.FileNode(dName, "Directory in which to create CLI", command.IsDir()),
-		command.Arg[string](bsName, "Suffix for the name", command.MinLength(1)),
+		sourcererDirArg,
+		sourcererSuffixArg,
 		command.ExecutableNode(func(_ command.Output, d *command.Data) ([]string, error) {
-			dir := strings.ReplaceAll(d.String(dName), `\`, "/")
+			dir := strings.ReplaceAll(sourcererDirArg.Get(d), `\`, "/")
 			// TODO: try using this? filepath.FromSlash()
 			return []string{
 				"pushd . > /dev/null",
-				fmt.Sprintf("cd %s", dir),
+				fmt.Sprintf("cd %q", dir),
 				`local tmpFile="$(mktemp)"`,
-				fmt.Sprintf("go run . %s > $tmpFile && source $tmpFile ", d.String(bsName)),
+				fmt.Sprintf("go run . %q > $tmpFile && source $tmpFile ", sourcererSuffixArg.Get(d)),
 				"popd > /dev/null",
 			}, nil
 		}),

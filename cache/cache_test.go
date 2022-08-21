@@ -2,6 +2,7 @@ package cache
 
 import (
 	"fmt"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -203,21 +204,38 @@ func fullCache(t *testing.T, c *Cache) map[string]string {
 
 func TestExecute(t *testing.T) {
 	for _, test := range []struct {
-		name  string
-		puts  []*put
-		etc   *command.ExecuteTestCase
-		want  map[string]string
-		wantC *Cache
+		name          string
+		c             *Cache
+		puts          []*put
+		etc           *command.ExecuteTestCase
+		skipFileCheck bool
+		want          map[string]string
+		wantC         *Cache
 	}{
 		{
 			name: "Requires branching arg",
+			c:    NewTestCache(t),
 			etc: &command.ExecuteTestCase{
 				WantErr:    fmt.Errorf("Branching argument must be one of [delete get list put setdir]"),
 				WantStderr: "Branching argument must be one of [delete get list put setdir]\n",
 			},
 		},
+		// Get tests
+		{
+			name: "Gets fails if unknown dir",
+			c: &Cache{
+				Dir: filepath.Join("bob", "lob", "law"),
+			},
+			skipFileCheck: true,
+			etc: &command.ExecuteTestCase{
+				Args:       []string{"get", "here"},
+				WantStderr: "failed to get file for key: failed to get cache directory: cache directory does not exist\n",
+				WantErr:    fmt.Errorf("failed to get file for key: failed to get cache directory: cache directory does not exist"),
+			},
+		},
 		{
 			name: "Get requires key",
+			c:    NewTestCache(t),
 			etc: &command.ExecuteTestCase{
 				Args:       []string{"get"},
 				WantErr:    fmt.Errorf(`Argument "KEY" requires at least 1 argument, got 0`),
@@ -226,6 +244,7 @@ func TestExecute(t *testing.T) {
 		},
 		{
 			name: "Get requires valid key",
+			c:    NewTestCache(t),
 			etc: &command.ExecuteTestCase{
 				Args:       []string{"get", ".?,"},
 				WantErr:    fmt.Errorf(`validation for "KEY" failed: [MatchesRegex] value ".?," doesn't match regex %q`, keyRegex),
@@ -234,6 +253,7 @@ func TestExecute(t *testing.T) {
 		},
 		{
 			name: "Get missing key",
+			c:    NewTestCache(t),
 			etc: &command.ExecuteTestCase{
 				Args:       []string{"get", "uh"},
 				WantStderr: "key not found\n",
@@ -241,6 +261,7 @@ func TestExecute(t *testing.T) {
 		},
 		{
 			name: "Gets present key key",
+			c:    NewTestCache(t),
 			puts: []*put{
 				{
 					key:  "here",
@@ -255,8 +276,22 @@ func TestExecute(t *testing.T) {
 				"here": "hello\nthere",
 			},
 		},
+		// Put tests
+		{
+			name: "Put fails if unknown dir",
+			c: &Cache{
+				Dir: filepath.Join("bob", "lob", "law"),
+			},
+			skipFileCheck: true,
+			etc: &command.ExecuteTestCase{
+				Args:       []string{"put", "things", "here"},
+				WantStderr: "failed to get file for key: failed to get cache directory: cache directory does not exist\n",
+				WantErr:    fmt.Errorf("failed to get file for key: failed to get cache directory: cache directory does not exist"),
+			},
+		},
 		{
 			name: "Put requires key",
+			c:    NewTestCache(t),
 			etc: &command.ExecuteTestCase{
 				Args:       []string{"put"},
 				WantErr:    fmt.Errorf(`Argument "KEY" requires at least 1 argument, got 0`),
@@ -265,6 +300,7 @@ func TestExecute(t *testing.T) {
 		},
 		{
 			name: "Put requires valid key",
+			c:    NewTestCache(t),
 			etc: &command.ExecuteTestCase{
 				Args:       []string{"put", ".?,"},
 				WantErr:    fmt.Errorf(`validation for "KEY" failed: [MatchesRegex] value ".?," doesn't match regex %q`, keyRegex),
@@ -273,6 +309,7 @@ func TestExecute(t *testing.T) {
 		},
 		{
 			name: "Put requires data",
+			c:    NewTestCache(t),
 			etc: &command.ExecuteTestCase{
 				Args:       []string{"put", "things"},
 				WantErr:    fmt.Errorf(`Argument "DATA" requires at least 1 argument, got 0`),
@@ -282,6 +319,7 @@ func TestExecute(t *testing.T) {
 		},
 		{
 			name: "Put works",
+			c:    NewTestCache(t),
 			etc: &command.ExecuteTestCase{
 				Args: []string{"put", "things", "better than", "you found them"},
 			},
@@ -291,6 +329,7 @@ func TestExecute(t *testing.T) {
 		},
 		{
 			name: "Put overrides",
+			c:    NewTestCache(t),
 			puts: []*put{
 				{"this", "that"},
 				{"things", "worse"},
@@ -307,13 +346,27 @@ func TestExecute(t *testing.T) {
 		},
 		// List tests
 		{
+			name: "list fails if unknown dir",
+			c: &Cache{
+				Dir: filepath.Join("bob", "lob", "law"),
+			},
+			skipFileCheck: true,
+			etc: &command.ExecuteTestCase{
+				Args:       []string{"list"},
+				WantStderr: "cache directory does not exist\n",
+				WantErr:    fmt.Errorf("cache directory does not exist"),
+			},
+		},
+		{
 			name: "List works with no data",
+			c:    NewTestCache(t),
 			etc: &command.ExecuteTestCase{
 				Args: []string{"list"},
 			},
 		},
 		{
 			name: "List works with data",
+			c:    NewTestCache(t),
 			puts: []*put{
 				{"this", "that"},
 				{"things", "better than you found them"},
@@ -332,6 +385,7 @@ func TestExecute(t *testing.T) {
 		// Delete tests
 		{
 			name: "Delete requires key",
+			c:    NewTestCache(t),
 			etc: &command.ExecuteTestCase{
 				Args:       []string{"delete"},
 				WantErr:    fmt.Errorf(`Argument "KEY" requires at least 1 argument, got 0`),
@@ -340,6 +394,7 @@ func TestExecute(t *testing.T) {
 		},
 		{
 			name: "Delete requires valid key",
+			c:    NewTestCache(t),
 			etc: &command.ExecuteTestCase{
 				Args:       []string{"delete", ".?,"},
 				WantErr:    fmt.Errorf(`validation for "KEY" failed: [MatchesRegex] value ".?," doesn't match regex %q`, keyRegex),
@@ -348,12 +403,14 @@ func TestExecute(t *testing.T) {
 		},
 		{
 			name: "Delete non-existant key",
+			c:    NewTestCache(t),
 			etc: &command.ExecuteTestCase{
 				Args: []string{"delete", "uh"},
 			},
 		},
 		{
 			name: "Delete key",
+			c:    NewTestCache(t),
 			puts: []*put{
 				{"this", "that"},
 				{"things", "worse than you found them"},
@@ -370,6 +427,7 @@ func TestExecute(t *testing.T) {
 		// setdir tests
 		{
 			name: "setdir requires an argument",
+			c:    NewTestCache(t),
 			etc: &command.ExecuteTestCase{
 				Args:       []string{"setdir"},
 				WantErr:    fmt.Errorf(`Argument "DIR" requires at least 1 argument, got 0`),
@@ -378,6 +436,7 @@ func TestExecute(t *testing.T) {
 		},
 		{
 			name: "setdir requires an existing file",
+			c:    NewTestCache(t),
 			etc: &command.ExecuteTestCase{
 				Args:       []string{"setdir", "uh"},
 				WantErr:    fmt.Errorf("validation for \"DIR\" failed: [FileExists] file %q does not exist", command.FilepathAbs(t, "uh")),
@@ -386,6 +445,7 @@ func TestExecute(t *testing.T) {
 		},
 		{
 			name: "setdir doesn't allow files",
+			c:    NewTestCache(t),
 			etc: &command.ExecuteTestCase{
 				Args:       []string{"setdir", "cache.go"},
 				WantErr:    fmt.Errorf("validation for \"DIR\" failed: [IsDir] argument %q is a file", command.FilepathAbs(t, "cache.go")),
@@ -394,6 +454,7 @@ func TestExecute(t *testing.T) {
 		},
 		{
 			name: "setdir works",
+			c:    NewTestCache(t),
 			etc: &command.ExecuteTestCase{
 				Args: []string{"setdir", "testing"},
 			},
@@ -406,20 +467,21 @@ func TestExecute(t *testing.T) {
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			c := NewTestCache(t)
 			for _, p := range test.puts {
-				Put(t, c, p.key, p.data)
+				Put(t, test.c, p.key, p.data)
 			}
 			if test.etc == nil {
 				test.etc = &command.ExecuteTestCase{}
 			}
-			test.etc.Node = c.Node()
+			test.etc.Node = test.c.Node()
 			test.etc.SkipDataCheck = true
 			command.ExecuteTest(t, test.etc)
-			command.ChangeTest(t, test.wantC, c, cmpopts.IgnoreUnexported(Cache{}))
+			command.ChangeTest(t, test.wantC, test.c, cmpopts.IgnoreUnexported(Cache{}))
 
-			if diff := cmp.Diff(test.want, fullCache(t, c), cmpopts.EquateEmpty()); diff != "" {
-				t.Errorf("Execute(%v) resulted in incorrect cache (-want, +got):\n%s", test.etc.Args, diff)
+			if !test.skipFileCheck {
+				if diff := cmp.Diff(test.want, fullCache(t, test.c), cmpopts.EquateEmpty()); diff != "" {
+					t.Errorf("Execute(%v) resulted in incorrect cache (-want, +got):\n%s", test.etc.Args, diff)
+				}
 			}
 		})
 	}
@@ -554,5 +616,12 @@ func TestPutStruct(t *testing.T) {
 				t.Errorf("PutStruct(%s, %v) produced diff:\n%s", test.key, test.data, diff)
 			}
 		})
+	}
+}
+
+func TestMetadata(t *testing.T) {
+	c := &Cache{}
+	if c.Setup() != nil {
+		t.Errorf("Cache returned unexpected setup: %v", c.Setup())
 	}
 }
