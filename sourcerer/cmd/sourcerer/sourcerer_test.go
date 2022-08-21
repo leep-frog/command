@@ -34,6 +34,9 @@ func TestExecute(t *testing.T) {
 					"set -o pipefail",
 					"go run . execute TMP_FILE",
 				}},
+				WantData: &command.Data{Values: map[string]interface{}{
+					goDirectory.Name(): ".",
+				}},
 			},
 		},
 		{
@@ -41,13 +44,16 @@ func TestExecute(t *testing.T) {
 			etc: &command.ExecuteTestCase{
 				Args: []string{
 					"-d",
-					"../../../testdata",
+					filepath.Join("..", "..", "..", "testdata"),
 				},
 				RunResponses: []*command.FakeRun{{}},
 				WantRunContents: [][]string{{
 					"set -e",
 					"set -o pipefail",
-					`go run ../../../testdata execute TMP_FILE`,
+					fmt.Sprintf(`go run %s execute TMP_FILE`, filepath.Join("..", "..", "..", "testdata")),
+				}},
+				WantData: &command.Data{Values: map[string]interface{}{
+					goDirectory.Name(): filepath.Join("..", "..", "..", "testdata"),
 				}},
 			},
 		},
@@ -70,6 +76,9 @@ func TestExecute(t *testing.T) {
 						"echo goodbye",
 					},
 				},
+				WantData: &command.Data{Values: map[string]interface{}{
+					goDirectory.Name(): ".",
+				}},
 			},
 		},
 		{
@@ -91,6 +100,9 @@ func TestExecute(t *testing.T) {
 					"set -e",
 					"set -o pipefail",
 					`go run . execute TMP_FILE`,
+				}},
+				WantData: &command.Data{Values: map[string]interface{}{
+					goDirectory.Name(): ".",
 				}},
 			},
 		},
@@ -119,6 +131,9 @@ func TestExecute(t *testing.T) {
 					"set -o pipefail",
 					`go run . execute TMP_FILE`,
 				}},
+				WantData: &command.Data{Values: map[string]interface{}{
+					goDirectory.Name(): ".",
+				}},
 			},
 		},
 		{
@@ -134,6 +149,13 @@ func TestExecute(t *testing.T) {
 					"set -o pipefail",
 					`go run . execute TMP_FILE arg1 arg2`,
 				}},
+				WantData: &command.Data{Values: map[string]interface{}{
+					passAlongArgs.Name(): []string{
+						"arg1",
+						"arg2",
+					},
+					goDirectory.Name(): ".",
+				}},
 			},
 		},
 		// Usage
@@ -148,6 +170,9 @@ func TestExecute(t *testing.T) {
 						"go run . usage",
 					},
 				},
+				WantData: &command.Data{Values: map[string]interface{}{
+					goDirectory.Name(): ".",
+				}},
 			},
 		},
 		{
@@ -156,12 +181,16 @@ func TestExecute(t *testing.T) {
 				Args: []string{
 					"usage",
 					"--go-dir",
-					"../../../color",
+					filepath.Join("..", "..", "..", "color"),
 				},
-
 				WantExecuteData: &command.ExecuteData{
-					Executable: []string{"go run ../../../color usage"},
+					Executable: []string{
+						fmt.Sprintf("go run %s usage", filepath.Join("..", "..", "..", "color")),
+					},
 				},
+				WantData: &command.Data{Values: map[string]interface{}{
+					goDirectory.Name(): filepath.Join("..", "..", "..", "color"),
+				}},
 			},
 		},
 		/* Useful for commenting out tests */
@@ -189,7 +218,6 @@ func TestExecute(t *testing.T) {
 
 			gl := &GoLeep{}
 			test.etc.Node = gl.Node()
-			test.etc.SkipDataCheck = true
 			command.ExecuteTest(t, test.etc)
 		})
 	}
@@ -203,13 +231,16 @@ func TestAutocomplete(t *testing.T) {
 		{
 			name: "completes directories",
 			ctc: &command.CompleteTestCase{
-				Args: "cmd -d ../../../c",
+				Args: fmt.Sprintf("cmd -d %s", filepath.Join("..", "..", "..", "c")),
 				Want: []string{
 					"cache/",
 					"cmd/",
 					"color/",
 					" ",
 				},
+				WantData: &command.Data{Values: map[string]interface{}{
+					goDirectory.Name(): filepath.Join("..", "..", "..", "c"),
+				}},
 			},
 		},
 		{
@@ -231,6 +262,10 @@ func TestAutocomplete(t *testing.T) {
 					"trois",
 					"un",
 				},
+				WantData: &command.Data{Values: map[string]interface{}{
+					goDirectory.Name():   ".",
+					passAlongArgs.Name(): []string{""},
+				}},
 			},
 		},
 		{
@@ -249,6 +284,10 @@ func TestAutocomplete(t *testing.T) {
 					"set -o pipefail",
 					`go run . autocomplete ""`,
 				}},
+				WantData: &command.Data{Values: map[string]interface{}{
+					goDirectory.Name():   ".",
+					passAlongArgs.Name(): []string{""},
+				}},
 			},
 		},
 		/* Useful for commenting out tests */
@@ -256,7 +295,6 @@ func TestAutocomplete(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			gl := &GoLeep{}
 			test.ctc.Node = gl.Node()
-			test.ctc.SkipDataCheck = true
 			command.CompleteTest(t, test.ctc)
 		})
 	}
