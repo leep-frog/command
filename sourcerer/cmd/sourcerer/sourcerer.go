@@ -70,8 +70,6 @@ func (*UsageCommand) Node() *command.Node {
 	return command.SerialNodes(
 		command.Description("mancli prints out usage info for any leep-frog generated CLI"),
 		command.Arg[string](c, "CLI for which usage should be fetched", command.SimpleDistinctCompleter[string](RelevantPackages...)),
-		// TODO: This is run before all args are processed. That's confusing if extra args are provided.
-		//       We'd expect an ExtraArgsErr, but instead get an error from this function.
 		command.ExecutableNode(func(o command.Output, d *command.Data) ([]string, error) {
 			cli := d.String(c)
 			return []string{

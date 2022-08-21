@@ -138,6 +138,8 @@ func (bn *BashCommand[T]) execute(input *Input, output Output, data *Data, eData
 
 // DebugMode returns whether or not debug mode is active.
 // TODO: Separate debug.go file that contains all info like this.
+// TODO: have debug mode point to directory or file
+//       and all output can be written there.
 func DebugMode() bool {
 	return os.Getenv("LEEP_FROG_DEBUG") != ""
 }

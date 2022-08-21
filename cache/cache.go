@@ -64,7 +64,6 @@ func (c *Cache) Node() *command.Node {
 				return nil
 			}),
 		),
-		// TODO: allow aliases for keys (via separator? "put|p")
 		"put": command.SerialNodes(
 			arg,
 			command.ListArg[string]("DATA", "Data to store", 1, command.UnboundedList),
