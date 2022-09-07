@@ -287,6 +287,10 @@ func (f *flag[T]) Get(d *Data) T {
 	return GetData[T](d, f.name)
 }
 
+func (f *flag[T]) Has(d *Data) bool {
+	return d.Has(f.name)
+}
+
 func (f *flag[T]) AddOptions(opts ...ArgOpt[T]) FlagWithType[T] {
 	for _, o := range opts {
 		o.modifyArgOpt(f.argNode.opt)

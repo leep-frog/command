@@ -43,6 +43,10 @@ func (an *ArgNode[T]) Get(data *Data) T {
 	return GetData[T](data, an.name)
 }
 
+func (an *ArgNode[T]) Has(data *Data) bool {
+	return data.Has(an.name)
+}
+
 // GetOrDefault fetches the arguments value from the `Data` object.
 func (an *ArgNode[T]) GetOrDefault(data *Data, dflt T) T {
 	if data.Has(an.name) {

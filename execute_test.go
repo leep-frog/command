@@ -3946,6 +3946,135 @@ func TestExecute(t *testing.T) {
 				WantStderr: "Flag \"quick\" has already been set\n",
 			},
 		},
+		// ArgFilter tests.
+		{
+			name: "empty arg doesn't get filtered",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					ListArg[string]("sl", testDesc, 0, UnboundedList),
+					ArgFilter[string](
+						ListArg[string]("sl", testDesc, 0, UnboundedList),
+						func(s string, d *Data) (bool, error) {
+							return strings.Contains(s, "y"), nil
+						},
+					),
+				),
+			},
+		},
+		{
+			name: "args get filtered",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					ListArg[string]("sl", testDesc, 0, UnboundedList),
+					ArgFilter[string](
+						ListArg[string]("sl", testDesc, 0, UnboundedList),
+						func(s string, d *Data) (bool, error) {
+							return strings.Contains(s, "y"), nil
+						},
+					),
+				),
+				Args: []string{"hey", "hi", "howdy", "hello"},
+				WantData: &Data{Values: map[string]interface{}{
+					"sl": []string{"hey", "howdy"},
+				}},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "hey"},
+						{value: "hi"},
+						{value: "howdy"},
+						{value: "hello"},
+					},
+				},
+			},
+		},
+		{
+			name: "flags get filtered",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					NewFlagNode(
+						NewListFlag[string]("sl", 's', testDesc, 0, UnboundedList),
+					),
+					ArgFilter[string](
+						ListArg[string]("sl", testDesc, 0, UnboundedList),
+						func(s string, d *Data) (bool, error) {
+							return strings.Contains(s, "y"), nil
+						},
+					),
+				),
+				Args: []string{"-s", "hey", "hi", "howdy", "hello"},
+				WantData: &Data{Values: map[string]interface{}{
+					"sl": []string{"hey", "howdy"},
+				}},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "-s"},
+						{value: "hey"},
+						{value: "hi"},
+						{value: "howdy"},
+						{value: "hello"},
+					},
+				},
+			},
+		},
+		{
+			name: "args filter returns error",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					ListArg[string]("sl", testDesc, 0, UnboundedList),
+					ArgFilter[string](
+						ListArg[string]("sl", testDesc, 0, UnboundedList),
+						func(s string, d *Data) (bool, error) {
+							return strings.Contains(s, "y"), fmt.Errorf("my b")
+						},
+					),
+				),
+				Args:       []string{"hey", "hi", "howdy", "hello"},
+				WantErr:    fmt.Errorf("my b"),
+				WantStderr: "my b\n",
+				WantData: &Data{Values: map[string]interface{}{
+					"sl": []string{"hey", "hi", "howdy", "hello"},
+				}},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "hey"},
+						{value: "hi"},
+						{value: "howdy"},
+						{value: "hello"},
+					},
+				},
+			},
+		},
+		{
+			name: "flag filter returns error",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					NewFlagNode(
+						NewListFlag[string]("sl", 's', testDesc, 0, UnboundedList),
+					),
+					ArgFilter[string](
+						ListArg[string]("sl", testDesc, 0, UnboundedList),
+						func(s string, d *Data) (bool, error) {
+							return strings.Contains(s, "y"), fmt.Errorf("my b")
+						},
+					),
+				),
+				Args:       []string{"--sl", "hey", "hi", "howdy", "hello"},
+				WantErr:    fmt.Errorf("my b"),
+				WantStderr: "my b\n",
+				WantData: &Data{Values: map[string]interface{}{
+					"sl": []string{"hey", "hi", "howdy", "hello"},
+				}},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "--sl"},
+						{value: "hey"},
+						{value: "hi"},
+						{value: "howdy"},
+						{value: "hello"},
+					},
+				},
+			},
+		},
 		// Transformer tests.
 		{
 			name: "args get transformed",
@@ -5412,6 +5541,47 @@ func TestComplete(t *testing.T) {
 					"where": true,
 					"run":   true,
 					"zf":    "",
+				}},
+			},
+		},
+		// ArgFilter tests.
+		{
+			name: "args get filtered",
+			ctc: &CompleteTestCase{
+				Node: SerialNodes(
+					ListArg[string]("sl", testDesc, 0, 4),
+					ArgFilter[string](
+						ListArg[string]("sl", testDesc, 0, 4),
+						func(s string, d *Data) (bool, error) {
+							return strings.Contains(s, "y"), nil
+						},
+					),
+					Arg[string]("s", testDesc),
+				),
+				Args: "cmd hey hi howdy hello ",
+				WantData: &Data{Values: map[string]interface{}{
+					"sl": []string{"hey", "howdy"},
+					"s":  "",
+				}},
+			},
+		},
+		{
+			name: "ArgFilter returns error",
+			ctc: &CompleteTestCase{
+				Node: SerialNodes(
+					ListArg[string]("sl", testDesc, 0, 4),
+					ArgFilter[string](
+						ListArg[string]("sl", testDesc, 0, 4),
+						func(s string, d *Data) (bool, error) {
+							return strings.Contains(s, "y"), fmt.Errorf("rats")
+						},
+					),
+					Arg[string]("s", testDesc),
+				),
+				Args:    "cmd hey hi howdy hello ",
+				WantErr: fmt.Errorf("rats"),
+				WantData: &Data{Values: map[string]interface{}{
+					"sl": []string{"hey", "hi", "howdy", "hello"},
 				}},
 			},
 		},

@@ -288,6 +288,39 @@ func BranchNode(branches map[string]*Node, dflt *Node, opts ...BranchNodeOption)
 	}
 }
 
+// DataValue is an interface for types that can be stored in `Data`.
+type DataValue[T any] interface {
+	Get(*Data) T
+	Has(*Data) bool
+	Set(T, *Data)
+}
+
+// ArgFilter filters out elements in an `ArgNode` or `Flag` slice.
+func ArgFilter[T any](arg DataValue[[]T], f func(T, *Data) (bool, error)) Processor {
+	filterFunc := func(d *Data) error {
+		if !arg.Has(d) {
+			return nil
+		}
+		var filtered []T
+		for _, t := range arg.Get(d) {
+			include, err := f(t, d)
+			if err != nil {
+				return err
+			}
+			if include {
+				filtered = append(filtered, t)
+			}
+		}
+		arg.Set(filtered, d)
+		return nil
+	}
+	return SimpleProcessor(func(i *Input, o Output, d *Data, ed *ExecuteData) error {
+		return o.Err(filterFunc(d))
+	}, func(i *Input, d *Data) (*Completion, error) {
+		return nil, filterFunc(d)
+	})
+}
+
 // SimpleProcessor creates a `Processor` from execution and completion functions.
 func SimpleProcessor(e func(*Input, Output, *Data, *ExecuteData) error, c func(*Input, *Data) (*Completion, error)) Processor {
 	return &simpleProcessor{
