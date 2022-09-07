@@ -214,8 +214,12 @@ func (s *sourcerer) autocompleteExecutor(o command.Output, d *command.Data) erro
 	if len(g) > 0 {
 		o.Stdoutf("%s\n", strings.Join(g, "\n"))
 	}
-
-	return o.Err(err)
+	if err != nil {
+		// Add newline so we're not writing over current line with curosr
+		o.Stderrln()
+		return o.Err(err)
+	}
+	return nil
 }
 
 // separate method for testing

@@ -823,9 +823,15 @@ func TestSourcerer(t *testing.T) {
 			wantErr: fmt.Errorf(`Argument "COMP_LINE" requires at least 1 argument, got 0`),
 		},
 		{
-			name: "autocomplete doesn't require passthrough args",
-			args: []string{"autocomplete", "basic", "0", "h"},
-			clis: []CLI{&testCLI{name: "basic"}},
+			name:    "autocomplete doesn't require passthrough args",
+			args:    []string{"autocomplete", "basic", "0", "h"},
+			clis:    []CLI{&testCLI{name: "basic"}},
+			wantErr: fmt.Errorf("Unprocessed extra args: []"),
+			wantStderr: []string{
+				"",
+				"Unprocessed extra args: []",
+				uStr,
+			},
 		},
 		{
 			name: "autocomplete requires valid cli",
