@@ -78,14 +78,26 @@ func ForwardStdout[T any]() BashOption[T] {
 	return &forwardStdout[T]{}
 }
 
+type dontRunOnComplete[T any] struct{}
+
+func (*dontRunOnComplete[T]) modifyBashNode(bc *BashCommand[T]) {
+	bc.dontRunOnComplete = true
+}
+
+// DontRunOnComplete is a `BashOption` that skips the node's execution when in the `Complete` context.
+func DontRunOnComplete[T any]() BashOption[T] {
+	return &dontRunOnComplete[T]{}
+}
+
 type BashCommand[T any] struct {
 	argName  string
 	contents []string
 	desc     string
 
-	validators    []*ValidatorOption[T]
-	hideStderr    bool
-	forwardStdout bool
+	validators        []*ValidatorOption[T]
+	hideStderr        bool
+	forwardStdout     bool
+	dontRunOnComplete bool
 }
 
 // BashOption is an option type for modifying `BashNode` objects
@@ -105,7 +117,10 @@ func (bn *BashCommand[T]) Get(d *Data) T {
 
 // Complete fulfills the `Processor` interface for `BashCommand`.
 func (bn *BashCommand[T]) Complete(input *Input, data *Data) (*Completion, error) {
-	return nil, nil
+	if bn.dontRunOnComplete {
+		return nil, nil
+	}
+	return nil, bn.execute(&FakeOutput{}, data)
 }
 
 // Usage fulfills the `Processor` interface for `BashCommand`.
@@ -119,14 +134,14 @@ func (bn *BashCommand[T]) set(v T, d *Data) {
 
 // Execute fulfills the `Processor` interface for `BashCommand`.
 func (bn *BashCommand[T]) Execute(input *Input, output Output, data *Data, eData *ExecuteData) error {
-	err := bn.execute(input, output, data, eData)
+	err := bn.execute(output, data)
 	if bn.hideStderr {
 		return err
 	}
 	return output.Err(err)
 }
 
-func (bn *BashCommand[T]) execute(input *Input, output Output, data *Data, eData *ExecuteData) error {
+func (bn *BashCommand[T]) execute(output Output, data *Data) error {
 	v, err := bn.Run(output)
 	if err != nil {
 		return err

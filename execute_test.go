@@ -6135,6 +6135,58 @@ func TestComplete(t *testing.T) {
 				},
 			},
 		},
+		// BashNode
+		{
+			name: "BashNode runs in Completion context",
+			ctc: &CompleteTestCase{
+				Node: SerialNodes(
+					NewBashCommand[string]("b", []string{"echo haha"}),
+					Arg[string]("s", testDesc),
+				),
+				RunResponses: []*FakeRun{{
+					Stdout: []string{"hehe"},
+				}},
+				WantRunContents: [][]string{{
+					"set -e",
+					"set -o pipefail",
+					"echo haha",
+				}},
+				WantData: &Data{Values: map[string]interface{}{
+					"b": "hehe",
+					"s": "",
+				}},
+			},
+		},
+		{
+			name: "BashNode fails in Completion context",
+			ctc: &CompleteTestCase{
+				Node: SerialNodes(
+					NewBashCommand[string]("b", []string{"echo haha"}),
+					Arg[string]("s", testDesc),
+				),
+				RunResponses: []*FakeRun{{
+					Err: fmt.Errorf("argh"),
+				}},
+				WantRunContents: [][]string{{
+					"set -e",
+					"set -o pipefail",
+					"echo haha",
+				}},
+				WantErr: fmt.Errorf("failed to execute bash command: argh"),
+			},
+		},
+		{
+			name: "BashNode does not run in Completion context when option provided",
+			ctc: &CompleteTestCase{
+				Node: SerialNodes(
+					NewBashCommand("b", []string{"echo haha"}, DontRunOnComplete[string]()),
+					Arg[string]("s", testDesc),
+				),
+				WantData: &Data{Values: map[string]interface{}{
+					"s": "",
+				}},
+			},
+		},
 		// BashCompleter
 		{
 			name: "BashCompleter doesn't complete if bash failure",
