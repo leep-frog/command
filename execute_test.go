@@ -4990,6 +4990,21 @@ func TestComplete(t *testing.T) {
 				}},
 			},
 		},
+		{
+			name: "if fail to convert arg, then don't complete",
+			ctc: &CompleteTestCase{
+				Node: SerialNodes(
+					Arg[string]("s1", testDesc, SimpleCompleter[string]("one", "two", "three")),
+					Arg[int]("i", testDesc),
+					Arg[string]("s2", testDesc, SimpleCompleter[string]("abc", "alpha")),
+				),
+				Args:    "cmd three two a",
+				WantErr: fmt.Errorf(`strconv.Atoi: parsing "two": invalid syntax`),
+				WantData: &Data{Values: map[string]interface{}{
+					"s1": "three",
+				}},
+			},
+		},
 		// Ensure completion iteration stops if necessary.
 		{
 			name: "stop iterating if a completion returns nil",
