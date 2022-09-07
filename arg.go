@@ -150,6 +150,12 @@ func (an *ArgNode[T]) Execute(i *Input, o Output, data *Data, eData *ExecuteData
 
 	// Copy values into returned list (required for shortcutting)
 	newSl := getOperator[T]().toArgs(v)
+	if len(newSl) != len(sl) {
+		// We enforce this for Arg transformers. The change around `Input` are too complicated
+		// to warrant enabling this functionality here, when users can easily just make a
+		// separate processor that transforms the input args later on.
+		return o.Stderrf("[%s] Transformers must return a value that is the same length as the original arguments\n", an.name)
+	}
 	for i := 0; i < len(sl); i++ {
 		*sl[i] = newSl[i]
 	}

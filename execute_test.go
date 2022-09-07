@@ -3990,6 +3990,48 @@ func TestExecute(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "list arg transformer fails if number of args increases",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					ListArg[string]("sl", testDesc, 2, 3, NewTransformer(func(v []string, d *Data) ([]string, error) {
+						return append(v, "!"), nil
+					})),
+				),
+				Args:       []string{"hello", "there", "general", "kenobi"},
+				WantErr:    fmt.Errorf("[sl] Transformers must return a value that is the same length as the original arguments"),
+				WantStderr: "[sl] Transformers must return a value that is the same length as the original arguments\n",
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "hello"},
+						{value: "there"},
+						{value: "general"},
+						{value: "kenobi"},
+					},
+				},
+			},
+		},
+		{
+			name: "list arg transformer fails if number of args decreases",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					ListArg[string]("sl", testDesc, 2, 3, NewTransformer(func(v []string, d *Data) ([]string, error) {
+						return v[:len(v)-1], nil
+					})),
+				),
+				Args:       []string{"hello", "there", "general", "kenobi"},
+				WantErr:    fmt.Errorf("[sl] Transformers must return a value that is the same length as the original arguments"),
+				WantStderr: "[sl] Transformers must return a value that is the same length as the original arguments\n",
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "hello"},
+						{value: "there"},
+						{value: "general"},
+						{value: "kenobi"},
+					},
+				},
+			},
+		},
 		// Stdoutln tests
 		{
 			name: "stdoutln works",
