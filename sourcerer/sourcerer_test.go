@@ -828,24 +828,28 @@ func TestSourcerer(t *testing.T) {
 			args:    []string{"autocomplete", "basic", "0", "h"},
 			clis:    []CLI{&testCLI{name: "basic"}},
 			wantErr: fmt.Errorf("Unprocessed extra args: []"),
+			wantStdout: []string{
+				" ",
+				"\t",
+			},
 			wantStderr: []string{
 				"",
 				"Unprocessed extra args: []",
-				"> ",
 			},
-			noStderrNewline: true,
 		},
 		{
 			name:    "autocomplete re-prints comp line",
 			args:    []string{"autocomplete", "basic", "10", "hello ther"},
 			clis:    []CLI{&testCLI{name: "basic"}},
 			wantErr: fmt.Errorf("Unprocessed extra args: [ther]"),
+			wantStdout: []string{
+				" ",
+				"\t",
+			},
 			wantStderr: []string{
 				"",
 				"Unprocessed extra args: [ther]",
-				"> hello ther",
 			},
-			noStderrNewline: true,
 		},
 		{
 			name: "autocomplete requires valid cli",

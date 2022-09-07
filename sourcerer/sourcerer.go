@@ -213,14 +213,17 @@ func (s *sourcerer) autocompleteExecutor(o command.Output, d *command.Data) erro
 	}
 
 	g, err := command.Autocomplete(cli.Node(), compLineArg.Get(d), autocompletePassthroughArgs.Get(d))
+	if err != nil {
+		// Add newline so we're outputting stderr on a newline (and not line with cursor)
+		o.Stderrf("\n%v\n", err)
+		// Also suggest non-overlapping strings so comp line is reprinted
+		o.Stdoutf(" \n\t\n")
+		return err
+	}
 	if len(g) > 0 {
 		o.Stdoutf("%s\n", strings.Join(g, "\n"))
 	}
-	if err != nil {
-		// Add newline so we're not writing over current line with curosr
-		o.Stderrf("\n%v\n> %s", err, compLineArg.Get(d))
-		return err
-	}
+
 	return nil
 }
 
