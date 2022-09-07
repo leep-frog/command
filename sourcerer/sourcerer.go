@@ -6,6 +6,7 @@ package sourcerer
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"runtime"
@@ -33,7 +34,7 @@ var (
 		"function _custom_autocomplete_%s {",
 		`  local tFile=$(mktemp)`,
 		// The last argument is for extra passthrough arguments to be passed for aliaser autocompletes.
-		`  $GOPATH/bin/_%s_runner autocomplete ${COMP_WORDS[0]} $COMP_POINT "$COMP_LINE" > $tFile`,
+		`  $GOPATH/bin/_%s_runner autocomplete ${COMP_WORDS[0]} "$COMP_TYPE" $COMP_POINT "$COMP_LINE" > $tFile`,
 		`  local IFS=$'\n'`,
 		`  COMPREPLY=( $(cat $tFile) )`,
 		`  rm $tFile`,
@@ -46,7 +47,7 @@ var (
 		fmt.Sprintf("  %s", FileStringFromCLI(`"$1"`)),
 		`  local tFile=$(mktemp)`,
 		// The last argument is for extra passthrough arguments to be passed for aliaser autocompletes.
-		`  $GOPATH/bin/_${file}_runner autocomplete "$1" $COMP_POINT "$COMP_LINE" "${@:2}" > $tFile`,
+		`  $GOPATH/bin/_${file}_runner autocomplete "$1" "$COMP_TYPE" $COMP_POINT "$COMP_LINE" "${@:2}" > $tFile`,
 		`  local IFS='`,
 		`';`,
 		`  COMPREPLY=( $(cat $tFile) )`,
@@ -109,8 +110,11 @@ var (
 	fileArg         = command.FileNode("FILE", "Temporary file for execution")
 	targetNameArg   = command.OptionalArg[string]("TARGET_NAME", "The name of the created target in $GOPATH/bin")
 	passthroughArgs = command.ListArg[string]("ARG", "Arguments that get passed through to relevant CLI command", 0, command.UnboundedList)
-	compPointArg    = command.Arg[int]("COMP_POINT", "COMP_POINT variable from bash complete function")
-	compLineArg     = command.Arg[string]("COMP_LINE", "COMP_LINE variable from bash complete function", command.NewTransformer(func(s string, d *command.Data) (string, error) {
+	// See the below link for more details on COMP_* details:
+	// https://www.gnu.org/software/bash/manual/html_node/Bash-Variables.html#Bash-Variables
+	compTypeArg  = command.Arg[string]("COMP_TYPE", "COMP_TYPE variable from bash complete function")
+	compPointArg = command.Arg[int]("COMP_POINT", "COMP_POINT variable from bash complete function")
+	compLineArg  = command.Arg[string]("COMP_LINE", "COMP_LINE variable from bash complete function", command.NewTransformer(func(s string, d *command.Data) (string, error) {
 		if cPoint := compPointArg.Get(d); cPoint < len(s) {
 			return s[:cPoint], nil
 		}
@@ -214,10 +218,14 @@ func (s *sourcerer) autocompleteExecutor(o command.Output, d *command.Data) erro
 
 	g, err := command.Autocomplete(cli.Node(), compLineArg.Get(d), autocompletePassthroughArgs.Get(d))
 	if err != nil {
-		// Add newline so we're outputting stderr on a newline (and not line with cursor)
-		o.Stderrf("\n%v\n", err)
-		// Also suggest non-overlapping strings so comp line is reprinted
-		o.Stdoutf(" \n\t\n")
+		ioutil.WriteFile("bleh.txt", []byte(compTypeArg.Get(d)), 0666)
+		// Only display the error if the user is requesting completion via successive tabs (so distinct completions are guaranteed to be displayed)
+		if compTypeArg.Get(d) == "?" {
+			// Add newline so we're outputting stderr on a newline (and not line with cursor)
+			o.Stderrf("\n%v\n", err)
+			// Also suggest non-overlapping strings so comp line is reprinted
+			o.Stdoutf(" \n\t\n")
+		}
 		return err
 	}
 	if len(g) > 0 {
@@ -291,6 +299,7 @@ func (s *sourcerer) Node() *command.Node {
 	return command.BranchNode(map[string]*command.Node{
 		"autocomplete": command.SerialNodes(
 			cliArg,
+			compTypeArg,
 			compPointArg,
 			compLineArg,
 			autocompletePassthroughArgs,
