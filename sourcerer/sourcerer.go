@@ -218,8 +218,8 @@ func (s *sourcerer) autocompleteExecutor(o command.Output, d *command.Data) erro
 	}
 	if err != nil {
 		// Add newline so we're not writing over current line with curosr
-		o.Stderrln()
-		return o.Err(err)
+		o.Stderrf("\n%v\n> %s", err, compLineArg.Get(d))
+		return err
 	}
 	return nil
 }

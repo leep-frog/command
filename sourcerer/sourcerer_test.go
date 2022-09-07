@@ -489,14 +489,15 @@ func TestSourcerer(t *testing.T) {
 	u := command.GetUsage((&sourcerer{}).Node()).String()
 	uStr := fmt.Sprintf("%s\n%s", usagePrefixString, u)
 	for _, test := range []struct {
-		name       string
-		clis       []CLI
-		args       []string
-		wantErr    error
-		wantStdout []string
-		wantStderr []string
-		wantCLIs   map[string]CLI
-		wantOutput []string
+		name            string
+		clis            []CLI
+		args            []string
+		wantErr         error
+		wantStdout      []string
+		wantStderr      []string
+		noStderrNewline bool
+		wantCLIs        map[string]CLI
+		wantOutput      []string
 	}{
 		{
 			name: "fails if invalid command branch",
@@ -830,7 +831,21 @@ func TestSourcerer(t *testing.T) {
 			wantStderr: []string{
 				"",
 				"Unprocessed extra args: []",
+				"> ",
 			},
+			noStderrNewline: true,
+		},
+		{
+			name:    "autocomplete re-prints comp line",
+			args:    []string{"autocomplete", "basic", "10", "hello ther"},
+			clis:    []CLI{&testCLI{name: "basic"}},
+			wantErr: fmt.Errorf("Unprocessed extra args: [ther]"),
+			wantStderr: []string{
+				"",
+				"Unprocessed extra args: [ther]",
+				"> hello ther",
+			},
+			noStderrNewline: true,
 		},
 		{
 			name: "autocomplete requires valid cli",
@@ -1020,10 +1035,13 @@ func TestSourcerer(t *testing.T) {
 			o.Close()
 
 			// Check outputs
+			if !test.noStderrNewline {
+				test.wantStderr = append(test.wantStderr, "")
+			}
 			if diff := cmp.Diff(strings.Join(append(test.wantStdout, ""), "\n"), o.GetStdout()); diff != "" {
 				t.Errorf("source(%v) sent incorrect stdout (-want, +got):\n%s", test.args, diff)
 			}
-			if diff := cmp.Diff(strings.Join(append(test.wantStderr, ""), "\n"), o.GetStderr()); diff != "" {
+			if diff := cmp.Diff(strings.Join(test.wantStderr, "\n"), o.GetStderr()); diff != "" {
 				t.Errorf("source(%v) sent incorrect stderr (-want, +got):\n%s", test.args, diff)
 			}
 
