@@ -210,12 +210,12 @@ func (s *sourcerer) autocompleteExecutor(o command.Output, d *command.Data) erro
 	args := d.String(compLineArg.Name())[:cpoint]
 	ptArgs := d.StringList(autocompletePassthroughArgs.Name())
 
-	g := command.Autocomplete(cli.Node(), args, ptArgs)
+	g, err := command.Autocomplete(cli.Node(), args, ptArgs)
 	if len(g) > 0 {
 		o.Stdoutf("%s\n", strings.Join(g, "\n"))
 	}
 
-	return nil
+	return o.Err(err)
 }
 
 // separate method for testing

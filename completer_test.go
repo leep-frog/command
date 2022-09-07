@@ -571,6 +571,7 @@ type completerTest[T any] struct {
 	absErr        error
 	commandBranch bool
 	want          []string
+	wantErr       error
 }
 
 func (test *completerTest[T]) Name() string {
@@ -593,15 +594,17 @@ func (test *completerTest[T]) run(t *testing.T) {
 		})
 
 		var got []string
+		var err error
 		if test.singleC != nil {
-			got = Autocomplete(SerialNodes(Arg[T]("test", testDesc, test.singleC)), test.args, test.ptArgs)
+			got, err = Autocomplete(SerialNodes(Arg[T]("test", testDesc, test.singleC)), test.args, test.ptArgs)
 		} else {
-			got = Autocomplete(SerialNodes(ListArg[T]("test", testDesc, 2, 5, test.c)), test.args, test.ptArgs)
+			got, err = Autocomplete(SerialNodes(ListArg[T]("test", testDesc, 2, 5, test.c)), test.args, test.ptArgs)
 		}
 
 		if diff := cmp.Diff(test.want, got); diff != "" {
 			t.Errorf("genericAutocomplete(%v) returned diff (-want, +got):\n%s", test.args, diff)
 		}
+		CmpError(t, fmt.Sprintf("genericAutocomplete(%v)", test.args), test.wantErr, err)
 	})
 }
 
@@ -643,9 +646,10 @@ func TestTypedCompleters(t *testing.T) {
 		},
 		// FileCompleter tests
 		&completerTest[string]{
-			name:   "file completer returns nil if failure completing current directory",
-			c:      &FileCompleter[[]string]{},
-			absErr: fmt.Errorf("failed to fetch directory"),
+			name:    "file completer returns nil if failure completing current directory",
+			c:       &FileCompleter[[]string]{},
+			absErr:  fmt.Errorf("failed to fetch directory"),
+			wantErr: fmt.Errorf("failed to get absolute filepath: failed to fetch directory"),
 		},
 		&completerTest[string]{
 			name: "file completer returns files with file types and directories",
@@ -715,6 +719,7 @@ func TestTypedCompleters(t *testing.T) {
 			c: &FileCompleter[[]string]{
 				Directory: "does/not/exist",
 			},
+			wantErr: fmt.Errorf("failed to read dir: open %s: The system cannot find the path specified.", FilepathAbs(t, "does/not/exist")),
 		},
 		&completerTest[string]{
 			name: "file completer returns files in the specified directory",

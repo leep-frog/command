@@ -285,10 +285,15 @@ func runNodes(n *Node, o Output, d *Data, args []string) error {
 		"autocomplete": SerialNodes(
 			// Don't need comp point because input will have already been trimmed by goleep processing.
 			Arg[string](PassthroughArgs, ""),
-			ExecutorNode(func(o Output, d *Data) {
-				for _, s := range Autocomplete(n, d.String(PassthroughArgs), nil) {
+			ExecuteErrNode(func(o Output, d *Data) error {
+				sl, err := Autocomplete(n, d.String(PassthroughArgs), nil)
+				if err != nil {
+					return o.Stderrln(err)
+				}
+				for _, s := range sl {
 					o.Stdoutln(s)
 				}
+				return nil
 			})),
 	}, n, DontCompleteSubcommands())
 

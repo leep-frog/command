@@ -6578,7 +6578,9 @@ func TestRunNodes(t *testing.T) {
 				Node: SerialNodes(
 					ListArg[string]("SL_ARG", "", 1, 0, SimpleCompleter[[]string]("one", "two", "three", "four")),
 				),
-				Args: []string{"autocomplete", "cmd three f"},
+				Args:       []string{"autocomplete", "cmd three f"},
+				WantStderr: "Unprocessed extra args: [f]\n",
+				WantErr:    fmt.Errorf("Unprocessed extra args: [f]"),
 			},
 		},
 		// Usage tests
