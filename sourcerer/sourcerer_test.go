@@ -845,6 +845,7 @@ func TestSourcerer(t *testing.T) {
 				"",
 				"Unprocessed extra args: []",
 			},
+			noStderrNewline: true,
 		},
 		{
 			name:    "autocomplete re-prints comp line",
@@ -859,6 +860,7 @@ func TestSourcerer(t *testing.T) {
 				"",
 				"Unprocessed extra args: [ther]",
 			},
+			noStderrNewline: true,
 		},
 		{
 			name:    "autocomplete doesn't re-print comp line if different COMP_TYPE",

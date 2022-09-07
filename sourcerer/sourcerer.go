@@ -220,7 +220,7 @@ func (s *sourcerer) autocompleteExecutor(o command.Output, d *command.Data) erro
 		// Only display the error if the user is requesting completion via successive tabs (so distinct completions are guaranteed to be displayed)
 		if compTypeArg.Get(d) == 63 { /* code 63 = '?' character */
 			// Add newline so we're outputting stderr on a newline (and not line with cursor)
-			o.Stderrf("\n%v\n", err)
+			o.Stderrf("\n%v", err)
 			// Also suggest non-overlapping strings so comp line is reprinted
 			o.Stdoutf(" \n\t\n")
 		}
