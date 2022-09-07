@@ -321,6 +321,14 @@ func ArgFilter[T any](arg DataValue[[]T], f func(T, *Data) (bool, error)) Proces
 	})
 }
 
+// EmptyArgFilter is an `ArgFilter` that filters out empty elements.
+func EmptyArgFilter[T comparable](arg DataValue[[]T]) Processor {
+	return ArgFilter(arg, func(t T, d *Data) (bool, error) {
+		var nill T
+		return t != nill, nil
+	})
+}
+
 // SimpleProcessor creates a `Processor` from execution and completion functions.
 func SimpleProcessor(e func(*Input, Output, *Data, *ExecuteData) error, c func(*Input, *Data) (*Completion, error)) Processor {
 	return &simpleProcessor{

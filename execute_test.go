@@ -4075,6 +4075,54 @@ func TestExecute(t *testing.T) {
 				},
 			},
 		},
+		// EmptyArgFilter tests.
+		{
+			name: "empty strings get filtered",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					ListArg[string]("sl", testDesc, 0, UnboundedList),
+					EmptyArgFilter[string](ListArg[string]("sl", testDesc, 0, UnboundedList)),
+				),
+				Args: []string{"hey", "hi", "", "hello", "", "howdy"},
+				WantData: &Data{Values: map[string]interface{}{
+					"sl": []string{"hey", "hi", "hello", "howdy"},
+				}},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "hey"},
+						{value: "hi"},
+						{value: ""},
+						{value: "hello"},
+						{value: ""},
+						{value: "howdy"},
+					},
+				},
+			},
+		},
+		{
+			name: "empty ints get filtered",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					ListArg[int]("il", testDesc, 0, UnboundedList),
+					EmptyArgFilter[int](ListArg[int]("il", testDesc, 0, UnboundedList)),
+				),
+				Args: []string{"123", "456", "000", "-7", "00", "89", "0"},
+				WantData: &Data{Values: map[string]interface{}{
+					"il": []int{123, 456, -7, 89},
+				}},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "123"},
+						{value: "456"},
+						{value: "0"},
+						{value: "-7"},
+						{value: "0"},
+						{value: "89"},
+						{value: "0"},
+					},
+				},
+			},
+		},
 		// Transformer tests.
 		{
 			name: "args get transformed",
