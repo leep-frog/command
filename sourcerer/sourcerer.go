@@ -155,7 +155,7 @@ func (s *sourcerer) executeExecutor(output command.Output, d *command.Data) erro
 
 	eData, err := command.Execute(n, command.ParseExecuteArgs(args), output)
 	if err != nil {
-		if command.IsUsageError(err) && !s.printedUsageError {
+		if command.IsUsageError(err) && !s.printedUsageError && !s.forAutocomplete {
 			s.printedUsageError = true
 			output.Stderrln(command.ShowUsageAfterError(n))
 		}
@@ -201,6 +201,7 @@ func (s *sourcerer) executeExecutor(output command.Output, d *command.Data) erro
 }
 
 func (s *sourcerer) autocompleteExecutor(o command.Output, d *command.Data) error {
+	s.forAutocomplete = true
 	cli, err := s.getCLI(d.String(cliArg.Name()))
 	if err != nil {
 		return o.Err(err)
@@ -251,6 +252,7 @@ type sourcerer struct {
 	sl                string
 	printedUsageError bool
 	opts              *compiledOpts
+	forAutocomplete   bool
 }
 
 func (*sourcerer) UnmarshalJSON(jsn []byte) error { return nil }

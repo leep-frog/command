@@ -830,7 +830,6 @@ func TestSourcerer(t *testing.T) {
 			wantStderr: []string{
 				"",
 				"Unprocessed extra args: []",
-				uStr,
 			},
 		},
 		{
