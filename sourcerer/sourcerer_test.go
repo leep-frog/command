@@ -816,7 +816,7 @@ func TestSourcerer(t *testing.T) {
 		},
 		{
 			name: "autocomplete requires comp_point",
-			args: []string{"autocomplete", "idk", "?"},
+			args: []string{"autocomplete", "idk", "63"},
 			wantStderr: []string{
 				`Argument "COMP_POINT" requires at least 1 argument, got 0`,
 				uStr,
@@ -825,7 +825,7 @@ func TestSourcerer(t *testing.T) {
 		},
 		{
 			name: "autocomplete requires comp_line",
-			args: []string{"autocomplete", "idk", "?", "2"},
+			args: []string{"autocomplete", "idk", "63", "2"},
 			wantStderr: []string{
 				`Argument "COMP_LINE" requires at least 1 argument, got 0`,
 				uStr,
@@ -834,7 +834,7 @@ func TestSourcerer(t *testing.T) {
 		},
 		{
 			name:    "autocomplete doesn't require passthrough args",
-			args:    []string{"autocomplete", "basic", "?", "0", "h"},
+			args:    []string{"autocomplete", "basic", "63", "0", "h"},
 			clis:    []CLI{&testCLI{name: "basic"}},
 			wantErr: fmt.Errorf("Unprocessed extra args: []"),
 			wantStdout: []string{
@@ -848,7 +848,7 @@ func TestSourcerer(t *testing.T) {
 		},
 		{
 			name:    "autocomplete re-prints comp line",
-			args:    []string{"autocomplete", "basic", "?", "10", "hello ther"},
+			args:    []string{"autocomplete", "basic", "63", "10", "hello ther"},
 			clis:    []CLI{&testCLI{name: "basic"}},
 			wantErr: fmt.Errorf("Unprocessed extra args: [ther]"),
 			wantStdout: []string{
@@ -861,8 +861,14 @@ func TestSourcerer(t *testing.T) {
 			},
 		},
 		{
+			name:    "autocomplete doesn't re-print comp line if different COMP_TYPE",
+			args:    []string{"autocomplete", "basic", "64", "10", "hello ther"},
+			clis:    []CLI{&testCLI{name: "basic"}},
+			wantErr: fmt.Errorf("Unprocessed extra args: [ther]"),
+		},
+		{
 			name: "autocomplete requires valid cli",
-			args: []string{"autocomplete", "idk", "?", "2", "a"},
+			args: []string{"autocomplete", "idk", "63", "2", "a"},
 			wantStderr: []string{
 				`unknown CLI "idk"`,
 			},
@@ -870,7 +876,7 @@ func TestSourcerer(t *testing.T) {
 		},
 		{
 			name: "autocomplete passes empty string along for completion",
-			args: []string{"autocomplete", "basic", "?", "4", "cmd "},
+			args: []string{"autocomplete", "basic", "63", "4", "cmd "},
 			clis: []CLI{
 				&testCLI{
 					name: "basic",
@@ -887,7 +893,7 @@ func TestSourcerer(t *testing.T) {
 		},
 		{
 			name: "autocomplete doesn't complete passthrough args",
-			args: []string{"autocomplete", "basic", "?", "4", "cmd ", "al"},
+			args: []string{"autocomplete", "basic", "63", "4", "cmd ", "al"},
 			clis: []CLI{
 				&testCLI{
 					name: "basic",
@@ -928,7 +934,7 @@ func TestSourcerer(t *testing.T) {
 		},*/
 		{
 			name: "autocomplete does partial completion",
-			args: []string{"autocomplete", "basic", "?", "5", "cmd b"},
+			args: []string{"autocomplete", "basic", "63", "5", "cmd b"},
 			clis: []CLI{
 				&testCLI{
 					name: "basic",
@@ -945,7 +951,7 @@ func TestSourcerer(t *testing.T) {
 		},
 		{
 			name: "autocomplete goes along processors",
-			args: []string{"autocomplete", "basic", "?", "6", "cmd a "},
+			args: []string{"autocomplete", "basic", "63", "6", "cmd a "},
 			clis: []CLI{
 				&testCLI{
 					name: "basic",
@@ -963,7 +969,7 @@ func TestSourcerer(t *testing.T) {
 		},
 		{
 			name: "autocomplete does earlier completion if cpoint is smaller",
-			args: []string{"autocomplete", "basic", "?", "5", "cmd c "},
+			args: []string{"autocomplete", "basic", "63", "5", "cmd c "},
 			clis: []CLI{
 				&testCLI{
 					name: "basic",

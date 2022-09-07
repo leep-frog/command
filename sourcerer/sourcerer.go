@@ -6,7 +6,6 @@ package sourcerer
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"runtime"
@@ -112,7 +111,7 @@ var (
 	passthroughArgs = command.ListArg[string]("ARG", "Arguments that get passed through to relevant CLI command", 0, command.UnboundedList)
 	// See the below link for more details on COMP_* details:
 	// https://www.gnu.org/software/bash/manual/html_node/Bash-Variables.html#Bash-Variables
-	compTypeArg  = command.Arg[string]("COMP_TYPE", "COMP_TYPE variable from bash complete function")
+	compTypeArg  = command.Arg[int]("COMP_TYPE", "COMP_TYPE variable from bash complete function")
 	compPointArg = command.Arg[int]("COMP_POINT", "COMP_POINT variable from bash complete function")
 	compLineArg  = command.Arg[string]("COMP_LINE", "COMP_LINE variable from bash complete function", command.NewTransformer(func(s string, d *command.Data) (string, error) {
 		if cPoint := compPointArg.Get(d); cPoint < len(s) {
@@ -218,9 +217,8 @@ func (s *sourcerer) autocompleteExecutor(o command.Output, d *command.Data) erro
 
 	g, err := command.Autocomplete(cli.Node(), compLineArg.Get(d), autocompletePassthroughArgs.Get(d))
 	if err != nil {
-		ioutil.WriteFile("bleh.txt", []byte(compTypeArg.Get(d)), 0666)
 		// Only display the error if the user is requesting completion via successive tabs (so distinct completions are guaranteed to be displayed)
-		if compTypeArg.Get(d) == "?" {
+		if compTypeArg.Get(d) == 63 { /* code 63 = '?' character */
 			// Add newline so we're outputting stderr on a newline (and not line with cursor)
 			o.Stderrf("\n%v\n", err)
 			// Also suggest non-overlapping strings so comp line is reprinted
