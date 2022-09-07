@@ -105,12 +105,17 @@ var (
 )
 
 var (
-	cliArg                      = command.Arg[string]("CLI", "Name of the CLI command to use")
-	fileArg                     = command.FileNode("FILE", "Temporary file for execution")
-	targetNameArg               = command.OptionalArg[string]("TARGET_NAME", "The name of the created target in $GOPATH/bin")
-	passthroughArgs             = command.ListArg[string]("ARG", "Arguments that get passed through to relevant CLI command", 0, command.UnboundedList)
-	compPointArg                = command.Arg[int]("COMP_POINT", "COMP_POINT variable from bash complete function")
-	compLineArg                 = command.Arg[string]("COMP_LINE", "COMP_LINE variable from bash complete function")
+	cliArg          = command.Arg[string]("CLI", "Name of the CLI command to use")
+	fileArg         = command.FileNode("FILE", "Temporary file for execution")
+	targetNameArg   = command.OptionalArg[string]("TARGET_NAME", "The name of the created target in $GOPATH/bin")
+	passthroughArgs = command.ListArg[string]("ARG", "Arguments that get passed through to relevant CLI command", 0, command.UnboundedList)
+	compPointArg    = command.Arg[int]("COMP_POINT", "COMP_POINT variable from bash complete function")
+	compLineArg     = command.Arg[string]("COMP_LINE", "COMP_LINE variable from bash complete function", command.NewTransformer(func(s string, d *command.Data) (string, error) {
+		if cPoint := compPointArg.Get(d); cPoint < len(s) {
+			return s[:cPoint], nil
+		}
+		return s, nil
+	}))
 	autocompletePassthroughArgs = command.ListArg[string]("PASSTHROUGH_ARG", "Arguments that get passed through to autocomplete command", 0, command.UnboundedList)
 )
 
@@ -207,11 +212,7 @@ func (s *sourcerer) autocompleteExecutor(o command.Output, d *command.Data) erro
 		return o.Err(err)
 	}
 
-	cpoint := d.Int(compPointArg.Name())
-	args := d.String(compLineArg.Name())[:cpoint]
-	ptArgs := d.StringList(autocompletePassthroughArgs.Name())
-
-	g, err := command.Autocomplete(cli.Node(), args, ptArgs)
+	g, err := command.Autocomplete(cli.Node(), compLineArg.Get(d), autocompletePassthroughArgs.Get(d))
 	if len(g) > 0 {
 		o.Stdoutf("%s\n", strings.Join(g, "\n"))
 	}
