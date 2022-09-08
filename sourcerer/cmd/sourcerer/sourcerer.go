@@ -217,7 +217,7 @@ func (gl *GoLeep) Node() *command.Node {
 			// Need to use ToSlash because mingw
 			cmd := gl.runCommand(d, "execute", append([]string{filepath.ToSlash(f.Name())}, d.StringList(passAlongArgs.Name())...))
 			bc := command.NewBashCommand("BASH_OUTPUT", cmd, command.ForwardStdout[[]string]())
-			if _, err := bc.Run(o); err != nil {
+			if _, err := bc.Run(o, d); err != nil {
 				return o.Stderrf("failed to run bash script: %v\n", err)
 			}
 
@@ -253,7 +253,7 @@ func (gl *GoLeep) completer() command.Completer[[]string] {
 			fmt.Sprintf("%q", strings.Join(passAlongArgs.Get(data), " ")),
 		}
 		bc := command.NewBashCommand("BASH_OUTPUT", gl.runCommand(data, "autocomplete", extraArgs), command.HideStderr[[]string]())
-		v, err := bc.Run(nil)
+		v, err := bc.Run(nil, data)
 		if err != nil {
 			return nil, err
 		}

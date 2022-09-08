@@ -433,6 +433,80 @@ func TestBashNode(t *testing.T) {
 				},
 			},
 		},
+		// formatArgs tests
+		{
+			name: "bash node formats all input types",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					Arg[string]("s", testDesc),
+					Arg[int]("i", testDesc),
+					Arg[float64]("f", testDesc),
+					Arg[bool]("b", testDesc),
+					ListArg("sl", testDesc, 0, UnboundedList, Default([]string{"alpha", "beta", "gamma", "delta"})),
+					ListArg("il", testDesc, 0, UnboundedList, Default([]int{1, 1, 2, 3, 5, 8})),
+					ListArg("fl", testDesc, 0, UnboundedList, Default([]float64{13.21, 34.55})),
+					NewBashCommand[string]("bc", []string{
+						"echo 1: %s && echo %s",
+						"echo 2: %s %s",
+						"echo list 1: %s",
+						"echo list 2: %s",
+						"echo list 3: %s",
+					},
+						NewBashDataStringer[string](Arg[string]("s", testDesc), ""),
+						NewBashDataStringer[string](Arg[int]("i", testDesc), ""),
+						NewBashDataStringer[string](Arg[float64]("f", testDesc), ""),
+						NewBashDataStringer[string](Arg[bool]("b", testDesc), ""),
+						NewBashDataStringer[string](ListArg("sl", testDesc, 0, UnboundedList, Default([]string{"alpha", "beta", "gamma", "delta"})), " , "),
+						NewBashDataStringer[string](ListArg("il", testDesc, 0, UnboundedList, Default([]int{1, 1, 2, 3, 5, 8})), ":"),
+						NewBashDataStringer[string](ListArg("fl", testDesc, 0, UnboundedList, Default([]float64{13.21, 34.55})), " "),
+					)),
+				Args: []string{
+					"stringVal",
+					"9",
+					"-12.345678",
+					"true",
+				},
+				WantRunContents: [][]string{{
+					"set -e",
+					"set -o pipefail",
+					"echo 1: stringVal && echo 9",
+					"echo 2: -12.345678 true",
+					"echo list 1: alpha , beta , gamma , delta",
+					"echo list 2: 1:1:2:3:5:8",
+					"echo list 3: 13.21 34.55",
+				}},
+				WantData: &Data{Values: map[string]interface{}{
+					"s":  "stringVal",
+					"i":  9,
+					"f":  -12.345678,
+					"b":  true,
+					"sl": []string{"alpha", "beta", "gamma", "delta"},
+					"il": []int{1, 1, 2, 3, 5, 8},
+					"fl": []float64{13.21, 34.55},
+					"bc": "-1248",
+				}},
+				RunResponses: []*FakeRun{
+					{
+						Stdout: []string{"-1248"},
+					},
+				},
+			},
+		},
+		{
+			name: "bash node formatting fails on error",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					NewBashCommand[string]("bc", []string{
+						"echo 1: %s",
+					},
+						CustomBashDataStringer[string](func(d *Data) (string, error) {
+							return "bleh", fmt.Errorf("ouch")
+						}),
+					)),
+				WantErr:    fmt.Errorf("failed to get string for bash formatting: ouch"),
+				WantStderr: "failed to get string for bash formatting: ouch\n",
+			},
+		},
 		/* Useful for commenting out tests. */
 	} {
 		t.Run(test.name, func(t *testing.T) {

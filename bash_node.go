@@ -27,7 +27,7 @@ func BashCompleter[T any](command ...string) Completer[T] {
 // with the output from the provided bash `command`.
 func BashCompleterWithOpts[T any](opts *Completion, command ...string) Completer[T] {
 	return &simpleCompleter[T]{func(t T, d *Data) (*Completion, error) {
-		resp, err := NewBashCommand[[]string]("", command).Run(nil)
+		resp, err := NewBashCommand[[]string]("", command).Run(nil, d)
 		if err != nil {
 			return nil, fmt.Errorf("failed to fetch autocomplete suggestions with bash command: %v", err)
 		}
@@ -42,6 +42,7 @@ func BashCompleterWithOpts[T any](opts *Completion, command ...string) Completer
 	}}
 }
 
+// TODO: Change things to just structs and remove constructor functions.
 // NewBashCommand runs the provided command in bash and stores the response as
 // a value in data with the provided type and argument name.
 func NewBashCommand[T any](argName string, command []string, opts ...BashOption[T]) *BashCommand[T] {
@@ -98,6 +99,34 @@ type BashCommand[T any] struct {
 	hideStderr        bool
 	forwardStdout     bool
 	dontRunOnComplete bool
+	formatArgs        []BashDataStringer[T]
+}
+
+type BashDataStringer[T any] interface {
+	BashOption[T]
+	ToString(d *Data) (string, error)
+}
+
+func NewBashDataStringer[T, A any](arg *ArgNode[A], delimiter string) BashDataStringer[T] {
+	return CustomBashDataStringer[T](func(d *Data) (string, error) {
+		return strings.Join(getOperator[A]().toArgs(arg.Get(d)), delimiter), nil
+	})
+}
+
+func CustomBashDataStringer[T any](f func(*Data) (string, error)) BashDataStringer[T] {
+	return &bashDataStringer[T]{f}
+}
+
+type bashDataStringer[T any] struct {
+	op func(*Data) (string, error)
+}
+
+func (df *bashDataStringer[T]) ToString(d *Data) (string, error) {
+	return df.op(d)
+}
+
+func (df *bashDataStringer[T]) modifyBashNode(bc *BashCommand[T]) {
+	bc.formatArgs = append(bc.formatArgs, df)
 }
 
 // BashOption is an option type for modifying `BashNode` objects
@@ -142,7 +171,7 @@ func (bn *BashCommand[T]) Execute(input *Input, output Output, data *Data, eData
 }
 
 func (bn *BashCommand[T]) execute(output Output, data *Data) error {
-	v, err := bn.Run(output)
+	v, err := bn.Run(output, data)
 	if err != nil {
 		return err
 	}
@@ -160,7 +189,7 @@ func DebugMode() bool {
 }
 
 // Run runs the `BashCommand` with the provided `Output` object.
-func (bn *BashCommand[T]) Run(output Output) (T, error) {
+func (bn *BashCommand[T]) Run(output Output, data *Data) (T, error) {
 	var nill T
 	// Create temp file.
 	f, err := ioutil.TempFile("", "leepFrogCommandExecution")
@@ -168,17 +197,28 @@ func (bn *BashCommand[T]) Run(output Output) (T, error) {
 		return nill, fmt.Errorf("failed to create file for execution: %v", err)
 	}
 
-	contents := []string{
+	contents := strings.Join(append([]string{
 		// Exit when any command fails.
 		"set -e",
 		// Exit if any command in a pipeline fails.
 		// https://stackoverflow.com/questions/32684119/exit-when-one-process-in-pipe-fails
 		"set -o pipefail",
+	}, bn.contents...), "\n")
+
+	if len(bn.formatArgs) > 0 {
+		var args []any
+		for _, fa := range bn.formatArgs {
+			s, err := fa.ToString(data)
+			if err != nil {
+				return nill, fmt.Errorf("failed to get string for bash formatting: %v", err)
+			}
+			args = append(args, s)
+		}
+		contents = fmt.Sprintf(contents, args...)
 	}
-	contents = append(contents, bn.contents...)
 
 	// Write contents to temp file.
-	if _, err := f.WriteString(strings.Join(contents, "\n")); err != nil {
+	if _, err := f.WriteString(contents); err != nil {
 		return nill, fmt.Errorf("failed to write contents to execution file: %v", err)
 	}
 	if err := f.Close(); err != nil {
