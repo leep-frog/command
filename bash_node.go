@@ -216,8 +216,6 @@ func (bn *BashCommand[T]) Run(output Output, data *Data) (T, error) {
 		return nill, fmt.Errorf("failed to cleanup temporary execution file: %v", err)
 	}
 
-	// TODO: global "mode" variable (execute, complete, usage)
-	//       maybe store it in data?
 	Debugf(output, "Bash execution file: %s\n", f.Name())
 
 	// Execute the contents of the file.

@@ -15,6 +15,6 @@ func DebugMode() bool {
 
 func Debugf(o Output, s string, i ...interface{}) {
 	if DebugMode() {
-		o.Stdoutf(s, i)
+		o.Stderrf(s, i)
 	}
 }
