@@ -5847,6 +5847,7 @@ func TestComplete(t *testing.T) {
 					"custom_nodes.go",
 					"data.go",
 					"data_test.go",
+					"debug.go",
 					"docs/",
 					"execute.go",
 					"execute_test.go",

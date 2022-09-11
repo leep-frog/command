@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"os"
 	"os/exec"
 	"strings"
 )
@@ -180,14 +179,6 @@ func (bn *BashCommand[T]) execute(output Output, data *Data) error {
 	return nil
 }
 
-// DebugMode returns whether or not debug mode is active.
-// TODO: Separate debug.go file that contains all info like this.
-// TODO: have debug mode point to directory or file
-//       and all output can be written there.
-func DebugMode() bool {
-	return os.Getenv("LEEP_FROG_DEBUG") != ""
-}
-
 // Run runs the `BashCommand` with the provided `Output` object.
 func (bn *BashCommand[T]) Run(output Output, data *Data) (T, error) {
 	var nill T
@@ -225,11 +216,9 @@ func (bn *BashCommand[T]) Run(output Output, data *Data) (T, error) {
 		return nill, fmt.Errorf("failed to cleanup temporary execution file: %v", err)
 	}
 
-	if DebugMode() {
-		// TODO: global "mode" variable (execute, complete, usage)
-		//       maybe store it in data?
-		output.Stdoutf("Bash execution file: %s\n", f.Name())
-	}
+	// TODO: global "mode" variable (execute, complete, usage)
+	//       maybe store it in data?
+	Debugf(output, "Bash execution file: %s\n", f.Name())
 
 	// Execute the contents of the file.
 	var rawOut bytes.Buffer

@@ -263,6 +263,33 @@ func (gl *GoLeep) completer() command.Completer[[]string] {
 	})
 }
 
+type Debugger struct{}
+
+func (*Debugger) Setup() []string { return nil }
+func (*Debugger) Changed() bool   { return false }
+func (*Debugger) Name() string    { return "leep_debug" }
+
+var (
+	// variables so it can be stubbed out in tests.
+	osLookupEnv = os.LookupEnv
+	osUnsetenv  = os.Unsetenv
+	osSetenv    = os.Setenv
+)
+
+func (*Debugger) Node() *command.Node {
+	return command.SerialNodes(
+		command.ExecutorNode(func(o command.Output, d *command.Data) {
+			if _, ok := osLookupEnv(command.DebugEnvVar); ok {
+				osUnsetenv(command.DebugEnvVar)
+				o.Stdoutln("Exiting debug mode.")
+			} else {
+				osSetenv(command.DebugEnvVar, "1")
+				o.Stdoutln("Entering debug mode.")
+			}
+		}),
+	)
+}
+
 func main() {
 	os.Exit(sourcerer.Source([]sourcerer.CLI{
 		&SourcererCommand{},
@@ -270,5 +297,6 @@ func main() {
 		&UsageCommand{},
 		&AliaserCommand{},
 		&GoLeep{},
+		&Debugger{},
 	}))
 }

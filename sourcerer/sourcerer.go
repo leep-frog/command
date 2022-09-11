@@ -79,7 +79,7 @@ var (
 		`  # Otherwise, run the ExecuteData.Executable data`,
 		`  source $tmpFile`,
 		`  local errorCode=$?`,
-		`  if [ -z "$LEEP_FROG_DEBUG" ]; then`,
+		fmt.Sprintf(`  if [ -z "$%s" ]; then`, command.DebugEnvVar),
 		`    rm $tmpFile`,
 		`  else`,
 		`    echo $tmpFile`,
