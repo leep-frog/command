@@ -22,7 +22,8 @@ func IfElse(t, f Processor, fn func(i *Input, d *Data) bool) Processor {
 				return nil, nil
 			}
 			return f.Complete(i, d)
-		})
+		},
+	)
 }
 
 // If runs the provided processor if the function argunment returns true

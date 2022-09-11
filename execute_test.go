@@ -4976,7 +4976,89 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		// IfElseData tests
-
+		{
+			name: "IfElseData runs t if variable is present",
+			etc: &ExecuteTestCase{
+				Args: []string{"abc"},
+				Node: SerialNodes(
+					OptionalArg[string]("s", testDesc),
+					IfElseData(
+						printlnNode(true, "hello"),
+						printlnNode(true, "goodbye"),
+						"s",
+					),
+				),
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "abc"},
+					},
+				},
+				WantStdout: "hello\n",
+				WantData: &Data{Values: map[string]interface{}{
+					"s": "abc",
+				}},
+			},
+		},
+		{
+			name: "IfElseData runs t if bool variable is present and true",
+			etc: &ExecuteTestCase{
+				Args: []string{"true"},
+				Node: SerialNodes(
+					OptionalArg[bool]("b", testDesc),
+					IfElseData(
+						printlnNode(true, "hello"),
+						printlnNode(true, "goodbye"),
+						"b",
+					),
+				),
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "true"},
+					},
+				},
+				WantStdout: "hello\n",
+				WantData: &Data{Values: map[string]interface{}{
+					"b": true,
+				}},
+			},
+		},
+		{
+			name: "IfElseData runs f if variable is not present",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					OptionalArg[string]("s", testDesc),
+					IfElseData(
+						printlnNode(true, "hello"),
+						printlnNode(true, "goodbye"),
+						"s",
+					),
+				),
+				WantStdout: "goodbye\n",
+			},
+		},
+		{
+			name: "IfData runs f if bool variable is present and false",
+			etc: &ExecuteTestCase{
+				Args: []string{"false"},
+				Node: SerialNodes(
+					OptionalArg[bool]("b", testDesc),
+					IfElseData(
+						printlnNode(true, "hello"),
+						printlnNode(true, "goodbye"),
+						"b",
+					),
+				),
+				WantStdout: "goodbye\n",
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "false"},
+					},
+				},
+				WantData: &Data{Values: map[string]interface{}{
+					"b": false,
+				}},
+			},
+		},
 		// EchoExecuteData
 		{
 			name: "EchoExecuteData ignores empty ExecuteData.Executable",
@@ -6695,6 +6777,51 @@ func TestComplete(t *testing.T) {
 					"s3": "",
 				}},
 				Want: []string{"delta", "epsilon"},
+			},
+		},
+		// IfElse
+		{
+			name: "If runs t if function returns true",
+			ctc: &CompleteTestCase{
+				Args: "cmd alpha ",
+				Node: SerialNodes(
+					Arg[string]("s", testDesc),
+					IfElse(
+						Arg[string]("s2", testDesc, SimpleCompleter[string]("bravo", "charlie")),
+						Arg[string]("s2", testDesc, SimpleCompleter[string]("alpha", "omega")),
+						func(i *Input, d *Data) bool {
+							return true
+						},
+					),
+					Arg[string]("s3", testDesc, SimpleCompleter[string]("delta", "epsilon")),
+				),
+				WantData: &Data{Values: map[string]interface{}{
+					"s":  "alpha",
+					"s2": "",
+				}},
+				Want: []string{"bravo", "charlie"},
+			},
+		},
+		{
+			name: "IfElse runs f if function returns false",
+			ctc: &CompleteTestCase{
+				Args: "cmd alpha ",
+				Node: SerialNodes(
+					Arg[string]("s", testDesc),
+					IfElse(
+						Arg[string]("s2", testDesc, SimpleCompleter[string]("bravo", "charlie")),
+						Arg[string]("s2", testDesc, SimpleCompleter[string]("alpha", "omega")),
+						func(i *Input, d *Data) bool {
+							return false
+						},
+					),
+					Arg[string]("s3", testDesc, SimpleCompleter[string]("delta", "epsilon")),
+				),
+				WantData: &Data{Values: map[string]interface{}{
+					"s":  "alpha",
+					"s2": "",
+				}},
+				Want: []string{"alpha", "omega"},
 			},
 		},
 		/* Useful comment for commenting out tests */
