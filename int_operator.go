@@ -10,7 +10,7 @@ type operator[T any] interface {
 	fromArgs([]*string) (T, error)
 }
 
-type intOperator struct {}
+type intOperator struct{}
 
 func (*intOperator) toArgs(i int) []string {
 	return []string{strconv.Itoa(i)}

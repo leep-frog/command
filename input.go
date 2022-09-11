@@ -417,6 +417,7 @@ func (it *inputTransformer[T]) Execute(i *Input, o Output, data *Data, eData *Ex
 	return it.Transform(i, o, data)
 }
 
+// TODO: Test this
 func (it *inputTransformer[T]) Transform(input *Input, output Output, data *Data) error {
 	s, ok := input.Peek()
 	if !ok {
