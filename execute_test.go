@@ -4851,14 +4851,14 @@ func TestExecute(t *testing.T) {
 				},
 			},
 		},
-		// ConditionalProcessor tests
+		// If tests
 		{
-			name: "ConditionalProcessor runs if function returns true",
+			name: "If runs if function returns true",
 			etc: &ExecuteTestCase{
 				Args: []string{"abc", "def"},
 				Node: SerialNodes(
 					Arg[string]("s", testDesc),
-					ConditionalProcessor(
+					If(
 						printArgsNode(),
 						func(i *Input, d *Data) bool {
 							return true
@@ -4884,12 +4884,12 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "ConditionalProcessor does not run if function returns false",
+			name: "If does not run if function returns false",
 			etc: &ExecuteTestCase{
 				Args: []string{"abc", "def"},
 				Node: SerialNodes(
 					Arg[string]("s", testDesc),
-					ConditionalProcessor(
+					If(
 						printArgsNode(),
 						func(i *Input, d *Data) bool {
 							return false
@@ -4909,6 +4909,74 @@ func TestExecute(t *testing.T) {
 				}},
 			},
 		},
+		// IfData tests
+		{
+			name: "IfData runs if variable is present",
+			etc: &ExecuteTestCase{
+				Args: []string{"abc"},
+				Node: SerialNodes(
+					OptionalArg[string]("s", testDesc),
+					IfData(printlnNode(true, "hello"), "s"),
+				),
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "abc"},
+					},
+				},
+				WantStdout: "hello\n",
+				WantData: &Data{Values: map[string]interface{}{
+					"s": "abc",
+				}},
+			},
+		},
+		{
+			name: "IfData runs if bool variable is present and true",
+			etc: &ExecuteTestCase{
+				Args: []string{"true"},
+				Node: SerialNodes(
+					OptionalArg[bool]("b", testDesc),
+					IfData(printlnNode(true, "hello"), "b"),
+				),
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "true"},
+					},
+				},
+				WantStdout: "hello\n",
+				WantData: &Data{Values: map[string]interface{}{
+					"b": true,
+				}},
+			},
+		},
+		{
+			name: "IfData does not run if variable is not present",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					OptionalArg[string]("s", testDesc),
+					IfData(printlnNode(true, "hello"), "s"),
+				),
+			},
+		},
+		{
+			name: "IfData does not run if bool variable is present and false",
+			etc: &ExecuteTestCase{
+				Args: []string{"false"},
+				Node: SerialNodes(
+					OptionalArg[bool]("b", testDesc),
+					IfData(printlnNode(true, "hello"), "b"),
+				),
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "false"},
+					},
+				},
+				WantData: &Data{Values: map[string]interface{}{
+					"b": false,
+				}},
+			},
+		},
+		// IfElseData tests
+
 		// EchoExecuteData
 		{
 			name: "EchoExecuteData ignores empty ExecuteData.Executable",
@@ -5844,6 +5912,7 @@ func TestComplete(t *testing.T) {
 					"commandtest.go",
 					"completer.go",
 					"completer_test.go",
+					"conditional.go",
 					"custom_nodes.go",
 					"data.go",
 					"data_test.go",
@@ -6585,14 +6654,14 @@ func TestComplete(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{"sl": []string{"abc", "ghi", ""}}},
 			},
 		},
-		// ConditionalProcessor tests
+		// If tests
 		{
-			name: "ConditionProcessor runs if function returns true",
+			name: "If runs if function returns true",
 			ctc: &CompleteTestCase{
 				Args: "cmd alpha ",
 				Node: SerialNodes(
 					Arg[string]("s", testDesc),
-					ConditionalProcessor(
+					If(
 						Arg[string]("s2", testDesc, SimpleCompleter[string]("bravo", "charlie")),
 						func(i *Input, d *Data) bool {
 							return true
@@ -6608,12 +6677,12 @@ func TestComplete(t *testing.T) {
 			},
 		},
 		{
-			name: "ConditionProcessor does not run if function returns true",
+			name: "If does not run if function returns true",
 			ctc: &CompleteTestCase{
 				Args: "cmd alpha ",
 				Node: SerialNodes(
 					Arg[string]("s", testDesc),
-					ConditionalProcessor(
+					If(
 						Arg[string]("s2", testDesc, SimpleCompleter[string]("bravo", "charlie")),
 						func(i *Input, d *Data) bool {
 							return false

@@ -107,7 +107,6 @@ func CompleteForExecuteAllowExactMatch() CompleteForExecuteOption {
 }
 
 // Transformer is an `ArgOpt` that transforms an argument.
-// TODO: make from and to different types?
 type Transformer[T any] struct {
 	t func(T, *Data) (T, error)
 }

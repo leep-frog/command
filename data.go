@@ -85,7 +85,7 @@ func (d *Data) String(k string) string {
 
 // Get returns the interface data for an argument.
 func (d *Data) Get(k string) interface{} {
-	return GetData[string](d, k)
+	return GetData[interface{}](d, k)
 }
 
 // StringList returns the string slice data for an argument.
