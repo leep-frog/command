@@ -294,26 +294,29 @@ func (s *sourcerer) Node() *command.Node {
 		command.ExecuteErrNode(s.generateFile),
 	)
 
-	return command.BranchNode(map[string]*command.Node{
-		"autocomplete": command.SerialNodes(
-			cliArg,
-			compTypeArg,
-			compPointArg,
-			compLineArg,
-			autocompletePassthroughArgs,
-			command.ExecuteErrNode(s.autocompleteExecutor),
-		),
-		"usage": command.SerialNodes(
-			cliArg,
-			command.ExecuteErrNode(s.usageExecutor),
-		),
-		"execute": command.SerialNodes(
-			fileArg,
-			cliArg,
-			passthroughArgs,
-			command.ExecuteErrNode(s.executeExecutor),
-		),
-	}, generateBinaryNode)
+	return command.AsNode(&command.BranchNode{
+		Branches: map[string]*command.Node{
+			"autocomplete": command.SerialNodes(
+				cliArg,
+				compTypeArg,
+				compPointArg,
+				compLineArg,
+				autocompletePassthroughArgs,
+				command.ExecuteErrNode(s.autocompleteExecutor),
+			),
+			"usage": command.SerialNodes(
+				cliArg,
+				command.ExecuteErrNode(s.usageExecutor),
+			),
+			"execute": command.SerialNodes(
+				fileArg,
+				cliArg,
+				passthroughArgs,
+				command.ExecuteErrNode(s.executeExecutor),
+			),
+		},
+		Default: generateBinaryNode,
+	})
 }
 
 func (s *sourcerer) usageExecutor(o command.Output, d *command.Data) error {

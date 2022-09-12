@@ -21,6 +21,18 @@ type Node struct {
 	Edge Edge
 }
 
+type NodeInterface interface {
+	Processor
+	Edge
+}
+
+func AsNode(n NodeInterface) *Node {
+	return &Node{
+		n,
+		n,
+	}
+}
+
 func (n *Node) Execute(input *Input, output Output, data *Data, exData *ExecuteData) error {
 	// TODO: maybe the caller (sourcerer) should be required to check
 	// if the input has been fully processed or not?
@@ -275,27 +287,31 @@ func runNodes(n *Node, o Output, d *Data, args []string) error {
 		n,
 	)
 
-	bn := BranchNode(map[string]*Node{
-		"execute": exNode,
-		"usage": SerialNodes(
-			ExecutorNode(func(o Output, d *Data) {
-				o.Stdoutln(GetUsage(n).String())
-			}),
-		),
-		"autocomplete": SerialNodes(
-			// Don't need comp point because input will have already been trimmed by goleep processing.
-			Arg[string](PassthroughArgs, ""),
-			ExecuteErrNode(func(o Output, d *Data) error {
-				sl, err := Autocomplete(n, d.String(PassthroughArgs), nil)
-				if err != nil {
-					return o.Stderrln(err)
-				}
-				for _, s := range sl {
-					o.Stdoutln(s)
-				}
-				return nil
-			})),
-	}, n, DontCompleteSubcommands())
+	bn := AsNode(&BranchNode{
+		Branches: map[string]*Node{
+			"execute": exNode,
+			"usage": SerialNodes(
+				ExecutorNode(func(o Output, d *Data) {
+					o.Stdoutln(GetUsage(n).String())
+				}),
+			),
+			"autocomplete": SerialNodes(
+				// Don't need comp point because input will have already been trimmed by goleep processing.
+				Arg[string](PassthroughArgs, ""),
+				ExecuteErrNode(func(o Output, d *Data) error {
+					sl, err := Autocomplete(n, d.String(PassthroughArgs), nil)
+					if err != nil {
+						return o.Stderrln(err)
+					}
+					for _, s := range sl {
+						o.Stdoutln(s)
+					}
+					return nil
+				})),
+		},
+		Default:           n,
+		DefaultCompletion: true,
+	})
 
 	eData, err := execute(bn, ParseExecuteArgs(args), o, d)
 	if err != nil {

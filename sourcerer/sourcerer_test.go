@@ -1132,10 +1132,13 @@ func (uec *usageErrCLI) Name() string {
 
 func (uec *usageErrCLI) UnmarshalJSON([]byte) error { return nil }
 func (uec *usageErrCLI) Node() *command.Node {
-	return command.BranchNode(map[string]*command.Node{
-		"a": command.SerialNodes(command.ListArg[string]("A_SL", "str list", 0, 1)),
-		"b": command.SerialNodes(command.ListArg[string]("B_SL", "str list", 1, 0)),
-	}, nil, command.DontCompleteSubcommands())
+	return command.AsNode(&command.BranchNode{
+		Branches: map[string]*command.Node{
+			"a": command.SerialNodes(command.ListArg[string]("A_SL", "str list", 0, 1)),
+			"b": command.SerialNodes(command.ListArg[string]("B_SL", "str list", 1, 0)),
+		},
+		DefaultCompletion: true,
+	})
 }
 func (uec *usageErrCLI) Changed() bool   { return false }
 func (uec *usageErrCLI) Setup() []string { return nil }

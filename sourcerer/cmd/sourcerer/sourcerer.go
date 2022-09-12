@@ -242,9 +242,12 @@ func (gl *GoLeep) Node() *command.Node {
 		}, nil),
 	)
 
-	return command.BranchNode(map[string]*command.Node{
-		"usage": usageNode,
-	}, exNode, command.DontCompleteSubcommands())
+	return command.AsNode(&command.BranchNode{
+		Branches: map[string]*command.Node{
+			"usage": usageNode,
+		},
+		Default: exNode, DefaultCompletion: true,
+	})
 }
 
 func (gl *GoLeep) completer() command.Completer[[]string] {

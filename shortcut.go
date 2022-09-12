@@ -71,7 +71,7 @@ func shortcutMap(name string, sc ShortcutCLI, n *Node) map[string]*Node {
 // ShortcutNode wraps the provided node with a shortcut node.
 func ShortcutNode(name string, sc ShortcutCLI, n *Node) *Node {
 	executor := SerialNodes(&executeShortcut{node: n, sc: sc, name: name}, n)
-	return BranchNode(shortcutMap(name, sc, n), executor, HideBranchUsage(), DontCompleteSubcommands())
+	return AsNode(&BranchNode{Branches: shortcutMap(name, sc, n), Default: executor, HideUsage: true, DefaultCompletion: true})
 }
 
 func shortcutCompleter(name string, sc ShortcutCLI) Completer[string] {

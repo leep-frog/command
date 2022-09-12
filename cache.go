@@ -37,27 +37,33 @@ func CacheNode(name string, c CachableCLI, n *Node, opts ...CacheOption) *Node {
 		Processor: cc,
 		Edge:      &cacheUsageNode{n},
 	}
-	return BranchNode(map[string]*Node{
-		"history": SerialNodes(
-			SimpleProcessor(func(input *Input, _ Output, data *Data, _ *ExecuteData) error {
-				used := input.Used()
-				if len(used) <= 1 {
-					// If only history arg is provided, then no prefix
-					data.Set(cachePrefixData, "")
+	return AsNode(&BranchNode{
+		Branches: map[string]*Node{
+			"history": SerialNodes(
+				SimpleProcessor(func(input *Input, _ Output, data *Data, _ *ExecuteData) error {
+					used := input.Used()
+					if len(used) <= 1 {
+						// If only history arg is provided, then no prefix
+						data.Set(cachePrefixData, "")
+						return nil
+					}
+					// Remove "history" arg
+					used = used[:len(used)-1]
+					data.Set(cachePrefixData, fmt.Sprintf("%s ", strings.Join(used, " ")))
 					return nil
-				}
-				// Remove "history" arg
-				used = used[:len(used)-1]
-				data.Set(cachePrefixData, fmt.Sprintf("%s ", strings.Join(used, " ")))
-				return nil
-			}, nil),
-			NewFlagNode(
-				cacheHistoryFlag,
-				cachePrintPrefixFlag,
+				}, nil),
+				NewFlagNode(
+					cacheHistoryFlag,
+					cachePrintPrefixFlag,
+				),
+				SimpleProcessor(cc.history, nil),
 			),
-			SimpleProcessor(cc.history, nil),
-		),
-	}, ccN, HideBranchUsage(), DontCompleteSubcommands(), BranchSynonyms(map[string][]string{"history": {"h"}}))
+		},
+		Default:           ccN,
+		HideUsage:         true,
+		DefaultCompletion: true,
+		Synonyms:          BranchSynonyms(map[string][]string{"history": {"h"}}),
+	})
 }
 
 // CacheOption is an option interface for modifying `CacheNode` objects.

@@ -41,56 +41,58 @@ func (c *Cache) Setup() []string { return nil }
 // Node returns the `command.Node` for the cache CLI.
 func (c *Cache) Node() *command.Node {
 	arg := command.Arg[string]("KEY", "Key of the data to get", command.MatchesRegex(keyRegex), completer(c))
-	return command.BranchNode(map[string]*command.Node{
-		"setdir": command.SerialNodes(
-			command.FileNode("DIR", "Directory in which to store data", command.IsDir()),
-			command.ExecutorNode(func(o command.Output, d *command.Data) {
-				c.Dir = d.String("DIR")
-				c.changed = true
-			}),
-		),
-		"get": command.SerialNodes(
-			arg,
-			command.ExecuteErrNode(func(o command.Output, d *command.Data) error {
-				s, ok, err := c.Get(d.String(arg.Name()))
-				if err != nil {
-					return o.Err(err)
-				}
-				if !ok {
-					o.Stderrln("key not found")
-				} else {
-					o.Stdoutln(s)
-				}
-				return nil
-			}),
-		),
-		"put": command.SerialNodes(
-			arg,
-			command.ListArg[string]("DATA", "Data to store", 1, command.UnboundedList),
-			command.ExecuteErrNode(func(o command.Output, d *command.Data) error {
-				return o.Err(c.Put(d.String(arg.Name()), strings.Join(d.StringList("DATA"), " ")))
-			}),
-		),
-		"delete": command.SerialNodes(
-			arg,
-			command.ExecuteErrNode(func(o command.Output, d *command.Data) error {
-				return o.Err(c.Delete(d.String(arg.Name())))
-			}),
-		),
-		"list": command.SerialNodes(
-			command.ExecuteErrNode(func(o command.Output, d *command.Data) error {
-				r, err := c.List()
-				if err != nil {
-					return o.Err(err)
-				}
-				sort.Strings(r)
-				for _, s := range r {
-					o.Stdoutln(s)
-				}
-				return nil
-			}),
-		),
-	}, nil)
+	return command.AsNode(&command.BranchNode{
+		Branches: map[string]*command.Node{
+			"setdir": command.SerialNodes(
+				command.FileNode("DIR", "Directory in which to store data", command.IsDir()),
+				command.ExecutorNode(func(o command.Output, d *command.Data) {
+					c.Dir = d.String("DIR")
+					c.changed = true
+				}),
+			),
+			"get": command.SerialNodes(
+				arg,
+				command.ExecuteErrNode(func(o command.Output, d *command.Data) error {
+					s, ok, err := c.Get(d.String(arg.Name()))
+					if err != nil {
+						return o.Err(err)
+					}
+					if !ok {
+						o.Stderrln("key not found")
+					} else {
+						o.Stdoutln(s)
+					}
+					return nil
+				}),
+			),
+			"put": command.SerialNodes(
+				arg,
+				command.ListArg[string]("DATA", "Data to store", 1, command.UnboundedList),
+				command.ExecuteErrNode(func(o command.Output, d *command.Data) error {
+					return o.Err(c.Put(d.String(arg.Name()), strings.Join(d.StringList("DATA"), " ")))
+				}),
+			),
+			"delete": command.SerialNodes(
+				arg,
+				command.ExecuteErrNode(func(o command.Output, d *command.Data) error {
+					return o.Err(c.Delete(d.String(arg.Name())))
+				}),
+			),
+			"list": command.SerialNodes(
+				command.ExecuteErrNode(func(o command.Output, d *command.Data) error {
+					r, err := c.List()
+					if err != nil {
+						return o.Err(err)
+					}
+					sort.Strings(r)
+					for _, s := range r {
+						o.Stdoutln(s)
+					}
+					return nil
+				}),
+			),
+		},
+	})
 }
 
 func completer(c *Cache) command.Completer[string] {

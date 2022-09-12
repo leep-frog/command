@@ -84,18 +84,42 @@ func ExecutorNode(f func(Output, *Data)) Processor {
 	})
 }
 
-type branchNode struct {
-	branches map[string]*Node
-	// Map from branch code to synonyms
-	synonyms     map[string]string
-	def          *Node
-	next         *Node
-	nextErr      error
-	scCompletion bool
-	hideUsage    bool
+// BranchNode implements a node that branches on specific string arguments.
+// If the argument does not match any branch, then the `Default` node is traversed.
+type BranchNode struct {
+	// Branches is a map from branching argument to `Node` that should be
+	// executed if that branching argument is provided.
+	Branches map[string]*Node
+	// Synonyms are synonyms for branching arguments.
+	Synonyms map[string]string
+	// Default is the `Node` that should be executed if the branching argument
+	// does not match of any of the branches.
+	Default *Node
+	// BranchCompletions is whether or not branch arguments should be completed
+	// or if the completions from the Default `Node` should be used.
+	// This is only relevant when the branching argument is the argument
+	// being completed. Otherwise, this node is executed as normal.
+	DefaultCompletion bool
+	// HideUsage is wheter or not usage info for this node should be
+	// hidden.
+	HideUsage bool
+
+	next *Node
 }
 
-func (bn *branchNode) Execute(input *Input, output Output, data *Data, eData *ExecuteData) error {
+// BranchSynonyms converts a map from branching argument to synonyms to a
+// branching synonym map.
+func BranchSynonyms(m map[string][]string) map[string]string {
+	r := map[string]string{}
+	for branch, synonyms := range m {
+		for _, syn := range synonyms {
+			r[syn] = branch
+		}
+	}
+	return r
+}
+
+func (bn *BranchNode) Execute(input *Input, output Output, data *Data, eData *ExecuteData) error {
 	// The edge will figure out what needs to be done next.
 	if err := bn.getNext(input, data); err != nil {
 		return output.Err(err)
@@ -103,7 +127,7 @@ func (bn *branchNode) Execute(input *Input, output Output, data *Data, eData *Ex
 	return nil
 }
 
-func (bn *branchNode) Complete(input *Input, data *Data) (*Completion, error) {
+func (bn *BranchNode) Complete(input *Input, data *Data) (*Completion, error) {
 	if len(input.remaining) > 1 {
 		return nil, bn.getNext(input, data)
 	}
@@ -111,42 +135,53 @@ func (bn *branchNode) Complete(input *Input, data *Data) (*Completion, error) {
 	// Note: we don't try to merge completions between branches
 	// and default node because the completion overlap can get
 	// convoluted given the number of `Completion` options.
-	if !bn.scCompletion {
+	if bn.DefaultCompletion {
 		// Need to iterate over the remaining nodes in case the immediately next node
 		// doesn't process any args and the one after it does.
-		return getCompleteData(bn.def, input, data)
+		return getCompleteData(bn.Default, input, data)
 	}
 
 	return &Completion{
-		Suggestions:     maps.Keys(bn.branches),
+		Suggestions:     maps.Keys(bn.Branches),
 		CaseInsensitive: true,
 	}, nil
 }
 
-func (bn *branchNode) getNext(input *Input, data *Data) error {
+func (bn *BranchNode) getNext(input *Input, data *Data) error {
 	s, ok := input.Peek()
 	if !ok {
-		if bn.def == nil {
+		if bn.Default == nil {
 			return newBranchingErr(bn)
 		}
-		bn.next = bn.def
+		bn.next = bn.Default
 		return nil
 	}
 
-	if n, ok := bn.branches[s]; ok {
-		input.Pop()
-		bn.next = n
-		return nil
+	if bn.Synonyms != nil {
+		if syn, ok := bn.Synonyms[s]; ok {
+			s = syn
+		}
 	}
 
-	if n, ok := bn.branches[bn.synonyms[s]]; ok {
-		input.Pop()
-		bn.next = n
-		return nil
+	for branch, n := range bn.Branches {
+		name, syns := bn.splitBranch(branch)
+		if s == name {
+			input.Pop()
+			bn.next = n
+			return nil
+		}
+
+		for _, b := range syns {
+			if s == b {
+				input.Pop()
+				bn.next = n
+				return nil
+			}
+		}
 	}
 
-	if bn.def != nil {
-		bn.next = bn.def
+	if bn.Default != nil {
+		bn.next = bn.Default
 		return nil
 	}
 
@@ -154,19 +189,19 @@ func (bn *branchNode) getNext(input *Input, data *Data) error {
 }
 
 type branchingErr struct {
-	bn *branchNode
+	bn *BranchNode
 }
 
 func (be *branchingErr) Error() string {
-	choices := make([]string, 0, len(be.bn.branches))
-	for k := range be.bn.branches {
+	choices := make([]string, 0, len(be.bn.Branches))
+	for k := range be.bn.Branches {
 		choices = append(choices, k)
 	}
 	sort.Strings(choices)
 	return fmt.Sprintf("Branching argument must be one of %v", choices)
 }
 
-func newBranchingErr(bn *branchNode) error {
+func newBranchingErr(bn *BranchNode) error {
 	return &branchingErr{bn}
 }
 
@@ -176,16 +211,21 @@ func IsBranchingError(err error) bool {
 	return ok
 }
 
-func (bn *branchNode) Next(input *Input, data *Data) (*Node, error) {
+func (bn *BranchNode) Next(input *Input, data *Data) (*Node, error) {
 	return bn.next, nil
 }
 
-func (bn *branchNode) UsageNext() *Node {
-	return bn.def
+func (bn *BranchNode) UsageNext() *Node {
+	return bn.Default
 }
 
-func (bn *branchNode) Usage(u *Usage) {
-	if bn.hideUsage {
+func (bn *BranchNode) splitBranch(b string) (string, []string) {
+	r := strings.Split(b, " ")
+	return r[0], r[1:]
+}
+
+func (bn *BranchNode) Usage(u *Usage) {
+	if bn.HideUsage {
 		return
 	}
 
@@ -193,21 +233,31 @@ func (bn *branchNode) Usage(u *Usage) {
 	u.Usage = append(u.Usage, "<")
 
 	var names []string
-	for name := range bn.branches {
+	branchToSynonyms := map[string]map[string]bool{}
+	for name := range bn.Branches {
+		name, syns := bn.splitBranch(name)
 		names = append(names, name)
+		if branchToSynonyms[name] == nil {
+			branchToSynonyms[name] = map[string]bool{}
+		}
+		for _, syn := range syns {
+			branchToSynonyms[name][syn] = true
+		}
 	}
 	sort.Strings(names)
 
-	branchToSynonyms := map[string][]string{}
-	for k, v := range bn.synonyms {
-		branchToSynonyms[v] = append(branchToSynonyms[v], k)
+	for k, v := range bn.Synonyms {
+		if branchToSynonyms[v] == nil {
+			branchToSynonyms[v] = map[string]bool{}
+		}
+		branchToSynonyms[v][k] = true
 	}
 
 	for _, name := range names {
-		su := GetUsage(bn.branches[name])
+		su := GetUsage(bn.Branches[name])
 		if as := branchToSynonyms[name]; len(as) > 0 {
 			var r []string
-			for _, a := range as {
+			for a := range as {
 				r = append(r, a)
 			}
 			sort.Strings(r)
@@ -215,69 +265,6 @@ func (bn *branchNode) Usage(u *Usage) {
 		}
 		su.Usage = append([]string{name}, su.Usage...)
 		u.SubSections = append(u.SubSections, su)
-	}
-}
-
-// BranchNodeOption is an option type for modifying a `BranchNode`.
-type BranchNodeOption func(*branchNode)
-
-// DontCompleteSubcommands is a `BranchNodeOption` that prevents
-// subcommands from being included in autocompletion.
-func DontCompleteSubcommands() BranchNodeOption {
-	return func(bn *branchNode) {
-		bn.scCompletion = false
-	}
-}
-
-// HideBranchUsage is a `BranchNodeOption` that prevents `BranchNode` usage
-// from showing up in the command's usage text.
-func HideBranchUsage() BranchNodeOption {
-	return func(bn *branchNode) {
-		bn.hideUsage = true
-	}
-}
-
-// BranchSynonyms is a `BranchNodeOption` to specify synonyms for branches in a
-// `BranchNode`.
-func BranchSynonyms(synonyms map[string][]string) BranchNodeOption {
-	m := map[string]string{}
-	for k, vs := range synonyms {
-		for _, v := range vs {
-			m[v] = k
-		}
-	}
-	return func(bn *branchNode) {
-		bn.synonyms = m
-	}
-}
-
-// BranchNode returns a node that branches on specific string arguments.
-// If the argument does not match any branch, then the `dflt` node is traversed.
-func BranchNode(branches map[string]*Node, dflt *Node, opts ...BranchNodeOption) *Node {
-	if branches == nil {
-		branches = map[string]*Node{}
-	}
-	synonyms := map[string]string{}
-	ob := map[string]*Node{}
-	for str, v := range branches {
-		ks := strings.Split(str, " ")
-		ob[ks[0]] = v
-		for _, k := range ks[1:] {
-			synonyms[k] = ks[0]
-		}
-	}
-	bn := &branchNode{
-		branches:     ob,
-		synonyms:     synonyms,
-		def:          dflt,
-		scCompletion: true,
-	}
-	for _, opt := range opts {
-		opt(bn)
-	}
-	return &Node{
-		Processor: bn,
-		Edge:      bn,
 	}
 }
 

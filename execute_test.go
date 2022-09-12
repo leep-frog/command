@@ -4229,10 +4229,12 @@ func TestExecute(t *testing.T) {
 		{
 			name: "branch node requires branch argument",
 			etc: &ExecuteTestCase{
-				Node: BranchNode(map[string]*Node{
-					"h": printNode("hello"),
-					"b": printNode("goodbye"),
-				}, nil),
+				Node: AsNode(&BranchNode{
+					Branches: map[string]*Node{
+						"h": printNode("hello"),
+						"b": printNode("goodbye"),
+					},
+				}),
 				WantStderr: "Branching argument must be one of [b h]\n",
 				WantErr:    fmt.Errorf("Branching argument must be one of [b h]"),
 			},
@@ -4240,10 +4242,12 @@ func TestExecute(t *testing.T) {
 		{
 			name: "branch node requires matching branch argument",
 			etc: &ExecuteTestCase{
-				Node: BranchNode(map[string]*Node{
-					"h": printNode("hello"),
-					"b": printNode("goodbye"),
-				}, nil),
+				Node: AsNode(&BranchNode{
+					Branches: map[string]*Node{
+						"h": printNode("hello"),
+						"b": printNode("goodbye"),
+					},
+				}),
 				Args:       []string{"uh"},
 				WantStderr: "Branching argument must be one of [b h]\n",
 				WantErr:    fmt.Errorf("Branching argument must be one of [b h]"),
@@ -4258,10 +4262,12 @@ func TestExecute(t *testing.T) {
 		{
 			name: "branch node forwards to proper node",
 			etc: &ExecuteTestCase{
-				Node: BranchNode(map[string]*Node{
-					"h": printNode("hello"),
-					"b": printNode("goodbye"),
-				}, nil),
+				Node: AsNode(&BranchNode{
+					Branches: map[string]*Node{
+						"h": printNode("hello"),
+						"b": printNode("goodbye"),
+					},
+				}),
 				Args:       []string{"h"},
 				WantStdout: "hello",
 				wantInput: &Input{
@@ -4274,20 +4280,26 @@ func TestExecute(t *testing.T) {
 		{
 			name: "branch node forwards to default if none provided",
 			etc: &ExecuteTestCase{
-				Node: BranchNode(map[string]*Node{
-					"h": printNode("hello"),
-					"b": printNode("goodbye"),
-				}, printNode("default")),
+				Node: AsNode(&BranchNode{
+					Branches: map[string]*Node{
+						"h": printNode("hello"),
+						"b": printNode("goodbye"),
+					},
+					Default: printNode("default"),
+				}),
 				WantStdout: "default",
 			},
 		},
 		{
 			name: "branch node forwards to default if unknown provided",
 			etc: &ExecuteTestCase{
-				Node: BranchNode(map[string]*Node{
-					"h": printNode("hello"),
-					"b": printNode("goodbye"),
-				}, SerialNodes(ListArg[string]("sl", testDesc, 0, UnboundedList), printArgsNode().Processor)),
+				Node: AsNode(&BranchNode{
+					Branches: map[string]*Node{
+						"h": printNode("hello"),
+						"b": printNode("goodbye"),
+					},
+					Default: SerialNodes(ListArg[string]("sl", testDesc, 0, UnboundedList), printArgsNode().Processor),
+				}),
 				Args:       []string{"good", "morning"},
 				WantStdout: "sl: [good morning]\n",
 				WantData: &Data{Values: map[string]interface{}{
@@ -4305,12 +4317,16 @@ func TestExecute(t *testing.T) {
 			name: "branch node forwards to synonym",
 			etc: &ExecuteTestCase{
 				Args: []string{"B"},
-				Node: BranchNode(map[string]*Node{
-					"h": printNode("hello"),
-					"b": printNode("goodbye"),
-				}, printNode("default"), BranchSynonyms(map[string][]string{
-					"b": {"bee", "B", "Be"},
-				})),
+				Node: AsNode(&BranchNode{
+					Branches: map[string]*Node{
+						"h": printNode("hello"),
+						"b": printNode("goodbye"),
+					},
+					Default: printNode("default"),
+					Synonyms: BranchSynonyms(map[string][]string{
+						"b": {"bee", "B", "Be"},
+					}),
+				}),
 				wantInput: &Input{
 					args: []*inputArg{
 						{value: "B"},
@@ -4323,12 +4339,15 @@ func TestExecute(t *testing.T) {
 			name: "branch node fails if synonym to unknown command",
 			etc: &ExecuteTestCase{
 				Args: []string{"uh"},
-				Node: BranchNode(map[string]*Node{
-					"h": printNode("hello"),
-					"b": printNode("goodbye"),
-				}, nil, BranchSynonyms(map[string][]string{
-					"o": {"uh"},
-				})),
+				Node: AsNode(&BranchNode{
+					Branches: map[string]*Node{
+						"h": printNode("hello"),
+						"b": printNode("goodbye"),
+					},
+					Synonyms: BranchSynonyms(map[string][]string{
+						"o": {"uh"},
+					}),
+				}),
 				wantInput: &Input{
 					args: []*inputArg{
 						{value: "uh"},
@@ -4343,12 +4362,16 @@ func TestExecute(t *testing.T) {
 			name: "branch node forwards to default if synonym to unknown command",
 			etc: &ExecuteTestCase{
 				Args: []string{"uh"},
-				Node: BranchNode(map[string]*Node{
-					"h": printNode("hello"),
-					"b": printNode("goodbye"),
-				}, SerialNodes(ListArg[string]("sl", testDesc, 0, UnboundedList), printArgsNode().Processor), BranchSynonyms(map[string][]string{
-					"o": {"uh"},
-				})),
+				Node: AsNode(&BranchNode{
+					Branches: map[string]*Node{
+						"h": printNode("hello"),
+						"b": printNode("goodbye"),
+					},
+					Default: SerialNodes(ListArg[string]("sl", testDesc, 0, UnboundedList), printArgsNode().Processor),
+					Synonyms: BranchSynonyms(map[string][]string{
+						"o": {"uh"},
+					}),
+				}),
 				wantInput: &Input{
 					args: []*inputArg{
 						{value: "uh"},
@@ -4366,10 +4389,13 @@ func TestExecute(t *testing.T) {
 			name: "branch node forwards to spaced synonym",
 			etc: &ExecuteTestCase{
 				Args: []string{"bee"},
-				Node: BranchNode(map[string]*Node{
-					"h":          printNode("hello"),
-					"b bee B Be": printNode("goodbye"),
-				}, printNode("default")),
+				Node: AsNode(&BranchNode{
+					Branches: map[string]*Node{
+						"h":          printNode("hello"),
+						"b bee B Be": printNode("goodbye"),
+					},
+					Default: printNode("default"),
+				}),
 				wantInput: &Input{
 					args: []*inputArg{
 						{value: "bee"},
@@ -5122,15 +5148,18 @@ func TestExecute(t *testing.T) {
 }
 
 func abc() *Node {
-	return BranchNode(map[string]*Node{
-		"t": ShortcutNode("TEST_SHORTCUT", nil,
-			CacheNode("TEST_CACHE", nil, SerialNodes(
-				&tt{},
-				Arg[string]("PATH", testDesc, SimpleCompleter[string]("clh111", "abcd111")),
-				Arg[string]("TARGET", testDesc, SimpleCompleter[string]("clh222", "abcd222")),
-				Arg[string]("FUNC", testDesc, SimpleCompleter[string]("clh333", "abcd333")),
-			))),
-	}, nil, DontCompleteSubcommands())
+	return AsNode(&BranchNode{
+		Branches: map[string]*Node{
+			"t": ShortcutNode("TEST_SHORTCUT", nil,
+				CacheNode("TEST_CACHE", nil, SerialNodes(
+					&tt{},
+					Arg[string]("PATH", testDesc, SimpleCompleter[string]("clh111", "abcd111")),
+					Arg[string]("TARGET", testDesc, SimpleCompleter[string]("clh222", "abcd222")),
+					Arg[string]("FUNC", testDesc, SimpleCompleter[string]("clh333", "abcd333")),
+				))),
+		},
+		DefaultCompletion: true,
+	})
 }
 
 type tt struct{}
@@ -6102,24 +6131,29 @@ func TestComplete(t *testing.T) {
 		{
 			name: "completes branch name options",
 			ctc: &CompleteTestCase{
-				Node: BranchNode(map[string]*Node{
-					"a":     {},
-					"alpha": SerialNodes(OptionalArg[string]("hello", testDesc, SimpleCompleter[string]("other", "stuff"))),
-					"bravo": {},
-				}, SerialNodes(ListArg[string]("default", testDesc, 1, 3, SimpleCompleter[[]string]("default", "command", "opts")))),
+				Node: AsNode(&BranchNode{
+					Branches: map[string]*Node{
+						"a":     {},
+						"alpha": SerialNodes(OptionalArg[string]("hello", testDesc, SimpleCompleter[string]("other", "stuff"))),
+						"bravo": {},
+					},
+					Default: SerialNodes(ListArg[string]("default", testDesc, 1, 3, SimpleCompleter[[]string]("default", "command", "opts"))),
+				}),
 				Want: []string{"a", "alpha", "bravo"},
 			},
 		},
 		{
 			name: "completes default node options",
 			ctc: &CompleteTestCase{
-				Node: BranchNode(map[string]*Node{
-					"a":     {},
-					"alpha": SerialNodes(OptionalArg[string]("hello", testDesc, SimpleCompleter[string]("other", "stuff"))),
-					"bravo": {},
-				}, SerialNodes(ListArg[string]("default", testDesc, 1, 3, SimpleCompleter[[]string]("default", "command", "opts"))),
-					DontCompleteSubcommands(),
-				),
+				Node: AsNode(&BranchNode{
+					Branches: map[string]*Node{
+						"a":     {},
+						"alpha": SerialNodes(OptionalArg[string]("hello", testDesc, SimpleCompleter[string]("other", "stuff"))),
+						"bravo": {},
+					},
+					Default:           SerialNodes(ListArg[string]("default", testDesc, 1, 3, SimpleCompleter[[]string]("default", "command", "opts"))),
+					DefaultCompletion: true,
+				}),
 				Want: []string{"command", "default", "opts"},
 				WantData: &Data{Values: map[string]interface{}{
 					"default": []string{""},
@@ -6129,24 +6163,29 @@ func TestComplete(t *testing.T) {
 		{
 			name: "no completions if default node is nil",
 			ctc: &CompleteTestCase{
-				Node: BranchNode(map[string]*Node{
-					"a":     {},
-					"alpha": SerialNodes(OptionalArg[string]("hello", testDesc, SimpleCompleter[string]("other", "stuff"))),
-					"bravo": {},
-				}, nil,
-					DontCompleteSubcommands(),
-				),
+				Node: AsNode(&BranchNode{
+					Branches: map[string]*Node{
+						"a":     {},
+						"alpha": SerialNodes(OptionalArg[string]("hello", testDesc, SimpleCompleter[string]("other", "stuff"))),
+						"bravo": {},
+					},
+					DefaultCompletion: true,
+				}),
 				WantErr: fmt.Errorf("Unprocessed extra args: []"),
 			},
 		},
 		{
 			name: "doesn't complete branch options if complete arg is false",
 			ctc: &CompleteTestCase{
-				Node: BranchNode(map[string]*Node{
-					"a":     {},
-					"alpha": SerialNodes(OptionalArg[string]("hello", testDesc, SimpleCompleter[string]("other", "stuff"))),
-					"bravo": {},
-				}, SerialNodes(ListArg[string]("default", testDesc, 1, 3, SimpleCompleter[[]string]("default", "command", "opts"))), DontCompleteSubcommands()),
+				Node: AsNode(&BranchNode{
+					Branches: map[string]*Node{
+						"a":     {},
+						"alpha": SerialNodes(OptionalArg[string]("hello", testDesc, SimpleCompleter[string]("other", "stuff"))),
+						"bravo": {},
+					},
+					Default:           SerialNodes(ListArg[string]("default", testDesc, 1, 3, SimpleCompleter[[]string]("default", "command", "opts"))),
+					DefaultCompletion: true,
+				}),
 				Want: []string{"command", "default", "opts"},
 				WantData: &Data{Values: map[string]interface{}{
 					"default": []string{""},
@@ -6156,11 +6195,15 @@ func TestComplete(t *testing.T) {
 		{
 			name: "completes for specific branch",
 			ctc: &CompleteTestCase{
-				Node: BranchNode(map[string]*Node{
-					"a":     {},
-					"alpha": SerialNodes(OptionalArg[string]("hello", testDesc, SimpleCompleter[string]("other", "stuff"))),
-					"bravo": {},
-				}, SerialNodes(ListArg[string]("default", testDesc, 1, 3, SimpleCompleter[[]string]("default", "command", "opts")))),
+				Node: AsNode(&BranchNode{
+					Branches: map[string]*Node{
+						"a":     {},
+						"alpha": SerialNodes(OptionalArg[string]("hello", testDesc, SimpleCompleter[string]("other", "stuff"))),
+						"bravo": {},
+					},
+					Default:           SerialNodes(ListArg[string]("default", testDesc, 1, 3, SimpleCompleter[[]string]("default", "command", "opts"))),
+					DefaultCompletion: true,
+				}),
 				Args: "cmd alpha ",
 				Want: []string{"other", "stuff"},
 				WantData: &Data{Values: map[string]interface{}{
@@ -6171,11 +6214,13 @@ func TestComplete(t *testing.T) {
 		{
 			name: "branch node doesn't complete if no default and no branch match",
 			ctc: &CompleteTestCase{
-				Node: BranchNode(map[string]*Node{
-					"a":     {},
-					"alpha": SerialNodes(OptionalArg[string]("hello", testDesc, SimpleCompleter[string]("other", "stuff"))),
-					"bravo": {},
-				}, nil),
+				Node: AsNode(&BranchNode{
+					Branches: map[string]*Node{
+						"a":     {},
+						"alpha": SerialNodes(OptionalArg[string]("hello", testDesc, SimpleCompleter[string]("other", "stuff"))),
+						"bravo": {},
+					},
+				}),
 				Args:    "cmd some thing else",
 				WantErr: fmt.Errorf("Branching argument must be one of [a alpha bravo]"),
 			},
@@ -6183,13 +6228,17 @@ func TestComplete(t *testing.T) {
 		{
 			name: "branch node returns default node error if branch completion is false",
 			ctc: &CompleteTestCase{
-				Node: BranchNode(map[string]*Node{
-					"a":     {},
-					"alpha": SerialNodes(OptionalArg[string]("hello", testDesc, SimpleCompleter[string]("other", "stuff"))),
-					"bravo": {},
-				}, SerialNodes(SimpleProcessor(nil, func(i *Input, d *Data) (*Completion, error) {
-					return nil, fmt.Errorf("bad news bears")
-				})), DontCompleteSubcommands()),
+				Node: AsNode(&BranchNode{
+					Branches: map[string]*Node{
+						"a":     {},
+						"alpha": SerialNodes(OptionalArg[string]("hello", testDesc, SimpleCompleter[string]("other", "stuff"))),
+						"bravo": {},
+					},
+					Default: SerialNodes(SimpleProcessor(nil, func(i *Input, d *Data) (*Completion, error) {
+						return nil, fmt.Errorf("bad news bears")
+					})),
+					DefaultCompletion: true,
+				}),
 				Args:    "cmd ",
 				WantErr: fmt.Errorf("bad news bears"),
 			},
@@ -6197,13 +6246,16 @@ func TestComplete(t *testing.T) {
 		{
 			name: "branch node returns only branch completions",
 			ctc: &CompleteTestCase{
-				Node: BranchNode(map[string]*Node{
-					"a":     {},
-					"alpha": SerialNodes(OptionalArg[string]("hello", testDesc, SimpleCompleter[string]("other", "stuff"))),
-					"bravo": {},
-				}, SerialNodes(SimpleProcessor(nil, func(i *Input, d *Data) (*Completion, error) {
-					return nil, fmt.Errorf("bad news bears")
-				}))),
+				Node: AsNode(&BranchNode{
+					Branches: map[string]*Node{
+						"a":     {},
+						"alpha": SerialNodes(OptionalArg[string]("hello", testDesc, SimpleCompleter[string]("other", "stuff"))),
+						"bravo": {},
+					},
+					Default: SerialNodes(SimpleProcessor(nil, func(i *Input, d *Data) (*Completion, error) {
+						return nil, fmt.Errorf("bad news bears")
+					})),
+				}),
 				Args: "cmd ",
 				Want: []string{"a", "alpha", "bravo"},
 			},
@@ -6211,13 +6263,15 @@ func TestComplete(t *testing.T) {
 		{
 			name: "completes branch options with partial completion",
 			ctc: &CompleteTestCase{
-				Node: BranchNode(map[string]*Node{
-					"a":     {},
-					"alpha": SerialNodes(OptionalArg[string]("hello", testDesc, SimpleCompleter[string]("other", "stuff"))),
-					"bravo": {},
-				}, SerialNodes(ListArg[string]("default", testDesc, 1, 3, SimpleCompleter[[]string]("default", "command", "opts", "ahhhh", "alright"))),
-					DontCompleteSubcommands(),
-				),
+				Node: AsNode(&BranchNode{
+					Branches: map[string]*Node{
+						"a":     {},
+						"alpha": SerialNodes(OptionalArg[string]("hello", testDesc, SimpleCompleter[string]("other", "stuff"))),
+						"bravo": {},
+					},
+					Default:           SerialNodes(ListArg[string]("default", testDesc, 1, 3, SimpleCompleter[[]string]("default", "command", "opts", "ahhhh", "alright"))),
+					DefaultCompletion: true,
+				}),
 				Args: "cmd a",
 				Want: []string{"ahhhh", "alright"},
 				WantData: &Data{Values: map[string]interface{}{
@@ -6228,11 +6282,14 @@ func TestComplete(t *testing.T) {
 		{
 			name: "completes default options",
 			ctc: &CompleteTestCase{
-				Node: BranchNode(map[string]*Node{
-					"a":     {},
-					"alpha": SerialNodes(OptionalArg[string]("hello", testDesc, SimpleCompleter[string]("other", "stuff"))),
-					"bravo": {},
-				}, SerialNodes(ListArg[string]("default", testDesc, 1, 3, SimpleCompleter[[]string]("default", "command", "opts")))),
+				Node: AsNode(&BranchNode{
+					Branches: map[string]*Node{
+						"a":     {},
+						"alpha": SerialNodes(OptionalArg[string]("hello", testDesc, SimpleCompleter[string]("other", "stuff"))),
+						"bravo": {},
+					},
+					Default: SerialNodes(ListArg[string]("default", testDesc, 1, 3, SimpleCompleter[[]string]("default", "command", "opts"))),
+				}),
 				Args: "cmd something ",
 				WantData: &Data{Values: map[string]interface{}{
 					"default": []string{"something", ""},
