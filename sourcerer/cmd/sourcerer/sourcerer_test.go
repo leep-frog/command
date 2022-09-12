@@ -12,31 +12,15 @@ import (
 	"github.com/leep-frog/command/sourcerer"
 )
 
-type lookupEnvCall struct {
-	want string
-	v    string
-	ok   bool
-}
-
-type setenvCall struct {
-	wantKey string
-	wantVal string
-}
-
-type unsetenvCall struct {
-	want string
-}
-
 func TestExecute(t *testing.T) {
 	for _, test := range []struct {
 		name        string
 		cli         sourcerer.CLI
 		etc         *command.ExecuteTestCase
 		writeToFile []string
-		lookupEnvs  []*lookupEnvCall
 		want        sourcerer.CLI
-		setenvs     []*setenvCall
-		unsetenvs   []*unsetenvCall
+		osenv       map[string]string
+		wantOSEnv   map[string]string
 	}{
 		// goleep tests
 		{
@@ -415,65 +399,32 @@ func TestExecute(t *testing.T) {
 		},
 		// Debugger tests
 		{
-			name:       "Activates debug mode",
-			cli:        &Debugger{},
-			lookupEnvs: []*lookupEnvCall{{command.DebugEnvVar, "", false}},
-			setenvs:    []*setenvCall{{command.DebugEnvVar, "1"}},
+			name: "Activates debug mode",
+			cli:  &Debugger{},
 			etc: &command.ExecuteTestCase{
 				WantStdout: "Entering debug mode.\n",
+				WantEnv: map[string]string{
+					command.DebugEnvVar: "1",
+				},
 			},
 		},
 		{
-			name:       "Deactivates debug mode",
-			cli:        &Debugger{},
-			lookupEnvs: []*lookupEnvCall{{command.DebugEnvVar, "", true}},
-			unsetenvs:  []*unsetenvCall{{command.DebugEnvVar}},
+			name: "Deactivates debug mode",
+			cli:  &Debugger{},
 			etc: &command.ExecuteTestCase{
 				WantStdout: "Exiting debug mode.\n",
+				Env: map[string]string{
+					command.DebugEnvVar: "1",
+				},
+				WantData: &command.Data{Values: map[string]interface{}{
+					command.DebugEnvVar: "1",
+				}},
 			},
 		},
 		/* Useful for commenting out tests */
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			// Stub os values
-			command.StubValue(t, &osLookupEnv, func(s string) (string, bool) {
-				if len(test.lookupEnvs) == 0 {
-					t.Fatalf("ran out of lookupEnvs responses")
-				}
-				call := test.lookupEnvs[0]
-				test.lookupEnvs = test.lookupEnvs[1:]
-				if s != call.want {
-					t.Fatalf("osLookupEnv called with %s; expected %s", s, call.want)
-				}
-				return call.v, call.ok
-			})
-
-			command.StubValue(t, &osSetenv, func(k, v string) error {
-				if len(test.setenvs) == 0 {
-					t.Fatalf("ran out of setenvs responses")
-				}
-				call := test.setenvs[0]
-				test.setenvs = test.setenvs[1:]
-				if k != call.wantKey {
-					t.Fatalf("osSetenv called with key %s; expected %s", k, call.wantKey)
-				}
-				if v != call.wantVal {
-					t.Fatalf("osSetenv called with value %s; expected %s", v, call.wantVal)
-				}
-				return nil
-			})
-
-			command.StubValue(t, &osUnsetenv, func(k string) error {
-				if len(test.unsetenvs) == 0 {
-					t.Fatalf("ran out of unsetenvs responses")
-				}
-				call := test.unsetenvs[0]
-				test.unsetenvs = test.unsetenvs[1:]
-				if k != call.want {
-					t.Fatalf("osUnsetenv called with %s; expected %s", k, call.want)
-				}
-				return nil
-			})
+			command.StubEnv(t, nil)
 
 			// Stub files
 			f, err := ioutil.TempFile("", "goleep-test")
@@ -499,17 +450,6 @@ func TestExecute(t *testing.T) {
 			test.etc.Node = test.cli.Node()
 			command.ExecuteTest(t, test.etc)
 			command.ChangeTest(t, test.want, test.cli)
-
-			// Verify no stubs remaining
-			if len(test.lookupEnvs) > 0 {
-				t.Errorf("Unused lookupEnv stubs: %v", test.lookupEnvs)
-			}
-			if len(test.setenvs) > 0 {
-				t.Errorf("Unused setenv stubs: %v", test.setenvs)
-			}
-			if len(test.unsetenvs) > 0 {
-				t.Errorf("Unused unsetenv stubs: %v", test.unsetenvs)
-			}
 		})
 	}
 }

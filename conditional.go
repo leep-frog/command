@@ -35,7 +35,7 @@ func If(p Processor, fn func(i *Input, d *Data) bool) Processor {
 // IfElseData runs `Processor` t if the argument name is present in Data.
 // If the argument's type is a boolean, then it also must not be false.
 // Otherwise, `Processor` f is run.
-func IfElseData(t, f Processor, dataArg string) Processor {
+func IfElseData(dataArg string, t, f Processor) Processor {
 	return IfElse(t, f, func(i *Input, d *Data) bool {
 		// If the arg is not in data, return false.
 		if !d.Has(dataArg) {
@@ -50,6 +50,6 @@ func IfElseData(t, f Processor, dataArg string) Processor {
 
 // IfData runs `Processor` p if the argument name is present in Data.
 // If the argument's type is a boolean, then it also must not be false.
-func IfData(p Processor, dataArg string) Processor {
-	return IfElseData(p, nil, dataArg)
+func IfData(dataArg string, p Processor) Processor {
+	return IfElseData(dataArg, p, nil)
 }

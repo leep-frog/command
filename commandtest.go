@@ -53,6 +53,8 @@ type ExecuteTestCase struct {
 	Node *Node
 	// Args is the list of arguments provided to the command.
 	Args []string
+	// Env is the map of os environment variables to stub. If nil, this is not stubbed.
+	Env map[string]string
 
 	// WantData is the `Data` object that should be constructed.
 	WantData *Data
@@ -66,6 +68,9 @@ type ExecuteTestCase struct {
 	WantStderr string
 	// WantErr is the error that should be returned.
 	WantErr error
+	// WantEnv is the expected map of os environment variables. This is only
+	// checked if Env is not nil.
+	WantEnv map[string]string
 
 	// Whether or not to test actual input against wantInput.
 	testInput bool
@@ -81,6 +86,17 @@ type ExecuteTestCase struct {
 
 	// RunResponses are the stubbed responses to return from exec.Cmd.Run.
 	RunResponses []*FakeRun
+}
+
+func (etc *ExecuteTestCase) getEnv() map[string]string {
+	if etc.Env == nil {
+		etc.Env = map[string]string{}
+	}
+	return etc.Env
+}
+
+func (etc *ExecuteTestCase) getWantEnv() map[string]string {
+	return etc.WantEnv
 }
 
 // FakeRun is a fake bash run.
@@ -119,18 +135,40 @@ func UsageTest(t *testing.T, utc *UsageTestCase) {
 }
 
 type RunNodeTestCase struct {
+	// Node is the root `Node` of the command to test.
 	Node *Node
+	// Args is the list of arguments provided to the command.
+	Args []string
+	// Env is the map of os environment variables to stub. If nil, this is not stubbed.
+	Env map[string]string
 
-	Args     []string
-	WantData *Data
-	WantErr  error
-
-	WantStdout string
-	WantStderr string
-
+	// WantFileContents contains the data that should be sent to the
+	// bash file that will be executed.
 	WantFileContents []string
-
+	// WantStdout is the data that should be sent to stdout.
+	WantStdout string
+	// WantStderr is the data that should be sent to stderr.
+	WantStderr string
+	// WantErr is the error that should be returned.
+	WantErr error
+	// WantData is the `Data` object that should be constructed.
+	WantData *Data
+	// SkipDataCheck skips the check on `WantData`.
 	SkipDataCheck bool
+	// WantEnv is the expected map of os environment variables. This is only
+	// checked if Env is not nil.
+	WantEnv map[string]string
+}
+
+func (rtc *RunNodeTestCase) getEnv() map[string]string {
+	if rtc.Env == nil {
+		rtc.Env = map[string]string{}
+	}
+	return rtc.Env
+}
+
+func (rtc *RunNodeTestCase) getWantEnv() map[string]string {
+	return rtc.WantEnv
 }
 
 func RunNodeTest(t *testing.T, rtc *RunNodeTestCase) {
@@ -157,8 +195,10 @@ func RunNodeTest(t *testing.T, rtc *RunNodeTestCase) {
 	}
 
 	tc := &testContext{
-		data: &Data{},
-		fo:   NewFakeOutput(),
+		prefix:   prefix,
+		testCase: rtc,
+		data:     &Data{},
+		fo:       NewFakeOutput(),
 	}
 	t.Cleanup(tc.fo.Close)
 
@@ -166,6 +206,7 @@ func RunNodeTest(t *testing.T, rtc *RunNodeTestCase) {
 		&outputTester{rtc.WantStdout, rtc.WantStderr},
 		&errorTester{rtc.WantErr},
 		checkIf(!rtc.SkipDataCheck, &dataTester{rtc.WantData}),
+		&envTester{},
 	}
 
 	for _, tester := range testers {
@@ -174,7 +215,7 @@ func RunNodeTest(t *testing.T, rtc *RunNodeTestCase) {
 	tc.err = runNodes(rtc.Node, tc.fo, tc.data, rtc.Args)
 
 	for _, tester := range testers {
-		tester.check(t, prefix, tc)
+		tester.check(t, tc)
 	}
 
 	var fileContents []string
@@ -211,8 +252,10 @@ func ExecuteTest(t *testing.T, etc *ExecuteTestCase) {
 	}
 
 	tc := &testContext{
-		data: &Data{},
-		fo:   NewFakeOutput(),
+		prefix:   fmt.Sprintf("Execute(%v)", etc.Args),
+		testCase: etc,
+		data:     &Data{},
+		fo:       NewFakeOutput(),
 	}
 	t.Cleanup(tc.fo.Close)
 	args := etc.Args
@@ -231,6 +274,7 @@ func ExecuteTest(t *testing.T, etc *ExecuteTestCase) {
 		&runResponseTester{etc.RunResponses, etc.WantRunContents, nil},
 		checkIf(!etc.SkipDataCheck, &dataTester{etc.WantData}),
 		checkIf(etc.testInput, &inputTester{etc.wantInput}),
+		&envTester{},
 	}
 
 	for _, tester := range testers {
@@ -244,9 +288,8 @@ func ExecuteTest(t *testing.T, etc *ExecuteTestCase) {
 
 	tc.eData, tc.err = execute(n, tc.input, tc.fo, tc.data)
 
-	prefix := fmt.Sprintf("Execute(%v)", etc.Args)
 	for _, tester := range testers {
-		tester.check(t, prefix, tc)
+		tester.check(t, tc)
 	}
 }
 
@@ -291,6 +334,8 @@ type CompleteTestCase struct {
 	Args string
 	// PassthroughArgs are the passthrough args provided to the command autocompletion.
 	PassthroughArgs []string
+	// Env is the map of os environment variables to stub. If nil, this is not stubbed.
+	Env map[string]string
 
 	// Want is the expected set of completion suggestions.
 	Want []string
@@ -300,12 +345,26 @@ type CompleteTestCase struct {
 	WantData *Data
 	// SkipDataCheck skips the check on `WantData`.
 	SkipDataCheck bool
+	// WantEnv is the expected map of os environment variables. This is only
+	// checked if Env is not nil.
+	WantEnv map[string]string
 
 	// RunResponses are the stubbed responses to return from exec.Cmd.Run.
 	RunResponses []*FakeRun
 
 	// WantRunContents are the set of commands that should have been run in bash.
 	WantRunContents [][]string
+}
+
+func (ctc *CompleteTestCase) getEnv() map[string]string {
+	if ctc.Env == nil {
+		ctc.Env = map[string]string{}
+	}
+	return ctc.Env
+}
+
+func (ctc *CompleteTestCase) getWantEnv() map[string]string {
+	return ctc.WantEnv
 }
 
 // CompleteTest runs a test on command autocompletion.
@@ -317,7 +376,9 @@ func CompleteTest(t *testing.T, ctc *CompleteTestCase) {
 	}
 
 	tc := &testContext{
-		data: &Data{},
+		prefix:   fmt.Sprintf("Autocomplete(%v)", ctc.Args),
+		testCase: ctc,
+		data:     &Data{},
 	}
 
 	testers := []commandTester{
@@ -325,6 +386,7 @@ func CompleteTest(t *testing.T, ctc *CompleteTestCase) {
 		&errorTester{ctc.WantErr},
 		&autocompleteTester{ctc.Want},
 		checkIf(!ctc.SkipDataCheck, &dataTester{ctc.WantData}),
+		&envTester{},
 	}
 
 	for _, tester := range testers {
@@ -333,13 +395,15 @@ func CompleteTest(t *testing.T, ctc *CompleteTestCase) {
 
 	tc.autocompleteSuggestions, tc.err = autocomplete(ctc.Node, ctc.Args, ctc.PassthroughArgs, tc.data)
 
-	prefix := fmt.Sprintf("Autocomplete(%v)", ctc.Args)
 	for _, tester := range testers {
-		tester.check(t, prefix, tc)
+		tester.check(t, tc)
 	}
 }
 
 type testContext struct {
+	prefix   string
+	testCase testCase
+
 	data  *Data
 	fo    *FakeOutput
 	input *Input
@@ -352,14 +416,19 @@ type testContext struct {
 
 type commandTester interface {
 	setup(*testing.T, *testContext)
-	check(*testing.T, string, *testContext)
+	check(*testing.T, *testContext)
+}
+
+type testCase interface {
+	getEnv() map[string]string
+	getWantEnv() map[string]string
 }
 
 type noOpTester struct{}
 
-func (*noOpTester) setup(t *testing.T, tc *testContext) {}
+func (*noOpTester) setup(*testing.T, *testContext) {}
 
-func (*noOpTester) check(t *testing.T, prefix string, tc *testContext) {}
+func (*noOpTester) check(t *testing.T, tc *testContext) {}
 
 func checkIf(cond bool, ct commandTester) commandTester {
 	if cond {
@@ -372,16 +441,30 @@ type dataTester struct {
 	want *Data
 }
 
-func (*dataTester) setup(t *testing.T, tc *testContext) {}
+func (*dataTester) setup(*testing.T, *testContext) {}
 
-func (dt *dataTester) check(t *testing.T, prefix string, tc *testContext) {
+func (dt *dataTester) check(t *testing.T, tc *testContext) {
 	t.Helper()
 	if dt.want == nil {
 		dt.want = &Data{}
 	}
 
 	if diff := cmp.Diff(dt.want, tc.data, cmpopts.EquateEmpty(), cmpopts.IgnoreUnexported(Data{})); diff != "" {
-		t.Errorf("%s produced incorrect Data (-want, +got):\n%s", prefix, diff)
+		t.Errorf("%s produced incorrect Data (-want, +got):\n%s", tc.prefix, diff)
+	}
+}
+
+type envTester struct{}
+
+func (et *envTester) setup(t *testing.T, tc *testContext) {
+	StubEnv(t, tc.testCase.getEnv())
+}
+
+func (et *envTester) check(t *testing.T, tc *testContext) {
+	t.Helper()
+
+	if diff := cmp.Diff(tc.testCase.getWantEnv(), tc.testCase.getEnv(), cmpopts.EquateEmpty()); diff != "" {
+		t.Errorf("%s resulted in incorrect env (-want, +got):\n%s", tc.prefix, diff)
 	}
 }
 
@@ -390,14 +473,14 @@ type outputTester struct {
 	wantStderr string
 }
 
-func (*outputTester) setup(t *testing.T, tc *testContext) {}
-func (ot *outputTester) check(t *testing.T, prefix string, tc *testContext) {
+func (*outputTester) setup(*testing.T, *testContext) {}
+func (ot *outputTester) check(t *testing.T, tc *testContext) {
 	t.Helper()
 	if diff := cmp.Diff(ot.wantStdout, tc.fo.GetStdout(), cmpopts.EquateEmpty()); diff != "" {
-		t.Errorf("%s sent wrong data to stdout (-want, +got):\n%s", prefix, diff)
+		t.Errorf("%s sent wrong data to stdout (-want, +got):\n%s", tc.prefix, diff)
 	}
 	if diff := cmp.Diff(ot.wantStderr, tc.fo.GetStderr(), cmpopts.EquateEmpty()); diff != "" {
-		t.Errorf("%s sent wrong data to stderr (-want, +got):\n%s", prefix, diff)
+		t.Errorf("%s sent wrong data to stderr (-want, +got):\n%s", tc.prefix, diff)
 	}
 }
 
@@ -405,14 +488,14 @@ type inputTester struct {
 	want *Input
 }
 
-func (*inputTester) setup(t *testing.T, tc *testContext) {}
-func (it *inputTester) check(t *testing.T, prefix string, tc *testContext) {
+func (*inputTester) setup(*testing.T, *testContext) {}
+func (it *inputTester) check(t *testing.T, tc *testContext) {
 	t.Helper()
 	if it.want == nil {
 		it.want = &Input{}
 	}
 	if diff := cmp.Diff(it.want, tc.input, cmpopts.EquateEmpty(), cmp.AllowUnexported(Input{}, inputArg{})); diff != "" {
-		t.Errorf("%s incorrectly modified input (-want, +got):\n%s", prefix, diff)
+		t.Errorf("%s incorrectly modified input (-want, +got):\n%s", tc.prefix, diff)
 	}
 }
 
@@ -468,7 +551,7 @@ func (rrt *runResponseTester) setup(t *testing.T, tc *testContext) {
 	t.Cleanup(func() { run = oldRun })
 }
 
-func (rrt *runResponseTester) check(t *testing.T, prefix string, tc *testContext) {
+func (rrt *runResponseTester) check(t *testing.T, tc *testContext) {
 	t.Helper()
 	if len(rrt.runResponses) > 0 {
 		t.Errorf("unused run responses: %v", rrt.runResponses)
@@ -476,7 +559,7 @@ func (rrt *runResponseTester) check(t *testing.T, prefix string, tc *testContext
 
 	// Check proper commands were run.
 	if diff := cmp.Diff(rrt.want, rrt.gotRunContents); diff != "" {
-		t.Errorf("%s produced unexpected bash commands:\n%s", prefix, diff)
+		t.Errorf("%s produced unexpected bash commands:\n%s", tc.prefix, diff)
 	}
 }
 
@@ -484,11 +567,11 @@ type errorTester struct {
 	want error
 }
 
-func (*errorTester) setup(t *testing.T, tc *testContext) {}
-func (et *errorTester) check(t *testing.T, prefix string, tc *testContext) {
+func (*errorTester) setup(*testing.T, *testContext) {}
+func (et *errorTester) check(t *testing.T, tc *testContext) {
 	t.Helper()
 
-	CmpError(t, prefix, et.want, tc.err)
+	CmpError(t, tc.prefix, et.want, tc.err)
 }
 
 func CmpError(t *testing.T, prefix string, wantErr, err error) {
@@ -510,8 +593,8 @@ type executeDataTester struct {
 	want *ExecuteData
 }
 
-func (*executeDataTester) setup(t *testing.T, tc *testContext) {}
-func (et *executeDataTester) check(t *testing.T, prefix string, tc *testContext) {
+func (*executeDataTester) setup(*testing.T, *testContext) {}
+func (et *executeDataTester) check(t *testing.T, tc *testContext) {
 	t.Helper()
 
 	if et.want == nil {
@@ -521,7 +604,7 @@ func (et *executeDataTester) check(t *testing.T, prefix string, tc *testContext)
 		tc.eData = &ExecuteData{}
 	}
 	if diff := cmp.Diff(et.want, tc.eData, cmpopts.IgnoreFields(ExecuteData{}, "Executor")); diff != "" {
-		t.Errorf("%s returned unexpected ExecuteData (-want, +got):\n%s", prefix, diff)
+		t.Errorf("%s returned unexpected ExecuteData (-want, +got):\n%s", tc.prefix, diff)
 	}
 }
 
@@ -529,12 +612,12 @@ type autocompleteTester struct {
 	want []string
 }
 
-func (*autocompleteTester) setup(t *testing.T, tc *testContext) {}
-func (at *autocompleteTester) check(t *testing.T, prefix string, tc *testContext) {
+func (*autocompleteTester) setup(*testing.T, *testContext) {}
+func (at *autocompleteTester) check(t *testing.T, tc *testContext) {
 	t.Helper()
 
 	if diff := cmp.Diff(at.want, tc.autocompleteSuggestions); diff != "" {
-		t.Errorf("%s produced incorrect completions (-want, +got):\n%s", prefix, diff)
+		t.Errorf("%s produced incorrect completions (-want, +got):\n%s", tc.prefix, diff)
 	}
 }
 

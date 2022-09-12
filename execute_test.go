@@ -4916,7 +4916,7 @@ func TestExecute(t *testing.T) {
 				Args: []string{"abc"},
 				Node: SerialNodes(
 					OptionalArg[string]("s", testDesc),
-					IfData(printlnNode(true, "hello"), "s"),
+					IfData("s", printlnNode(true, "hello")),
 				),
 				wantInput: &Input{
 					args: []*inputArg{
@@ -4935,7 +4935,7 @@ func TestExecute(t *testing.T) {
 				Args: []string{"true"},
 				Node: SerialNodes(
 					OptionalArg[bool]("b", testDesc),
-					IfData(printlnNode(true, "hello"), "b"),
+					IfData("b", printlnNode(true, "hello")),
 				),
 				wantInput: &Input{
 					args: []*inputArg{
@@ -4953,7 +4953,7 @@ func TestExecute(t *testing.T) {
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
 					OptionalArg[string]("s", testDesc),
-					IfData(printlnNode(true, "hello"), "s"),
+					IfData("s", printlnNode(true, "hello")),
 				),
 			},
 		},
@@ -4963,7 +4963,7 @@ func TestExecute(t *testing.T) {
 				Args: []string{"false"},
 				Node: SerialNodes(
 					OptionalArg[bool]("b", testDesc),
-					IfData(printlnNode(true, "hello"), "b"),
+					IfData("b", printlnNode(true, "hello")),
 				),
 				wantInput: &Input{
 					args: []*inputArg{
@@ -4983,9 +4983,9 @@ func TestExecute(t *testing.T) {
 				Node: SerialNodes(
 					OptionalArg[string]("s", testDesc),
 					IfElseData(
+						"s",
 						printlnNode(true, "hello"),
 						printlnNode(true, "goodbye"),
-						"s",
 					),
 				),
 				wantInput: &Input{
@@ -5006,9 +5006,9 @@ func TestExecute(t *testing.T) {
 				Node: SerialNodes(
 					OptionalArg[bool]("b", testDesc),
 					IfElseData(
+						"b",
 						printlnNode(true, "hello"),
 						printlnNode(true, "goodbye"),
-						"b",
 					),
 				),
 				wantInput: &Input{
@@ -5028,9 +5028,9 @@ func TestExecute(t *testing.T) {
 				Node: SerialNodes(
 					OptionalArg[string]("s", testDesc),
 					IfElseData(
+						"s",
 						printlnNode(true, "hello"),
 						printlnNode(true, "goodbye"),
-						"s",
 					),
 				),
 				WantStdout: "goodbye\n",
@@ -5043,9 +5043,9 @@ func TestExecute(t *testing.T) {
 				Node: SerialNodes(
 					OptionalArg[bool]("b", testDesc),
 					IfElseData(
+						"b",
 						printlnNode(true, "hello"),
 						printlnNode(true, "goodbye"),
-						"b",
 					),
 				),
 				WantStdout: "goodbye\n",
@@ -6013,6 +6013,7 @@ func TestComplete(t *testing.T) {
 					"int_operator.go",
 					"option.go",
 					"os.go",
+					"osenv.go",
 					"output.go",
 					"output_test.go",
 					"prompt.go",
