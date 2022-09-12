@@ -271,8 +271,9 @@ func (*Debugger) Name() string    { return "leep_debug" }
 
 func (*Debugger) Node() *command.Node {
 	return command.SerialNodes(
+		// Get the environment variable
 		command.EnvArg(command.DebugEnvVar),
-
+		// Either set or unset the environment variable.
 		command.IfElseData(
 			command.DebugEnvVar,
 			command.ExecutorNode(func(o command.Output, d *command.Data) {
