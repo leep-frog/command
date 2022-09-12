@@ -291,14 +291,15 @@ func runNodes(n *Node, o Output, d *Data, args []string) error {
 		Branches: map[string]*Node{
 			"execute": exNode,
 			"usage": SerialNodes(
-				ExecutorNode(func(o Output, d *Data) {
+				&ExecutorProcessor{func(o Output, d *Data) error {
 					o.Stdoutln(GetUsage(n).String())
-				}),
+					return nil
+				}},
 			),
 			"autocomplete": SerialNodes(
 				// Don't need comp point because input will have already been trimmed by goleep processing.
 				Arg[string](PassthroughArgs, ""),
-				ExecuteErrNode(func(o Output, d *Data) error {
+				&ExecutorProcessor{func(o Output, d *Data) error {
 					sl, err := Autocomplete(n, d.String(PassthroughArgs), nil)
 					if err != nil {
 						return o.Stderrln(err)
@@ -307,7 +308,7 @@ func runNodes(n *Node, o Output, d *Data, args []string) error {
 						o.Stdoutln(s)
 					}
 					return nil
-				})),
+				}}),
 		},
 		Default:           n,
 		DefaultCompletion: true,

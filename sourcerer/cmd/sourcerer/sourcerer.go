@@ -279,14 +279,16 @@ func (*Debugger) Node() *command.Node {
 		// Either set or unset the environment variable.
 		command.IfElseData(
 			command.DebugEnvVar,
-			command.ExecutorNode(func(o command.Output, d *command.Data) {
+			&command.ExecutorProcessor{F: func(o command.Output, d *command.Data) error {
 				command.OSUnsetenv(command.DebugEnvVar)
 				o.Stdoutln("Exiting debug mode.")
-			}),
-			command.ExecutorNode(func(o command.Output, d *command.Data) {
+				return nil
+			}},
+			&command.ExecutorProcessor{F: func(o command.Output, d *command.Data) error {
 				command.OSSetenv(command.DebugEnvVar, "1")
 				o.Stdoutln("Entering debug mode.")
-			}),
+				return nil
+			}},
 		),
 	)
 }

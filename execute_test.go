@@ -1590,9 +1590,9 @@ func TestExecute(t *testing.T) {
 		{
 			name: "executor error is returned",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(ListArg[int]("il", testDesc, 2, 0), Arg[string]("s", testDesc), ListArg[float64]("fl", testDesc, 1, 2), ExecuteErrNode(func(o Output, d *Data) error {
+				Node: SerialNodes(ListArg[int]("il", testDesc, 2, 0), Arg[string]("s", testDesc), ListArg[float64]("fl", testDesc, 1, 2), &ExecutorProcessor{func(o Output, d *Data) error {
 					return o.Stderrf("bad news bears")
-				})),
+				}}),
 				Args: []string{"0", "1", "two", "0.3", "-4"},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -6922,27 +6922,28 @@ func TestComplete(t *testing.T) {
 
 func printNode(s string) *Node {
 	return &Node{
-		Processor: ExecutorNode(func(output Output, _ *Data) {
+		Processor: &ExecutorProcessor{func(output Output, _ *Data) error {
 			output.Stdout(s)
-		}),
+			return nil
+		}},
 	}
 }
 
 func printlnNode(stdout bool, a ...interface{}) *Node {
 	return &Node{
-		Processor: ExecuteErrNode(func(output Output, _ *Data) error {
+		Processor: &ExecutorProcessor{func(output Output, _ *Data) error {
 			if !stdout {
 				return output.Stderrln(a...)
 			}
 			output.Stdoutln(a...)
 			return nil
-		}),
+		}},
 	}
 }
 
 func printArgsNode() *Node {
 	return &Node{
-		Processor: ExecutorNode(func(output Output, data *Data) {
+		Processor: &ExecutorProcessor{func(output Output, data *Data) error {
 			var keys []string
 			for k := range data.Values {
 				keys = append(keys, k)
@@ -6951,7 +6952,8 @@ func printArgsNode() *Node {
 			for _, k := range keys {
 				output.Stdoutf("%s: %v\n", k, data.Values[k])
 			}
-		}),
+			return nil
+		}},
 	}
 }
 
@@ -6979,9 +6981,10 @@ func TestRunNodes(t *testing.T) {
 		Description("Adds A and B"),
 		Arg[int]("A", "The first value"),
 		Arg[int]("B", "The second value"),
-		ExecutorNode(func(o Output, d *Data) {
+		&ExecutorProcessor{func(o Output, d *Data) error {
 			o.Stdoutln(d.Int("A") + d.Int("B"))
-		}),
+			return nil
+		}},
 	)
 	for _, test := range []struct {
 		name string

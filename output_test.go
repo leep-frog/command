@@ -16,7 +16,7 @@ func TestOutput(t *testing.T) {
 		{
 			name: "output formats when interfaces provided",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(ExecutorNode(func(o Output, d *Data) {
+				Node: SerialNodes(&ExecutorProcessor{func(o Output, d *Data) error {
 					t := "there"
 					o.Stdout("hello %s")
 					o.Stdoutf("hello %s", t)
@@ -28,7 +28,8 @@ func TestOutput(t *testing.T) {
 					// Make sure we don't format the %s from the error
 					o.Annotate(fmt.Errorf("bad news bears %%s"), "attention animals")
 					o.Annotatef(fmt.Errorf("rough news rabbits %%s"), "attention %d dalmations", 101)
-				})),
+					return nil
+				}}),
 				WantStdout: strings.Join([]string{
 					"hello %s",
 					"hello there",
@@ -45,7 +46,7 @@ func TestOutput(t *testing.T) {
 		{
 			name: "output terminates on error, but not on nil",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(ExecutorNode(func(o Output, d *Data) {
+				Node: SerialNodes(&ExecutorProcessor{func(o Output, d *Data) error {
 					o.Stdout("hello")
 					o.Stderr("there")
 
@@ -58,7 +59,8 @@ func TestOutput(t *testing.T) {
 
 					o.Stdout("ignore")
 					o.Stderr("this")
-				})),
+					return nil
+				}}),
 				WantStdout: strings.Join([]string{
 					"hello",
 					"general",
@@ -74,7 +76,7 @@ func TestOutput(t *testing.T) {
 		{
 			name: "Terminatef terminates",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(ExecutorNode(func(o Output, d *Data) {
+				Node: SerialNodes(&ExecutorProcessor{func(o Output, d *Data) error {
 					o.Stdout("hello")
 					o.Stderr("there")
 
@@ -82,7 +84,8 @@ func TestOutput(t *testing.T) {
 
 					o.Stdout("general")
 					o.Stderr("kenobi")
-				})),
+					return nil
+				}}),
 				WantStdout: "hello",
 				WantStderr: "thereahoy matey",
 				WantErr:    fmt.Errorf("ahoy matey"),
@@ -91,7 +94,7 @@ func TestOutput(t *testing.T) {
 		{
 			name: "Tannotate terminates",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(ExecutorNode(func(o Output, d *Data) {
+				Node: SerialNodes(&ExecutorProcessor{func(o Output, d *Data) error {
 					o.Stdout("hello")
 					o.Stderr("there")
 
@@ -104,7 +107,8 @@ func TestOutput(t *testing.T) {
 
 					o.Stdout("ignore")
 					o.Stderr("us")
-				})),
+					return nil
+				}}),
 				WantStdout: "hellogeneral",
 				WantStderr: "therekenobibut: do mind me\n",
 				WantErr:    fmt.Errorf("but: do mind me"),
@@ -113,7 +117,7 @@ func TestOutput(t *testing.T) {
 		{
 			name: "Tannotate terminates",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(ExecutorNode(func(o Output, d *Data) {
+				Node: SerialNodes(&ExecutorProcessor{func(o Output, d *Data) error {
 					o.Stdout("hello")
 					o.Stderr("there")
 
@@ -126,7 +130,8 @@ func TestOutput(t *testing.T) {
 
 					o.Stdout("ignore")
 					o.Stderr("us")
-				})),
+					return nil
+				}}),
 				WantStdout: "hellogeneral",
 				WantStderr: "therekenobihowever: do mind me\n",
 				WantErr:    fmt.Errorf("however: do mind me"),

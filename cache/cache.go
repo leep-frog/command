@@ -45,14 +45,15 @@ func (c *Cache) Node() *command.Node {
 		Branches: map[string]*command.Node{
 			"setdir": command.SerialNodes(
 				command.FileNode("DIR", "Directory in which to store data", command.IsDir()),
-				command.ExecutorNode(func(o command.Output, d *command.Data) {
+				&command.ExecutorProcessor{F: func(o command.Output, d *command.Data) error {
 					c.Dir = d.String("DIR")
 					c.changed = true
-				}),
+					return nil
+				}},
 			),
 			"get": command.SerialNodes(
 				arg,
-				command.ExecuteErrNode(func(o command.Output, d *command.Data) error {
+				&command.ExecutorProcessor{F: func(o command.Output, d *command.Data) error {
 					s, ok, err := c.Get(d.String(arg.Name()))
 					if err != nil {
 						return o.Err(err)
@@ -63,23 +64,23 @@ func (c *Cache) Node() *command.Node {
 						o.Stdoutln(s)
 					}
 					return nil
-				}),
+				}},
 			),
 			"put": command.SerialNodes(
 				arg,
 				command.ListArg[string]("DATA", "Data to store", 1, command.UnboundedList),
-				command.ExecuteErrNode(func(o command.Output, d *command.Data) error {
+				&command.ExecutorProcessor{F: func(o command.Output, d *command.Data) error {
 					return o.Err(c.Put(d.String(arg.Name()), strings.Join(d.StringList("DATA"), " ")))
-				}),
+				}},
 			),
 			"delete": command.SerialNodes(
 				arg,
-				command.ExecuteErrNode(func(o command.Output, d *command.Data) error {
+				&command.ExecutorProcessor{F: func(o command.Output, d *command.Data) error {
 					return o.Err(c.Delete(d.String(arg.Name())))
-				}),
+				}},
 			),
 			"list": command.SerialNodes(
-				command.ExecuteErrNode(func(o command.Output, d *command.Data) error {
+				&command.ExecutorProcessor{F: func(o command.Output, d *command.Data) error {
 					r, err := c.List()
 					if err != nil {
 						return o.Err(err)
@@ -89,7 +90,7 @@ func (c *Cache) Node() *command.Node {
 						o.Stdoutln(s)
 					}
 					return nil
-				}),
+				}},
 			),
 		},
 	})

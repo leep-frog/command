@@ -457,9 +457,10 @@ func TestCacheExecution(t *testing.T) {
 			etc: &ExecuteTestCase{
 				Node: CacheNode("money", cc, SerialNodes(
 					Arg[string]("s", testDesc),
-					ExecutorNode(func(output Output, _ *Data) {
+					&ExecutorProcessor{func(output Output, _ *Data) error {
 						output.Stdout("We made it!")
-					}),
+						return nil
+					}},
 				)),
 				Args: []string{"dollar"},
 				WantData: &Data{Values: map[string]interface{}{

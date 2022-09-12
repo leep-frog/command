@@ -63,7 +63,7 @@ func (mfc *myFirstCommand) Node() *command.Node {
 		// The logic of your function!
 		// ExecutorNode doesn't deal with errors. If your command involves potential
 		// errors, use ExecuteErrNode instead.
-		command.ExecutorNode(func(o command.Output, d *command.Data) {
+		&command.ExecutorProcessor{F: func(o command.Output, d *command.Data) error {
 			name := nameArg.Get(d)
 			n := nArg.Get(d)
 			for i := 0; i < n; i++ {
@@ -73,6 +73,7 @@ func (mfc *myFirstCommand) Node() *command.Node {
 					o.Stdoutf("Hello, %s.\n", name)
 				}
 			}
-		}),
+			return nil
+		}},
 	)
 }

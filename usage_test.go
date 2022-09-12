@@ -175,7 +175,7 @@ func TestUsage(t *testing.T) {
 						"charlie": AsNode(&BranchNode{
 							Branches: map[string]*Node{
 								"brown":  SerialNodes(Description("learn about cartoons"), Arg[float64]("FLOATER", "something bouyant")),
-								"yellow": SerialNodes(ExecutorNode(nil)),
+								"yellow": SerialNodes(&ExecutorProcessor{}),
 							},
 						}),
 					},
@@ -218,7 +218,7 @@ func TestUsage(t *testing.T) {
 						"charlie": AsNode(&BranchNode{
 							Branches: map[string]*Node{
 								"brown":  SerialNodes(Description("learn about cartoons"), Arg[float64]("FLOATER", "something bouyant")),
-								"yellow": SerialNodes(ExecutorNode(nil)),
+								"yellow": SerialNodes(&ExecutorProcessor{}),
 							},
 						}),
 					},
@@ -265,7 +265,7 @@ func TestUsage(t *testing.T) {
 						"charlie": AsNode(&BranchNode{
 							Branches: map[string]*Node{
 								"brown":  SerialNodes(Description("learn about cartoons"), Arg[float64]("FLOATER", "something bouyant")),
-								"yellow": SerialNodes(ExecutorNode(nil)),
+								"yellow": SerialNodes(&ExecutorProcessor{}),
 							},
 						}),
 					},

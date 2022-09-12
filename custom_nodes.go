@@ -42,36 +42,22 @@ func SerialNodes(p Processor, ps ...Processor) *Node {
 	return root
 }
 
-type executor struct {
-	executor func(Output, *Data) error
+// ExecuteErrNode creates a simple execution node from the provided error-able function.
+type ExecutorProcessor struct {
+	F func(Output, *Data) error
 }
 
-func (e *executor) Execute(_ *Input, _ Output, _ *Data, eData *ExecuteData) error {
-	eData.Executor = append(eData.Executor, e.executor)
+func (e *ExecutorProcessor) Execute(_ *Input, _ Output, _ *Data, eData *ExecuteData) error {
+	eData.Executor = append(eData.Executor, e.F)
 	return nil
 }
 
-func (e *executor) Complete(*Input, *Data) (*Completion, error) {
+func (e *ExecutorProcessor) Complete(*Input, *Data) (*Completion, error) {
 	return nil, nil
 }
 
-func (e *executor) Usage(u *Usage) {
+func (e *ExecutorProcessor) Usage(u *Usage) {
 	return
-}
-
-// ExecuteErrNode creates a simple execution node from the provided error-able function.
-func ExecuteErrNode(f func(Output, *Data) error) Processor {
-	return &executor{
-		executor: f,
-	}
-}
-
-// ExecturoNode creates a simple execution node from the provided no-error function.
-func ExecutorNode(f func(Output, *Data)) Processor {
-	return ExecuteErrNode(func(o Output, d *Data) error {
-		f(o, d)
-		return nil
-	})
 }
 
 // BranchNode implements a node that branches on specific string arguments.

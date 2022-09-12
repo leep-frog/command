@@ -98,7 +98,7 @@ func shortcutListArg(name string, sc ShortcutCLI) Processor {
 
 func shortcutSearcher(name string, sc ShortcutCLI, n *Node) *Node {
 	regexArg := ListArg[string]("regexp", hiddenNodeDesc, 1, UnboundedList, ValidatorList(IsRegex()))
-	return SerialNodes(regexArg, ExecutorNode(func(output Output, data *Data) {
+	return SerialNodes(regexArg, &ExecutorProcessor{func(output Output, data *Data) error {
 		rs := data.RegexpList("regexp")
 		var as []string
 		for k, v := range getShortcutMap(sc, name) {
@@ -117,11 +117,12 @@ func shortcutSearcher(name string, sc ShortcutCLI, n *Node) *Node {
 				output.Stdoutln(a)
 			}
 		}
-	}))
+		return nil
+	}})
 }
 
 func shortcutLister(name string, sc ShortcutCLI, n *Node) *Node {
-	return SerialNodes(ExecutorNode(func(output Output, data *Data) {
+	return SerialNodes(&ExecutorProcessor{func(output Output, data *Data) error {
 		var r []string
 		for k, v := range getShortcutMap(sc, name) {
 			r = append(r, shortcutStr(k, v))
@@ -130,11 +131,12 @@ func shortcutLister(name string, sc ShortcutCLI, n *Node) *Node {
 		for _, v := range r {
 			output.Stdoutln(v)
 		}
-	}))
+		return nil
+	}})
 }
 
 func shortcutDeleter(name string, sc ShortcutCLI, n *Node) *Node {
-	return SerialNodes(shortcutListArg(name, sc), ExecuteErrNode(func(output Output, data *Data) error {
+	return SerialNodes(shortcutListArg(name, sc), &ExecutorProcessor{func(output Output, data *Data) error {
 		if len(getShortcutMap(sc, name)) == 0 {
 			return output.Stderrln("Shortcut group has no shortcuts yet.")
 		}
@@ -144,7 +146,7 @@ func shortcutDeleter(name string, sc ShortcutCLI, n *Node) *Node {
 			}
 		}
 		return nil
-	}))
+	}})
 }
 
 func shortcutStr(shortcut string, values []string) string {
@@ -152,7 +154,7 @@ func shortcutStr(shortcut string, values []string) string {
 }
 
 func shortcutGetter(name string, sc ShortcutCLI, n *Node) *Node {
-	return SerialNodes(shortcutListArg(name, sc), ExecuteErrNode(func(output Output, data *Data) error {
+	return SerialNodes(shortcutListArg(name, sc), &ExecutorProcessor{func(output Output, data *Data) error {
 		if getShortcutMap(sc, name) == nil {
 			return output.Stderrf("No shortcuts exist for shortcut type %q\n", name)
 		}
@@ -165,7 +167,7 @@ func shortcutGetter(name string, sc ShortcutCLI, n *Node) *Node {
 			}
 		}
 		return nil
-	}))
+	}})
 }
 
 type executeShortcut struct {
