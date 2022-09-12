@@ -6100,17 +6100,43 @@ func TestComplete(t *testing.T) {
 		},
 		// BranchNode completion tests.
 		{
-			name: "completes branch options",
+			name: "completes branch name options",
 			ctc: &CompleteTestCase{
 				Node: BranchNode(map[string]*Node{
 					"a":     {},
 					"alpha": SerialNodes(OptionalArg[string]("hello", testDesc, SimpleCompleter[string]("other", "stuff"))),
 					"bravo": {},
 				}, SerialNodes(ListArg[string]("default", testDesc, 1, 3, SimpleCompleter[[]string]("default", "command", "opts")))),
-				Want: []string{"a", "alpha", "bravo", "command", "default", "opts"},
+				Want: []string{"a", "alpha", "bravo"},
+			},
+		},
+		{
+			name: "completes default node options",
+			ctc: &CompleteTestCase{
+				Node: BranchNode(map[string]*Node{
+					"a":     {},
+					"alpha": SerialNodes(OptionalArg[string]("hello", testDesc, SimpleCompleter[string]("other", "stuff"))),
+					"bravo": {},
+				}, SerialNodes(ListArg[string]("default", testDesc, 1, 3, SimpleCompleter[[]string]("default", "command", "opts"))),
+					DontCompleteSubcommands(),
+				),
+				Want: []string{"command", "default", "opts"},
 				WantData: &Data{Values: map[string]interface{}{
 					"default": []string{""},
 				}},
+			},
+		},
+		{
+			name: "no completions if default node is nil",
+			ctc: &CompleteTestCase{
+				Node: BranchNode(map[string]*Node{
+					"a":     {},
+					"alpha": SerialNodes(OptionalArg[string]("hello", testDesc, SimpleCompleter[string]("other", "stuff"))),
+					"bravo": {},
+				}, nil,
+					DontCompleteSubcommands(),
+				),
+				WantErr: fmt.Errorf("Unprocessed extra args: []"),
 			},
 		},
 		{
@@ -6169,7 +6195,7 @@ func TestComplete(t *testing.T) {
 			},
 		},
 		{
-			name: "branch node returns default node error and branch completions",
+			name: "branch node returns only branch completions",
 			ctc: &CompleteTestCase{
 				Node: BranchNode(map[string]*Node{
 					"a":     {},
@@ -6178,9 +6204,8 @@ func TestComplete(t *testing.T) {
 				}, SerialNodes(SimpleProcessor(nil, func(i *Input, d *Data) (*Completion, error) {
 					return nil, fmt.Errorf("bad news bears")
 				}))),
-				Args:    "cmd ",
-				Want:    []string{"a", "alpha", "bravo"},
-				WantErr: fmt.Errorf("bad news bears"),
+				Args: "cmd ",
+				Want: []string{"a", "alpha", "bravo"},
 			},
 		},
 		{
@@ -6190,9 +6215,11 @@ func TestComplete(t *testing.T) {
 					"a":     {},
 					"alpha": SerialNodes(OptionalArg[string]("hello", testDesc, SimpleCompleter[string]("other", "stuff"))),
 					"bravo": {},
-				}, SerialNodes(ListArg[string]("default", testDesc, 1, 3, SimpleCompleter[[]string]("default", "command", "opts", "ahhhh")))),
+				}, SerialNodes(ListArg[string]("default", testDesc, 1, 3, SimpleCompleter[[]string]("default", "command", "opts", "ahhhh", "alright"))),
+					DontCompleteSubcommands(),
+				),
 				Args: "cmd a",
-				Want: []string{"a", "ahhhh", "alpha"},
+				Want: []string{"ahhhh", "alright"},
 				WantData: &Data{Values: map[string]interface{}{
 					"default": []string{"a"},
 				}},

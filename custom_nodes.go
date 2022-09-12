@@ -5,6 +5,8 @@ import (
 	"os"
 	"sort"
 	"strings"
+
+	"golang.org/x/exp/maps"
 )
 
 var (
@@ -106,28 +108,19 @@ func (bn *branchNode) Complete(input *Input, data *Data) (*Completion, error) {
 		return nil, bn.getNext(input, data)
 	}
 
-	c := &Completion{}
-	var defaultNodeErr error
-	if bn.def != nil {
+	// Note: we don't try to merge completions between branches
+	// and default node because the completion overlap can get
+	// convoluted given the number of `Completion` options.
+	if !bn.scCompletion {
 		// Need to iterate over the remaining nodes in case the immediately next node
 		// doesn't process any args and the one after it does.
-		var newC *Completion
-		// TODO: if newC returns a completion with DontCompelete,
-		// then the branch completions aren't filtered out properly.
-		newC, defaultNodeErr = getCompleteData(bn.def, input, data)
-		if newC != nil {
-			c = newC
-		}
+		return getCompleteData(bn.def, input, data)
 	}
 
-	if !bn.scCompletion {
-		return c, defaultNodeErr
-	}
-
-	for k := range bn.branches {
-		c.Suggestions = append(c.Suggestions, k)
-	}
-	return c, defaultNodeErr
+	return &Completion{
+		Suggestions:     maps.Keys(bn.branches),
+		CaseInsensitive: true,
+	}, nil
 }
 
 func (bn *branchNode) getNext(input *Input, data *Data) error {
