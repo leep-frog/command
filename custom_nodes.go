@@ -14,26 +14,16 @@ var (
 	SetupArg = FileNode("SETUP_FILE", "file used to run setup for command", HiddenArg[string]())
 )
 
-type simpleEdge struct {
+type SimpleEdge struct {
 	n *Node
 }
 
-func (se *simpleEdge) Next(*Input, *Data) (*Node, error) {
+func (se *SimpleEdge) Next(*Input, *Data) (*Node, error) {
 	return se.n, nil
 }
 
-func (se *simpleEdge) UsageNext() *Node {
+func (se *SimpleEdge) UsageNext() *Node {
 	return se.n
-}
-
-// SimpleEdge returns an edge that points to the provided node.
-func SimpleEdge(n *Node) Edge {
-	if n == nil {
-		return nil
-	}
-	return &simpleEdge{
-		n: n,
-	}
 }
 
 // SerialNodes returns a graph that iterates serially over the provided `Processors`.
@@ -46,7 +36,7 @@ func SerialNodes(p Processor, ps ...Processor) *Node {
 		newN := &Node{
 			Processor: newP,
 		}
-		n.Edge = SimpleEdge(newN)
+		n.Edge = &SimpleEdge{newN}
 		n = newN
 	}
 	return root
