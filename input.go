@@ -1,6 +1,9 @@
 package command
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 const (
 	// UnboundedList is used to indicate that an argument list should allow an unbounded amount of arguments.
@@ -106,31 +109,6 @@ func (i *Input) Peek() (string, bool) {
 func (i *Input) get(j int) *inputArg {
 	return i.args[i.remaining[j]]
 }
-
-// CheckShortcuts checks if the next argument is a shortcut and replaces it.
-/*func (i *Input) CheckShortcuts(upTo int, sc ShortcutCLI, name string, complete bool) error {
-	k := 0
-	if complete {
-		k = -1
-	}
-
-	for j := i.offset; j < len(i.remaining)+k && j < i.offset+upTo; {
-		sl, ok := getShortcut(sc, name, i.get(j).value)
-		if !ok {
-			j++
-			continue
-		}
-
-		if len(sl) == 0 {
-			return fmt.Errorf("shortcut has empty value")
-		}
-		end := len(sl) - 1
-		i.get(j).value = sl[end]
-		i.PushFrontAt(j, sl[:end]...)
-		j += len(sl)
-	}
-	return nil
-}*/
 
 // PushFront pushes arguments to the front of the remaining input.
 func (i *Input) PushFront(sl ...string) {
@@ -403,9 +381,10 @@ func snapshotsMap(iss ...inputSnapshot) map[inputSnapshot]bool {
 // TODO: have cache use this!
 
 // InputTransformer checks the next input argument (as a string), runs `F` on that
-// argument, and inserts the values returned from `F` in its place. This is useful
-// if you want to split an argument like "input.go:15" into ["input.go", "15"]
-// before an `ArgNode` processes either one. This should only be used
+// argument, and inserts the values returned from `F` in its place.
+// See `FileNumberInputTransformer` for a useful example.
+//
+// Note: `InputTransformer` should only be used
 // when the number of arguments or the argument type is expected to change.
 // If the number of arguments and type will remain the same, use an `ArgNode`
 // with a `Transformer` option.
@@ -416,6 +395,19 @@ type InputTransformer struct {
 	// This is zero-indexed so default behavior (UpToIndex: 0) will run on the
 	// first argument.
 	UpToIndex int
+}
+
+// FileNumberInputTransformer transforms input arguments of the format "input.go:123"
+// into ["input.go" "123"]. This allows CLIs to transform provided arguments and
+// use regular string and int `ArgNode`s for parsing arguments.
+func FileNumberInputTransformer(upToIndex int) *InputTransformer {
+	return &InputTransformer{F: func(o Output, d *Data, s string) ([]string, error) {
+		sl := strings.Split(s, ":")
+		if len(sl) <= 2 {
+			return sl, nil
+		}
+		return nil, o.Stderrf("Expected either 1 or 2 parts, got %d\n", len(sl))
+	}, UpToIndex: upToIndex}
 }
 
 func shortcutInputTransformer(sc ShortcutCLI, name string, upToIndex int) *InputTransformer {
@@ -435,10 +427,11 @@ func (it *InputTransformer) Execute(i *Input, o Output, data *Data, eData *Execu
 func (it *InputTransformer) Transform(input *Input, output Output, data *Data, complete bool) error {
 	k := 0
 	if complete {
+		// Don't check the last argument (i.e. the completion argument)
 		k = -1
 	}
 
-	for j := input.offset; j < len(input.remaining)+k && j <= input.offset+it.UpToIndex; {
+	for j := input.offset; j < input.NumRemaining()+k && j <= input.offset+it.UpToIndex; {
 		sl, err := it.F(output, data, input.get(j).value)
 		if err != nil {
 			return err
@@ -456,11 +449,6 @@ func (it *InputTransformer) Transform(input *Input, output Output, data *Data, c
 }
 
 func (it *InputTransformer) Complete(input *Input, data *Data) (*Completion, error) {
-	// If at arg to autocomplete, return.
-	if input.NumRemaining() <= 1 {
-		return nil, nil
-	}
-
 	return nil, it.Transform(input, NewIgnoreAllOutput(), data, true)
 }
 

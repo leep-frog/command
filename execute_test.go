@@ -4209,6 +4209,101 @@ func TestExecute(t *testing.T) {
 				},
 			},
 		},
+		// InputTransformer tests.
+		{
+			name: "InputTransformer handles no arguments",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					FileNumberInputTransformer(1),
+				),
+			},
+		},
+		{
+			name: "InputTransformer handles non-matching arguments",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					FileNumberInputTransformer(1),
+					Arg[string]("s", testDesc),
+					Arg[int]("i", testDesc),
+				),
+				Args: []string{"hello.go", "248"},
+				WantData: &Data{Values: map[string]interface{}{
+					"s": "hello.go",
+					"i": 248,
+				}},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "hello.go"},
+						{value: "248"},
+					},
+				},
+			},
+		},
+		{
+			name: "InputTransformer expands matching arguments",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					FileNumberInputTransformer(1),
+					Arg[string]("s", testDesc),
+					Arg[int]("i", testDesc),
+				),
+				Args: []string{"hello.go:248"},
+				WantData: &Data{Values: map[string]interface{}{
+					"s": "hello.go",
+					"i": 248,
+				}},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "hello.go"},
+						{value: "248"},
+					},
+				},
+			},
+		},
+		{
+			name: "InputTransformer fails",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					FileNumberInputTransformer(1),
+				),
+				Args:       []string{"hello.go:248:extra"},
+				WantErr:    fmt.Errorf("Expected either 1 or 2 parts, got 3"),
+				WantStderr: "Expected either 1 or 2 parts, got 3\n",
+				wantInput: &Input{
+					remaining: []int{0},
+					args: []*inputArg{
+						{value: "hello.go:248:extra"},
+					},
+				},
+			},
+		},
+		{
+			name: "InputTransformer expands multiple matching arguments",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					FileNumberInputTransformer(2),
+					Arg[string]("s", testDesc),
+					Arg[int]("i", testDesc),
+					Arg[string]("s2", testDesc),
+					Arg[int]("i2", testDesc),
+				),
+				Args: []string{"hello.go:248", "there.txt:139"},
+				WantData: &Data{Values: map[string]interface{}{
+					"s":  "hello.go",
+					"i":  248,
+					"s2": "there.txt",
+					"i2": 139,
+				}},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "hello.go"},
+						{value: "248"},
+						{value: "there.txt"},
+						{value: "139"},
+					},
+				},
+			},
+		},
 		// Stdoutln tests
 		{
 			name: "stdoutln works",
