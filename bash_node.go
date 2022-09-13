@@ -26,7 +26,8 @@ func BashCompleter[T any](command ...string) Completer[T] {
 // with the output from the provided bash `command`.
 func BashCompleterWithOpts[T any](opts *Completion, command ...string) Completer[T] {
 	return &simpleCompleter[T]{func(t T, d *Data) (*Completion, error) {
-		resp, err := NewBashCommand[[]string]("", command).Run(nil, d)
+		bc := &BashCommand[[]string]{Contents: command}
+		resp, err := bc.Run(nil, d)
 		if err != nil {
 			return nil, fmt.Errorf("failed to fetch autocomplete suggestions with bash command: %v", err)
 		}
@@ -41,68 +42,30 @@ func BashCompleterWithOpts[T any](opts *Completion, command ...string) Completer
 	}}
 }
 
-// TODO: Change things to just structs and remove constructor functions.
-// NewBashCommand runs the provided command in bash and stores the response as
-// a value in data with the provided type and argument name.
-func NewBashCommand[T any](argName string, command []string, opts ...BashOption[T]) *BashCommand[T] {
-	bc := &BashCommand[T]{
-		argName:  argName,
-		contents: command,
-	}
-	for _, o := range opts {
-		o.modifyBashNode(bc)
-	}
-	return bc
-}
-
-type hideStderr[T any] struct{}
-
-func (*hideStderr[T]) modifyBashNode(bc *BashCommand[T]) {
-	bc.hideStderr = true
-}
-
-// HideStderr is a `BashOption` that hides stderr output when
-// running the bash command.
-func HideStderr[T any]() BashOption[T] {
-	return &hideStderr[T]{}
-}
-
-type forwardStdout[T any] struct{}
-
-func (*forwardStdout[T]) modifyBashNode(bc *BashCommand[T]) {
-	bc.forwardStdout = true
-}
-
-// ForwardStdout is a `BashOption` that forwards stdout to the terminal (rather than just parsing it).
-func ForwardStdout[T any]() BashOption[T] {
-	return &forwardStdout[T]{}
-}
-
-type dontRunOnComplete[T any] struct{}
-
-func (*dontRunOnComplete[T]) modifyBashNode(bc *BashCommand[T]) {
-	bc.dontRunOnComplete = true
-}
-
-// DontRunOnComplete is a `BashOption` that skips the node's execution when in the `Complete` context.
-func DontRunOnComplete[T any]() BashOption[T] {
-	return &dontRunOnComplete[T]{}
-}
-
+// BashCommand can run the provided command `Contents` in bash and stores the response as
+// a value in data with the provided type and `ArgName`.
 type BashCommand[T any] struct {
-	argName  string
-	contents []string
-	desc     string
+	// ArgName is the argument name to use if stored in `Data`.
+	ArgName string
+	// Contents contains the bash commands to run.
+	Contents []string
+	// Desc is the description of this bash command. Used for the CLI usage doc.
+	Desc string
 
-	validators        []*ValidatorOption[T]
-	hideStderr        bool
-	forwardStdout     bool
-	dontRunOnComplete bool
-	formatArgs        []BashDataStringer[T]
+	// Validators contains a list of validators to run with the bash output.
+	Validators []*ValidatorOption[T]
+	// HideStderr is whether or not the stderr of the command should be sent to actual stderr or not.
+	HideStderr bool
+	// ForwardStdout indicates whether the output should also be displayed (originally, it is just parsed into a value).
+	ForwardStdout bool
+	// DontRunOnComplete indicates whether or not the bash command should be run when we are completing a command arg.
+	DontRunOnComplete bool
+	// FormatArgs contains a list of values that will be formatted against the contents.
+	// This is used to use data values that are populated during execution.
+	FormatArgs []BashDataStringer[T]
 }
 
 type BashDataStringer[T any] interface {
-	BashOption[T]
 	ToString(d *Data) (string, error)
 }
 
@@ -124,28 +87,19 @@ func (df *bashDataStringer[T]) ToString(d *Data) (string, error) {
 	return df.op(d)
 }
 
-func (df *bashDataStringer[T]) modifyBashNode(bc *BashCommand[T]) {
-	bc.formatArgs = append(bc.formatArgs, df)
-}
-
-// BashOption is an option type for modifying `BashNode` objects
-type BashOption[T any] interface {
-	modifyBashNode(*BashCommand[T])
-}
-
 // Name returns the arg name of the `BashCommand`
 func (bn *BashCommand[T]) Name() string {
-	return bn.argName
+	return bn.ArgName
 }
 
 // Get fetches the relevant bash output from the provided `Data` object.
 func (bn *BashCommand[T]) Get(d *Data) T {
-	return GetData[T](d, bn.argName)
+	return GetData[T](d, bn.Name())
 }
 
 // Complete fulfills the `Processor` interface for `BashCommand`.
 func (bn *BashCommand[T]) Complete(input *Input, data *Data) (*Completion, error) {
-	if bn.dontRunOnComplete {
+	if bn.DontRunOnComplete {
 		return nil, nil
 	}
 	return nil, bn.execute(&FakeOutput{}, data)
@@ -153,17 +107,17 @@ func (bn *BashCommand[T]) Complete(input *Input, data *Data) (*Completion, error
 
 // Usage fulfills the `Processor` interface for `BashCommand`.
 func (bn *BashCommand[T]) Usage(u *Usage) {
-	u.Description = bn.desc
+	u.Description = bn.Desc
 }
 
 func (bn *BashCommand[T]) set(v T, d *Data) {
-	d.Set(bn.argName, v)
+	d.Set(bn.Name(), v)
 }
 
 // Execute fulfills the `Processor` interface for `BashCommand`.
 func (bn *BashCommand[T]) Execute(input *Input, output Output, data *Data, eData *ExecuteData) error {
 	err := bn.execute(output, data)
-	if bn.hideStderr {
+	if bn.HideStderr {
 		return err
 	}
 	return output.Err(err)
@@ -194,11 +148,11 @@ func (bn *BashCommand[T]) Run(output Output, data *Data) (T, error) {
 		// Exit if any command in a pipeline fails.
 		// https://stackoverflow.com/questions/32684119/exit-when-one-process-in-pipe-fails
 		"set -o pipefail",
-	}, bn.contents...), "\n")
+	}, bn.Contents...), "\n")
 
-	if len(bn.formatArgs) > 0 {
+	if len(bn.FormatArgs) > 0 {
 		var args []any
-		for _, fa := range bn.formatArgs {
+		for _, fa := range bn.FormatArgs {
 			s, err := fa.ToString(data)
 			if err != nil {
 				return nill, fmt.Errorf("failed to get string for bash formatting: %v", err)
@@ -222,12 +176,12 @@ func (bn *BashCommand[T]) Run(output Output, data *Data) (T, error) {
 	var rawOut bytes.Buffer
 	// msys/mingw doesn't work if "bash" is excluded.
 	cmd := exec.Command("bash", f.Name())
-	if !bn.forwardStdout || output == nil {
+	if !bn.ForwardStdout || output == nil {
 		cmd.Stdout = &rawOut
 	} else {
 		cmd.Stdout = io.MultiWriter(StdoutWriter(output), &rawOut)
 	}
-	if bn.hideStderr || output == nil {
+	if bn.HideStderr || output == nil {
 		cmd.Stderr = DevNull()
 	} else {
 		cmd.Stderr = StderrWriter(output)
@@ -248,7 +202,7 @@ func (bn *BashCommand[T]) Run(output Output, data *Data) (T, error) {
 		return nill, err
 	}
 
-	for _, validator := range bn.validators {
+	for _, validator := range bn.Validators {
 		if err := validator.Validate(bn, v); err != nil {
 			return nill, err
 		}

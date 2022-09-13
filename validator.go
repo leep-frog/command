@@ -46,10 +46,6 @@ func (vo *ValidatorOption[T]) modifyArgOpt(ao *argOpt[T]) {
 	ao.validators = append(ao.validators, vo)
 }
 
-func (vo *ValidatorOption[T]) modifyBashNode(bn *BashCommand[T]) {
-	bn.validators = append(bn.validators, vo)
-}
-
 // Validate validates the argument and returns an error if the validation fails.
 func (vo *ValidatorOption[T]) Validate(arg validatable, v T) error {
 	if err := vo.validate(v); err != nil {

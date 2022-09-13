@@ -6821,7 +6821,7 @@ func TestComplete(t *testing.T) {
 			name: "BashNode runs in Completion context",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					NewBashCommand[string]("b", []string{"echo haha"}),
+					&BashCommand[string]{ArgName: "b", Contents: []string{"echo haha"}},
 					Arg[string]("s", testDesc),
 				),
 				RunResponses: []*FakeRun{{
@@ -6842,7 +6842,7 @@ func TestComplete(t *testing.T) {
 			name: "BashNode fails in Completion context",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					NewBashCommand[string]("b", []string{"echo haha"}),
+					&BashCommand[string]{ArgName: "b", Contents: []string{"echo haha"}},
 					Arg[string]("s", testDesc),
 				),
 				RunResponses: []*FakeRun{{
@@ -6860,7 +6860,7 @@ func TestComplete(t *testing.T) {
 			name: "BashNode does not run in Completion context when option provided",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					NewBashCommand("b", []string{"echo haha"}, DontRunOnComplete[string]()),
+					&BashCommand[string]{ArgName: "b", Contents: []string{"echo haha"}, DontRunOnComplete: true},
 					Arg[string]("s", testDesc),
 				),
 				WantData: &Data{Values: map[string]interface{}{
