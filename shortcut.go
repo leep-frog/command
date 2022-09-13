@@ -183,14 +183,11 @@ func (ea *executeShortcut) Usage(u *Usage) {
 }
 
 func (ea *executeShortcut) Execute(input *Input, output Output, data *Data, eData *ExecuteData) error {
-	return output.Err(input.CheckShortcuts(1, ea.sc, ea.name, false))
+	return output.Err(shortcutInputTransformer(ea.sc, ea.name, 0).Execute(input, output, data, eData))
 }
 
 func (ea *executeShortcut) Complete(input *Input, data *Data) (*Completion, error) {
-	if err := input.CheckShortcuts(1, ea.sc, ea.name, true); err != nil {
-		return nil, err
-	}
-	return nil, nil
+	return shortcutInputTransformer(ea.sc, ea.name, 0).Complete(input, data)
 }
 
 type addShortcut struct {

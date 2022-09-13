@@ -108,7 +108,7 @@ func (i *Input) get(j int) *inputArg {
 }
 
 // CheckShortcuts checks if the next argument is a shortcut and replaces it.
-func (i *Input) CheckShortcuts(upTo int, sc ShortcutCLI, name string, complete bool) error {
+/*func (i *Input) CheckShortcuts(upTo int, sc ShortcutCLI, name string, complete bool) error {
 	k := 0
 	if complete {
 		k = -1
@@ -130,7 +130,7 @@ func (i *Input) CheckShortcuts(upTo int, sc ShortcutCLI, name string, complete b
 		j += len(sl)
 	}
 	return nil
-}
+}*/
 
 // PushFront pushes arguments to the front of the remaining input.
 func (i *Input) PushFront(sl ...string) {
@@ -400,52 +400,68 @@ func snapshotsMap(iss ...inputSnapshot) map[inputSnapshot]bool {
 	return m
 }
 
-// NewInputTransformer returns a processor that checks the
-func NewInputTransformer[T any](f func(Output, *Data, string) (T, error), upTo int) Processor {
-	return &inputTransformer[T]{f, upTo}
+// TODO: have cache use this!
+
+// InputTransformer checks the next input argument (as a string), runs `F` on that
+// argument, and inserts the values returned from `F` in its place. This is useful
+// if you want to split an argument like "input.go:15" into ["input.go", "15"]
+// before an `ArgNode` processes either one. This should only be used
+// when the number of arguments or the argument type is expected to change.
+// If the number of arguments and type will remain the same, use an `ArgNode`
+// with a `Transformer` option.
+type InputTransformer struct {
+	// F is the function that will be run on each element in Input.
+	F func(Output, *Data, string) ([]string, error)
+	// UpToIndex is the input argument index that F will be run through.
+	// This is zero-indexed so default behavior (UpToIndex: 0) will run on the
+	// first argument.
+	UpToIndex int
 }
 
-// TODO: have cache and shortcuts use this!
-// TODO: potentially merge with CheckShortcuts or delete one of the two functions
-type inputTransformer[T any] struct {
-	f func(Output, *Data, string) (T, error)
-	// TODO: check inputs changes up to this spot.
-	upTo int
+func shortcutInputTransformer(sc ShortcutCLI, name string, upToIndex int) *InputTransformer {
+	return &InputTransformer{F: func(o Output, d *Data, s string) ([]string, error) {
+		sl, ok := getShortcut(sc, name, s)
+		if !ok {
+			return []string{s}, nil
+		}
+		return sl, nil
+	}, UpToIndex: upToIndex}
 }
 
-func (it *inputTransformer[T]) Execute(i *Input, o Output, data *Data, eData *ExecuteData) error {
-	return it.Transform(i, o, data)
+func (it *InputTransformer) Execute(i *Input, o Output, data *Data, eData *ExecuteData) error {
+	return it.Transform(i, o, data, false)
 }
 
-// TODO: Test this
-func (it *inputTransformer[T]) Transform(input *Input, output Output, data *Data) error {
-	s, ok := input.Peek()
-	if !ok {
-		return nil
+func (it *InputTransformer) Transform(input *Input, output Output, data *Data, complete bool) error {
+	k := 0
+	if complete {
+		k = -1
 	}
 
-	t, err := it.f(output, data, s)
-	if err != nil {
-		return err
-	}
+	for j := input.offset; j < len(input.remaining)+k && j <= input.offset+it.UpToIndex; {
+		sl, err := it.F(output, data, input.get(j).value)
+		if err != nil {
+			return err
+		}
 
-	args := getOperator[T]().toArgs(t)
-	if len(args) == 0 {
-		input.Pop()
-		return nil
+		if len(sl) == 0 {
+			return fmt.Errorf("shortcut has empty value")
+		}
+		end := len(sl) - 1
+		input.get(j).value = sl[end]
+		input.PushFrontAt(j, sl[:end]...)
+		j += len(sl)
 	}
-	input.get(input.offset).value = args[0]
-	input.PushFrontAt(1, args[1:]...)
 	return nil
 }
 
-func (it *inputTransformer[T]) Complete(input *Input, data *Data) (*Completion, error) {
+func (it *InputTransformer) Complete(input *Input, data *Data) (*Completion, error) {
 	// If at arg to autocomplete, return.
 	if input.NumRemaining() <= 1 {
 		return nil, nil
 	}
 
-	return nil, it.Transform(input, NewIgnoreAllOutput(), data)
+	return nil, it.Transform(input, NewIgnoreAllOutput(), data, true)
 }
 
-func (it *inputTransformer[T]) Usage(*Usage) {}
+func (it *InputTransformer) Usage(*Usage) {}

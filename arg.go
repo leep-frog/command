@@ -96,7 +96,7 @@ func (an *ArgNode[T]) Usage(u *Usage) {
 
 // Execute fulfills the `Processor` interface for `ArgNode`.
 func (an *ArgNode[T]) Execute(i *Input, o Output, data *Data, eData *ExecuteData) error {
-	an.shortcutCheck(i, false)
+	an.shortcutCheck(i, o, data, false)
 
 	sl, enough := i.PopN(an.minN, an.optionalN, an.opt.breaker)
 
@@ -240,19 +240,22 @@ func (ne *notEnoughArgs) Error() string {
 	return fmt.Sprintf("Argument %q requires at least %d argument%s, got %d", ne.name, ne.req, plural, ne.got)
 }
 
-func (an *ArgNode[T]) shortcutCheck(input *Input, complete bool) {
-	if an.opt != nil && an.opt.shortcut != nil {
-		if an.optionalN == UnboundedList {
-			input.CheckShortcuts(len(input.remaining), an.opt.shortcut.ShortcutCLI, an.opt.shortcut.ShortcutName, complete)
-		} else {
-			input.CheckShortcuts(an.minN+an.optionalN, an.opt.shortcut.ShortcutCLI, an.opt.shortcut.ShortcutName, complete)
-		}
+func (an *ArgNode[T]) shortcutCheck(input *Input, output Output, data *Data, complete bool) error {
+	if an.opt == nil || an.opt.shortcut == nil {
+		return nil
 	}
+
+	upTo := an.minN + an.optionalN
+	if an.optionalN == UnboundedList {
+		upTo = len(input.remaining)
+	}
+
+	return shortcutInputTransformer(an.opt.shortcut.ShortcutCLI, an.opt.shortcut.ShortcutName, upTo-1).Transform(input, output, data, complete)
 }
 
 // Complete fulfills the `Processor` interface for `ArgNode`.
 func (an *ArgNode[T]) Complete(input *Input, data *Data) (*Completion, error) {
-	an.shortcutCheck(input, true)
+	an.shortcutCheck(input, NewIgnoreAllOutput(), data, true)
 
 	sl, enough := input.PopN(an.minN, an.optionalN, an.opt.breaker)
 
