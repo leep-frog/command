@@ -74,7 +74,7 @@ func (an *ArgNode[T]) Usage(u *Usage) {
 		u.UsageSection.Add(ArgSection, an.name, an.desc)
 		if an.opt != nil {
 			for _, v := range an.opt.validators {
-				u.UsageSection.Add(ArgSection, an.name, fmt.Sprintf("  %s", v.Usage))
+				u.UsageSection.Add(ArgSection, an.name, v.Usage)
 			}
 		}
 	}

@@ -129,6 +129,7 @@ func InList[T comparable](choices ...T) *ValidatorOption[T] {
 	}
 }
 
+// TODO: MaxLength
 // MinLength [`ValidatorOption`] validates an argument is at least `length` long.
 func MinLength(length int) *ValidatorOption[string] {
 	var plural string
