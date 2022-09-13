@@ -378,8 +378,6 @@ func snapshotsMap(iss ...inputSnapshot) map[inputSnapshot]bool {
 	return m
 }
 
-// TODO: have cache use this!
-
 // InputTransformer checks the next input argument (as a string), runs `F` on that
 // argument, and inserts the values returned from `F` in its place.
 // See `FileNumberInputTransformer` for a useful example.
@@ -440,6 +438,7 @@ func (it *InputTransformer) Transform(input *Input, output Output, data *Data, c
 		if len(sl) == 0 {
 			return fmt.Errorf("shortcut has empty value")
 		}
+		// TODO: Inserted args should be added to the input snapshot
 		end := len(sl) - 1
 		input.get(j).value = sl[end]
 		input.PushFrontAt(j, sl[:end]...)

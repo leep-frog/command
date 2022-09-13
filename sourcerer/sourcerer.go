@@ -488,7 +488,8 @@ func cacheKey(cli CLI) string {
 	return fmt.Sprintf("leep-frog-cache-key-%s.json", cli.Name())
 }
 
-// TODO: add these to clis.go
+// SimpleCommands returns a list of CLIs that are simply aliased
+// to a bash command.
 func SimpleCommands(m map[string]string) []CLI {
 	cs := []CLI{}
 	for name, cmd := range m {

@@ -481,7 +481,6 @@ func ListUntil(validators ...*ValidatorOption[string]) *ListBreaker {
 }
 
 // ListBreaker is an `ArgOpt` for breaking out of lists with an optional number of arguments.
-// TODO: this should be ListBreaker[T any, ST []T]
 type ListBreaker struct {
 	validators []*ValidatorOption[string]
 	discard    bool
