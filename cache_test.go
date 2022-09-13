@@ -148,9 +148,9 @@ func TestCacheExecution(t *testing.T) {
 			etc: &ExecuteTestCase{
 				Node: CacheNode("money", cc, SerialNodes(
 					Arg[string]("s", testDesc,
-						NewTransformer(func(string, *Data) (string, error) {
+						&Transformer[string]{F: func(string, *Data) (string, error) {
 							return "usd", nil
-						}),
+						}},
 					))),
 				Args: []string{"dollar"},
 				WantData: &Data{Values: map[string]interface{}{
@@ -382,9 +382,9 @@ func TestCacheExecution(t *testing.T) {
 			etc: &ExecuteTestCase{
 				Node: CacheNode("money", cc, SerialNodes(
 					Arg[string]("s", testDesc,
-						NewTransformer(func(string, *Data) (string, error) {
+						&Transformer[string]{F: func(string, *Data) (string, error) {
 							return "usd", nil
-						}),
+						}},
 					),
 				)),
 				Args: []string{"dollar"},
@@ -411,19 +411,19 @@ func TestCacheExecution(t *testing.T) {
 				Node: CacheNode("money", cc, SerialNodes(
 					Arg[int]("i", testDesc),
 					Arg[string]("s", testDesc,
-						NewTransformer(func(string, *Data) (string, error) {
+						&Transformer[string]{F: func(string, *Data) (string, error) {
 							return "usd", nil
-						}),
+						}},
 					),
 					ListArg[float64]("fl", testDesc, 2, 0),
 					ListArg[string]("sl", testDesc, 1, 2,
-						NewTransformer(func(v []string, d *Data) ([]string, error) {
+						&Transformer[[]string]{F: func(v []string, d *Data) ([]string, error) {
 							var newSL []string
 							for _, s := range v {
 								newSL = append(newSL, fmt.Sprintf("$%s", s))
 							}
 							return newSL, nil
-						}),
+						}},
 					),
 				)),
 				Args: []string{"123", "dollar", "3.4", "4.5", "six", "7"},
@@ -797,9 +797,9 @@ func TestCacheExecution(t *testing.T) {
 			},
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					Arg[string]("beforeStr", testDesc, NewTransformer(func(s string, d *Data) (string, error) {
+					Arg[string]("beforeStr", testDesc, &Transformer[string]{F: func(s string, d *Data) (string, error) {
 						return fmt.Sprintf("TRANSFORM(%s)", s), nil
-					})),
+					}}),
 					Arg[int]("beforeInt", testDesc),
 					CacheNode("money", cc, SerialNodes(
 						Arg[string]("s", testDesc),

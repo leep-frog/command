@@ -113,12 +113,12 @@ var (
 	// https://www.gnu.org/software/bash/manual/html_node/Bash-Variables.html#Bash-Variables
 	compTypeArg  = command.Arg[int]("COMP_TYPE", "COMP_TYPE variable from bash complete function")
 	compPointArg = command.Arg[int]("COMP_POINT", "COMP_POINT variable from bash complete function")
-	compLineArg  = command.Arg[string]("COMP_LINE", "COMP_LINE variable from bash complete function", command.NewTransformer(func(s string, d *command.Data) (string, error) {
+	compLineArg  = command.Arg[string]("COMP_LINE", "COMP_LINE variable from bash complete function", &command.Transformer[string]{F: func(s string, d *command.Data) (string, error) {
 		if cPoint := compPointArg.Get(d); cPoint < len(s) {
 			return s[:cPoint], nil
 		}
 		return s, nil
-	}))
+	}})
 	autocompletePassthroughArgs = command.ListArg[string]("PASSTHROUGH_ARG", "Arguments that get passed through to autocomplete command", 0, command.UnboundedList)
 )
 

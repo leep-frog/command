@@ -382,9 +382,9 @@ func TestShortcutExecute(t *testing.T) {
 			name: "adds transformed arguments",
 			etc: &ExecuteTestCase{
 				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2,
-					NewTransformer(func([]string, *Data) ([]string, error) {
+					&Transformer[[]string]{F: func([]string, *Data) ([]string, error) {
 						return []string{"papa", "mama", "baby"}, nil
-					})))),
+					}}))),
 				Args: []string{"a", "bearMinimum", "grizzly", "teddy", "brown"},
 				WantData: &Data{Values: map[string]interface{}{
 					"SHORTCUT": "bearMinimum",
@@ -414,9 +414,9 @@ func TestShortcutExecute(t *testing.T) {
 			name: "fails if transform error",
 			etc: &ExecuteTestCase{
 				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2,
-					NewTransformer(func([]string, *Data) ([]string, error) {
+					&Transformer[[]string]{F: func([]string, *Data) ([]string, error) {
 						return nil, fmt.Errorf("bad news bears")
-					})))),
+					}}))),
 				Args: []string{"a", "bearMinimum", "grizzly", "teddy", "brown"},
 				WantData: &Data{Values: map[string]interface{}{
 					"SHORTCUT": "bearMinimum",
@@ -1728,5 +1728,5 @@ func UpperCaseTransformer() ArgOpt[[]string] {
 		}
 		return r, nil
 	}
-	return NewTransformer(f)
+	return &Transformer[[]string]{F: f}
 }
