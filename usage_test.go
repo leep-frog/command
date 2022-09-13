@@ -213,8 +213,10 @@ func TestUsage(t *testing.T) {
 			utc: &UsageTestCase{
 				Node: AsNode(&BranchNode{
 					Branches: map[string]*Node{
-						"alpha": nil,
-						"beta":  SerialNodes(ListArg[string]("ROPES", "lots of strings", 2, 3)),
+						"alpha": SerialNodes(
+							Description("The first"),
+						),
+						"beta": SerialNodes(ListArg[string]("ROPES", "lots of strings", 2, 3)),
 						"charlie": AsNode(&BranchNode{
 							Branches: map[string]*Node{
 								"brown":  SerialNodes(Description("learn about cartoons"), Arg[float64]("FLOATER", "something bouyant")),
@@ -233,6 +235,7 @@ func TestUsage(t *testing.T) {
 					"the default command",
 					"< INT_ARG STRINGS [ STRINGS ... ]",
 					"",
+					"  The first",
 					"  [alpha|omega]",
 					"",
 					"  beta ROPES ROPES [ ROPES ROPES ROPES ]",
@@ -260,8 +263,10 @@ func TestUsage(t *testing.T) {
 			utc: &UsageTestCase{
 				Node: AsNode(&BranchNode{
 					Branches: map[string]*Node{
-						"alpha omega1": nil,
-						"beta":         SerialNodes(ListArg[string]("ROPES", "lots of strings", 2, 3)),
+						"alpha omega1": SerialNodes(
+							Description("The first"),
+						),
+						"beta": SerialNodes(ListArg[string]("ROPES", "lots of strings", 2, 3)),
 						"charlie": AsNode(&BranchNode{
 							Branches: map[string]*Node{
 								"brown":  SerialNodes(Description("learn about cartoons"), Arg[float64]("FLOATER", "something bouyant")),
@@ -280,6 +285,7 @@ func TestUsage(t *testing.T) {
 					"the default command",
 					"< INT_ARG STRINGS [ STRINGS ... ]",
 					"",
+					"  The first",
 					"  [alpha|omega1|omega2]",
 					"",
 					"  beta ROPES ROPES [ ROPES ROPES ROPES ]",

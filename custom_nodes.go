@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"golang.org/x/exp/maps"
+	"golang.org/x/exp/slices"
 )
 
 var (
@@ -200,6 +201,34 @@ func (bn *BranchNode) splitBranch(b string) (string, []string) {
 	return r[0], r[1:]
 }
 
+type branchSyn struct {
+	name   string
+	values []string
+	n      *Node
+}
+
+func (bn *BranchNode) getSyns() map[string]*branchSyn {
+	nameToSyns := map[string]*branchSyn{}
+
+	for bs, n := range bn.Branches {
+		name, syns := bn.splitBranch(bs)
+		nameToSyns[name] = &branchSyn{
+			name:   name,
+			values: syns,
+			n:      n,
+		}
+	}
+
+	for syn, name := range bn.Synonyms {
+		nameToSyns[name].values = append(nameToSyns[name].values, syn)
+	}
+
+	for _, bs := range nameToSyns {
+		slices.Sort(bs.values)
+	}
+	return nameToSyns
+}
+
 func (bn *BranchNode) Usage(u *Usage) {
 	if bn.HideUsage {
 		return
@@ -208,38 +237,18 @@ func (bn *BranchNode) Usage(u *Usage) {
 	u.UsageSection.Add(SymbolSection, "<", "Start of subcommand branches")
 	u.Usage = append(u.Usage, "<")
 
-	var names []string
-	branchToSynonyms := map[string]map[string]bool{}
-	for name := range bn.Branches {
-		name, syns := bn.splitBranch(name)
-		names = append(names, name)
-		if branchToSynonyms[name] == nil {
-			branchToSynonyms[name] = map[string]bool{}
-		}
-		for _, syn := range syns {
-			branchToSynonyms[name][syn] = true
-		}
-	}
-	sort.Strings(names)
+	bss := maps.Values(bn.getSyns())
+	slices.SortFunc(bss, func(this, that *branchSyn) bool {
+		return this.name < that.name
+	})
 
-	for k, v := range bn.Synonyms {
-		if branchToSynonyms[v] == nil {
-			branchToSynonyms[v] = map[string]bool{}
+	for _, bs := range bss {
+		su := GetUsage(bs.n)
+		v := bs.name
+		if len(bs.values) > 0 {
+			v = fmt.Sprintf("[%s|%s]", bs.name, strings.Join(bs.values, "|"))
 		}
-		branchToSynonyms[v][k] = true
-	}
-
-	for _, name := range names {
-		su := GetUsage(bn.Branches[name])
-		if as := branchToSynonyms[name]; len(as) > 0 {
-			var r []string
-			for a := range as {
-				r = append(r, a)
-			}
-			sort.Strings(r)
-			name = fmt.Sprintf("[%s|%v]", name, strings.Join(r, "|"))
-		}
-		su.Usage = append([]string{name}, su.Usage...)
+		su.Usage = append([]string{v}, su.Usage...)
 		u.SubSections = append(u.SubSections, su)
 	}
 }

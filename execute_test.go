@@ -4499,6 +4499,72 @@ func TestExecute(t *testing.T) {
 				WantStdout: "goodbye",
 			},
 		},
+		// BranchNode synonym tests
+		{
+			name: "branch node works with branch name",
+			etc: &ExecuteTestCase{
+				Args: []string{"hello"},
+				Node: branchSynNode(),
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "hello"},
+					},
+				},
+				WantStdout: "yo",
+			},
+		},
+		{
+			name: "branch node works with branch name",
+			etc: &ExecuteTestCase{
+				Args: []string{"hello"},
+				Node: branchSynNode(),
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "hello"},
+					},
+				},
+				WantStdout: "yo",
+			},
+		},
+		{
+			name: "branch node works with second spaced alias",
+			etc: &ExecuteTestCase{
+				Args: []string{"greetings"},
+				Node: branchSynNode(),
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "greetings"},
+					},
+				},
+				WantStdout: "yo",
+			},
+		},
+		{
+			name: "branch node works with first synonym",
+			etc: &ExecuteTestCase{
+				Args: []string{"hey"},
+				Node: branchSynNode(),
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "hey"},
+					},
+				},
+				WantStdout: "yo",
+			},
+		},
+		{
+			name: "branch node works with second synonym",
+			etc: &ExecuteTestCase{
+				Args: []string{"howdy"},
+				Node: branchSynNode(),
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "howdy"},
+					},
+				},
+				WantStdout: "yo",
+			},
+		},
 		// NodeRepeater tests
 		{
 			name: "NodeRepeater fails if not enough",
@@ -7069,6 +7135,18 @@ func sampleRepeaterNode(minN, optionalN int) Processor {
 			}
 		}), SimpleCompleter[int]("1", "121", "1213121")),
 	), minN, optionalN)
+}
+
+func branchSynNode() *Node {
+	return AsNode(&BranchNode{
+		Branches: map[string]*Node{
+			"hello hi greetings": printNode("yo"),
+		},
+		Default: printNode("default"),
+		Synonyms: BranchSynonyms(map[string][]string{
+			"hello": {"hey", "howdy"},
+		}),
+	})
 }
 
 func TestRunNodes(t *testing.T) {
