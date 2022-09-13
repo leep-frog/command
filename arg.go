@@ -195,7 +195,7 @@ func (an *ArgNode[T]) convertStringValue(sl []*string, data *Data, transform boo
 	}
 
 	for _, transformer := range an.opt.transformers {
-		newV, err := transformer.t(v, data)
+		newV, err := transformer.F(v, data)
 		if err != nil {
 			return nill, fmt.Errorf("Custom transformer failed: %v", err)
 		}
@@ -292,7 +292,7 @@ func (an *ArgNode[T]) complete(sl []*string, enough bool, input *Input, data *Da
 		if an.opt != nil {
 			for _, transformer := range an.opt.transformers {
 				// Don't return an error because this may not be the last one.
-				newV, err := transformer.t(v, data)
+				newV, err := transformer.F(v, data)
 				if err == nil {
 					v = newV
 				} else {

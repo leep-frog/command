@@ -108,7 +108,7 @@ func CompleteForExecuteAllowExactMatch() CompleteForExecuteOption {
 
 // Transformer is an `ArgOpt` that transforms an argument.
 type Transformer[T any] struct {
-	t func(T, *Data) (T, error)
+	F func(T, *Data) (T, error)
 }
 
 func (t *Transformer[T]) modifyArgOpt(ao *argOpt[T]) {
@@ -117,7 +117,7 @@ func (t *Transformer[T]) modifyArgOpt(ao *argOpt[T]) {
 
 // Transform transforms the provided value.
 func (t *Transformer[T]) Transform(v T, d *Data) (T, error) {
-	return t.t(v, d)
+	return t.F(v, d)
 }
 
 // TransformerList changes a single-arg transformer (`Transformer[T]`) to a list-arg transformer (`Transformer[[]T]`).
@@ -125,7 +125,7 @@ func TransformerList[T any](t *Transformer[T]) *Transformer[[]T] {
 	return NewTransformer(func(vs []T, data *Data) ([]T, error) {
 		l := make([]T, 0, len(vs))
 		for i, v := range vs {
-			nv, err := t.t(v, data)
+			nv, err := t.F(v, data)
 			if err != nil {
 				return append(l, vs[i:]...), err
 			}
@@ -138,7 +138,7 @@ func TransformerList[T any](t *Transformer[T]) *Transformer[[]T] {
 // NewTransformer creates a new `Transformer`.
 func NewTransformer[T any](f func(T, *Data) (T, error)) *Transformer[T] {
 	return &Transformer[T]{
-		t: f,
+		F: f,
 	}
 }
 
