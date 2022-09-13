@@ -35,8 +35,6 @@ func IsValidationError(err error) bool {
 	return ok
 }
 
-// TODO: Have Validator option update docs
-
 // ValidatorOption is an `ArgOpt` and `BashOption` for validating arguments.
 type ValidatorOption[T any] struct {
 	Validate func(T) error
@@ -129,7 +127,6 @@ func InList[T comparable](choices ...T) *ValidatorOption[T] {
 	}
 }
 
-// TODO: MaxLength
 // MinLength [`ValidatorOption`] validates an argument is at least `length` long.
 func MinLength(length int) *ValidatorOption[string] {
 	var plural string
@@ -144,6 +141,23 @@ func MinLength(length int) *ValidatorOption[string] {
 			return nil
 		},
 		fmt.Sprintf("MinLength(%d)", length),
+	}
+}
+
+// MaxLength [`ValidatorOption`] validates an argument is at most `length` long.
+func MaxLength(length int) *ValidatorOption[string] {
+	var plural string
+	if length != 1 {
+		plural = "s"
+	}
+	return &ValidatorOption[string]{
+		func(vs string) error {
+			if len(vs) > length {
+				return fmt.Errorf("[MaxLength] value must be less than %d character%s", length, plural)
+			}
+			return nil
+		},
+		fmt.Sprintf("MaxLength(%d)", length),
 	}
 }
 
