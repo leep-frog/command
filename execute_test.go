@@ -6458,6 +6458,14 @@ func TestComplete(t *testing.T) {
 				Want: []string{"command", "default", "opts"},
 			},
 		},
+		{
+			name: "BranchNode only completes first name of branch",
+			ctc: &CompleteTestCase{
+				Node: branchSynNode(),
+				Args: "cmd ",
+				Want: []string{"hello"},
+			},
+		},
 		// MenuArg tests.
 		{
 			name: "MenuArg completes choices",

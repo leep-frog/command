@@ -118,8 +118,14 @@ func (bn *BranchNode) Complete(input *Input, data *Data) (*Completion, error) {
 		return getCompleteData(bn.Default, input, data)
 	}
 
+	var names []string
+	for b := range bn.Branches {
+		name, _ := bn.splitBranch(b)
+		names = append(names, name)
+	}
+
 	return &Completion{
-		Suggestions:     maps.Keys(bn.Branches),
+		Suggestions:     names,
 		CaseInsensitive: true,
 	}, nil
 }
