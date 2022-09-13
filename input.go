@@ -215,7 +215,6 @@ func (i *Input) PopN(n, optN int, breaker *ListBreaker) ([]*string, bool) {
 	return ret, len(ret) >= n
 }
 
-// TODO: Should this belong to the os-type implementer
 // ParseExecuteArgs converts a list of strings into an Input struct.
 func ParseExecuteArgs(strArgs []string) *Input {
 	r := make([]int, len(strArgs))
@@ -336,6 +335,7 @@ func (qs *quoteState) delimiter() *rune {
 	return &qs.quoteChar
 }
 
+// TODO: Should this belong to the os-type implementer
 func ParseCompLine(compLine string, passthroughArgs []string) *Input {
 	w := &words{}
 	state := parserState(&whitespaceState{})
