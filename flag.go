@@ -15,9 +15,9 @@ var (
 	MultiFlagRegex = regexp.MustCompile("^-[^-0-9]{2,}$")
 )
 
-// Flag defines a flag argument that is parsed regardless of it's position in
+// FlagInterface defines a flag argument that is parsed regardless of it's position in
 // the provided command line arguments.
-type Flag interface {
+type FlagInterface interface {
 	// Name is the name of the flag. "--name" is the flags indicator
 	Name() string
 	// Desc is the description of the flag.
@@ -36,7 +36,7 @@ type Flag interface {
 }
 
 type FlagWithType[T any] interface {
-	Flag
+	FlagInterface
 	// Get returns the flags value from a `Data` object.
 	Get(*Data) T
 	// AddOptions adds options to a `FlagWithType`. Although chaining isn't
@@ -45,18 +45,18 @@ type FlagWithType[T any] interface {
 	AddOptions(...ArgOpt[T]) FlagWithType[T]
 }
 
-func flagName(f Flag) string {
+func flagName(f FlagInterface) string {
 	return fmt.Sprintf("--%s", f.Name())
 }
 
-func flagShortName(f Flag) string {
+func flagShortName(f FlagInterface) string {
 	return fmt.Sprintf("-%c", f.ShortName())
 }
 
-// NewFlagNode returns a node that iterates over the remaining command line
+// FlagNode returns a node that iterates over the remaining command line
 // arguments and processes any flags that are present.
-func NewFlagNode(fs ...Flag) Processor {
-	m := map[string]Flag{}
+func FlagNode(fs ...FlagInterface) Processor {
+	m := map[string]FlagInterface{}
 	for _, f := range fs {
 		// We explicitly don't check for duplicate keys to give more freedom to users
 		// For example, if they wanted to override a flag from a separate package
@@ -69,11 +69,11 @@ func NewFlagNode(fs ...Flag) Processor {
 }
 
 type flagNode struct {
-	flagMap map[string]Flag
+	flagMap map[string]FlagInterface
 }
 
 func (fn *flagNode) Complete(input *Input, data *Data) (*Completion, error) {
-	unprocessed := map[string]Flag{}
+	unprocessed := map[string]FlagInterface{}
 	// Don't define `processed := map[string]bool{}` like we do in Execute
 	// because we want to run completion on a best effort basis.
 	// Specifically, we will try to complete a flag's value even
@@ -149,7 +149,7 @@ func (fn *flagNode) Complete(input *Input, data *Data) (*Completion, error) {
 }
 
 func (fn *flagNode) Execute(input *Input, output Output, data *Data, eData *ExecuteData) error {
-	unprocessed := map[string]Flag{}
+	unprocessed := map[string]FlagInterface{}
 	processed := map[string]bool{}
 	for _, f := range fn.flagMap {
 		unprocessed[f.Name()] = f
@@ -224,7 +224,7 @@ func (fn *flagNode) Execute(input *Input, output Output, data *Data, eData *Exec
 }
 
 func (fn *flagNode) Usage(u *Usage) {
-	var flags []Flag
+	var flags []FlagInterface
 	for k, f := range fn.flagMap {
 		// flagMap contains entries for name and short name, so ensure we only do each one once.
 		if k == flagName(f) {
@@ -298,12 +298,12 @@ func (f *flag[T]) AddOptions(opts ...ArgOpt[T]) FlagWithType[T] {
 	return f
 }
 
-// NewFlag creates a `Flag` from argument info.
-func NewFlag[T any](name string, shortName rune, desc string, opts ...ArgOpt[T]) FlagWithType[T] {
+// Flag creates a `FlagInterface` from argument info.
+func Flag[T any](name string, shortName rune, desc string, opts ...ArgOpt[T]) FlagWithType[T] {
 	return listFlag(name, desc, shortName, 1, 0, opts...)
 }
 
-// BoolFlag creates a `Flag` for a boolean argument.
+// BoolFlag creates a `FlagInterface` for a boolean argument.
 func BoolFlag(name string, shortName rune, desc string) FlagWithType[bool] {
 	return &boolFlag[bool]{
 		name:      name,
@@ -313,13 +313,13 @@ func BoolFlag(name string, shortName rune, desc string) FlagWithType[bool] {
 	}
 }
 
-// BoolValueFlag creates a boolean `Flag` whose data value gets set to
+// BoolValueFlag creates a boolean `FlagInterface` whose data value gets set to
 // `trueValue` if the flag is provided.
 func BoolValueFlag[T any](name string, shortName rune, desc string, trueValue T) *boolFlag[T] {
 	return &boolFlag[T]{name, shortName, desc, trueValue, nil}
 }
 
-// BoolValuesFlag creates a boolean `Flag` whose data value gets set to
+// BoolValuesFlag creates a boolean `FlagInterface` whose data value gets set to
 // `trueValue` if the flag is provided. Otherwise, it gets set to `falseValue`
 func BoolValuesFlag[T any](name string, shortName rune, desc string, trueValue, falseValue T) *boolFlag[T] {
 	return &boolFlag[T]{name, shortName, desc, trueValue, &falseValue}
@@ -398,8 +398,8 @@ func (bf *boolFlag[T]) AddOptions(opts ...ArgOpt[T]) FlagWithType[T] {
 	panic("options cannot be added to a boolean flag")
 }
 
-// NewListFlag creates a `Flag` from list argument info.
-func NewListFlag[T any](name string, shortName rune, desc string, minN, optionalN int, opts ...ArgOpt[[]T]) FlagWithType[[]T] {
+// ListFlag creates a `FlagInterface` from list argument info.
+func ListFlag[T any](name string, shortName rune, desc string, minN, optionalN int, opts ...ArgOpt[[]T]) FlagWithType[[]T] {
 	return listFlag(name, desc, shortName, minN, optionalN, opts...)
 }
 

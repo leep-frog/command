@@ -6,7 +6,7 @@ import (
 )
 
 var (
-	cacheHistoryFlag     = NewFlag("cache-len", 'n', "Number of historical elements to display from the cache", Default(1))
+	cacheHistoryFlag     = Flag("cache-len", 'n', "Number of historical elements to display from the cache", Default(1))
 	cachePrintPrefixFlag = BoolFlag("cache-prefix", 'p', "Include prefix arguments in print statement")
 	cachePrefixData      = "CACHE_PREFIX_DATA"
 	defaultHistory       = 100
@@ -52,7 +52,7 @@ func CacheNode(name string, c CachableCLI, n *Node, opts ...CacheOption) *Node {
 					data.Set(cachePrefixData, fmt.Sprintf("%s ", strings.Join(used, " ")))
 					return nil
 				}, nil),
-				NewFlagNode(
+				FlagNode(
 					cacheHistoryFlag,
 					cachePrintPrefixFlag,
 				),

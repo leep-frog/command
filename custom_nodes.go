@@ -408,7 +408,7 @@ func MenuFlag[T comparable](name string, shortName rune, desc string, choices ..
 	for _, c := range choices {
 		strChoices = append(strChoices, op.toArgs(c)...)
 	}
-	return NewFlag[T](name, shortName, desc, SimpleCompleter[T](strChoices...), InList(choices...))
+	return Flag[T](name, shortName, desc, SimpleCompleter[T](strChoices...), InList(choices...))
 }
 
 // MenuArg returns an `Arg` that is required to be one of the provided choices.

@@ -155,7 +155,7 @@ func (*SourcererCommand) Node() *command.Node {
 type GoLeep struct{}
 
 var (
-	goDirectory = command.NewFlag[string](
+	goDirectory = command.Flag[string](
 		"go-dir",
 		'd',
 		"Directory of package to run",
@@ -194,7 +194,7 @@ func (gl *GoLeep) Setup() []string        { return nil }
 func (gl *GoLeep) Node() *command.Node {
 	usageNode := command.SerialNodes(
 		command.Description("Get the usage of the provided go files"),
-		command.NewFlagNode(goDirectory),
+		command.FlagNode(goDirectory),
 		command.SimpleProcessor(func(i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
 			ed.Executable = gl.runCommand(d, "usage", nil)
 			return nil
@@ -205,7 +205,7 @@ func (gl *GoLeep) Node() *command.Node {
 
 	exNode := command.SerialNodes(
 		command.Description("Execute the provided go files"),
-		command.NewFlagNode(goDirectory),
+		command.FlagNode(goDirectory),
 		passAlongArgs,
 		command.SimpleProcessor(func(i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
 			f, err := getTmpFile()
