@@ -196,7 +196,7 @@ func (i *Input) PopN(n, optN int, breaker *ListBreaker) ([]*string, bool) {
 	}
 	for ; idx < shift; idx++ {
 		for _, validator := range validators {
-			if err := validator.validate(i.get(idx + i.offset).value); err != nil {
+			if err := validator.Validate(i.get(idx + i.offset).value); err != nil {
 				//if err := validator.validate(StringValue(i.get(idx + i.offset).value)); err != nil {
 				broken = true
 				break

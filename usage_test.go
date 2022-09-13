@@ -166,6 +166,31 @@ func TestUsage(t *testing.T) {
 			},
 		},
 		{
+			name: "works with simple branch node",
+			utc: &UsageTestCase{
+				Node: AsNode(&BranchNode{
+					Branches: map[string]*Node{
+						"alpha": nil,
+					},
+					Default:           SerialNodes(Description("the default command"), Arg[int]("INT_ARG", "an integer"), ListArg[string]("STRINGS", "unltd strings", 1, UnboundedList)),
+					DefaultCompletion: true,
+				}),
+				WantString: []string{
+					"the default command",
+					"< INT_ARG STRINGS [ STRINGS ... ]",
+					"",
+					"  alpha",
+					"",
+					"Arguments:",
+					"  INT_ARG: an integer",
+					"  STRINGS: unltd strings",
+					"",
+					"Symbols:",
+					BranchDesc,
+				},
+			},
+		},
+		{
 			name: "works with branch node",
 			utc: &UsageTestCase{
 				Node: AsNode(&BranchNode{

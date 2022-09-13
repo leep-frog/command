@@ -240,7 +240,7 @@ func (bn *BranchNode) Usage(u *Usage) {
 		return
 	}
 
-	u.UsageSection.Add(SymbolSection, "<", "Start of subcommand branches")
+	u.UsageSection.Set(SymbolSection, "<", "Start of subcommand branches")
 	u.Usage = append(u.Usage, "<")
 
 	bss := maps.Values(bn.getSyns())
@@ -327,7 +327,7 @@ func (nr *nodeRepeater) Usage(u *Usage) {
 	// Merge UsageSection
 	for k1, m := range *nu.UsageSection {
 		for k2, v := range m {
-			u.UsageSection.Add(k1, k2, v)
+			u.UsageSection.Add(k1, k2, v...)
 		}
 	}
 

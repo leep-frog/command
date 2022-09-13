@@ -39,50 +39,47 @@ func IsValidationError(err error) bool {
 
 // ValidatorOption is an `ArgOpt` and `BashOption` for validating arguments.
 type ValidatorOption[T any] struct {
-	validate func(T) error
+	Validate func(T) error
+	Usage    string
+}
+
+func (vo *ValidatorOption[T]) RunValidation(arg validatable, t T) error {
+	if err := vo.Validate(t); err != nil {
+		return newValidationErr(arg, err)
+	}
+	return nil
 }
 
 func (vo *ValidatorOption[T]) modifyArgOpt(ao *argOpt[T]) {
 	ao.validators = append(ao.validators, vo)
 }
 
-// Validate validates the argument and returns an error if the validation fails.
-func (vo *ValidatorOption[T]) Validate(arg validatable, v T) error {
-	if err := vo.validate(v); err != nil {
-		return newValidationErr(arg, err)
-	}
-	return nil
-}
-
 // ValidatorList changes a single-arg validator (`Validator[T]`) to a list-arg validator (`Validator[[]T]`).
 func ValidatorList[T any](vo *ValidatorOption[T]) *ValidatorOption[[]T] {
 	return &ValidatorOption[[]T]{
-		validate: func(ts []T) error {
+		func(ts []T) error {
 			for _, t := range ts {
-				if err := vo.validate(t); err != nil {
+				if err := vo.Validate(t); err != nil {
 					return err
 				}
 			}
 			return nil
 		},
+		vo.Usage,
 	}
-}
-
-// Option creates a `ValidatorOption` from the provided function.
-func Option[T any](f func(T) error) *ValidatorOption[T] {
-	return &ValidatorOption[T]{f}
 }
 
 // Contains [`ValidatorOption`] validates an argument contains the provided string.
 func Contains(s string) *ValidatorOption[string] {
-	return Option(
+	return &ValidatorOption[string]{
 		func(vs string) error {
 			if !strings.Contains(vs, s) {
 				return fmt.Errorf("[Contains] value doesn't contain substring %q", s)
 			}
 			return nil
 		},
-	)
+		fmt.Sprintf("Contains(%q)", s),
+	}
 }
 
 // MatchesRegex [`ValidatorOption`] validates an argument matches the provided regexes.
@@ -91,7 +88,7 @@ func MatchesRegex(pattern ...string) *ValidatorOption[string] {
 	for _, p := range pattern {
 		rs = append(rs, regexp.MustCompile(p))
 	}
-	return Option(
+	return &ValidatorOption[string]{
 		func(vs string) error {
 			for _, r := range rs {
 				if !r.MatchString(vs) {
@@ -100,24 +97,26 @@ func MatchesRegex(pattern ...string) *ValidatorOption[string] {
 			}
 			return nil
 		},
-	)
+		fmt.Sprintf("MatchesRegex(%v)", rs),
+	}
 }
 
 // IsRegex [`ValidatorOption`] validates an argument is a valid regex.
 func IsRegex() *ValidatorOption[string] {
-	return Option(
+	return &ValidatorOption[string]{
 		func(s string) error {
 			if _, err := regexp.Compile(s); err != nil {
 				return fmt.Errorf("[IsRegex] value %q isn't a valid regex: %v", s, err)
 			}
 			return nil
 		},
-	)
+		"IsRegex()",
+	}
 }
 
 // InList [`ValidatorOption`] validates an argument is one of the provided choices.
 func InList[T comparable](choices ...T) *ValidatorOption[T] {
-	return Option(
+	return &ValidatorOption[T]{
 		func(vs T) error {
 			for _, c := range choices {
 				if vs == c {
@@ -126,7 +125,8 @@ func InList[T comparable](choices ...T) *ValidatorOption[T] {
 			}
 			return fmt.Errorf("[InList] argument must be one of %v", choices)
 		},
-	)
+		fmt.Sprintf("InList(%v)", choices),
+	}
 }
 
 // MinLength [`ValidatorOption`] validates an argument is at least `length` long.
@@ -135,14 +135,15 @@ func MinLength(length int) *ValidatorOption[string] {
 	if length != 1 {
 		plural = "s"
 	}
-	return Option(
+	return &ValidatorOption[string]{
 		func(vs string) error {
 			if len(vs) < length {
 				return fmt.Errorf("[MinLength] value must be at least %d character%s", length, plural)
 			}
 			return nil
 		},
-	)
+		fmt.Sprintf("MinLength(%d)", length),
+	}
 }
 
 func fileExists(vName, s string) (os.FileInfo, error) {
@@ -158,12 +159,13 @@ func fileExists(vName, s string) (os.FileInfo, error) {
 
 // FileExists [`ValidatorOption`] validates the file or directory exists.
 func FileExists() *ValidatorOption[string] {
-	return Option(
+	return &ValidatorOption[string]{
 		func(s string) error {
 			_, err := fileExists("FileExists", s)
 			return err
 		},
-	)
+		"FileExists()",
+	}
 }
 
 func isDir(vName, s string) error {
@@ -179,11 +181,12 @@ func isDir(vName, s string) error {
 
 // IsDir [`ValidatorOption`] validates an argument is a directory.
 func IsDir() *ValidatorOption[string] {
-	return Option(
+	return &ValidatorOption[string]{
 		func(s string) error {
 			return isDir("IsDir", s)
 		},
-	)
+		"IsDir()",
+	}
 }
 
 func isFile(vName, s string) error {
@@ -199,90 +202,97 @@ func isFile(vName, s string) error {
 
 // IsFile [`ValidatorOption`] validates an argument is a file.
 func IsFile() *ValidatorOption[string] {
-	return Option(
+	return &ValidatorOption[string]{
 		func(s string) error {
 			return isFile("IsFile", s)
 		},
-	)
+		"IsFile()",
+	}
 }
 
 // Ordered options
 
 // EQ [`ValidatorOption`] validates an argument equals `n`.
 func EQ[T constraints.Ordered](n T) *ValidatorOption[T] {
-	return Option(
+	return &ValidatorOption[T]{
 		func(v T) error {
 			if v == n {
 				return nil
 			}
 			return fmt.Errorf("[EQ] value isn't equal to %v", n)
 		},
-	)
+		fmt.Sprintf("EQ(%v)", n),
+	}
 }
 
 // NEQ [`ValidatorOption`] validates an argument does not equal `n`.
 func NEQ[T constraints.Ordered](n T) *ValidatorOption[T] {
-	return Option(
+	return &ValidatorOption[T]{
 		func(v T) error {
 			if v != n {
 				return nil
 			}
 			return fmt.Errorf("[NEQ] value cannot equal %v", n)
 		},
-	)
+		fmt.Sprintf("NEQ(%v)", n),
+	}
 }
 
 // LT [`ValidatorOption`] validates an argument is less than `n`.
 func LT[T constraints.Ordered](n T) *ValidatorOption[T] {
-	return Option(
+	return &ValidatorOption[T]{
 		func(v T) error {
 			if v < n {
 				return nil
 			}
 			return fmt.Errorf("[LT] value isn't less than %v", n)
 		},
-	)
+		fmt.Sprintf("LT(%v)", n),
+	}
 }
 
 // LTE [`ValidatorOption`] validates an argument is less than or equal to `n`.
 func LTE[T constraints.Ordered](n T) *ValidatorOption[T] {
-	return Option(
+	return &ValidatorOption[T]{
 		func(v T) error {
 			if v <= n {
 				return nil
 			}
 			return fmt.Errorf("[LTE] value isn't less than or equal to %v", n)
 		},
-	)
+		fmt.Sprintf("LTE(%v)", n),
+	}
 }
 
 // GT [`ValidatorOption`] validates an argument is greater than `n`.
 func GT[T constraints.Ordered](n T) *ValidatorOption[T] {
-	return Option(
+	return &ValidatorOption[T]{
 		func(v T) error {
 			if v > n {
 				return nil
 			}
 			return fmt.Errorf("[GT] value isn't greater than %v", n)
 		},
-	)
+		fmt.Sprintf("GT(%v)", n),
+	}
 }
 
 // GTE [`ValidatorOption`] validates an argument is greater than or equal to `n`.
 func GTE[T constraints.Ordered](n T) *ValidatorOption[T] {
-	return Option(
+	return &ValidatorOption[T]{
 		func(v T) error {
 			if v >= n {
 				return nil
 			}
 			return fmt.Errorf("[GTE] value isn't greater than or equal to %v", n)
 		},
-	)
+		fmt.Sprintf("GTE(%v)", n),
+	}
 }
 
 // Positive [`ValidatorOption`] validates an argument is positive.
 func Positive[T constraints.Ordered]() *ValidatorOption[T] {
-	return Option(
+	return &ValidatorOption[T]{
 		func(v T) error {
 			var t T
 			if v > t {
@@ -290,12 +300,13 @@ func Positive[T constraints.Ordered]() *ValidatorOption[T] {
 			}
 			return fmt.Errorf("[Positive] value isn't positive")
 		},
-	)
+		"Positive()",
+	}
 }
 
 // NonNegative [`ValidatorOption`] validates an argument is non-negative.
 func NonNegative[T constraints.Ordered]() *ValidatorOption[T] {
-	return Option(
+	return &ValidatorOption[T]{
 		func(v T) error {
 			var t T
 			if v >= t {
@@ -303,12 +314,13 @@ func NonNegative[T constraints.Ordered]() *ValidatorOption[T] {
 			}
 			return fmt.Errorf("[NonNegative] value isn't non-negative")
 		},
-	)
+		"NonNegative()",
+	}
 }
 
 // Negative [`ValidatorOption`] validates an argument is negative.
 func Negative[T constraints.Ordered]() *ValidatorOption[T] {
-	return Option(
+	return &ValidatorOption[T]{
 		func(v T) error {
 			var t T
 			if v < t {
@@ -316,5 +328,6 @@ func Negative[T constraints.Ordered]() *ValidatorOption[T] {
 			}
 			return fmt.Errorf("[Negative] value isn't negative")
 		},
-	)
+		"Negative()",
+	}
 }

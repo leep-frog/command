@@ -82,12 +82,19 @@ type Usage struct {
 }
 
 // UsageSection is a map from section name to key phrase for that section to description for that key.
-type UsageSection map[string]map[string]string
+type UsageSection map[string]map[string][]string
 
 // Add adds a usage section.
-func (us *UsageSection) Add(section, key, value string) {
+func (us *UsageSection) Add(section, key string, value ...string) {
 	if (*us)[section] == nil {
-		(*us)[section] = map[string]string{}
+		(*us)[section] = map[string][]string{}
+	}
+	(*us)[section][key] = append((*us)[section][key], value...)
+}
+
+func (us *UsageSection) Set(section, key string, value ...string) {
+	if (*us)[section] == nil {
+		(*us)[section] = map[string][]string{}
 	}
 	(*us)[section][key] = value
 }
@@ -120,7 +127,14 @@ func (u *Usage) String() string {
 				sort.Strings(keys)
 			}
 			for _, k := range keys {
-				r = append(r, fmt.Sprintf("  %s: %s", k, kvs[k]))
+				for idx, kv := range kvs[k] {
+					if idx == 0 {
+						r = append(r, fmt.Sprintf("  %s: %s", k, kv))
+					} else {
+						r = append(r, fmt.Sprintf("    %s", kv))
+					}
+				}
+
 			}
 
 			// Since already split by newlines, this statement actually adds one newline.
@@ -150,7 +164,9 @@ func (u *Usage) string(r []string, depth int) []string {
 		if su.UsageSection != nil {
 			for section, m := range *su.UsageSection {
 				for k, v := range m {
-					u.UsageSection.Add(section, k, v)
+					// Subsections override the higher-level section
+					// Mostly needed for duplicate sections (like nested branch nodes).
+					u.UsageSection.Set(section, k, v...)
 				}
 			}
 		}

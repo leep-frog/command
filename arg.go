@@ -72,6 +72,11 @@ func (an *ArgNode[T]) Usage(u *Usage) {
 
 	if an.desc != "" {
 		u.UsageSection.Add(ArgSection, an.name, an.desc)
+		if an.opt != nil {
+			for _, v := range an.opt.validators {
+				u.UsageSection.Add(ArgSection, an.name, fmt.Sprintf("  %s", v.Usage))
+			}
+		}
 	}
 
 	for i := 0; i < an.minN; i++ {
@@ -168,7 +173,7 @@ func (an *ArgNode[T]) Execute(i *Input, o Output, data *Data, eData *ExecuteData
 
 	if an.opt != nil {
 		for _, validator := range an.opt.validators {
-			if err := validator.Validate(an, v); err != nil {
+			if err := validator.RunValidation(an, v); err != nil {
 				return o.Err(err)
 			}
 		}

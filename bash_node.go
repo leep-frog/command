@@ -203,7 +203,7 @@ func (bn *BashCommand[T]) Run(output Output, data *Data) (T, error) {
 	}
 
 	for _, validator := range bn.Validators {
-		if err := validator.Validate(bn, v); err != nil {
+		if err := validator.RunValidation(bn, v); err != nil {
 			return nill, err
 		}
 	}
