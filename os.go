@@ -2,18 +2,20 @@ package command
 
 import (
 	"fmt"
+	"io/fs"
 	"path/filepath"
 	"runtime"
 )
 
 var (
-	cmdos = mustGetOS()
+	CmdOS = mustGetOS()
 )
 
 // TODO: eventually actually implement completions and commands in windows shell.
 type commandOS interface {
-	isAbs(string) bool
-	absStart() string
+	IsAbs(string) bool
+	AbsStart() string
+	DefaultFilePerm() fs.FileMode
 }
 
 func mustGetOS() commandOS {
@@ -41,30 +43,44 @@ func mustGetOS() commandOS {
 
 type windowsOS struct{}
 
-func (*windowsOS) isAbs(dir string) bool {
+func (*windowsOS) IsAbs(dir string) bool {
 	return filepath.IsAbs(dir) || (len(dir) > 0 && dir[0] == '/')
 }
 
-func (*windowsOS) absStart() string {
+func (*windowsOS) AbsStart() string {
 	return "/"
+}
+
+func (*windowsOS) DefaultFilePerm() fs.FileMode {
+	return 0644
 }
 
 type windowsMingwOS struct{}
 
-func (*windowsMingwOS) isAbs(dir string) bool {
+func (*windowsMingwOS) IsAbs(dir string) bool {
 	return filepath.IsAbs(dir) || (len(dir) > 0 && dir[0] == '/')
 }
 
-func (*windowsMingwOS) absStart() string {
+func (*windowsMingwOS) AbsStart() string {
 	return "/"
+}
+
+func (*windowsMingwOS) DefaultFilePerm() fs.FileMode {
+	return 0644
 }
 
 type linuxOS struct{}
 
-func (*linuxOS) isAbs(dir string) bool {
+func (*linuxOS) IsAbs(dir string) bool {
 	return filepath.IsAbs(dir)
 }
 
-func (*linuxOS) absStart() string {
+func (*linuxOS) AbsStart() string {
 	return "/"
+}
+
+func (*linuxOS) DefaultFilePerm() fs.FileMode {
+	// This was originally 0644, but that caused an error in GCP Cloud Shell (
+	// which is Linux based). Hence why we use 0666 here
+	return 0666
 }

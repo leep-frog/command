@@ -676,7 +676,7 @@ func TestTypedCompleters(t *testing.T) {
 			c:    &FileCompleter[[]string]{},
 			args: "cmd testdata/empty/",
 			setup: func(t *testing.T) {
-				if err := os.Mkdir("testdata/empty", 0644); err != nil {
+				if err := os.Mkdir("testdata/empty", CmdOS.DefaultFilePerm()); err != nil {
 					t.Fatalf("failed to create empty directory")
 				}
 			},
@@ -727,7 +727,7 @@ func TestTypedCompleters(t *testing.T) {
 				Directory: "testdata",
 			},
 			setup: func(t *testing.T) {
-				if err := os.Mkdir("testdata/empty", 0644); err != nil {
+				if err := os.Mkdir("testdata/empty", CmdOS.DefaultFilePerm()); err != nil {
 					t.Fatalf("failed to create empty directory")
 				}
 			},
@@ -1237,13 +1237,13 @@ func TestTypedCompleters(t *testing.T) {
 		&completerTest[string]{
 			name: "file completer works for absolute path",
 			c:    &FileCompleter[[]string]{},
-			setup: fakeReadDir(cmdos.absStart(),
+			setup: fakeReadDir(CmdOS.AbsStart(),
 				fakeFile("file1"),
 				fakeFile("file2"),
 				fakeDir("dirA"),
 				fakeDir("dirB"),
 			),
-			args: fmt.Sprintf("cmd %s", cmdos.absStart()),
+			args: fmt.Sprintf("cmd %s", CmdOS.AbsStart()),
 			want: []string{
 				"dirA/",
 				"dirB/",
@@ -1255,7 +1255,7 @@ func TestTypedCompleters(t *testing.T) {
 		&completerTest[string]{
 			name: "file completer partial completes dir for absolute path",
 			c:    &FileCompleter[[]string]{},
-			args: fmt.Sprintf("cmd %sd", cmdos.absStart()),
+			args: fmt.Sprintf("cmd %sd", CmdOS.AbsStart()),
 			setup: fakeReadDir("/",
 				fakeFile("file1"),
 				fakeFile("file2"),
@@ -1270,7 +1270,7 @@ func TestTypedCompleters(t *testing.T) {
 		&completerTest[string]{
 			name: "file completer partial completes file for absolute path",
 			c:    &FileCompleter[[]string]{},
-			args: fmt.Sprintf("cmd %sf", cmdos.absStart()),
+			args: fmt.Sprintf("cmd %sf", CmdOS.AbsStart()),
 			setup: fakeReadDir("/",
 				fakeFile("file1"),
 				fakeFile("file2"),

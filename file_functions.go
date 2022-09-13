@@ -38,7 +38,6 @@ func ReadFile(name string) ([]string, error) {
 
 // CreateFile creates a file from the provided string slice.
 func CreateFile(name string, contents []string, ps fs.FileMode) error {
-	// TODO: Might need to change permissions throughout to 0666 on other systems (had an error with this in GCP).
 	return ioutil.WriteFile(name, []byte(strings.Join(contents, "\n")), ps)
 }
 

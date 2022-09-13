@@ -1029,7 +1029,7 @@ func TestSourcerer(t *testing.T) {
 		/* Useful for commenting out tests */
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			if err := ioutil.WriteFile(f.Name(), nil, 0644); err != nil {
+			if err := ioutil.WriteFile(f.Name(), nil, command.CmdOS.DefaultFilePerm()); err != nil {
 				t.Fatalf("failed to clear file: %v", err)
 			}
 

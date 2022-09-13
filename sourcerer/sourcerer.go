@@ -184,7 +184,7 @@ func (s *sourcerer) executeExecutor(output command.Output, d *command.Data) erro
 		return nil
 	}
 
-	f, err := os.OpenFile(sourcingFile, os.O_WRONLY|os.O_CREATE, 0644)
+	f, err := os.OpenFile(sourcingFile, os.O_WRONLY|os.O_CREATE, command.CmdOS.DefaultFilePerm())
 	if err != nil {
 		return output.Stderrf("failed to open file: %v\n", err)
 	}
@@ -429,7 +429,7 @@ func (s *sourcerer) generateFile(o command.Output, d *command.Data) error {
 	// bash environments that don't actually source sourcerer-related commands.
 	efc := fmt.Sprintf(executeFileContents, filename, filename, filename)
 
-	f, err := os.OpenFile(getExecuteFile(filename), os.O_WRONLY|os.O_CREATE, 0644)
+	f, err := os.OpenFile(getExecuteFile(filename), os.O_WRONLY|os.O_CREATE, command.CmdOS.DefaultFilePerm())
 	if err != nil {
 		return o.Stderrf("failed to open execute function file: %v\n", err)
 	}

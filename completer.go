@@ -287,7 +287,7 @@ func (ff *FileCompleter[T]) Complete(value T, data *Data) (*Completion, error) {
 	laDir, laFile := filepath.Split(lastArg)
 	var dir string
 	// Use extra check for mingw on windows
-	if cmdos.isAbs(laDir) {
+	if CmdOS.IsAbs(laDir) {
 		dir = laDir
 	} else {
 		var err error

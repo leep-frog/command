@@ -338,7 +338,7 @@ func runNodes(n *Node, o Output, d *Data, args []string) error {
 		return err
 	}
 	if filename != "" && len(eData.Executable) > 0 {
-		if err := ioutil.WriteFile(filename, []byte(strings.Join(eData.Executable, "\n")), 0644); err != nil {
+		if err := ioutil.WriteFile(filename, []byte(strings.Join(eData.Executable, "\n")), CmdOS.DefaultFilePerm()); err != nil {
 			return o.Stderrf("failed to write eData.Executable to file: %v\n", err)
 		}
 	}
