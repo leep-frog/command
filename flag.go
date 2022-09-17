@@ -26,6 +26,10 @@ type FlagInterface interface {
 	ShortName() rune
 	// Processor returns a node processor that processes arguments after the flag indicator.
 	Processor() Processor
+
+	// TODO: Everything below this line should be combined into
+	// a config type.
+
 	// ProcessMissing processes the flag when it is not provided
 	ProcessMissing(d *Data) error
 	// Combinable indicates whether or not the short flag can be combined
@@ -33,6 +37,8 @@ type FlagInterface interface {
 	// When used as a combinable flag, the flag will be evaluated with
 	// an empty `Input` object.
 	Combinable(d *Data) bool
+	// AllowMultiple returns whether or not the flag can be provided multiple times.
+	AllowMultiple(d *Data) bool
 }
 
 type FlagWithType[T any] interface {
@@ -187,13 +193,14 @@ func (fn *flagNode) Execute(input *Input, output Output, data *Data, eData *Exec
 
 			// This is outside of the for-loop so we only remove
 			// the multi-flag arg (not one arg per flag).
+			// TODO: PopAt function?
 			input.offset = i
 			input.Pop()
 			input.offset = 0
 		} else if f, ok := fn.flagMap[a]; ok {
 			// If regular flag
 			delete(unprocessed, f.Name())
-			if processed[f.Name()] {
+			if !f.AllowMultiple(data) && processed[f.Name()] {
 				return output.Stderrf("Flag %q has already been set\n", f.Name())
 			}
 			processed[f.Name()] = true
@@ -283,6 +290,10 @@ func (f *flag[T]) Combinable(*Data) bool {
 	return false
 }
 
+func (f *flag[T]) AllowMultiple(*Data) bool {
+	return false
+}
+
 func (f *flag[T]) Get(d *Data) T {
 	return GetData[T](d, f.name)
 }
@@ -365,6 +376,10 @@ func (bf *boolFlag[T]) Processor() Processor {
 
 func (bf *boolFlag[T]) Combinable(*Data) bool {
 	return true
+}
+
+func (bf *boolFlag[T]) AllowMultiple(*Data) bool {
+	return false
 }
 
 func (bf *boolFlag[T]) ProcessMissing(d *Data) error {
