@@ -201,6 +201,19 @@ func (c *Cache) Get(key string) (string, bool, error) {
 	return string(s), b, e
 }
 
+// GetStruct retrieves data from the cache and stores it in the provided object.
+// This function returns whether the cache exists and any error encountered.
+func (c *Cache) GetStruct(key string, obj interface{}) (bool, error) {
+	bytes, ok, err := c.GetBytes(key)
+	if !ok || err != nil || bytes == nil {
+		return ok, err
+	}
+	if err := json.Unmarshal(bytes, obj); err != nil {
+		return ok, fmt.Errorf("failed to unmarshal cache data: %v", err)
+	}
+	return ok, nil
+}
+
 // PutStruct json-deserializes the provided struct and stores the data in the cache.
 func (c *Cache) PutStruct(key string, i interface{}) error {
 	b, err := json.MarshalIndent(i, "", "  ")

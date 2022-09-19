@@ -4,7 +4,6 @@
 package sourcerer
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
@@ -247,14 +246,8 @@ var (
 func load(cli CLI) error {
 	ck := cacheKey(cli)
 	cash, err := getCache()
-	if err != nil {
-		return err
-	} else if bytes, fileExists, err := cash.GetBytes(ck); err != nil {
-		return fmt.Errorf("failed to load cli %q: %v", cli.Name(), err)
-	} else if fileExists && bytes != nil {
-		return json.Unmarshal(bytes, cli)
-	}
-	return nil
+	_, err = cash.GetStruct(ck, cli)
+	return err
 }
 
 type sourcerer struct {

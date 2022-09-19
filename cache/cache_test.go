@@ -17,19 +17,19 @@ func TestPut(t *testing.T) {
 		key        string
 		data       string
 		want       string
-		wantGetErr string
+		wantGetErr error
 		wantGetOk  bool
-		wantErr    string
+		wantErr    error
 	}{
 		{
 			name:       "put fails on empty",
-			wantErr:    "invalid key format",
-			wantGetErr: "failed to get file for key: invalid key format",
+			wantErr:    fmt.Errorf("failed to get file for key: invalid key format"),
+			wantGetErr: fmt.Errorf("failed to get file for key: invalid key format"),
 		}, {
 			name:       "put fails on invalid key",
 			key:        "abc-$",
-			wantErr:    "invalid key format",
-			wantGetErr: "failed to get file for key: invalid key format",
+			wantErr:    fmt.Errorf("failed to get file for key: invalid key format"),
+			wantGetErr: fmt.Errorf("failed to get file for key: invalid key format"),
 		}, {
 			name:      "put succeeds",
 			key:       "abc",
@@ -41,26 +41,12 @@ func TestPut(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			c := NewTestCache(t)
 
+			prefix := fmt.Sprintf("Put(%s, %s)", test.key, test.data)
 			err := c.Put(test.key, test.data)
-			if test.wantErr == "" && err != nil {
-				t.Errorf("Put(%s, %s) returned err %v; want nil", test.key, test.data, err)
-			}
-			if test.wantErr != "" && err == nil {
-				t.Errorf("Put(%s, %s) returned nil; want err %q", test.key, test.data, test.wantErr)
-			}
-			if test.wantErr != "" && err != nil && !strings.Contains(err.Error(), test.wantErr) {
-				t.Errorf("Put(%s, %s) returned err %q; want %q", test.key, test.data, err.Error(), test.wantErr)
-			}
+			command.CmpError(t, prefix, test.wantErr, err)
 
 			stored, ok, err := c.Get(test.key)
-			if (err == nil) != (test.wantErr == "") {
-				t.Fatalf("PutStruct(%s, %v) returned get error (%v); want %v", test.key, test.data, err, test.wantErr)
-			}
-			if err != nil {
-				if diff := cmp.Diff(test.wantGetErr, err.Error()); diff != "" {
-					t.Errorf("PutStruct(%s, %v) returned wrong get error (-want, +got):\n%s", test.key, test.data, diff)
-				}
-			}
+			command.CmpError(t, prefix, test.wantGetErr, err)
 			if ok != test.wantGetOk {
 				t.Errorf("PutStruct(%s, %v) returned ok=%v; want %v", test.key, test.data, ok, test.wantGetOk)
 			}
@@ -77,15 +63,15 @@ func TestGet(t *testing.T) {
 		key     string
 		want    string
 		wantOk  bool
-		wantErr string
+		wantErr error
 	}{
 		{
 			name:    "get fails on empty",
-			wantErr: "invalid key format",
+			wantErr: fmt.Errorf("failed to get file for key: invalid key format"),
 		}, {
 			name:    "get fails on invalid key",
 			key:     "abc-$",
-			wantErr: "invalid key format",
+			wantErr: fmt.Errorf("failed to get file for key: invalid key format"),
 		}, {
 			name: "returns empty string on missing key",
 			key:  "xyz",
@@ -101,16 +87,9 @@ func TestGet(t *testing.T) {
 			c := NewTestCache(t)
 			Put(t, c, "abc", "123\n456\n")
 
+			prefix := fmt.Sprintf("Get(%s)", test.key)
 			resp, ok, err := c.Get(test.key)
-			if test.wantErr == "" && err != nil {
-				t.Errorf("Get(%s) returned err: %v; want nil", test.key, err)
-			}
-			if test.wantErr != "" && err == nil {
-				t.Errorf("Get(%s) returned nil; want err %q", test.key, test.wantErr)
-			}
-			if test.wantErr != "" && err != nil && !strings.Contains(err.Error(), test.wantErr) {
-				t.Errorf("Get(%s) returned err: %q; want %q", test.key, err.Error(), test.wantErr)
-			}
+			command.CmpError(t, prefix, test.wantErr, err)
 
 			if ok != test.wantOk {
 				t.Errorf("Get(%s) returned ok=%v; want %v", test.key, ok, test.wantOk)
@@ -314,7 +293,6 @@ func TestExecute(t *testing.T) {
 				Args:       []string{"put", "things"},
 				WantErr:    fmt.Errorf(`Argument "DATA" requires at least 1 argument, got 0`),
 				WantStderr: "Argument \"DATA\" requires at least 1 argument, got 0\n",
-				//WantStderr: []string{"key not found"},
 			},
 		},
 		{
@@ -545,25 +523,93 @@ func TestCompletion(t *testing.T) {
 	}
 }
 
+func TestGetStruct(t *testing.T) {
+	key := "key"
+	c := NewTestCache(t)
+	val := &testStruct{
+		A: 1,
+		B: "two",
+		C: map[string]bool{
+			"three": true,
+		},
+	}
+	if err := c.PutStruct(key, val); err != nil {
+		t.Fatalf("failed to put struct: %v", err)
+	}
+
+	for _, test := range []struct {
+		name    string
+		c       *Cache
+		key     string
+		obj     interface{}
+		wantOK  bool
+		wantErr error
+		wantObj interface{}
+	}{
+		{
+			name:    "get struct fails on bad cache dir",
+			c:       &Cache{"bleh", false},
+			key:     key,
+			wantErr: fmt.Errorf("failed to get file for key: failed to get cache directory: cache directory does not exist"),
+		},
+		{
+			name: "get struct returns false on missingkey",
+			c:    c,
+			key:  fmt.Sprintf("missing_%s", key),
+		},
+		{
+			name:    "get struct handles mismatched object",
+			c:       c,
+			obj:     &Cache{},
+			wantOK:  true,
+			key:     key,
+			wantObj: &Cache{},
+		},
+		{
+			name:    "get struct works",
+			c:       c,
+			obj:     &testStruct{},
+			wantOK:  true,
+			key:     key,
+			wantObj: val,
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			prefix := fmt.Sprintf("GetStruct(%s)", test.key)
+
+			ok, err := test.c.GetStruct(test.key, test.obj)
+			if ok != test.wantOK {
+				t.Errorf("%s returned ok=%v; want %v", prefix, ok, test.wantOK)
+			}
+			command.CmpError(t, prefix, test.wantErr, err)
+
+			if diff := cmp.Diff(test.wantObj, test.obj, cmp.AllowUnexported(Cache{})); diff != "" {
+				t.Errorf("%s returned object diff (-want, +got):\n%s", prefix, diff)
+			}
+
+		})
+	}
+}
+
 func TestPutStruct(t *testing.T) {
 	for _, test := range []struct {
 		name       string
 		key        string
 		data       interface{}
 		wantGet    string
-		wantGetErr string
+		wantGetErr error
 		wantGetOk  bool
-		wantErr    string
+		wantErr    error
 	}{
 		{
 			name:       "put fails on empty",
-			wantErr:    "invalid key format",
-			wantGetErr: "failed to get file for key: invalid key format",
+			wantErr:    fmt.Errorf("failed to get file for key: invalid key format"),
+			wantGetErr: fmt.Errorf("failed to get file for key: invalid key format"),
 		}, {
 			name:       "put fails on invalid key",
 			key:        "abc-$",
-			wantErr:    "invalid key format",
-			wantGetErr: "failed to get file for key: invalid key format",
+			wantErr:    fmt.Errorf("failed to get file for key: invalid key format"),
+			wantGetErr: fmt.Errorf("failed to get file for key: invalid key format"),
 		}, {
 			name: "put succeeds",
 			key:  "abc",
@@ -589,26 +635,13 @@ func TestPutStruct(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			c := NewTestCache(t)
 
+			prefix := fmt.Sprintf("PutStruct(%s, %v)", test.key, test.data)
+
 			err := c.PutStruct(test.key, test.data)
-			if test.wantErr == "" && err != nil {
-				t.Errorf("PutStruct(%s, %v) returned err %v; want nil", test.key, test.data, err)
-			}
-			if test.wantErr != "" && err == nil {
-				t.Errorf("PutStruct(%s, %v) returned nil; want err %q", test.key, test.data, test.wantErr)
-			}
-			if test.wantErr != "" && err != nil && !strings.Contains(err.Error(), test.wantErr) {
-				t.Errorf("PutStruct(%s, %v) returned err %q; want %q", test.key, test.data, err.Error(), test.wantErr)
-			}
+			command.CmpError(t, prefix, test.wantErr, err)
 
 			stored, ok, err := c.Get(test.key)
-			if (err == nil) != (test.wantErr == "") {
-				t.Fatalf("PutStruct(%s, %v) returned get error (%v); want %v", test.key, test.data, err, test.wantErr)
-			}
-			if err != nil {
-				if diff := cmp.Diff(test.wantGetErr, err.Error()); diff != "" {
-					t.Errorf("PutStruct(%s, %v) returned wrong get error (-want, +got):\n%s", test.key, test.data, diff)
-				}
-			}
+			command.CmpError(t, prefix, test.wantGetErr, err)
 			if ok != test.wantGetOk {
 				t.Errorf("PutStruct(%s, %v) returned ok=%v; want %v", test.key, test.data, ok, test.wantGetOk)
 			}
