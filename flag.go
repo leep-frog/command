@@ -31,14 +31,16 @@ type FlagInterface interface {
 	// a config type.
 
 	// ProcessMissing processes the flag when it is not provided
-	ProcessMissing(d *Data) error
+	ProcessMissing(*Data) error
+	// PostProcess runs after the entire flag node has been processed.
+	PostProcess(*Input, Output, *Data, *ExecuteData) error
 	// Combinable indicates whether or not the short flag can be combined
 	// with other flags (`-qwer` = `-q -w -e -r`, for example).
 	// When used as a combinable flag, the flag will be evaluated with
 	// an empty `Input` object.
-	Combinable(d *Data) bool
+	Combinable(*Data) bool
 	// AllowMultiple returns whether or not the flag can be provided multiple times.
-	AllowMultiple(d *Data) bool
+	AllowMultiple(*Data) bool
 }
 
 type FlagWithType[T any] interface {
@@ -87,12 +89,22 @@ func (fn *flagNode) Complete(input *Input, data *Data) (*Completion, error) {
 	for _, f := range fn.flagMap {
 		unprocessed[f.Name()] = f
 	}
-	for i := 0; i < len(input.remaining); {
-		a, ok := input.PeekAt(i)
-		if !ok {
-			i++
-			continue
+	for i := 0; i < input.NumRemaining(); {
+		a, _ := input.PeekAt(i)
+
+		// If it's the last arg.
+		if i == input.NumRemaining()-1 && len(a) > 0 && a[0] == '-' {
+			// TODO: only complete full flag names
+			k := make([]string, 0, len(fn.flagMap))
+			for n := range fn.flagMap {
+				k = append(k, n)
+			}
+			sort.Strings(k)
+			return &Completion{
+				Suggestions: k,
+			}, nil
 		}
+
 		// Check if combinable flag (e.g. `-qwer` -> `-q -w -e -r`).
 		if MultiFlagRegex.MatchString(a) {
 			for j := 1; j < len(a); j++ {
@@ -136,16 +148,6 @@ func (fn *flagNode) Complete(input *Input, data *Data) (*Completion, error) {
 		}
 	}
 
-	if lastArg, ok := input.PeekAt(len(input.remaining) - 1); ok && len(lastArg) > 0 && lastArg[0] == '-' {
-		k := make([]string, 0, len(fn.flagMap))
-		for n := range fn.flagMap {
-			k = append(k, n)
-		}
-		sort.Strings(k)
-		return &Completion{
-			Suggestions: k,
-		}, nil
-	}
 	for _, f := range unprocessed {
 		if err := f.ProcessMissing(data); err != nil {
 			return nil, err
@@ -227,6 +229,9 @@ func (fn *flagNode) Execute(input *Input, output Output, data *Data, eData *Exec
 			return output.Annotatef(err, "failed to get default")
 		}
 	}
+	for _, f := range fn.flagMap {
+		f.PostProcess(input, output, data, eData)
+	}
 	return nil
 }
 
@@ -263,6 +268,10 @@ func (f *flag[T]) Desc() string {
 
 func (f *flag[T]) Processor() Processor {
 	return f.argNode
+}
+
+func (f *flag[T]) PostProcess(input *Input, output Output, data *Data, eData *ExecuteData) error {
+	return nil
 }
 
 func (f *flag[T]) ProcessMissing(d *Data) error {
@@ -382,6 +391,10 @@ func (bf *boolFlag[T]) AllowMultiple(*Data) bool {
 	return false
 }
 
+func (bf *boolFlag[T]) PostProcess(*Input, Output, *Data, *ExecuteData) error {
+	return nil
+}
+
 func (bf *boolFlag[T]) ProcessMissing(d *Data) error {
 	if bf.falseValue != nil {
 		d.Set(bf.name, *bf.falseValue)
@@ -413,12 +426,65 @@ func (bf *boolFlag[T]) AddOptions(opts ...ArgOpt[T]) FlagWithType[T] {
 	panic("options cannot be added to a boolean flag")
 }
 
+func ItemizedListFlag[T any](name string, shortName rune, desc string, opts ...ArgOpt[[]T]) FlagWithType[[]T] {
+	return &itemizedListFlag[T]{
+		flag: listFlag(name, desc, shortName, 0, UnboundedList, opts...),
+	}
+}
+
+type itemizedListFlag[T any] struct {
+	*flag[[]T]
+
+	rawArgs []string
+}
+
+func (ilf *itemizedListFlag[T]) Processor() Processor {
+	return ilf
+}
+
+func (ilf *itemizedListFlag[T]) PostProcess(input *Input, output Output, data *Data, eData *ExecuteData) error {
+	return ilf.flag.argNode.Execute(NewInput(ilf.rawArgs, nil), output, data, eData)
+}
+
+func (ilf *itemizedListFlag[T]) Execute(input *Input, output Output, data *Data, eData *ExecuteData) error {
+	s, ok := input.Pop()
+	if !ok {
+		return output.Err(NotEnoughArgs(ilf.Name(), 1, 0))
+	}
+	ilf.rawArgs = append(ilf.rawArgs, s)
+	return nil
+}
+
+func (ilf *itemizedListFlag[T]) Complete(input *Input, data *Data) (*Completion, error) {
+	if input.FullyProcessed() {
+		// Don't think it's possible to get here (because the flag Complete function
+		// would complete the flag value ("--ilf") if it was the last value). So,
+		// the input will always have at least one more argument.
+		return nil, nil
+	}
+	s, _ := input.Pop()
+	ilf.rawArgs = append(ilf.rawArgs, s)
+	if input.FullyProcessed() {
+		c, e := ilf.flag.argNode.Complete(NewInput(ilf.rawArgs, nil), data)
+		return c, e
+	}
+	return nil, nil
+}
+
+func (ilf *itemizedListFlag[T]) AllowMultiple(*Data) bool {
+	return true
+}
+
+func (ilf *itemizedListFlag[T]) Usage(u *Usage) {
+	ilf.flag.Processor().Usage(u)
+}
+
 // ListFlag creates a `FlagInterface` from list argument info.
 func ListFlag[T any](name string, shortName rune, desc string, minN, optionalN int, opts ...ArgOpt[[]T]) FlagWithType[[]T] {
 	return listFlag(name, desc, shortName, minN, optionalN, opts...)
 }
 
-func listFlag[T any](name, desc string, shortName rune, minN, optionalN int, opts ...ArgOpt[T]) FlagWithType[T] {
+func listFlag[T any](name, desc string, shortName rune, minN, optionalN int, opts ...ArgOpt[T]) *flag[T] {
 	return &flag[T]{
 		name:      name,
 		desc:      desc,

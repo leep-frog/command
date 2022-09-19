@@ -4000,6 +4000,80 @@ func TestExecute(t *testing.T) {
 				WantStderr: "Flag \"quick\" has already been set\n",
 			},
 		},
+		// ItemizedListFlag tests
+		{
+			name: "Itemized list flag requires argument",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					FlagNode(
+						ItemizedListFlag[string]("ilf", 'i', testDesc),
+					),
+				),
+				Args: []string{"--ilf"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "--ilf"},
+					},
+				},
+				WantErr:    fmt.Errorf("Argument \"ilf\" requires at least 1 argument, got 0"),
+				WantStderr: "Argument \"ilf\" requires at least 1 argument, got 0\n",
+			},
+		},
+		{
+			name: "Itemized list flag only takes one argument",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					FlagNode(
+						ItemizedListFlag[string]("ilf", 'i', testDesc),
+					),
+					ListArg[string]("sl", testDesc, 0, UnboundedList),
+				),
+				Args: []string{"--ilf", "i1", "other"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "--ilf"},
+						{value: "i1"},
+						{value: "other"},
+					},
+				},
+				WantData: &Data{Values: map[string]interface{}{
+					"ilf": []string{"i1"},
+					"sl":  []string{"other"},
+				}},
+			},
+		},
+		{
+			name: "Mixed itemized args",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					FlagNode(
+						ItemizedListFlag[string]("ilf", 'i', testDesc),
+					),
+					ListArg[string]("sl", testDesc, 0, UnboundedList),
+				),
+				Args: []string{"--ilf", "i1", "other", "thing", "-i", "robot", "--ilf", "phone", "okay", "-i", "enough", "then"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "--ilf"},
+						{value: "i1"},
+						{value: "other"},
+						{value: "thing"},
+						{value: "-i"},
+						{value: "robot"},
+						{value: "--ilf"},
+						{value: "phone"},
+						{value: "okay"},
+						{value: "-i"},
+						{value: "enough"},
+						{value: "then"},
+					},
+				},
+				WantData: &Data{Values: map[string]interface{}{
+					"ilf": []string{"i1", "robot", "phone", "enough"},
+					"sl":  []string{"other", "thing", "okay", "then"},
+				}},
+			},
+		},
 		// ArgFilter tests.
 		{
 			name: "empty arg doesn't get filtered",
@@ -5735,6 +5809,37 @@ func TestComplete(t *testing.T) {
 			},
 		},
 		{
+			name: "partial flag name gets completed",
+			ctc: &CompleteTestCase{
+				Node: SerialNodes(
+					FlagNode(
+						Flag[string]("greeting", 'h', testDesc, SimpleCompleter[string]("hey", "hi")),
+						ListFlag[string]("names", 'n', testDesc, 1, 2, SimpleCompleter[[]string]("ralph", "johnny", "renee")),
+						BoolFlag("good", 'g', testDesc),
+					),
+					Arg[int]("i", testDesc, SimpleCompleter[int]("1", "2")),
+				),
+				Args: "cmd --gr",
+				Want: []string{"--greeting"},
+			},
+		},
+		{
+			name: "full flag name gets completed",
+			ctc: &CompleteTestCase{
+				Node: SerialNodes(
+					FlagNode(
+						Flag[string]("greeting", 'h', testDesc, SimpleCompleter[string]("hey", "hi")),
+						ListFlag[string]("names", 'n', testDesc, 1, 2, SimpleCompleter[[]string]("ralph", "johnny", "renee")),
+						BoolFlag("good", 'g', testDesc),
+					),
+					Arg[int]("i", testDesc, SimpleCompleter[int]("1", "2")),
+				),
+				Args: "cmd --names",
+				Want: []string{"--names"},
+			},
+		},
+		// Flag value completions
+		{
 			name: "completes for single flag",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
@@ -5862,12 +5967,6 @@ func TestComplete(t *testing.T) {
 						BoolFlag("where", 'w', testDesc),
 					),
 				),
-				WantData: &Data{Values: map[string]interface{}{
-					"quick":    true,
-					"where":    true,
-					"everyone": true,
-					"run":      true,
-				}},
 			},
 		},
 		{
@@ -5984,6 +6083,64 @@ func TestComplete(t *testing.T) {
 					"run":   true,
 					"zf":    "",
 				}},
+			},
+		},
+		// ItemizedListFlag tests
+		{
+			name: "Itemized list flag gets completed",
+			ctc: &CompleteTestCase{
+				Node: SerialNodes(
+					FlagNode(
+						ItemizedListFlag[string]("ilf", 'i', testDesc, SimpleDistinctCompleter[[]string]("abc", "def", "ghi")),
+					),
+				),
+				Args: "cmd --ilf",
+				Want: []string{"--ilf"},
+			},
+		},
+		{
+			name: "Completes itemized list flag value",
+			ctc: &CompleteTestCase{
+				Node: SerialNodes(
+					FlagNode(
+						ItemizedListFlag[string]("ilf", 'i', testDesc, SimpleDistinctCompleter[[]string]("abc", "def", "ghi")),
+					),
+				),
+				Args: "cmd --ilf ",
+				Want: []string{"abc", "def", "ghi"},
+				WantData: &Data{Values: map[string]interface{}{
+					"ilf": []string{""},
+				}},
+			},
+		},
+		{
+			name: "Completes later itemized list flag value",
+			ctc: &CompleteTestCase{
+				Node: SerialNodes(
+					FlagNode(
+						ItemizedListFlag[string]("ilf", 'i', testDesc, SimpleDistinctCompleter[[]string]("abc", "def", "ghi")),
+					),
+				),
+				Args: "cmd --ilf un -i d",
+				WantData: &Data{Values: map[string]interface{}{
+					"ilf": []string{"un", "d"},
+				}},
+				Want: []string{"def"},
+			},
+		},
+		{
+			name: "Completes distinct itemized list flag value",
+			ctc: &CompleteTestCase{
+				Node: SerialNodes(
+					FlagNode(
+						ItemizedListFlag[string]("ilf", 'i', testDesc, SimpleDistinctCompleter[[]string]("abc", "def", "ghi")),
+					),
+				),
+				Args: "cmd --ilf def -i ",
+				WantData: &Data{Values: map[string]interface{}{
+					"ilf": []string{"def", ""},
+				}},
+				Want: []string{"abc", "ghi"},
 			},
 		},
 		// ArgFilter tests.

@@ -15,6 +15,7 @@ type argOpt[T any] struct {
 	breaker            *ListBreaker
 	completeForExecute *completeForExecute
 
+	// TODO: hideUsage
 	hiddenUsage bool
 }
 
