@@ -25,9 +25,11 @@ func (ee *errorEdge) UsageNext() *Node {
 
 func TestExecute(t *testing.T) {
 	for _, test := range []struct {
-		name      string
-		etc       *ExecuteTestCase
-		postCheck func(*testing.T)
+		name       string
+		etc        *ExecuteTestCase
+		osGetwd    string
+		osGetwdErr error
+		postCheck  func(*testing.T)
 	}{
 		{
 			name: "handles nil node",
@@ -1558,6 +1560,59 @@ func TestExecute(t *testing.T) {
 				WantExecuteData: &ExecuteData{
 					Executable: []string{"hello", "there"},
 				},
+			},
+		},
+		// SuperSimpleProcessor tests
+		{
+			name: "sets data with SuperSimpleProcessor",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(SuperSimpleProcessor(func(i *Input, d *Data) error {
+					d.Set("key", "value")
+					return nil
+				})),
+				WantData: &Data{
+					Values: map[string]interface{}{
+						"key": "value",
+					},
+				},
+			},
+		},
+		{
+			name: "returns error with SuperSimpleProcessor",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(SuperSimpleProcessor(func(i *Input, d *Data) error {
+					d.Set("key", "value")
+					return fmt.Errorf("argh")
+				})),
+				WantErr:    fmt.Errorf("argh"),
+				WantStderr: "argh\n",
+				WantData: &Data{
+					Values: map[string]interface{}{
+						"key": "value",
+					},
+				},
+			},
+		},
+		// Getwd tests
+		{
+			name:    "sets data with Getwd",
+			osGetwd: "some/dir",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(Getwd()),
+				WantData: &Data{
+					Values: map[string]interface{}{
+						GetwdKey: "some/dir",
+					},
+				},
+			},
+		},
+		{
+			name:       "returns error from Getwd",
+			osGetwdErr: fmt.Errorf("whoops"),
+			etc: &ExecuteTestCase{
+				Node:       SerialNodes(Getwd()),
+				WantErr:    fmt.Errorf("failed to get current directory: whoops"),
+				WantStderr: "failed to get current directory: whoops\n",
 			},
 		},
 		{
@@ -5427,6 +5482,9 @@ func TestExecute(t *testing.T) {
 		/* Useful for commenting out tests. */
 	} {
 		t.Run(test.name, func(t *testing.T) {
+			StubValue(t, &osGetwd, func() (string, error) {
+				return test.osGetwd, test.osGetwdErr
+			})
 			if test.etc == nil {
 				test.etc = &ExecuteTestCase{}
 			}
@@ -5479,6 +5537,8 @@ func TestComplete(t *testing.T) {
 		ctc            *CompleteTestCase
 		filepathAbs    string
 		filepathAbsErr error
+		osGetwd        string
+		osGetwdErr     error
 	}{
 		{
 			name: "stuff",
@@ -6677,6 +6737,75 @@ func TestComplete(t *testing.T) {
 				Want: []string{"hello"},
 			},
 		},
+		// SuperSimpleProcessor tests
+		{
+			name: "sets data with SuperSimpleProcessor",
+			ctc: &CompleteTestCase{
+				Args: "cmd",
+				Node: SerialNodes(SuperSimpleProcessor(func(i *Input, d *Data) error {
+					d.Set("key", "value")
+					return nil
+				}),
+					Arg[string]("s", testDesc, SimpleCompleter[string]("abc", "def")),
+				),
+				Want: []string{"abc", "def"},
+				WantData: &Data{
+					Values: map[string]interface{}{
+						"key": "value",
+						"s":   "",
+					},
+				},
+			},
+		},
+		{
+			name: "returns error from SuperSimpleProcessor",
+			ctc: &CompleteTestCase{
+				Args: "cmd",
+				Node: SerialNodes(SuperSimpleProcessor(func(i *Input, d *Data) error {
+					d.Set("key", "value")
+					return fmt.Errorf("ugh")
+				}),
+					Arg[string]("s", testDesc, SimpleCompleter[string]("abc", "def")),
+				),
+				WantErr: fmt.Errorf("ugh"),
+				WantData: &Data{
+					Values: map[string]interface{}{
+						"key": "value",
+					},
+				},
+			},
+		},
+		// Getwd tests
+		{
+			name:    "sets data with Getwd",
+			osGetwd: "some/dir",
+			ctc: &CompleteTestCase{
+				Args: "cmd",
+				Node: SerialNodes(
+					Getwd(),
+					Arg[string]("s", testDesc, SimpleCompleter[string]("abc", "def")),
+				),
+				Want: []string{"abc", "def"},
+				WantData: &Data{
+					Values: map[string]interface{}{
+						GetwdKey: "some/dir",
+						"s":      "",
+					},
+				},
+			},
+		},
+		{
+			name:       "returns error from Getwd",
+			osGetwdErr: fmt.Errorf("whoops"),
+			ctc: &CompleteTestCase{
+				Args: "cmd",
+				Node: SerialNodes(
+					Getwd(),
+					Arg[string]("s", testDesc, SimpleCompleter[string]("abc", "def")),
+				),
+				WantErr: fmt.Errorf("failed to get current directory: whoops"),
+			},
+		},
 		// MenuArg tests.
 		{
 			name: "MenuArg completes choices",
@@ -7292,6 +7421,9 @@ func TestComplete(t *testing.T) {
 		/* Useful comment for commenting out tests */
 	} {
 		t.Run(test.name, func(t *testing.T) {
+			StubValue(t, &osGetwd, func() (string, error) {
+				return test.osGetwd, test.osGetwdErr
+			})
 			StubValue(t, &filepathAbs, func(s string) (string, error) {
 				return filepath.Join(test.filepathAbs, s), test.filepathAbsErr
 			})

@@ -308,6 +308,19 @@ func SimpleProcessor(e func(*Input, Output, *Data, *ExecuteData) error, c func(*
 	}
 }
 
+// SuperSimpleProcessor returns a processor from a single function that is run in both
+// the execution and completion contexts.
+func SuperSimpleProcessor(f func(*Input, *Data) error) Processor {
+	return &simpleProcessor{
+		e: func(i *Input, o Output, d *Data, ed *ExecuteData) error {
+			return o.Err(f(i, d))
+		},
+		c: func(i *Input, d *Data) (*Completion, error) {
+			return nil, f(i, d)
+		},
+	}
+}
+
 // NodeRepeater is a `Processor` that runs the provided Node at least `minN` times and up to `minN + optionalN` times.
 // It should work with most node types, but hasn't been tested with branch nodes and flags really.
 // Additionally, any argument nodes under it should probably use `CustomSetter` arg options.
@@ -608,4 +621,36 @@ func EchoExecuteDataf(format string) Processor {
 		}
 		return nil
 	}, nil)
+}
+
+const (
+	// GetwdKey is the `Data` key used by `Getwd` and `GetwdFromData`.
+	GetwdKey = "GETWD"
+)
+
+// GetwdFromData retrieves the current directory from `Data` (as set by
+// `Getwd`).
+func GetwdFromData(d *Data) string {
+	return d.String(GetwdKey)
+}
+
+var (
+	osGetwd = os.Getwd
+)
+
+// Getwd returns a processor that stores the present directory in `Data`.
+// Use the `GetwdFromData` function to retrieve its value.
+func Getwd() Processor {
+	return SuperSimpleProcessor(func(i *Input, d *Data) error {
+		s, err := osGetwd()
+		if err != nil {
+			return fmt.Errorf("failed to get current directory: %v", err)
+		}
+		d.Set(GetwdKey, s)
+		return nil
+	})
+}
+
+func getwd() (string, error) {
+	return os.Getwd()
 }
