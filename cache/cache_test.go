@@ -2,6 +2,7 @@ package cache
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -648,6 +649,67 @@ func TestPutStruct(t *testing.T) {
 			if diff := cmp.Diff(test.wantGet, stored); diff != "" {
 				t.Errorf("PutStruct(%s, %v) produced diff:\n%s", test.key, test.data, diff)
 			}
+		})
+	}
+}
+
+func TestNewShell(t *testing.T) {
+	dir, err := os.MkdirTemp("", "leep-cd-test")
+	if err != nil {
+		t.Fatalf("failed to create temp dir: %v", err)
+	}
+
+	for _, test := range []struct {
+		name      string
+		env       map[string]string
+		mkdirErr  error
+		wantCache *Cache
+		wantErr   error
+		wantEnv   map[string]string
+	}{
+		{
+			name: "returns shell cache if directory returned",
+			env: map[string]string{
+				ShellOSEnvVar: dir,
+			},
+			wantCache: &Cache{
+				Dir: dir,
+			},
+		},
+		{
+			name: "returns error if not a directory",
+			env: map[string]string{
+				ShellOSEnvVar: filepath.Join(dir, "bleh"),
+			},
+			wantErr: fmt.Errorf("invalid environment variable (LEEP_CACHE_SHELL_DIR) for cache: cache directory does not exist"),
+		},
+		{
+			name:     "Error if fails to create temp dir",
+			mkdirErr: fmt.Errorf("oops"),
+			wantErr:  fmt.Errorf("failed to create temporary directory: oops"),
+		},
+		{
+			name: "Creates dir and sets env",
+			env:  map[string]string{},
+			wantEnv: map[string]string{
+				ShellOSEnvVar: dir,
+			},
+			wantCache: &Cache{
+				Dir: dir,
+			},
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+
+			command.StubEnv(t, test.env)
+			command.StubValue(t, &osMkdirTemp, func(string, string) (string, error) {
+				return dir, test.mkdirErr
+			})
+			c, err := NewShell()
+			if diff := cmp.Diff(test.wantCache, c, cmp.AllowUnexported(Cache{})); diff != "" {
+				t.Errorf("NewShell() returned incorrect cache (-want, +got):\n%s", diff)
+			}
+			command.CmpError(t, "", test.wantErr, err)
 		})
 	}
 }

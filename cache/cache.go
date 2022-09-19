@@ -127,8 +127,12 @@ func NewTestCache(t *testing.T) *Cache {
 
 // New creates a new cache from an environment variable.
 func New(e string) (*Cache, error) {
+	v, ok := command.OSLookupEnv(e)
+	if !ok || v == "" {
+		return nil, fmt.Errorf("environment variable %q is not set", e)
+	}
 	c := &Cache{
-		Dir: os.Getenv(e),
+		Dir: v,
 	}
 	if _, err := c.getCacheDir(); err != nil {
 		return nil, fmt.Errorf("invalid environment variable (%s) for cache: %v", e, err)
