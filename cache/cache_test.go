@@ -653,6 +653,96 @@ func TestPutStruct(t *testing.T) {
 	}
 }
 
+func TestNewTestCacheWithData(t *testing.T) {
+	cmpGet := func(t *testing.T, want, got interface{}, wantOK, ok bool, wantErr, err error) {
+		if diff := cmp.Diff(want, got); diff != "" {
+			t.Errorf("Cache contained incorrect data (-want, +got):\n%s", diff)
+		}
+		if ok != wantOK {
+			t.Errorf("Cache returned incorrect ok: got %v, want %v", ok, wantOK)
+		}
+		command.CmpError(t, "Cache", wantErr, err)
+	}
+
+	for _, test := range []struct {
+		name string
+		data map[string]interface{}
+		t    func(t *testing.T, c *Cache)
+	}{
+		{
+			name: "handles nil data",
+		},
+		{
+			name: "handles empty data",
+			data: map[string]interface{}{},
+		},
+		{
+			name: "handles missing key",
+			data: map[string]interface{}{},
+			t: func(t *testing.T, c *Cache) {
+				k, ok, err := c.Get("v1")
+				cmpGet(t, "", k, false, ok, nil, err)
+			},
+		},
+		{
+			name: "inserts string",
+			data: map[string]interface{}{
+				"v1": "k1",
+			},
+			t: func(t *testing.T, c *Cache) {
+				k, ok, err := c.Get("v1")
+				cmpGet(t, "k1", k, true, ok, nil, err)
+			},
+		},
+		{
+			name: "inserts multiple strings",
+			data: map[string]interface{}{
+				"v1": "k1",
+				"v2": "k2",
+			},
+			t: func(t *testing.T, c *Cache) {
+				k, ok, err := c.Get("v1")
+				cmpGet(t, "k1", k, true, ok, nil, err)
+				k, ok, err = c.Get("v2")
+				cmpGet(t, "k2", k, true, ok, nil, err)
+			},
+		},
+		{
+			name: "inserts interface",
+			data: map[string]interface{}{
+				"v1": &testStruct{
+					A: 123,
+					B: "456",
+					C: map[string]bool{
+						"78": true,
+						"9":  false,
+					},
+				},
+			},
+			t: func(t *testing.T, c *Cache) {
+				ts := &testStruct{}
+				ok, err := c.GetStruct("v1", ts)
+				wantTS := &testStruct{
+					A: 123,
+					B: "456",
+					C: map[string]bool{
+						"78": true,
+						"9":  false,
+					},
+				}
+				cmpGet(t, wantTS, ts, true, ok, nil, err)
+			},
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			c := NewTestCacheWithData(t, test.data)
+			if test.t != nil {
+				test.t(t, c)
+			}
+		})
+	}
+}
+
 func TestNewShell(t *testing.T) {
 	dir, err := os.MkdirTemp("", "leep-cd-test")
 	if err != nil {

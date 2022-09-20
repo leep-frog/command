@@ -111,6 +111,13 @@ func completer(c *Cache) command.Completer[string] {
 // NewTestCache is a function useful for stubbing out caches in tests.
 func NewTestCache(t *testing.T) *Cache {
 	t.Helper()
+	return NewTestCacheWithData(t, nil)
+}
+
+// NewTestCacheWithData creates a test cache with the provided key-values.
+// String values are set using Cache.Put. All other values are set with Cache.PutStruct.
+func NewTestCacheWithData(t *testing.T, m map[string]interface{}) *Cache {
+	t.Helper()
 	dir, err := ioutil.TempDir("", "test-leep-frog-command-cache")
 	if err != nil {
 		t.Fatalf("failed to create temp directory: %v", err)
@@ -120,9 +127,19 @@ func NewTestCache(t *testing.T) *Cache {
 			t.Logf("failed to clean up test cache: %v", err)
 		}
 	})
-	return &Cache{
+	c := &Cache{
 		Dir: dir,
 	}
+	for k, v := range m {
+		if s, ok := v.(string); ok {
+			if err := c.Put(k, s); err != nil {
+				t.Fatalf("Cache.Put(%s, %s) returned error: %v", k, s, err)
+			}
+		} else if err := c.PutStruct(k, v); err != nil {
+			t.Fatalf("Cache.PutStruct(%s, %v) returned error: %v", k, v, err)
+		}
+	}
+	return c
 }
 
 // New creates a new cache from an environment variable.
