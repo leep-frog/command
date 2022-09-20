@@ -27,6 +27,7 @@ func NewShell() (*Cache, error) {
 		if err := command.OSSetenv(ShellOSEnvVar, f); err != nil {
 			return nil, fmt.Errorf("failed to set cache env var: %v", err)
 		}
+		fmt.Println("Set env", ShellOSEnvVar, f)
 	}
 	return New(ShellOSEnvVar)
 }
