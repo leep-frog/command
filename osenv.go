@@ -29,27 +29,18 @@ func EnvArg(name string) Processor {
 	)
 }
 
+// StubEnv uses the provided map as the OS environment.
 func StubEnv(t *testing.T, m map[string]string) {
-	oldLookup := OSLookupEnv
-	oldSet := OSSetenv
-	oldUnset := OSUnsetenv
-
-	OSLookupEnv = func(key string) (string, bool) {
+	StubValue(t, &OSLookupEnv, func(key string) (string, bool) {
 		v, ok := m[key]
 		return v, ok
-	}
-	OSSetenv = func(key, value string) error {
+	})
+	StubValue(t, &OSSetenv, func(key, value string) error {
 		m[key] = value
 		return nil
-	}
-	OSUnsetenv = func(key string) error {
+	})
+	StubValue(t, &OSUnsetenv, func(key string) error {
 		delete(m, key)
 		return nil
-	}
-
-	t.Cleanup(func() {
-		OSLookupEnv = oldLookup
-		OSSetenv = oldSet
-		OSUnsetenv = oldUnset
 	})
 }

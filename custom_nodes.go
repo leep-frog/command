@@ -5,6 +5,7 @@ import (
 	"os"
 	"sort"
 	"strings"
+	"testing"
 
 	"golang.org/x/exp/maps"
 	"golang.org/x/exp/slices"
@@ -637,6 +638,13 @@ func GetwdFromData(d *Data) string {
 var (
 	osGetwd = os.Getwd
 )
+
+// StubGetwd uses the provided string and error when calling command.Getwd.
+func StubGetwd(t *testing.T, wd string, err error) {
+	StubValue(t, &osGetwd, func() (string, error) {
+		return wd, err
+	})
+}
 
 // Getwd returns a processor that stores the present directory in `Data`.
 // Use the `GetwdFromData` function to retrieve its value.
