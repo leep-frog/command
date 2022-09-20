@@ -32,7 +32,7 @@ var (
 		"function _custom_autocomplete_%s {",
 		`  local tFile=$(mktemp)`,
 		// The last argument is for extra passthrough arguments to be passed for aliaser autocompletes.
-		`  source $GOPATH/bin/_%s_runner autocomplete ${COMP_WORDS[0]} "$COMP_TYPE" $COMP_POINT "$COMP_LINE" > $tFile`,
+		`  $GOPATH/bin/_%s_runner autocomplete ${COMP_WORDS[0]} "$COMP_TYPE" $COMP_POINT "$COMP_LINE" > $tFile`,
 		`  local IFS=$'\n'`,
 		`  COMPREPLY=( $(cat $tFile) )`,
 		`  rm $tFile`,
@@ -45,7 +45,7 @@ var (
 		fmt.Sprintf("  %s", FileStringFromCLI(`"$1"`)),
 		`  local tFile=$(mktemp)`,
 		// The last argument is for extra passthrough arguments to be passed for aliaser autocompletes.
-		`  source $GOPATH/bin/_${file}_runner autocomplete "$1" "$COMP_TYPE" $COMP_POINT "$COMP_LINE" "${@:2}" > $tFile`,
+		`  $GOPATH/bin/_${file}_runner autocomplete "$1" "$COMP_TYPE" $COMP_POINT "$COMP_LINE" "${@:2}" > $tFile`,
 		`  local IFS='`,
 		`';`,
 		`  COMPREPLY=( $(cat $tFile) )`,
@@ -70,7 +70,7 @@ var (
 		`  local tmpFile=$(mktemp)`,
 		``,
 		`  # Run the go-only code`,
-		`  source $GOPATH/bin/_%s_runner execute $tmpFile "$@"`,
+		`  $GOPATH/bin/_%s_runner execute $tmpFile "$@"`,
 		`  # Return the error code if go code terminated with an error`,
 		`  local errorCode=$?`,
 		`  if [ $errorCode -ne 0 ]; then return $errorCode; fi`,
