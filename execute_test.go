@@ -1551,6 +1551,53 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
+			name: "SimpleExecutableNode appends executable",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					SimpleExecutableNode("do some", "stuff"),
+					SimpleExecutableNode("and then", "even", "MORE"),
+				),
+				WantExecuteData: &ExecuteData{
+					Executable: []string{
+						"do some",
+						"stuff",
+						"and then",
+						"even",
+						"MORE",
+					},
+				},
+			},
+		},
+		{
+			name: "ExecutableNode appends executable",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					ExecutableNode(func(o Output, d *Data) ([]string, error) {
+						return []string{
+							"do some",
+							"stuff",
+						}, nil
+					}),
+					ExecutableNode(func(o Output, d *Data) ([]string, error) {
+						return []string{
+							"and then",
+							"even",
+							"MORE",
+						}, nil
+					}),
+				),
+				WantExecuteData: &ExecuteData{
+					Executable: []string{
+						"do some",
+						"stuff",
+						"and then",
+						"even",
+						"MORE",
+					},
+				},
+			},
+		},
+		{
 			name: "Sets executable with processor",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(SimpleProcessor(func(i *Input, o Output, d *Data, ed *ExecuteData) error {
@@ -1591,6 +1638,106 @@ func TestExecute(t *testing.T) {
 						"key": "value",
 					},
 				},
+			},
+		},
+		// osenv tests
+		{
+			name: "EnvArg returns nil if no env",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					EnvArg("SOME_VAR"),
+				),
+			},
+		},
+		{
+			name: "EnvArg adds environment variable to data",
+			etc: &ExecuteTestCase{
+				Env: map[string]string{
+					"SOME_VAR": "heyo",
+				},
+				WantEnv: map[string]string{
+					"SOME_VAR": "heyo",
+				},
+				Node: SerialNodes(
+					EnvArg("SOME_VAR"),
+				),
+				WantData: &Data{
+					Values: map[string]interface{}{
+						"SOME_VAR": "heyo",
+					},
+				},
+			},
+		},
+		{
+			name: "SetEnvVar sets variable",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(SimpleProcessor(func(i *Input, o Output, d *Data, ed *ExecuteData) error {
+					SetEnvVar("abc", "def", ed)
+					return nil
+				}, nil)),
+				WantExecuteData: &ExecuteData{
+					Executable: []string{
+						`export "abc"="def"`,
+					},
+				},
+			},
+		},
+		{
+			name: "SetEnvVarProcessor sets variable",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					SetEnvVarProcessor("abc", "def"),
+				),
+				WantExecuteData: &ExecuteData{
+					Executable: []string{
+						`export "abc"="def"`,
+					},
+				},
+			},
+		},
+		{
+			name: "SetEnvVar appends executable",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					SimpleExecutableNode("do some", "stuff"),
+					SimpleProcessor(func(i *Input, o Output, d *Data, ed *ExecuteData) error {
+						SetEnvVar("abc", "def", ed)
+						return nil
+					}, nil),
+				),
+				WantExecuteData: &ExecuteData{
+					Executable: []string{
+						"do some",
+						"stuff",
+						`export "abc"="def"`,
+					},
+				},
+			},
+		},
+		{
+			name: "SetEnvVarProcessor appends executable",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					SimpleExecutableNode("do some", "stuff"),
+					SetEnvVarProcessor("abc", "def"),
+				),
+				WantExecuteData: &ExecuteData{
+					Executable: []string{
+						"do some",
+						"stuff",
+						`export "abc"="def"`,
+					},
+				},
+			},
+		},
+		// PrintlnProcessor tests
+		{
+			name: "PrintlnProcessor prints output",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					PrintlnProcessor("hello there"),
+				),
+				WantStdout: "hello there\n",
 			},
 		},
 		// Getwd tests
@@ -6771,6 +6918,25 @@ func TestComplete(t *testing.T) {
 				WantData: &Data{
 					Values: map[string]interface{}{
 						"key": "value",
+					},
+				},
+			},
+		},
+		// PrintlnProcessor tests
+		{
+			name: "PrintlnProcessor does not print output in completion context",
+			ctc: &CompleteTestCase{
+				Node: SerialNodes(
+					PrintlnProcessor("hello there"),
+					Arg[string]("s", testDesc, SimpleCompleter[string]("okay", "then")),
+				),
+				Want: []string{
+					"okay",
+					"then",
+				},
+				WantData: &Data{
+					Values: map[string]interface{}{
+						"s": "",
 					},
 				},
 			},

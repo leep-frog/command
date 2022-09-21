@@ -662,3 +662,11 @@ func Getwd() Processor {
 func getwd() (string, error) {
 	return os.Getwd()
 }
+
+// PrintlnProcessor returns a `Processor` that runs `output.Stdoutln(v)`.
+func PrintlnProcessor(v string) Processor {
+	return SimpleProcessor(func(i *Input, o Output, d *Data, ed *ExecuteData) error {
+		o.Stdoutln(v)
+		return nil
+	}, nil)
+}

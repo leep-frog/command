@@ -284,11 +284,10 @@ func (*Debugger) Node() *command.Node {
 				o.Stdoutln("Exiting debug mode.")
 				return nil
 			}},
-			&command.ExecutorProcessor{F: func(o command.Output, d *command.Data) error {
-				command.OSSetenv(command.DebugEnvVar, "1")
-				o.Stdoutln("Entering debug mode.")
-				return nil
-			}},
+			command.SerialNodes(
+				command.SetEnvVarProcessor(command.DebugEnvVar, "1"),
+				command.PrintlnProcessor("Entering debug mode."),
+			),
 		),
 	)
 }

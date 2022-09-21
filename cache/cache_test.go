@@ -804,7 +804,7 @@ func TestNewShell(t *testing.T) {
 			etc: &command.ExecuteTestCase{
 				WantExecuteData: &command.ExecuteData{
 					Executable: []string{
-						fmt.Sprintf("export %s=%q", ShellOSEnvVar, dir),
+						fmt.Sprintf("export %q=%q", ShellOSEnvVar, dir),
 					},
 				},
 				WantData: &command.Data{Values: map[string]interface{}{

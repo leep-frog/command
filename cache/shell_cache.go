@@ -29,11 +29,7 @@ var (
 			if err != nil {
 				return fmt.Errorf("failed to create temporary directory: %v", err)
 			}
-			// We can't us os.Setenv because the go executable runs in
-			// a separate shell.
-			ed.Executable = append(ed.Executable,
-				fmt.Sprintf("export %s=%q", ShellOSEnvVar, v),
-			)
+			command.SetEnvVar(ShellOSEnvVar, v, ed)
 		}
 		c, err := ForDir(v)
 		if err != nil {
