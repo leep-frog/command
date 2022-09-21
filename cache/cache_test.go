@@ -762,9 +762,6 @@ func TestNewShell(t *testing.T) {
 				Env: map[string]string{
 					ShellOSEnvVar: dir,
 				},
-				WantEnv: map[string]string{
-					ShellOSEnvVar: dir,
-				},
 				WantData: &command.Data{Values: map[string]interface{}{
 					ShellDataKey: &Cache{Dir: dir},
 				}},
@@ -777,10 +774,6 @@ func TestNewShell(t *testing.T) {
 			name: "returns error if existing shell cache doesn't point to a directory",
 			etc: &command.ExecuteTestCase{
 				Env: map[string]string{
-					ShellOSEnvVar: filepath.Join(dir, "bleh"),
-				},
-				// TODO: remove wantEnv check and remove setenv (since operates in separate subshell)
-				WantEnv: map[string]string{
 					ShellOSEnvVar: filepath.Join(dir, "bleh"),
 				},
 				WantErr:    fmt.Errorf("failed to create shell-level cache: invalid directory (%s) for cache: cache directory does not exist", filepath.Join(dir, "bleh")),

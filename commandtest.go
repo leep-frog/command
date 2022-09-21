@@ -71,9 +71,6 @@ type ExecuteTestCase struct {
 	WantStderr string
 	// WantErr is the error that should be returned.
 	WantErr error
-	// WantEnv is the expected map of os environment variables. This is only
-	// checked if Env is not nil.
-	WantEnv map[string]string
 
 	// Whether or not to test actual input against wantInput.
 	testInput bool
@@ -96,10 +93,6 @@ func (etc *ExecuteTestCase) getEnv() map[string]string {
 		etc.Env = map[string]string{}
 	}
 	return etc.Env
-}
-
-func (etc *ExecuteTestCase) getWantEnv() map[string]string {
-	return etc.WantEnv
 }
 
 // FakeRun is a fake bash run.
@@ -161,9 +154,6 @@ type RunNodeTestCase struct {
 	// DataCmpOpts is the set of cmp.Options that should be used
 	// when comparing data.
 	DataCmpOpts cmp.Options
-	// WantEnv is the expected map of os environment variables. This is only
-	// checked if Env is not nil.
-	WantEnv map[string]string
 }
 
 func (rtc *RunNodeTestCase) getEnv() map[string]string {
@@ -171,10 +161,6 @@ func (rtc *RunNodeTestCase) getEnv() map[string]string {
 		rtc.Env = map[string]string{}
 	}
 	return rtc.Env
-}
-
-func (rtc *RunNodeTestCase) getWantEnv() map[string]string {
-	return rtc.WantEnv
 }
 
 func RunNodeTest(t *testing.T, rtc *RunNodeTestCase) {
@@ -354,9 +340,6 @@ type CompleteTestCase struct {
 	// DataCmpOpts is the set of cmp.Options that should be used
 	// when comparing data.
 	DataCmpOpts cmp.Options
-	// WantEnv is the expected map of os environment variables. This is only
-	// checked if Env is not nil.
-	WantEnv map[string]string
 
 	// RunResponses are the stubbed responses to return from exec.Cmd.Run.
 	RunResponses []*FakeRun
@@ -370,10 +353,6 @@ func (ctc *CompleteTestCase) getEnv() map[string]string {
 		ctc.Env = map[string]string{}
 	}
 	return ctc.Env
-}
-
-func (ctc *CompleteTestCase) getWantEnv() map[string]string {
-	return ctc.WantEnv
 }
 
 // CompleteTest runs a test on command autocompletion.
@@ -430,7 +409,6 @@ type commandTester interface {
 
 type testCase interface {
 	getEnv() map[string]string
-	getWantEnv() map[string]string
 }
 
 type noOpTester struct{}
@@ -470,13 +448,7 @@ func (et *envTester) setup(t *testing.T, tc *testContext) {
 	StubEnv(t, tc.testCase.getEnv())
 }
 
-func (et *envTester) check(t *testing.T, tc *testContext) {
-	t.Helper()
-
-	if diff := cmp.Diff(tc.testCase.getWantEnv(), tc.testCase.getEnv(), cmpopts.EquateEmpty()); diff != "" {
-		t.Errorf("%s resulted in incorrect env (-want, +got):\n%s", tc.prefix, diff)
-	}
-}
+func (et *envTester) check(t *testing.T, tc *testContext) {}
 
 type outputTester struct {
 	wantStdout string

@@ -418,9 +418,6 @@ func TestExecute(t *testing.T) {
 				Env: map[string]string{
 					command.DebugEnvVar: "1",
 				},
-				WantEnv: map[string]string{
-					command.DebugEnvVar: "1",
-				},
 				WantExecuteData: &command.ExecuteData{
 					Executable: []string{
 						fmt.Sprintf("unset %q", command.DebugEnvVar),

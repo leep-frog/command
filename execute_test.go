@@ -1655,9 +1655,6 @@ func TestExecute(t *testing.T) {
 				Env: map[string]string{
 					"SOME_VAR": "heyo",
 				},
-				WantEnv: map[string]string{
-					"SOME_VAR": "heyo",
-				},
 				Node: SerialNodes(
 					EnvArg("SOME_VAR"),
 				),
