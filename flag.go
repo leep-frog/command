@@ -27,20 +27,47 @@ type FlagInterface interface {
 	// Processor returns a node processor that processes arguments after the flag indicator.
 	Processor() Processor
 
-	// TODO: Everything below this line should be combined into
-	// a config type. (So we can easily add more fields without breaking things)
+	// Options returns the set of additional options for this flag.
+	// Returning a separate type (rather than enumerating functions here)
+	// allows us to update the options without breaking existing code.
+	Options() *FlagOptions
+}
 
-	// ProcessMissing processes the flag when it is not provided
-	ProcessMissing(*Data) error
-	// PostProcess runs after the entire flag node has been processed.
-	PostProcess(*Input, Output, *Data, *ExecuteData) error
+// FlagOptions contains optional data for flags
+type FlagOptions struct {
 	// Combinable indicates whether or not the short flag can be combined
 	// with other flags (`-qwer` = `-q -w -e -r`, for example).
 	// When used as a combinable flag, the flag will be evaluated with
 	// an empty `Input` object.
-	Combinable(*Data) bool
-	// AllowMultiple returns whether or not the flag can be provided multiple times.
-	AllowMultiple(*Data) bool
+	Combinable bool
+	// AllowsMultiple returns whether or not the flag can be provided multiple times.
+	AllowsMultiple bool
+	// ProcessMissing processes the flag when it is not provided
+	ProcessMissing func(*Data) error
+	// PostProcess runs after the entire flag node has been processed.
+	PostProcess func(*Input, Output, *Data, *ExecuteData) error
+}
+
+func (fo *FlagOptions) combinable() bool {
+	return fo != nil && fo.Combinable
+}
+
+func (fo *FlagOptions) allowsMultiple() bool {
+	return fo != nil && fo.AllowsMultiple
+}
+
+func (fo *FlagOptions) processMissing(d *Data) error {
+	if fo == nil || fo.ProcessMissing == nil {
+		return nil
+	}
+	return fo.ProcessMissing(d)
+}
+
+func (fo *FlagOptions) postProcess(i *Input, o Output, d *Data, ed *ExecuteData) error {
+	if fo == nil || fo.PostProcess == nil {
+		return nil
+	}
+	return fo.PostProcess(i, o, d, ed)
 }
 
 type FlagWithType[T any] interface {
@@ -111,7 +138,7 @@ func (fn *flagNode) Complete(input *Input, data *Data) (*Completion, error) {
 				shortCode := fmt.Sprintf("-%s", string(a[j]))
 				f, ok := fn.flagMap[shortCode]
 				// Run multi-flags on a best-effort basis
-				if !ok || !f.Combinable(data) {
+				if !ok || !f.Options().combinable() {
 					continue
 				}
 				delete(unprocessed, f.Name())
@@ -149,7 +176,7 @@ func (fn *flagNode) Complete(input *Input, data *Data) (*Completion, error) {
 	}
 
 	for _, f := range unprocessed {
-		if err := f.ProcessMissing(data); err != nil {
+		if err := f.Options().processMissing(data); err != nil {
 			return nil, err
 		}
 	}
@@ -157,6 +184,7 @@ func (fn *flagNode) Complete(input *Input, data *Data) (*Completion, error) {
 }
 
 func (fn *flagNode) Execute(input *Input, output Output, data *Data, eData *ExecuteData) error {
+	// TODO: Flag args should check for other flag values.
 	unprocessed := map[string]FlagInterface{}
 	processed := map[string]bool{}
 	for _, f := range fn.flagMap {
@@ -176,7 +204,7 @@ func (fn *flagNode) Execute(input *Input, output Output, data *Data, eData *Exec
 				if !ok {
 					return output.Stderrf("Unknown flag code %q used in multi-flag\n", shortCode)
 				}
-				if !f.Combinable(data) {
+				if !f.Options().combinable() {
 					return output.Stderrf("Flag %q is not combinable\n", f.Name())
 				}
 				delete(unprocessed, f.Name())
@@ -202,7 +230,7 @@ func (fn *flagNode) Execute(input *Input, output Output, data *Data, eData *Exec
 		} else if f, ok := fn.flagMap[a]; ok {
 			// If regular flag
 			delete(unprocessed, f.Name())
-			if !f.AllowMultiple(data) && processed[f.Name()] {
+			if !f.Options().allowsMultiple() && processed[f.Name()] {
 				return output.Stderrf("Flag %q has already been set\n", f.Name())
 			}
 			processed[f.Name()] = true
@@ -225,12 +253,12 @@ func (fn *flagNode) Execute(input *Input, output Output, data *Data, eData *Exec
 	keys := maps.Keys(unprocessed)
 	slices.Sort(keys)
 	for _, k := range keys {
-		if err := unprocessed[k].ProcessMissing(data); err != nil {
+		if err := unprocessed[k].Options().processMissing(data); err != nil {
 			return output.Annotatef(err, "failed to get default")
 		}
 	}
 	for _, f := range fn.flagMap {
-		f.PostProcess(input, output, data, eData)
+		f.Options().postProcess(input, output, data, eData)
 	}
 	return nil
 }
@@ -270,21 +298,21 @@ func (f *flag[T]) Processor() Processor {
 	return f.argNode
 }
 
-func (f *flag[T]) PostProcess(input *Input, output Output, data *Data, eData *ExecuteData) error {
-	return nil
-}
+func (f *flag[T]) Options() *FlagOptions {
+	return &FlagOptions{
+		ProcessMissing: func(d *Data) error {
+			if f.argNode.opt == nil || f.argNode.opt._default == nil {
+				return nil
+			}
 
-func (f *flag[T]) ProcessMissing(d *Data) error {
-	if f.argNode.opt == nil || f.argNode.opt._default == nil {
-		return nil
+			def, err := f.argNode.opt._default.f(d)
+			if err != nil {
+				return err
+			}
+			f.argNode.Set(def, d)
+			return nil
+		},
 	}
-
-	def, err := f.argNode.opt._default.f(d)
-	if err != nil {
-		return err
-	}
-	f.argNode.Set(def, d)
-	return nil
 }
 
 func (f *flag[T]) Name() string {
@@ -293,14 +321,6 @@ func (f *flag[T]) Name() string {
 
 func (f *flag[T]) ShortName() rune {
 	return f.shortName
-}
-
-func (f *flag[T]) Combinable(*Data) bool {
-	return false
-}
-
-func (f *flag[T]) AllowMultiple(*Data) bool {
-	return false
 }
 
 func (f *flag[T]) Get(d *Data) T {
@@ -383,23 +403,16 @@ func (bf *boolFlag[T]) Processor() Processor {
 	return bf
 }
 
-func (bf *boolFlag[T]) Combinable(*Data) bool {
-	return true
-}
-
-func (bf *boolFlag[T]) AllowMultiple(*Data) bool {
-	return false
-}
-
-func (bf *boolFlag[T]) PostProcess(*Input, Output, *Data, *ExecuteData) error {
-	return nil
-}
-
-func (bf *boolFlag[T]) ProcessMissing(d *Data) error {
-	if bf.falseValue != nil {
-		d.Set(bf.name, *bf.falseValue)
+func (bf *boolFlag[T]) Options() *FlagOptions {
+	return &FlagOptions{
+		Combinable: true,
+		ProcessMissing: func(d *Data) error {
+			if bf.falseValue != nil {
+				d.Set(bf.name, *bf.falseValue)
+			}
+			return nil
+		},
 	}
-	return nil
 }
 
 func (bf *boolFlag[T]) Complete(input *Input, data *Data) (*Completion, error) {
@@ -438,12 +451,25 @@ type itemizedListFlag[T any] struct {
 	rawArgs []string
 }
 
-func (ilf *itemizedListFlag[T]) Processor() Processor {
-	return ilf
+func (ilf *itemizedListFlag[T]) Options() *FlagOptions {
+	return &FlagOptions{
+		// Combinable
+		ilf.flag.Options().combinable(),
+		// AllowsMultiple
+		true,
+		// ProcessMissing
+		func(d *Data) error {
+			return ilf.flag.Options().processMissing(d)
+		},
+		// PostProcess
+		func(i *Input, o Output, d *Data, ed *ExecuteData) error {
+			return ilf.flag.argNode.Execute(NewInput(ilf.rawArgs, nil), o, d, ed)
+		},
+	}
 }
 
-func (ilf *itemizedListFlag[T]) PostProcess(input *Input, output Output, data *Data, eData *ExecuteData) error {
-	return ilf.flag.argNode.Execute(NewInput(ilf.rawArgs, nil), output, data, eData)
+func (ilf *itemizedListFlag[T]) Processor() Processor {
+	return ilf
 }
 
 func (ilf *itemizedListFlag[T]) Execute(input *Input, output Output, data *Data, eData *ExecuteData) error {
@@ -469,10 +495,6 @@ func (ilf *itemizedListFlag[T]) Complete(input *Input, data *Data) (*Completion,
 		return c, e
 	}
 	return nil, nil
-}
-
-func (ilf *itemizedListFlag[T]) AllowMultiple(*Data) bool {
-	return true
 }
 
 func (ilf *itemizedListFlag[T]) Usage(u *Usage) {
