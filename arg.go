@@ -66,7 +66,7 @@ func (an *ArgNode[T]) Set(v T, data *Data) {
 
 // Usage adds the command info to the provided `Usage` object.
 func (an *ArgNode[T]) Usage(u *Usage) {
-	if an.opt != nil && an.opt.hiddenUsage {
+	if an.opt != nil && an.opt.hideUsage {
 		return
 	}
 

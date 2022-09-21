@@ -14,9 +14,7 @@ type argOpt[T any] struct {
 	_default           *defaultArgOpt[T]
 	breaker            *ListBreaker
 	completeForExecute *completeForExecute
-
-	// TODO: hideUsage
-	hiddenUsage bool
+	hideUsage          bool
 }
 
 type simpleArgOpt[T any] func(*argOpt[T])
@@ -159,5 +157,5 @@ func HiddenArg[T any]() ArgOpt[T] {
 type hiddenArg[T any] struct{}
 
 func (ha *hiddenArg[T]) modifyArgOpt(ao *argOpt[T]) {
-	ao.hiddenUsage = true
+	ao.hideUsage = true
 }

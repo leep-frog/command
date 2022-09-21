@@ -28,7 +28,7 @@ type FlagInterface interface {
 	Processor() Processor
 
 	// TODO: Everything below this line should be combined into
-	// a config type.
+	// a config type. (So we can easily add more fields without breaking things)
 
 	// ProcessMissing processes the flag when it is not provided
 	ProcessMissing(*Data) error
