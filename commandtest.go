@@ -60,6 +60,9 @@ type ExecuteTestCase struct {
 	WantData *Data
 	// SkipDataCheck skips the check on `WantData`.
 	SkipDataCheck bool
+	// DataCmpOpts is the set of cmp.Options that should be used
+	// when comparing data.
+	DataCmpOpts cmp.Options
 	// WantExecuteData is the `ExecuteData` object that should be constructed.
 	WantExecuteData *ExecuteData
 	// WantStdout is the data that should be sent to stdout.
@@ -155,6 +158,9 @@ type RunNodeTestCase struct {
 	WantData *Data
 	// SkipDataCheck skips the check on `WantData`.
 	SkipDataCheck bool
+	// DataCmpOpts is the set of cmp.Options that should be used
+	// when comparing data.
+	DataCmpOpts cmp.Options
 	// WantEnv is the expected map of os environment variables. This is only
 	// checked if Env is not nil.
 	WantEnv map[string]string
@@ -205,7 +211,7 @@ func RunNodeTest(t *testing.T, rtc *RunNodeTestCase) {
 	testers := []commandTester{
 		&outputTester{rtc.WantStdout, rtc.WantStderr},
 		&errorTester{rtc.WantErr},
-		checkIf(!rtc.SkipDataCheck, &dataTester{rtc.WantData}),
+		checkIf(!rtc.SkipDataCheck, &dataTester{rtc.WantData, rtc.DataCmpOpts}),
 		&envTester{},
 	}
 
@@ -272,7 +278,7 @@ func ExecuteTest(t *testing.T, etc *ExecuteTestCase) {
 		&errorTester{etc.WantErr},
 		&executeDataTester{etc.WantExecuteData},
 		&runResponseTester{etc.RunResponses, etc.WantRunContents, nil},
-		checkIf(!etc.SkipDataCheck, &dataTester{etc.WantData}),
+		checkIf(!etc.SkipDataCheck, &dataTester{etc.WantData, etc.DataCmpOpts}),
 		checkIf(etc.testInput, &inputTester{etc.wantInput}),
 		&envTester{},
 	}
@@ -345,6 +351,9 @@ type CompleteTestCase struct {
 	WantData *Data
 	// SkipDataCheck skips the check on `WantData`.
 	SkipDataCheck bool
+	// DataCmpOpts is the set of cmp.Options that should be used
+	// when comparing data.
+	DataCmpOpts cmp.Options
 	// WantEnv is the expected map of os environment variables. This is only
 	// checked if Env is not nil.
 	WantEnv map[string]string
@@ -385,7 +394,7 @@ func CompleteTest(t *testing.T, ctc *CompleteTestCase) {
 		&runResponseTester{ctc.RunResponses, ctc.WantRunContents, nil},
 		&errorTester{ctc.WantErr},
 		&autocompleteTester{ctc.Want},
-		checkIf(!ctc.SkipDataCheck, &dataTester{ctc.WantData}),
+		checkIf(!ctc.SkipDataCheck, &dataTester{ctc.WantData, ctc.DataCmpOpts}),
 		&envTester{},
 	}
 
@@ -439,6 +448,7 @@ func checkIf(cond bool, ct commandTester) commandTester {
 
 type dataTester struct {
 	want *Data
+	opts cmp.Options
 }
 
 func (*dataTester) setup(*testing.T, *testContext) {}
@@ -449,7 +459,7 @@ func (dt *dataTester) check(t *testing.T, tc *testContext) {
 		dt.want = &Data{}
 	}
 
-	if diff := cmp.Diff(dt.want, tc.data, cmpopts.EquateEmpty(), cmpopts.IgnoreUnexported(Data{})); diff != "" {
+	if diff := cmp.Diff(dt.want, tc.data, cmpopts.EquateEmpty(), cmpopts.IgnoreUnexported(Data{}), dt.opts); diff != "" {
 		t.Errorf("%s produced incorrect Data (-want, +got):\n%s", tc.prefix, diff)
 	}
 }
