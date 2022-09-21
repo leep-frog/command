@@ -751,55 +751,92 @@ func TestNewShell(t *testing.T) {
 
 	for _, test := range []struct {
 		name      string
-		env       map[string]string
+		etc       *command.ExecuteTestCase
+		mkdir     string
 		mkdirErr  error
 		wantCache *Cache
-		wantErr   error
-		wantEnv   map[string]string
 	}{
 		{
-			name: "returns shell cache if directory returned",
-			env: map[string]string{
-				ShellOSEnvVar: dir,
+			name: "returns existing shell cache",
+			etc: &command.ExecuteTestCase{
+				Env: map[string]string{
+					ShellOSEnvVar: dir,
+				},
+				WantEnv: map[string]string{
+					ShellOSEnvVar: dir,
+				},
+				WantData: &command.Data{Values: map[string]interface{}{
+					ShellDataKey: &Cache{Dir: dir},
+				}},
 			},
 			wantCache: &Cache{
 				Dir: dir,
 			},
 		},
 		{
-			name: "returns error if not a directory",
-			env: map[string]string{
-				ShellOSEnvVar: filepath.Join(dir, "bleh"),
+			name: "returns error if existing shell cache doesn't point to a directory",
+			etc: &command.ExecuteTestCase{
+				Env: map[string]string{
+					ShellOSEnvVar: filepath.Join(dir, "bleh"),
+				},
+				// TODO: remove wantEnv check and remove setenv (since operates in separate subshell)
+				WantEnv: map[string]string{
+					ShellOSEnvVar: filepath.Join(dir, "bleh"),
+				},
+				WantErr:    fmt.Errorf("failed to create shell-level cache: invalid directory (%s) for cache: cache directory does not exist", filepath.Join(dir, "bleh")),
+				WantStderr: fmt.Sprintf("failed to create shell-level cache: invalid directory (%s) for cache: cache directory does not exist\n", filepath.Join(dir, "bleh")),
 			},
-			wantErr: fmt.Errorf("invalid environment variable (LEEP_CACHE_SHELL_DIR) for cache: cache directory does not exist"),
 		},
 		{
 			name:     "Error if fails to create temp dir",
 			mkdirErr: fmt.Errorf("oops"),
-			wantErr:  fmt.Errorf("failed to create temporary directory: oops"),
+			etc: &command.ExecuteTestCase{
+				WantErr:    fmt.Errorf("failed to create temporary directory: oops"),
+				WantStderr: "failed to create temporary directory: oops\n",
+			},
 		},
 		{
-			name: "Creates dir and sets env",
-			env:  map[string]string{},
-			wantEnv: map[string]string{
-				ShellOSEnvVar: dir,
-			},
+			name:  "Creates dir and sets env",
+			mkdir: dir,
 			wantCache: &Cache{
 				Dir: dir,
+			},
+			etc: &command.ExecuteTestCase{
+				WantExecuteData: &command.ExecuteData{
+					Executable: []string{
+						fmt.Sprintf("export %s=%q", ShellOSEnvVar, dir),
+					},
+				},
+				WantData: &command.Data{Values: map[string]interface{}{
+					ShellDataKey: &Cache{Dir: dir},
+				}},
 			},
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-
-			command.StubEnv(t, test.env)
 			command.StubValue(t, &osMkdirTemp, func(string, string) (string, error) {
 				return dir, test.mkdirErr
 			})
-			c, err := NewShell()
+
+			var c *Cache
+			d := &command.Data{}
+			test.etc.Node = command.SerialNodes(
+				ShellProcessor(),
+				command.SuperSimpleProcessor(func(i *command.Input, data *command.Data) error {
+					c = ShellFromData(data)
+					d = data
+					return nil
+				}),
+			)
+			test.etc.SkipDataCheck = true
+			command.ExecuteTest(t, test.etc)
+
+			if diff := cmp.Diff(test.etc.WantData, d, cmp.AllowUnexported(Cache{}, command.Data{})); diff != "" {
+				t.Errorf("ShellProcessor() produced incorrect data (-want, +got):\n%s", diff)
+			}
 			if diff := cmp.Diff(test.wantCache, c, cmp.AllowUnexported(Cache{})); diff != "" {
 				t.Errorf("NewShell() returned incorrect cache (-want, +got):\n%s", diff)
 			}
-			command.CmpError(t, "", test.wantErr, err)
 		})
 	}
 }

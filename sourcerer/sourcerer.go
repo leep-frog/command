@@ -239,7 +239,7 @@ var (
 	EnvCacheVar = "LEEP_CLI_CACHE"
 	// getCache is a variable function so it can be swapped in tests
 	getCache = func() (*cache.Cache, error) {
-		return cache.New(EnvCacheVar)
+		return cache.FromEnvVar(EnvCacheVar)
 	}
 )
 

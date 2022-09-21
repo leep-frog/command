@@ -142,19 +142,25 @@ func NewTestCacheWithData(t *testing.T, m map[string]interface{}) *Cache {
 	return c
 }
 
-// New creates a new cache from an environment variable.
-func New(e string) (*Cache, error) {
+// ForDir returns a cache pointing to the provided directory.
+func ForDir(dir string) (*Cache, error) {
+	c := &Cache{
+		Dir: dir,
+	}
+	if _, err := c.getCacheDir(); err != nil {
+		return nil, fmt.Errorf("invalid directory (%s) for cache: %v", dir, err)
+	}
+	return c, nil
+}
+
+// FromEnvVar creates a new cache pointing to the directory specified
+// by the provided environment variable.
+func FromEnvVar(e string) (*Cache, error) {
 	v, ok := command.OSLookupEnv(e)
 	if !ok || v == "" {
 		return nil, fmt.Errorf("environment variable %q is not set", e)
 	}
-	c := &Cache{
-		Dir: v,
-	}
-	if _, err := c.getCacheDir(); err != nil {
-		return nil, fmt.Errorf("invalid environment variable (%s) for cache: %v", e, err)
-	}
-	return c, nil
+	return ForDir(v)
 }
 
 // Put puts data in the cache.
