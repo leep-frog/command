@@ -1683,6 +1683,20 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
+			name: "UnsetEnvVar unsets variable",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(SimpleProcessor(func(i *Input, o Output, d *Data, ed *ExecuteData) error {
+					UnsetEnvVar("abc", ed)
+					return nil
+				}, nil)),
+				WantExecuteData: &ExecuteData{
+					Executable: []string{
+						`unset "abc"`,
+					},
+				},
+			},
+		},
+		{
 			name: "SetEnvVarProcessor sets variable",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
@@ -1696,12 +1710,26 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "SetEnvVar appends executable",
+			name: "UnsetEnvVarProcessor unsets variable",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					UnsetEnvVarProcessor("abc"),
+				),
+				WantExecuteData: &ExecuteData{
+					Executable: []string{
+						`unset "abc"`,
+					},
+				},
+			},
+		},
+		{
+			name: "[Un]SetEnvVar appends executable",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
 					SimpleExecutableNode("do some", "stuff"),
 					SimpleProcessor(func(i *Input, o Output, d *Data, ed *ExecuteData) error {
 						SetEnvVar("abc", "def", ed)
+						UnsetEnvVar("ghi", ed)
 						return nil
 					}, nil),
 				),
@@ -1710,22 +1738,25 @@ func TestExecute(t *testing.T) {
 						"do some",
 						"stuff",
 						`export "abc"="def"`,
+						`unset "ghi"`,
 					},
 				},
 			},
 		},
 		{
-			name: "SetEnvVarProcessor appends executable",
+			name: "[Un]SetEnvVarProcessor appends executable",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
 					SimpleExecutableNode("do some", "stuff"),
 					SetEnvVarProcessor("abc", "def"),
+					UnsetEnvVarProcessor("ghi"),
 				),
 				WantExecuteData: &ExecuteData{
 					Executable: []string{
 						"do some",
 						"stuff",
 						`export "abc"="def"`,
+						`unset "ghi"`,
 					},
 				},
 			},

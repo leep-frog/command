@@ -403,8 +403,10 @@ func TestExecute(t *testing.T) {
 			cli:  &Debugger{},
 			etc: &command.ExecuteTestCase{
 				WantStdout: "Entering debug mode.\n",
-				WantEnv: map[string]string{
-					command.DebugEnvVar: "1",
+				WantExecuteData: &command.ExecuteData{
+					Executable: []string{
+						fmt.Sprintf("export %q=%q", command.DebugEnvVar, "1"),
+					},
 				},
 			},
 		},
@@ -415,6 +417,14 @@ func TestExecute(t *testing.T) {
 				WantStdout: "Exiting debug mode.\n",
 				Env: map[string]string{
 					command.DebugEnvVar: "1",
+				},
+				WantEnv: map[string]string{
+					command.DebugEnvVar: "1",
+				},
+				WantExecuteData: &command.ExecuteData{
+					Executable: []string{
+						fmt.Sprintf("unset %q", command.DebugEnvVar),
+					},
 				},
 				WantData: &command.Data{Values: map[string]interface{}{
 					command.DebugEnvVar: "1",

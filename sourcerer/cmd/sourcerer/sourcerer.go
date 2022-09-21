@@ -279,11 +279,10 @@ func (*Debugger) Node() *command.Node {
 		// Either set or unset the environment variable.
 		command.IfElseData(
 			command.DebugEnvVar,
-			&command.ExecutorProcessor{F: func(o command.Output, d *command.Data) error {
-				command.OSUnsetenv(command.DebugEnvVar)
-				o.Stdoutln("Exiting debug mode.")
-				return nil
-			}},
+			command.SerialNodes(
+				command.UnsetEnvVarProcessor(command.DebugEnvVar),
+				command.PrintlnProcessor("Exiting debug mode."),
+			),
 			command.SerialNodes(
 				command.SetEnvVarProcessor(command.DebugEnvVar, "1"),
 				command.PrintlnProcessor("Entering debug mode."),

@@ -9,7 +9,6 @@ import (
 var (
 	// variables so it can be stubbed out in tests.
 	OSLookupEnv = os.LookupEnv
-	OSUnsetenv  = os.Unsetenv
 )
 
 // EnvArg loads the provided environment variable's value into `Data`.
@@ -30,10 +29,25 @@ func SetEnvVar(envVar, value string, ed *ExecuteData) {
 	ed.Executable = append(ed.Executable, fmt.Sprintf("export %q=%q", envVar, value))
 }
 
+// UnsetEnvVar updates the provided ExecuteData to unset the provided environment variable.
+// This can't and shouldn't be done by os.Unsetenv because the go CLI executable
+// is run in a sub-shell.
+func UnsetEnvVar(envVar string, ed *ExecuteData) {
+	ed.Executable = append(ed.Executable, fmt.Sprintf("unset %q", envVar))
+}
+
 // SetEnvVarProcessor returns a `Processor` that sets the environment variable to the provided value.
 func SetEnvVarProcessor(envVar, value string) Processor {
 	return SimpleProcessor(func(i *Input, o Output, d *Data, ed *ExecuteData) error {
 		SetEnvVar(envVar, value, ed)
+		return nil
+	}, nil)
+}
+
+// UnsetEnvVarProcessor returns a `Processor` that unsets the environment variable.
+func UnsetEnvVarProcessor(envVar string) Processor {
+	return SimpleProcessor(func(i *Input, o Output, d *Data, ed *ExecuteData) error {
+		UnsetEnvVar(envVar, ed)
 		return nil
 	}, nil)
 }
@@ -43,9 +57,5 @@ func StubEnv(t *testing.T, m map[string]string) {
 	StubValue(t, &OSLookupEnv, func(key string) (string, bool) {
 		v, ok := m[key]
 		return v, ok
-	})
-	StubValue(t, &OSUnsetenv, func(key string) error {
-		delete(m, key)
-		return nil
 	})
 }
