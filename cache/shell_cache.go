@@ -3,6 +3,7 @@ package cache
 import (
 	"fmt"
 	"os"
+	"testing"
 
 	"github.com/leep-frog/command"
 )
@@ -19,30 +20,29 @@ const (
 
 var (
 	osMkdirTemp = os.MkdirTemp
-)
 
-func getShellCache(d *command.Data, ed *command.ExecuteData) error {
-	v, ok := command.OSLookupEnv(ShellOSEnvVar)
-	fmt.Println(v, ok)
-	if !ok || v == "" {
-		var err error
-		v, err = osMkdirTemp("", "leep-shell-cache")
-		if err != nil {
-			return fmt.Errorf("failed to create temporary directory: %v", err)
+	getShellCache = func(d *command.Data, ed *command.ExecuteData) error {
+		v, ok := command.OSLookupEnv(ShellOSEnvVar)
+		if !ok || v == "" {
+			var err error
+			v, err = osMkdirTemp("", "leep-shell-cache")
+			if err != nil {
+				return fmt.Errorf("failed to create temporary directory: %v", err)
+			}
+			// We can't us os.Setenv because the go executable runs in
+			// a separate shell.
+			ed.Executable = append(ed.Executable,
+				fmt.Sprintf("export %s=%q", ShellOSEnvVar, v),
+			)
 		}
-		// We can't us os.Setenv because the go executable runs in
-		// a separate shell.
-		ed.Executable = append(ed.Executable,
-			fmt.Sprintf("export %s=%q", ShellOSEnvVar, v),
-		)
+		c, err := ForDir(v)
+		if err != nil {
+			return fmt.Errorf("failed to create shell-level cache: %v", err)
+		}
+		d.Set(ShellDataKey, c)
+		return nil
 	}
-	c, err := ForDir(v)
-	if err != nil {
-		return fmt.Errorf("failed to create shell-level cache: %v", err)
-	}
-	d.Set(ShellDataKey, c)
-	return nil
-}
+)
 
 // ShellProcessor returns a processor that creates a shell-level `Cache`.
 // This needs to be done at the processor level so we can update an environment
@@ -59,4 +59,12 @@ func ShellProcessor() command.Processor {
 func ShellFromData(d *command.Data) *Cache {
 	i := d.Get(ShellDataKey)
 	return i.(*Cache)
+}
+
+// StubShellCache stubs the cache created and set by `ShellProcessor`.
+func StubShellCache(t *testing.T, c *Cache) {
+	command.StubValue(t, &getShellCache, func(d *command.Data, ed *command.ExecuteData) error {
+		d.Set(ShellDataKey, c)
+		return nil
+	})
 }
