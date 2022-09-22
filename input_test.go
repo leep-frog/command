@@ -215,7 +215,7 @@ func TestPopN(t *testing.T) {
 		want      []string
 		wantOK    bool
 		wantInput *Input
-		breaker   *ListBreaker
+		breakers  []*ListBreaker
 	}{
 		{
 			name:      "pops none",
@@ -242,36 +242,36 @@ func TestPopN(t *testing.T) {
 			},
 		},
 		{
-			name:    "breaks unbounded list at breaker",
-			input:   []string{"hello", "there", "person", "how", "are", "you"},
-			optN:    UnboundedList,
-			want:    []string{"hello", "there", "person"},
-			breaker: ListUntilSymbol("how"),
-			wantOK:  true,
+			name:     "breaks unbounded list at breaker",
+			input:    []string{"hello", "there", "person", "how", "are", "you"},
+			optN:     UnboundedList,
+			want:     []string{"hello", "there", "person"},
+			breakers: []*ListBreaker{ListUntilSymbol("how")},
+			wantOK:   true,
 			wantInput: &Input{
 				args:      []*inputArg{{value: "hello"}, {value: "there"}, {value: "person"}, {value: "how"}, {value: "are"}, {value: "you"}},
 				remaining: []int{3, 4, 5},
 			},
 		},
 		{
-			name:    "breaks unbounded list at breaker with discard",
-			input:   []string{"hello", "there", "person", "how", "are", "you"},
-			optN:    UnboundedList,
-			want:    []string{"hello", "there", "person"},
-			breaker: ListUntilSymbol("how", DiscardBreaker()),
-			wantOK:  true,
+			name:     "breaks unbounded list at breaker with discard",
+			input:    []string{"hello", "there", "person", "how", "are", "you"},
+			optN:     UnboundedList,
+			want:     []string{"hello", "there", "person"},
+			breakers: []*ListBreaker{ListUntilSymbol("how", DiscardBreaker())},
+			wantOK:   true,
 			wantInput: &Input{
 				args:      []*inputArg{{value: "hello"}, {value: "there"}, {value: "person"}, {value: "how"}, {value: "are"}, {value: "you"}},
 				remaining: []int{4, 5},
 			},
 		},
 		{
-			name:    "pops all when no ListBreaker breaks",
-			input:   []string{"hello", "there", "person", "how", "are", "you"},
-			optN:    UnboundedList,
-			want:    []string{"hello", "there", "person", "how", "are", "you"},
-			breaker: ListUntilSymbol("no match"),
-			wantOK:  true,
+			name:     "pops all when no ListBreaker breaks",
+			input:    []string{"hello", "there", "person", "how", "are", "you"},
+			optN:     UnboundedList,
+			want:     []string{"hello", "there", "person", "how", "are", "you"},
+			breakers: []*ListBreaker{ListUntilSymbol("no match")},
+			wantOK:   true,
 			wantInput: &Input{
 				args: []*inputArg{{value: "hello"}, {value: "there"}, {value: "person"}, {value: "how"}, {value: "are"}, {value: "you"}},
 			},
@@ -325,7 +325,7 @@ func TestPopN(t *testing.T) {
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			input := NewInput(test.input, nil)
-			gotPtrs, gotOK := input.PopN(test.n, test.optN, test.breaker)
+			gotPtrs, gotOK := input.PopN(test.n, test.optN, test.breakers)
 			var got []string
 			for _, p := range gotPtrs {
 				got = append(got, *p)

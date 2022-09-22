@@ -94,8 +94,8 @@ func (an *ArgNode[T]) Usage(u *Usage) {
 		}
 	}
 
-	if an.opt.breaker != nil {
-		an.opt.breaker.Usage(u)
+	for _, b := range an.opt.breakers {
+		b.Usage(u)
 	}
 }
 
@@ -103,7 +103,7 @@ func (an *ArgNode[T]) Usage(u *Usage) {
 func (an *ArgNode[T]) Execute(i *Input, o Output, data *Data, eData *ExecuteData) error {
 	an.shortcutCheck(i, o, data, false)
 
-	sl, enough := i.PopN(an.minN, an.optionalN, an.opt.breaker)
+	sl, enough := i.PopN(an.minN, an.optionalN, an.opt.breakers)
 
 	// Don't set at all if no arguments provided for arg.
 	if len(sl) == 0 {
@@ -262,7 +262,7 @@ func (an *ArgNode[T]) shortcutCheck(input *Input, output Output, data *Data, com
 func (an *ArgNode[T]) Complete(input *Input, data *Data) (*Completion, error) {
 	an.shortcutCheck(input, NewIgnoreAllOutput(), data, true)
 
-	sl, enough := input.PopN(an.minN, an.optionalN, an.opt.breaker)
+	sl, enough := input.PopN(an.minN, an.optionalN, an.opt.breakers)
 
 	// If this is the last arg, we want the node walkthrough to stop (which
 	// doesn't happen if c and err are nil).

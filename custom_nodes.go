@@ -502,7 +502,7 @@ type ListBreaker struct {
 }
 
 func (lb *ListBreaker) modifyArgOpt(ao *argOpt[[]string]) {
-	ao.breaker = lb
+	ao.breakers = append(ao.breakers, lb)
 }
 
 // Validators returns the `ListBreaker`'s validators.

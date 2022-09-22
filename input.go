@@ -177,7 +177,7 @@ func (i *Input) Pop() (string, bool) {
 }
 
 // PopN pops the next `n` arguments from the input and returns whether or not there are enough arguments left.
-func (i *Input) PopN(n, optN int, breaker *ListBreaker) ([]*string, bool) {
+func (i *Input) PopN(n, optN int, breakers []*ListBreaker) ([]*string, bool) {
 	shift := n + optN
 	if optN == UnboundedList || shift+i.offset > len(i.remaining) {
 		shift = len(i.remaining) - i.offset
@@ -189,27 +189,24 @@ func (i *Input) PopN(n, optN int, breaker *ListBreaker) ([]*string, bool) {
 
 	ret := make([]*string, 0, shift)
 	idx := 0
-	var broken bool
-	var validators []*ValidatorOption[string]
-	if breaker != nil {
-		validators = breaker.Validators()
-	}
+	var broken, discardBreak bool
 	for ; idx < shift; idx++ {
-		for _, validator := range validators {
-			if err := validator.Validate(i.get(idx + i.offset).value); err != nil {
-				//if err := validator.validate(StringValue(i.get(idx + i.offset).value)); err != nil {
-				broken = true
-				break
+		for _, b := range breakers {
+			for _, validator := range b.validators {
+				if err := validator.Validate(i.get(idx + i.offset).value); err != nil {
+					//if err := validator.validate(StringValue(i.get(idx + i.offset).value)); err != nil {
+					broken = true
+					discardBreak = b.DiscardBreak()
+					goto LOOP_END
+				}
 			}
-		}
-		if broken {
-			break
 		}
 		ret = append(ret, &i.get(idx+i.offset).value)
 	}
+LOOP_END:
 	i.remaining = append(i.remaining[:i.offset], i.remaining[i.offset+idx:]...)
 
-	if broken && breaker.DiscardBreak() {
+	if broken && discardBreak {
 		i.Pop()
 	}
 	return ret, len(ret) >= n

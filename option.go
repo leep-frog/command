@@ -12,7 +12,7 @@ type argOpt[T any] struct {
 	shortcut           *shortcutOpt[T]
 	customSet          customSetter[T]
 	_default           *defaultArgOpt[T]
-	breaker            *ListBreaker
+	breakers           []*ListBreaker
 	completeForExecute *completeForExecute
 	hideUsage          bool
 }
