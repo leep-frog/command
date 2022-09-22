@@ -510,7 +510,7 @@ func (lb *ListBreaker[T]) Validate(s string) error {
 	return nil
 }
 
-func (lb *ListBreaker[T]) modifyArgOpt(ao *argOpt[[]T]) {
+func (lb *ListBreaker[T]) modifyArgOpt(ao *argOpt[T]) {
 	ao.breakers = append(ao.breakers, lb)
 }
 
@@ -536,7 +536,7 @@ func StringListListNode(name, desc, breakSymbol string, minN, optionalN int, opt
 	n := &Node{
 		Processor: ListArg(name, desc, 0, UnboundedList,
 			append(opts,
-				ListUntilSymbol(breakSymbol, DiscardBreaker[string]()),
+				ListUntilSymbol(breakSymbol, DiscardBreaker[[]string]()),
 				CustomSetter(func(sl []string, d *Data) {
 					if len(sl) > 0 {
 						if !d.Has(name) {

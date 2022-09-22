@@ -340,8 +340,7 @@ func (f *flag[T]) AddOptions(opts ...ArgOpt[T]) FlagWithType[T] {
 
 // Flag creates a `FlagInterface` from argument info.
 func Flag[T any](name string, shortName rune, desc string, opts ...ArgOpt[T]) FlagWithType[T] {
-	return listFlag(name, desc, shortName, 1, 0, opts...)
-	//return listFlag(name, desc, shortName, 1, 0, opts...).AddOptions(ListUntil(MatchesRegex("^-")))
+	return listFlag(name, desc, shortName, 1, 0, opts...) //.AddOptions(ListUntil[T](MatchesRegex("^-")))
 }
 
 // BoolFlag creates a `FlagInterface` for a boolean argument.

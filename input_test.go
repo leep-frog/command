@@ -246,7 +246,7 @@ func TestPopN(t *testing.T) {
 			input:    []string{"hello", "there", "person", "how", "are", "you"},
 			optN:     UnboundedList,
 			want:     []string{"hello", "there", "person"},
-			breakers: []InputValidator{ListUntilSymbol[string]("how")},
+			breakers: []InputValidator{ListUntilSymbol[[]string]("how")},
 			wantOK:   true,
 			wantInput: &Input{
 				args:      []*inputArg{{value: "hello"}, {value: "there"}, {value: "person"}, {value: "how"}, {value: "are"}, {value: "you"}},
@@ -258,7 +258,7 @@ func TestPopN(t *testing.T) {
 			input:    []string{"hello", "there", "person", "how", "are", "you"},
 			optN:     UnboundedList,
 			want:     []string{"hello", "there", "person"},
-			breakers: []InputValidator{ListUntilSymbol[string]("how", DiscardBreaker[string]())},
+			breakers: []InputValidator{ListUntilSymbol[[]string]("how", DiscardBreaker[[]string]())},
 			wantOK:   true,
 			wantInput: &Input{
 				args:      []*inputArg{{value: "hello"}, {value: "there"}, {value: "person"}, {value: "how"}, {value: "are"}, {value: "you"}},
@@ -270,7 +270,7 @@ func TestPopN(t *testing.T) {
 			input:    []string{"hello", "there", "person", "how", "are", "you"},
 			optN:     UnboundedList,
 			want:     []string{"hello", "there", "person", "how", "are", "you"},
-			breakers: []InputValidator{ListUntilSymbol[string]("no match")},
+			breakers: []InputValidator{ListUntilSymbol[[]string]("no match")},
 			wantOK:   true,
 			wantInput: &Input{
 				args: []*inputArg{{value: "hello"}, {value: "there"}, {value: "person"}, {value: "how"}, {value: "are"}, {value: "you"}},
