@@ -293,6 +293,7 @@ func (*Debugger) Node() *command.Node {
 
 func main() {
 	os.Exit(sourcerer.Source([]sourcerer.CLI{
+		// TODO: Command to clear go/bin of leep-frog files
 		&SourcererCommand{},
 		&UpdateLeepPackageCommand{},
 		&UsageCommand{},

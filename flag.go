@@ -12,7 +12,9 @@ import (
 var (
 	// MultiFlagRegex is the regex used to determine a multi-flag (`-qwer -> -q -w -e -r`).
 	// It explicitly doesn't allow short number flags.
-	MultiFlagRegex = regexp.MustCompile("^-[^-0-9]{2,}$")
+	// TODO: Enforce short flag options
+	MultiFlagRegex = regexp.MustCompile("^-[a-zA-Z]{2,}$")
+	ShortFlagRegex = regexp.MustCompile("^[a-zA-Z]$")
 )
 
 // FlagInterface defines a flag argument that is parsed regardless of it's position in
@@ -108,15 +110,35 @@ type flagNode struct {
 }
 
 func (fn *flagNode) flagBreaker() InputValidator {
-	return ListUntil[string](&ValidatorOption[string]{
-		func(s string) error {
-			if _, ok := fn.flagMap[s]; ok {
-				return fmt.Errorf("value %q is a flag in the flag map", s)
-			}
-			return nil
+	return ListUntil[string](
+		// Don't eat any full flags (e.g. --my-flag)
+		&ValidatorOption[string]{
+			func(s string) error {
+				if _, ok := fn.flagMap[s]; ok {
+					return fmt.Errorf("value %q is a flag in the flag map", s)
+				}
+				return nil
+			},
+			"",
 		},
-		"",
-	})
+		// Don't eat any multi-flags where all flags are in the FlagNode.
+		&ValidatorOption[string]{
+			func(s string) error {
+				if !MultiFlagRegex.MatchString(s) {
+					return nil
+				}
+				for j := 1; j < len(s); j++ {
+					shortCode := fmt.Sprintf("-%s", string(s[j]))
+					if _, ok := fn.flagMap[shortCode]; !ok {
+						// This isn't a multi-flag for this FlagNode, so eat the arg.
+						return nil
+					}
+				}
+				return fmt.Errorf("value %q is a multi-flag argument for the FlagNode", s)
+			},
+			"",
+		},
+	)
 }
 
 func (fn *flagNode) Complete(input *Input, data *Data) (*Completion, error) {

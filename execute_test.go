@@ -3988,7 +3988,7 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "flags eat multi flags", // TODO: but should they?
+			name: "flags don't eat valid multi flags",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
 					FlagNode(
@@ -4009,7 +4009,37 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &Data{Values: map[string]interface{}{
-					"alpha": []string{"hey", "there", "-qwer"},
+					"alpha": []string{"hey", "there"},
+					"Q":     true,
+					"W":     true,
+					"E":     true,
+					"R":     true,
+				}},
+			},
+		},
+		{
+			name: "flags eat invalid multi flags",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					FlagNode(
+						ListFlag[string]("alpha", 'a', testDesc, 0, UnboundedList),
+						BoolFlag("Q", 'q', testDesc),
+						BoolFlag("W", 'w', testDesc),
+						BoolFlag("E", 'e', testDesc),
+						BoolFlag("R", 'r', testDesc),
+					),
+				),
+				Args: []string{"-a", "hey", "there", "-qwert"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "-a"},
+						{value: "hey"},
+						{value: "there"},
+						{value: "-qwert"},
+					},
+				},
+				WantData: &Data{Values: map[string]interface{}{
+					"alpha": []string{"hey", "there", "-qwert"},
 				}},
 			},
 		},
