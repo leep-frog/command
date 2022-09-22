@@ -340,8 +340,6 @@ func OptionalArg[T any](name, desc string, opts ...ArgOpt[T]) *ArgNode[T] {
 	return listNode(name, desc, 0, 1, opts...)
 }
 
-// TODO: Change this to ArgList (same with flag)
-
 // ListArg creates a list argument that requires at least `minN` arguments and
 // at most `minN`+`optionalN` arguments. Use UnboundedList for `optionalN` to
 // allow an unlimited number of arguments.
