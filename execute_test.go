@@ -3930,6 +3930,89 @@ func TestExecute(t *testing.T) {
 				WantErr:    fmt.Errorf(`strconv.ParseFloat: parsing "eight": invalid syntax`),
 			},
 		},
+		// Flag overlapping tests
+		{
+			name: "flags don't eat other flags",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					FlagNode(
+						ListFlag[string]("alpha", 'a', testDesc, 0, UnboundedList),
+						ListFlag[string]("bravo", 'b', testDesc, 0, UnboundedList),
+						ListFlag[string]("charlie", 'c', testDesc, 0, UnboundedList),
+					),
+				),
+				Args: []string{"--alpha", "hey", "there", "--dude", "--bravo", "yay", "--charlie"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "--alpha"},
+						{value: "hey"},
+						{value: "there"},
+						{value: "--dude"},
+						{value: "--bravo"},
+						{value: "yay"},
+						{value: "--charlie"},
+					},
+				},
+				WantData: &Data{Values: map[string]interface{}{
+					"alpha": []string{"hey", "there", "--dude"},
+					"bravo": []string{"yay"},
+				}},
+			},
+		},
+		{
+			name: "flags don't eat other short flags",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					FlagNode(
+						ListFlag[string]("alpha", 'a', testDesc, 0, UnboundedList),
+						ListFlag[string]("bravo", 'b', testDesc, 0, UnboundedList),
+						ListFlag[string]("charlie", 'c', testDesc, 0, UnboundedList),
+					),
+				),
+				Args: []string{"-a", "hey", "there", "-d", "-b", "yay", "-c"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "-a"},
+						{value: "hey"},
+						{value: "there"},
+						{value: "-d"},
+						{value: "-b"},
+						{value: "yay"},
+						{value: "-c"},
+					},
+				},
+				WantData: &Data{Values: map[string]interface{}{
+					"alpha": []string{"hey", "there", "-d"},
+					"bravo": []string{"yay"},
+				}},
+			},
+		},
+		{
+			name: "flags eat multi flags", // TODO: but should they?
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					FlagNode(
+						ListFlag[string]("alpha", 'a', testDesc, 0, UnboundedList),
+						BoolFlag("Q", 'q', testDesc),
+						BoolFlag("W", 'w', testDesc),
+						BoolFlag("E", 'e', testDesc),
+						BoolFlag("R", 'r', testDesc),
+					),
+				),
+				Args: []string{"-a", "hey", "there", "-qwer"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "-a"},
+						{value: "hey"},
+						{value: "there"},
+						{value: "-qwer"},
+					},
+				},
+				WantData: &Data{Values: map[string]interface{}{
+					"alpha": []string{"hey", "there", "-qwer"},
+				}},
+			},
+		},
 		// Misc. flag tests
 		{
 			name: "processes multiple flags",

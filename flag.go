@@ -107,6 +107,18 @@ type flagNode struct {
 	flagMap map[string]FlagInterface
 }
 
+func (fn *flagNode) flagBreaker() InputValidator {
+	return ListUntil[string](&ValidatorOption[string]{
+		func(s string) error {
+			if _, ok := fn.flagMap[s]; ok {
+				return fmt.Errorf("value %q is a flag in the flag map", s)
+			}
+			return nil
+		},
+		"",
+	})
+}
+
 func (fn *flagNode) Complete(input *Input, data *Data) (*Completion, error) {
 	unprocessed := map[string]FlagInterface{}
 	// Don't define `processed := map[string]bool{}` like we do in Execute
@@ -164,7 +176,9 @@ func (fn *flagNode) Complete(input *Input, data *Data) (*Completion, error) {
 			input.offset = i
 			// Remove flag argument (e.g. --flagName).
 			input.Pop()
+			input.pushValidators(fn.flagBreaker())
 			c, err := f.Processor().Complete(input, data)
+			input.popValidators(1)
 			input.offset = 0
 			if c != nil || err != nil {
 				return c, err
@@ -238,7 +252,9 @@ func (fn *flagNode) Execute(input *Input, output Output, data *Data, eData *Exec
 			input.offset = i
 			// Remove flag argument (e.g. --flagName).
 			input.Pop()
+			input.pushValidators(fn.flagBreaker())
 			err := f.Processor().Execute(input, output, data, eData)
+			input.popValidators(1)
 			input.offset = 0
 			if err != nil {
 				return err

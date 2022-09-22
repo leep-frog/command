@@ -32,6 +32,15 @@ type Input struct {
 	delimiter     *rune
 	offset        int
 	snapshotCount inputSnapshot
+	validators    []InputValidator
+}
+
+func (i *Input) pushValidators(vs ...InputValidator) {
+	i.validators = append(i.validators, vs...)
+}
+
+func (i *Input) popValidators(n int) {
+	i.validators = i.validators[:len(i.validators)-n]
 }
 
 type inputArg struct {
@@ -197,7 +206,7 @@ func (i *Input) PopN(n, optN int, validators []InputValidator) ([]*string, bool)
 	idx := 0
 	var broken, discardBreak bool
 	for ; idx < shift; idx++ {
-		for _, v := range validators {
+		for _, v := range append(validators, i.validators...) {
 			if err := v.Validate(i.get(idx + i.offset).value); err != nil {
 				//if err := validator.validate(StringValue(i.get(idx + i.offset).value)); err != nil {
 				broken = true
