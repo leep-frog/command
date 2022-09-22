@@ -133,10 +133,11 @@ func (fn *flagNode) Complete(input *Input, data *Data) (*Completion, error) {
 
 		// If it's the last arg.
 		if i == input.NumRemaining()-1 && len(a) > 0 && a[0] == '-' {
-			// TODO: only complete full flag names
 			k := make([]string, 0, len(fn.flagMap))
 			for n := range fn.flagMap {
-				k = append(k, n)
+				if len(n) > 2 {
+					k = append(k, n)
+				}
 			}
 			sort.Strings(k)
 			return &Completion{
@@ -198,7 +199,6 @@ func (fn *flagNode) Complete(input *Input, data *Data) (*Completion, error) {
 }
 
 func (fn *flagNode) Execute(input *Input, output Output, data *Data, eData *ExecuteData) error {
-	// TODO: Flag args should check for other flag values.
 	unprocessed := map[string]FlagInterface{}
 	processed := map[string]bool{}
 	for _, f := range fn.flagMap {

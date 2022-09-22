@@ -6093,7 +6093,7 @@ func TestComplete(t *testing.T) {
 					Arg[int]("i", testDesc, SimpleCompleter[int]("1", "2")),
 				),
 				Args: "cmd -",
-				Want: []string{"--good", "--greeting", "--names", "-g", "-h", "-n"},
+				Want: []string{"--good", "--greeting", "--names"},
 			},
 		},
 		{
@@ -6123,7 +6123,7 @@ func TestComplete(t *testing.T) {
 					Arg[int]("i", testDesc, SimpleCompleter[int]("1", "2")),
 				),
 				Args: "cmd 1 -",
-				Want: []string{"--good", "--greeting", "--names", "-g", "-h", "-n"},
+				Want: []string{"--good", "--greeting", "--names"},
 			},
 		},
 		{
