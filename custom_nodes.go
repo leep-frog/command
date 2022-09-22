@@ -451,36 +451,36 @@ func MenuArg[T comparable](name, desc string, choices ...T) *ArgNode[T] {
 }
 
 // ListBreakerOption is an option type for the `ListBreaker` type.
-type ListBreakerOption func(*ListBreaker)
+type ListBreakerOption[T any] func(*ListBreaker[T])
 
-func newBreakerOpt(f func(*ListBreaker)) ListBreakerOption {
+func newBreakerOpt[T any](f func(*ListBreaker[T])) ListBreakerOption[T] {
 	return f
 }
 
 // DiscardBreaker is a `ListBreakerOption` that removes the breaker argument from the input (rather than keeping it for the next node to parse).
-func DiscardBreaker() ListBreakerOption {
-	return newBreakerOpt(func(lb *ListBreaker) {
+func DiscardBreaker[T any]() ListBreakerOption[T] {
+	return newBreakerOpt(func(lb *ListBreaker[T]) {
 		lb.discard = true
 	})
 }
 
 // ListBreakerUsage is a `ListBreakerOption` that inlcudes usage info in the command's usage text.
-func ListBreakerUsage(uf func(*Usage)) ListBreakerOption {
-	return newBreakerOpt(func(lb *ListBreaker) {
+func ListBreakerUsage[T any](uf func(*Usage)) ListBreakerOption[T] {
+	return newBreakerOpt(func(lb *ListBreaker[T]) {
 		lb.u = uf
 	})
 }
 
 // ListUntilSymbol returns an unbounded list node that ends when a specific symbol is parsed.
-func ListUntilSymbol(symbol string, opts ...ListBreakerOption) *ListBreaker {
-	return ListUntil(NEQ(symbol)).AddOptions(append(opts, ListBreakerUsage(func(u *Usage) {
+func ListUntilSymbol[T any](symbol string, opts ...ListBreakerOption[T]) *ListBreaker[T] {
+	return ListUntil[T](NEQ(symbol)).AddOptions(append(opts, ListBreakerUsage[T](func(u *Usage) {
 		u.Usage = append(u.Usage, symbol)
 		u.UsageSection.Add(SymbolSection, symbol, "List breaker")
 	}))...)
 }
 
 // AddOptions adds `ListBreakerOptions` to a `ListBreaker` object.
-func (lb *ListBreaker) AddOptions(opts ...ListBreakerOption) *ListBreaker {
+func (lb *ListBreaker[T]) AddOptions(opts ...ListBreakerOption[T]) *ListBreaker[T] {
 	for _, opt := range opts {
 		opt(lb)
 	}
@@ -488,35 +488,44 @@ func (lb *ListBreaker) AddOptions(opts ...ListBreakerOption) *ListBreaker {
 }
 
 // ListUntil returns a `ListBreaker` node that breaks when any of the provided `ValidatorOptions` are not satisfied.
-func ListUntil(validators ...*ValidatorOption[string]) *ListBreaker {
-	return &ListBreaker{
+func ListUntil[T any](validators ...*ValidatorOption[string]) *ListBreaker[T] {
+	return &ListBreaker[T]{
 		validators: validators,
 	}
 }
 
 // ListBreaker is an `ArgOpt` for breaking out of lists with an optional number of arguments.
-type ListBreaker struct {
+type ListBreaker[T any] struct {
 	validators []*ValidatorOption[string]
 	discard    bool
 	u          func(*Usage)
 }
 
-func (lb *ListBreaker) modifyArgOpt(ao *argOpt[[]string]) {
+func (lb *ListBreaker[T]) Validate(s string) error {
+	for _, v := range lb.validators {
+		if err := v.Validate(s); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (lb *ListBreaker[T]) modifyArgOpt(ao *argOpt[[]T]) {
 	ao.breakers = append(ao.breakers, lb)
 }
 
 // Validators returns the `ListBreaker`'s validators.
-func (lb *ListBreaker) Validators() []*ValidatorOption[string] {
+func (lb *ListBreaker[T]) Validators() []*ValidatorOption[string] {
 	return lb.validators
 }
 
 // DiscardBreak indicates whether the `ListBreaker` discards the argument that breaks the list.
-func (lb *ListBreaker) DiscardBreak() bool {
+func (lb *ListBreaker[T]) DiscardBreak() bool {
 	return lb.discard
 }
 
 // Usage updates the provided `Usage` object.
-func (lb *ListBreaker) Usage(u *Usage) {
+func (lb *ListBreaker[T]) Usage(u *Usage) {
 	if lb.u != nil {
 		lb.u(u)
 	}
@@ -527,7 +536,7 @@ func StringListListNode(name, desc, breakSymbol string, minN, optionalN int, opt
 	n := &Node{
 		Processor: ListArg(name, desc, 0, UnboundedList,
 			append(opts,
-				ListUntilSymbol(breakSymbol, DiscardBreaker()),
+				ListUntilSymbol(breakSymbol, DiscardBreaker[string]()),
 				CustomSetter(func(sl []string, d *Data) {
 					if len(sl) > 0 {
 						if !d.Has(name) {

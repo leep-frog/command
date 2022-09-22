@@ -5114,7 +5114,7 @@ func TestExecute(t *testing.T) {
 			name: "Handles broken list",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					ListArg[string]("SL", testDesc, 1, UnboundedList, ListUntilSymbol("ghi")),
+					ListArg[string]("SL", testDesc, 1, UnboundedList, ListUntilSymbol[string]("ghi")),
 					ListArg[string]("SL2", testDesc, 0, UnboundedList),
 				),
 				Args: []string{"abc", "def", "ghi", "jkl"},
@@ -5136,7 +5136,7 @@ func TestExecute(t *testing.T) {
 			name: "List breaker before min value",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					ListArg[string]("SL", testDesc, 3, UnboundedList, ListUntilSymbol("ghi")),
+					ListArg[string]("SL", testDesc, 3, UnboundedList, ListUntilSymbol[string]("ghi")),
 				),
 				Args: []string{"abc", "def", "ghi", "jkl"},
 				WantData: &Data{Values: map[string]interface{}{
@@ -5159,7 +5159,7 @@ func TestExecute(t *testing.T) {
 			name: "Handles broken list with discard",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					ListArg[string]("SL", testDesc, 1, UnboundedList, ListUntilSymbol("ghi", DiscardBreaker())),
+					ListArg[string]("SL", testDesc, 1, UnboundedList, ListUntilSymbol[string]("ghi", DiscardBreaker[string]())),
 					ListArg[string]("SL2", testDesc, 0, UnboundedList),
 				),
 				Args: []string{"abc", "def", "ghi", "jkl"},
@@ -5181,7 +5181,7 @@ func TestExecute(t *testing.T) {
 			name: "Handles unbroken list",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					ListArg[string]("SL", testDesc, 1, UnboundedList, ListUntilSymbol("ghi")),
+					ListArg[string]("SL", testDesc, 1, UnboundedList, ListUntilSymbol[string]("ghi")),
 					ListArg[string]("SL2", testDesc, 0, UnboundedList),
 				),
 				Args: []string{"abc", "def", "ghif", "jkl"},
@@ -5202,7 +5202,7 @@ func TestExecute(t *testing.T) {
 			name: "Fails if arguments required after broken list",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					ListArg[string]("SL", testDesc, 1, UnboundedList, ListUntilSymbol("ghi")),
+					ListArg[string]("SL", testDesc, 1, UnboundedList, ListUntilSymbol[string]("ghi")),
 					ListArg[string]("SL2", testDesc, 1, UnboundedList),
 				),
 				Args: []string{"abc", "def", "ghif", "jkl"},
@@ -7266,7 +7266,7 @@ func TestComplete(t *testing.T) {
 			name: "Suggests things after broken list",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					ListArg[string]("SL", testDesc, 1, UnboundedList, ListUntilSymbol("ghi"), SimpleCompleter[[]string]("un", "deux", "trois")),
+					ListArg[string]("SL", testDesc, 1, UnboundedList, ListUntilSymbol[string]("ghi"), SimpleCompleter[[]string]("un", "deux", "trois")),
 					ListArg[string]("SL2", testDesc, 0, UnboundedList, SimpleCompleter[[]string]("one", "two", "three")),
 				),
 				Args: "cmd abc def ghi ",
@@ -7281,7 +7281,7 @@ func TestComplete(t *testing.T) {
 			name: "Suggests things after broken list with discard",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					ListArg[string]("SL", testDesc, 1, UnboundedList, ListUntilSymbol("ghi", DiscardBreaker()), SimpleCompleter[[]string]("un", "deux", "trois")),
+					ListArg[string]("SL", testDesc, 1, UnboundedList, ListUntilSymbol[string]("ghi", DiscardBreaker[string]()), SimpleCompleter[[]string]("un", "deux", "trois")),
 					ListArg[string]("SL2", testDesc, 0, UnboundedList, SimpleCompleter[[]string]("one", "two", "three")),
 				),
 				Args: "cmd abc def ghi ",
@@ -7296,7 +7296,7 @@ func TestComplete(t *testing.T) {
 			name: "Suggests things before list is broken",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					ListArg[string]("SL", testDesc, 1, UnboundedList, ListUntilSymbol("ghi"), SimpleCompleter[[]string]("un", "deux", "trois", "uno")),
+					ListArg[string]("SL", testDesc, 1, UnboundedList, ListUntilSymbol[string]("ghi"), SimpleCompleter[[]string]("un", "deux", "trois", "uno")),
 					ListArg[string]("SL2", testDesc, 0, UnboundedList, SimpleCompleter[[]string]("one", "two", "three")),
 				),
 				Args: "cmd abc def un",

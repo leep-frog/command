@@ -1,6 +1,6 @@
 package command
 
-// ArgOpt is a type for modifying `Arg` nodes.
+// ArgOpt is an interface for modifying `Arg` nodes.
 type ArgOpt[T any] interface {
 	modifyArgOpt(*argOpt[T])
 }
@@ -12,7 +12,7 @@ type argOpt[T any] struct {
 	shortcut           *shortcutOpt[T]
 	customSet          customSetter[T]
 	_default           *defaultArgOpt[T]
-	breakers           []*ListBreaker
+	breakers           []InputValidator
 	completeForExecute *completeForExecute
 	hideUsage          bool
 }

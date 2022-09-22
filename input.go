@@ -176,8 +176,14 @@ func (i *Input) Pop() (string, bool) {
 	return *sl[0], true
 }
 
+type InputValidator interface {
+	Validate(string) error
+	DiscardBreak() bool
+	Usage(*Usage)
+}
+
 // PopN pops the next `n` arguments from the input and returns whether or not there are enough arguments left.
-func (i *Input) PopN(n, optN int, breakers []*ListBreaker) ([]*string, bool) {
+func (i *Input) PopN(n, optN int, validators []InputValidator) ([]*string, bool) {
 	shift := n + optN
 	if optN == UnboundedList || shift+i.offset > len(i.remaining) {
 		shift = len(i.remaining) - i.offset
@@ -191,14 +197,12 @@ func (i *Input) PopN(n, optN int, breakers []*ListBreaker) ([]*string, bool) {
 	idx := 0
 	var broken, discardBreak bool
 	for ; idx < shift; idx++ {
-		for _, b := range breakers {
-			for _, validator := range b.validators {
-				if err := validator.Validate(i.get(idx + i.offset).value); err != nil {
-					//if err := validator.validate(StringValue(i.get(idx + i.offset).value)); err != nil {
-					broken = true
-					discardBreak = b.DiscardBreak()
-					goto LOOP_END
-				}
+		for _, v := range validators {
+			if err := v.Validate(i.get(idx + i.offset).value); err != nil {
+				//if err := validator.validate(StringValue(i.get(idx + i.offset).value)); err != nil {
+				broken = true
+				discardBreak = v.DiscardBreak()
+				goto LOOP_END
 			}
 		}
 		ret = append(ret, &i.get(idx+i.offset).value)
