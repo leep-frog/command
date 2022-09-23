@@ -98,6 +98,9 @@ func FlagNode(fs ...FlagInterface) Processor {
 		// We explicitly don't check for duplicate keys to give more freedom to users
 		// For example, if they wanted to override a flag from a separate package
 		m[flagName(f)] = f
+		if !ShortFlagRegex.MatchString(string(f.ShortName())) {
+			panic(fmt.Sprintf("Short flag name %c must match regex %v", f.ShortName(), ShortFlagRegex))
+		}
 		m[flagShortName(f)] = f
 	}
 	return &flagNode{

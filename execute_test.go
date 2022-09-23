@@ -1094,7 +1094,7 @@ func TestExecute(t *testing.T) {
 				Node: SerialNodes(
 					FlagNode(
 						Flag("s", 's', testDesc, Default("defStr")),
-						Flag("s2", '2', testDesc, DefaultFunc(func(d *Data) (string, error) {
+						Flag("s2", 'S', testDesc, DefaultFunc(func(d *Data) (string, error) {
 							return "dos", nil
 						})),
 						Flag("it", 't', testDesc, Default(-456)),
@@ -1104,12 +1104,12 @@ func TestExecute(t *testing.T) {
 						Flag("fs", 'f', testDesc, Default([]float64{1.2, 3.4, -5.6})),
 					),
 				),
-				Args: []string{"--it", "7", "-2", "dos"},
+				Args: []string{"--it", "7", "-S", "dos"},
 				wantInput: &Input{
 					args: []*inputArg{
 						{value: "--it"},
 						{value: "7"},
-						{value: "-2"},
+						{value: "-S"},
 						{value: "dos"},
 					},
 				},
@@ -1128,7 +1128,7 @@ func TestExecute(t *testing.T) {
 				Node: SerialNodes(
 					FlagNode(
 						Flag("s", 's', testDesc, Default("defStr")),
-						Flag("s2", '2', testDesc, DefaultFunc(func(d *Data) (string, error) {
+						Flag("s2", 'S', testDesc, DefaultFunc(func(d *Data) (string, error) {
 							// This flag is set, so this error func shouldn't be run at all,
 							// hence why we don't expect to see this error.
 							return "dos", fmt.Errorf("nooooooo")
@@ -1140,12 +1140,12 @@ func TestExecute(t *testing.T) {
 						Flag("fs", 'f', testDesc, Default([]float64{1.2, 3.4, -5.6})),
 					),
 				),
-				Args: []string{"--it", "7", "-2", "dos"},
+				Args: []string{"--it", "7", "-S", "dos"},
 				wantInput: &Input{
 					args: []*inputArg{
 						{value: "--it"},
 						{value: "7"},
-						{value: "-2"},
+						{value: "-S"},
 						{value: "dos"},
 					},
 				},
@@ -5272,7 +5272,7 @@ func TestExecute(t *testing.T) {
 			name: "Handles broken list with discard",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					ListArg[string]("SL", testDesc, 1, UnboundedList, ListUntilSymbol[[]string]("ghi", DiscardBreaker[[]string]())),
+					ListArg[string]("SL", testDesc, 1, UnboundedList, ListUntilSymbol("ghi", DiscardBreaker[[]string]())),
 					ListArg[string]("SL2", testDesc, 0, UnboundedList),
 				),
 				Args: []string{"abc", "def", "ghi", "jkl"},
@@ -7394,7 +7394,7 @@ func TestComplete(t *testing.T) {
 			name: "Suggests things after broken list with discard",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					ListArg[string]("SL", testDesc, 1, UnboundedList, ListUntilSymbol[[]string]("ghi", DiscardBreaker[[]string]()), SimpleCompleter[[]string]("un", "deux", "trois")),
+					ListArg[string]("SL", testDesc, 1, UnboundedList, ListUntilSymbol("ghi", DiscardBreaker[[]string]()), SimpleCompleter[[]string]("un", "deux", "trois")),
 					ListArg[string]("SL2", testDesc, 0, UnboundedList, SimpleCompleter[[]string]("one", "two", "three")),
 				),
 				Args: "cmd abc def ghi ",
@@ -8053,5 +8053,27 @@ func TestBoolFlag(t *testing.T) {
 		},
 	} {
 		test.runTest(t)
+	}
+}
+
+func TestPanics(t *testing.T) {
+	for _, test := range []struct {
+		name string
+		f    func()
+		want interface{}
+	}{
+		{
+			name: "Flag with improper short name panics",
+			f: func() {
+				FlagNode(
+					Flag[string]("five", '5', testDesc),
+				)
+			},
+			want: "Short flag name 5 must match regex ^[a-zA-Z]$",
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			VerifyPanic(t, test.name, test.want, test.f)
+		})
 	}
 }

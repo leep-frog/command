@@ -16,6 +16,22 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 )
 
+// VerifyPanic verifies that function `f` panics with argument `want`.
+func VerifyPanic(t *testing.T, prefix string, want interface{}, f func()) {
+	t.Helper()
+
+	defer func() {
+		r := recover()
+		if r == nil {
+			t.Errorf("%s did not panic", prefix)
+		} else if diff := cmp.Diff(want, r); diff != "" {
+			t.Errorf("%s panicked with incorrect value (-want, +got):\n%s", prefix, diff)
+		}
+	}()
+
+	f()
+}
+
 func TempFile(t *testing.T, pattern string) *os.File {
 	tmp, err := ioutil.TempFile("", pattern)
 	if err != nil {
