@@ -8071,6 +8071,20 @@ func TestPanics(t *testing.T) {
 			},
 			want: "Short flag name 5 must match regex ^[a-zA-Z]$",
 		},
+		{
+			name: "Can't add options to a boolean flag",
+			f: func() {
+				BoolFlag("b", 'b', testDesc).AddOptions()
+			},
+			want: "options cannot be added to a boolean flag",
+		},
+		{
+			name: "Can't create arg for unsupported type",
+			f: func() {
+				Arg[*Node]("n", testDesc).Execute(NewInput([]string{"abc"}, nil), NewFakeOutput(), &Data{}, &ExecuteData{})
+			},
+			want: "no operator defined for type *command.Node",
+		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			VerifyPanic(t, test.name, test.want, test.f)
