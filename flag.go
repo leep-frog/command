@@ -12,7 +12,6 @@ import (
 var (
 	// MultiFlagRegex is the regex used to determine a multi-flag (`-qwer -> -q -w -e -r`).
 	// It explicitly doesn't allow short number flags.
-	// TODO: Enforce short flag options
 	MultiFlagRegex = regexp.MustCompile("^-[a-zA-Z]{2,}$")
 	ShortFlagRegex = regexp.MustCompile("^[a-zA-Z]$")
 )
