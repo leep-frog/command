@@ -722,7 +722,7 @@ func TestSourcerer(t *testing.T) {
 				"sourcerer.go",
 			},
 			wantStdout: []string{
-				// false is for data.completeForExecute
+				// false is for data.complexecute
 				fmt.Sprintf(`stdout: &{map[SETUP_FILE:%s] false}`, command.FilepathAbs(t, "sourcerer.go")),
 			},
 		},
@@ -750,7 +750,7 @@ func TestSourcerer(t *testing.T) {
 				"5",
 			},
 			wantStdout: []string{
-				// false is for data.completeForExecute
+				// false is for data.complexecute
 				fmt.Sprintf(`stdout: &{map[SETUP_FILE:%s i:5] false}`, command.FilepathAbs(t, "sourcerer.go")),
 			},
 		},

@@ -297,8 +297,8 @@ func (ff *FileCompleter[T]) Complete(value T, data *Data) (*Completion, error) {
 		}
 	}
 
-	if data.completeForExecute && len(laFile) == 0 {
-		// If completing for execute and we are at a full directory (no basename),
+	if data.complexecute && len(laFile) == 0 {
+		// If complexecuting and we are at a full directory (no basename),
 		// then just return that.
 		return &Completion{
 			Suggestions: []string{lastArg},
@@ -388,8 +388,8 @@ func (ff *FileCompleter[T]) Complete(value T, data *Data) (*Completion, error) {
 		// Note: we can't use filepath.Join here because it cleans up the path
 		c.Suggestions[0] = fmt.Sprintf("%s%s", laDir, c.Suggestions[0])
 
-		// If completing for execute, then just complete to the directory
-		if onlyDir && !data.completeForExecute {
+		// If complexecuting, then just complete to the directory
+		if onlyDir && !data.complexecute {
 			// This does "dir1/" and "dir1/_" so that the user's command is
 			// autocompleted to "dir1/" without a space after it.
 			c.Suggestions = append(c.Suggestions, fmt.Sprintf("%s%s", c.Suggestions[0], suffixChar))

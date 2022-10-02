@@ -120,34 +120,34 @@ func (an *ArgNode[T]) Execute(i *Input, o Output, data *Data, eData *ExecuteData
 		return nil
 	}
 
-	if an.opt != nil && an.opt.completeForExecute != nil && an.opt.completeForExecute.enabled {
-		strict := an.opt.completeForExecute.strict
+	if an.opt != nil && an.opt.complexecute != nil && an.opt.complexecute.enabled {
+		strict := an.opt.complexecute.strict
 
 		// Iteratively complete arguments
 		for i := 1; i <= len(sl); i++ {
 			tsl := sl[:i]
 			v, err := an.convertStringValue(tsl, data, false)
-			data.completeForExecute = true
+			data.complexecute = true
 			compl, err := RunCompletion(an.opt.completer, *tsl[len(tsl)-1], v, data)
-			data.completeForExecute = false
+			data.complexecute = false
 			if err != nil {
 				if strict {
-					return o.Annotatef(err, "[CompleteForExecute] failed to fetch completion for %q", an.name)
+					return o.Annotatef(err, "[Complexecute] failed to fetch completion for %q", an.name)
 				}
 				continue
 			} else if compl == nil {
 				if strict {
-					return o.Stderrf("[CompleteForExecute] nil completion returned for %q\n", an.name)
+					return o.Stderrf("[Complexecute] nil completion returned for %q\n", an.name)
 				}
 				continue
 			}
 
 			lastArg := *tsl[len(tsl)-1]
 			suggestions := compl.process(lastArg, nil, true)
-			if len(suggestions) == 1 || (an.opt.completeForExecute.exactMatch && slices.Contains(suggestions, lastArg)) {
+			if len(suggestions) == 1 || (an.opt.complexecute.exactMatch && slices.Contains(suggestions, lastArg)) {
 				*tsl[len(tsl)-1] = suggestions[0]
 			} else if strict {
-				return o.Stderrf("[CompleteForExecute] requires exactly one suggestion to be returned for %q, got %d: %v\n", an.name, len(suggestions), suggestions)
+				return o.Stderrf("[Complexecute] requires exactly one suggestion to be returned for %q, got %d: %v\n", an.name, len(suggestions), suggestions)
 			}
 		}
 	}

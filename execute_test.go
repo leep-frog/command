@@ -94,11 +94,11 @@ func TestExecute(t *testing.T) {
 				WantStderr: "Argument \"f\" requires at least 1 argument, got 0\n",
 			},
 		},
-		// CompleteForExecute tests for single Arg
+		// Complexecute tests for single Arg
 		{
-			name: "CompleteForExecute for Arg fails if no arg provided",
+			name: "Complexecute for Arg fails if no arg provided",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(Arg[int]("is", testDesc, CompleteForExecute[int](), CompleterFromFunc(func(i int, d *Data) (*Completion, error) {
+				Node: SerialNodes(Arg[int]("is", testDesc, Complexecute[int](), CompleterFromFunc(func(i int, d *Data) (*Completion, error) {
 					return nil, fmt.Errorf("oopsie")
 				}))),
 				WantErr:    fmt.Errorf(`Argument "is" requires at least 1 argument, got 0`),
@@ -106,10 +106,10 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "CompleteForExecute for Arg fails completer returns error",
+			name: "Complexecute for Arg fails completer returns error",
 			etc: &ExecuteTestCase{
 				Args: []string{""},
-				Node: SerialNodes(Arg[int]("is", testDesc, CompleteForExecute[int](), CompleterFromFunc(func(i int, d *Data) (*Completion, error) {
+				Node: SerialNodes(Arg[int]("is", testDesc, Complexecute[int](), CompleterFromFunc(func(i int, d *Data) (*Completion, error) {
 					return nil, fmt.Errorf("oopsie")
 				}))),
 				wantInput: &Input{
@@ -117,15 +117,15 @@ func TestExecute(t *testing.T) {
 						{value: ""},
 					},
 				},
-				WantErr:    fmt.Errorf("[CompleteForExecute] failed to fetch completion for \"is\": oopsie"),
-				WantStderr: "[CompleteForExecute] failed to fetch completion for \"is\": oopsie\n",
+				WantErr:    fmt.Errorf("[Complexecute] failed to fetch completion for \"is\": oopsie"),
+				WantStderr: "[Complexecute] failed to fetch completion for \"is\": oopsie\n",
 			},
 		},
 		{
-			name: "CompleteForExecute for Arg fails if returned completion is nil",
+			name: "Complexecute for Arg fails if returned completion is nil",
 			etc: &ExecuteTestCase{
 				Args: []string{""},
-				Node: SerialNodes(Arg[int]("is", testDesc, CompleteForExecute[int](), CompleterFromFunc(func(i int, d *Data) (*Completion, error) {
+				Node: SerialNodes(Arg[int]("is", testDesc, Complexecute[int](), CompleterFromFunc(func(i int, d *Data) (*Completion, error) {
 					return nil, nil
 				}))),
 				wantInput: &Input{
@@ -133,15 +133,15 @@ func TestExecute(t *testing.T) {
 						{value: ""},
 					},
 				},
-				WantErr:    fmt.Errorf("[CompleteForExecute] nil completion returned for \"is\""),
-				WantStderr: "[CompleteForExecute] nil completion returned for \"is\"\n",
+				WantErr:    fmt.Errorf("[Complexecute] nil completion returned for \"is\""),
+				WantStderr: "[Complexecute] nil completion returned for \"is\"\n",
 			},
 		},
 		{
-			name: "CompleteForExecute for Arg fails if 0 suggestions",
+			name: "Complexecute for Arg fails if 0 suggestions",
 			etc: &ExecuteTestCase{
 				Args: []string{""},
-				Node: SerialNodes(Arg[int]("is", testDesc, CompleteForExecute[int](), CompleterFromFunc(func(i int, d *Data) (*Completion, error) {
+				Node: SerialNodes(Arg[int]("is", testDesc, Complexecute[int](), CompleterFromFunc(func(i int, d *Data) (*Completion, error) {
 					return &Completion{}, nil
 				}))),
 				wantInput: &Input{
@@ -149,15 +149,15 @@ func TestExecute(t *testing.T) {
 						{value: ""},
 					},
 				},
-				WantErr:    fmt.Errorf("[CompleteForExecute] requires exactly one suggestion to be returned for \"is\", got 0: []"),
-				WantStderr: "[CompleteForExecute] requires exactly one suggestion to be returned for \"is\", got 0: []\n",
+				WantErr:    fmt.Errorf("[Complexecute] requires exactly one suggestion to be returned for \"is\", got 0: []"),
+				WantStderr: "[Complexecute] requires exactly one suggestion to be returned for \"is\", got 0: []\n",
 			},
 		},
 		{
-			name: "CompleteForExecute for Arg fails if multiple suggestions",
+			name: "Complexecute for Arg fails if multiple suggestions",
 			etc: &ExecuteTestCase{
 				Args: []string{""},
-				Node: SerialNodes(Arg[int]("is", testDesc, CompleteForExecute[int](), CompleterFromFunc(func(i int, d *Data) (*Completion, error) {
+				Node: SerialNodes(Arg[int]("is", testDesc, Complexecute[int](), CompleterFromFunc(func(i int, d *Data) (*Completion, error) {
 					return &Completion{
 						Suggestions: []string{"1", "4"},
 					}, nil
@@ -167,15 +167,15 @@ func TestExecute(t *testing.T) {
 						{value: ""},
 					},
 				},
-				WantErr:    fmt.Errorf("[CompleteForExecute] requires exactly one suggestion to be returned for \"is\", got 2: [1 4]"),
-				WantStderr: "[CompleteForExecute] requires exactly one suggestion to be returned for \"is\", got 2: [1 4]\n",
+				WantErr:    fmt.Errorf("[Complexecute] requires exactly one suggestion to be returned for \"is\", got 2: [1 4]"),
+				WantStderr: "[Complexecute] requires exactly one suggestion to be returned for \"is\", got 2: [1 4]\n",
 			},
 		},
 		{
-			name: "CompleteForExecute for Arg fails if suggestions is wrong type",
+			name: "Complexecute for Arg fails if suggestions is wrong type",
 			etc: &ExecuteTestCase{
 				Args: []string{""},
-				Node: SerialNodes(Arg[int]("is", testDesc, CompleteForExecute[int](), CompleterFromFunc(func(i int, d *Data) (*Completion, error) {
+				Node: SerialNodes(Arg[int]("is", testDesc, Complexecute[int](), CompleterFromFunc(func(i int, d *Data) (*Completion, error) {
 					return &Completion{
 						Suggestions: []string{"someString"},
 					}, nil
@@ -190,10 +190,10 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "CompleteForExecute for Arg works if one suggestion",
+			name: "Complexecute for Arg works if one suggestion",
 			etc: &ExecuteTestCase{
 				Args: []string{""},
-				Node: SerialNodes(Arg[int]("is", testDesc, CompleteForExecute[int](), CompleterFromFunc(func(i int, d *Data) (*Completion, error) {
+				Node: SerialNodes(Arg[int]("is", testDesc, Complexecute[int](), CompleterFromFunc(func(i int, d *Data) (*Completion, error) {
 					return &Completion{
 						Suggestions: []string{"123"},
 					}, nil
@@ -211,10 +211,10 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "CompleteForExecute for Arg completes on best effort",
+			name: "Complexecute for Arg completes on best effort",
 			etc: &ExecuteTestCase{
 				Args: []string{""},
-				Node: SerialNodes(Arg[int]("is", testDesc, CompleteForExecute[int](CompleteForExecuteBestEffort()), CompleterFromFunc(func(i int, d *Data) (*Completion, error) {
+				Node: SerialNodes(Arg[int]("is", testDesc, Complexecute[int](ComplexecuteBestEffort()), CompleterFromFunc(func(i int, d *Data) (*Completion, error) {
 					return &Completion{
 						Suggestions: []string{"123"},
 					}, nil
@@ -232,10 +232,10 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "CompleteForExecute for Arg doesn't complete or error on best effort if no suggestions",
+			name: "Complexecute for Arg doesn't complete or error on best effort if no suggestions",
 			etc: &ExecuteTestCase{
 				Args: []string{"h"},
-				Node: SerialNodes(Arg[string]("s", testDesc, CompleteForExecute[string](CompleteForExecuteBestEffort()), CompleterFromFunc(func(i string, d *Data) (*Completion, error) {
+				Node: SerialNodes(Arg[string]("s", testDesc, Complexecute[string](ComplexecuteBestEffort()), CompleterFromFunc(func(i string, d *Data) (*Completion, error) {
 					return &Completion{}, nil
 				}))),
 				wantInput: &Input{
@@ -251,10 +251,10 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "CompleteForExecute for Arg doesn't complete or error on best effort if multiple suggestions",
+			name: "Complexecute for Arg doesn't complete or error on best effort if multiple suggestions",
 			etc: &ExecuteTestCase{
 				Args: []string{"h"},
-				Node: SerialNodes(Arg[string]("s", testDesc, CompleteForExecute[string](CompleteForExecuteBestEffort()), CompleterFromFunc(func(i string, d *Data) (*Completion, error) {
+				Node: SerialNodes(Arg[string]("s", testDesc, Complexecute[string](ComplexecuteBestEffort()), CompleterFromFunc(func(i string, d *Data) (*Completion, error) {
 					return &Completion{
 						Suggestions: []string{"hey", "hi"},
 					}, nil
@@ -272,10 +272,10 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "CompleteForExecute for Arg doesn't complete or error on best effort if error",
+			name: "Complexecute for Arg doesn't complete or error on best effort if error",
 			etc: &ExecuteTestCase{
 				Args: []string{"h"},
-				Node: SerialNodes(Arg[string]("s", testDesc, CompleteForExecute[string](CompleteForExecuteBestEffort()), CompleterFromFunc(func(i string, d *Data) (*Completion, error) {
+				Node: SerialNodes(Arg[string]("s", testDesc, Complexecute[string](ComplexecuteBestEffort()), CompleterFromFunc(func(i string, d *Data) (*Completion, error) {
 					return nil, fmt.Errorf("oopsie")
 				}))),
 				wantInput: &Input{
@@ -291,10 +291,10 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "CompleteForExecute for Arg doesn't complete or error on best effort if nil Completion",
+			name: "Complexecute for Arg doesn't complete or error on best effort if nil Completion",
 			etc: &ExecuteTestCase{
 				Args: []string{"h"},
-				Node: SerialNodes(Arg[string]("s", testDesc, CompleteForExecute[string](CompleteForExecuteBestEffort()), CompleterFromFunc(func(i string, d *Data) (*Completion, error) {
+				Node: SerialNodes(Arg[string]("s", testDesc, Complexecute[string](ComplexecuteBestEffort()), CompleterFromFunc(func(i string, d *Data) (*Completion, error) {
 					return nil, nil
 				}))),
 				wantInput: &Input{
@@ -310,10 +310,10 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "CompleteForExecute for Arg works when only one prefix matches",
+			name: "Complexecute for Arg works when only one prefix matches",
 			etc: &ExecuteTestCase{
 				Args: []string{"4"},
-				Node: SerialNodes(Arg[int]("is", testDesc, CompleteForExecute[int](), CompleterFromFunc(func(i int, d *Data) (*Completion, error) {
+				Node: SerialNodes(Arg[int]("is", testDesc, Complexecute[int](), CompleterFromFunc(func(i int, d *Data) (*Completion, error) {
 					return &Completion{
 						Suggestions: []string{"123", "234", "345", "456", "567"},
 					}, nil
@@ -331,10 +331,10 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "CompleteForExecute for Arg fails if multiple completions",
+			name: "Complexecute for Arg fails if multiple completions",
 			etc: &ExecuteTestCase{
 				Args: []string{"f"},
-				Node: SerialNodes(Arg[string]("s", testDesc, CompleteForExecute[string](), CompleterFromFunc(func(i string, d *Data) (*Completion, error) {
+				Node: SerialNodes(Arg[string]("s", testDesc, Complexecute[string](), CompleterFromFunc(func(i string, d *Data) (*Completion, error) {
 					return &Completion{
 						Suggestions: []string{"one", "two", "three", "four", "five", "six"},
 					}, nil
@@ -344,15 +344,15 @@ func TestExecute(t *testing.T) {
 						{value: "f"},
 					},
 				},
-				WantErr:    fmt.Errorf("[CompleteForExecute] requires exactly one suggestion to be returned for \"s\", got 2: [five four]"),
-				WantStderr: "[CompleteForExecute] requires exactly one suggestion to be returned for \"s\", got 2: [five four]\n",
+				WantErr:    fmt.Errorf("[Complexecute] requires exactly one suggestion to be returned for \"s\", got 2: [five four]"),
+				WantStderr: "[Complexecute] requires exactly one suggestion to be returned for \"s\", got 2: [five four]\n",
 			},
 		},
 		{
-			name: "CompleteForExecute for Arg works for string",
+			name: "Complexecute for Arg works for string",
 			etc: &ExecuteTestCase{
 				Args: []string{"fi"},
-				Node: SerialNodes(Arg[string]("s", testDesc, CompleteForExecute[string](), CompleterFromFunc(func(i string, d *Data) (*Completion, error) {
+				Node: SerialNodes(Arg[string]("s", testDesc, Complexecute[string](), CompleterFromFunc(func(i string, d *Data) (*Completion, error) {
 					return &Completion{
 						Suggestions: []string{"one", "two", "three", "four", "five", "six"},
 					}, nil
@@ -370,16 +370,16 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "CompleteForExecute for Arg works for multiple, independent args",
+			name: "Complexecute for Arg works for multiple, independent args",
 			etc: &ExecuteTestCase{
 				Args: []string{"fi", "tr"},
 				Node: SerialNodes(
-					Arg[string]("s", testDesc, CompleteForExecute[string](), CompleterFromFunc(func(i string, d *Data) (*Completion, error) {
+					Arg[string]("s", testDesc, Complexecute[string](), CompleterFromFunc(func(i string, d *Data) (*Completion, error) {
 						return &Completion{
 							Suggestions: []string{"one", "two", "three", "four", "five", "six"},
 						}, nil
 					})),
-					Arg[string]("s2", testDesc, CompleteForExecute[string](), CompleterFromFunc(func(i string, d *Data) (*Completion, error) {
+					Arg[string]("s2", testDesc, Complexecute[string](), CompleterFromFunc(func(i string, d *Data) (*Completion, error) {
 						return &Completion{
 							Suggestions: []string{"un", "deux", "trois", "quatre"},
 						}, nil
@@ -400,19 +400,19 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "CompleteForExecute for Arg fails if one of completions fails for independent args",
+			name: "Complexecute for Arg fails if one of completions fails for independent args",
 			etc: &ExecuteTestCase{
 				Args: []string{"fi", "mouse", "tr"},
 				Node: SerialNodes(
-					Arg[string]("s", testDesc, CompleteForExecute[string](), CompleterFromFunc(func(i string, d *Data) (*Completion, error) {
+					Arg[string]("s", testDesc, Complexecute[string](), CompleterFromFunc(func(i string, d *Data) (*Completion, error) {
 						return &Completion{
 							Suggestions: []string{"one", "two", "three", "four", "five", "six"},
 						}, nil
 					})),
-					Arg[string]("s2", testDesc, CompleteForExecute[string](), CompleterFromFunc(func(i string, d *Data) (*Completion, error) {
+					Arg[string]("s2", testDesc, Complexecute[string](), CompleterFromFunc(func(i string, d *Data) (*Completion, error) {
 						return nil, fmt.Errorf("rats")
 					})),
-					Arg[string]("s3", testDesc, CompleteForExecute[string](), CompleterFromFunc(func(i string, d *Data) (*Completion, error) {
+					Arg[string]("s3", testDesc, Complexecute[string](), CompleterFromFunc(func(i string, d *Data) (*Completion, error) {
 						return &Completion{
 							Suggestions: []string{"un", "deux", "trois", "quatre"},
 						}, nil
@@ -431,24 +431,24 @@ func TestExecute(t *testing.T) {
 						"s": "five",
 					},
 				},
-				WantStderr: "[CompleteForExecute] failed to fetch completion for \"s2\": rats\n",
-				WantErr:    fmt.Errorf("[CompleteForExecute] failed to fetch completion for \"s2\": rats"),
+				WantStderr: "[Complexecute] failed to fetch completion for \"s2\": rats\n",
+				WantErr:    fmt.Errorf("[Complexecute] failed to fetch completion for \"s2\": rats"),
 			},
 		},
 		{
-			name: "CompleteForExecute for Arg works if one of completions fails on best effort for independent args",
+			name: "Complexecute for Arg works if one of completions fails on best effort for independent args",
 			etc: &ExecuteTestCase{
 				Args: []string{"fi", "mouse", "tr"},
 				Node: SerialNodes(
-					Arg[string]("s", testDesc, CompleteForExecute[string](), CompleterFromFunc(func(i string, d *Data) (*Completion, error) {
+					Arg[string]("s", testDesc, Complexecute[string](), CompleterFromFunc(func(i string, d *Data) (*Completion, error) {
 						return &Completion{
 							Suggestions: []string{"one", "two", "three", "four", "five", "six"},
 						}, nil
 					})),
-					Arg[string]("s2", testDesc, CompleteForExecute[string](CompleteForExecuteBestEffort()), CompleterFromFunc(func(i string, d *Data) (*Completion, error) {
+					Arg[string]("s2", testDesc, Complexecute[string](ComplexecuteBestEffort()), CompleterFromFunc(func(i string, d *Data) (*Completion, error) {
 						return nil, fmt.Errorf("rats")
 					})),
-					Arg[string]("s3", testDesc, CompleteForExecute[string](), CompleterFromFunc(func(i string, d *Data) (*Completion, error) {
+					Arg[string]("s3", testDesc, Complexecute[string](), CompleterFromFunc(func(i string, d *Data) (*Completion, error) {
 						return &Completion{
 							Suggestions: []string{"un", "deux", "trois", "quatre"},
 						}, nil
@@ -471,11 +471,11 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "CompleteForExecute for Arg transforms last arg *after* CompleteForExecute",
+			name: "Complexecute for Arg transforms last arg *after* Complexecute",
 			etc: &ExecuteTestCase{
 				Args: []string{""},
 				Node: SerialNodes(Arg[string]("s", testDesc,
-					CompleteForExecute[string](),
+					Complexecute[string](),
 					CompleterFromFunc(func(s string, d *Data) (*Completion, error) {
 						return &Completion{
 							Suggestions: []string{"abc"},
@@ -498,11 +498,11 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "CompleteForExecute for Arg transforms last arg *after* CompleteForExecute and sub completion",
+			name: "Complexecute for Arg transforms last arg *after* Complexecute and sub completion",
 			etc: &ExecuteTestCase{
 				Args: []string{"bra"},
 				Node: SerialNodes(Arg[string]("s", testDesc,
-					CompleteForExecute[string](),
+					Complexecute[string](),
 					CompleterFromFunc(func(s string, d *Data) (*Completion, error) {
 						return &Completion{
 							Suggestions: []string{"alpha", "bravo", "charlie", "brown"},
@@ -525,11 +525,11 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "CompleteForExecute for Arg with transformer fails if no match",
+			name: "Complexecute for Arg with transformer fails if no match",
 			etc: &ExecuteTestCase{
 				Args: []string{"br"},
 				Node: SerialNodes(Arg[string]("s", testDesc,
-					CompleteForExecute[string](),
+					Complexecute[string](),
 					CompleterFromFunc(func(s string, d *Data) (*Completion, error) {
 						return &Completion{
 							Suggestions: []string{"alpha", "bravo", "charlie", "brown"},
@@ -544,16 +544,16 @@ func TestExecute(t *testing.T) {
 						{value: "br"},
 					},
 				},
-				WantStderr: "[CompleteForExecute] requires exactly one suggestion to be returned for \"s\", got 2: [bravo brown]\n",
-				WantErr:    fmt.Errorf("[CompleteForExecute] requires exactly one suggestion to be returned for \"s\", got 2: [bravo brown]"),
+				WantStderr: "[Complexecute] requires exactly one suggestion to be returned for \"s\", got 2: [bravo brown]\n",
+				WantErr:    fmt.Errorf("[Complexecute] requires exactly one suggestion to be returned for \"s\", got 2: [bravo brown]"),
 			},
 		},
 		{
-			name: "CompleteForExecute for Arg transforms last arg if CompleteForExecute fails with best effort",
+			name: "Complexecute for Arg transforms last arg if Complexecute fails with best effort",
 			etc: &ExecuteTestCase{
 				Args: []string{"br"},
 				Node: SerialNodes(Arg[string]("s", testDesc,
-					CompleteForExecute[string](CompleteForExecuteBestEffort()),
+					Complexecute[string](ComplexecuteBestEffort()),
 					CompleterFromFunc(func(s string, d *Data) (*Completion, error) {
 						return &Completion{
 							Suggestions: []string{"alpha", "bravo", "charlie", "brown"},
@@ -576,10 +576,10 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "CompleteForExecute is properly set in data",
+			name: "Complexecute is properly set in data",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(Arg[string]("s", testDesc, CompleteForExecute[string](), CompleterFromFunc(func(s string, d *Data) (*Completion, error) {
-					d.Set("CFE", d.completeForExecute)
+				Node: SerialNodes(Arg[string]("s", testDesc, Complexecute[string](), CompleterFromFunc(func(s string, d *Data) (*Completion, error) {
+					d.Set("CFE", d.complexecute)
 					return &Completion{Suggestions: []string{"abcde"}}, nil
 				}))),
 				Args: []string{"ab"},
@@ -594,12 +594,12 @@ func TestExecute(t *testing.T) {
 				}},
 			},
 		},
-		// CompleteForExecuteAllowExactMatch tests
+		// ComplexecuteAllowExactMatch tests
 		{
-			name: "CompleteForExecute fails if exact match and ExactMatch option not provided",
+			name: "Complexecute fails if exact match and ExactMatch option not provided",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(Arg[string]("s", testDesc,
-					CompleteForExecute[string](),
+					Complexecute[string](),
 					SimpleCompleter[string]("Hello", "HelloThere", "Hello!", "Goodbye"),
 				)),
 				Args: []string{"Hello"},
@@ -608,15 +608,15 @@ func TestExecute(t *testing.T) {
 						{value: "Hello"},
 					},
 				},
-				WantStderr: "[CompleteForExecute] requires exactly one suggestion to be returned for \"s\", got 3: [Hello Hello! HelloThere]\n",
-				WantErr:    fmt.Errorf("[CompleteForExecute] requires exactly one suggestion to be returned for \"s\", got 3: [Hello Hello! HelloThere]"),
+				WantStderr: "[Complexecute] requires exactly one suggestion to be returned for \"s\", got 3: [Hello Hello! HelloThere]\n",
+				WantErr:    fmt.Errorf("[Complexecute] requires exactly one suggestion to be returned for \"s\", got 3: [Hello Hello! HelloThere]"),
 			},
 		},
 		{
-			name: "CompleteForExecuteAllowExactMatch fails if partial match",
+			name: "ComplexecuteAllowExactMatch fails if partial match",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(Arg[string]("s", testDesc,
-					CompleteForExecute[string](CompleteForExecuteAllowExactMatch()),
+					Complexecute[string](ComplexecuteAllowExactMatch()),
 					SimpleCompleter[string]("Hello", "HelloThere", "Hello!", "Goodbye"),
 				)),
 				Args: []string{"Hel"},
@@ -625,15 +625,15 @@ func TestExecute(t *testing.T) {
 						{value: "Hel"},
 					},
 				},
-				WantStderr: "[CompleteForExecute] requires exactly one suggestion to be returned for \"s\", got 3: [Hello Hello! HelloThere]\n",
-				WantErr:    fmt.Errorf("[CompleteForExecute] requires exactly one suggestion to be returned for \"s\", got 3: [Hello Hello! HelloThere]"),
+				WantStderr: "[Complexecute] requires exactly one suggestion to be returned for \"s\", got 3: [Hello Hello! HelloThere]\n",
+				WantErr:    fmt.Errorf("[Complexecute] requires exactly one suggestion to be returned for \"s\", got 3: [Hello Hello! HelloThere]"),
 			},
 		},
 		{
-			name: "CompleteForExecuteAllowExactMatch works if exact match",
+			name: "ComplexecuteAllowExactMatch works if exact match",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(Arg[string]("s", testDesc,
-					CompleteForExecute[string](CompleteForExecuteAllowExactMatch()),
+					Complexecute[string](ComplexecuteAllowExactMatch()),
 					SimpleCompleter[string]("Hello", "HelloThere", "Hello!", "Goodbye"),
 				)),
 				Args: []string{"Hello"},
@@ -648,10 +648,10 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "CompleteForExecuteAllowExactMatch works if exact match with sub match",
+			name: "ComplexecuteAllowExactMatch works if exact match with sub match",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(Arg[string]("s", testDesc,
-					CompleteForExecute[string](CompleteForExecuteAllowExactMatch()),
+					Complexecute[string](ComplexecuteAllowExactMatch()),
 					SimpleCompleter[string]("Hello", "HelloThere", "Hello!", "Goodbye"),
 				)),
 				Args: []string{"HelloThere"},
@@ -666,10 +666,10 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "CompleteForExecuteAllowExactMatch works if only sub match",
+			name: "ComplexecuteAllowExactMatch works if only sub match",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(Arg[string]("s", testDesc,
-					CompleteForExecute[string](CompleteForExecuteAllowExactMatch()),
+					Complexecute[string](ComplexecuteAllowExactMatch()),
 					SimpleCompleter[string]("Hello", "HelloThere", "Hello!", "Goodbye"),
 				)),
 				Args: []string{"HelloThere!"},
@@ -678,15 +678,15 @@ func TestExecute(t *testing.T) {
 						{value: "HelloThere!"},
 					},
 				},
-				WantStderr: "[CompleteForExecute] requires exactly one suggestion to be returned for \"s\", got 0: []\n",
-				WantErr:    fmt.Errorf("[CompleteForExecute] requires exactly one suggestion to be returned for \"s\", got 0: []"),
+				WantStderr: "[Complexecute] requires exactly one suggestion to be returned for \"s\", got 0: []\n",
+				WantErr:    fmt.Errorf("[Complexecute] requires exactly one suggestion to be returned for \"s\", got 0: []"),
 			},
 		},
-		// FileCompleter with CompleteForExecute
+		// FileCompleter with Complexecute
 		{
-			name: "FileCompleter with CompleteForExecute properly completes a single directory",
+			name: "FileCompleter with Complexecute properly completes a single directory",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(FileNode("s", testDesc, CompleteForExecute[string]())),
+				Node: SerialNodes(FileNode("s", testDesc, Complexecute[string]())),
 				Args: []string{"do"},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -699,9 +699,9 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "FileCompleter with CompleteForExecute properly completes a full directory",
+			name: "FileCompleter with Complexecute properly completes a full directory",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(FileNode("s", testDesc, CompleteForExecute[string]())),
+				Node: SerialNodes(FileNode("s", testDesc, Complexecute[string]())),
 				Args: []string{"docs"},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -714,9 +714,9 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "FileCompleter with CompleteForExecute properly completes a full directory with trailing slash",
+			name: "FileCompleter with Complexecute properly completes a full directory with trailing slash",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(FileNode("s", testDesc, CompleteForExecute[string]())),
+				Node: SerialNodes(FileNode("s", testDesc, Complexecute[string]())),
 				Args: []string{fmt.Sprintf("docs%c", filepath.Separator)},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -729,9 +729,9 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "FileCompleter with CompleteForExecute properly completes nested directory",
+			name: "FileCompleter with Complexecute properly completes nested directory",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(FileNode("s", testDesc, CompleteForExecute[string]())),
+				Node: SerialNodes(FileNode("s", testDesc, Complexecute[string]())),
 				Args: []string{filepath.Join("sourcerer", "c")},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -744,9 +744,9 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "FileCompleter with CompleteForExecute properly completes nested file",
+			name: "FileCompleter with Complexecute properly completes nested file",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(FileNode("s", testDesc, CompleteForExecute[string]())),
+				Node: SerialNodes(FileNode("s", testDesc, Complexecute[string]())),
 				Args: []string{filepath.Join("sourcerer", "cmd", "l")},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -759,9 +759,9 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "FileCompleter with CompleteForExecute properly completes a single file",
+			name: "FileCompleter with Complexecute properly completes a single file",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(FileNode("s", testDesc, CompleteForExecute[string]())),
+				Node: SerialNodes(FileNode("s", testDesc, Complexecute[string]())),
 				Args: []string{"v"},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -774,38 +774,38 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "FileCompleter with CompleteForExecute fails if multiple options",
+			name: "FileCompleter with Complexecute fails if multiple options",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(FileNode("s", testDesc, CompleteForExecute[string]())),
+				Node: SerialNodes(FileNode("s", testDesc, Complexecute[string]())),
 				Args: []string{"ca"},
 				wantInput: &Input{
 					args: []*inputArg{
 						{value: "ca"},
 					},
 				},
-				WantStderr: "[CompleteForExecute] requires exactly one suggestion to be returned for \"s\", got 2: [cache cache_]\n",
-				WantErr:    fmt.Errorf("[CompleteForExecute] requires exactly one suggestion to be returned for \"s\", got 2: [cache cache_]"),
+				WantStderr: "[Complexecute] requires exactly one suggestion to be returned for \"s\", got 2: [cache cache_]\n",
+				WantErr:    fmt.Errorf("[Complexecute] requires exactly one suggestion to be returned for \"s\", got 2: [cache cache_]"),
 			},
 		},
 		{
-			name: "FileCompleter with CompleteForExecute fails if no options",
+			name: "FileCompleter with Complexecute fails if no options",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(FileNode("s", testDesc, CompleteForExecute[string]())),
+				Node: SerialNodes(FileNode("s", testDesc, Complexecute[string]())),
 				Args: []string{"uhhh"},
 				wantInput: &Input{
 					args: []*inputArg{
 						{value: "uhhh"},
 					},
 				},
-				WantStderr: "[CompleteForExecute] nil completion returned for \"s\"\n",
-				WantErr:    fmt.Errorf("[CompleteForExecute] nil completion returned for \"s\""),
+				WantStderr: "[Complexecute] nil completion returned for \"s\"\n",
+				WantErr:    fmt.Errorf("[Complexecute] nil completion returned for \"s\""),
 			},
 		},
-		// CompleteForExecute tests for ListArg
+		// Complexecute tests for ListArg
 		{
-			name: "CompleteForExecute for ListArg fails if no arg provided",
+			name: "Complexecute for ListArg fails if no arg provided",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, CompleteForExecute[[]string](), CompleterFromFunc(func(sl []string, d *Data) (*Completion, error) {
+				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, Complexecute[[]string](), CompleterFromFunc(func(sl []string, d *Data) (*Completion, error) {
 					return nil, fmt.Errorf("oopsie")
 				}))),
 				WantErr:    fmt.Errorf(`Argument "sl" requires at least 2 arguments, got 0`),
@@ -813,10 +813,10 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "CompleteForExecute for ListArg fails completer returns error",
+			name: "Complexecute for ListArg fails completer returns error",
 			etc: &ExecuteTestCase{
 				Args: []string{""},
-				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, CompleteForExecute[[]string](), CompleterFromFunc(func(sl []string, d *Data) (*Completion, error) {
+				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, Complexecute[[]string](), CompleterFromFunc(func(sl []string, d *Data) (*Completion, error) {
 					return nil, fmt.Errorf("oopsie")
 				}))),
 				wantInput: &Input{
@@ -824,15 +824,15 @@ func TestExecute(t *testing.T) {
 						{value: ""},
 					},
 				},
-				WantErr:    fmt.Errorf("[CompleteForExecute] failed to fetch completion for \"sl\": oopsie"),
-				WantStderr: "[CompleteForExecute] failed to fetch completion for \"sl\": oopsie\n",
+				WantErr:    fmt.Errorf("[Complexecute] failed to fetch completion for \"sl\": oopsie"),
+				WantStderr: "[Complexecute] failed to fetch completion for \"sl\": oopsie\n",
 			},
 		},
 		{
-			name: "CompleteForExecute for ListArg fails if returned completion is nil",
+			name: "Complexecute for ListArg fails if returned completion is nil",
 			etc: &ExecuteTestCase{
 				Args: []string{""},
-				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, CompleteForExecute[[]string](), CompleterFromFunc(func(sl []string, d *Data) (*Completion, error) {
+				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, Complexecute[[]string](), CompleterFromFunc(func(sl []string, d *Data) (*Completion, error) {
 					return nil, nil
 				}))),
 				wantInput: &Input{
@@ -840,15 +840,15 @@ func TestExecute(t *testing.T) {
 						{value: ""},
 					},
 				},
-				WantErr:    fmt.Errorf("[CompleteForExecute] nil completion returned for \"sl\""),
-				WantStderr: "[CompleteForExecute] nil completion returned for \"sl\"\n",
+				WantErr:    fmt.Errorf("[Complexecute] nil completion returned for \"sl\""),
+				WantStderr: "[Complexecute] nil completion returned for \"sl\"\n",
 			},
 		},
 		{
-			name: "CompleteForExecute for ListArg fails if 0 suggestions",
+			name: "Complexecute for ListArg fails if 0 suggestions",
 			etc: &ExecuteTestCase{
 				Args: []string{""},
-				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, CompleteForExecute[[]string](), CompleterFromFunc(func(sl []string, d *Data) (*Completion, error) {
+				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, Complexecute[[]string](), CompleterFromFunc(func(sl []string, d *Data) (*Completion, error) {
 					return &Completion{}, nil
 				}))),
 				wantInput: &Input{
@@ -856,15 +856,15 @@ func TestExecute(t *testing.T) {
 						{value: ""},
 					},
 				},
-				WantErr:    fmt.Errorf("[CompleteForExecute] requires exactly one suggestion to be returned for \"sl\", got 0: []"),
-				WantStderr: "[CompleteForExecute] requires exactly one suggestion to be returned for \"sl\", got 0: []\n",
+				WantErr:    fmt.Errorf("[Complexecute] requires exactly one suggestion to be returned for \"sl\", got 0: []"),
+				WantStderr: "[Complexecute] requires exactly one suggestion to be returned for \"sl\", got 0: []\n",
 			},
 		},
 		{
-			name: "CompleteForExecute for ListArg fails if multiple suggestions",
+			name: "Complexecute for ListArg fails if multiple suggestions",
 			etc: &ExecuteTestCase{
 				Args: []string{""},
-				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, CompleteForExecute[[]string](), CompleterFromFunc(func(sl []string, d *Data) (*Completion, error) {
+				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, Complexecute[[]string](), CompleterFromFunc(func(sl []string, d *Data) (*Completion, error) {
 					return &Completion{
 						Suggestions: []string{"alpha", "bravo"},
 					}, nil
@@ -874,15 +874,15 @@ func TestExecute(t *testing.T) {
 						{value: ""},
 					},
 				},
-				WantErr:    fmt.Errorf("[CompleteForExecute] requires exactly one suggestion to be returned for \"sl\", got 2: [alpha bravo]"),
-				WantStderr: "[CompleteForExecute] requires exactly one suggestion to be returned for \"sl\", got 2: [alpha bravo]\n",
+				WantErr:    fmt.Errorf("[Complexecute] requires exactly one suggestion to be returned for \"sl\", got 2: [alpha bravo]"),
+				WantStderr: "[Complexecute] requires exactly one suggestion to be returned for \"sl\", got 2: [alpha bravo]\n",
 			},
 		},
 		{
-			name: "CompleteForExecute for ListArg fails if suggestions is wrong type",
+			name: "Complexecute for ListArg fails if suggestions is wrong type",
 			etc: &ExecuteTestCase{
 				Args: []string{""},
-				Node: SerialNodes(ListArg[int]("il", testDesc, 2, 3, CompleteForExecute[[]int](), CompleterFromFunc(func(sl []int, d *Data) (*Completion, error) {
+				Node: SerialNodes(ListArg[int]("il", testDesc, 2, 3, Complexecute[[]int](), CompleterFromFunc(func(sl []int, d *Data) (*Completion, error) {
 					return &Completion{
 						Suggestions: []string{"alpha"},
 					}, nil
@@ -897,10 +897,10 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "CompleteForExecute for ListArg fails if still not enough args",
+			name: "Complexecute for ListArg fails if still not enough args",
 			etc: &ExecuteTestCase{
 				Args: []string{"alpha", ""},
-				Node: SerialNodes(ListArg[string]("sl", testDesc, 3, 3, CompleteForExecute[[]string](), CompleterFromFunc(func(sl []string, d *Data) (*Completion, error) {
+				Node: SerialNodes(ListArg[string]("sl", testDesc, 3, 3, Complexecute[[]string](), CompleterFromFunc(func(sl []string, d *Data) (*Completion, error) {
 					return &Completion{
 						Distinct:    true,
 						Suggestions: []string{"alpha", "charlie"},
@@ -922,10 +922,10 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "CompleteForExecute for ListArg works if one suggestion",
+			name: "Complexecute for ListArg works if one suggestion",
 			etc: &ExecuteTestCase{
 				Args: []string{"alpha", "bravo", ""},
-				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, CompleteForExecute[[]string](), CompleterFromFunc(func(sl []string, d *Data) (*Completion, error) {
+				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, Complexecute[[]string](), CompleterFromFunc(func(sl []string, d *Data) (*Completion, error) {
 					return &Completion{
 						Distinct:    true,
 						Suggestions: []string{"alpha", "bravo", "charlie"},
@@ -946,10 +946,10 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "CompleteForExecute for ListArg works when only one prefix matches",
+			name: "Complexecute for ListArg works when only one prefix matches",
 			etc: &ExecuteTestCase{
 				Args: []string{"alpha", "bravo", "c"},
-				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, CompleteForExecute[[]string](), CompleterFromFunc(func(sl []string, d *Data) (*Completion, error) {
+				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, Complexecute[[]string](), CompleterFromFunc(func(sl []string, d *Data) (*Completion, error) {
 					return &Completion{
 						Distinct:    true,
 						Suggestions: []string{"alpha", "bravo", "charlie", "delta", "epsilon"},
@@ -970,10 +970,10 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "CompleteForExecute for ListArg fails if no distinct filter",
+			name: "Complexecute for ListArg fails if no distinct filter",
 			etc: &ExecuteTestCase{
 				Args: []string{"alpha", "bravo", ""},
-				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, CompleteForExecute[[]string](), CompleterFromFunc(func(sl []string, d *Data) (*Completion, error) {
+				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, Complexecute[[]string](), CompleterFromFunc(func(sl []string, d *Data) (*Completion, error) {
 					return &Completion{
 						Suggestions: []string{"alpha", "bravo", "charlie"},
 					}, nil
@@ -985,15 +985,15 @@ func TestExecute(t *testing.T) {
 						{value: ""},
 					},
 				},
-				WantErr:    fmt.Errorf("[CompleteForExecute] requires exactly one suggestion to be returned for \"sl\", got 3: [alpha bravo charlie]"),
-				WantStderr: "[CompleteForExecute] requires exactly one suggestion to be returned for \"sl\", got 3: [alpha bravo charlie]\n",
+				WantErr:    fmt.Errorf("[Complexecute] requires exactly one suggestion to be returned for \"sl\", got 3: [alpha bravo charlie]"),
+				WantStderr: "[Complexecute] requires exactly one suggestion to be returned for \"sl\", got 3: [alpha bravo charlie]\n",
 			},
 		},
 		{
-			name: "CompleteForExecute for ListArg works with distinct filter",
+			name: "Complexecute for ListArg works with distinct filter",
 			etc: &ExecuteTestCase{
 				Args: []string{"alpha", "bravo", ""},
-				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, CompleteForExecute[[]string](), CompleterFromFunc(func(sl []string, d *Data) (*Completion, error) {
+				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, Complexecute[[]string](), CompleterFromFunc(func(sl []string, d *Data) (*Completion, error) {
 					return &Completion{
 						Distinct:    true,
 						Suggestions: []string{"alpha", "bravo", "charlie"},
@@ -1014,10 +1014,10 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "CompleteForExecute for ListArg completes multiple args",
+			name: "Complexecute for ListArg completes multiple args",
 			etc: &ExecuteTestCase{
 				Args: []string{"a", "br", "c"},
-				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, CompleteForExecute[[]string](), CompleterFromFunc(func(sl []string, d *Data) (*Completion, error) {
+				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, Complexecute[[]string](), CompleterFromFunc(func(sl []string, d *Data) (*Completion, error) {
 					return &Completion{
 						Suggestions: []string{"alpha", "bravo", "charlie"},
 					}, nil
@@ -1037,10 +1037,10 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "CompleteForExecute for ListArg fails if multiple completions",
+			name: "Complexecute for ListArg fails if multiple completions",
 			etc: &ExecuteTestCase{
 				Args: []string{"f"},
-				Node: SerialNodes(Arg[string]("s", testDesc, CompleteForExecute[string](), CompleterFromFunc(func(i string, d *Data) (*Completion, error) {
+				Node: SerialNodes(Arg[string]("s", testDesc, Complexecute[string](), CompleterFromFunc(func(i string, d *Data) (*Completion, error) {
 					return &Completion{
 						Suggestions: []string{"one", "two", "three", "four", "five", "six"},
 					}, nil
@@ -1050,8 +1050,8 @@ func TestExecute(t *testing.T) {
 						{value: "f"},
 					},
 				},
-				WantErr:    fmt.Errorf("[CompleteForExecute] requires exactly one suggestion to be returned for \"s\", got 2: [five four]"),
-				WantStderr: "[CompleteForExecute] requires exactly one suggestion to be returned for \"s\", got 2: [five four]\n",
+				WantErr:    fmt.Errorf("[Complexecute] requires exactly one suggestion to be returned for \"s\", got 2: [five four]"),
+				WantStderr: "[Complexecute] requires exactly one suggestion to be returned for \"s\", got 2: [five four]\n",
 			},
 		},
 		// Default value tests

@@ -6,15 +6,15 @@ type ArgOpt[T any] interface {
 }
 
 type argOpt[T any] struct {
-	validators         []*ValidatorOption[T]
-	completer          Completer[T]
-	transformers       []*Transformer[T]
-	shortcut           *shortcutOpt[T]
-	customSet          *CustomSetter[T]
-	_default           *defaultArgOpt[T]
-	breakers           []InputValidator
-	completeForExecute *completeForExecute
-	hideUsage          bool
+	validators   []*ValidatorOption[T]
+	completer    Completer[T]
+	transformers []*Transformer[T]
+	shortcut     *shortcutOpt[T]
+	customSet    *CustomSetter[T]
+	_default     *defaultArgOpt[T]
+	breakers     []InputValidator
+	complexecute *complexecute
+	hideUsage    bool
 }
 
 type simpleArgOpt[T any] func(*argOpt[T])
@@ -63,12 +63,12 @@ func (cs *CustomSetter[T]) modifyArgOpt(ao *argOpt[T]) {
 	ao.customSet = cs
 }
 
-// CompleteForExecute is an arg option for arg execution.
+// Complexecute (Complete for Execute) is an arg option for arg execution.
 // If a command execution is run, then the last value for this arg
 // will be completed using its `Complete` logic. Exactly one suggestion
 // must be returned.
-func CompleteForExecute[T any](opts ...CompleteForExecuteOption) ArgOpt[T] {
-	cfe := &completeForExecute{
+func Complexecute[T any](opts ...ComplexecuteOption) ArgOpt[T] {
+	cfe := &complexecute{
 		enabled: true,
 		strict:  true,
 	}
@@ -76,30 +76,30 @@ func CompleteForExecute[T any](opts ...CompleteForExecuteOption) ArgOpt[T] {
 		o(cfe)
 	}
 	return newArgOpt(func(ao *argOpt[T]) {
-		ao.completeForExecute = cfe
+		ao.complexecute = cfe
 	})
 }
 
-type CompleteForExecuteOption func(*completeForExecute)
+type ComplexecuteOption func(*complexecute)
 
-type completeForExecute struct {
+type complexecute struct {
 	// Whether or not to actually complete it
 	enabled    bool
 	strict     bool
 	exactMatch bool
 }
 
-// CompleteForExecuteBestEffort runs CompleteForExecute on a best effort basis.
+// ComplexecuteBestEffort runs Complexecute on a best effort basis.
 // If zero or multiple completions are suggested, then the argument isn't altered.
-func CompleteForExecuteBestEffort() CompleteForExecuteOption {
-	return func(cfe *completeForExecute) { cfe.strict = false }
+func ComplexecuteBestEffort() ComplexecuteOption {
+	return func(cfe *complexecute) { cfe.strict = false }
 }
 
-// CompleteForExecuteAllowExactMatch allows exact matches even if multiple
+// ComplexecuteAllowExactMatch allows exact matches even if multiple
 // completions were returned. For example, if the arg is "Hello", and the resulting
 // completions are ["Hello", "HelloThere", "Hello!"], then we won't error.
-func CompleteForExecuteAllowExactMatch() CompleteForExecuteOption {
-	return func(cfe *completeForExecute) { cfe.exactMatch = true }
+func ComplexecuteAllowExactMatch() ComplexecuteOption {
+	return func(cfe *complexecute) { cfe.exactMatch = true }
 }
 
 // Transformer is an `ArgOpt` that transforms an argument.
