@@ -50,23 +50,35 @@ func (mc *myCLI) Node() *command.Node {
 This makes the following possible:
 
 ```shell
+# Execute the command normally
 > mc someFile.txt echo contents
 /full/path/to/someFile.txt # output from fileArg
 echo contents              # output from printArgs
+
+# Execute other command(s)
 > echo another command
 another command
+
+# Execute mc using the cached arguments
 > mc
 /full/path/to/someFile.txt # output from fileArg
 echo contents              # output from printArgs
 ```
 
-It is also important to note that the final, transformed value of the input is stored in the cache, so this will still work from other directories (provided the `command.FileTransformer()` is used for all of your file args/flags).
+## Stores Transformed Arguments
+
+It is also important to note that the final, transformed value of the input is stored in the CLI's [persistent data](./persistent_data.md), so this will still work from other directories (provided the `command.FileTransformer()` is used for all of your file args/flags).
 
 ```shell
+# Execute the command normally
 > mc someFile.txt echo contents
 /full/path/to/someFile.txt # output from fileArg
 echo contents              # output from printArgs
+
+# Change directory
 > cd ../..
+
+# Execute mc using the cached arguments
 > mc
 /full/path/to/someFile.txt # output from fileArg
 echo contents              # output from printArgs
