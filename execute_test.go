@@ -7778,20 +7778,20 @@ func printArgsNode() *Node {
 
 func sampleRepeaterNode(minN, optionalN int) Processor {
 	return NodeRepeater(SerialNodes(
-		Arg[string]("KEY", testDesc, CustomSetter(func(v string, d *Data) {
+		Arg[string]("KEY", testDesc, &CustomSetter[string]{func(v string, d *Data) {
 			if !d.Has("keys") {
 				d.Set("keys", []string{v})
 			} else {
 				d.Set("keys", append(d.StringList("keys"), v))
 			}
-		}), SimpleCompleter[string]("alpha", "bravo", "charlie", "brown")),
-		Arg[int]("VALUE", testDesc, CustomSetter(func(v int, d *Data) {
+		}}, SimpleCompleter[string]("alpha", "bravo", "charlie", "brown")),
+		Arg[int]("VALUE", testDesc, &CustomSetter[int]{func(v int, d *Data) {
 			if !d.Has("values") {
 				d.Set("values", []int{v})
 			} else {
 				d.Set("values", append(d.IntList("values"), v))
 			}
-		}), SimpleCompleter[int]("1", "121", "1213121")),
+		}}, SimpleCompleter[int]("1", "121", "1213121")),
 	), minN, optionalN)
 }
 

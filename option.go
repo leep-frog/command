@@ -10,7 +10,7 @@ type argOpt[T any] struct {
 	completer          Completer[T]
 	transformers       []*Transformer[T]
 	shortcut           *shortcutOpt[T]
-	customSet          customSetter[T]
+	customSet          *CustomSetter[T]
 	_default           *defaultArgOpt[T]
 	breakers           []InputValidator
 	completeForExecute *completeForExecute
@@ -55,15 +55,12 @@ func (so *shortcutOpt[T]) modifyArgOpt(argO *argOpt[T]) {
 
 // CustomSetter is an `ArgOpt` to specify a custom setting function when setting
 // argument data.
-func CustomSetter[T any](f func(T, *Data)) ArgOpt[T] {
-	cs := customSetter[T](f)
-	return &cs
+type CustomSetter[T any] struct {
+	F func(T, *Data)
 }
 
-type customSetter[T any] func(T, *Data)
-
-func (cs *customSetter[T]) modifyArgOpt(ao *argOpt[T]) {
-	ao.customSet = *cs
+func (cs *CustomSetter[T]) modifyArgOpt(ao *argOpt[T]) {
+	ao.customSet = cs
 }
 
 // CompleteForExecute is an arg option for arg execution.

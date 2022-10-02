@@ -4,23 +4,25 @@
 
  - [Simple autocomplete implementation](./docs/features/autocompletion.md)
 
- - [Automatic CLI usage documentation](./docs/features/automated_documentation.md)
- 
+ - [Automatic help documentation](./docs/features/automated_documentation.md)
+
+ - [Persistent CLI data](./docs/features/persistent_data.md)
+
  - [CLI shortcutting](./docs/features/shortcuts.md)
 
- - [Built-in persistent data capabilities](./docs/features/persistent_data.md)
-
- - [Testing command execution, completion, and usage](./docs/features/testing.md)
+ - [Testing framework for command execution, completion, and usage](./docs/features/testing.md)
 
  - [Caching previous command executions](./docs/features/caching.md)
 
 See the following docs folders for more info:
 
-- [`docs/basics folder`](./docs/basics/): Core concepts and types for this package.
+- [`docs/basics` folder](./docs/basics/): Core concepts and types for this package.
 
 - [`docs/features` folder](./docs/features/): Exhaustive list of features.
 
 ## Installation
+
+> TODO: Update this section to use user's go module instead of this repo directly.
 
 1. Download this repository locally:
 
@@ -41,15 +43,13 @@ See the following docs folders for more info:
 
 ## Writing Your First Command
 
-There are a couple of ways to get started. Some people love reading through a good doc, while otherwise like to just get their hands on examples right away. The following two sub-sections should hopefully satiate both of those approaches.
+There are a couple of ways to get started. Some people love reading through a good doc, while others prefer to get their hands on examples right away. The following two sub-sections should hopefully satiate both of those approaches.
 
 ### Building Blocks Docs
 
-To read through the building blocks of this package, see the following docs:
+- [Nodes, Processors, and Edges](./docs/basics/nodes_processors_and_edges.md)
 
-- [Nodes, Processors, and Edges](./building_blocks/nodes_processors_edges.md)
-
-- [Argument Processors](./building_blocks/arg_processors.md)
+- [Argument Nodes and Processors](./docs/basics/args.md)
 
 - [Flag Nodes and Processors](./building_blocks/flag_nodes_and_processors.md)
 

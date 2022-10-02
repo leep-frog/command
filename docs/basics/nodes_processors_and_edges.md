@@ -1,5 +1,7 @@
 # Nodes, Processors, and Edges
 
+<!-- TODO: update code blocks (maybe pull these from files that can be tested) -->
+
 At a high level, the `command` package simply traverses a graph of `command.Node` objects. A `Node` contains two fields:
 
 1. `Node.Processor` contains the logic that should be executed when a `Node` is reached.
@@ -10,7 +12,7 @@ The graph is traversed until there aren't any more nodes to traverse (i.e. `Node
 
 ## Usage
 
-While the graph logic may seem convoluted, this strucutre allows for features like [dynamic caching](TODO) and [dynamic shortcuts](TODO). Additionally, simple graphs can be easily constructed with the `SerialNodes` and `BranchNode` helper functions.
+While the graph logic may seem convoluted, this strucutre allows for features like [command execution caching](TODO) and [command shortcuts](TODO). Additionally, simple graphs can still be easily constructed with the `SerialNodes` and `BranchNode` helper functions.
 
 ## Examples
 

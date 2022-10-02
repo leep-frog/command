@@ -57,8 +57,8 @@ func (an *ArgNode[T]) GetOrDefault(data *Data, dflt T) T {
 
 // Set sets the argument key in the given `Data` object.
 func (an *ArgNode[T]) Set(v T, data *Data) {
-	if an.opt != nil && an.opt.customSet != nil {
-		an.opt.customSet(v, data)
+	if an.opt != nil && an.opt.customSet != nil && an.opt.customSet.F != nil {
+		an.opt.customSet.F(v, data)
 	} else {
 		data.Set(an.name, v)
 	}

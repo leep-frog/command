@@ -537,7 +537,7 @@ func StringListListNode(name, desc, breakSymbol string, minN, optionalN int, opt
 		Processor: ListArg(name, desc, 0, UnboundedList,
 			append(opts,
 				ListUntilSymbol(breakSymbol, DiscardBreaker[[]string]()),
-				CustomSetter(func(sl []string, d *Data) {
+				&CustomSetter[[]string]{func(sl []string, d *Data) {
 					if len(sl) > 0 {
 						if !d.Has(name) {
 							d.Set(name, [][]string{sl})
@@ -545,7 +545,7 @@ func StringListListNode(name, desc, breakSymbol string, minN, optionalN int, opt
 							d.Set(name, append(GetData[[][]string](d, name), sl))
 						}
 					}
-				}),
+				}},
 			)...,
 		),
 	}
