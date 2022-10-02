@@ -9,7 +9,7 @@ var (
 	cacheHistoryFlag     = Flag("cache-len", 'n', "Number of historical elements to display from the cache", Default(1))
 	cachePrintPrefixFlag = BoolFlag("cache-prefix", 'p', "Include prefix arguments in print statement")
 	cachePrefixData      = "CACHE_PREFIX_DATA"
-	defaultHistory       = 100
+	CacheDefaultHistory  = 100
 )
 
 // CachableCLI is an interface for CLIs that can store cached executions.
@@ -28,7 +28,7 @@ func CacheNode(name string, c CachableCLI, n *Node, opts ...CacheOption) *Node {
 		name: name,
 		c:    c,
 		n:    n,
-		ch:   &cacheHistory{defaultHistory},
+		ch:   &cacheHistory{CacheDefaultHistory},
 	}
 	for _, opt := range opts {
 		opt.modifyCache(cc)

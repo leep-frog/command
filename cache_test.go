@@ -29,7 +29,7 @@ func (sc *simpleCacheCLI) Cache() map[string][][]string {
 }
 
 func TestCacheExecution(t *testing.T) {
-	StubValue(t, &defaultHistory, 2)
+	StubValue(t, &CacheDefaultHistory, 2)
 
 	cc := &simpleCacheCLI{}
 	for _, test := range []struct {
