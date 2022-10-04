@@ -144,13 +144,18 @@ func (fn *flagNode) flagBreaker() InputValidator {
 }
 
 func (fn *flagNode) Complete(input *Input, data *Data) (*Completion, error) {
+	// unprocessed tracks the flags that have not been processed
 	unprocessed := map[string]FlagInterface{}
+	// available tracks the flags that can still be set (either because they
+	// haven't been set yet or because `AllowsMultiple()` returned `true`).
+	available := map[string]bool{}
 	// Don't define `processed := map[string]bool{}` like we do in Execute
 	// because we want to run completion on a best effort basis.
 	// Specifically, we will try to complete a flag's value even
 	// if the flag was provided twice.
 	for _, f := range fn.flagMap {
 		unprocessed[f.Name()] = f
+		available[f.Name()] = true
 	}
 	for i := 0; i < input.NumRemaining(); {
 		a, _ := input.PeekAt(i)
@@ -158,10 +163,8 @@ func (fn *flagNode) Complete(input *Input, data *Data) (*Completion, error) {
 		// If it's the last arg.
 		if i == input.NumRemaining()-1 && len(a) > 0 && a[0] == '-' {
 			k := make([]string, 0, len(fn.flagMap))
-			for n := range fn.flagMap {
-				if len(n) > 2 {
-					k = append(k, n)
-				}
+			for n := range available {
+				k = append(k, fmt.Sprintf("--%s", n))
 			}
 			sort.Strings(k)
 			return &Completion{
@@ -179,6 +182,9 @@ func (fn *flagNode) Complete(input *Input, data *Data) (*Completion, error) {
 					continue
 				}
 				delete(unprocessed, f.Name())
+				if !f.Options().allowsMultiple() {
+					delete(available, f.Name())
+				}
 
 				// Pass an empty input so multiple flags don't compete
 				// for the remaining args. Only return if an error is returned,
@@ -197,6 +203,9 @@ func (fn *flagNode) Complete(input *Input, data *Data) (*Completion, error) {
 			// If regular flag
 
 			delete(unprocessed, f.Name())
+			if !f.Options().allowsMultiple() {
+				delete(available, f.Name())
+			}
 
 			input.offset = i
 			// Remove flag argument (e.g. --flagName).
@@ -247,7 +256,7 @@ func (fn *flagNode) Execute(input *Input, output Output, data *Data, eData *Exec
 				}
 				delete(unprocessed, f.Name())
 
-				if processed[f.Name()] {
+				if !f.Options().allowsMultiple() && processed[f.Name()] {
 					return output.Stderrf("Flag %q has already been set\n", f.Name())
 				}
 				processed[f.Name()] = true
@@ -479,14 +488,74 @@ func (bf *boolFlag[T]) AddOptions(opts ...ArgOpt[T]) FlagWithType[T] {
 	panic("options cannot be added to a boolean flag")
 }
 
+type optionalFlag[T any] struct {
+	FlagWithType[T]
+
+	defaultValue T
+}
+
+// OptionalFlag is a flag that can accept an optional parameter. Unlike `OptionalArg`, it actually has three different outcomes:
+// Example with `OptionalFlag[string]("optStr", 'o', "description", "default-value")`
+// 1. `Args=["--optStr"]`: The flag's value is set to "default-value" in data.
+// 2. `Args=[]`: The flag's value isn't set (or is set to command.Default(...) option if provided).
+// 3. `Args=["--optStr", "custom-value"]`: The flag's value is set to "custom-value" in data.
+func OptionalFlag[T any](name string, shortName rune, desc string, defaultValue T, opts ...ArgOpt[T]) FlagWithType[T] {
+	return &optionalFlag[T]{
+		listFlag(name, desc, shortName, 0, 1, opts...),
+		defaultValue,
+	}
+}
+
+func (of *optionalFlag[T]) Processor() Processor {
+	return of
+}
+
+func (of *optionalFlag[T]) Execute(input *Input, output Output, data *Data, eData *ExecuteData) error {
+	if err := of.FlagWithType.Processor().Execute(input, output, data, eData); err != nil {
+		return err
+	}
+
+	of.setDefault(data)
+	return nil
+}
+
+func (of *optionalFlag[T]) setDefault(data *Data) {
+	if !data.Has(of.Name()) {
+		data.Set(of.Name(), of.defaultValue)
+	}
+}
+
+func (of *optionalFlag[T]) Complete(input *Input, data *Data) (*Completion, error) {
+	// Complete flag argument if necessary
+	if input.NumRemaining() <= 1 {
+		if a, _ := input.Peek(); len(a) > 0 && a[0] == '-' {
+			return nil, nil
+		}
+	}
+
+	// Otherwise just run regular completion.
+	c, err := of.FlagWithType.Processor().Complete(input, data)
+	if c != nil || err != nil {
+		return c, err
+	}
+
+	of.setDefault(data)
+	return nil, nil
+}
+
+func (of *optionalFlag[T]) Usage(u *Usage) {
+	of.FlagWithType.Processor().Usage(u)
+}
+
+// ItemizedListFlag creates a flag that can be set with separate flags (e.g. `cmd -i value-one -i value-two -b other-flag -i value-three`).
 func ItemizedListFlag[T any](name string, shortName rune, desc string, opts ...ArgOpt[[]T]) FlagWithType[[]T] {
 	return &itemizedListFlag[T]{
-		flag: listFlag(name, desc, shortName, 0, UnboundedList, opts...),
+		FlagWithType: ListFlag(name, shortName, desc, 0, UnboundedList, opts...),
 	}
 }
 
 type itemizedListFlag[T any] struct {
-	*flag[[]T]
+	FlagWithType[[]T]
 
 	rawArgs []string
 }
@@ -494,16 +563,16 @@ type itemizedListFlag[T any] struct {
 func (ilf *itemizedListFlag[T]) Options() *FlagOptions {
 	return &FlagOptions{
 		// Combinable
-		ilf.flag.Options().combinable(),
+		ilf.FlagWithType.Options().combinable(),
 		// AllowsMultiple
 		true,
 		// ProcessMissing
 		func(d *Data) error {
-			return ilf.flag.Options().processMissing(d)
+			return ilf.FlagWithType.Options().processMissing(d)
 		},
 		// PostProcess
 		func(i *Input, o Output, d *Data, ed *ExecuteData) error {
-			return ilf.flag.argNode.Execute(NewInput(ilf.rawArgs, nil), o, d, ed)
+			return ilf.FlagWithType.Processor().Execute(NewInput(ilf.rawArgs, nil), o, d, ed)
 		},
 	}
 }
@@ -531,14 +600,14 @@ func (ilf *itemizedListFlag[T]) Complete(input *Input, data *Data) (*Completion,
 	s, _ := input.Pop()
 	ilf.rawArgs = append(ilf.rawArgs, s)
 	if input.FullyProcessed() {
-		c, e := ilf.flag.argNode.Complete(NewInput(ilf.rawArgs, nil), data)
+		c, e := ilf.FlagWithType.Processor().Complete(NewInput(ilf.rawArgs, nil), data)
 		return c, e
 	}
 	return nil, nil
 }
 
 func (ilf *itemizedListFlag[T]) Usage(u *Usage) {
-	ilf.flag.Processor().Usage(u)
+	ilf.FlagWithType.Processor().Usage(u)
 }
 
 // ListFlag creates a `FlagInterface` from list argument info.

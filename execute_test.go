@@ -4343,6 +4343,88 @@ func TestExecute(t *testing.T) {
 				WantStderr: "Flag \"quick\" has already been set\n",
 			},
 		},
+		// OptionalFlag tests
+		{
+			name: "OptionalFlag sets if default if last argument",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					FlagNode(
+						OptionalFlag("of", 'o', testDesc, "dfltValue"),
+					),
+				),
+				Args: []string{"--of"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "--of"},
+					},
+				},
+				WantData: &Data{Values: map[string]interface{}{
+					"of": "dfltValue",
+				}},
+			},
+		},
+		{
+			name: "OptionalFlag doesn't eat other flags",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					FlagNode(
+						OptionalFlag("of", 'o', testDesc, "dfltValue"),
+						Flag[string]("sf", 's', testDesc),
+					),
+				),
+				Args: []string{"--of", "--sf", "hello"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "--of"},
+						{value: "--sf"},
+						{value: "hello"},
+					},
+				},
+				WantData: &Data{Values: map[string]interface{}{
+					"of": "dfltValue",
+					"sf": "hello",
+				}},
+			},
+		},
+		{
+			name: "OptionalFlag gets set",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					FlagNode(
+						OptionalFlag("of", 'o', testDesc, "dfltValue"),
+					),
+				),
+				Args: []string{"--of", "other"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "--of"},
+						{value: "other"},
+					},
+				},
+				WantData: &Data{Values: map[string]interface{}{
+					"of": "other",
+				}},
+			},
+		},
+		{
+			name: "OptionalFlag handles error",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					FlagNode(
+						OptionalFlag("of", 'o', testDesc, 123),
+					),
+				),
+				Args: []string{"--of", "not-a-number"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "--of"},
+						{value: "not-a-number"},
+					},
+				},
+				WantErr:    fmt.Errorf(`strconv.Atoi: parsing "not-a-number": invalid syntax`),
+				WantStderr: "strconv.Atoi: parsing \"not-a-number\": invalid syntax\n",
+			},
+		},
 		// ItemizedListFlag tests
 		{
 			name: "Itemized list flag requires argument",
@@ -6431,6 +6513,80 @@ func TestComplete(t *testing.T) {
 					"run":   true,
 					"zf":    "",
 				}},
+			},
+		},
+		{
+			name: "Don't suggest already seen flag names",
+			ctc: &CompleteTestCase{
+				Args: "cmd -z firstZ --everyone --ilf heyo --run -",
+				Node: SerialNodes(
+					FlagNode(
+						BoolFlag("everyone", 'e', testDesc),
+						BoolFlag("quick", 'q', testDesc),
+						BoolFlag("run", 'r', testDesc),
+						BoolFlag("to", 't', testDesc),
+						Flag[string]("zf", 'z', testDesc, SimpleCompleter[string]("zyx", "wvu", "tsr")),
+						ItemizedListFlag[string]("ilf", 'i', testDesc),
+						BoolFlag("where", 'w', testDesc),
+					),
+				),
+				Want: []string{
+					// ilf still gets completed because it allows multiple.
+					"--ilf",
+					"--quick",
+					"--to",
+					"--where",
+				},
+				WantData: &Data{Values: map[string]interface{}{
+					"everyone": true,
+					"run":      true,
+					"zf":       "firstZ",
+				}},
+			},
+		},
+		// OptionalFlag tests
+		{
+			name: "OptionalFlag gets completed",
+			ctc: &CompleteTestCase{
+				Node: SerialNodes(
+					FlagNode(
+						OptionalFlag[string]("of", 'o', testDesc, "dfltValue", SimpleDistinctCompleter[string]("abc", "def", "ghi")),
+					),
+				),
+				Args: "cmd --of",
+				Want: []string{"--of"},
+			},
+		},
+		{
+			name: "OptionalFlag arg gets completed",
+			ctc: &CompleteTestCase{
+				Node: SerialNodes(
+					FlagNode(
+						OptionalFlag[string]("of", 'o', testDesc, "dfltValue", SimpleDistinctCompleter[string]("abc", "def", "ghi")),
+					),
+				),
+				Args: "cmd --of ",
+				Want: []string{"abc", "def", "ghi"},
+				WantData: &Data{Values: map[string]interface{}{
+					"of": "",
+				}},
+			},
+		},
+		{
+			name: "Eats partial flag completion",
+			// Eats partial flag completion because there's no great way
+			// to know if the value is for this flag or not.
+			ctc: &CompleteTestCase{
+				Node: SerialNodes(
+					FlagNode(
+						OptionalFlag[string]("of", 'o', testDesc, "dfltValue", SimpleDistinctCompleter[string]("abc", "def", "ghi")),
+						BoolFlag("bf", 'b', testDesc),
+					),
+				),
+				Args: "cmd --of -",
+				Want: []string{
+					"--bf",
+				},
 			},
 		},
 		// ItemizedListFlag tests
