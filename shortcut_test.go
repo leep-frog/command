@@ -57,8 +57,8 @@ func TestShortcutExecute(t *testing.T) {
 						{},
 					},
 				},
-				WantErr:    fmt.Errorf("validation for \"SHORTCUT\" failed: [MinLength] value must be at least 1 character"),
-				WantStderr: "validation for \"SHORTCUT\" failed: [MinLength] value must be at least 1 character\n",
+				WantErr:    fmt.Errorf("validation for \"SHORTCUT\" failed: [MinLength] length must be at least 1"),
+				WantStderr: "validation for \"SHORTCUT\" failed: [MinLength] length must be at least 1\n",
 			},
 		},
 		{
@@ -154,8 +154,8 @@ func TestShortcutExecute(t *testing.T) {
 						{value: ""},
 					},
 				},
-				WantErr:    fmt.Errorf("validation for \"SHORTCUT\" failed: [MinLength] value must be at least 1 character"),
-				WantStderr: "validation for \"SHORTCUT\" failed: [MinLength] value must be at least 1 character\n",
+				WantErr:    fmt.Errorf("validation for \"SHORTCUT\" failed: [MinLength] length must be at least 1"),
+				WantStderr: "validation for \"SHORTCUT\" failed: [MinLength] length must be at least 1\n",
 			},
 		},
 		{

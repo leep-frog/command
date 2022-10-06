@@ -8,7 +8,7 @@ import (
 
 var (
 	// ShortcutArg is the `Arg` used to check for shortcuts.
-	ShortcutArg = Arg[string]("SHORTCUT", "TODO shortcut desc", MinLength(1))
+	ShortcutArg = Arg[string]("SHORTCUT", "TODO shortcut desc", MinLength[string, string](1))
 )
 
 // ShortcutCLI is the interface required for integrating with shortcut nodes.

@@ -2523,7 +2523,7 @@ func TestExecute(t *testing.T) {
 			name: "MinLength works",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: Arg[string]("strArg", testDesc, MinLength(3)),
+					Processor: Arg[string]("strArg", testDesc, MinLength[string, string](3)),
 				},
 				Args: []string{"hello"},
 				wantInput: &Input{
@@ -2540,7 +2540,7 @@ func TestExecute(t *testing.T) {
 			name: "MinLength works for exact count match",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: Arg[string]("strArg", testDesc, MinLength(3)),
+					Processor: Arg[string]("strArg", testDesc, MinLength[string, string](3)),
 				},
 				Args: []string{"hey"},
 				wantInput: &Input{
@@ -2557,7 +2557,7 @@ func TestExecute(t *testing.T) {
 			name: "MinLength fails",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: Arg[string]("strArg", testDesc, MinLength(3)),
+					Processor: Arg[string]("strArg", testDesc, MinLength[string, string](3)),
 				},
 				Args: []string{"hi"},
 				wantInput: &Input{
@@ -2568,8 +2568,8 @@ func TestExecute(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"strArg": "hi",
 				}},
-				WantStderr: "validation for \"strArg\" failed: [MinLength] value must be at least 3 characters\n",
-				WantErr:    fmt.Errorf(`validation for "strArg" failed: [MinLength] value must be at least 3 characters`),
+				WantStderr: "validation for \"strArg\" failed: [MinLength] length must be at least 3\n",
+				WantErr:    fmt.Errorf(`validation for "strArg" failed: [MinLength] length must be at least 3`),
 			},
 		},
 		// MaxLength
@@ -2577,16 +2577,20 @@ func TestExecute(t *testing.T) {
 			name: "MaxLength works",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: Arg[string]("strArg", testDesc, MaxLength(3)),
+					Processor: ListArg[int]("strArg", testDesc, 0, UnboundedList, MaxLength[int, []int](3)),
 				},
-				Args: []string{"hi"},
+				Args: []string{"1234", "56"},
 				wantInput: &Input{
 					args: []*inputArg{
-						{value: "hi"},
+						{value: "1234"},
+						{value: "56"},
 					},
 				},
 				WantData: &Data{Values: map[string]interface{}{
-					"strArg": "hi",
+					"strArg": []int{
+						1234,
+						56,
+					},
 				}},
 			},
 		},
@@ -2594,7 +2598,58 @@ func TestExecute(t *testing.T) {
 			name: "MaxLength works for exact count match",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: Arg[string]("strArg", testDesc, MaxLength(3)),
+					Processor: ListArg[int]("strArg", testDesc, 0, UnboundedList, MaxLength[int, []int](3)),
+				},
+				Args: []string{"1234", "56", "78901"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "1234"},
+						{value: "56"},
+						{value: "78901"},
+					},
+				},
+				WantData: &Data{Values: map[string]interface{}{
+					"strArg": []int{
+						1234,
+						56,
+						78901,
+					},
+				}},
+			},
+		},
+		{
+			name: "MaxLength fails",
+			etc: &ExecuteTestCase{
+				Node: &Node{
+					Processor: ListArg[int]("strArg", testDesc, 0, UnboundedList, MaxLength[int, []int](3)),
+				},
+				Args: []string{"1234", "56", "78901", "234"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "1234"},
+						{value: "56"},
+						{value: "78901"},
+						{value: "234"},
+					},
+				},
+				WantData: &Data{Values: map[string]interface{}{
+					"strArg": []int{
+						1234,
+						56,
+						78901,
+						234,
+					},
+				}},
+				WantStderr: "validation for \"strArg\" failed: [MaxLength] length must be at most 3\n",
+				WantErr:    fmt.Errorf(`validation for "strArg" failed: [MaxLength] length must be at most 3`),
+			},
+		},
+		// Length
+		{
+			name: "Length works",
+			etc: &ExecuteTestCase{
+				Node: &Node{
+					Processor: Arg[string]("strArg", testDesc, Length[string, string](3)),
 				},
 				Args: []string{"hey"},
 				wantInput: &Input{
@@ -2608,22 +2663,41 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "MaxLength fails",
+			name: "Length fails for too few",
 			etc: &ExecuteTestCase{
 				Node: &Node{
-					Processor: Arg[string]("strArg", testDesc, MaxLength(3)),
+					Processor: Arg[string]("strArg", testDesc, Length[string, string](3)),
 				},
-				Args: []string{"hello"},
+				Args: []string{"hi"},
 				wantInput: &Input{
 					args: []*inputArg{
-						{value: "hello"},
+						{value: "hi"},
 					},
 				},
 				WantData: &Data{Values: map[string]interface{}{
-					"strArg": "hello",
+					"strArg": "hi",
 				}},
-				WantStderr: "validation for \"strArg\" failed: [MaxLength] value must be less than 3 characters\n",
-				WantErr:    fmt.Errorf(`validation for "strArg" failed: [MaxLength] value must be less than 3 characters`),
+				WantStderr: "validation for \"strArg\" failed: [Length] length must be exactly 3\n",
+				WantErr:    fmt.Errorf(`validation for "strArg" failed: [Length] length must be exactly 3`),
+			},
+		},
+		{
+			name: "Length fails for too many",
+			etc: &ExecuteTestCase{
+				Node: &Node{
+					Processor: Arg[string]("strArg", testDesc, Length[string, string](4)),
+				},
+				Args: []string{"howdy"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "howdy"},
+					},
+				},
+				WantData: &Data{Values: map[string]interface{}{
+					"strArg": "howdy",
+				}},
+				WantStderr: "validation for \"strArg\" failed: [Length] length must be exactly 4\n",
+				WantErr:    fmt.Errorf(`validation for "strArg" failed: [Length] length must be exactly 4`),
 			},
 		},
 		// IntEQ

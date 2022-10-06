@@ -547,6 +547,18 @@ func (of *optionalFlag[T]) Usage(u *Usage) {
 	of.FlagWithType.Processor().Usage(u)
 }
 
+// TODO: Node that populates a struct from arguments.
+/*
+type structable struct {
+	field1 `json:"f1"
+}
+func StructArg[structable](... the usual ...)
+This should create an arg that can be processed with flags or positional arguments:
+`v1` -> &struct{"v1"}
+`--field1 v1` -> &struct{"v1"}
+Make intermediate arg that transforms values into json and then json into struct
+*/
+
 // ItemizedListFlag creates a flag that can be set with separate flags (e.g. `cmd -i value-one -i value-two -b other-flag -i value-three`).
 func ItemizedListFlag[T any](name string, shortName rune, desc string, opts ...ArgOpt[[]T]) FlagWithType[[]T] {
 	return &itemizedListFlag[T]{

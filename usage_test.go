@@ -106,7 +106,7 @@ func TestUsage(t *testing.T) {
 			utc: &UsageTestCase{
 				Node: SerialNodes(
 					Arg[string]("SARG", "desc",
-						MinLength(3),
+						MinLength[string, string](3),
 						Contains("X"),
 						FileExists(),
 					),
@@ -129,7 +129,7 @@ func TestUsage(t *testing.T) {
 			utc: &UsageTestCase{
 				Node: SerialNodes(
 					Arg[string]("SARG", "desc",
-						MinLength(3),
+						MinLength[string, string](3),
 						Contains("X"),
 						FileExists(),
 					),

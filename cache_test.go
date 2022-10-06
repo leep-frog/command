@@ -97,11 +97,11 @@ func TestCacheExecution(t *testing.T) {
 			name: "caches data on validator error",
 			etc: &ExecuteTestCase{
 				Node: CacheNode("money", cc, SerialNodes(
-					Arg[string]("s", testDesc, MinLength(100)),
+					Arg[string]("s", testDesc, MinLength[string, string](100)),
 				)),
 				Args:       []string{"dollar"},
-				WantErr:    fmt.Errorf("validation for \"s\" failed: [MinLength] value must be at least 100 characters"),
-				WantStderr: "validation for \"s\" failed: [MinLength] value must be at least 100 characters\n",
+				WantErr:    fmt.Errorf("validation for \"s\" failed: [MinLength] length must be at least 100"),
+				WantStderr: "validation for \"s\" failed: [MinLength] length must be at least 100\n",
 				WantData: &Data{Values: map[string]interface{}{
 					"s": "dollar",
 				}},

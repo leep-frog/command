@@ -127,16 +127,16 @@ func InList[T comparable](choices ...T) *ValidatorOption[T] {
 	}
 }
 
+type Lengthable[T any] interface {
+	string | []T
+}
+
 // MinLength [`ValidatorOption`] validates an argument is at least `length` long.
-func MinLength(length int) *ValidatorOption[string] {
-	var plural string
-	if length != 1 {
-		plural = "s"
-	}
-	return &ValidatorOption[string]{
-		func(vs string) error {
+func MinLength[K any, T Lengthable[K]](length int) *ValidatorOption[T] {
+	return &ValidatorOption[T]{
+		func(vs T) error {
 			if len(vs) < length {
-				return fmt.Errorf("[MinLength] value must be at least %d character%s", length, plural)
+				return fmt.Errorf("[MinLength] length must be at least %d", length)
 			}
 			return nil
 		},
@@ -145,19 +145,28 @@ func MinLength(length int) *ValidatorOption[string] {
 }
 
 // MaxLength [`ValidatorOption`] validates an argument is at most `length` long.
-func MaxLength(length int) *ValidatorOption[string] {
-	var plural string
-	if length != 1 {
-		plural = "s"
-	}
-	return &ValidatorOption[string]{
-		func(vs string) error {
+func MaxLength[K any, T Lengthable[K]](length int) *ValidatorOption[T] {
+	return &ValidatorOption[T]{
+		func(vs T) error {
 			if len(vs) > length {
-				return fmt.Errorf("[MaxLength] value must be less than %d character%s", length, plural)
+				return fmt.Errorf("[MaxLength] length must be at most %d", length)
 			}
 			return nil
 		},
 		fmt.Sprintf("MaxLength(%d)", length),
+	}
+}
+
+// Length [`ValidatorOption`] validates an argument is exactly length.
+func Length[K any, T Lengthable[K]](length int) *ValidatorOption[T] {
+	return &ValidatorOption[T]{
+		func(vs T) error {
+			if len(vs) != length {
+				return fmt.Errorf("[Length] length must be exactly %d", length)
+			}
+			return nil
+		},
+		fmt.Sprintf("Length(%d)", length),
 	}
 }
 

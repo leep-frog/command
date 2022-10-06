@@ -450,6 +450,7 @@ func MenuArg[T comparable](name, desc string, choices ...T) *ArgNode[T] {
 	return Arg[T](name, desc, SimpleCompleter[T](strChoices...), InList(choices...))
 }
 
+// TODO: Remove this (or hide this) in favor of ItemizedListFlag?
 // ListBreakerOption is an option type for the `ListBreaker` type.
 type ListBreakerOption[T any] func(*ListBreaker[T])
 

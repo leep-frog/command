@@ -26,7 +26,7 @@ func (mfc *myFirstCommand) Name() string {
 
 // Changed is whether or not the persistent data for a command
 // has changed (in which case the object will be saved).
-// See the [persistent data feature doc](TODO) for more info on this.
+// See the persistent data feature doc for more info on this.
 func (mfc *myFirstCommand) Changed() bool {
 	return false
 }

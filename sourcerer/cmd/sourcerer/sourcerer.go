@@ -96,7 +96,7 @@ func (*UsageCommand) Node() *command.Node {
 type AliaserCommand struct{}
 
 var (
-	aliasArg    = command.Arg[string]("ALIAS", "Alias of new command", command.MinLength(1))
+	aliasArg    = command.Arg[string]("ALIAS", "Alias of new command", command.MinLength[string, string](1))
 	aliasCLIArg = command.Arg[string]("CLI", "CLI of new command")
 	aliasPTArg  = command.ListArg[string]("PASSTHROUGH_ARGS", "Args to passthrough with alias", 0, command.UnboundedList)
 )
@@ -132,7 +132,7 @@ func (*SourcererCommand) Name() string {
 
 var (
 	sourcererDirArg    = command.FileNode("DIRECTORY", "Directory in which to create CLI", command.IsDir())
-	sourcererSuffixArg = command.Arg[string]("BINARY_SUFFIX", "Suffix for the name", command.MinLength(1))
+	sourcererSuffixArg = command.Arg[string]("BINARY_SUFFIX", "Suffix for the name", command.MinLength[string, string](1))
 )
 
 func (*SourcererCommand) Node() *command.Node {
