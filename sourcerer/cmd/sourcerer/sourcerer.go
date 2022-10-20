@@ -22,6 +22,7 @@ var (
 		"notification",
 		"pdf",
 		"replace",
+		"ssh",
 		"sourcecontrol",
 		"todo",
 		"workspace",
