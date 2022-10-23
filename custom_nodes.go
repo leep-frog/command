@@ -635,13 +635,13 @@ func EchoExecuteDataf(format string) Processor {
 }
 
 const (
-	// GetwdKey is the `Data` key used by `Getwd` and `GetwdFromData`.
+	// GetwdKey is the `Data` key used by `GetwdProcessor` and `Getwd`.
 	GetwdKey = "GETWD"
 )
 
-// GetwdFromData retrieves the current directory from `Data` (as set by
-// `Getwd`).
-func GetwdFromData(d *Data) string {
+// Getwd retrieves the current directory from `Data` (as set by
+// `GetwdProcessor`).
+func Getwd(d *Data) string {
 	return d.String(GetwdKey)
 }
 
@@ -656,9 +656,9 @@ func StubGetwd(t *testing.T, wd string, err error) {
 	})
 }
 
-// Getwd returns a processor that stores the present directory in `Data`.
-// Use the `GetwdFromData` function to retrieve its value.
-func Getwd() Processor {
+// GetwdProcessor returns a processor that stores the present directory in `Data`.
+// Use the `Getwd` function to retrieve its value.
+func GetwdProcessor() Processor {
 	return SuperSimpleProcessor(func(i *Input, d *Data) error {
 		s, err := osGetwd()
 		if err != nil {

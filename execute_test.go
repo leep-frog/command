@@ -1773,7 +1773,7 @@ func TestExecute(t *testing.T) {
 			name:    "sets data with Getwd",
 			osGetwd: "some/dir",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(Getwd()),
+				Node: SerialNodes(GetwdProcessor()),
 				WantData: &Data{
 					Values: map[string]interface{}{
 						GetwdKey: "some/dir",
@@ -1785,7 +1785,7 @@ func TestExecute(t *testing.T) {
 			name:       "returns error from Getwd",
 			osGetwdErr: fmt.Errorf("whoops"),
 			etc: &ExecuteTestCase{
-				Node:       SerialNodes(Getwd()),
+				Node:       SerialNodes(GetwdProcessor()),
 				WantErr:    fmt.Errorf("failed to get current directory: whoops"),
 				WantStderr: "failed to get current directory: whoops\n",
 			},
@@ -7320,7 +7320,7 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Args: "cmd",
 				Node: SerialNodes(
-					Getwd(),
+					GetwdProcessor(),
 					Arg[string]("s", testDesc, SimpleCompleter[string]("abc", "def")),
 				),
 				Want: []string{"abc", "def"},
@@ -7338,7 +7338,7 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Args: "cmd",
 				Node: SerialNodes(
-					Getwd(),
+					GetwdProcessor(),
 					Arg[string]("s", testDesc, SimpleCompleter[string]("abc", "def")),
 				),
 				WantErr: fmt.Errorf("failed to get current directory: whoops"),
