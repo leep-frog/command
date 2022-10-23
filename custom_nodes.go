@@ -649,8 +649,8 @@ var (
 	osGetwd = os.Getwd
 )
 
-// StubGetwd uses the provided string and error when calling command.Getwd.
-func StubGetwd(t *testing.T, wd string, err error) {
+// StubGetwdProcessor uses the provided string and error when calling command.GetwdProcessor.
+func StubGetwdProcessor(t *testing.T, wd string, err error) {
 	StubValue(t, &osGetwd, func() (string, error) {
 		return wd, err
 	})
