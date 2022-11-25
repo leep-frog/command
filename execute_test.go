@@ -6990,6 +6990,7 @@ func TestComplete(t *testing.T) {
 					"input.go",
 					"input_test.go",
 					"int_operator.go",
+					"int_operator_test.go",
 					"LICENSE",
 					"option.go",
 					"os.go",

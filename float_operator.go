@@ -1,6 +1,22 @@
 package command
 
-import "strconv"
+import (
+	"regexp"
+	"strconv"
+	"strings"
+)
+
+var (
+	floatRegex = regexp.MustCompile(`-?[0-9](_?[0-9])*(\.[0-9](_?[0-9])*)?`)
+)
+
+func parseFloat(s string) (float64, error) {
+	// Replace all underscores *only* if it matches the pattern
+	if intRegex.MatchString(s) {
+		s = strings.ReplaceAll(s, "_", "")
+	}
+	return strconv.ParseFloat(s, 64)
+}
 
 type floatOperator struct{}
 
@@ -12,7 +28,7 @@ func (*floatOperator) fromArgs(sl []*string) (float64, error) {
 	if len(sl) == 0 {
 		return 0, nil
 	}
-	return strconv.ParseFloat(*sl[0], 64)
+	return parseFloat(*sl[0])
 }
 
 type floatListOperator struct{}
@@ -29,7 +45,7 @@ func (*floatListOperator) fromArgs(sl []*string) ([]float64, error) {
 	var err error
 	var fs []float64
 	for _, s := range sl {
-		f, e := strconv.ParseFloat(*s, 64)
+		f, e := parseFloat(*s)
 		if e != nil {
 			err = e
 		}
