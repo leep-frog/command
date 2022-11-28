@@ -21,6 +21,11 @@ func TestParseInt(t *testing.T) {
 			want: 123,
 		},
 		{
+			name:    "Decimal",
+			arg:     "12.3",
+			wantErr: errFunc("12.3"),
+		},
+		{
 			name: "Underscore in the middle",
 			arg:  "1_2_3",
 			want: 123,

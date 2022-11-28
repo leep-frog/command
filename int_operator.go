@@ -13,12 +13,14 @@ type operator[T any] interface {
 }
 
 var (
-	intRegex = regexp.MustCompile("^-?[0-9](_?[0-9])*?$")
+	// IntRegex is the regex checked for int `Args`. Underscores will be removed
+	// if they are in a valid position (not the first or last character).
+	IntRegex = regexp.MustCompile("^-?[0-9](_?[0-9])*?$")
 )
 
 func parseInt(s string) (int, error) {
 	// Replace all underscores *only* if it matches the pattern
-	if intRegex.MatchString(s) {
+	if IntRegex.MatchString(s) {
 		s = strings.ReplaceAll(s, "_", "")
 	}
 	return strconv.Atoi(s)

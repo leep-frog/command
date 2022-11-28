@@ -1,20 +1,11 @@
 package command
 
 import (
-	"regexp"
 	"strconv"
-	"strings"
-)
-
-var (
-	floatRegex = regexp.MustCompile(`-?[0-9](_?[0-9])*(\.[0-9](_?[0-9])*)?`)
 )
 
 func parseFloat(s string) (float64, error) {
-	// Replace all underscores *only* if it matches the pattern
-	if intRegex.MatchString(s) {
-		s = strings.ReplaceAll(s, "_", "")
-	}
+	// ParseFloat replaces relevant underscores for us.
 	return strconv.ParseFloat(s, 64)
 }
 
