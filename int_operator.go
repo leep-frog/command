@@ -18,7 +18,7 @@ var (
 	IntRegex = regexp.MustCompile("^-?[0-9](_?[0-9])*?$")
 )
 
-func parseInt(s string) (int, error) {
+func ParseInt(s string) (int, error) {
 	// Replace all underscores *only* if it matches the pattern
 	if IntRegex.MatchString(s) {
 		s = strings.ReplaceAll(s, "_", "")
@@ -36,7 +36,7 @@ func (*intOperator) fromArgs(sl []*string) (int, error) {
 	if len(sl) == 0 {
 		return 0, nil
 	}
-	return parseInt(*sl[0])
+	return ParseInt(*sl[0])
 }
 
 type intListOperator struct{}
@@ -53,7 +53,7 @@ func (*intListOperator) fromArgs(sl []*string) ([]int, error) {
 	var err error
 	var is []int
 	for _, s := range sl {
-		i, e := parseInt(*s)
+		i, e := ParseInt(*s)
 		if e != nil {
 			err = e
 		}
