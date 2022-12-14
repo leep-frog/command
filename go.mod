@@ -7,4 +7,7 @@ require (
 	golang.org/x/exp v0.0.0-20220321124402-2d6d886f8a82
 )
 
-require golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
+require (
+	github.com/leep-frog/gocli v0.0.0-20221214140506-c673693bfdd1 // indirect
+	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
+)
