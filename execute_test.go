@@ -801,8 +801,29 @@ func TestExecute(t *testing.T) {
 				WantErr:    fmt.Errorf("[Complexecute] nil completion returned for \"s\""),
 			},
 		},
-		// Complexecute tests for ListArg
 		{
+			name:    "FileCompleter with Complexecute and ExcludePwd",
+			osGetwd: FilepathAbs(t, "."),
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					Arg[string]("s", testDesc, Complexecute[string](), &FileCompleter[string]{
+						ExcludePwd:  true,
+						IgnoreFiles: true,
+					}),
+				),
+				Args: []string{"co"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "color/"},
+					},
+				},
+				WantData: &Data{Values: map[string]interface{}{
+					"s": "color/",
+				}},
+			},
+		},
+		// Complexecute tests for ListArg
+		/*{
 			name: "Complexecute for ListArg fails if no arg provided",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, Complexecute[[]string](), CompleterFromFunc(func(sl []string, d *Data) (*Completion, error) {
@@ -1054,6 +1075,7 @@ func TestExecute(t *testing.T) {
 				WantStderr: "[Complexecute] requires exactly one suggestion to be returned for \"s\", got 2: [five four]\n",
 			},
 		},
+		// Complexecute with
 		// Default value tests
 		{
 			name: "Uses default if no arg provided",
@@ -5926,6 +5948,7 @@ func TestExecute(t *testing.T) {
 		/* Useful for commenting out tests. */
 	} {
 		t.Run(test.name, func(t *testing.T) {
+			fmt.Println(test.name, "=======")
 			StubValue(t, &osGetwd, func() (string, error) {
 				return test.osGetwd, test.osGetwdErr
 			})
