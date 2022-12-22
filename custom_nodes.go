@@ -3,6 +3,7 @@ package command
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 	"testing"
@@ -646,7 +647,8 @@ func Getwd(d *Data) string {
 }
 
 var (
-	osGetwd = os.Getwd
+	osGetwd     = os.Getwd
+	filepathRel = filepath.Rel
 )
 
 // StubGetwdProcessor uses the provided string and error when calling command.GetwdProcessor.

@@ -561,17 +561,19 @@ func TestParseAndComplete(t *testing.T) {
 }
 
 type completerTest[T any] struct {
-	name          string
-	c             Completer[[]T]
-	singleC       Completer[T]
-	args          string
-	ptArgs        []string
-	setup         func(*testing.T)
-	cleanup       func(*testing.T)
-	absErr        error
-	commandBranch bool
-	want          []string
-	wantErr       error
+	name           string
+	c              Completer[[]T]
+	singleC        Completer[T]
+	args           string
+	ptArgs         []string
+	setup          func(*testing.T)
+	cleanup        func(*testing.T)
+	absErr         error
+	commandBranch  bool
+	want           []string
+	wantErr        error
+	getwd          func() (string, error)
+	filepathRelErr error
 }
 
 func (test *completerTest[T]) Name() string {
@@ -580,6 +582,14 @@ func (test *completerTest[T]) Name() string {
 
 func (test *completerTest[T]) run(t *testing.T) {
 	t.Run(test.name, func(t *testing.T) {
+		if test.getwd != nil {
+			StubValue(t, &osGetwd, test.getwd)
+		}
+		if test.filepathRelErr != nil {
+			StubValue(t, &filepathRel, func(a, b string) (string, error) {
+				return "", test.filepathRelErr
+			})
+		}
 		if test.setup != nil {
 			test.setup(t)
 		}
@@ -614,6 +624,38 @@ type completerTestInterface interface {
 }
 
 func TestTypedCompleters(t *testing.T) {
+	testdataContents := func() []string {
+		return []string{
+			".surprise",
+			"cases/",
+			"dir1/",
+			"dir2/",
+			"dir3/",
+			"dir4/",
+			"four.txt",
+			"METADATA",
+			"metadata_/",
+			"moreCases/",
+			"one.txt",
+			"three.txt",
+			"two.txt",
+			" ",
+		}
+	}
+	testdataContentsExcept := func(t *testing.T, except string) []string {
+		var r []string
+		var excluded bool
+		for _, s := range testdataContents() {
+			if s != except {
+				excluded = true
+				r = append(r, s)
+			}
+		}
+		if !excluded {
+			t.Errorf("%q was not excluded", except)
+		}
+		return r
+	}
 	for _, test := range []completerTestInterface{
 		// Bool completer tests
 		&completerTest[bool]{
@@ -948,7 +990,7 @@ func TestTypedCompleters(t *testing.T) {
 			},
 		},
 		&completerTest[string]{
-			name: "autocomplete fills in letters that are the same for all options",
+			name: "file completer fills in letters that are the same for all options",
 			c:    &FileCompleter[[]string]{},
 			args: `cmd testdata/dir4/fo`,
 			want: []string{
@@ -1336,6 +1378,98 @@ func TestTypedCompleters(t *testing.T) {
 				"/file",
 				"/file_",
 			},
+		},
+		// ExcludePwd FileCompleter tests
+		&completerTest[string]{
+			name: "file completer returns all files if cwd contains FileCompleter.directory",
+			// cwd = "."; Directory = "./testdata"
+			singleC: &FileCompleter[string]{
+				Directory:  "testdata",
+				ExcludePwd: true,
+			},
+			args: "cmd ",
+			want: testdataContents(),
+		},
+		&completerTest[string]{
+			name:  "file completer returns all files if cwd equals FileCompleter.directory",
+			getwd: func() (string, error) { return FilepathAbs(t, "testdata"), nil },
+			singleC: &FileCompleter[string]{
+				Directory:  "testdata",
+				ExcludePwd: true,
+			},
+			args: "cmd ",
+			want: testdataContents(),
+		},
+		&completerTest[string]{
+			name:  "file completer does not return directory if cwd is inside of FileCompleter.directory",
+			getwd: func() (string, error) { return FilepathAbs(t, "testdata", "dir2"), nil },
+			singleC: &FileCompleter[string]{
+				Directory:  "testdata",
+				ExcludePwd: true,
+			},
+			args: "cmd ",
+			want: testdataContentsExcept(t, "dir2/"),
+		},
+		&completerTest[string]{
+			name:  "file completer does not return directory if cwd is nested inside of FileCompleter.directory",
+			getwd: func() (string, error) { return FilepathAbs(t, "testdata", "metadata_", "other"), nil },
+			singleC: &FileCompleter[string]{
+				Directory:  "testdata",
+				ExcludePwd: true,
+			},
+			args: "cmd ",
+			want: testdataContentsExcept(t, "metadata_/"),
+		},
+		&completerTest[string]{
+			name:  "file completer returns all if cwd is sibling directory",
+			getwd: func() (string, error) { return FilepathAbs(t, "cache"), nil },
+			singleC: &FileCompleter[string]{
+				Directory:  "testdata",
+				ExcludePwd: true,
+			},
+			args: "cmd ",
+			want: testdataContents(),
+		},
+		&completerTest[string]{
+			name:  "file completer returns all if cwd matches non-dir file",
+			getwd: func() (string, error) { return FilepathAbs(t, "testdata", "four.txt"), nil },
+			singleC: &FileCompleter[string]{
+				Directory:  "testdata",
+				ExcludePwd: true,
+			},
+			args: "cmd ",
+			want: testdataContents(),
+		},
+		&completerTest[string]{
+			name:  "file completer returns all if directory is substring of cwd",
+			getwd: func() (string, error) { return FilepathAbs(t, "testdatabc"), nil },
+			singleC: &FileCompleter[string]{
+				Directory:  "testdata",
+				ExcludePwd: true,
+			},
+			args: "cmd ",
+			want: testdataContents(),
+		},
+		&completerTest[string]{
+			name:  "file completer does not complete if failed to get pwd",
+			getwd: func() (string, error) { return FilepathAbs(t, "", "metadata_", "other"), fmt.Errorf("ugh a bug") },
+			singleC: &FileCompleter[string]{
+				Directory:  "testdata",
+				ExcludePwd: true,
+			},
+			args:    "cmd ",
+			wantErr: fmt.Errorf("failed to get current working directory: ugh a bug"),
+		},
+		&completerTest[string]{
+			name:           "file completer does not complete if failed to get relative filepath",
+			getwd:          func() (string, error) { return FilepathAbs(t, "", "metadata_", "other"), nil },
+			filepathRelErr: fmt.Errorf("unrelated"),
+			singleC: &FileCompleter[string]{
+				Directory:  "testdata",
+				ExcludePwd: true,
+			},
+			args:    "cmd ",
+			wantErr: fmt.Errorf("failed to get relative directory: unrelated"),
 		},
 		/* Useful for commenting out tests. */
 	} {

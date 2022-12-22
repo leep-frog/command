@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/fs"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"regexp"
 	"sort"
@@ -265,6 +266,9 @@ type FileCompleter[T any] struct {
 	IgnoreDirectories bool
 	// IgnoreFunc is a function that indicates whether a suggestion should be ignored.
 	IgnoreFunc func(fullPath string, basename string, data *Data) bool
+	// ExcludePwd is whether or not the current working directory path should be excluded
+	// from completions.
+	ExcludePwd bool
 }
 
 func (ff *FileCompleter[T]) modifyArgOpt(ao *argOpt[T]) {
@@ -310,6 +314,23 @@ func (ff *FileCompleter[T]) Complete(value T, data *Data) (*Completion, error) {
 		return nil, fmt.Errorf("failed to read dir: %v", err)
 	}
 
+	var ignoreDir *string
+	if ff.ExcludePwd {
+		pwd, err := osGetwd()
+		if err != nil {
+			return nil, fmt.Errorf("failed to get current working directory: %v", err)
+		}
+
+		// pwd and dir are both absolute paths, so an error should never be returned
+		rel, err := filepathRel(dir, pwd)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get relative directory: %v", err)
+		}
+		if rel[0] != '.' {
+			ignoreDir = &(strings.Split(rel, string(os.PathSeparator))[0])
+		}
+	}
+
 	onlyDir := true
 	suggestions := make([]string, 0, len(files))
 	allowedFileTypes := map[string]bool{}
@@ -319,6 +340,11 @@ func (ff *FileCompleter[T]) Complete(value T, data *Data) (*Completion, error) {
 	for _, f := range files {
 		isDir := f.IsDir() || (f.Mode()&fs.ModeSymlink != 0)
 		if (isDir && ff.IgnoreDirectories) || (!isDir && ff.IgnoreFiles) {
+			continue
+		}
+
+		// ExcludePwd check
+		if isDir && ignoreDir != nil && *ignoreDir == f.Name() {
 			continue
 		}
 
