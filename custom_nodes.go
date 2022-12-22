@@ -652,6 +652,7 @@ var (
 )
 
 // StubGetwdProcessor uses the provided string and error when calling command.GetwdProcessor.
+// TODO: Change to StubGetwd because this actually stubs getwd (used by cd)
 func StubGetwdProcessor(t *testing.T, wd string, err error) {
 	StubValue(t, &osGetwd, func() (string, error) {
 		return wd, err

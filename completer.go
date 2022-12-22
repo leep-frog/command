@@ -282,7 +282,6 @@ var (
 
 // Complete creates a `Completion` object with the relevant set of files.
 func (ff *FileCompleter[T]) Complete(value T, data *Data) (*Completion, error) {
-	fmt.Println("HERE WE ARE")
 	var lastArg string
 	op := getOperator[T]()
 	if args := op.toArgs(value); len(args) > 0 {
@@ -315,15 +314,12 @@ func (ff *FileCompleter[T]) Complete(value T, data *Data) (*Completion, error) {
 		return nil, fmt.Errorf("failed to read dir: %v", err)
 	}
 
-	fmt.Println("and here 1", dir, "|")
 	var ignoreDir *string
 	if ff.ExcludePwd {
 		pwd, err := osGetwd()
 		if err != nil {
 			return nil, fmt.Errorf("failed to get current working directory: %v", err)
 		}
-
-		fmt.Println("and here 1.1", pwd, err, "|")
 
 		// pwd and dir are both absolute paths, so an error should never be returned
 		rel, err := filepathRel(dir, pwd)
@@ -334,7 +330,6 @@ func (ff *FileCompleter[T]) Complete(value T, data *Data) (*Completion, error) {
 			ignoreDir = &(strings.Split(rel, string(os.PathSeparator))[0])
 		}
 	}
-	fmt.Println("and here 2")
 
 	onlyDir := true
 	suggestions := make([]string, 0, len(files))

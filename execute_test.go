@@ -823,7 +823,7 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		// Complexecute tests for ListArg
-		/*{
+		{
 			name: "Complexecute for ListArg fails if no arg provided",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, Complexecute[[]string](), CompleterFromFunc(func(sl []string, d *Data) (*Completion, error) {
@@ -1075,7 +1075,6 @@ func TestExecute(t *testing.T) {
 				WantStderr: "[Complexecute] requires exactly one suggestion to be returned for \"s\", got 2: [five four]\n",
 			},
 		},
-		// Complexecute with
 		// Default value tests
 		{
 			name: "Uses default if no arg provided",
@@ -5948,7 +5947,6 @@ func TestExecute(t *testing.T) {
 		/* Useful for commenting out tests. */
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			fmt.Println(test.name, "=======")
 			StubValue(t, &osGetwd, func() (string, error) {
 				return test.osGetwd, test.osGetwdErr
 			})
