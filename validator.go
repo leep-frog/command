@@ -355,3 +355,29 @@ func Negative[T constraints.Ordered]() *ValidatorOption[T] {
 		"Negative()",
 	}
 }
+
+// Between [`ValidatorOption`] validates an argument is between two numbers.
+func Between[T constraints.Ordered](start, end T, inclusive bool) *ValidatorOption[T] {
+	return &ValidatorOption[T]{
+		func(v T) error {
+			if v < start {
+				return fmt.Errorf("[Between] value is less than lower bound")
+			}
+			if v > end {
+				return fmt.Errorf("[Between] value is greater than upper bound")
+			}
+
+			if !inclusive {
+				if v == start {
+					return fmt.Errorf("[Between] value equals exclusive lower bound")
+				}
+				if v == end {
+					return fmt.Errorf("[Between] value equals exclusive upper bound")
+				}
+			}
+
+			return nil
+		},
+		"Negative()",
+	}
+}

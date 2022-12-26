@@ -3641,6 +3641,190 @@ func TestExecute(t *testing.T) {
 				}},
 			},
 		},
+		// Between inclusive
+		{
+			name: "Between inclusive fails when less than lower bound",
+			etc: &ExecuteTestCase{
+				Node: &Node{
+					Processor: Arg[int]("iArg", testDesc, Between(-3, 4, true)),
+				},
+				Args: []string{"-4"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "-4"},
+					},
+				},
+				WantData: &Data{Values: map[string]interface{}{
+					"iArg": -4,
+				}},
+				WantStderr: "validation for \"iArg\" failed: [Between] value is less than lower bound\n",
+				WantErr:    fmt.Errorf("validation for \"iArg\" failed: [Between] value is less than lower bound"),
+			},
+		},
+		{
+			name: "Between inclusive succeeds when equals lower bound",
+			etc: &ExecuteTestCase{
+				Node: &Node{
+					Processor: Arg[int]("iArg", testDesc, Between(-3, 4, true)),
+				},
+				Args: []string{"-3"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "-3"},
+					},
+				},
+				WantData: &Data{Values: map[string]interface{}{
+					"iArg": -3,
+				}},
+			},
+		},
+		{
+			name: "Between inclusive succeeds when between bounds",
+			etc: &ExecuteTestCase{
+				Node: &Node{
+					Processor: Arg[int]("iArg", testDesc, Between(-3, 4, true)),
+				},
+				Args: []string{"0"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "0"},
+					},
+				},
+				WantData: &Data{Values: map[string]interface{}{
+					"iArg": 0,
+				}},
+			},
+		},
+		{
+			name: "Between inclusive succeeds when equals upper bound",
+			etc: &ExecuteTestCase{
+				Node: &Node{
+					Processor: Arg[int]("iArg", testDesc, Between(-3, 4, true)),
+				},
+				Args: []string{"4"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "4"},
+					},
+				},
+				WantData: &Data{Values: map[string]interface{}{
+					"iArg": 4,
+				}},
+			},
+		},
+		{
+			name: "Between inclusive fails when greater than upper bound",
+			etc: &ExecuteTestCase{
+				Node: &Node{
+					Processor: Arg[int]("iArg", testDesc, Between(-3, 4, true)),
+				},
+				Args: []string{"5"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "5"},
+					},
+				},
+				WantData: &Data{Values: map[string]interface{}{
+					"iArg": 5,
+				}},
+				WantStderr: "validation for \"iArg\" failed: [Between] value is greater than upper bound\n",
+				WantErr:    fmt.Errorf("validation for \"iArg\" failed: [Between] value is greater than upper bound"),
+			},
+		},
+		// Between exclusive
+		{
+			name: "Between exclusive fails when less than lower bound",
+			etc: &ExecuteTestCase{
+				Node: &Node{
+					Processor: Arg[int]("iArg", testDesc, Between(-3, 4, false)),
+				},
+				Args: []string{"-4"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "-4"},
+					},
+				},
+				WantData: &Data{Values: map[string]interface{}{
+					"iArg": -4,
+				}},
+				WantStderr: "validation for \"iArg\" failed: [Between] value is less than lower bound\n",
+				WantErr:    fmt.Errorf("validation for \"iArg\" failed: [Between] value is less than lower bound"),
+			},
+		},
+		{
+			name: "Between exclusive fails when equals lower bound",
+			etc: &ExecuteTestCase{
+				Node: &Node{
+					Processor: Arg[int]("iArg", testDesc, Between(-3, 4, false)),
+				},
+				Args: []string{"-3"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "-3"},
+					},
+				},
+				WantData: &Data{Values: map[string]interface{}{
+					"iArg": -3,
+				}},
+				WantStderr: "validation for \"iArg\" failed: [Between] value equals exclusive lower bound\n",
+				WantErr:    fmt.Errorf("validation for \"iArg\" failed: [Between] value equals exclusive lower bound"),
+			},
+		},
+		{
+			name: "Between exclusive succeeds when between bounds",
+			etc: &ExecuteTestCase{
+				Node: &Node{
+					Processor: Arg[int]("iArg", testDesc, Between(-3, 4, false)),
+				},
+				Args: []string{"0"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "0"},
+					},
+				},
+				WantData: &Data{Values: map[string]interface{}{
+					"iArg": 0,
+				}},
+			},
+		},
+		{
+			name: "Between exclusive fails when equals upper bound",
+			etc: &ExecuteTestCase{
+				Node: &Node{
+					Processor: Arg[int]("iArg", testDesc, Between(-3, 4, false)),
+				},
+				Args: []string{"4"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "4"},
+					},
+				},
+				WantData: &Data{Values: map[string]interface{}{
+					"iArg": 4,
+				}},
+				WantStderr: "validation for \"iArg\" failed: [Between] value equals exclusive upper bound\n",
+				WantErr:    fmt.Errorf("validation for \"iArg\" failed: [Between] value equals exclusive upper bound"),
+			},
+		},
+		{
+			name: "Between exclusive fails when greater than upper bound",
+			etc: &ExecuteTestCase{
+				Node: &Node{
+					Processor: Arg[int]("iArg", testDesc, Between(-3, 4, false)),
+				},
+				Args: []string{"5"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "5"},
+					},
+				},
+				WantData: &Data{Values: map[string]interface{}{
+					"iArg": 5,
+				}},
+				WantStderr: "validation for \"iArg\" failed: [Between] value is greater than upper bound\n",
+				WantErr:    fmt.Errorf("validation for \"iArg\" failed: [Between] value is greater than upper bound"),
+			},
+		},
 		// Flag nodes
 		{
 			name: "empty flag node works",
