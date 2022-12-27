@@ -6265,6 +6265,77 @@ func TestExecute(t *testing.T) {
 				}},
 			},
 		},
+		{
+			name: "MapArgNode.Get works",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					MapArg("m", testDesc, map[string]int{
+						"one":   1,
+						"two":   2,
+						"three": 3,
+					}, true),
+					SimpleProcessor(func(i *Input, o Output, d *Data, ed *ExecuteData) error {
+						ma := MapArg("m", testDesc, map[string]int{
+							"one":   1,
+							"two":   2,
+							"three": 3,
+						}, true)
+						o.Stdoutln(ma.Get(d))
+						return nil
+					}, nil),
+				),
+				Args: []string{"three"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "three"},
+					},
+				},
+				WantData: &Data{Values: map[string]interface{}{
+					"m": 3,
+				}},
+				WantStdout: "3\n",
+			},
+		},
+		{
+			name: "MapArgNode.Get works with custom type",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					MapArg("m", testDesc, map[string]struct {
+						A int
+						B float64
+					}{
+						"one":   {1, 1.1},
+						"two":   {2, 2.2},
+						"three": {3, 3.3},
+					}, true),
+					SimpleProcessor(func(i *Input, o Output, d *Data, ed *ExecuteData) error {
+						ma := MapArg("m", testDesc, map[string]struct {
+							A int
+							B float64
+						}{
+							"one":   {1, 1.1},
+							"two":   {2, 2.2},
+							"three": {3, 3.3},
+						}, true)
+						o.Stdoutln(ma.Get(d))
+						return nil
+					}, nil),
+				),
+				Args: []string{"three"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "three"},
+					},
+				},
+				WantData: &Data{Values: map[string]interface{}{
+					"m": struct {
+						A int
+						B float64
+					}{3, 3.3},
+				}},
+				WantStdout: "{3 3.3}\n",
+			},
+		},
 		/* Useful for commenting out tests. */
 	} {
 		t.Run(test.name, func(t *testing.T) {

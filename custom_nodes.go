@@ -661,7 +661,7 @@ func StubGetwdProcessor(t *testing.T, wd string, err error) {
 }
 
 // MapArg returns a `Processor` that converts an input key into it's value.
-func MapArg[K constraints.Ordered, V any](name, desc string, m map[K]V, allowMissing bool) *ArgNode[K] {
+func MapArg[K constraints.Ordered, V any](name, desc string, m map[K]V, allowMissing bool) *MapArgNode[K, V] {
 	var keys []string
 	for _, k := range maps.Keys(m) {
 		keys = append(keys, fmt.Sprintf("%v", k))
@@ -684,7 +684,15 @@ func MapArg[K constraints.Ordered, V any](name, desc string, m map[K]V, allowMis
 			"MapArg",
 		})
 	}
-	return Arg(name, desc, opts...)
+	return &MapArgNode[K, V]{Arg(name, desc, opts...)}
+}
+
+type MapArgNode[K constraints.Ordered, V any] struct {
+	*ArgNode[K]
+}
+
+func (man *MapArgNode[K, V]) Get(d *Data) V {
+	return GetData[V](d, man.name)
 }
 
 // GetwdProcessor returns a processor that stores the present directory in `Data`.
