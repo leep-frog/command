@@ -361,18 +361,18 @@ func Between[T constraints.Ordered](start, end T, inclusive bool) *ValidatorOpti
 	return &ValidatorOption[T]{
 		func(v T) error {
 			if v < start {
-				return fmt.Errorf("[Between] value is less than lower bound")
+				return fmt.Errorf("[Between] value is less than lower bound (%v)", start)
 			}
 			if v > end {
-				return fmt.Errorf("[Between] value is greater than upper bound")
+				return fmt.Errorf("[Between] value is greater than upper bound (%v)", end)
 			}
 
 			if !inclusive {
 				if v == start {
-					return fmt.Errorf("[Between] value equals exclusive lower bound")
+					return fmt.Errorf("[Between] value equals exclusive lower bound (%v)", start)
 				}
 				if v == end {
-					return fmt.Errorf("[Between] value equals exclusive upper bound")
+					return fmt.Errorf("[Between] value equals exclusive upper bound (%v)", end)
 				}
 			}
 

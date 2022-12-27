@@ -3657,8 +3657,8 @@ func TestExecute(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"iArg": -4,
 				}},
-				WantStderr: "validation for \"iArg\" failed: [Between] value is less than lower bound\n",
-				WantErr:    fmt.Errorf("validation for \"iArg\" failed: [Between] value is less than lower bound"),
+				WantStderr: "validation for \"iArg\" failed: [Between] value is less than lower bound (-3)\n",
+				WantErr:    fmt.Errorf("validation for \"iArg\" failed: [Between] value is less than lower bound (-3)"),
 			},
 		},
 		{
@@ -3727,8 +3727,8 @@ func TestExecute(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"iArg": 5,
 				}},
-				WantStderr: "validation for \"iArg\" failed: [Between] value is greater than upper bound\n",
-				WantErr:    fmt.Errorf("validation for \"iArg\" failed: [Between] value is greater than upper bound"),
+				WantStderr: "validation for \"iArg\" failed: [Between] value is greater than upper bound (4)\n",
+				WantErr:    fmt.Errorf("validation for \"iArg\" failed: [Between] value is greater than upper bound (4)"),
 			},
 		},
 		// Between exclusive
@@ -3747,8 +3747,8 @@ func TestExecute(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"iArg": -4,
 				}},
-				WantStderr: "validation for \"iArg\" failed: [Between] value is less than lower bound\n",
-				WantErr:    fmt.Errorf("validation for \"iArg\" failed: [Between] value is less than lower bound"),
+				WantStderr: "validation for \"iArg\" failed: [Between] value is less than lower bound (-3)\n",
+				WantErr:    fmt.Errorf("validation for \"iArg\" failed: [Between] value is less than lower bound (-3)"),
 			},
 		},
 		{
@@ -3766,8 +3766,8 @@ func TestExecute(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"iArg": -3,
 				}},
-				WantStderr: "validation for \"iArg\" failed: [Between] value equals exclusive lower bound\n",
-				WantErr:    fmt.Errorf("validation for \"iArg\" failed: [Between] value equals exclusive lower bound"),
+				WantStderr: "validation for \"iArg\" failed: [Between] value equals exclusive lower bound (-3)\n",
+				WantErr:    fmt.Errorf("validation for \"iArg\" failed: [Between] value equals exclusive lower bound (-3)"),
 			},
 		},
 		{
@@ -3802,8 +3802,8 @@ func TestExecute(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"iArg": 4,
 				}},
-				WantStderr: "validation for \"iArg\" failed: [Between] value equals exclusive upper bound\n",
-				WantErr:    fmt.Errorf("validation for \"iArg\" failed: [Between] value equals exclusive upper bound"),
+				WantStderr: "validation for \"iArg\" failed: [Between] value equals exclusive upper bound (4)\n",
+				WantErr:    fmt.Errorf("validation for \"iArg\" failed: [Between] value equals exclusive upper bound (4)"),
 			},
 		},
 		{
@@ -3821,8 +3821,8 @@ func TestExecute(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"iArg": 5,
 				}},
-				WantStderr: "validation for \"iArg\" failed: [Between] value is greater than upper bound\n",
-				WantErr:    fmt.Errorf("validation for \"iArg\" failed: [Between] value is greater than upper bound"),
+				WantStderr: "validation for \"iArg\" failed: [Between] value is greater than upper bound (4)\n",
+				WantErr:    fmt.Errorf("validation for \"iArg\" failed: [Between] value is greater than upper bound (4)"),
 			},
 		},
 		// Flag nodes
