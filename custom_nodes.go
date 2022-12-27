@@ -691,6 +691,7 @@ type MapArgNode[K constraints.Ordered, V any] struct {
 	*ArgNode[K]
 }
 
+// Get overrides the Arg.Get function to return V (rather than type K).
 func (man *MapArgNode[K, V]) Get(d *Data) V {
 	return GetData[V](d, man.name)
 }
