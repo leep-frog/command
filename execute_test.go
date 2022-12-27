@@ -6128,6 +6128,143 @@ func TestExecute(t *testing.T) {
 				}, "\n"),
 			},
 		},
+		// MapArg tests
+		{
+			name: "MapArg converts a value with allowMissing=true",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					MapArg("m", testDesc, map[string]int{
+						"one":   1,
+						"two":   2,
+						"three": 3,
+					}, true),
+				),
+				Args: []string{"two"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "two"},
+					},
+				},
+				WantData: &Data{Values: map[string]interface{}{
+					"m": 2,
+				}},
+			},
+		},
+		{
+			name: "MapArg converts a value with allowMissing=false",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					MapArg("m", testDesc, map[string]int{
+						"one":   1,
+						"two":   2,
+						"three": 3,
+					}, false),
+				),
+				Args: []string{"two"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "two"},
+					},
+				},
+				WantData: &Data{Values: map[string]interface{}{
+					"m": 2,
+				}},
+			},
+		},
+		{
+			name: "MapArg converts to default value if allow missing",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					MapArg("m", testDesc, map[string]int{
+						"one":   1,
+						"two":   2,
+						"three": 3,
+					}, true),
+				),
+				Args: []string{"four"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "four"},
+					},
+				},
+				WantData: &Data{Values: map[string]interface{}{
+					"m": 0,
+				}},
+			},
+		},
+		{
+			name: "MapArg fails if allow missing is false",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					MapArg("m", testDesc, map[string]int{
+						"one":   1,
+						"two":   2,
+						"three": 3,
+					}, false),
+				),
+				Args: []string{"four"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "four"},
+					},
+				},
+				WantStderr: "validation for \"m\" failed: [MapArg] key is not in map\n",
+				WantErr:    fmt.Errorf("validation for \"m\" failed: [MapArg] key is not in map"),
+				WantData: &Data{Values: map[string]interface{}{
+					"m": 0,
+				}},
+			},
+		},
+		{
+			name: "MapArg fails if allow missing is false",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					MapArg("m", testDesc, map[string]int{
+						"one":   1,
+						"two":   2,
+						"three": 3,
+					}, false),
+				),
+				Args: []string{"four"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "four"},
+					},
+				},
+				WantStderr: "validation for \"m\" failed: [MapArg] key is not in map\n",
+				WantErr:    fmt.Errorf("validation for \"m\" failed: [MapArg] key is not in map"),
+				WantData: &Data{Values: map[string]interface{}{
+					"m": 0,
+				}},
+			},
+		},
+		{
+			name: "MapArg works with custom types",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					MapArg("m", testDesc, map[string]struct {
+						A int
+						B float64
+					}{
+						"one":   {1, 1.0},
+						"two":   {2, 2.0},
+						"three": {3, 3.0},
+					}, true),
+				),
+				Args: []string{"three"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "three"},
+					},
+				},
+				WantData: &Data{Values: map[string]interface{}{
+					"m": struct {
+						A int
+						B float64
+					}{3, 3.0},
+				}},
+			},
+		},
 		/* Useful for commenting out tests. */
 	} {
 		t.Run(test.name, func(t *testing.T) {
@@ -8162,7 +8299,91 @@ func TestComplete(t *testing.T) {
 				Want: []string{"alpha", "omega"},
 			},
 		},
-		/* Useful comment for commenting out tests */
+		// MapArg test
+		{
+			name: "MapArg completes keys",
+			ctc: &CompleteTestCase{
+				Args: "cmd ",
+				Node: SerialNodes(
+					MapArg("m", testDesc, map[string]int{
+						"one":   1,
+						"two":   2,
+						"three": 3,
+					}, true),
+				),
+				WantData: &Data{Values: map[string]interface{}{
+					"m": 0,
+				}},
+				Want: []string{"one", "three", "two"},
+			},
+		},
+		{
+			name: "MapArg completes some keys",
+			ctc: &CompleteTestCase{
+				Args: "cmd t",
+				Node: SerialNodes(
+					MapArg("m", testDesc, map[string]int{
+						"one":   1,
+						"two":   2,
+						"three": 3,
+					}, true),
+				),
+				WantData: &Data{Values: map[string]interface{}{
+					"m": 0,
+				}},
+				Want: []string{"three", "two"},
+			},
+		},
+		{
+			name: "MapArg completes single",
+			ctc: &CompleteTestCase{
+				Args: "cmd th",
+				Node: SerialNodes(
+					MapArg("m", testDesc, map[string]int{
+						"one":   1,
+						"two":   2,
+						"three": 3,
+					}, true),
+				),
+				WantData: &Data{Values: map[string]interface{}{
+					"m": 0,
+				}},
+				Want: []string{"three"},
+			},
+		},
+		{
+			name: "MapArg completes int",
+			ctc: &CompleteTestCase{
+				Args: "cmd ",
+				Node: SerialNodes(
+					MapArg("m", testDesc, map[int]string{
+						123: "one",
+						456: "two",
+						789: "three",
+					}, true),
+				),
+				Want: []string{"123", "456", "789"},
+			},
+		},
+		{
+			name: "MapArg completes single int",
+			ctc: &CompleteTestCase{
+				Args: "cmd 4",
+				Node: SerialNodes(
+					MapArg("m", testDesc, map[int]string{
+						123: "one",
+						456: "two",
+						789: "three",
+						4:   "other",
+					}, true),
+				),
+				WantData: &Data{Values: map[string]interface{}{
+					"m": "other",
+				}},
+				Want: []string{"4", "456"},
+			},
+		},
+		/* Useful for commenting out tests. */
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			StubValue(t, &osGetwd, func() (string, error) {
