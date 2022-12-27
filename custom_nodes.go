@@ -696,6 +696,14 @@ func (man *MapArgNode[K, V]) Get(d *Data) V {
 	return GetData[V](d, man.name)
 }
 
+// GetOrDefault overrides the Arg.GetOrDefault function to return V (rather than type K).
+func (man *MapArgNode[K, V]) GetOrDefault(d *Data, dflt V) V {
+	if d.Has(man.name) {
+		return GetData[V](d, man.name)
+	}
+	return dflt
+}
+
 // GetwdProcessor returns a processor that stores the present directory in `Data`.
 // Use the `Getwd` function to retrieve its value.
 func GetwdProcessor() Processor {

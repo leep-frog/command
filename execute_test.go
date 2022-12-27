@@ -6266,7 +6266,7 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "MapArgNode.Get works",
+			name: "MapArgNode.Get and GetOrDefault works",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
 					MapArg("m", testDesc, map[string]int{
@@ -6280,7 +6280,15 @@ func TestExecute(t *testing.T) {
 							"two":   2,
 							"three": 3,
 						}, true)
+						otherMa := MapArg("m2", testDesc, map[string]int{
+							"one":   1,
+							"two":   2,
+							"three": 3,
+						}, true)
 						o.Stdoutln(ma.Get(d))
+						o.Stdoutln(ma.GetOrDefault(d, 7))
+						o.Stdoutln(otherMa.Get(d))
+						o.Stdoutln(otherMa.GetOrDefault(d, 7))
 						return nil
 					}, nil),
 				),
@@ -6293,11 +6301,17 @@ func TestExecute(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"m": 3,
 				}},
-				WantStdout: "3\n",
+				WantStdout: strings.Join([]string{
+					"3", // ma.Get
+					"3", // ma.GetOrDefault
+					"0", // otherMa.Get
+					"7", // otherMa.GetOrDefault
+					"",
+				}, "\n"),
 			},
 		},
 		{
-			name: "MapArgNode.Get works with custom type",
+			name: "MapArgNode.Get and GetOrDefault works with custom type",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
 					MapArg("m", testDesc, map[string]struct {
@@ -6317,7 +6331,24 @@ func TestExecute(t *testing.T) {
 							"two":   {2, 2.2},
 							"three": {3, 3.3},
 						}, true)
+						otherMa := MapArg("m2", testDesc, map[string]struct {
+							A int
+							B float64
+						}{
+							"one":   {1, 1.1},
+							"two":   {2, 2.2},
+							"three": {3, 3.3},
+						}, true)
 						o.Stdoutln(ma.Get(d))
+						o.Stdoutln(ma.GetOrDefault(d, struct {
+							A int
+							B float64
+						}{7, 7.7}))
+						o.Stdoutln(otherMa.Get(d))
+						o.Stdoutln(ma.GetOrDefault(d, struct {
+							A int
+							B float64
+						}{7, 7.7}))
 						return nil
 					}, nil),
 				),
@@ -6333,7 +6364,13 @@ func TestExecute(t *testing.T) {
 						B float64
 					}{3, 3.3},
 				}},
-				WantStdout: "{3 3.3}\n",
+				WantStdout: strings.Join([]string{
+					"{3 3.3}", // ma.Get
+					"{3 3.3}", // ma.GetOrDefault
+					"{0 0}",   // otherMa.Get
+					"{3 3.3}", // otherMa.GetOrDefault
+					"",
+				}, "\n"),
 			},
 		},
 		/* Useful for commenting out tests. */
