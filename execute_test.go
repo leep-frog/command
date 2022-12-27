@@ -6266,112 +6266,104 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "MapArgNode.Get and GetOrDefault works",
-			etc: &ExecuteTestCase{
-				Node: SerialNodes(
-					MapArg("m", testDesc, map[string]int{
-						"one":   1,
-						"two":   2,
-						"three": 3,
-					}, true),
-					SimpleProcessor(func(i *Input, o Output, d *Data, ed *ExecuteData) error {
-						ma := MapArg("m", testDesc, map[string]int{
-							"one":   1,
-							"two":   2,
-							"three": 3,
-						}, true)
-						otherMa := MapArg("m2", testDesc, map[string]int{
-							"one":   1,
-							"two":   2,
-							"three": 3,
-						}, true)
-						o.Stdoutln(ma.Get(d))
-						o.Stdoutln(ma.GetOrDefault(d, 7))
-						o.Stdoutln(otherMa.Get(d))
-						o.Stdoutln(otherMa.GetOrDefault(d, 7))
-						return nil
-					}, nil),
-				),
-				Args: []string{"three"},
-				wantInput: &Input{
-					args: []*inputArg{
-						{value: "three"},
+			name: "MapArgNode.Get, GetOrDefault, and GetKey works",
+			etc: func() *ExecuteTestCase {
+				ma := MapArg("m", testDesc, map[string]int{
+					"one":   1,
+					"two":   2,
+					"three": 3,
+				}, true)
+				otherMa := MapArg("m2", testDesc, map[string]int{
+					"one":   1,
+					"two":   2,
+					"three": 3,
+				}, true)
+
+				return &ExecuteTestCase{
+					Node: SerialNodes(
+						ma,
+						SimpleProcessor(func(i *Input, o Output, d *Data, ed *ExecuteData) error {
+							o.Stdoutln(ma.GetKey())
+							o.Stdoutln(otherMa.GetKey())
+							o.Stdoutln(ma.Get(d))
+							o.Stdoutln(ma.GetOrDefault(d, 7))
+							o.Stdoutln(otherMa.Get(d))
+							o.Stdoutln(otherMa.GetOrDefault(d, 7))
+							return nil
+						}, nil),
+					),
+					Args: []string{"three"},
+					wantInput: &Input{
+						args: []*inputArg{
+							{value: "three"},
+						},
 					},
-				},
-				WantData: &Data{Values: map[string]interface{}{
-					"m": 3,
-				}},
-				WantStdout: strings.Join([]string{
-					"3", // ma.Get
-					"3", // ma.GetOrDefault
-					"0", // otherMa.Get
-					"7", // otherMa.GetOrDefault
-					"",
-				}, "\n"),
-			},
+					WantData: &Data{Values: map[string]interface{}{
+						"m": 3,
+					}},
+					WantStdout: strings.Join([]string{
+						"three", // ma.GetKey
+						"",      // otherMa.GetKey
+						"3",     // ma.Get
+						"3",     // ma.GetOrDefault
+						"0",     // otherMa.Get
+						"7",     // otherMa.GetOrDefault
+						"",
+					}, "\n"),
+				}
+			}(),
 		},
 		{
-			name: "MapArgNode.Get and GetOrDefault works with custom type",
-			etc: &ExecuteTestCase{
-				Node: SerialNodes(
-					MapArg("m", testDesc, map[string]struct {
-						A int
-						B float64
-					}{
-						"one":   {1, 1.1},
-						"two":   {2, 2.2},
-						"three": {3, 3.3},
-					}, true),
-					SimpleProcessor(func(i *Input, o Output, d *Data, ed *ExecuteData) error {
-						ma := MapArg("m", testDesc, map[string]struct {
-							A int
-							B float64
-						}{
-							"one":   {1, 1.1},
-							"two":   {2, 2.2},
-							"three": {3, 3.3},
-						}, true)
-						otherMa := MapArg("m2", testDesc, map[string]struct {
-							A int
-							B float64
-						}{
-							"one":   {1, 1.1},
-							"two":   {2, 2.2},
-							"three": {3, 3.3},
-						}, true)
-						o.Stdoutln(ma.Get(d))
-						o.Stdoutln(ma.GetOrDefault(d, struct {
-							A int
-							B float64
-						}{7, 7.7}))
-						o.Stdoutln(otherMa.Get(d))
-						o.Stdoutln(ma.GetOrDefault(d, struct {
-							A int
-							B float64
-						}{7, 7.7}))
-						return nil
-					}, nil),
-				),
-				Args: []string{"three"},
-				wantInput: &Input{
-					args: []*inputArg{
-						{value: "three"},
+			name: "MapArgNode.Get, GetOrDefault, and GetKey works with custom type",
+			etc: func() *ExecuteTestCase {
+				type vType struct {
+					A int
+					B float64
+				}
+				ma := MapArg("m", testDesc, map[string]*vType{
+					"one":   {1, 1.1},
+					"two":   {2, 2.2},
+					"three": {3, 3.3},
+				}, true)
+				otherMa := MapArg("m2", testDesc, map[string]*vType{
+					"one":   {1, 1.1},
+					"two":   {2, 2.2},
+					"three": {3, 3.3},
+				}, true)
+
+				return &ExecuteTestCase{
+					Node: SerialNodes(
+						ma,
+						SimpleProcessor(func(i *Input, o Output, d *Data, ed *ExecuteData) error {
+							o.Stdoutln(ma.GetKey())
+							o.Stdoutln(otherMa.GetKey())
+							o.Stdoutln(ma.Get(d))
+							o.Stdoutln(ma.GetOrDefault(d, &vType{7, 7.7}))
+							o.Stdoutln(otherMa.Get(d))
+							o.Stdoutln(ma.GetOrDefault(d, &vType{7, 7.7}))
+							return nil
+						}, nil),
+					),
+					Args: []string{"three"},
+					wantInput: &Input{
+						args: []*inputArg{
+							{value: "three"},
+						},
 					},
-				},
-				WantData: &Data{Values: map[string]interface{}{
-					"m": struct {
-						A int
-						B float64
-					}{3, 3.3},
-				}},
-				WantStdout: strings.Join([]string{
-					"{3 3.3}", // ma.Get
-					"{3 3.3}", // ma.GetOrDefault
-					"{0 0}",   // otherMa.Get
-					"{3 3.3}", // otherMa.GetOrDefault
-					"",
-				}, "\n"),
-			},
+					WantData: &Data{Values: map[string]interface{}{
+						"m": &vType{3, 3.3},
+					}},
+					WantStdout: strings.Join([]string{
+						"three",    // ma.GetKey
+						"",         // otherMa.GetKey
+						"&{3 3.3}", // ma.Get
+						"&{3 3.3}", // ma.GetOrDefault
+						"<nil>",    // otherMa.Get
+						"&{3 3.3}", // otherMa.GetOrDefault
+						"",
+					}, "\n"),
+				}
+			}(),
 		},
 		/* Useful for commenting out tests. */
 	} {

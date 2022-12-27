@@ -666,10 +666,12 @@ func MapArg[K constraints.Ordered, V any](name, desc string, m map[K]V, allowMis
 	for _, k := range maps.Keys(m) {
 		keys = append(keys, fmt.Sprintf("%v", k))
 	}
+	ma := &MapArgNode[K, V]{}
 	opts := []ArgOpt[K]{
 		SimpleCompleter[K](keys...),
 		&CustomSetter[K]{F: func(key K, d *Data) {
 			d.Set(name, m[key])
+			ma.key = key
 		}},
 	}
 
@@ -684,16 +686,23 @@ func MapArg[K constraints.Ordered, V any](name, desc string, m map[K]V, allowMis
 			"MapArg",
 		})
 	}
-	return &MapArgNode[K, V]{Arg(name, desc, opts...)}
+	ma.ArgNode = Arg(name, desc, opts...)
+	return ma
 }
 
 type MapArgNode[K constraints.Ordered, V any] struct {
 	*ArgNode[K]
+	key K
 }
 
 // Get overrides the Arg.Get function to return V (rather than type K).
 func (man *MapArgNode[K, V]) Get(d *Data) V {
 	return GetData[V](d, man.name)
+}
+
+// GetKey returns the key that was set by the am
+func (man *MapArgNode[K, V]) GetKey() K {
+	return man.key
 }
 
 // GetOrDefault overrides the Arg.GetOrDefault function to return V (rather than type K).
