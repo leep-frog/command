@@ -6101,6 +6101,21 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
+			name: "EchoExecuteData outputs ExecuteData.Executable to stderr",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					SimpleExecutableNode("un", "deux", "trois"),
+					&EchoExecuteDataProcessor{
+						Stderr: true,
+					},
+				),
+				WantExecuteData: &ExecuteData{
+					Executable: []string{"un", "deux", "trois"},
+				},
+				WantStderr: "un\ndeux\ntrois\n",
+			},
+		},
+		{
 			name: "EchoExecuteDataf ignores empty ExecuteData.Executable",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
@@ -6119,6 +6134,29 @@ func TestExecute(t *testing.T) {
 					Executable: []string{"un", "deux", "trois"},
 				},
 				WantStdout: strings.Join([]string{
+					"RUNNING CODE:",
+					"un",
+					"deux",
+					"trois",
+					"DONE CODE",
+					"",
+				}, "\n"),
+			},
+		},
+		{
+			name: "EchoExecuteData outputs ExecuteData.Executable to stderr",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					SimpleExecutableNode("un", "deux", "trois"),
+					&EchoExecuteDataProcessor{
+						Stderr: true,
+						Format: "RUNNING CODE:\n%s\nDONE CODE\n",
+					},
+				),
+				WantExecuteData: &ExecuteData{
+					Executable: []string{"un", "deux", "trois"},
+				},
+				WantStderr: strings.Join([]string{
 					"RUNNING CODE:",
 					"un",
 					"deux",
