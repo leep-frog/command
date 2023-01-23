@@ -269,6 +269,9 @@ type FileCompleter[T any] struct {
 	// ExcludePwd is whether or not the current working directory path should be excluded
 	// from completions.
 	ExcludePwd bool
+	// MaxDepth is the maximum depth for files allowed. If less than or equal to zero,
+	// then no limit is applied.
+	MaxDepth int
 }
 
 func (ff *FileCompleter[T]) modifyArgOpt(ao *argOpt[T]) {
@@ -280,6 +283,11 @@ var (
 	ioutilReadDir = ioutil.ReadDir
 )
 
+// filepathDepth returns the depth of the provided directory
+func filepathDepth(path string) int {
+	return len(strings.Split(strings.TrimLeft(path, string(os.PathSeparator)), string(os.PathSeparator)))
+}
+
 // Complete creates a `Completion` object with the relevant set of files.
 func (ff *FileCompleter[T]) Complete(value T, data *Data) (*Completion, error) {
 	var lastArg string
@@ -289,6 +297,7 @@ func (ff *FileCompleter[T]) Complete(value T, data *Data) (*Completion, error) {
 	}
 
 	laDir, laFile := filepath.Split(lastArg)
+	depth := filepathDepth(lastArg)
 	var dir string
 	// Use extra check for mingw on windows
 	if CmdOS.IsAbs(laDir) {
@@ -357,7 +366,11 @@ func (ff *FileCompleter[T]) Complete(value T, data *Data) (*Completion, error) {
 		}
 
 		if isDir {
-			suggestions = append(suggestions, fmt.Sprintf("%s/", f.Name()))
+			if ff.MaxDepth > 0 && depth >= ff.MaxDepth {
+				suggestions = append(suggestions, f.Name())
+			} else {
+				suggestions = append(suggestions, fmt.Sprintf("%s/", f.Name()))
+			}
 		} else if len(allowedFileTypes) == 0 || allowedFileTypes[filepath.Ext(f.Name())] {
 			onlyDir = false
 			suggestions = append(suggestions, f.Name())

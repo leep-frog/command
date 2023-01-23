@@ -6,12 +6,93 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 )
+
+func TestFilepathLen(t *testing.T) {
+	for _, test := range []struct {
+		pathParts []string
+		want      int
+	}{
+		{
+			[]string{"."},
+			1,
+		},
+		{
+			// `./`
+			[]string{".", ""},
+			2,
+		},
+		{
+			[]string{".."},
+			1,
+		},
+		{
+			// `../..`
+			[]string{"..", ".."},
+			2,
+		},
+		{
+			// `../../`
+			[]string{"..", "..", ""},
+			3,
+		},
+		{
+			// `../../`
+			[]string{"..", "..", "a"},
+			3,
+		},
+		{
+			[]string{"abc", "def", "a"},
+			3,
+		},
+		{
+			[]string{"abc", "def", ".", "a"},
+			4,
+		},
+		{
+			[]string{"abc", "def", ".", "a", "other", "."},
+			6,
+		},
+		// Absolute paths
+		{
+			[]string{"", ""},
+			1,
+		},
+		{
+			[]string{"", "abc"},
+			1,
+		},
+		{
+			[]string{"", "abc", ".", "def"},
+			3,
+		},
+		{
+			[]string{"", "abc", "def", "a"},
+			3,
+		},
+		{
+			[]string{"", "abc", "def", ".", "a"},
+			4,
+		},
+		{
+			[]string{"", "abc", "def", ".", "a", "other", "."},
+			6,
+		},
+	} {
+		path := strings.Join(test.pathParts, string(os.PathSeparator))
+		t.Run(fmt.Sprintf("filepathDist(%q)", filepath.Join(path)), func(t *testing.T) {
+			if got := filepathDepth(path); got != test.want {
+				t.Errorf("filepathDist(%q) returned %d; want %d", path, got, test.want)
+			}
+		})
+	}
+}
 
 func TestStringCompleters(t *testing.T) {
 	type testCase struct {
@@ -1470,6 +1551,70 @@ func TestTypedCompleters(t *testing.T) {
 			},
 			args:    "cmd ",
 			wantErr: fmt.Errorf("failed to get relative directory: unrelated"),
+		},
+		// MaxDepth FileCompleter tests
+		&completerTest[string]{
+			name: "file completer with negative max depth returns regular suggestions with slashes",
+			singleC: &FileCompleter[string]{
+				FileTypes: []string{".mod", ".sum"},
+				MaxDepth:  -1,
+			},
+			args: "cmd ",
+			want: []string{
+				".git/",
+				"_testdata_symlink/",
+				"cache/",
+				"cmd/",
+				"color/",
+				"docs/",
+				"go.mod",
+				"go.sum",
+				"sourcerer/",
+				"testdata/",
+				" ",
+			},
+		},
+		&completerTest[string]{
+			name: "file completer with 2 max depth returns regular suggestions with slashes",
+			singleC: &FileCompleter[string]{
+				FileTypes: []string{".mod", ".sum"},
+				MaxDepth:  2,
+			},
+			args: "cmd ",
+			want: []string{
+				".git/",
+				"_testdata_symlink/",
+				"cache/",
+				"cmd/",
+				"color/",
+				"docs/",
+				"go.mod",
+				"go.sum",
+				"sourcerer/",
+				"testdata/",
+				" ",
+			},
+		},
+		&completerTest[string]{
+			name: "file completer with max depth 1 removes slashes from dirs",
+			singleC: &FileCompleter[string]{
+				FileTypes: []string{".mod", ".sum"},
+				MaxDepth:  1,
+			},
+			args: "cmd ",
+			want: []string{
+				".git",
+				"_testdata_symlink",
+				"cache",
+				"cmd",
+				"color",
+				"docs",
+				"go.mod",
+				"go.sum",
+				"sourcerer",
+				"testdata",
+				" ",
+			},
 		},
 		/* Useful for commenting out tests. */
 	} {
