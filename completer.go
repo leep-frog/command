@@ -285,7 +285,7 @@ var (
 
 // filepathDepth returns the depth of the provided directory
 func filepathDepth(path string) int {
-	return len(strings.Split(strings.TrimLeft(path, string(os.PathSeparator)), string(os.PathSeparator)))
+	return len(strings.Split(strings.TrimLeft(filepath.FromSlash(path), string(os.PathSeparator)), string(os.PathSeparator)))
 }
 
 // Complete creates a `Completion` object with the relevant set of files.
@@ -297,7 +297,7 @@ func (ff *FileCompleter[T]) Complete(value T, data *Data) (*Completion, error) {
 	}
 
 	laDir, laFile := filepath.Split(lastArg)
-	depth := filepathDepth(lastArg)
+	tooDeep := ff.MaxDepth > 0 && filepathDepth(lastArg) >= ff.MaxDepth
 	var dir string
 	// Use extra check for mingw on windows
 	if CmdOS.IsAbs(laDir) {
@@ -366,7 +366,7 @@ func (ff *FileCompleter[T]) Complete(value T, data *Data) (*Completion, error) {
 		}
 
 		if isDir {
-			if ff.MaxDepth > 0 && depth >= ff.MaxDepth {
+			if tooDeep {
 				suggestions = append(suggestions, f.Name())
 			} else {
 				suggestions = append(suggestions, fmt.Sprintf("%s/", f.Name()))
@@ -428,7 +428,7 @@ func (ff *FileCompleter[T]) Complete(value T, data *Data) (*Completion, error) {
 		c.Suggestions[0] = fmt.Sprintf("%s%s", laDir, c.Suggestions[0])
 
 		// If complexecuting, then just complete to the directory
-		if onlyDir && !data.complexecute {
+		if onlyDir && !data.complexecute && !tooDeep {
 			// This does "dir1/" and "dir1/_" so that the user's command is
 			// autocompleted to "dir1/" without a space after it.
 			c.Suggestions = append(c.Suggestions, fmt.Sprintf("%s%s", c.Suggestions[0], suffixChar))

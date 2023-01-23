@@ -1616,6 +1616,141 @@ func TestTypedCompleters(t *testing.T) {
 				" ",
 			},
 		},
+		&completerTest[string]{
+			name: "file completer with max depth 1 completes partial",
+			singleC: &FileCompleter[string]{
+				MaxDepth:  1,
+				FileTypes: []string{".mod", ".sum"},
+			},
+			args: "cmd g",
+			want: []string{
+				"go.",
+				"go._",
+			},
+		},
+		&completerTest[string]{
+			name: "file completer with max depth 2 completes partial",
+			singleC: &FileCompleter[string]{
+				MaxDepth:  2,
+				FileTypes: []string{".mod", ".sum"},
+			},
+			args: "cmd g",
+			want: []string{
+				"go.",
+				"go._",
+			},
+		},
+		&completerTest[string]{
+			name: "file completer with max depth 1 completes fully",
+			singleC: &FileCompleter[string]{
+				MaxDepth:  1,
+				FileTypes: []string{".mod", ".sum"},
+			},
+			args: "cmd te",
+			want: []string{
+				"testdata",
+			},
+		},
+		&completerTest[string]{
+			name: "file completer with max depth 2 completes with slash",
+			singleC: &FileCompleter[string]{
+				MaxDepth:  2,
+				FileTypes: []string{".mod", ".sum"},
+			},
+			args: "cmd te",
+			want: []string{
+				"testdata/",
+				"testdata/_",
+			},
+		},
+		&completerTest[string]{
+			name: "file completer with max depth 1 completes sub directories still (and without slashes)",
+			singleC: &FileCompleter[string]{
+				MaxDepth: 1,
+			},
+			args: "cmd testdata/",
+			want: []string{
+				".surprise",
+				"cases",
+				"dir1",
+				"dir2",
+				"dir3",
+				"dir4",
+				"four.txt",
+				"METADATA",
+				"metadata_",
+				"moreCases",
+				"one.txt",
+				"three.txt",
+				"two.txt",
+				" ",
+			},
+		},
+		&completerTest[string]{
+			name: "file completer with max depth 2 completes sub directories without slashes",
+			singleC: &FileCompleter[string]{
+				MaxDepth: 2,
+			},
+			args: "cmd testdata/",
+			want: []string{
+				".surprise",
+				"cases",
+				"dir1",
+				"dir2",
+				"dir3",
+				"dir4",
+				"four.txt",
+				"METADATA",
+				"metadata_",
+				"moreCases",
+				"one.txt",
+				"three.txt",
+				"two.txt",
+				" ",
+			},
+		},
+		&completerTest[string]{
+			name: "file completer with max depth 1 completes partial",
+			singleC: &FileCompleter[string]{
+				MaxDepth: 1,
+			},
+			args: "cmd testdata/d",
+			want: []string{
+				"testdata/dir",
+				"testdata/dir_",
+			},
+		},
+		&completerTest[string]{
+			name: "file completer with max depth 2 completes partial",
+			singleC: &FileCompleter[string]{
+				MaxDepth: 2,
+			},
+			args: "cmd testdata/d",
+			want: []string{
+				"testdata/dir",
+				"testdata/dir_",
+			},
+		},
+		&completerTest[string]{
+			name: "file completer with max depth 1 completes sub directory fully with no slash",
+			singleC: &FileCompleter[string]{
+				MaxDepth: 1,
+			},
+			args: "cmd testdata/mo",
+			want: []string{
+				"testdata/moreCases",
+			},
+		},
+		&completerTest[string]{
+			name: "file completer with max depth 2 completes sub directory fully with no slash",
+			singleC: &FileCompleter[string]{
+				MaxDepth: 2,
+			},
+			args: "cmd testdata/mo",
+			want: []string{
+				"testdata/moreCases",
+			},
+		},
 		/* Useful for commenting out tests. */
 	} {
 		test.run(t)
