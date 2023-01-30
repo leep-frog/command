@@ -223,13 +223,13 @@ func TestUsage(t *testing.T) {
 		{
 			name: "works with simple branch node",
 			utc: &UsageTestCase{
-				Node: AsNode(&BranchNode{
-					Branches: map[string]*Node{
+				Node: &BranchNode{
+					Branches: map[string]Node{
 						"alpha": nil,
 					},
 					Default:           SerialNodes(Description("the default command"), Arg[int]("INT_ARG", "an integer"), ListArg[string]("STRINGS", "unltd strings", 1, UnboundedList)),
 					DefaultCompletion: true,
-				}),
+				},
 				WantString: []string{
 					"the default command",
 					"< INT_ARG STRINGS [ STRINGS ... ]",
@@ -248,20 +248,20 @@ func TestUsage(t *testing.T) {
 		{
 			name: "works with branch node",
 			utc: &UsageTestCase{
-				Node: AsNode(&BranchNode{
-					Branches: map[string]*Node{
+				Node: &BranchNode{
+					Branches: map[string]Node{
 						"alpha": nil,
 						"beta":  SerialNodes(ListArg[string]("ROPES", "lots of strings", 2, 3)),
-						"charlie": AsNode(&BranchNode{
-							Branches: map[string]*Node{
+						"charlie": &BranchNode{
+							Branches: map[string]Node{
 								"brown":  SerialNodes(Description("learn about cartoons"), Arg[float64]("FLOATER", "something bouyant")),
 								"yellow": SerialNodes(&ExecutorProcessor{}),
 							},
-						}),
+						},
 					},
 					Default:           SerialNodes(Description("the default command"), Arg[int]("INT_ARG", "an integer"), ListArg[string]("STRINGS", "unltd strings", 1, UnboundedList)),
 					DefaultCompletion: true,
-				}),
+				},
 				WantString: []string{
 					"the default command",
 					"< INT_ARG STRINGS [ STRINGS ... ]",
@@ -291,18 +291,18 @@ func TestUsage(t *testing.T) {
 		{
 			name: "works with branch node shortcut option",
 			utc: &UsageTestCase{
-				Node: AsNode(&BranchNode{
-					Branches: map[string]*Node{
+				Node: &BranchNode{
+					Branches: map[string]Node{
 						"alpha": SerialNodes(
 							Description("The first"),
 						),
 						"beta": SerialNodes(ListArg[string]("ROPES", "lots of strings", 2, 3)),
-						"charlie": AsNode(&BranchNode{
-							Branches: map[string]*Node{
+						"charlie": &BranchNode{
+							Branches: map[string]Node{
 								"brown":  SerialNodes(Description("learn about cartoons"), Arg[float64]("FLOATER", "something bouyant")),
 								"yellow": SerialNodes(&ExecutorProcessor{}),
 							},
-						}),
+						},
 					},
 					Synonyms: BranchSynonyms(map[string][]string{
 						"charlie": {"charles", "chuck"},
@@ -310,7 +310,7 @@ func TestUsage(t *testing.T) {
 					}),
 					Default:           SerialNodes(Description("the default command"), Arg[int]("INT_ARG", "an integer"), ListArg[string]("STRINGS", "unltd strings", 1, UnboundedList)),
 					DefaultCompletion: true,
-				}),
+				},
 				WantString: []string{
 					"the default command",
 					"< INT_ARG STRINGS [ STRINGS ... ]",
@@ -341,18 +341,18 @@ func TestUsage(t *testing.T) {
 		{
 			name: "works with branch node shortcut option via spaces",
 			utc: &UsageTestCase{
-				Node: AsNode(&BranchNode{
-					Branches: map[string]*Node{
+				Node: &BranchNode{
+					Branches: map[string]Node{
 						"alpha omega1": SerialNodes(
 							Description("The first"),
 						),
 						"beta": SerialNodes(ListArg[string]("ROPES", "lots of strings", 2, 3)),
-						"charlie": AsNode(&BranchNode{
-							Branches: map[string]*Node{
+						"charlie": &BranchNode{
+							Branches: map[string]Node{
 								"brown":  SerialNodes(Description("learn about cartoons"), Arg[float64]("FLOATER", "something bouyant")),
 								"yellow": SerialNodes(&ExecutorProcessor{}),
 							},
-						}),
+						},
 					},
 					Synonyms: BranchSynonyms(map[string][]string{
 						"charlie": {"charles", "chuck"},
@@ -360,7 +360,7 @@ func TestUsage(t *testing.T) {
 					}),
 					Default:           SerialNodes(Description("the default command"), Arg[int]("INT_ARG", "an integer"), ListArg[string]("STRINGS", "unltd strings", 1, UnboundedList)),
 					DefaultCompletion: true,
-				}),
+				},
 				WantString: []string{
 					"the default command",
 					"< INT_ARG STRINGS [ STRINGS ... ]",

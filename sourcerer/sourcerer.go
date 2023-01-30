@@ -130,7 +130,7 @@ type CLI interface {
 	// Name is the name of the alias command to use for this CLI.
 	Name() string
 	// Node returns the command node for the CLI. This is where the CLI's logic lives.
-	Node() *command.Node
+	Node() command.Node
 	// Changed indicates whether or not the CLI has changed after execution.
 	// If true, the CLI's value will be save to the cache.
 	Changed() bool
@@ -281,14 +281,14 @@ func (s *sourcerer) getCLI(cli string) (CLI, error) {
 	return nil, fmt.Errorf("unknown CLI %q", cli)
 }
 
-func (s *sourcerer) Node() *command.Node {
+func (s *sourcerer) Node() command.Node {
 	generateBinaryNode := command.SerialNodes(
 		targetNameArg,
 		&command.ExecutorProcessor{F: s.generateFile},
 	)
 
-	return command.AsNode(&command.BranchNode{
-		Branches: map[string]*command.Node{
+	return &command.BranchNode{
+		Branches: map[string]command.Node{
 			"autocomplete": command.SerialNodes(
 				cliArg,
 				compTypeArg,
@@ -309,7 +309,7 @@ func (s *sourcerer) Node() *command.Node {
 			),
 		},
 		Default: generateBinaryNode,
-	})
+	}
 }
 
 func (s *sourcerer) usageExecutor(o command.Output, d *command.Data) error {
@@ -500,7 +500,7 @@ func (bc *bashCLI) Changed() bool              { return false }
 func (bc *bashCLI) Setup() []string            { return nil }
 func (bc *bashCLI) UnmarshalJSON([]byte) error { return nil }
 func (bc *bashCLI) Name() string               { return bc.name }
-func (bc *bashCLI) Node() *command.Node {
+func (bc *bashCLI) Node() command.Node {
 	return command.SerialNodes(&command.ExecutorProcessor{F: func(o command.Output, d *command.Data) error {
 		cmd := exec.Command("bash", "-c", bc.commandString)
 		cmd.Stdout = command.StdoutWriter(o)

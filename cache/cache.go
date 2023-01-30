@@ -39,10 +39,10 @@ func (c *Cache) Changed() bool {
 func (c *Cache) Setup() []string { return nil }
 
 // Node returns the `command.Node` for the cache CLI.
-func (c *Cache) Node() *command.Node {
+func (c *Cache) Node() command.Node {
 	arg := command.Arg[string]("KEY", "Key of the data to get", command.MatchesRegex(keyRegex), completer(c))
-	return command.AsNode(&command.BranchNode{
-		Branches: map[string]*command.Node{
+	return &command.BranchNode{
+		Branches: map[string]command.Node{
 			"setdir": command.SerialNodes(
 				command.FileNode("DIR", "Directory in which to store data", command.IsDir()),
 				&command.ExecutorProcessor{F: func(o command.Output, d *command.Data) error {
@@ -93,7 +93,7 @@ func (c *Cache) Node() *command.Node {
 				}},
 			),
 		},
-	})
+	}
 }
 
 func completer(c *Cache) command.Completer[string] {

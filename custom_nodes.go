@@ -19,25 +19,25 @@ var (
 )
 
 type SimpleEdge struct {
-	n *Node
+	n Node
 }
 
-func (se *SimpleEdge) Next(*Input, *Data) (*Node, error) {
+func (se *SimpleEdge) Next(*Input, *Data) (Node, error) {
 	return se.n, nil
 }
 
-func (se *SimpleEdge) UsageNext() *Node {
+func (se *SimpleEdge) UsageNext() Node {
 	return se.n
 }
 
 // SerialNodes returns a graph that iterates serially over the provided `Processors`.
-func SerialNodes(p Processor, ps ...Processor) *Node {
-	root := &Node{
+func SerialNodes(p Processor, ps ...Processor) Node {
+	root := &SimpleNode{
 		Processor: p,
 	}
 	n := root
 	for _, newP := range ps {
-		newN := &Node{
+		newN := &SimpleNode{
 			Processor: newP,
 		}
 		n.Edge = &SimpleEdge{newN}
@@ -69,12 +69,12 @@ func (e *ExecutorProcessor) Usage(u *Usage) {
 type BranchNode struct {
 	// Branches is a map from branching argument to `Node` that should be
 	// executed if that branching argument is provided.
-	Branches map[string]*Node
+	Branches map[string]Node
 	// Synonyms are synonyms for branching arguments.
 	Synonyms map[string]string
 	// Default is the `Node` that should be executed if the branching argument
 	// does not match of any of the branches.
-	Default *Node
+	Default Node
 	// BranchCompletions is whether or not branch arguments should be completed
 	// or if the completions from the Default `Node` should be used.
 	// This is only relevant when the branching argument is the argument
@@ -84,7 +84,7 @@ type BranchNode struct {
 	// hidden.
 	HideUsage bool
 
-	next *Node
+	next Node
 }
 
 // BranchSynonyms converts a map from branching argument to synonyms to a
@@ -101,10 +101,7 @@ func BranchSynonyms(m map[string][]string) map[string]string {
 
 func (bn *BranchNode) Execute(input *Input, output Output, data *Data, eData *ExecuteData) error {
 	// The edge will figure out what needs to be done next.
-	if err := bn.getNext(input, data); err != nil {
-		return output.Err(err)
-	}
-	return nil
+	return output.Err(bn.getNext(input, data))
 }
 
 func (bn *BranchNode) Complete(input *Input, data *Data) (*Completion, error) {
@@ -197,11 +194,11 @@ func IsBranchingError(err error) bool {
 	return ok
 }
 
-func (bn *BranchNode) Next(input *Input, data *Data) (*Node, error) {
+func (bn *BranchNode) Next(input *Input, data *Data) (Node, error) {
 	return bn.next, nil
 }
 
-func (bn *BranchNode) UsageNext() *Node {
+func (bn *BranchNode) UsageNext() Node {
 	return bn.Default
 }
 
@@ -213,7 +210,7 @@ func (bn *BranchNode) splitBranch(b string) (string, []string) {
 type branchSyn struct {
 	name   string
 	values []string
-	n      *Node
+	n      Node
 }
 
 func (bn *BranchNode) getSyns() map[string]*branchSyn {
@@ -327,14 +324,14 @@ func SuperSimpleProcessor(f func(*Input, *Data) error) Processor {
 // NodeRepeater is a `Processor` that runs the provided Node at least `minN` times and up to `minN + optionalN` times.
 // It should work with most node types, but hasn't been tested with branch nodes and flags really.
 // Additionally, any argument nodes under it should probably use `CustomSetter` arg options.
-func NodeRepeater(n *Node, minN, optionalN int) Processor {
+func NodeRepeater(n Node, minN, optionalN int) Processor {
 	return &nodeRepeater{minN, optionalN, n}
 }
 
 type nodeRepeater struct {
 	minN      int
 	optionalN int
-	n         *Node
+	n         Node
 }
 
 func (nr *nodeRepeater) Usage(u *Usage) {
@@ -387,7 +384,7 @@ func (nr *nodeRepeater) proceedCondition(exCount int, i *Input) bool {
 func (nr *nodeRepeater) Execute(i *Input, o Output, d *Data, e *ExecuteData) error {
 	ieo := NewIgnoreErrOutput(o, IsExtraArgsError)
 	for exCount := 0; nr.proceedCondition(exCount, i); exCount++ {
-		if err := iterativeExecute(nr.n, i, ieo, d, e); err != nil && !IsExtraArgsError(err) {
+		if err := processGraph(nr.n, i, ieo, d, e, false); err != nil && !IsExtraArgsError(err) {
 			return err
 		}
 	}
@@ -536,7 +533,7 @@ func (lb *ListBreaker[T]) Usage(u *Usage) {
 
 // StringListListNode parses a two-dimensional slice of strings, with each slice being separated by `breakSymbol`
 func StringListListNode(name, desc, breakSymbol string, minN, optionalN int, opts ...ArgOpt[[]string]) Processor {
-	n := &Node{
+	n := &SimpleNode{
 		Processor: ListArg(name, desc, 0, UnboundedList,
 			append(opts,
 				ListUntilSymbol(breakSymbol, DiscardBreaker[[]string]()),
@@ -600,7 +597,7 @@ func FunctionWrap() Processor {
 func FileContents(name, desc string, opts ...ArgOpt[string]) Processor {
 	fc := FileNode(name, desc, opts...)
 	return SimpleProcessor(func(i *Input, o Output, d *Data, ed *ExecuteData) error {
-		if err := fc.Execute(i, o, d, ed); err != nil {
+		if err := processOrExecute(fc, i, o, d, ed); err != nil {
 			return err
 		}
 		b, err := os.ReadFile(d.String(name))
@@ -610,7 +607,7 @@ func FileContents(name, desc string, opts ...ArgOpt[string]) Processor {
 		d.Set(name, strings.Split(strings.TrimSpace(string(b)), "\n"))
 		return nil
 	}, func(i *Input, d *Data) (*Completion, error) {
-		return fc.Complete(i, d)
+		return processOrComplete(fc, i, d)
 	})
 }
 

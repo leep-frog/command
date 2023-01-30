@@ -27,6 +27,6 @@ func (sc *staticCLI) Name() string {
 }
 func (sc *staticCLI) Changed() bool   { return false }
 func (sc *staticCLI) Setup() []string { return nil }
-func (sc *staticCLI) Node() *Node {
+func (sc *staticCLI) Node() Node {
 	return SerialNodes(SimpleExecutableNode(sc.commands...))
 }

@@ -7,21 +7,21 @@ func IfElse(t, f Processor, fn func(i *Input, d *Data) bool) Processor {
 	return SimpleProcessor(
 		func(i *Input, o Output, d *Data, ed *ExecuteData) error {
 			if fn(i, d) {
-				return t.Execute(i, o, d, ed)
+				return processOrExecute(t, i, o, d, ed)
 			}
 			if f == nil {
 				return nil
 			}
-			return f.Execute(i, o, d, ed)
+			return processOrExecute(f, i, o, d, ed)
 		},
 		func(i *Input, d *Data) (*Completion, error) {
 			if fn(i, d) {
-				return t.Complete(i, d)
+				return processOrComplete(t, i, d)
 			}
 			if f == nil {
 				return nil, nil
 			}
-			return f.Complete(i, d)
+			return processOrComplete(f, i, d)
 		},
 	)
 }

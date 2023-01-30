@@ -43,7 +43,7 @@ var (
 	packageArg = command.ListArg[string]("PACKAGE", "Package name", 1, command.UnboundedList, command.SimpleDistinctCompleter[[]string](RelevantPackages...))
 )
 
-func (*UpdateLeepPackageCommand) Node() *command.Node {
+func (*UpdateLeepPackageCommand) Node() command.Node {
 	return command.SerialNodes(
 		command.Description("gg updates go packages from the github.com/leep-frog repository"),
 		packageArg,
@@ -73,7 +73,7 @@ func (*UsageCommand) Setup() []string { return nil }
 func (*UsageCommand) Changed() bool   { return false }
 func (*UsageCommand) Name() string    { return "mancli" }
 
-func (*UsageCommand) Node() *command.Node {
+func (*UsageCommand) Node() command.Node {
 	return command.SerialNodes(
 		command.Description("mancli prints out usage info for any leep-frog generated CLI"),
 		usageCLIArg,
@@ -106,7 +106,7 @@ func (*AliaserCommand) Setup() []string { return nil }
 func (*AliaserCommand) Changed() bool   { return false }
 func (*AliaserCommand) Name() string    { return "aliaser" }
 
-func (*AliaserCommand) Node() *command.Node {
+func (*AliaserCommand) Node() command.Node {
 	return command.SerialNodes(
 		command.Description("Alias a command to a cli with some args included"),
 		aliasArg,
@@ -136,7 +136,7 @@ var (
 	sourcererSuffixArg = command.Arg[string]("BINARY_SUFFIX", "Suffix for the name", command.MinLength[string, string](1))
 )
 
-func (*SourcererCommand) Node() *command.Node {
+func (*SourcererCommand) Node() command.Node {
 	return command.SerialNodes(
 		sourcererDirArg,
 		sourcererSuffixArg,
@@ -192,7 +192,7 @@ var (
 func (gl *GoLeep) Load(json string) error { return nil }
 func (gl *GoLeep) Changed() bool          { return false }
 func (gl *GoLeep) Setup() []string        { return nil }
-func (gl *GoLeep) Node() *command.Node {
+func (gl *GoLeep) Node() command.Node {
 	usageNode := command.SerialNodes(
 		command.Description("Get the usage of the provided go files"),
 		command.FlagNode(goDirectory),
@@ -243,12 +243,12 @@ func (gl *GoLeep) Node() *command.Node {
 		}, nil),
 	)
 
-	return command.AsNode(&command.BranchNode{
-		Branches: map[string]*command.Node{
+	return &command.BranchNode{
+		Branches: map[string]command.Node{
 			"usage": usageNode,
 		},
 		Default: exNode, DefaultCompletion: true,
-	})
+	}
 }
 
 func (gl *GoLeep) completer() command.Completer[[]string] {
@@ -273,7 +273,7 @@ func (*Debugger) Setup() []string { return nil }
 func (*Debugger) Changed() bool   { return false }
 func (*Debugger) Name() string    { return "leep_debug" }
 
-func (*Debugger) Node() *command.Node {
+func (*Debugger) Node() command.Node {
 	return command.SerialNodes(
 		// Get the environment variable
 		command.EnvArg(command.DebugEnvVar),

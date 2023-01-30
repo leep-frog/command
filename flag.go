@@ -189,7 +189,7 @@ func (fn *flagNode) Complete(input *Input, data *Data) (*Completion, error) {
 				// Pass an empty input so multiple flags don't compete
 				// for the remaining args. Only return if an error is returned,
 				// because all multi-flag objects should never be completed.
-				if _, err := f.Processor().Complete(NewInput(nil, nil), data); err != nil {
+				if _, err := processOrComplete(f.Processor(), NewInput(nil, nil), data); err != nil {
 					return nil, err
 				}
 			}
@@ -211,7 +211,7 @@ func (fn *flagNode) Complete(input *Input, data *Data) (*Completion, error) {
 			// Remove flag argument (e.g. --flagName).
 			input.Pop()
 			input.pushValidators(fn.flagBreaker())
-			c, err := f.Processor().Complete(input, data)
+			c, err := processOrComplete(f.Processor(), input, data)
 			input.popValidators(1)
 			input.offset = 0
 			if c != nil || err != nil {
@@ -263,7 +263,7 @@ func (fn *flagNode) Execute(input *Input, output Output, data *Data, eData *Exec
 
 				// Pass an empty input so multiple flags don't compete
 				// for the remaining args
-				if err := f.Processor().Execute(NewInput(nil, nil), output, data, eData); err != nil {
+				if err := processOrExecute(f.Processor(), NewInput(nil, nil), output, data, eData); err != nil {
 					return err
 				}
 			}
@@ -286,7 +286,7 @@ func (fn *flagNode) Execute(input *Input, output Output, data *Data, eData *Exec
 			// Remove flag argument (e.g. --flagName).
 			input.Pop()
 			input.pushValidators(fn.flagBreaker())
-			err := f.Processor().Execute(input, output, data, eData)
+			err := processOrExecute(f.Processor(), input, output, data, eData)
 			input.popValidators(1)
 			input.offset = 0
 			if err != nil {
@@ -511,7 +511,7 @@ func (of *optionalFlag[T]) Processor() Processor {
 }
 
 func (of *optionalFlag[T]) Execute(input *Input, output Output, data *Data, eData *ExecuteData) error {
-	if err := of.FlagWithType.Processor().Execute(input, output, data, eData); err != nil {
+	if err := processOrExecute(of.FlagWithType.Processor(), input, output, data, eData); err != nil {
 		return err
 	}
 
@@ -534,7 +534,7 @@ func (of *optionalFlag[T]) Complete(input *Input, data *Data) (*Completion, erro
 	}
 
 	// Otherwise just run regular completion.
-	c, err := of.FlagWithType.Processor().Complete(input, data)
+	c, err := processOrComplete(of.FlagWithType.Processor(), input, data)
 	if c != nil || err != nil {
 		return c, err
 	}
@@ -584,7 +584,7 @@ func (ilf *itemizedListFlag[T]) Options() *FlagOptions {
 		},
 		// PostProcess
 		func(i *Input, o Output, d *Data, ed *ExecuteData) error {
-			return ilf.FlagWithType.Processor().Execute(NewInput(ilf.rawArgs, nil), o, d, ed)
+			return processOrExecute(ilf.FlagWithType.Processor(), NewInput(ilf.rawArgs, nil), o, d, ed)
 		},
 	}
 }
@@ -612,7 +612,7 @@ func (ilf *itemizedListFlag[T]) Complete(input *Input, data *Data) (*Completion,
 	s, _ := input.Pop()
 	ilf.rawArgs = append(ilf.rawArgs, s)
 	if input.FullyProcessed() {
-		c, e := ilf.FlagWithType.Processor().Complete(NewInput(ilf.rawArgs, nil), data)
+		c, e := processOrComplete(ilf.FlagWithType.Processor(), NewInput(ilf.rawArgs, nil), data)
 		return c, e
 	}
 	return nil, nil

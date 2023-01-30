@@ -57,9 +57,9 @@ func setShortcut(sc ShortcutCLI, name, shortcut string, value []string) {
 	m[shortcut] = value
 }
 
-func shortcutMap(name string, sc ShortcutCLI, n *Node) map[string]*Node {
+func shortcutMap(name string, sc ShortcutCLI, n Node) map[string]Node {
 	adder := SerialNodes(ShortcutArg, &addShortcut{node: n, sc: sc, name: name})
-	return map[string]*Node{
+	return map[string]Node{
 		"a": adder,
 		"d": shortcutDeleter(name, sc, n),
 		"g": shortcutGetter(name, sc, n),
@@ -69,9 +69,9 @@ func shortcutMap(name string, sc ShortcutCLI, n *Node) map[string]*Node {
 }
 
 // ShortcutNode wraps the provided node with a shortcut node.
-func ShortcutNode(name string, sc ShortcutCLI, n *Node) *Node {
+func ShortcutNode(name string, sc ShortcutCLI, n Node) Node {
 	executor := SerialNodes(&executeShortcut{node: n, sc: sc, name: name}, n)
-	return AsNode(&BranchNode{Branches: shortcutMap(name, sc, n), Default: executor, HideUsage: true, DefaultCompletion: true})
+	return &BranchNode{Branches: shortcutMap(name, sc, n), Default: executor, HideUsage: true, DefaultCompletion: true}
 }
 
 func shortcutCompleter(name string, sc ShortcutCLI) Completer[string] {
@@ -96,7 +96,7 @@ func shortcutListArg(name string, sc ShortcutCLI) Processor {
 	return ListArg[string](ShortcutArg.Name(), hiddenNodeDesc, 1, UnboundedList, CompleterList(shortcutCompleter(name, sc)))
 }
 
-func shortcutSearcher(name string, sc ShortcutCLI, n *Node) *Node {
+func shortcutSearcher(name string, sc ShortcutCLI, n Node) Node {
 	regexArg := ListArg[string]("regexp", hiddenNodeDesc, 1, UnboundedList, ValidatorList(IsRegex()))
 	return SerialNodes(regexArg, &ExecutorProcessor{func(output Output, data *Data) error {
 		rs := data.RegexpList("regexp")
@@ -121,7 +121,7 @@ func shortcutSearcher(name string, sc ShortcutCLI, n *Node) *Node {
 	}})
 }
 
-func shortcutLister(name string, sc ShortcutCLI, n *Node) *Node {
+func shortcutLister(name string, sc ShortcutCLI, n Node) Node {
 	return SerialNodes(&ExecutorProcessor{func(output Output, data *Data) error {
 		var r []string
 		for k, v := range getShortcutMap(sc, name) {
@@ -135,7 +135,7 @@ func shortcutLister(name string, sc ShortcutCLI, n *Node) *Node {
 	}})
 }
 
-func shortcutDeleter(name string, sc ShortcutCLI, n *Node) *Node {
+func shortcutDeleter(name string, sc ShortcutCLI, n Node) Node {
 	return SerialNodes(shortcutListArg(name, sc), &ExecutorProcessor{func(output Output, data *Data) error {
 		if len(getShortcutMap(sc, name)) == 0 {
 			return output.Stderrln("Shortcut group has no shortcuts yet.")
@@ -153,7 +153,7 @@ func shortcutStr(shortcut string, values []string) string {
 	return fmt.Sprintf("%s: %s", shortcut, strings.Join(values, " "))
 }
 
-func shortcutGetter(name string, sc ShortcutCLI, n *Node) *Node {
+func shortcutGetter(name string, sc ShortcutCLI, n Node) Node {
 	return SerialNodes(shortcutListArg(name, sc), &ExecutorProcessor{func(output Output, data *Data) error {
 		if getShortcutMap(sc, name) == nil {
 			return output.Stderrf("No shortcuts exist for shortcut type %q\n", name)
@@ -171,7 +171,7 @@ func shortcutGetter(name string, sc ShortcutCLI, n *Node) *Node {
 }
 
 type executeShortcut struct {
-	node *Node
+	node Node
 	sc   ShortcutCLI
 	name string
 }
@@ -183,15 +183,15 @@ func (ea *executeShortcut) Usage(u *Usage) {
 }
 
 func (ea *executeShortcut) Execute(input *Input, output Output, data *Data, eData *ExecuteData) error {
-	return output.Err(shortcutInputTransformer(ea.sc, ea.name, 0).Execute(input, output, data, eData))
+	return output.Err(processOrExecute(shortcutInputTransformer(ea.sc, ea.name, 0), input, output, data, eData))
 }
 
 func (ea *executeShortcut) Complete(input *Input, data *Data) (*Completion, error) {
-	return shortcutInputTransformer(ea.sc, ea.name, 0).Complete(input, data)
+	return processOrComplete(shortcutInputTransformer(ea.sc, ea.name, 0), input, data)
 }
 
 type addShortcut struct {
-	node *Node
+	node Node
 	sc   ShortcutCLI
 	name string
 }
@@ -217,7 +217,7 @@ func (as *addShortcut) Execute(input *Input, output Output, data *Data, _ *Execu
 	// We don't want to output not enough args error, because we actually
 	// don't mind those when adding shortcuts.
 	ieo := NewIgnoreErrOutput(output, IsNotEnoughArgsError)
-	err := iterativeExecute(as.node, input, ieo, data, fakeEData)
+	err := processGraph(as.node, input, ieo, data, fakeEData, true)
 	if err != nil && !IsNotEnoughArgsError(err) {
 		return err
 	}

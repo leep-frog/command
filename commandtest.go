@@ -58,7 +58,7 @@ const (
 // UsageTestCase is a test case object for testing command usage.
 type UsageTestCase struct {
 	// Node is the root `Node` of the command to test.
-	Node *Node
+	Node Node
 	// WantString is the expected usage output.
 	WantString []string
 }
@@ -66,7 +66,7 @@ type UsageTestCase struct {
 // ExecuteTestCase is a test case object for testing command execution.
 type ExecuteTestCase struct {
 	// Node is the root `Node` of the command to test.
-	Node *Node
+	Node Node
 	// Args is the list of arguments provided to the command.
 	Args []string
 	// Env is the map of os environment variables to stub. If nil, this is not stubbed.
@@ -148,7 +148,7 @@ func UsageTest(t *testing.T, utc *UsageTestCase) {
 
 type RunNodeTestCase struct {
 	// Node is the root `Node` of the command to test.
-	Node *Node
+	Node Node
 	// Args is the list of arguments provided to the command.
 	Args []string
 	// Env is the map of os environment variables to stub. If nil, this is not stubbed.
@@ -243,7 +243,7 @@ func RunNodeTest(t *testing.T, rtc *RunNodeTestCase) {
 }
 
 // PrependSetupArg prepends the SetupArg node to the given node.
-func PreprendSetupArg(n *Node) *Node {
+func PreprendSetupArg(n Node) Node {
 	return SerialNodes(SetupArg, n)
 }
 
@@ -335,7 +335,7 @@ func ChangeTest[T Changeable](t *testing.T, want, original T, opts ...cmp.Option
 // CompleteTestCase is a test case object for testing command autocompletion.
 type CompleteTestCase struct {
 	// Node is the root `Node` of the command to test.
-	Node *Node
+	Node Node
 	// Args is the list of arguments provided to the command.
 	// Remember that args requires a dummy command argument (e.g. "cmd ")
 	// since `COMP_LINE` includes that.

@@ -37,7 +37,7 @@ func (mfc *myFirstCommand) Setup() []string {
 }
 
 // Node returns the logic of your new command!
-func (mfc *myFirstCommand) Node() *command.Node {
+func (mfc *myFirstCommand) Node() command.Node {
 
 	// A boolean flag (set by passing `--formal` or `-f` to your command in bash).
 	formalFlag := command.BoolFlag("formal", 'f', "Whether or not the response should be formal")

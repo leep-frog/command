@@ -9,51 +9,78 @@ import (
 	"sync"
 )
 
-// Node is a type containing the relevant processing that should be done
-// when the node is reached (`Processor`) as well as what `Node` should be
-// visited next (`Edge`). `Node` also implements the `Processor` interface,
-// so a single root `Node` (and its entire underlying graph) can also be treated
-// as an individual `Processor` element.
-type Node struct {
-	// Processor is used to process the node when it is visited.
-	Processor Processor
-	// Edge determines the next node to visit.
-	Edge Edge
+// Processor defines the logic that should be executed at a `Node`.
+type Processor interface {
+	// Execute is the function called when a command graph is
+	// being executed.
+	Execute(*Input, Output, *Data, *ExecuteData) error
+	// Complete is the function called when a command graph is
+	// being autocompleted. If it returns a non-nil `Completion` object,
+	// then the graph traversal stops and uses the returned object
+	// to construct the command completion suggestions.
+	Complete(*Input, *Data) (*Completion, error)
+	// Usage is the function called when the usage data for a command
+	// graph is being constructed. The input `Usage` object should be
+	// updated for each `Node`.
+	Usage(*Usage)
 }
 
-type NodeInterface interface {
+// Edge determines which `Node` to execute next.
+type Edge interface {
+	// Next fetches the next node in the command graph based on
+	// the provided `Input` and `Data`.
+	Next(*Input, *Data) (Node, error)
+	// UsageNext fetches the next node in the command graph when
+	// command graph usage is being constructed. This is separate from
+	// the `Next` function because `Next` is input-dependent whereas `UsageNext`
+	// receives no input arguments.
+	UsageNext() Node
+}
+
+// Node defines a cohesive node in the command graph. It is simply a combination
+// of a `Processor` and an `Edge`.
+type Node interface {
 	Processor
 	Edge
 }
 
-func AsNode(n NodeInterface) *Node {
-	return &Node{
-		n,
-		n,
-	}
+type SimpleNode struct {
+	Processor Processor
+	Edge      Edge
 }
 
-func (n *Node) Execute(input *Input, output Output, data *Data, exData *ExecuteData) error {
-	// TODO: maybe the caller (sourcerer) should be required to check
-	// if the input has been fully processed or not?
-	ieo := NewIgnoreErrOutput(output, IsExtraArgsError)
-	err := iterativeExecute(n, input, ieo, data, exData)
-	if IsExtraArgsError(err) {
+func (sn *SimpleNode) Next(i *Input, d *Data) (Node, error) {
+	if sn.Edge == nil {
+		return nil, nil
+	}
+	return sn.Edge.Next(i, d)
+}
+
+func (sn *SimpleNode) UsageNext() Node {
+	if sn.Edge == nil {
 		return nil
 	}
-	return err
+	return sn.Edge.UsageNext()
 }
 
-func (n *Node) Complete(input *Input, data *Data) (*Completion, error) {
-	c, err := getCompleteData(n, input, data)
-	if IsExtraArgsError(err) {
-		return c, nil
+func (sn *SimpleNode) Execute(input *Input, output Output, data *Data, exData *ExecuteData) error {
+	if sn.Processor == nil {
+		return nil
 	}
-	return c, err
+	return processOrExecute(sn.Processor, input, output, data, exData)
 }
 
-func (n *Node) Usage(usage *Usage) {
-	getUsage(n, usage)
+func (sn *SimpleNode) Complete(input *Input, data *Data) (*Completion, error) {
+	if sn.Processor == nil {
+		return nil, nil
+	}
+	return processOrComplete(sn.Processor, input, data)
+}
+
+func (sn *SimpleNode) Usage(usage *Usage) {
+	if sn.Processor != nil {
+		processOrUsage(sn.Processor, usage)
+	}
 }
 
 const (
@@ -212,36 +239,8 @@ type ExecuteData struct {
 	FunctionWrap bool
 }
 
-// Processor is the interface for nodes in the command graph.
-type Processor interface {
-	// Execute is the function called when a command graph is
-	// being executed.
-	Execute(*Input, Output, *Data, *ExecuteData) error
-	// Complete is the function called when a command graph is
-	// being autocompleted. If it returns a non-nil `Completion` object,
-	// then the graph traversal stops and uses the returned object
-	// to construct the command completion suggestions.
-	Complete(*Input, *Data) (*Completion, error)
-	// Usage is the function called when the usage data for a command
-	// graph is being constructed. The input `Usage` object should be
-	// updated for each `Node`.
-	Usage(*Usage)
-}
-
-// Edge is the interface for edges in the command graph.
-type Edge interface {
-	// Next fetches the next node in the command graph based on
-	// the provided `Input` and `Data`.
-	Next(*Input, *Data) (*Node, error)
-	// UsageNext fetches the next node in the command graph when
-	// command graph usage is being constructed. This is separate from
-	// the `Next` function because `Next` is input-dependent whereas `UsageNext`
-	// receives no input arguments.
-	UsageNext() *Node
-}
-
 // GetUsage constructs a `Usage` object from the head `Node` of a command graph.
-func GetUsage(n *Node) *Usage {
+func GetUsage(n Node) *Usage {
 	return getUsage(n, &Usage{
 		UsageSection: &UsageSection{},
 	})
@@ -249,25 +248,20 @@ func GetUsage(n *Node) *Usage {
 
 // ShowUsageAfterError returns a string containing the the provided
 // Node's usage doc along with a prefix to separate it from the printed error.
-func ShowUsageAfterError(n *Node) string {
+func ShowUsageAfterError(n Node) string {
 	return fmt.Sprintf("\n======= Command Usage =======\n%s", GetUsage(n).String())
 }
 
-func getUsage(n *Node, u *Usage) *Usage {
+func getUsage(n Node, u *Usage) *Usage {
 	for n != nil {
-		n.Processor.Usage(u)
-
-		if n.Edge == nil {
-			return u
-		}
-
-		n = n.Edge.UsageNext()
+		n.Usage(u)
+		n = n.UsageNext()
 	}
 	return u
 }
 
 // Execute executes a node with the provided `Input` and `Output`.
-func Execute(n *Node, input *Input, output Output) (*ExecuteData, error) {
+func Execute(n Node, input *Input, output Output) (*ExecuteData, error) {
 	return execute(n, input, output, &Data{})
 }
 
@@ -275,7 +269,7 @@ func Execute(n *Node, input *Input, output Output) (*ExecuteData, error) {
 // aren't used for CLI tools (such as in regular main.go files that are
 // executed via "go run"). Using in this in conjunction with the `goleep`
 // command is incredibly useful.
-func RunNodes(n *Node) error {
+func RunNodes(n Node) error {
 	o := NewOutput()
 	err := runNodes(n, o, &Data{}, os.Args[1:])
 	o.Close()
@@ -289,7 +283,7 @@ const (
 )
 
 // Separate method for testing purposes.
-func runNodes(n *Node, o Output, d *Data, args []string) error {
+func runNodes(n Node, o Output, d *Data, args []string) error {
 	// We set default node to n in case user tries to run with "go run", but using goleep
 	// is better because "go run main.go autocomplete" won't work as expected.
 	var filename string
@@ -303,8 +297,8 @@ func runNodes(n *Node, o Output, d *Data, args []string) error {
 		n,
 	)
 
-	bn := AsNode(&BranchNode{
-		Branches: map[string]*Node{
+	bn := &BranchNode{
+		Branches: map[string]Node{
 			"execute": exNode,
 			"usage": SerialNodes(
 				&ExecutorProcessor{func(o Output, d *Data) error {
@@ -328,15 +322,20 @@ func runNodes(n *Node, o Output, d *Data, args []string) error {
 		},
 		Default:           n,
 		DefaultCompletion: true,
-	})
+	}
 
-	eData, err := execute(bn, ParseExecuteArgs(args), o, d)
+	input := ParseExecuteArgs(args)
+	eData, err := execute(bn, input, NewIgnoreErrOutput(o, IsExtraArgsError), d)
 	if err != nil {
 		if IsUsageError(err) {
+			if IsExtraArgsError(err) {
+				o.Err(err)
+			}
 			o.Stderrln(ShowUsageAfterError(n))
 		}
 		return err
 	}
+
 	if filename != "" && len(eData.Executable) > 0 {
 		if err := ioutil.WriteFile(filename, []byte(strings.Join(eData.Executable, "\n")), CmdOS.DefaultFilePerm()); err != nil {
 			return o.Stderrf("failed to write eData.Executable to file: %v\n", err)
@@ -346,7 +345,7 @@ func runNodes(n *Node, o Output, d *Data, args []string) error {
 }
 
 // Separate method for testing purposes.
-func execute(n *Node, input *Input, output Output, data *Data) (*ExecuteData, error) {
+func execute(n Node, input *Input, output Output, data *Data) (*ExecuteData, error) {
 	eData := &ExecuteData{}
 
 	// This threading logic is needed in case the underlying process calls an output.Terminate command.
@@ -361,7 +360,15 @@ func execute(n *Node, input *Input, output Output, data *Data) (*ExecuteData, er
 			}
 			wg.Done()
 		}()
-		if err := iterativeExecute(n, input, output, data, eData); err != nil {
+		if err := processGraph(n, input, output, data, eData, true); err != nil {
+			termErr = err
+			return
+		}
+
+		if err := input.CheckForExtraArgsError(); err != nil {
+			output.Stderrln(err)
+			// TODO: Make this the last node we reached?
+			ShowUsageAfterError(n)
 			termErr = err
 			return
 		}
@@ -377,28 +384,50 @@ func execute(n *Node, input *Input, output Output, data *Data) (*ExecuteData, er
 	return eData, termErr
 }
 
-func iterativeExecute(n *Node, input *Input, output Output, data *Data, eData *ExecuteData) error {
-	for n != nil {
-		if n.Processor != nil {
-			if err := n.Processor.Execute(input, output, data, eData); err != nil {
-				return err
-			}
-		}
+// processOrExecute checks if the provided processor is a `Node` or just a `Processor`
+// and traverses the subgraph or executes the processor accordingly.
+func processOrExecute(p Processor, input *Input, output Output, data *Data, eData *ExecuteData) error {
+	if n, ok := p.(Node); ok {
+		return processGraph(n, input, output, data, eData, false)
+	}
+	return p.Execute(input, output, data, eData)
+}
 
-		if n.Edge == nil {
-			break
+// processOrComplete checks if the provided processor is a `Node` or just a `Processor`
+// and traverses the subgraph or completes the processor accordingly.
+func processOrComplete(p Processor, input *Input, data *Data) (*Completion, error) {
+	if n, ok := p.(Node); ok {
+		return getCompleteData(n, input, data)
+	}
+	return p.Complete(input, data)
+}
+
+// processOrUsage checks if the provided `Processor` is a `Node` or just a `Processor`
+// and traverses the subgraph or executes the processor accordingly.
+func processOrUsage(p Processor, usage *Usage) {
+	if n, ok := p.(Node); ok {
+		getUsage(n, usage)
+	} else {
+		p.Usage(usage)
+	}
+}
+
+// processGraph processes the provided graph
+func processGraph(root Node, input *Input, output Output, data *Data, eData *ExecuteData, checkInput bool) error {
+	for n := root; n != nil; {
+		if err := n.Execute(input, output, data, eData); err != nil {
+			return err
 		}
 
 		var err error
-		if n, err = n.Edge.Next(input, data); err != nil {
+		if n, err = n.Next(input, data); err != nil {
 			return err
 		}
 	}
 
-	if !input.FullyProcessed() {
-		return output.Err(ExtraArgsErr(input))
+	if checkInput {
+		return output.Err(input.CheckForExtraArgsError())
 	}
-
 	return nil
 }
 

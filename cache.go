@@ -23,7 +23,7 @@ type CachableCLI interface {
 // CacheNode returns a node that caches any execution of downstream commands.
 // A `CacheNode` introduces new branches, hence the requirement for it to be a `Node`
 // and not just a `Processor`.
-func CacheNode(name string, c CachableCLI, n *Node, opts ...CacheOption) *Node {
+func CacheNode(name string, c CachableCLI, n Node, opts ...CacheOption) Node {
 	cc := &commandCache{
 		name: name,
 		c:    c,
@@ -33,12 +33,12 @@ func CacheNode(name string, c CachableCLI, n *Node, opts ...CacheOption) *Node {
 	for _, opt := range opts {
 		opt.modifyCache(cc)
 	}
-	ccN := &Node{
+	ccN := &SimpleNode{
 		Processor: cc,
 		Edge:      &cacheUsageNode{n},
 	}
-	return AsNode(&BranchNode{
-		Branches: map[string]*Node{
+	return &BranchNode{
+		Branches: map[string]Node{
 			"history": SerialNodes(
 				SimpleProcessor(func(input *Input, _ Output, data *Data, _ *ExecuteData) error {
 					used := input.Used()
@@ -63,7 +63,7 @@ func CacheNode(name string, c CachableCLI, n *Node, opts ...CacheOption) *Node {
 		HideUsage:         true,
 		DefaultCompletion: true,
 		Synonyms:          BranchSynonyms(map[string][]string{"history": {"h"}}),
-	})
+	}
 }
 
 // CacheOption is an option interface for modifying `CacheNode` objects.
@@ -85,21 +85,21 @@ func (ch *cacheHistory) modifyCache(cc *commandCache) {
 }
 
 type cacheUsageNode struct {
-	n *Node
+	n Node
 }
 
-func (cun *cacheUsageNode) Next(i *Input, d *Data) (*Node, error) {
+func (cun *cacheUsageNode) Next(i *Input, d *Data) (Node, error) {
 	return nil, nil
 }
 
-func (cun *cacheUsageNode) UsageNext() *Node {
+func (cun *cacheUsageNode) UsageNext() Node {
 	return cun.n
 }
 
 type commandCache struct {
 	name string
 	c    CachableCLI
-	n    *Node
+	n    Node
 	ch   *cacheHistory
 }
 
@@ -135,11 +135,11 @@ func (cc *commandCache) Execute(input *Input, output Output, data *Data, eData *
 		if sls, ok := cc.c.Cache()[cc.name]; ok {
 			input.PushFront(sls[len(sls)-1]...)
 		}
-		return iterativeExecute(cc.n, input, output, data, eData)
+		return processGraph(cc.n, input, output, data, eData, false)
 	}
 
 	snapshot := input.Snapshot()
-	err := iterativeExecute(cc.n, input, output, data, eData)
+	err := processGraph(cc.n, input, output, data, eData, true)
 
 	// Don't cache if retrying will never fix the issue (outside of a change
 	// to the code for the specific CLI).
