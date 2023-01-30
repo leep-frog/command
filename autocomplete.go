@@ -13,7 +13,7 @@ func Autocomplete(n Node, compLine string, passthroughArgs []string) ([]string, 
 // constructed by callers).
 func autocomplete(n Node, compLine string, passthroughArgs []string, data *Data) ([]string, error) {
 	input := ParseCompLine(compLine, passthroughArgs)
-	c, err := getCompleteData(n, input, data)
+	c, err := processGraphCompletion(n, input, data, true)
 
 	var r []string
 	if c != nil {
@@ -23,7 +23,7 @@ func autocomplete(n Node, compLine string, passthroughArgs []string, data *Data)
 }
 
 // Separate method for use by modifiers (shortcut.go, cache.go, etc.)
-func getCompleteData(n Node, input *Input, data *Data) (*Completion, error) {
+func processGraphCompletion(n Node, input *Input, data *Data, checkInput bool) (*Completion, error) {
 	for n != nil {
 		c, err := n.Complete(input, data)
 		if c != nil || err != nil {
@@ -35,5 +35,8 @@ func getCompleteData(n Node, input *Input, data *Data) (*Completion, error) {
 		}
 	}
 
-	return nil, input.CheckForExtraArgsError()
+	if checkInput {
+		return nil, input.CheckForExtraArgsError()
+	}
+	return nil, nil
 }

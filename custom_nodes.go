@@ -115,7 +115,7 @@ func (bn *BranchNode) Complete(input *Input, data *Data) (*Completion, error) {
 	if bn.DefaultCompletion {
 		// Need to iterate over the remaining nodes in case the immediately next node
 		// doesn't process any args and the one after it does.
-		return getCompleteData(bn.Default, input, data)
+		return processGraphCompletion(bn.Default, input, data, false)
 	}
 
 	var names []string
@@ -384,7 +384,7 @@ func (nr *nodeRepeater) proceedCondition(exCount int, i *Input) bool {
 func (nr *nodeRepeater) Execute(i *Input, o Output, d *Data, e *ExecuteData) error {
 	ieo := NewIgnoreErrOutput(o, IsExtraArgsError)
 	for exCount := 0; nr.proceedCondition(exCount, i); exCount++ {
-		if err := processGraph(nr.n, i, ieo, d, e, false); err != nil && !IsExtraArgsError(err) {
+		if err := processGraphExecution(nr.n, i, ieo, d, e, false); err != nil && !IsExtraArgsError(err) {
 			return err
 		}
 	}
@@ -395,7 +395,7 @@ func (nr *nodeRepeater) Execute(i *Input, o Output, d *Data, e *ExecuteData) err
 
 func (nr *nodeRepeater) Complete(i *Input, d *Data) (*Completion, error) {
 	for exCount := 0; nr.proceedCondition(exCount, i); exCount++ {
-		c, err := getCompleteData(nr.n, i, d)
+		c, err := processGraphCompletion(nr.n, i, d, false)
 		if c != nil || (err != nil && !IsExtraArgsError(err)) {
 			return c, err
 		}

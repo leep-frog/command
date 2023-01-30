@@ -126,7 +126,7 @@ func (cc *commandCache) Usage(u *Usage) {
 }
 
 func (cc *commandCache) Complete(input *Input, data *Data) (*Completion, error) {
-	return getCompleteData(cc.n, input, data)
+	return processGraphCompletion(cc.n, input, data, true)
 }
 
 func (cc *commandCache) Execute(input *Input, output Output, data *Data, eData *ExecuteData) error {
@@ -135,11 +135,11 @@ func (cc *commandCache) Execute(input *Input, output Output, data *Data, eData *
 		if sls, ok := cc.c.Cache()[cc.name]; ok {
 			input.PushFront(sls[len(sls)-1]...)
 		}
-		return processGraph(cc.n, input, output, data, eData, false)
+		return processGraphExecution(cc.n, input, output, data, eData, false)
 	}
 
 	snapshot := input.Snapshot()
-	err := processGraph(cc.n, input, output, data, eData, true)
+	err := processGraphExecution(cc.n, input, output, data, eData, true)
 
 	// Don't cache if retrying will never fix the issue (outside of a change
 	// to the code for the specific CLI).

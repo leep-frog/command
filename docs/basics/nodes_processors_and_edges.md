@@ -19,7 +19,7 @@ While the graph logic may seem convoluted, this strucutre allows for features li
 This example constructs a graph that simply works its way through a set of linear nodes:
 
 ```go
-func SerialGraph() *command.Node {
+func SerialGraph() command.Node {
   firstNameArg := command.Arg[string]("FIRST_NAME", "First name")
   lastNameArg := command.Arg[string]("LAST_NAME", "Last name")
   excArg := command.OptionalArg[int]("EXCITEMENT", "How excited you are", command.Default(1))
@@ -40,13 +40,13 @@ func SerialGraph() *command.Node {
 This graph does different things depending on the first argument.
 
 ```go
-func BranchingGraph() *command.Node {
+func BranchingGraph() command.Node {
   defaultNode := command.SerialNodes(
     command.ExecutorNode(func(o command.Output, d *command.Data) {
       o.Stdoutln("Why didn't you pick a door?")
     })
   )
-  return command.BranchNode(map[string]*command.Node{
+  return command.BranchNode(map[string]command.Node{
     "one": command.SerialNodes(
       command.ExecutorNode(func(o command.Output, d *command.Data) {
         o.Stdoutln("Not quite!")

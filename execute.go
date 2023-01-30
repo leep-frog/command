@@ -360,7 +360,7 @@ func execute(n Node, input *Input, output Output, data *Data) (*ExecuteData, err
 			}
 			wg.Done()
 		}()
-		if err := processGraph(n, input, output, data, eData, true); err != nil {
+		if err := processGraphExecution(n, input, output, data, eData, true); err != nil {
 			termErr = err
 			return
 		}
@@ -388,7 +388,7 @@ func execute(n Node, input *Input, output Output, data *Data) (*ExecuteData, err
 // and traverses the subgraph or executes the processor accordingly.
 func processOrExecute(p Processor, input *Input, output Output, data *Data, eData *ExecuteData) error {
 	if n, ok := p.(Node); ok {
-		return processGraph(n, input, output, data, eData, false)
+		return processGraphExecution(n, input, output, data, eData, false)
 	}
 	return p.Execute(input, output, data, eData)
 }
@@ -397,7 +397,7 @@ func processOrExecute(p Processor, input *Input, output Output, data *Data, eDat
 // and traverses the subgraph or completes the processor accordingly.
 func processOrComplete(p Processor, input *Input, data *Data) (*Completion, error) {
 	if n, ok := p.(Node); ok {
-		return getCompleteData(n, input, data)
+		return processGraphCompletion(n, input, data, false)
 	}
 	return p.Complete(input, data)
 }
@@ -412,8 +412,8 @@ func processOrUsage(p Processor, usage *Usage) {
 	}
 }
 
-// processGraph processes the provided graph
-func processGraph(root Node, input *Input, output Output, data *Data, eData *ExecuteData, checkInput bool) error {
+// processGraphExecution processes the provided graph
+func processGraphExecution(root Node, input *Input, output Output, data *Data, eData *ExecuteData, checkInput bool) error {
 	for n := root; n != nil; {
 		if err := n.Execute(input, output, data, eData); err != nil {
 			return err

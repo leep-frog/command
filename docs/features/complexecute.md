@@ -25,11 +25,11 @@ func (mc *myCLI) Name() string {
   return "myCLI"
 }
 
-func (mc *myCLI) Node() *command.Node {
+func (mc *myCLI) Node() command.Node {
   fileArg := command.FileNode("TEST_FILE", "File to test", command.CompleteForExecute())
 
   return command.AsNode(&command.BranchNode{
-    Branches: map[string]*command.Node{
+    Branches: map[string]command.Node{
       "test": command.SerialNodes(
         fileArg,
         command.ExecutableNode(func(o command.Output, d *command.Data) ([]string, error) {

@@ -28,7 +28,7 @@ func (mc *myCLI) ShortcutMap() map[string]map[string][]string {
   return mc.Shortcuts
 }
 
-func (mc *myCLI) Node() *command.Node {
+func (mc *myCLI) Node() command.Node {
   fileArg := command.Arg[string]("FILE", "filename to print", command.FileTransformer())
 
   printArgs := command.ListArg[string]("PRINT", "args to print", 1, command.UnboundedList)
