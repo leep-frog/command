@@ -107,8 +107,8 @@ type DeferredCompletion struct {
 	F func(*Data) (*Completion, error)
 }
 
-// DeferredCopmleter returns a completer that defers completion after the provided
-// graph is run. See the `DeferredCopmletion` object for more info.
+// DeferredCompleter returns a completer that defers completion after the provided
+// graph is run. See the `DeferredCompletion` object for more info.
 func DeferredCompleter[T any](graph Node, f func(*Data) (*Completion, error)) Completer[T] {
 	return AsCompleter[T](&Completion{DeferredCompletion: &DeferredCompletion{graph, f}})
 }

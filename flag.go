@@ -112,10 +112,8 @@ type flagProcessor struct {
 }
 
 // ListBreaker returns a `ListBreaker` that breaks a list at any
-// string that would be considered a flag (short/full flag name, multi-flag).
-// This is particularly useful when you need to define a `FlagProcessor` after
-// positional argument list nodes for use in completion logic. For example:
-// `command.SerialNodes(unboundedListArg.AddOptions(fn.ListBreaker()), fn)`
+// string that would be considered a flag (short/full flag name, multi-flag)
+// in this flag processor.
 func (fn *flagProcessor) ListBreaker() *ListBreaker[any] {
 	return ListUntil[any](
 		// Don't eat any full flags (e.g. --my-flag)
