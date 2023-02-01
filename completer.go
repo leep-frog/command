@@ -89,7 +89,10 @@ type Completion struct {
 	CaseInsensitiveSort bool
 	// CaseInsensitve is whether or not case should be considered when filtering out suggestions.
 	CaseInsensitive bool
-	// Distinct is whether or not we should return only distinct suggestions (specifically to prevent duplicates in list args).
+	// Distinct is whether or not we should return only distinct suggestions (specifically to prevent duplicates in list arguments).
+	// Note: this is only applied for built-in types like `Argument` and `Flag`. To ensure
+	// distinctness for custom argument processors, you will need to implement
+	// logic in those custom objects yourself.
 	Distinct bool
 	// DeferredCompletion will *execute* another graph before generating the actual
 	// execution object.
@@ -109,6 +112,9 @@ type DeferredCompletion struct {
 
 // DeferredCompleter returns a completer that defers completion after the provided
 // graph is run. See the `DeferredCompletion` object for more info.
+// When using this with `Argument` or `Flag` nodes, you will need to explicitly
+// run `RunArgumentCompletion` (which is normally taken care of automatically
+// by those objects).
 func DeferredCompleter[T any](graph Node, f func(*Data) (*Completion, error)) Completer[T] {
 	return AsCompleter[T](&Completion{DeferredCompletion: &DeferredCompletion{graph, f}})
 }
@@ -177,8 +183,9 @@ func BoolCompleter() Completer[bool] {
 	return SimpleCompleter[bool](boolStringValues...)
 }
 
-// RunCompletion generates the `Completion` object from the provided inputs.
-func RunCompletion[T any](c Completer[T], rawValue string, value T, data *Data) (*Completion, error) {
+// RunArgumentCompleter generates a `Completion` object from the provided
+// `Completer` and inputs.
+func RunArgumentCompleter[T any](c Completer[T], rawValue string, value T, data *Data) (*Completion, error) {
 	if c == nil {
 		return nil, nil
 	}
@@ -187,6 +194,13 @@ func RunCompletion[T any](c Completer[T], rawValue string, value T, data *Data) 
 	if completion == nil || err != nil {
 		return nil, err
 	}
+
+	return RunArgumentCompletion[T](completion, rawValue, value, data)
+}
+
+// RunArgumentCompletion generates a `Completion` object from the provided
+// `Completion` and inputs.
+func RunArgumentCompletion[T any](completion *Completion, rawValue string, value T, data *Data) (*Completion, error) {
 
 	op := getOperator[T]()
 
