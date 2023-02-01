@@ -45,7 +45,7 @@ type FlagOptions struct {
 	AllowsMultiple bool
 	// ProcessMissing processes the flag when it is not provided
 	ProcessMissing func(*Data) error
-	// PostProcess runs after the entire flag node has been processed.
+	// PostProcess runs after the entire flag processor has been processed.
 	PostProcess func(*Input, Output, *Data, *ExecuteData) error
 }
 
@@ -89,9 +89,9 @@ func flagShortName(f FlagInterface) string {
 	return fmt.Sprintf("-%c", f.ShortName())
 }
 
-// FlagNode returns a node that iterates over the remaining command line
+// FlagProcessor returns a `Processor` that iterates over the remaining command line
 // arguments and processes any flags that are present.
-func FlagNode(fs ...FlagInterface) *flagNode {
+func FlagProcessor(fs ...FlagInterface) *flagProcessor {
 	m := map[string]FlagInterface{}
 	for _, f := range fs {
 		// We explicitly don't check for duplicate keys to give more freedom to users
@@ -102,21 +102,21 @@ func FlagNode(fs ...FlagInterface) *flagNode {
 		}
 		m[flagShortName(f)] = f
 	}
-	return &flagNode{
+	return &flagProcessor{
 		flagMap: m,
 	}
 }
 
-type flagNode struct {
+type flagProcessor struct {
 	flagMap map[string]FlagInterface
 }
 
 // ListBreaker returns a `ListBreaker` that breaks a list at any
 // string that would be considered a flag (short/full flag name, multi-flag).
-// This is particularly useful when you need to define a `FlagNode` after
+// This is particularly useful when you need to define a `FlagProcessor` after
 // positional argument list nodes for use in completion logic. For example:
 // `command.SerialNodes(unboundedListArg.AddOptions(fn.ListBreaker()), fn)`
-func (fn *flagNode) ListBreaker() *ListBreaker[any] {
+func (fn *flagProcessor) ListBreaker() *ListBreaker[any] {
 	return ListUntil[any](
 		// Don't eat any full flags (e.g. --my-flag)
 		&ValidatorOption[string]{
@@ -128,7 +128,7 @@ func (fn *flagNode) ListBreaker() *ListBreaker[any] {
 			},
 			"",
 		},
-		// Don't eat any multi-flags where all flags are in the FlagNode.
+		// Don't eat any multi-flags where all flags are in the FlagProcessor.
 		&ValidatorOption[string]{
 			func(s string) error {
 				if !MultiFlagRegex.MatchString(s) {
@@ -137,18 +137,18 @@ func (fn *flagNode) ListBreaker() *ListBreaker[any] {
 				for j := 1; j < len(s); j++ {
 					shortCode := fmt.Sprintf("-%s", string(s[j]))
 					if _, ok := fn.flagMap[shortCode]; !ok {
-						// This isn't a multi-flag for this FlagNode, so eat the arg.
+						// This isn't a multi-flag for this FlagProcessor, so eat the arg.
 						return nil
 					}
 				}
-				return fmt.Errorf("value %q is a multi-flag argument for the FlagNode", s)
+				return fmt.Errorf("value %q is a multi-flag argument for the FlagProcessor", s)
 			},
 			"",
 		},
 	)
 }
 
-func (fn *flagNode) Complete(input *Input, data *Data) (*Completion, error) {
+func (fn *flagProcessor) Complete(input *Input, data *Data) (*Completion, error) {
 	// unprocessed tracks the flags that have not been processed
 	unprocessed := map[string]FlagInterface{}
 	// available tracks the flags that can still be set (either because they
@@ -236,7 +236,7 @@ func (fn *flagNode) Complete(input *Input, data *Data) (*Completion, error) {
 	return nil, nil
 }
 
-func (fn *flagNode) Execute(input *Input, output Output, data *Data, eData *ExecuteData) error {
+func (fn *flagProcessor) Execute(input *Input, output Output, data *Data, eData *ExecuteData) error {
 	unprocessed := map[string]FlagInterface{}
 	processed := map[string]bool{}
 	for _, f := range fn.flagMap {
@@ -317,7 +317,7 @@ func (fn *flagNode) Execute(input *Input, output Output, data *Data, eData *Exec
 	return nil
 }
 
-func (fn *flagNode) Usage(u *Usage) {
+func (fn *flagProcessor) Usage(u *Usage) {
 	var flags []FlagInterface
 	for k, f := range fn.flagMap {
 		// flagMap contains entries for name and short name, so ensure we only do each one once.
@@ -475,7 +475,7 @@ func (bf *boolFlag[T]) Complete(input *Input, data *Data) (*Completion, error) {
 }
 
 func (bf *boolFlag[T]) Usage(u *Usage) {
-	// Since flag nodes are added at the beginning, the usage statements can be a bit awkward
+	// Since flag processors are added at the beginning, the usage statements can be a bit awkward
 	// Instead add another row for supported flags
 	u.UsageSection.Add(FlagSection, bf.name, bf.desc)
 }

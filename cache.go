@@ -52,7 +52,7 @@ func CacheNode(name string, c CachableCLI, n Node, opts ...CacheOption) Node {
 					data.Set(cachePrefixData, fmt.Sprintf("%s ", strings.Join(used, " ")))
 					return nil
 				}, nil),
-				FlagNode(
+				FlagProcessor(
 					cacheHistoryFlag,
 					cachePrintPrefixFlag,
 				),

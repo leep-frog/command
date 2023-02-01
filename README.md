@@ -51,7 +51,7 @@ There are a couple of ways to get started. Some people love reading through a go
 
 - [Argument Nodes and Processors](./docs/basics/args.md)
 
-- [Flag Nodes and Processors](./building_blocks/flag_nodes_and_processors.md)
+- [Flag Processors](./building_blocks/flag_processors.md)
 
 - [Execution Nodes](./building_blocks/execution_nodes.md)
 

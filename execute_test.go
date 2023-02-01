@@ -1113,7 +1113,7 @@ func TestExecute(t *testing.T) {
 			name: "Flag defaults get set",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					FlagNode(
+					FlagProcessor(
 						Flag("s", 's', testDesc, Default("defStr")),
 						Flag("s2", 'S', testDesc, DefaultFunc(func(d *Data) (string, error) {
 							return "dos", nil
@@ -1147,7 +1147,7 @@ func TestExecute(t *testing.T) {
 			name: "Flag defaults get set",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					FlagNode(
+					FlagProcessor(
 						Flag("s", 's', testDesc, Default("defStr")),
 						Flag("s2", 'S', testDesc, DefaultFunc(func(d *Data) (string, error) {
 							// This flag is set, so this error func shouldn't be run at all,
@@ -2488,7 +2488,7 @@ func TestExecute(t *testing.T) {
 			name: "MenuFlag works",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					FlagNode(
+					FlagProcessor(
 						MenuFlag("sf", 's', testDesc, "abc", "def", "ghi"),
 					),
 				),
@@ -2508,7 +2508,7 @@ func TestExecute(t *testing.T) {
 			name: "MenuFlag works with AddOptions(default)",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					FlagNode(
+					FlagProcessor(
 						MenuFlag("sf", 's', testDesc, "abc", "def", "ghi", "xyz").AddOptions(Default("xyz")),
 					),
 				),
@@ -2521,7 +2521,7 @@ func TestExecute(t *testing.T) {
 			name: "MenuFlag fails if provided is not in list",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					FlagNode(
+					FlagProcessor(
 						MenuFlag("sf", 's', testDesc, "abc", "def", "ghi"),
 					),
 				),
@@ -3825,23 +3825,23 @@ func TestExecute(t *testing.T) {
 				WantErr:    fmt.Errorf("validation for \"iArg\" failed: [Between] value is greater than upper bound (4)"),
 			},
 		},
-		// Flag nodes
+		// Flag processors
 		{
-			name: "empty flag node works",
+			name: "empty flag processor works",
 			etc: &ExecuteTestCase{
-				Node: &SimpleNode{Processor: FlagNode()},
+				Node: &SimpleNode{Processor: FlagProcessor()},
 			},
 		},
 		{
-			name: "flag node allows empty",
+			name: "flag processor allows empty",
 			etc: &ExecuteTestCase{
-				Node: &SimpleNode{Processor: FlagNode(Flag[string]("strFlag", 'f', testDesc))},
+				Node: &SimpleNode{Processor: FlagProcessor(Flag[string]("strFlag", 'f', testDesc))},
 			},
 		},
 		{
-			name: "flag node fails if no argument",
+			name: "flag processor fails if no argument",
 			etc: &ExecuteTestCase{
-				Node:       &SimpleNode{Processor: FlagNode(Flag[string]("strFlag", 'f', testDesc))},
+				Node:       &SimpleNode{Processor: FlagProcessor(Flag[string]("strFlag", 'f', testDesc))},
 				Args:       []string{"--strFlag"},
 				WantStderr: "Argument \"strFlag\" requires at least 1 argument, got 0\n",
 				WantErr:    fmt.Errorf(`Argument "strFlag" requires at least 1 argument, got 0`),
@@ -3853,9 +3853,9 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "flag node parses flag",
+			name: "flag processor parses flag",
 			etc: &ExecuteTestCase{
-				Node: &SimpleNode{Processor: FlagNode(Flag[string]("strFlag", 'f', testDesc))},
+				Node: &SimpleNode{Processor: FlagProcessor(Flag[string]("strFlag", 'f', testDesc))},
 				Args: []string{"--strFlag", "hello"},
 				WantData: &Data{Values: map[string]interface{}{
 					"strFlag": "hello",
@@ -3869,9 +3869,9 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "flag node parses short name flag",
+			name: "flag processor parses short name flag",
 			etc: &ExecuteTestCase{
-				Node: &SimpleNode{Processor: FlagNode(Flag[string]("strFlag", 'f', testDesc))},
+				Node: &SimpleNode{Processor: FlagProcessor(Flag[string]("strFlag", 'f', testDesc))},
 				Args: []string{"-f", "hello"},
 				WantData: &Data{Values: map[string]interface{}{
 					"strFlag": "hello",
@@ -3885,10 +3885,10 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "flag node parses flag in the middle",
+			name: "flag processor parses flag in the middle",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					FlagNode(Flag[string]("strFlag", 'f', testDesc)),
+					FlagProcessor(Flag[string]("strFlag", 'f', testDesc)),
 					ListArg[string]("filler", testDesc, 1, 2),
 				),
 				Args: []string{"un", "--strFlag", "hello", "deux"},
@@ -3907,10 +3907,10 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "flag node parses short name flag",
+			name: "flag processor parses short name flag",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					FlagNode(Flag[string]("strFlag", 'f', testDesc)),
+					FlagProcessor(Flag[string]("strFlag", 'f', testDesc)),
 					ListArg[string]("filler", testDesc, 1, 2),
 				),
 				Args: []string{"uno", "dos", "-f", "hello"},
@@ -3933,7 +3933,7 @@ func TestExecute(t *testing.T) {
 			name: "parses int flag",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					FlagNode(Flag[int]("intFlag", 'f', testDesc)),
+					FlagProcessor(Flag[int]("intFlag", 'f', testDesc)),
 					ListArg[string]("filler", testDesc, 1, 2),
 				),
 				Args: []string{"un", "deux", "-f", "3", "quatre"},
@@ -3956,7 +3956,7 @@ func TestExecute(t *testing.T) {
 			name: "handles invalid int flag value",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					FlagNode(Flag[int]("intFlag", 'f', testDesc)),
+					FlagProcessor(Flag[int]("intFlag", 'f', testDesc)),
 					ListArg[string]("filler", testDesc, 1, 2),
 				),
 				Args: []string{"un", "deux", "-f", "trois", "quatre"},
@@ -3979,7 +3979,7 @@ func TestExecute(t *testing.T) {
 			name: "parses float flag",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					FlagNode(Flag[float64]("floatFlag", 'f', testDesc)),
+					FlagProcessor(Flag[float64]("floatFlag", 'f', testDesc)),
 					ListArg[string]("filler", testDesc, 1, 2),
 				),
 				Args: []string{"--floatFlag", "-1.2", "three"},
@@ -4000,7 +4000,7 @@ func TestExecute(t *testing.T) {
 			name: "handles invalid float flag value",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					FlagNode(Flag[float64]("floatFlag", 'f', testDesc)),
+					FlagProcessor(Flag[float64]("floatFlag", 'f', testDesc)),
 					ListArg[string]("filler", testDesc, 1, 2),
 				),
 				Args: []string{"--floatFlag", "twelve", "eleven"},
@@ -4021,7 +4021,7 @@ func TestExecute(t *testing.T) {
 			name: "bool flag",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					FlagNode(BoolFlag("boolFlag", 'b', testDesc)),
+					FlagProcessor(BoolFlag("boolFlag", 'b', testDesc)),
 					ListArg[string]("filler", testDesc, 1, 2),
 				),
 				Args: []string{"okay", "--boolFlag", "then"},
@@ -4042,7 +4042,7 @@ func TestExecute(t *testing.T) {
 			name: "short bool flag",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					FlagNode(BoolFlag("boolFlag", 'b', testDesc)),
+					FlagProcessor(BoolFlag("boolFlag", 'b', testDesc)),
 					ListArg[string]("filler", testDesc, 1, 2),
 				),
 				Args: []string{"okay", "-b", "then"},
@@ -4064,7 +4064,7 @@ func TestExecute(t *testing.T) {
 			name: "flag list works",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					FlagNode(ListFlag[string]("slFlag", 's', testDesc, 2, 3)),
+					FlagProcessor(ListFlag[string]("slFlag", 's', testDesc, 2, 3)),
 					ListArg[string]("filler", testDesc, 1, 2),
 				),
 				Args: []string{"un", "--slFlag", "hello", "there"},
@@ -4086,7 +4086,7 @@ func TestExecute(t *testing.T) {
 			name: "flag list fails if not enough",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					FlagNode(ListFlag[string]("slFlag", 's', testDesc, 2, 3)),
+					FlagProcessor(ListFlag[string]("slFlag", 's', testDesc, 2, 3)),
 					ListArg[string]("filler", testDesc, 1, 2),
 				),
 				Args: []string{"un", "--slFlag", "hello"},
@@ -4110,7 +4110,7 @@ func TestExecute(t *testing.T) {
 			name: "int list works",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					FlagNode(ListFlag[int]("ilFlag", 'i', testDesc, 2, 3)),
+					FlagProcessor(ListFlag[int]("ilFlag", 'i', testDesc, 2, 3)),
 					ListArg[string]("filler", testDesc, 1, 2),
 				),
 				Args: []string{"un", "-i", "2", "4", "8", "16", "32", "64"},
@@ -4136,7 +4136,7 @@ func TestExecute(t *testing.T) {
 			name: "int list transform failure",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					FlagNode(ListFlag[int]("ilFlag", 'i', testDesc, 2, 3)),
+					FlagProcessor(ListFlag[int]("ilFlag", 'i', testDesc, 2, 3)),
 					ListArg[string]("filler", testDesc, 1, 2),
 				),
 				Args: []string{"un", "-i", "2", "4", "8", "16.0", "32", "64"},
@@ -4162,7 +4162,7 @@ func TestExecute(t *testing.T) {
 			name: "float list works",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					FlagNode(ListFlag[float64]("flFlag", 'f', testDesc, 0, 3)),
+					FlagProcessor(ListFlag[float64]("flFlag", 'f', testDesc, 0, 3)),
 					ListArg[string]("filler", testDesc, 1, 3),
 				),
 				Args: []string{"un", "-f", "2", "-4.4", "0.8", "16.16", "-32", "64"},
@@ -4188,7 +4188,7 @@ func TestExecute(t *testing.T) {
 			name: "float list transform failure",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					FlagNode(ListFlag[float64]("flFlag", 'f', testDesc, 0, 3)),
+					FlagProcessor(ListFlag[float64]("flFlag", 'f', testDesc, 0, 3)),
 					ListArg[string]("filler", testDesc, 1, 2),
 				),
 				Args: []string{"un", "--flFlag", "2", "4", "eight", "16.0", "32", "64"},
@@ -4214,7 +4214,7 @@ func TestExecute(t *testing.T) {
 			name: "flags don't eat other flags",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					FlagNode(
+					FlagProcessor(
 						ListFlag[string]("alpha", 'a', testDesc, 0, UnboundedList),
 						ListFlag[string]("bravo", 'b', testDesc, 0, UnboundedList),
 						ListFlag[string]("charlie", 'c', testDesc, 0, UnboundedList),
@@ -4242,7 +4242,7 @@ func TestExecute(t *testing.T) {
 			name: "flags don't eat other short flags",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					FlagNode(
+					FlagProcessor(
 						ListFlag[string]("alpha", 'a', testDesc, 0, UnboundedList),
 						ListFlag[string]("bravo", 'b', testDesc, 0, UnboundedList),
 						ListFlag[string]("charlie", 'c', testDesc, 0, UnboundedList),
@@ -4270,7 +4270,7 @@ func TestExecute(t *testing.T) {
 			name: "flags don't eat valid multi flags",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					FlagNode(
+					FlagProcessor(
 						ListFlag[string]("alpha", 'a', testDesc, 0, UnboundedList),
 						BoolFlag("Q", 'q', testDesc),
 						BoolFlag("W", 'w', testDesc),
@@ -4300,7 +4300,7 @@ func TestExecute(t *testing.T) {
 			name: "flags eat invalid multi flags",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					FlagNode(
+					FlagProcessor(
 						ListFlag[string]("alpha", 'a', testDesc, 0, UnboundedList),
 						BoolFlag("Q", 'q', testDesc),
 						BoolFlag("W", 'w', testDesc),
@@ -4327,7 +4327,7 @@ func TestExecute(t *testing.T) {
 			name: "processes multiple flags",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					FlagNode(
+					FlagProcessor(
 						ListFlag[float64]("coordinates", 'c', testDesc, 2, 0),
 						BoolFlag("boo", 'o', testDesc),
 						ListFlag[string]("names", 'n', testDesc, 1, 2),
@@ -4368,7 +4368,7 @@ func TestExecute(t *testing.T) {
 			name: "BoolValueFlag works with true value",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					FlagNode(
+					FlagProcessor(
 						BoolValueFlag("light", 'l', testDesc, "hello there"),
 					),
 				),
@@ -4387,7 +4387,7 @@ func TestExecute(t *testing.T) {
 			name: "BoolValueFlag works with false value",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					FlagNode(
+					FlagProcessor(
 						BoolValueFlag("light", 'l', testDesc, "hello there"),
 					),
 				),
@@ -4397,7 +4397,7 @@ func TestExecute(t *testing.T) {
 			name: "BoolValuesFlag works with true value",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					FlagNode(
+					FlagProcessor(
 						BoolValuesFlag("light", 'l', testDesc, "hello there", "general kenobi"),
 					),
 				),
@@ -4416,7 +4416,7 @@ func TestExecute(t *testing.T) {
 			name: "BoolValuesFlag works with false value",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					FlagNode(
+					FlagProcessor(
 						BoolValuesFlag("light", 'l', testDesc, "hello there", "general kenobi"),
 					),
 				),
@@ -4430,7 +4430,7 @@ func TestExecute(t *testing.T) {
 			name: "Multiple bool flags work as a multi-flag",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					FlagNode(
+					FlagProcessor(
 						BoolFlag("everyone", 'e', testDesc),
 						BoolFlag("quick", 'q', testDesc),
 						BoolValuesFlag("run", 'r', testDesc, "hello there", "general kenobi"),
@@ -4456,7 +4456,7 @@ func TestExecute(t *testing.T) {
 			name: "Multi-flag fails if unknown flag",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					FlagNode(
+					FlagProcessor(
 						BoolFlag("everyone", 'e', testDesc),
 						BoolFlag("quick", 'q', testDesc),
 						BoolFlag("run", 'r', testDesc),
@@ -4483,7 +4483,7 @@ func TestExecute(t *testing.T) {
 			name: "Multi-flag fails if uncombinable flag",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					FlagNode(
+					FlagProcessor(
 						BoolFlag("everyone", 'e', testDesc),
 						BoolFlag("quick", 'q', testDesc),
 						BoolFlag("run", 'r', testDesc),
@@ -4511,7 +4511,7 @@ func TestExecute(t *testing.T) {
 			name: "Duplicate flags get caught in multi-flag",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					FlagNode(
+					FlagProcessor(
 						BoolFlag("everyone", 'e', testDesc),
 						BoolFlag("quick", 'q', testDesc),
 						BoolValuesFlag("run", 'r', testDesc, "hello there", "general kenobi"),
@@ -4540,7 +4540,7 @@ func TestExecute(t *testing.T) {
 			name: "Duplicate flags get caught in regular flags",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					FlagNode(
+					FlagProcessor(
 						BoolFlag("everyone", 'e', testDesc),
 						BoolFlag("quick", 'q', testDesc),
 						BoolValuesFlag("run", 'r', testDesc, "hello there", "general kenobi"),
@@ -4567,7 +4567,7 @@ func TestExecute(t *testing.T) {
 			name: "Duplicate flags get caught when multi, then regular flag",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					FlagNode(
+					FlagProcessor(
 						BoolFlag("everyone", 'e', testDesc),
 						BoolFlag("quick", 'q', testDesc),
 						BoolValuesFlag("run", 'r', testDesc, "hello there", "general kenobi"),
@@ -4597,7 +4597,7 @@ func TestExecute(t *testing.T) {
 			name: "Duplicate flags get caught when regular, then multi flag",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					FlagNode(
+					FlagProcessor(
 						BoolFlag("everyone", 'e', testDesc),
 						BoolFlag("quick", 'q', testDesc),
 						BoolValuesFlag("run", 'r', testDesc, "hello there", "general kenobi"),
@@ -4627,7 +4627,7 @@ func TestExecute(t *testing.T) {
 			name: "OptionalFlag sets if default if last argument",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					FlagNode(
+					FlagProcessor(
 						OptionalFlag("of", 'o', testDesc, "dfltValue"),
 					),
 				),
@@ -4646,7 +4646,7 @@ func TestExecute(t *testing.T) {
 			name: "OptionalFlag doesn't eat other flags",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					FlagNode(
+					FlagProcessor(
 						OptionalFlag("of", 'o', testDesc, "dfltValue"),
 						Flag[string]("sf", 's', testDesc),
 					),
@@ -4669,7 +4669,7 @@ func TestExecute(t *testing.T) {
 			name: "OptionalFlag gets set",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					FlagNode(
+					FlagProcessor(
 						OptionalFlag("of", 'o', testDesc, "dfltValue"),
 					),
 				),
@@ -4689,7 +4689,7 @@ func TestExecute(t *testing.T) {
 			name: "OptionalFlag handles error",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					FlagNode(
+					FlagProcessor(
 						OptionalFlag("of", 'o', testDesc, 123),
 					),
 				),
@@ -4709,7 +4709,7 @@ func TestExecute(t *testing.T) {
 			name: "Itemized list flag requires argument",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					FlagNode(
+					FlagProcessor(
 						ItemizedListFlag[string]("ilf", 'i', testDesc),
 					),
 				),
@@ -4727,7 +4727,7 @@ func TestExecute(t *testing.T) {
 			name: "Itemized list flag only takes one argument",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					FlagNode(
+					FlagProcessor(
 						ItemizedListFlag[string]("ilf", 'i', testDesc),
 					),
 					ListArg[string]("sl", testDesc, 0, UnboundedList),
@@ -4750,7 +4750,7 @@ func TestExecute(t *testing.T) {
 			name: "Mixed itemized args",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					FlagNode(
+					FlagProcessor(
 						ItemizedListFlag[string]("ilf", 'i', testDesc),
 					),
 					ListArg[string]("sl", testDesc, 0, UnboundedList),
@@ -4823,7 +4823,7 @@ func TestExecute(t *testing.T) {
 			name: "flags get filtered",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					FlagNode(
+					FlagProcessor(
 						ListFlag[string]("sl", 's', testDesc, 0, UnboundedList),
 					),
 					ArgFilter[string](
@@ -4880,7 +4880,7 @@ func TestExecute(t *testing.T) {
 			name: "flag filter returns error",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					FlagNode(
+					FlagProcessor(
 						ListFlag[string]("sl", 's', testDesc, 0, UnboundedList),
 					),
 					ArgFilter[string](
@@ -6456,7 +6456,7 @@ func (t *tt) Complete(input *Input, data *Data) (*Completion, error) {
 }
 
 func TestComplete(t *testing.T) {
-	breakerFlagNode := FlagNode(
+	breakerFlagProcessor := FlagProcessor(
 		Flag[string]("greeting", 'h', testDesc, SimpleCompleter[string]("hey", "hi")),
 		ListFlag[string]("names", 'n', testDesc, 1, 2, SimpleCompleter[[]string]("ralph", "johnny", "renee")),
 		BoolFlag("good", 'g', testDesc),
@@ -6674,7 +6674,7 @@ func TestComplete(t *testing.T) {
 			name: "bool flag gets set if not last one",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					FlagNode(
+					FlagProcessor(
 						Flag[string]("greeting", 'h', testDesc, SimpleCompleter[string]("hey", "hi")),
 						ListFlag[string]("names", 'n', testDesc, 1, 2, SimpleCompleter[[]string]("ralph", "johnny", "renee")),
 						BoolFlag("good", 'g', testDesc),
@@ -6694,7 +6694,7 @@ func TestComplete(t *testing.T) {
 			name: "arg flag gets set if not last one",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					FlagNode(
+					FlagProcessor(
 						Flag[string]("greeting", 'h', testDesc, SimpleCompleter[string]("hey", "hi")),
 						ListFlag[string]("names", 'n', testDesc, 1, 2, SimpleCompleter[[]string]("ralph", "johnny", "renee")),
 						BoolFlag("good", 'g', testDesc),
@@ -6714,7 +6714,7 @@ func TestComplete(t *testing.T) {
 			name: "list arg flag gets set if not last one",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					FlagNode(
+					FlagProcessor(
 						Flag[string]("greeting", 'h', testDesc, SimpleCompleter[string]("hey", "hi")),
 						ListFlag[string]("names", 'n', testDesc, 1, 2, SimpleCompleter[[]string]("ralph", "johnny", "renee")),
 						BoolFlag("good", 'g', testDesc),
@@ -6734,7 +6734,7 @@ func TestComplete(t *testing.T) {
 			name: "multiple flags get set if not last one",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					FlagNode(
+					FlagProcessor(
 						Flag[string]("greeting", 'h', testDesc, SimpleCompleter[string]("hey", "hi")),
 						ListFlag[string]("names", 'n', testDesc, 1, 2, SimpleCompleter[[]string]("ralph", "johnny", "renee")),
 						BoolFlag("good", 'g', testDesc),
@@ -6756,7 +6756,7 @@ func TestComplete(t *testing.T) {
 			name: "flag name gets completed if single hyphen at end",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					FlagNode(
+					FlagProcessor(
 						Flag[string]("greeting", 'h', testDesc, SimpleCompleter[string]("hey", "hi")),
 						ListFlag[string]("names", 'n', testDesc, 1, 2, SimpleCompleter[[]string]("ralph", "johnny", "renee")),
 						BoolFlag("good", 'g', testDesc),
@@ -6771,7 +6771,7 @@ func TestComplete(t *testing.T) {
 			name: "flag name gets completed if double hyphen at end",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					FlagNode(
+					FlagProcessor(
 						Flag[string]("greeting", 'h', testDesc, SimpleCompleter[string]("hey", "hi")),
 						ListFlag[string]("names", 'n', testDesc, 1, 2, SimpleCompleter[[]string]("ralph", "johnny", "renee")),
 						BoolFlag("good", 'g', testDesc),
@@ -6786,7 +6786,7 @@ func TestComplete(t *testing.T) {
 			name: "flag name gets completed if it's the only arg",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					FlagNode(
+					FlagProcessor(
 						Flag[string]("greeting", 'h', testDesc, SimpleCompleter[string]("hey", "hi")),
 						ListFlag[string]("names", 'n', testDesc, 1, 2, SimpleCompleter[[]string]("ralph", "johnny", "renee")),
 						BoolFlag("good", 'g', testDesc),
@@ -6801,7 +6801,7 @@ func TestComplete(t *testing.T) {
 			name: "partial flag name gets completed",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					FlagNode(
+					FlagProcessor(
 						Flag[string]("greeting", 'h', testDesc, SimpleCompleter[string]("hey", "hi")),
 						ListFlag[string]("names", 'n', testDesc, 1, 2, SimpleCompleter[[]string]("ralph", "johnny", "renee")),
 						BoolFlag("good", 'g', testDesc),
@@ -6816,7 +6816,7 @@ func TestComplete(t *testing.T) {
 			name: "full flag name gets completed",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					FlagNode(
+					FlagProcessor(
 						Flag[string]("greeting", 'h', testDesc, SimpleCompleter[string]("hey", "hi")),
 						ListFlag[string]("names", 'n', testDesc, 1, 2, SimpleCompleter[[]string]("ralph", "johnny", "renee")),
 						BoolFlag("good", 'g', testDesc),
@@ -6832,7 +6832,7 @@ func TestComplete(t *testing.T) {
 			name: "completes for single flag",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					FlagNode(
+					FlagProcessor(
 						Flag[string]("greeting", 'h', testDesc, SimpleCompleter[string]("hey", "hi")),
 						ListFlag[string]("names", 'n', testDesc, 1, 2, SimpleCompleter[[]string]("ralph", "johnny", "renee")),
 						BoolFlag("good", 'g', testDesc),
@@ -6850,7 +6850,7 @@ func TestComplete(t *testing.T) {
 			name: "completes for single short flag",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					FlagNode(
+					FlagProcessor(
 						Flag[string]("greeting", 'h', testDesc, SimpleCompleter[string]("hey", "hi")),
 						ListFlag[string]("names", 'n', testDesc, 1, 2, SimpleCompleter[[]string]("ralph", "johnny", "renee")),
 						BoolFlag("good", 'g', testDesc),
@@ -6868,7 +6868,7 @@ func TestComplete(t *testing.T) {
 			name: "completes for list flag",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					FlagNode(
+					FlagProcessor(
 						Flag[string]("greeting", 'h', testDesc, SimpleCompleter[string]("hey", "hi")),
 						ListFlag[string]("names", 'n', testDesc, 1, 2, SimpleCompleter[[]string]("ralph", "johnny", "renee")),
 						BoolFlag("good", 'g', testDesc),
@@ -6887,7 +6887,7 @@ func TestComplete(t *testing.T) {
 			name: "completes distinct secondary for list flag",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					FlagNode(
+					FlagProcessor(
 						Flag[string]("greeting", 'h', testDesc, SimpleCompleter[string]("hey", "hi")),
 						ListFlag[string]("names", 'n', testDesc, 1, 2, SimpleDistinctCompleter[[]string]("ralph", "johnny", "renee")),
 						BoolFlag("good", 'g', testDesc),
@@ -6906,7 +6906,7 @@ func TestComplete(t *testing.T) {
 			name: "completes last flag",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					FlagNode(
+					FlagProcessor(
 						Flag[string]("greeting", 'h', testDesc, SimpleCompleter[string]("hey", "hi")),
 						ListFlag[string]("names", 'n', testDesc, 1, 2, SimpleDistinctCompleter[[]string]("ralph", "johnny", "renee")),
 						BoolFlag("good", 'g', testDesc),
@@ -6926,7 +6926,7 @@ func TestComplete(t *testing.T) {
 			name: "completes arg if flag arg isn't at the end",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					FlagNode(
+					FlagProcessor(
 						Flag[string]("greeting", 'h', testDesc, SimpleCompleter[string]("hey", "hi")),
 						ListFlag[string]("names", 'n', testDesc, 1, 2, SimpleDistinctCompleter[[]string]("ralph", "johnny", "renee")),
 						BoolFlag("good", 'g', testDesc),
@@ -6948,7 +6948,7 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Args: "cmd -qwer",
 				Node: SerialNodes(
-					FlagNode(
+					FlagProcessor(
 						BoolFlag("everyone", 'e', testDesc),
 						BoolFlag("quick", 'q', testDesc),
 						BoolFlag("run", 'r', testDesc),
@@ -6963,7 +6963,7 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Args: "cmd -qwer ",
 				Node: SerialNodes(
-					FlagNode(
+					FlagProcessor(
 						BoolFlag("everyone", 'e', testDesc),
 						BoolFlag("quick", 'q', testDesc),
 						BoolFlag("run", 'r', testDesc),
@@ -6987,7 +6987,7 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Args: "cmd -qwertyuiop ",
 				Node: SerialNodes(
-					FlagNode(
+					FlagProcessor(
 						BoolFlag("everyone", 'e', testDesc),
 						BoolFlag("quick", 'q', testDesc),
 						BoolFlag("run", 'r', testDesc),
@@ -7012,7 +7012,7 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Args: "cmd -qwz ",
 				Node: SerialNodes(
-					FlagNode(
+					FlagProcessor(
 						BoolFlag("everyone", 'e', testDesc),
 						BoolFlag("quick", 'q', testDesc),
 						BoolFlag("run", 'r', testDesc),
@@ -7036,7 +7036,7 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Args: "cmd -z firstZ -z ",
 				Node: SerialNodes(
-					FlagNode(
+					FlagProcessor(
 						BoolFlag("everyone", 'e', testDesc),
 						BoolFlag("quick", 'q', testDesc),
 						BoolFlag("run", 'r', testDesc),
@@ -7056,7 +7056,7 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Args: "cmd --quick -qwrqw --where -z firstZ -z ",
 				Node: SerialNodes(
-					FlagNode(
+					FlagProcessor(
 						BoolFlag("everyone", 'e', testDesc),
 						BoolFlag("quick", 'q', testDesc),
 						BoolFlag("run", 'r', testDesc),
@@ -7079,7 +7079,7 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Args: "cmd -z firstZ --everyone --ilf heyo --run -",
 				Node: SerialNodes(
-					FlagNode(
+					FlagProcessor(
 						BoolFlag("everyone", 'e', testDesc),
 						BoolFlag("quick", 'q', testDesc),
 						BoolFlag("run", 'r', testDesc),
@@ -7108,7 +7108,7 @@ func TestComplete(t *testing.T) {
 			name: "OptionalFlag gets completed",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					FlagNode(
+					FlagProcessor(
 						OptionalFlag[string]("of", 'o', testDesc, "dfltValue", SimpleDistinctCompleter[string]("abc", "def", "ghi")),
 					),
 				),
@@ -7120,7 +7120,7 @@ func TestComplete(t *testing.T) {
 			name: "OptionalFlag arg gets completed",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					FlagNode(
+					FlagProcessor(
 						OptionalFlag[string]("of", 'o', testDesc, "dfltValue", SimpleDistinctCompleter[string]("abc", "def", "ghi")),
 					),
 				),
@@ -7137,7 +7137,7 @@ func TestComplete(t *testing.T) {
 			// to know if the value is for this flag or not.
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					FlagNode(
+					FlagProcessor(
 						OptionalFlag[string]("of", 'o', testDesc, "dfltValue", SimpleDistinctCompleter[string]("abc", "def", "ghi")),
 						BoolFlag("bf", 'b', testDesc),
 					),
@@ -7153,7 +7153,7 @@ func TestComplete(t *testing.T) {
 			name: "Itemized list flag gets completed",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					FlagNode(
+					FlagProcessor(
 						ItemizedListFlag[string]("ilf", 'i', testDesc, SimpleDistinctCompleter[[]string]("abc", "def", "ghi")),
 					),
 				),
@@ -7165,7 +7165,7 @@ func TestComplete(t *testing.T) {
 			name: "Completes itemized list flag value",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					FlagNode(
+					FlagProcessor(
 						ItemizedListFlag[string]("ilf", 'i', testDesc, SimpleDistinctCompleter[[]string]("abc", "def", "ghi")),
 					),
 				),
@@ -7180,7 +7180,7 @@ func TestComplete(t *testing.T) {
 			name: "Completes later itemized list flag value",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					FlagNode(
+					FlagProcessor(
 						ItemizedListFlag[string]("ilf", 'i', testDesc, SimpleDistinctCompleter[[]string]("abc", "def", "ghi")),
 					),
 				),
@@ -7195,7 +7195,7 @@ func TestComplete(t *testing.T) {
 			name: "Completes distinct itemized list flag value",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					FlagNode(
+					FlagProcessor(
 						ItemizedListFlag[string]("ilf", 'i', testDesc, SimpleDistinctCompleter[[]string]("abc", "def", "ghi")),
 					),
 				),
@@ -7208,11 +7208,11 @@ func TestComplete(t *testing.T) {
 		},
 		// Flag completion with list breaker
 		{
-			name: "completes flag argument when flag node's list breaker is provided as arg option",
+			name: "completes flag argument when flag processor's list breaker is provided as arg option",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					ListArg[string]("lst", testDesc, 0, UnboundedList, ConvertListBreaker[[]string](breakerFlagNode.ListBreaker())),
-					breakerFlagNode,
+					ListArg[string]("lst", testDesc, 0, UnboundedList, ConvertListBreaker[[]string](breakerFlagProcessor.ListBreaker())),
+					breakerFlagProcessor,
 				),
 				Args: "cmd v1 v2 other --names ",
 				Want: []string{"johnny", "ralph", "renee"},
@@ -7226,8 +7226,8 @@ func TestComplete(t *testing.T) {
 			name: "second flag is recognized and completed",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					ListArg[string]("lst", testDesc, 0, UnboundedList, ConvertListBreaker[[]string](breakerFlagNode.ListBreaker())),
-					breakerFlagNode,
+					ListArg[string]("lst", testDesc, 0, UnboundedList, ConvertListBreaker[[]string](breakerFlagProcessor.ListBreaker())),
+					breakerFlagProcessor,
 				),
 				Args: "cmd v1 v2 other --names un --greeting ",
 				Want: []string{"hey", "hi"},
@@ -7899,7 +7899,7 @@ func TestComplete(t *testing.T) {
 			name: "MenuFlag completes choices",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					FlagNode(
+					FlagProcessor(
 						MenuFlag("sf", 's', testDesc, "abc", "def", "ghi"),
 					),
 				),
@@ -7914,7 +7914,7 @@ func TestComplete(t *testing.T) {
 			name: "MenuArg completes partial",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					FlagNode(
+					FlagProcessor(
 						MenuFlag("sf", 's', testDesc, "abc", "def", "ghi"),
 					),
 				),
@@ -7929,7 +7929,7 @@ func TestComplete(t *testing.T) {
 			name: "MenuFlag completes none",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					FlagNode(
+					FlagProcessor(
 						MenuFlag("sf", 's', testDesc, "abc", "def", "ghi"),
 					),
 				),
@@ -8899,7 +8899,7 @@ func TestPanics(t *testing.T) {
 		{
 			name: "Flag with improper short name panics",
 			f: func() {
-				FlagNode(
+				FlagProcessor(
 					Flag[string]("five", '5', testDesc),
 				)
 			},

@@ -55,7 +55,7 @@ func (mfc *myFirstCommand) Node() command.Node {
 		// Description adds a description field to your commands usage doc.
 		command.Description("My very first command!"),
 		// This node defines all of the flags for your command.
-		command.FlagNode(
+		command.FlagProcessor(
 			formalFlag,
 		),
 		nameArg,
