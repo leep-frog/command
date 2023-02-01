@@ -7217,7 +7217,7 @@ func TestComplete(t *testing.T) {
 				Args: "cmd v1 v2 other --names ",
 				Want: []string{"johnny", "ralph", "renee"},
 				WantData: &Data{Values: map[string]interface{}{
-					"lst": []string{"v1", "v2", "other"},
+					"lst":   []string{"v1", "v2", "other"},
 					"names": []string{""},
 				}},
 			},
@@ -7232,8 +7232,8 @@ func TestComplete(t *testing.T) {
 				Args: "cmd v1 v2 other --names un --greeting ",
 				Want: []string{"hey", "hi"},
 				WantData: &Data{Values: map[string]interface{}{
-					"lst": []string{"v1", "v2", "other"},
-					"names": []string{"un"},
+					"lst":      []string{"v1", "v2", "other"},
+					"names":    []string{"un"},
 					"greeting": "",
 				}},
 			},
