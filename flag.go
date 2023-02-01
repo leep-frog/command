@@ -91,7 +91,7 @@ func flagShortName(f FlagInterface) string {
 
 // FlagNode returns a node that iterates over the remaining command line
 // arguments and processes any flags that are present.
-func FlagNode(fs ...FlagInterface) Processor {
+func FlagNode(fs ...FlagInterface) *flagNode {
 	m := map[string]FlagInterface{}
 	for _, f := range fs {
 		// We explicitly don't check for duplicate keys to give more freedom to users
@@ -111,8 +111,13 @@ type flagNode struct {
 	flagMap map[string]FlagInterface
 }
 
-func (fn *flagNode) flagBreaker() InputValidator {
-	return ListUntil[string](
+// ListBreaker returns a `ListBreaker` that breaks a list at any
+// string that would be considered a flag (short/full flag name, multi-flag).
+// This is particularly useful when you need to define a `FlagNode` after
+// positional argument list nodes for use in completion logic. For example:
+// `command.SerialNodes(unboundedListArg.AddOptions(fn.ListBreaker()), fn)`
+func (fn *flagNode) ListBreaker() *ListBreaker[any] {
+	return ListUntil[any](
 		// Don't eat any full flags (e.g. --my-flag)
 		&ValidatorOption[string]{
 			func(s string) error {
@@ -210,7 +215,7 @@ func (fn *flagNode) Complete(input *Input, data *Data) (*Completion, error) {
 			input.offset = i
 			// Remove flag argument (e.g. --flagName).
 			input.Pop()
-			input.pushValidators(fn.flagBreaker())
+			input.pushValidators(fn.ListBreaker())
 			c, err := processOrComplete(f.Processor(), input, data)
 			input.popValidators(1)
 			input.offset = 0
@@ -285,7 +290,7 @@ func (fn *flagNode) Execute(input *Input, output Output, data *Data, eData *Exec
 			input.offset = i
 			// Remove flag argument (e.g. --flagName).
 			input.Pop()
-			input.pushValidators(fn.flagBreaker())
+			input.pushValidators(fn.ListBreaker())
 			err := processOrExecute(f.Processor(), input, output, data, eData)
 			input.popValidators(1)
 			input.offset = 0

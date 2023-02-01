@@ -6456,6 +6456,11 @@ func (t *tt) Complete(input *Input, data *Data) (*Completion, error) {
 }
 
 func TestComplete(t *testing.T) {
+	breakerFlagNode := FlagNode(
+		Flag[string]("greeting", 'h', testDesc, SimpleCompleter[string]("hey", "hi")),
+		ListFlag[string]("names", 'n', testDesc, 1, 2, SimpleCompleter[[]string]("ralph", "johnny", "renee")),
+		BoolFlag("good", 'g', testDesc),
+	)
 	for _, test := range []struct {
 		name           string
 		ctc            *CompleteTestCase
@@ -7199,6 +7204,38 @@ func TestComplete(t *testing.T) {
 					"ilf": []string{"def", ""},
 				}},
 				Want: []string{"abc", "ghi"},
+			},
+		},
+		// Flag completion with list breaker
+		{
+			name: "completes flag argument when flag node's list breaker is provided as arg option",
+			ctc: &CompleteTestCase{
+				Node: SerialNodes(
+					ListArg[string]("lst", testDesc, 0, UnboundedList, ConvertListBreaker[[]string](breakerFlagNode.ListBreaker())),
+					breakerFlagNode,
+				),
+				Args: "cmd v1 v2 other --names ",
+				Want: []string{"johnny", "ralph", "renee"},
+				WantData: &Data{Values: map[string]interface{}{
+					"lst": []string{"v1", "v2", "other"},
+					"names": []string{""},
+				}},
+			},
+		},
+		{
+			name: "second flag is recognized and completed",
+			ctc: &CompleteTestCase{
+				Node: SerialNodes(
+					ListArg[string]("lst", testDesc, 0, UnboundedList, ConvertListBreaker[[]string](breakerFlagNode.ListBreaker())),
+					breakerFlagNode,
+				),
+				Args: "cmd v1 v2 other --names un --greeting ",
+				Want: []string{"hey", "hi"},
+				WantData: &Data{Values: map[string]interface{}{
+					"lst": []string{"v1", "v2", "other"},
+					"names": []string{"un"},
+					"greeting": "",
+				}},
 			},
 		},
 		// ArgFilter tests.

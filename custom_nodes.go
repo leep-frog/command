@@ -514,6 +514,12 @@ func (lb *ListBreaker[T]) modifyArgOpt(ao *argOpt[T]) {
 	ao.breakers = append(ao.breakers, lb)
 }
 
+// ConvertListBreaker converts a `ListBreaker` for an arbitrary type
+// into a `ListBreaker` for the provided generic type `T`.
+func ConvertListBreaker[T any](lb *ListBreaker[any]) *ListBreaker[T] {
+	return &ListBreaker[T]{lb.validators, lb.discard, lb.u}
+}
+
 // Validators returns the `ListBreaker`'s validators.
 func (lb *ListBreaker[T]) Validators() []*ValidatorOption[string] {
 	return lb.validators
