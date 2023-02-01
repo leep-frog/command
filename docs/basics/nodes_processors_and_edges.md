@@ -28,9 +28,9 @@ func SerialGraph() command.Node {
     firstNameArg,
     lastNameArg,
     excArg,
-    command.ExecutorNode(func(o command.Output, d *command.Data) {
+    &command.ExecutorProcessor{func(o command.Output, d *command.Data) {
       o.Stdoutf("Hello, %s %s%s\n", firstNameArg.Get(d), lastNameArg.Get(d), strings.Repeat("!", excArg.Get(d)))
-    })
+    }}
   )
 }
 ```

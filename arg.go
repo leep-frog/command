@@ -332,27 +332,27 @@ func (an *Argument[T]) complete(sl []*string, enough bool, input *Input, data *D
 
 // Arg creates an argument node that requires exactly one input.
 func Arg[T any](name, desc string, opts ...ArgOpt[T]) *Argument[T] {
-	return listNode(name, desc, 1, 0, opts...)
+	return listArgument(name, desc, 1, 0, opts...)
 }
 
 // OptionalArg creates an argument node that accepts zero or one input arguments.
 func OptionalArg[T any](name, desc string, opts ...ArgOpt[T]) *Argument[T] {
-	return listNode(name, desc, 0, 1, opts...)
+	return listArgument(name, desc, 0, 1, opts...)
 }
 
 // ListArg creates a list argument that requires at least `minN` arguments and
 // at most `minN`+`optionalN` arguments. Use UnboundedList for `optionalN` to
 // allow an unlimited number of arguments.
 func ListArg[T any](name, desc string, minN, optionalN int, opts ...ArgOpt[[]T]) *Argument[[]T] {
-	return listNode(name, desc, minN, optionalN, opts...)
+	return listArgument(name, desc, minN, optionalN, opts...)
 }
 
 // BoolArg creates a boolean argument.
 func BoolArg(name, desc string) *Argument[bool] {
-	return listNode[bool](name, desc, 1, 0, BoolCompleter())
+	return listArgument[bool](name, desc, 1, 0, BoolCompleter())
 }
 
-func listNode[T any](name, desc string, minN, optionalN int, opts ...ArgOpt[T]) *Argument[T] {
+func listArgument[T any](name, desc string, minN, optionalN int, opts ...ArgOpt[T]) *Argument[T] {
 	return &Argument[T]{
 		name:      name,
 		desc:      desc,
