@@ -195,7 +195,7 @@ func RunArgumentCompleter[T any](c Completer[T], rawValue string, value T, data 
 		return nil, err
 	}
 
-	return RunArgumentCompletion[T](completion, rawValue, value, data)
+	return RunArgumentCompletion(completion, rawValue, value, data)
 }
 
 // RunArgumentCompletion generates a `Completion` object from the provided
