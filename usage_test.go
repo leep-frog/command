@@ -451,7 +451,7 @@ func TestUsage(t *testing.T) {
 		{
 			name: "NodeRepeater usage works for finite optional",
 			utc: &UsageTestCase{
-				Node: SerialNodes(sampleRepeaterNode(2, 1)),
+				Node: SerialNodes(sampleRepeaterProcessor(2, 1)),
 				WantString: []string{
 					"KEY VALUE KEY VALUE { KEY VALUE }",
 					"",
@@ -464,7 +464,7 @@ func TestUsage(t *testing.T) {
 		{
 			name: "NodeRepeater usage works for no optional",
 			utc: &UsageTestCase{
-				Node: SerialNodes(sampleRepeaterNode(2, 0)),
+				Node: SerialNodes(sampleRepeaterProcessor(2, 0)),
 				WantString: []string{
 					"KEY VALUE KEY VALUE",
 					"",
@@ -477,7 +477,7 @@ func TestUsage(t *testing.T) {
 		{
 			name: "NodeRepeater usage works for no required",
 			utc: &UsageTestCase{
-				Node: SerialNodes(sampleRepeaterNode(0, 1)),
+				Node: SerialNodes(sampleRepeaterProcessor(0, 1)),
 				WantString: []string{
 					"{ KEY VALUE }",
 					"",
@@ -490,7 +490,7 @@ func TestUsage(t *testing.T) {
 		{
 			name: "NodeRepeater usage works for unbounded",
 			utc: &UsageTestCase{
-				Node: SerialNodes(sampleRepeaterNode(3, UnboundedList)),
+				Node: SerialNodes(sampleRepeaterProcessor(3, UnboundedList)),
 				WantString: []string{
 					"KEY VALUE KEY VALUE KEY VALUE { KEY VALUE } ...",
 					"",
@@ -520,11 +520,11 @@ func TestUsage(t *testing.T) {
 				},
 			},
 		},
-		// StringListListNode
+		// StringListListProcessor
 		{
-			name: "StringListListNode",
+			name: "StringListListProcessor",
 			utc: &UsageTestCase{
-				Node: SerialNodes(StringListListNode("SLL", "sl desc", ";", 1, 2)),
+				Node: SerialNodes(StringListListProcessor("SLL", "sl desc", ";", 1, 2)),
 				WantString: []string{
 					"[ SLL ... ] ; { [ SLL ... ] ; [ SLL ... ] ; }",
 					"",
@@ -537,9 +537,9 @@ func TestUsage(t *testing.T) {
 			},
 		},
 		{
-			name: "unbounded StringListListNode",
+			name: "unbounded StringListListProcessor",
 			utc: &UsageTestCase{
-				Node: SerialNodes(StringListListNode("SLL", "sl desc", ";", 1, UnboundedList)),
+				Node: SerialNodes(StringListListProcessor("SLL", "sl desc", ";", 1, UnboundedList)),
 				WantString: []string{
 					"[ SLL ... ] ; { [ SLL ... ] ; } ...",
 					"",

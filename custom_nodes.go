@@ -30,14 +30,17 @@ func (se *SimpleEdge) UsageNext() Node {
 	return se.n
 }
 
-// TODO: SerialProcessors
-// SerialNodes returns a graph that iterates serially over the provided `Processors`.
-func SerialNodes(p Processor, ps ...Processor) Node {
+// SerialNodes returns a graph that iterates serially over nodes with the provided `Processor` objects.
+func SerialNodes(ps ...Processor) Node {
+	if len(ps) == 0 {
+		return &SimpleNode{}
+	}
+
 	root := &SimpleNode{
-		Processor: p,
+		Processor: ps[0],
 	}
 	n := root
-	for _, newP := range ps {
+	for _, newP := range ps[1:] {
 		newN := &SimpleNode{
 			Processor: newP,
 		}
@@ -267,7 +270,7 @@ type DataValue[T any] interface {
 	Set(T, *Data)
 }
 
-// ArgFilter filters out elements in an `ArgNode` or `Flag` slice.
+// ArgFilter filters out elements in an `Argument` or `Flag` slice.
 func ArgFilter[T any](arg DataValue[[]T], f func(T, *Data) (bool, error)) Processor {
 	filterFunc := func(d *Data) error {
 		if !arg.Has(d) {
@@ -441,7 +444,7 @@ func MenuFlag[T comparable](name string, shortName rune, desc string, choices ..
 }
 
 // MenuArg returns an `Arg` that is required to be one of the provided choices.
-func MenuArg[T comparable](name, desc string, choices ...T) *ArgNode[T] {
+func MenuArg[T comparable](name, desc string, choices ...T) *Argument[T] {
 	var strChoices []string
 	op := getOperator[T]()
 	for _, c := range choices {
@@ -538,8 +541,8 @@ func (lb *ListBreaker[T]) Usage(u *Usage) {
 	}
 }
 
-// StringListListNode parses a two-dimensional slice of strings, with each slice being separated by `breakSymbol`
-func StringListListNode(name, desc, breakSymbol string, minN, optionalN int, opts ...ArgOpt[[]string]) Processor {
+// StringListListProcessor parses a two-dimensional slice of strings, with each slice being separated by `breakSymbol`
+func StringListListProcessor(name, desc, breakSymbol string, minN, optionalN int, opts ...ArgOpt[[]string]) Processor {
 	n := &SimpleNode{
 		Processor: ListArg(name, desc, 0, UnboundedList,
 			append(opts,
@@ -578,17 +581,17 @@ func (ea *executableAppender) Complete(*Input, *Data) (*Completion, error) {
 
 func (ea *executableAppender) Usage(*Usage) {}
 
-// SimpleExecutableNode returns a `Processor` that adds to the command's `Executable`.
-func SimpleExecutableNode(sl ...string) Processor {
-	return ExecutableNode(func(_ Output, d *Data) ([]string, error) { return sl, nil })
+// SimpleExecutableProcessor returns a `Processor` that adds to the command's `Executable`.
+func SimpleExecutableProcessor(sl ...string) Processor {
+	return ExecutableProcessor(func(_ Output, d *Data) ([]string, error) { return sl, nil })
 }
 
-// ExecutableNode returns a `Processor` that adds to the command's `Executable`.
+// ExecutableProcessor returns a `Processor` that adds to the command's `Executable`.
 // Below are some tips when writing bash outputs for this:
 // 1. Be sure to initialize variables with `local` to avoid overriding variables used in
 // sourcerer scripts.
 // 2. Use `return` rather than `exit` when terminating a session early.
-func ExecutableNode(f func(Output, *Data) ([]string, error)) Processor {
+func ExecutableProcessor(f func(Output, *Data) ([]string, error)) Processor {
 	return &executableAppender{f}
 }
 
@@ -689,12 +692,12 @@ func StubGetwdProcessor(t *testing.T, wd string, err error) {
 }
 
 // MapArg returns a `Processor` that converts an input key into it's value.
-func MapArg[K constraints.Ordered, V any](name, desc string, m map[K]V, allowMissing bool) *MapArgNode[K, V] {
+func MapArg[K constraints.Ordered, V any](name, desc string, m map[K]V, allowMissing bool) *MapArgument[K, V] {
 	var keys []string
 	for _, k := range maps.Keys(m) {
 		keys = append(keys, fmt.Sprintf("%v", k))
 	}
-	ma := &MapArgNode[K, V]{}
+	ma := &MapArgument[K, V]{}
 	opts := []ArgOpt[K]{
 		SimpleCompleter[K](keys...),
 		&CustomSetter[K]{F: func(key K, d *Data) {
@@ -714,27 +717,27 @@ func MapArg[K constraints.Ordered, V any](name, desc string, m map[K]V, allowMis
 			"MapArg",
 		})
 	}
-	ma.ArgNode = Arg(name, desc, opts...)
+	ma.Argument = Arg(name, desc, opts...)
 	return ma
 }
 
-type MapArgNode[K constraints.Ordered, V any] struct {
-	*ArgNode[K]
+type MapArgument[K constraints.Ordered, V any] struct {
+	*Argument[K]
 	key K
 }
 
 // Get overrides the Arg.Get function to return V (rather than type K).
-func (man *MapArgNode[K, V]) Get(d *Data) V {
+func (man *MapArgument[K, V]) Get(d *Data) V {
 	return GetData[V](d, man.name)
 }
 
 // GetKey returns the key that was set by the am
-func (man *MapArgNode[K, V]) GetKey() K {
+func (man *MapArgument[K, V]) GetKey() K {
 	return man.key
 }
 
 // GetOrDefault overrides the Arg.GetOrDefault function to return V (rather than type K).
-func (man *MapArgNode[K, V]) GetOrDefault(d *Data, dflt V) V {
+func (man *MapArgument[K, V]) GetOrDefault(d *Data, dflt V) V {
 	if d.Has(man.name) {
 		return GetData[V](d, man.name)
 	}

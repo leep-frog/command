@@ -521,7 +521,7 @@ func getAutofillLetters(laFile string, suggestions []string) (string, bool) {
 }
 
 // FileNode creates an `Arg` node for a file object.
-func FileNode(argName, desc string, opts ...ArgOpt[string]) *ArgNode[string] {
+func FileNode(argName, desc string, opts ...ArgOpt[string]) *Argument[string] {
 
 	// Defaults must go first so they can be overriden by provided opts
 	// For example, the last `Completer` opt in the slice will be the one
@@ -534,7 +534,7 @@ func FileNode(argName, desc string, opts ...ArgOpt[string]) *ArgNode[string] {
 }
 
 // FileListNode creates an `ArgList` node for file objects.
-func FileListNode(argName, desc string, minN, optionalN int, opts ...ArgOpt[[]string]) *ArgNode[[]string] {
+func FileListNode(argName, desc string, minN, optionalN int, opts ...ArgOpt[[]string]) *Argument[[]string] {
 	opts = append(opts,
 		&FileCompleter[[]string]{},
 		TransformerList(FileTransformer()),

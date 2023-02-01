@@ -47,7 +47,7 @@ func (*UpdateLeepPackageCommand) Node() command.Node {
 	return command.SerialNodes(
 		command.Description("gg updates go packages from the github.com/leep-frog repository"),
 		packageArg,
-		command.ExecutableNode(func(o command.Output, d *command.Data) ([]string, error) {
+		command.ExecutableProcessor(func(o command.Output, d *command.Data) ([]string, error) {
 			var r []string
 			for _, p := range packageArg.Get(d) {
 				r = append(r,
@@ -77,7 +77,7 @@ func (*UsageCommand) Node() command.Node {
 	return command.SerialNodes(
 		command.Description("mancli prints out usage info for any leep-frog generated CLI"),
 		usageCLIArg,
-		command.ExecutableNode(func(o command.Output, d *command.Data) ([]string, error) {
+		command.ExecutableProcessor(func(o command.Output, d *command.Data) ([]string, error) {
 			cli := usageCLIArg.Get(d)
 			return []string{
 				// Extract the custom execute function so that this function
@@ -112,7 +112,7 @@ func (*AliaserCommand) Node() command.Node {
 		aliasArg,
 		aliasCLIArg,
 		aliasPTArg,
-		command.ExecutableNode(func(_ command.Output, d *command.Data) ([]string, error) {
+		command.ExecutableProcessor(func(_ command.Output, d *command.Data) ([]string, error) {
 			aliaser := sourcerer.NewAliaser(aliasArg.Get(d), aliasCLIArg.Get(d), aliasPTArg.Get(d)...)
 			fo := command.NewFakeOutput()
 			sourcerer.AliasSourcery(fo, aliaser)
@@ -140,7 +140,7 @@ func (*SourcererCommand) Node() command.Node {
 	return command.SerialNodes(
 		sourcererDirArg,
 		sourcererSuffixArg,
-		command.ExecutableNode(func(_ command.Output, d *command.Data) ([]string, error) {
+		command.ExecutableProcessor(func(_ command.Output, d *command.Data) ([]string, error) {
 			return []string{
 				"pushd . > /dev/null",
 				fmt.Sprintf("cd %q", sourcererDirArg.Get(d)),

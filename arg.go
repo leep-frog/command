@@ -6,9 +6,9 @@ import (
 	"golang.org/x/exp/slices"
 )
 
-// ArgNode is a type that implements `Processor`. It can be
+// Argument is a type that implements `Processor`. It can be
 // created via `Arg[T]` and `ListArg[T]` functions.
-type ArgNode[T any] struct {
+type Argument[T any] struct {
 	name      string
 	desc      string
 	opt       *argOpt[T]
@@ -18,10 +18,10 @@ type ArgNode[T any] struct {
 	flag      bool
 }
 
-// AddOptions adds options to an `ArgNode`. Although chaining isn't conventional
+// AddOptions adds options to an `Argument`. Although chaining isn't conventional
 // in go, it is done here because args are usually declared as package-level
 // variables.
-func (an *ArgNode[T]) AddOptions(opts ...ArgOpt[T]) *ArgNode[T] {
+func (an *Argument[T]) AddOptions(opts ...ArgOpt[T]) *Argument[T] {
 	for _, o := range opts {
 		o.modifyArgOpt(an.opt)
 	}
@@ -29,26 +29,26 @@ func (an *ArgNode[T]) AddOptions(opts ...ArgOpt[T]) *ArgNode[T] {
 }
 
 // Name returns the name of the argument.
-func (an *ArgNode[T]) Name() string {
+func (an *Argument[T]) Name() string {
 	return an.name
 }
 
 // Desc returns the description of the argument.
-func (an *ArgNode[T]) Desc() string {
+func (an *Argument[T]) Desc() string {
 	return an.desc
 }
 
 // Get fetches the arguments value from the `Data` object.
-func (an *ArgNode[T]) Get(data *Data) T {
+func (an *Argument[T]) Get(data *Data) T {
 	return GetData[T](data, an.name)
 }
 
-func (an *ArgNode[T]) Has(data *Data) bool {
+func (an *Argument[T]) Has(data *Data) bool {
 	return data.Has(an.name)
 }
 
 // GetOrDefault fetches the arguments value from the `Data` object.
-func (an *ArgNode[T]) GetOrDefault(data *Data, dflt T) T {
+func (an *Argument[T]) GetOrDefault(data *Data, dflt T) T {
 	if data.Has(an.name) {
 		return GetData[T](data, an.name)
 	}
@@ -56,7 +56,7 @@ func (an *ArgNode[T]) GetOrDefault(data *Data, dflt T) T {
 }
 
 // Set sets the argument key in the given `Data` object.
-func (an *ArgNode[T]) Set(v T, data *Data) {
+func (an *Argument[T]) Set(v T, data *Data) {
 	if an.opt != nil && an.opt.customSet != nil && an.opt.customSet.F != nil {
 		an.opt.customSet.F(v, data)
 	} else {
@@ -65,7 +65,7 @@ func (an *ArgNode[T]) Set(v T, data *Data) {
 }
 
 // Usage adds the command info to the provided `Usage` object.
-func (an *ArgNode[T]) Usage(u *Usage) {
+func (an *Argument[T]) Usage(u *Usage) {
 	if an.opt != nil && an.opt.hideUsage {
 		return
 	}
@@ -99,8 +99,8 @@ func (an *ArgNode[T]) Usage(u *Usage) {
 	}
 }
 
-// Execute fulfills the `Processor` interface for `ArgNode`.
-func (an *ArgNode[T]) Execute(i *Input, o Output, data *Data, eData *ExecuteData) error {
+// Execute fulfills the `Processor` interface for `Argument`.
+func (an *Argument[T]) Execute(i *Input, o Output, data *Data, eData *ExecuteData) error {
 	an.shortcutCheck(i, o, data, false)
 
 	sl, enough := i.PopN(an.minN, an.optionalN, an.opt.breakers)
@@ -185,7 +185,7 @@ func (an *ArgNode[T]) Execute(i *Input, o Output, data *Data, eData *ExecuteData
 	return nil
 }
 
-func (an *ArgNode[T]) convertStringValue(sl []*string, data *Data, transform bool) (T, error) {
+func (an *Argument[T]) convertStringValue(sl []*string, data *Data, transform bool) (T, error) {
 	var nill T
 	// Transform from string to value.
 	op := getOperator[T]()
@@ -209,7 +209,7 @@ func (an *ArgNode[T]) convertStringValue(sl []*string, data *Data, transform boo
 	return v, nil
 }
 
-func (an *ArgNode[T]) notEnoughErr(got int) error {
+func (an *Argument[T]) notEnoughErr(got int) error {
 	return NotEnoughArgs(an.name, an.minN, got)
 }
 
@@ -245,7 +245,7 @@ func (ne *notEnoughArgs) Error() string {
 	return fmt.Sprintf("Argument %q requires at least %d argument%s, got %d", ne.name, ne.req, plural, ne.got)
 }
 
-func (an *ArgNode[T]) shortcutCheck(input *Input, output Output, data *Data, complete bool) error {
+func (an *Argument[T]) shortcutCheck(input *Input, output Output, data *Data, complete bool) error {
 	if an.opt == nil || an.opt.shortcut == nil {
 		return nil
 	}
@@ -258,8 +258,8 @@ func (an *ArgNode[T]) shortcutCheck(input *Input, output Output, data *Data, com
 	return shortcutInputTransformer(an.opt.shortcut.ShortcutCLI, an.opt.shortcut.ShortcutName, upTo-1).Transform(input, output, data, complete)
 }
 
-// Complete fulfills the `Processor` interface for `ArgNode`.
-func (an *ArgNode[T]) Complete(input *Input, data *Data) (*Completion, error) {
+// Complete fulfills the `Processor` interface for `Argument`.
+func (an *Argument[T]) Complete(input *Input, data *Data) (*Completion, error) {
 	an.shortcutCheck(input, NewIgnoreAllOutput(), data, true)
 
 	sl, enough := input.PopN(an.minN, an.optionalN, an.opt.breakers)
@@ -273,7 +273,7 @@ func (an *ArgNode[T]) Complete(input *Input, data *Data) (*Completion, error) {
 	return c, err
 }
 
-func (an *ArgNode[T]) complete(sl []*string, enough bool, input *Input, data *Data) (*Completion, error) {
+func (an *Argument[T]) complete(sl []*string, enough bool, input *Input, data *Data) (*Completion, error) {
 	// Try to transform from string to value.
 	op := getOperator[T]()
 	v, err := op.fromArgs(sl)
@@ -331,29 +331,29 @@ func (an *ArgNode[T]) complete(sl []*string, enough bool, input *Input, data *Da
 }
 
 // Arg creates an argument node that requires exactly one input.
-func Arg[T any](name, desc string, opts ...ArgOpt[T]) *ArgNode[T] {
+func Arg[T any](name, desc string, opts ...ArgOpt[T]) *Argument[T] {
 	return listNode(name, desc, 1, 0, opts...)
 }
 
 // OptionalArg creates an argument node that accepts zero or one input arguments.
-func OptionalArg[T any](name, desc string, opts ...ArgOpt[T]) *ArgNode[T] {
+func OptionalArg[T any](name, desc string, opts ...ArgOpt[T]) *Argument[T] {
 	return listNode(name, desc, 0, 1, opts...)
 }
 
 // ListArg creates a list argument that requires at least `minN` arguments and
 // at most `minN`+`optionalN` arguments. Use UnboundedList for `optionalN` to
 // allow an unlimited number of arguments.
-func ListArg[T any](name, desc string, minN, optionalN int, opts ...ArgOpt[[]T]) *ArgNode[[]T] {
+func ListArg[T any](name, desc string, minN, optionalN int, opts ...ArgOpt[[]T]) *Argument[[]T] {
 	return listNode(name, desc, minN, optionalN, opts...)
 }
 
-// BoolNode creates a boolean argument.
-func BoolNode(name, desc string) *ArgNode[bool] {
+// BoolArg creates a boolean argument.
+func BoolArg(name, desc string) *Argument[bool] {
 	return listNode[bool](name, desc, 1, 0, BoolCompleter())
 }
 
-func listNode[T any](name, desc string, minN, optionalN int, opts ...ArgOpt[T]) *ArgNode[T] {
-	return &ArgNode[T]{
+func listNode[T any](name, desc string, minN, optionalN int, opts ...ArgOpt[T]) *Argument[T] {
+	return &Argument[T]{
 		name:      name,
 		desc:      desc,
 		minN:      minN,

@@ -401,7 +401,7 @@ func snapshotsMap(iss ...inputSnapshot) map[inputSnapshot]bool {
 //
 // Note: `InputTransformer` should only be used
 // when the number of arguments or the argument type is expected to change.
-// If the number of arguments and type will remain the same, use an `ArgNode`
+// If the number of arguments and type will remain the same, use an `Argument`
 // with a `Transformer` option.
 type InputTransformer struct {
 	// F is the function that will be run on each element in Input.
@@ -414,7 +414,7 @@ type InputTransformer struct {
 
 // FileNumberInputTransformer transforms input arguments of the format "input.go:123"
 // into ["input.go" "123"]. This allows CLIs to transform provided arguments and
-// use regular string and int `ArgNode`s for parsing arguments.
+// use regular string and int `Argument`s for parsing arguments.
 func FileNumberInputTransformer(upToIndex int) *InputTransformer {
 	return &InputTransformer{F: func(o Output, d *Data, s string) ([]string, error) {
 		sl := strings.Split(s, ":")

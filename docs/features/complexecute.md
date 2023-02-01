@@ -32,7 +32,7 @@ func (mc *myCLI) Node() command.Node {
     Branches: map[string]command.Node{
       "test": command.SerialNodes(
         fileArg,
-        command.ExecutableNode(func(o command.Output, d *command.Data) ([]string, error) {
+        command.ExecutableProcessor(func(o command.Output, d *command.Data) ([]string, error) {
 					return []string{
 						fmt.Sprintf("test %q", fileArg.Get(d)),
 					}, nil

@@ -1114,7 +1114,7 @@ func (tc *testCLI) Node() command.Node {
 		}
 		return nil
 	}, nil))
-	return command.SerialNodes(ns[0], ns[1:]...)
+	return command.SerialNodes(ns...)
 }
 func (tc *testCLI) Changed() bool   { return tc.changed }
 func (tc *testCLI) Setup() []string { return tc.setup }

@@ -1496,9 +1496,9 @@ func TestExecute(t *testing.T) {
 		},
 		// Executor tests.
 		{
-			name: "Sets executable with SimpleExecutableNode",
+			name: "Sets executable with SimpleExecutableProcessor",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(SimpleExecutableNode("hello", "there")),
+				Node: SerialNodes(SimpleExecutableProcessor("hello", "there")),
 				WantExecuteData: &ExecuteData{
 					Executable: []string{"hello", "there"},
 				},
@@ -1508,7 +1508,7 @@ func TestExecute(t *testing.T) {
 			name: "FunctionWrap sets ExecuteData.FunctionWrap",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					SimpleExecutableNode("hello", "there"),
+					SimpleExecutableProcessor("hello", "there"),
 					FunctionWrap(),
 				),
 				WantExecuteData: &ExecuteData{
@@ -1518,11 +1518,11 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "Sets executable with ExecutableNode",
+			name: "Sets executable with ExecutableProcessor",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
 					ListArg[string]("SL", "", 0, UnboundedList),
-					ExecutableNode(func(o Output, d *Data) ([]string, error) {
+					ExecutableProcessor(func(o Output, d *Data) ([]string, error) {
 						o.Stdoutln("hello")
 						o.Stderr("there")
 						return d.StringList("SL"), nil
@@ -1548,11 +1548,11 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "ExecutableNode returning error",
+			name: "ExecutableProcessor returning error",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
 					ListArg[string]("SL", "", 0, UnboundedList),
-					ExecutableNode(func(o Output, d *Data) ([]string, error) {
+					ExecutableProcessor(func(o Output, d *Data) ([]string, error) {
 						return d.StringList("SL"), fmt.Errorf("bad news bears")
 					}),
 				),
@@ -1572,11 +1572,11 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "SimpleExecutableNode appends executable",
+			name: "SimpleExecutableProcessor appends executable",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					SimpleExecutableNode("do some", "stuff"),
-					SimpleExecutableNode("and then", "even", "MORE"),
+					SimpleExecutableProcessor("do some", "stuff"),
+					SimpleExecutableProcessor("and then", "even", "MORE"),
 				),
 				WantExecuteData: &ExecuteData{
 					Executable: []string{
@@ -1590,16 +1590,16 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "ExecutableNode appends executable",
+			name: "ExecutableProcessor appends executable",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					ExecutableNode(func(o Output, d *Data) ([]string, error) {
+					ExecutableProcessor(func(o Output, d *Data) ([]string, error) {
 						return []string{
 							"do some",
 							"stuff",
 						}, nil
 					}),
-					ExecutableNode(func(o Output, d *Data) ([]string, error) {
+					ExecutableProcessor(func(o Output, d *Data) ([]string, error) {
 						return []string{
 							"and then",
 							"even",
@@ -1744,7 +1744,7 @@ func TestExecute(t *testing.T) {
 			name: "[Un]SetEnvVar appends executable",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					SimpleExecutableNode("do some", "stuff"),
+					SimpleExecutableProcessor("do some", "stuff"),
 					SimpleProcessor(func(i *Input, o Output, d *Data, ed *ExecuteData) error {
 						SetEnvVar("abc", "def", ed)
 						UnsetEnvVar("ghi", ed)
@@ -1765,7 +1765,7 @@ func TestExecute(t *testing.T) {
 			name: "[Un]SetEnvVarProcessor appends executable",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					SimpleExecutableNode("do some", "stuff"),
+					SimpleExecutableProcessor("do some", "stuff"),
 					SetEnvVarProcessor("abc", "def"),
 					UnsetEnvVarProcessor("ghi"),
 				),
@@ -5401,7 +5401,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "NodeRepeater fails if not enough",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(sampleRepeaterNode(3, 0)),
+				Node: SerialNodes(sampleRepeaterProcessor(3, 0)),
 				Args: []string{"k1", "100", "k2", "200"},
 				WantData: &Data{Values: map[string]interface{}{
 					"keys":   []string{"k1", "k2"},
@@ -5422,7 +5422,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "NodeRepeater fails if middle node doen't have enough",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(sampleRepeaterNode(1, 1)),
+				Node: SerialNodes(sampleRepeaterProcessor(1, 1)),
 				Args: []string{"k1", "100", "k2"},
 				WantData: &Data{Values: map[string]interface{}{
 					"keys":   []string{"k1", "k2"},
@@ -5442,7 +5442,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "NodeRepeater fails if too many",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(sampleRepeaterNode(1, 0)),
+				Node: SerialNodes(sampleRepeaterProcessor(1, 0)),
 				Args: []string{"k1", "100", "k2", "200"},
 				WantData: &Data{Values: map[string]interface{}{
 					"keys":   []string{"k1"},
@@ -5464,7 +5464,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "NodeRepeater accepts minimum when no optional",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(sampleRepeaterNode(2, 0)),
+				Node: SerialNodes(sampleRepeaterProcessor(2, 0)),
 				Args: []string{"k1", "100", "k2", "200"},
 				WantData: &Data{Values: map[string]interface{}{
 					"keys":   []string{"k1", "k2"},
@@ -5483,7 +5483,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "NodeRepeater accepts minimum when optional",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(sampleRepeaterNode(2, 3)),
+				Node: SerialNodes(sampleRepeaterProcessor(2, 3)),
 				Args: []string{"k1", "100", "k2", "200"},
 				WantData: &Data{Values: map[string]interface{}{
 					"keys":   []string{"k1", "k2"},
@@ -5502,7 +5502,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "NodeRepeater accepts minimum when unlimited optional",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(sampleRepeaterNode(2, 3)),
+				Node: SerialNodes(sampleRepeaterProcessor(2, 3)),
 				Args: []string{"k1", "100", "k2", "200"},
 				WantData: &Data{Values: map[string]interface{}{
 					"keys":   []string{"k1", "k2"},
@@ -5521,7 +5521,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "NodeRepeater accepts maximum when no optional",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(sampleRepeaterNode(2, 0)),
+				Node: SerialNodes(sampleRepeaterProcessor(2, 0)),
 				Args: []string{"k1", "100", "k2", "200"},
 				WantData: &Data{Values: map[string]interface{}{
 					"keys":   []string{"k1", "k2"},
@@ -5540,7 +5540,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "NodeRepeater accepts maximum when optional",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(sampleRepeaterNode(1, 1)),
+				Node: SerialNodes(sampleRepeaterProcessor(1, 1)),
 				Args: []string{"k1", "100", "k2", "200"},
 				WantData: &Data{Values: map[string]interface{}{
 					"keys":   []string{"k1", "k2"},
@@ -5559,7 +5559,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "NodeRepeater with unlimited optional accepts a bunch",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(sampleRepeaterNode(1, UnboundedList)),
+				Node: SerialNodes(sampleRepeaterProcessor(1, UnboundedList)),
 				Args: []string{"k1", "100", "k2", "200", "k3", "300", "k4", "400", "...", "0", "kn", "999"},
 				WantData: &Data{Values: map[string]interface{}{
 					"keys":   []string{"k1", "k2", "k3", "k4", "...", "kn"},
@@ -5695,12 +5695,12 @@ func TestExecute(t *testing.T) {
 				},
 			},
 		},
-		// StringListListNode tests
+		// StringListListProcessor tests
 		{
-			name: "StringListListNode works if no breakers",
+			name: "StringListListProcessor works if no breakers",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					StringListListNode("SLL", testDesc, "|", 1, UnboundedList),
+					StringListListProcessor("SLL", testDesc, "|", 1, UnboundedList),
 				),
 				Args: []string{"abc", "def", "ghi", "jkl"},
 				WantData: &Data{Values: map[string]interface{}{
@@ -5719,10 +5719,10 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "StringListListNode works with unbounded list",
+			name: "StringListListProcessor works with unbounded list",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					StringListListNode("SLL", testDesc, "|", 1, UnboundedList),
+					StringListListProcessor("SLL", testDesc, "|", 1, UnboundedList),
 				),
 				Args: []string{"abc", "def", "|", "ghi", "||", "|", "jkl"},
 				WantData: &Data{Values: map[string]interface{}{
@@ -5746,10 +5746,10 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "StringListListNode works with bounded list",
+			name: "StringListListProcessor works with bounded list",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					StringListListNode("SLL", testDesc, "|", 1, 2),
+					StringListListProcessor("SLL", testDesc, "|", 1, 2),
 				),
 				Args: []string{"abc", "def", "|", "ghi", "||", "|", "jkl"},
 				WantData: &Data{Values: map[string]interface{}{
@@ -5773,10 +5773,10 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "StringListListNode works if ends with operator",
+			name: "StringListListProcessor works if ends with operator",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					StringListListNode("SLL", testDesc, "|", 1, 2),
+					StringListListProcessor("SLL", testDesc, "|", 1, 2),
 				),
 				Args: []string{"abc", "def", "|", "ghi", "||", "|", "jkl", "|"},
 				WantData: &Data{Values: map[string]interface{}{
@@ -5801,10 +5801,10 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "StringListListNode fails if extra args",
+			name: "StringListListProcessor fails if extra args",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					StringListListNode("SLL", testDesc, "|", 1, 2),
+					StringListListProcessor("SLL", testDesc, "|", 1, 2),
 				),
 				Args: []string{"abc", "def", "|", "ghi", "||", "|", "jkl", "|", "other", "stuff"},
 				WantData: &Data{Values: map[string]interface{}{
@@ -6091,7 +6091,7 @@ func TestExecute(t *testing.T) {
 			name: "EchoExecuteData outputs ExecuteData.Executable",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					SimpleExecutableNode("un", "deux", "trois"),
+					SimpleExecutableProcessor("un", "deux", "trois"),
 					EchoExecuteData(),
 				),
 				WantExecuteData: &ExecuteData{
@@ -6104,7 +6104,7 @@ func TestExecute(t *testing.T) {
 			name: "EchoExecuteData outputs ExecuteData.Executable to stderr",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					SimpleExecutableNode("un", "deux", "trois"),
+					SimpleExecutableProcessor("un", "deux", "trois"),
 					&EchoExecuteDataProcessor{
 						Stderr: true,
 					},
@@ -6127,7 +6127,7 @@ func TestExecute(t *testing.T) {
 			name: "EchoExecuteData outputs ExecuteData.Executable",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					SimpleExecutableNode("un", "deux", "trois"),
+					SimpleExecutableProcessor("un", "deux", "trois"),
 					EchoExecuteDataf("RUNNING CODE:\n%s\nDONE CODE\n"),
 				),
 				WantExecuteData: &ExecuteData{
@@ -6147,7 +6147,7 @@ func TestExecute(t *testing.T) {
 			name: "EchoExecuteData outputs ExecuteData.Executable to stderr",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					SimpleExecutableNode("un", "deux", "trois"),
+					SimpleExecutableProcessor("un", "deux", "trois"),
 					&EchoExecuteDataProcessor{
 						Stderr: true,
 						Format: "RUNNING CODE:\n%s\nDONE CODE\n",
@@ -6304,7 +6304,7 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "MapArgNode.Get, GetOrDefault, and GetKey works",
+			name: "MapA.Get, GetOrDefault, and GetKey works",
 			etc: func() *ExecuteTestCase {
 				ma := MapArg("m", testDesc, map[string]int{
 					"one":   1,
@@ -6352,7 +6352,7 @@ func TestExecute(t *testing.T) {
 			}(),
 		},
 		{
-			name: "MapArgNode.Get, GetOrDefault, and GetKey works with custom type",
+			name: "MapA.Get, GetOrDefault, and GetKey works with custom type",
 			etc: func() *ExecuteTestCase {
 				type vType struct {
 					A int
@@ -8105,7 +8105,7 @@ func TestComplete(t *testing.T) {
 		{
 			name: "bool arg gets completed",
 			ctc: &CompleteTestCase{
-				Node:     SerialNodes(BoolNode("bArg", testDesc)),
+				Node:     SerialNodes(BoolArg("bArg", testDesc)),
 				Want:     []string{"0", "1", "F", "FALSE", "False", "T", "TRUE", "True", "f", "false", "t", "true"},
 				WantData: &Data{Values: map[string]interface{}{}},
 			},
@@ -8114,7 +8114,7 @@ func TestComplete(t *testing.T) {
 		{
 			name: "NodeRepeater completes first node",
 			ctc: &CompleteTestCase{
-				Node: SerialNodes(sampleRepeaterNode(1, 2)),
+				Node: SerialNodes(sampleRepeaterProcessor(1, 2)),
 				Want: []string{"alpha", "bravo", "brown", "charlie"},
 				WantData: &Data{Values: map[string]interface{}{
 					"keys": []string{""},
@@ -8124,7 +8124,7 @@ func TestComplete(t *testing.T) {
 		{
 			name: "NodeRepeater completes first node partial",
 			ctc: &CompleteTestCase{
-				Node: SerialNodes(sampleRepeaterNode(1, 2)),
+				Node: SerialNodes(sampleRepeaterProcessor(1, 2)),
 				Args: "cmd b",
 				Want: []string{"bravo", "brown"},
 				WantData: &Data{Values: map[string]interface{}{
@@ -8135,7 +8135,7 @@ func TestComplete(t *testing.T) {
 		{
 			name: "NodeRepeater completes second node",
 			ctc: &CompleteTestCase{
-				Node: SerialNodes(sampleRepeaterNode(1, 2)),
+				Node: SerialNodes(sampleRepeaterProcessor(1, 2)),
 				Args: "cmd brown ",
 				Want: []string{"1", "121", "1213121"},
 				WantData: &Data{Values: map[string]interface{}{
@@ -8146,7 +8146,7 @@ func TestComplete(t *testing.T) {
 		{
 			name: "NodeRepeater completes second node partial",
 			ctc: &CompleteTestCase{
-				Node: SerialNodes(sampleRepeaterNode(1, 2)),
+				Node: SerialNodes(sampleRepeaterProcessor(1, 2)),
 				Args: "cmd brown 12",
 				Want: []string{"121", "1213121"},
 				WantData: &Data{Values: map[string]interface{}{
@@ -8158,7 +8158,7 @@ func TestComplete(t *testing.T) {
 		{
 			name: "NodeRepeater completes second required iteration",
 			ctc: &CompleteTestCase{
-				Node: SerialNodes(sampleRepeaterNode(2, 0)),
+				Node: SerialNodes(sampleRepeaterProcessor(2, 0)),
 				Args: "cmd brown 12 c",
 				Want: []string{"charlie"},
 				WantData: &Data{Values: map[string]interface{}{
@@ -8170,7 +8170,7 @@ func TestComplete(t *testing.T) {
 		{
 			name: "NodeRepeater completes optional iteration",
 			ctc: &CompleteTestCase{
-				Node: SerialNodes(sampleRepeaterNode(2, 1)),
+				Node: SerialNodes(sampleRepeaterProcessor(2, 1)),
 				Args: "cmd brown 12 charlie 21 alpha 1",
 				Want: []string{"1", "121", "1213121"},
 				WantData: &Data{Values: map[string]interface{}{
@@ -8182,7 +8182,7 @@ func TestComplete(t *testing.T) {
 		{
 			name: "NodeRepeater completes unbounded optional iteration",
 			ctc: &CompleteTestCase{
-				Node: SerialNodes(sampleRepeaterNode(2, UnboundedList)),
+				Node: SerialNodes(sampleRepeaterProcessor(2, UnboundedList)),
 				Args: "cmd brown 12 charlie 21 alpha 100 delta 98 b",
 				Want: []string{"bravo", "brown"},
 				WantData: &Data{Values: map[string]interface{}{
@@ -8194,7 +8194,7 @@ func TestComplete(t *testing.T) {
 		{
 			name: "NodeRepeater doesn't complete beyond repeated iterations",
 			ctc: &CompleteTestCase{
-				Node: SerialNodes(sampleRepeaterNode(2, 1)),
+				Node: SerialNodes(sampleRepeaterProcessor(2, 1)),
 				Args: "cmd brown 12 charlie 21 alpha 100 b",
 				WantData: &Data{Values: map[string]interface{}{
 					"keys":   []string{"brown", "charlie", "alpha"},
@@ -8206,7 +8206,7 @@ func TestComplete(t *testing.T) {
 		{
 			name: "NodeRepeater works if fully processed",
 			ctc: &CompleteTestCase{
-				Node: SerialNodes(sampleRepeaterNode(2, 1), Arg[string]("S", testDesc, SimpleCompleter[string]("un", "deux", "trois"))),
+				Node: SerialNodes(sampleRepeaterProcessor(2, 1), Arg[string]("S", testDesc, SimpleCompleter[string]("un", "deux", "trois"))),
 				Args: "cmd brown 12 charlie 21 alpha 100",
 				WantData: &Data{Values: map[string]interface{}{
 					"keys":   []string{"brown", "charlie", "alpha"},
@@ -8259,12 +8259,12 @@ func TestComplete(t *testing.T) {
 				}},
 			},
 		},
-		// StringListListNode
+		// StringListListProcessor
 		{
-			name: "StringListListNode works if no breakers",
+			name: "StringListListProcessor works if no breakers",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					StringListListNode("SLL", testDesc, "|", 1, UnboundedList, SimpleCompleter[[]string]("one", "two", "three")),
+					StringListListProcessor("SLL", testDesc, "|", 1, UnboundedList, SimpleCompleter[[]string]("one", "two", "three")),
 				),
 				Args: "cmd abc def ghi ",
 				Want: []string{"one", "three", "two"},
@@ -8274,10 +8274,10 @@ func TestComplete(t *testing.T) {
 			},
 		},
 		{
-			name: "StringListListNode works with breakers",
+			name: "StringListListProcessor works with breakers",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					StringListListNode("SLL", testDesc, "|", 1, UnboundedList, SimpleCompleter[[]string]("one", "two", "three")),
+					StringListListProcessor("SLL", testDesc, "|", 1, UnboundedList, SimpleCompleter[[]string]("one", "two", "three")),
 				),
 				Args: "cmd abc def | ghi t",
 				Want: []string{"three", "two"},
@@ -8287,10 +8287,10 @@ func TestComplete(t *testing.T) {
 			},
 		},
 		{
-			name: "completes args after StringListListNode",
+			name: "completes args after StringListListProcessor",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					StringListListNode("SLL", testDesc, "|", 1, 1, SimpleCompleter[[]string]("one", "two", "three")),
+					StringListListProcessor("SLL", testDesc, "|", 1, 1, SimpleCompleter[[]string]("one", "two", "three")),
 					Arg[string]("S", testDesc, SimpleCompleter[string]("un", "deux", "trois")),
 				),
 				Args: "cmd abc def | ghi | ",
@@ -8700,7 +8700,7 @@ func printArgsNode() Node {
 	}
 }
 
-func sampleRepeaterNode(minN, optionalN int) Processor {
+func sampleRepeaterProcessor(minN, optionalN int) Processor {
 	return NodeRepeater(SerialNodes(
 		Arg[string]("KEY", testDesc, &CustomSetter[string]{func(v string, d *Data) {
 			if !d.Has("keys") {
@@ -8819,7 +8819,7 @@ func TestRunNodes(t *testing.T) {
 			name: "execute data",
 			rtc: &RunNodeTestCase{
 				Node: SerialNodes(
-					SimpleExecutableNode(
+					SimpleExecutableProcessor(
 						"echo hello",
 						"echo there",
 					),

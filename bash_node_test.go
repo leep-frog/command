@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-func TestBashNode(t *testing.T) {
+func TestBashCommand(t *testing.T) {
 	for _, test := range []struct {
 		name string
 		etc  *ExecuteTestCase

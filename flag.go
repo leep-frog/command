@@ -339,7 +339,7 @@ type flag[T any] struct {
 	name      string
 	desc      string
 	shortName rune
-	argNode   *ArgNode[T]
+	argument  *Argument[T]
 }
 
 func (f *flag[T]) Desc() string {
@@ -347,21 +347,21 @@ func (f *flag[T]) Desc() string {
 }
 
 func (f *flag[T]) Processor() Processor {
-	return f.argNode
+	return f.argument
 }
 
 func (f *flag[T]) Options() *FlagOptions {
 	return &FlagOptions{
 		ProcessMissing: func(d *Data) error {
-			if f.argNode.opt == nil || f.argNode.opt._default == nil {
+			if f.argument.opt == nil || f.argument.opt._default == nil {
 				return nil
 			}
 
-			def, err := f.argNode.opt._default.f(d)
+			def, err := f.argument.opt._default.f(d)
 			if err != nil {
 				return err
 			}
-			f.argNode.Set(def, d)
+			f.argument.Set(def, d)
 			return nil
 		},
 	}
@@ -385,7 +385,7 @@ func (f *flag[T]) Has(d *Data) bool {
 
 func (f *flag[T]) AddOptions(opts ...ArgOpt[T]) FlagWithType[T] {
 	for _, o := range opts {
-		o.modifyArgOpt(f.argNode.opt)
+		o.modifyArgOpt(f.argument.opt)
 	}
 	return f
 }
@@ -635,7 +635,7 @@ func listFlag[T any](name, desc string, shortName rune, minN, optionalN int, opt
 		name:      name,
 		desc:      desc,
 		shortName: shortName,
-		argNode: &ArgNode[T]{
+		argument: &Argument[T]{
 			flag:      true,
 			name:      name,
 			minN:      minN,

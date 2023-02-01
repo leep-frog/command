@@ -69,7 +69,7 @@ type BashDataStringer[T any] interface {
 	ToString(d *Data) (string, error)
 }
 
-func NewBashDataStringer[T, A any](arg *ArgNode[A], delimiter string) BashDataStringer[T] {
+func NewBashDataStringer[T, A any](arg *Argument[A], delimiter string) BashDataStringer[T] {
 	return CustomBashDataStringer[T](func(d *Data) (string, error) {
 		return strings.Join(getOperator[A]().toArgs(arg.Get(d)), delimiter), nil
 	})
