@@ -15,7 +15,7 @@ import (
 
 var (
 	// SetupArg is an argument that points to the filename containing the output of the Setup command.
-	SetupArg = FileNode("SETUP_FILE", "file used to run setup for command", HiddenArg[string]())
+	SetupArg = FileArgument("SETUP_FILE", "file used to run setup for command", HiddenArg[string]())
 )
 
 type SimpleEdge struct {
@@ -605,7 +605,7 @@ func FunctionWrap() Processor {
 
 // FileContents converts a filename into the file's contents.
 func FileContents(name, desc string, opts ...ArgOpt[string]) Processor {
-	fc := FileNode(name, desc, opts...)
+	fc := FileArgument(name, desc, opts...)
 	return SimpleProcessor(func(i *Input, o Output, d *Data, ed *ExecuteData) error {
 		if err := processOrExecute(fc, i, o, d, ed); err != nil {
 			return err

@@ -289,7 +289,7 @@ func runNodes(n Node, o Output, d *Data, args []string) error {
 	var filename string
 	nrf := "NODE_RUNNER_FILE"
 	exNode := SerialNodes(
-		FileNode(nrf, "Temporary file for execution"),
+		FileArgument(nrf, "Temporary file for execution"),
 		SimpleProcessor(func(i *Input, o Output, d *Data, ed *ExecuteData) error {
 			filename = d.String(nrf)
 			return nil

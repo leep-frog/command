@@ -132,7 +132,7 @@ func (*SourcererCommand) Name() string {
 }
 
 var (
-	sourcererDirArg    = command.FileNode("DIRECTORY", "Directory in which to create CLI", command.IsDir())
+	sourcererDirArg    = command.FileArgument("DIRECTORY", "Directory in which to create CLI", command.IsDir())
 	sourcererSuffixArg = command.Arg[string]("BINARY_SUFFIX", "Suffix for the name", command.MinLength[string, string](1))
 )
 

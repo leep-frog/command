@@ -686,7 +686,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "FileCompleter with Complexecute properly completes a single directory",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(FileNode("s", testDesc, Complexecute[string]())),
+				Node: SerialNodes(FileArgument("s", testDesc, Complexecute[string]())),
 				Args: []string{"do"},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -701,7 +701,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "FileCompleter with Complexecute properly completes a full directory",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(FileNode("s", testDesc, Complexecute[string]())),
+				Node: SerialNodes(FileArgument("s", testDesc, Complexecute[string]())),
 				Args: []string{"docs"},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -716,7 +716,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "FileCompleter with Complexecute properly completes a full directory with trailing slash",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(FileNode("s", testDesc, Complexecute[string]())),
+				Node: SerialNodes(FileArgument("s", testDesc, Complexecute[string]())),
 				Args: []string{fmt.Sprintf("docs%c", filepath.Separator)},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -731,7 +731,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "FileCompleter with Complexecute properly completes nested directory",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(FileNode("s", testDesc, Complexecute[string]())),
+				Node: SerialNodes(FileArgument("s", testDesc, Complexecute[string]())),
 				Args: []string{filepath.Join("sourcerer", "c")},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -746,7 +746,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "FileCompleter with Complexecute properly completes nested file",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(FileNode("s", testDesc, Complexecute[string]())),
+				Node: SerialNodes(FileArgument("s", testDesc, Complexecute[string]())),
 				Args: []string{filepath.Join("sourcerer", "cmd", "l")},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -761,7 +761,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "FileCompleter with Complexecute properly completes a single file",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(FileNode("s", testDesc, Complexecute[string]())),
+				Node: SerialNodes(FileArgument("s", testDesc, Complexecute[string]())),
 				Args: []string{"v"},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -776,7 +776,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "FileCompleter with Complexecute fails if multiple options",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(FileNode("s", testDesc, Complexecute[string]())),
+				Node: SerialNodes(FileArgument("s", testDesc, Complexecute[string]())),
 				Args: []string{"ca"},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -790,7 +790,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "FileCompleter with Complexecute fails if no options",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(FileNode("s", testDesc, Complexecute[string]())),
+				Node: SerialNodes(FileArgument("s", testDesc, Complexecute[string]())),
 				Args: []string{"uhhh"},
 				wantInput: &Input{
 					args: []*inputArg{
@@ -7553,13 +7553,13 @@ func TestComplete(t *testing.T) {
 				}},
 			},
 		},
-		// FileNode
+		// FileArgument
 		{
-			name:        "FileNode includes a vanilla FileCompleter",
+			name:        "FileArgument includes a vanilla FileCompleter",
 			filepathAbs: filepath.Join("."),
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					FileNode("fn", testDesc),
+					FileArgument("fn", testDesc),
 				),
 				Args: "cmd ",
 				WantData: &Data{Values: map[string]interface{}{
@@ -7622,11 +7622,11 @@ func TestComplete(t *testing.T) {
 			},
 		},
 		{
-			name:        "FileNode uses provided FileCompleter option",
+			name:        "FileArgument uses provided FileCompleter option",
 			filepathAbs: filepath.Join("."),
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					FileNode("fn", testDesc, &FileCompleter[string]{
+					FileArgument("fn", testDesc, &FileCompleter[string]{
 						FileTypes: []string{".sum", ".mod"},
 					}),
 				),

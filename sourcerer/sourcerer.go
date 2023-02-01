@@ -105,7 +105,7 @@ var (
 
 var (
 	cliArg          = command.Arg[string]("CLI", "Name of the CLI command to use")
-	fileArg         = command.FileNode("FILE", "Temporary file for execution")
+	fileArg         = command.FileArgument("FILE", "Temporary file for execution")
 	targetNameArg   = command.OptionalArg[string]("TARGET_NAME", "The name of the created target in $GOPATH/bin")
 	passthroughArgs = command.ListArg[string]("ARG", "Arguments that get passed through to relevant CLI command", 0, command.UnboundedList)
 	// See the below link for more details on COMP_* details:

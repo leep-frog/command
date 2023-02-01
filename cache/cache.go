@@ -44,7 +44,7 @@ func (c *Cache) Node() command.Node {
 	return &command.BranchNode{
 		Branches: map[string]command.Node{
 			"setdir": command.SerialNodes(
-				command.FileNode("DIR", "Directory in which to store data", command.IsDir()),
+				command.FileArgument("DIR", "Directory in which to store data", command.IsDir()),
 				&command.ExecutorProcessor{F: func(o command.Output, d *command.Data) error {
 					c.Dir = d.String("DIR")
 					c.changed = true

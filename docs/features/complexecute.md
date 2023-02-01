@@ -26,7 +26,7 @@ func (mc *myCLI) Name() string {
 }
 
 func (mc *myCLI) Node() command.Node {
-  fileArg := command.FileNode("TEST_FILE", "File to test", command.CompleteForExecute())
+  fileArg := command.FileArgument("TEST_FILE", "File to test", command.CompleteForExecute())
 
   return command.AsNode(&command.BranchNode{
     Branches: map[string]command.Node{
