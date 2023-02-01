@@ -498,7 +498,7 @@ func ListUntil[T any](validators ...*ValidatorOption[string]) *ListBreaker[T] {
 	}
 }
 
-// ListBreaker is an `ArgOpt` for breaking out of lists with an optional number of arguments.
+// ListBreaker is an `ArgumentOption` for breaking out of lists with an optional number of arguments.
 type ListBreaker[T any] struct {
 	validators []*ValidatorOption[string]
 	discard    bool
@@ -514,7 +514,7 @@ func (lb *ListBreaker[T]) Validate(s string) error {
 	return nil
 }
 
-func (lb *ListBreaker[T]) modifyArgOpt(ao *argOpt[T]) {
+func (lb *ListBreaker[T]) modifyArgumentOption(ao *argumentOption[T]) {
 	ao.breakers = append(ao.breakers, lb)
 }
 
@@ -542,7 +542,7 @@ func (lb *ListBreaker[T]) Usage(u *Usage) {
 }
 
 // StringListListProcessor parses a two-dimensional slice of strings, with each slice being separated by `breakSymbol`
-func StringListListProcessor(name, desc, breakSymbol string, minN, optionalN int, opts ...ArgOpt[[]string]) Processor {
+func StringListListProcessor(name, desc, breakSymbol string, minN, optionalN int, opts ...ArgumentOption[[]string]) Processor {
 	n := &SimpleNode{
 		Processor: ListArg(name, desc, 0, UnboundedList,
 			append(opts,
@@ -604,7 +604,7 @@ func FunctionWrap() Processor {
 }
 
 // FileContents converts a filename into the file's contents.
-func FileContents(name, desc string, opts ...ArgOpt[string]) Processor {
+func FileContents(name, desc string, opts ...ArgumentOption[string]) Processor {
 	fc := FileArgument(name, desc, opts...)
 	return SimpleProcessor(func(i *Input, o Output, d *Data, ed *ExecuteData) error {
 		if err := processOrExecute(fc, i, o, d, ed); err != nil {
@@ -698,7 +698,7 @@ func MapArg[K constraints.Ordered, V any](name, desc string, m map[K]V, allowMis
 		keys = append(keys, fmt.Sprintf("%v", k))
 	}
 	ma := &MapArgument[K, V]{}
-	opts := []ArgOpt[K]{
+	opts := []ArgumentOption[K]{
 		SimpleCompleter[K](keys...),
 		&CustomSetter[K]{F: func(key K, d *Data) {
 			d.Set(name, m[key])

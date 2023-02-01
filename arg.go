@@ -11,7 +11,7 @@ import (
 type Argument[T any] struct {
 	name      string
 	desc      string
-	opt       *argOpt[T]
+	opt       *argumentOption[T]
 	minN      int
 	optionalN int
 	shortName rune
@@ -21,9 +21,9 @@ type Argument[T any] struct {
 // AddOptions adds options to an `Argument`. Although chaining isn't conventional
 // in go, it is done here because args are usually declared as package-level
 // variables.
-func (an *Argument[T]) AddOptions(opts ...ArgOpt[T]) *Argument[T] {
+func (an *Argument[T]) AddOptions(opts ...ArgumentOption[T]) *Argument[T] {
 	for _, o := range opts {
-		o.modifyArgOpt(an.opt)
+		o.modifyArgumentOption(an.opt)
 	}
 	return an
 }
@@ -330,20 +330,20 @@ func (an *Argument[T]) complete(sl []*string, enough bool, input *Input, data *D
 	return RunCompletion(an.opt.completer, lastArg, v, data)
 }
 
-// Arg creates an argument node that requires exactly one input.
-func Arg[T any](name, desc string, opts ...ArgOpt[T]) *Argument[T] {
+// Arg creates an argument `Processor` that requires exactly one input.
+func Arg[T any](name, desc string, opts ...ArgumentOption[T]) *Argument[T] {
 	return listArgument(name, desc, 1, 0, opts...)
 }
 
-// OptionalArg creates an argument node that accepts zero or one input arguments.
-func OptionalArg[T any](name, desc string, opts ...ArgOpt[T]) *Argument[T] {
+// OptionalArg creates an argument `Processor` that accepts zero or one input arguments.
+func OptionalArg[T any](name, desc string, opts ...ArgumentOption[T]) *Argument[T] {
 	return listArgument(name, desc, 0, 1, opts...)
 }
 
 // ListArg creates a list argument that requires at least `minN` arguments and
 // at most `minN`+`optionalN` arguments. Use UnboundedList for `optionalN` to
 // allow an unlimited number of arguments.
-func ListArg[T any](name, desc string, minN, optionalN int, opts ...ArgOpt[[]T]) *Argument[[]T] {
+func ListArg[T any](name, desc string, minN, optionalN int, opts ...ArgumentOption[[]T]) *Argument[[]T] {
 	return listArgument(name, desc, minN, optionalN, opts...)
 }
 
@@ -352,12 +352,12 @@ func BoolArg(name, desc string) *Argument[bool] {
 	return listArgument[bool](name, desc, 1, 0, BoolCompleter())
 }
 
-func listArgument[T any](name, desc string, minN, optionalN int, opts ...ArgOpt[T]) *Argument[T] {
+func listArgument[T any](name, desc string, minN, optionalN int, opts ...ArgumentOption[T]) *Argument[T] {
 	return &Argument[T]{
 		name:      name,
 		desc:      desc,
 		minN:      minN,
 		optionalN: optionalN,
-		opt:       multiArgOpts(opts...),
+		opt:       multiArgumentOptions(opts...),
 	}
 }

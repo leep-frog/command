@@ -213,7 +213,7 @@ func TestStringCompleters(t *testing.T) {
 		},*/
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			opts := []ArgOpt[[]string]{}
+			opts := []ArgumentOption[[]string]{}
 			if test.c != nil {
 				opts = append(opts, test.c)
 			}

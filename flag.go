@@ -25,7 +25,7 @@ type FlagInterface interface {
 	Desc() string
 	// ShortName indicates the shorthand version of the flag. "-s" is the short hand flag indicator.
 	ShortName() rune
-	// Processor returns a node processor that processes arguments after the flag indicator.
+	// Processor returns a node `Processor` that processes arguments after the flag indicator.
 	Processor() Processor
 
 	// Options returns the set of additional options for this flag.
@@ -78,7 +78,7 @@ type FlagWithType[T any] interface {
 	// AddOptions adds options to a `FlagWithType`. Although chaining isn't
 	// conventional in go, it is done here because flags are usually declared as
 	// package-level variables.
-	AddOptions(...ArgOpt[T]) FlagWithType[T]
+	AddOptions(...ArgumentOption[T]) FlagWithType[T]
 }
 
 func flagName(f FlagInterface) string {
@@ -383,15 +383,15 @@ func (f *flag[T]) Has(d *Data) bool {
 	return d.Has(f.name)
 }
 
-func (f *flag[T]) AddOptions(opts ...ArgOpt[T]) FlagWithType[T] {
+func (f *flag[T]) AddOptions(opts ...ArgumentOption[T]) FlagWithType[T] {
 	for _, o := range opts {
-		o.modifyArgOpt(f.argument.opt)
+		o.modifyArgumentOption(f.argument.opt)
 	}
 	return f
 }
 
 // Flag creates a `FlagInterface` from argument info.
-func Flag[T any](name string, shortName rune, desc string, opts ...ArgOpt[T]) FlagWithType[T] {
+func Flag[T any](name string, shortName rune, desc string, opts ...ArgumentOption[T]) FlagWithType[T] {
 	return listFlag(name, desc, shortName, 1, 0, opts...) //.AddOptions(ListUntil[T](MatchesRegex("^-")))
 }
 
@@ -487,7 +487,7 @@ func (bf *boolFlag[T]) Get(d *Data) T {
 	return GetData[T](d, bf.name)
 }
 
-func (bf *boolFlag[T]) AddOptions(opts ...ArgOpt[T]) FlagWithType[T] {
+func (bf *boolFlag[T]) AddOptions(opts ...ArgumentOption[T]) FlagWithType[T] {
 	panic("options cannot be added to a boolean flag")
 }
 
@@ -502,7 +502,7 @@ type optionalFlag[T any] struct {
 // 1. `Args=["--optStr"]`: The flag's value is set to "default-value" in data.
 // 2. `Args=[]`: The flag's value isn't set (or is set to command.Default(...) option if provided).
 // 3. `Args=["--optStr", "custom-value"]`: The flag's value is set to "custom-value" in data.
-func OptionalFlag[T any](name string, shortName rune, desc string, defaultValue T, opts ...ArgOpt[T]) FlagWithType[T] {
+func OptionalFlag[T any](name string, shortName rune, desc string, defaultValue T, opts ...ArgumentOption[T]) FlagWithType[T] {
 	return &optionalFlag[T]{
 		listFlag(name, desc, shortName, 0, 1, opts...),
 		defaultValue,
@@ -563,7 +563,7 @@ Make intermediate arg that transforms values into json and then json into struct
 */
 
 // ItemizedListFlag creates a flag that can be set with separate flags (e.g. `cmd -i value-one -i value-two -b other-flag -i value-three`).
-func ItemizedListFlag[T any](name string, shortName rune, desc string, opts ...ArgOpt[[]T]) FlagWithType[[]T] {
+func ItemizedListFlag[T any](name string, shortName rune, desc string, opts ...ArgumentOption[[]T]) FlagWithType[[]T] {
 	return &itemizedListFlag[T]{
 		FlagWithType: ListFlag(name, shortName, desc, 0, UnboundedList, opts...),
 	}
@@ -626,11 +626,11 @@ func (ilf *itemizedListFlag[T]) Usage(u *Usage) {
 }
 
 // ListFlag creates a `FlagInterface` from list argument info.
-func ListFlag[T any](name string, shortName rune, desc string, minN, optionalN int, opts ...ArgOpt[[]T]) FlagWithType[[]T] {
+func ListFlag[T any](name string, shortName rune, desc string, minN, optionalN int, opts ...ArgumentOption[[]T]) FlagWithType[[]T] {
 	return listFlag(name, desc, shortName, minN, optionalN, opts...)
 }
 
-func listFlag[T any](name, desc string, shortName rune, minN, optionalN int, opts ...ArgOpt[T]) *flag[T] {
+func listFlag[T any](name, desc string, shortName rune, minN, optionalN int, opts ...ArgumentOption[T]) *flag[T] {
 	return &flag[T]{
 		name:      name,
 		desc:      desc,
@@ -640,7 +640,7 @@ func listFlag[T any](name, desc string, shortName rune, minN, optionalN int, opt
 			name:      name,
 			minN:      minN,
 			optionalN: optionalN,
-			opt:       multiArgOpts(opts...),
+			opt:       multiArgumentOptions(opts...),
 		},
 	}
 }

@@ -1,43 +1,43 @@
 package command
 
-// ArgOpt is an interface for modifying `Arg` nodes.
-type ArgOpt[T any] interface {
-	modifyArgOpt(*argOpt[T])
+// ArgumentOption is an interface for modifying `Argument` objects.
+type ArgumentOption[T any] interface {
+	modifyArgumentOption(*argumentOption[T])
 }
 
-type argOpt[T any] struct {
+type argumentOption[T any] struct {
 	validators   []*ValidatorOption[T]
 	completer    Completer[T]
 	transformers []*Transformer[T]
 	shortcut     *shortcutOpt[T]
 	customSet    *CustomSetter[T]
-	_default     *defaultArgOpt[T]
+	_default     *defaultArgumentOption[T]
 	breakers     []InputValidator
 	complexecute *complexecute
 	hideUsage    bool
 }
 
-type simpleArgOpt[T any] func(*argOpt[T])
+type simpleArgumentOption[T any] func(*argumentOption[T])
 
-func (sao *simpleArgOpt[T]) modifyArgOpt(ao *argOpt[T]) {
+func (sao *simpleArgumentOption[T]) modifyArgumentOption(ao *argumentOption[T]) {
 	(*sao)(ao)
 }
 
-func newArgOpt[T any](f func(*argOpt[T])) ArgOpt[T] {
-	sao := simpleArgOpt[T](f)
+func newArgumentOption[T any](f func(*argumentOption[T])) ArgumentOption[T] {
+	sao := simpleArgumentOption[T](f)
 	return &sao
 }
 
-func multiArgOpts[T any](opts ...ArgOpt[T]) *argOpt[T] {
-	ao := &argOpt[T]{}
+func multiArgumentOptions[T any](opts ...ArgumentOption[T]) *argumentOption[T] {
+	ao := &argumentOption[T]{}
 	for _, opt := range opts {
-		opt.modifyArgOpt(ao)
+		opt.modifyArgumentOption(ao)
 	}
 	return ao
 }
 
-// ShortcutOpt is an `ArgOpt` that checks for shortcut substitution.
-func ShortcutOpt[T any](name string, ac ShortcutCLI) ArgOpt[T] {
+// ShortcutOpt is an `ArgumentOption` that checks for shortcut substitution.
+func ShortcutOpt[T any](name string, ac ShortcutCLI) ArgumentOption[T] {
 	return &shortcutOpt[T]{
 		ShortcutName: name,
 		ShortcutCLI:  ac,
@@ -49,17 +49,17 @@ type shortcutOpt[T any] struct {
 	ShortcutCLI  ShortcutCLI
 }
 
-func (so *shortcutOpt[T]) modifyArgOpt(argO *argOpt[T]) {
+func (so *shortcutOpt[T]) modifyArgumentOption(argO *argumentOption[T]) {
 	argO.shortcut = so
 }
 
-// CustomSetter is an `ArgOpt` to specify a custom setting function when setting
+// CustomSetter is an `ArgumentOption` to specify a custom setting function when setting
 // argument data.
 type CustomSetter[T any] struct {
 	F func(T, *Data)
 }
 
-func (cs *CustomSetter[T]) modifyArgOpt(ao *argOpt[T]) {
+func (cs *CustomSetter[T]) modifyArgumentOption(ao *argumentOption[T]) {
 	ao.customSet = cs
 }
 
@@ -67,7 +67,7 @@ func (cs *CustomSetter[T]) modifyArgOpt(ao *argOpt[T]) {
 // If a command execution is run, then the last value for this arg
 // will be completed using its `Complete` logic. Exactly one suggestion
 // must be returned.
-func Complexecute[T any](opts ...ComplexecuteOption) ArgOpt[T] {
+func Complexecute[T any](opts ...ComplexecuteOption) ArgumentOption[T] {
 	cfe := &complexecute{
 		enabled: true,
 		strict:  true,
@@ -75,7 +75,7 @@ func Complexecute[T any](opts ...ComplexecuteOption) ArgOpt[T] {
 	for _, o := range opts {
 		o(cfe)
 	}
-	return newArgOpt(func(ao *argOpt[T]) {
+	return newArgumentOption(func(ao *argumentOption[T]) {
 		ao.complexecute = cfe
 	})
 }
@@ -102,12 +102,12 @@ func ComplexecuteAllowExactMatch() ComplexecuteOption {
 	return func(cfe *complexecute) { cfe.exactMatch = true }
 }
 
-// Transformer is an `ArgOpt` that transforms an argument.
+// Transformer is an `ArgumentOption` that transforms an argument.
 type Transformer[T any] struct {
 	F func(T, *Data) (T, error)
 }
 
-func (t *Transformer[T]) modifyArgOpt(ao *argOpt[T]) {
+func (t *Transformer[T]) modifyArgumentOption(ao *argumentOption[T]) {
 	ao.transformers = append(ao.transformers, t)
 }
 
@@ -126,33 +126,33 @@ func TransformerList[T any](t *Transformer[T]) *Transformer[[]T] {
 	}}
 }
 
-// Default is an `ArgOpt` that sets a default value for an `Arg` node.
-func Default[T any](v T) ArgOpt[T] {
+// Default is an `ArgumentOption` that sets a default value for an `Arg` node.
+func Default[T any](v T) ArgumentOption[T] {
 	return DefaultFunc(func(d *Data) (T, error) { return v, nil })
 }
 
-// DefaultFunc is an `ArgOpt` that sets a default value (obtained from the provided function) for an `Arg` node.
-func DefaultFunc[T any](f defaultFunc[T]) ArgOpt[T] {
-	return &defaultArgOpt[T]{f}
+// DefaultFunc is an `ArgumentOption` that sets a default value (obtained from the provided function) for an `Arg` node.
+func DefaultFunc[T any](f defaultFunc[T]) ArgumentOption[T] {
+	return &defaultArgumentOption[T]{f}
 }
 
 type defaultFunc[T any] func(d *Data) (T, error)
 
-type defaultArgOpt[T any] struct {
+type defaultArgumentOption[T any] struct {
 	f defaultFunc[T]
 }
 
-func (dao *defaultArgOpt[T]) modifyArgOpt(ao *argOpt[T]) {
+func (dao *defaultArgumentOption[T]) modifyArgumentOption(ao *argumentOption[T]) {
 	ao._default = dao
 }
 
-// HiddenArg is an `ArgOpt` that hides an argument from a command's usage text.
-func HiddenArg[T any]() ArgOpt[T] {
+// HiddenArg is an `ArgumentOption` that hides an argument from a command's usage text.
+func HiddenArg[T any]() ArgumentOption[T] {
 	return &hiddenArg[T]{}
 }
 
 type hiddenArg[T any] struct{}
 
-func (ha *hiddenArg[T]) modifyArgOpt(ao *argOpt[T]) {
+func (ha *hiddenArg[T]) modifyArgumentOption(ao *argumentOption[T]) {
 	ao.hideUsage = true
 }

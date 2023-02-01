@@ -58,4 +58,4 @@ var (
 
 ## Argument Options
 
-Arguments also accept a handful of `ArgOpt` modifiers. See [the options doc](./options.md) for more details.
+Arguments also accept a handful of `ArgumentOption` modifiers. See [the options doc](./options.md) for more details.

@@ -35,7 +35,7 @@ func IsValidationError(err error) bool {
 	return ok
 }
 
-// ValidatorOption is an `ArgOpt` and `BashOption` for validating arguments.
+// ValidatorOption is an `ArgumentOption` and `BashOption` for validating arguments.
 type ValidatorOption[T any] struct {
 	Validate func(T) error
 	Usage    string
@@ -48,7 +48,7 @@ func (vo *ValidatorOption[T]) RunValidation(arg validatable, t T) error {
 	return nil
 }
 
-func (vo *ValidatorOption[T]) modifyArgOpt(ao *argOpt[T]) {
+func (vo *ValidatorOption[T]) modifyArgumentOption(ao *argumentOption[T]) {
 	ao.validators = append(ao.validators, vo)
 }
 

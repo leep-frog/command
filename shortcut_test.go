@@ -1720,7 +1720,7 @@ func newSimpleShortcut(existing map[string]map[string][]string) ShortcutCLI {
 	}
 }
 
-func UpperCaseTransformer() ArgOpt[[]string] {
+func UpperCaseTransformer() ArgumentOption[[]string] {
 	f := func(sl []string, d *Data) ([]string, error) {
 		r := make([]string, 0, len(sl))
 		for _, v := range sl {

@@ -66,14 +66,14 @@ func (sc *simpleCompleter[T]) Complete(t T, d *Data) (*Completion, error) {
 	return sc.f(t, d)
 }
 
-func (sc *simpleCompleter[T]) modifyArgOpt(ao *argOpt[T]) {
+func (sc *simpleCompleter[T]) modifyArgumentOption(ao *argumentOption[T]) {
 	ao.completer = sc
 }
 
-// Completer is an autocompletion object that can be used as an `ArgOpt`.
+// Completer is an autocompletion object that can be used as an `ArgumentOption`.
 type Completer[T any] interface {
 	Complete(T, *Data) (*Completion, error)
-	modifyArgOpt(*argOpt[T])
+	modifyArgumentOption(*argumentOption[T])
 }
 
 // Completion is the object constructed by a completer.
@@ -146,7 +146,7 @@ func (cwo *cmplWithOpts[T]) Complete(t T, d *Data) (*Completion, error) {
 	return c, err
 }
 
-func (cwo *cmplWithOpts[T]) modifyArgOpt(ao *argOpt[T]) {
+func (cwo *cmplWithOpts[T]) modifyArgumentOption(ao *argumentOption[T]) {
 	ao.completer = cwo
 }
 
@@ -168,7 +168,7 @@ func (sc *completionCompleter[T]) Complete(t T, d *Data) (*Completion, error) {
 	return sc.c, nil
 }
 
-func (sc *completionCompleter[T]) modifyArgOpt(c *argOpt[T]) {
+func (sc *completionCompleter[T]) modifyArgumentOption(c *argumentOption[T]) {
 	c.completer = sc
 }
 
@@ -295,7 +295,7 @@ type FileCompleter[T any] struct {
 	MaxDepth int
 }
 
-func (ff *FileCompleter[T]) modifyArgOpt(ao *argOpt[T]) {
+func (ff *FileCompleter[T]) modifyArgumentOption(ao *argumentOption[T]) {
 	ao.completer = ff
 }
 
@@ -521,12 +521,12 @@ func getAutofillLetters(laFile string, suggestions []string) (string, bool) {
 }
 
 // FileArgument creates an `Argument` processor for a file object.
-func FileArgument(argName, desc string, opts ...ArgOpt[string]) *Argument[string] {
+func FileArgument(argName, desc string, opts ...ArgumentOption[string]) *Argument[string] {
 
 	// Defaults must go first so they can be overriden by provided opts
 	// For example, the last `Completer` opt in the slice will be the one
-	// set in the `ArgOpt` object.
-	return Arg(argName, desc, append([]ArgOpt[string]{
+	// set in the `ArgumentOption` object.
+	return Arg(argName, desc, append([]ArgumentOption[string]{
 		&FileCompleter[string]{},
 		FileTransformer(),
 		FileExists(),
@@ -534,7 +534,7 @@ func FileArgument(argName, desc string, opts ...ArgOpt[string]) *Argument[string
 }
 
 // FileListArgument creates an `ArgList` node for file objects.
-func FileListArgument(argName, desc string, minN, optionalN int, opts ...ArgOpt[[]string]) *Argument[[]string] {
+func FileListArgument(argName, desc string, minN, optionalN int, opts ...ArgumentOption[[]string]) *Argument[[]string] {
 	opts = append(opts,
 		&FileCompleter[[]string]{},
 		TransformerList(FileTransformer()),
