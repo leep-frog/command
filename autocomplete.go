@@ -1,5 +1,7 @@
 package command
 
+import "fmt"
+
 // Autocomplete returns the completion suggestions for the provided node, `COMP_LINE`,
 // and `passthroughArgs` (`passthroughArgs` are used for `Aliaser` statements).
 // The returned slice is a list of autocompletion suggestions, and the returned error
@@ -27,6 +29,12 @@ func processGraphCompletion(n Node, input *Input, data *Data, checkInput bool) (
 	for n != nil {
 		c, err := n.Complete(input, data)
 		if c != nil || err != nil {
+			if c != nil && c.DeferredCompletion != nil {
+				if err := processGraphExecution(c.DeferredCompletion.Graph, input, NewIgnoreAllOutput(), data, &ExecuteData{}, false); err != nil {
+					return nil, fmt.Errorf("failed to execute DeferredCompletion graph: %v", err)
+				}
+				return c.DeferredCompletion.F(data)
+			}
 			return c, err
 		}
 

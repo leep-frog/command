@@ -6669,6 +6669,16 @@ func TestComplete(t *testing.T) {
 				}},
 			},
 		},
+		{
+			name: "fails if edge returns an error",
+			ctc: &CompleteTestCase{
+				Node: &SimpleNode{
+					Edge: &errorEdge{fmt.Errorf("whoops")},
+				},
+				Args:    "cmd p",
+				WantErr: fmt.Errorf("whoops"),
+			},
+		},
 		// Flag completion
 		{
 			name: "bool flag gets set if not last one",
@@ -7235,6 +7245,87 @@ func TestComplete(t *testing.T) {
 					"lst":      []string{"v1", "v2", "other"},
 					"names":    []string{"un"},
 					"greeting": "",
+				}},
+			},
+		},
+		// DeferredCompletion tests
+		{
+			name: "DeferredCompletion handles nil graph",
+			ctc: &CompleteTestCase{
+				Node: SerialNodes(
+					FlagProcessor(
+						ListFlag[string]("lf", 'f', testDesc, 0, UnboundedList, DeferredCompleter[[]string](nil, func(d *Data) (*Completion, error) {
+							return &Completion{Suggestions: []string{"abc", "def"}}, nil
+						})),
+					),
+				),
+				Args: "cmd --lf ab ",
+				Want: []string{"abc", "def"},
+				WantData: &Data{Values: map[string]interface{}{
+					"lf": []string{"ab", ""},
+				}},
+			},
+		},
+		{
+			name: "DeferredCompletion handles error",
+			ctc: &CompleteTestCase{
+				Node: SerialNodes(
+					FlagProcessor(
+						ListFlag[string]("lf", 'f', testDesc, 0, UnboundedList, DeferredCompleter[[]string](nil, func(d *Data) (*Completion, error) {
+							return &Completion{Suggestions: []string{"abc", "def"}}, fmt.Errorf("oh well")
+						})),
+					),
+				),
+				Args:    "cmd --lf ab ",
+				Want:    []string{"abc", "def"},
+				WantErr: fmt.Errorf("oh well"),
+				WantData: &Data{Values: map[string]interface{}{
+					"lf": []string{"ab", ""},
+				}},
+			},
+		},
+		{
+			name: "DeferredCompletion executes sub graph",
+			ctc: &CompleteTestCase{
+				Node: SerialNodes(
+					FlagProcessor(
+						ListFlag[string]("lf", 'f', testDesc, 0, UnboundedList, DeferredCompleter[[]string](
+							SerialNodes(
+								ListArg[string]("la", testDesc, 3, UnboundedList, SimpleCompleter[[]string]("un", "deux")),
+							),
+							func(d *Data) (*Completion, error) {
+								return &Completion{Suggestions: []string{"abc", "def"}}, fmt.Errorf("oh well")
+							})),
+					),
+				),
+				Args:    "cmd v1 v2 other --lf ab ",
+				Want:    []string{"abc", "def"},
+				WantErr: fmt.Errorf("oh well"),
+				WantData: &Data{Values: map[string]interface{}{
+					"lf": []string{"ab", ""},
+					"la": []string{"v1", "v2", "other"},
+				}},
+			},
+		},
+		{
+			name: "DeferredCompletion returns error from sub graph",
+			ctc: &CompleteTestCase{
+				Node: SerialNodes(
+					FlagProcessor(
+						ListFlag[string]("lf", 'f', testDesc, 0, UnboundedList, DeferredCompleter[[]string](
+							SerialNodes(
+								ListArg[string]("la", testDesc, 4, UnboundedList, SimpleCompleter[[]string]("un", "deux")),
+							),
+							func(d *Data) (*Completion, error) {
+								return &Completion{Suggestions: []string{"abc", "def"}}, fmt.Errorf("oh well")
+							})),
+					),
+				),
+				Args:    "cmd v1 v2 other --lf ab ",
+				WantErr: fmt.Errorf(`failed to execute DeferredCompletion graph: Argument "la" requires at least 4 arguments, got 3`),
+				WantData: &Data{Values: map[string]interface{}{
+					"lf": []string{"ab", ""},
+					"la": []string{"v1", "v2", "other"},
 				}},
 			},
 		},

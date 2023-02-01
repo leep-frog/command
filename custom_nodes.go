@@ -30,6 +30,7 @@ func (se *SimpleEdge) UsageNext() Node {
 	return se.n
 }
 
+// TODO: SerialProcessors
 // SerialNodes returns a graph that iterates serially over the provided `Processors`.
 func SerialNodes(p Processor, ps ...Processor) Node {
 	root := &SimpleNode{
