@@ -128,7 +128,7 @@ func (an *Argument[T]) Execute(i *Input, o Output, data *Data, eData *ExecuteDat
 			tsl := sl[:i]
 			v, err := an.convertStringValue(tsl, data, false)
 			data.complexecute = true
-			compl, err := RunArgumentCompleter(an.opt.completer, *tsl[len(tsl)-1], v, data)
+			compl, err := RunArgumentCompleter(an.opt.completer, v, data)
 			data.complexecute = false
 			if err != nil {
 				if strict {
@@ -280,11 +280,7 @@ func (an *Argument[T]) complete(sl []*string, enough bool, input *Input, data *D
 	if err != nil {
 		// If we're on the last one, then complete it.
 		if !enough || input.FullyProcessed() {
-			var lastArg string
-			if len(sl) > 0 {
-				lastArg = *sl[len(sl)-1]
-			}
-			return RunArgumentCompleter(an.opt.completer, lastArg, v, data)
+			return RunArgumentCompleter(an.opt.completer, v, data)
 		}
 
 		return nil, err
@@ -321,13 +317,7 @@ func (an *Argument[T]) complete(sl []*string, enough bool, input *Input, data *D
 		return nil, nil
 	}
 
-	// Otherwise, try to complete arg.
-	var lastArg string
-	ta := op.toArgs(v)
-	if len(ta) > 0 {
-		lastArg = ta[len(ta)-1]
-	}
-	return RunArgumentCompleter(an.opt.completer, lastArg, v, data)
+	return RunArgumentCompleter(an.opt.completer, v, data)
 }
 
 // Arg creates an argument `Processor` that requires exactly one input.

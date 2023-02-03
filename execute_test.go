@@ -7254,9 +7254,7 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
 					FlagProcessor(
-						ListFlag[string]("lf", 'f', testDesc, 0, UnboundedList, DeferredCompleter[[]string](nil, func(d *Data) (*Completion, error) {
-							return &Completion{Suggestions: []string{"abc", "def"}}, nil
-						})),
+						ListFlag[string]("lf", 'f', testDesc, 0, UnboundedList, DeferredCompleter(nil, SimpleCompleter[[]string]("abc", "def"))),
 					),
 				),
 				Args: "cmd --lf ab ",
@@ -7271,13 +7269,12 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
 					FlagProcessor(
-						ListFlag[string]("lf", 'f', testDesc, 0, UnboundedList, DeferredCompleter[[]string](nil, func(d *Data) (*Completion, error) {
+						ListFlag[string]("lf", 'f', testDesc, 0, UnboundedList, DeferredCompleter(nil, CompleterFromFunc(func([]string, *Data) (*Completion, error) {
 							return &Completion{Suggestions: []string{"abc", "def"}}, fmt.Errorf("oh well")
-						})),
+						}))),
 					),
 				),
 				Args:    "cmd --lf ab ",
-				Want:    []string{"abc", "def"},
 				WantErr: fmt.Errorf("oh well"),
 				WantData: &Data{Values: map[string]interface{}{
 					"lf": []string{"ab", ""},
@@ -7289,17 +7286,16 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
 					FlagProcessor(
-						ListFlag[string]("lf", 'f', testDesc, 0, UnboundedList, DeferredCompleter[[]string](
+						ListFlag[string]("lf", 'f', testDesc, 0, UnboundedList, DeferredCompleter(
 							SerialNodes(
 								ListArg[string]("la", testDesc, 3, UnboundedList, SimpleCompleter[[]string]("un", "deux")),
 							),
-							func(d *Data) (*Completion, error) {
+							CompleterFromFunc(func([]string, *Data) (*Completion, error) {
 								return &Completion{Suggestions: []string{"abc", "def"}}, fmt.Errorf("oh well")
-							})),
+							}))),
 					),
 				),
 				Args:    "cmd v1 v2 other --lf ab ",
-				Want:    []string{"abc", "def"},
 				WantErr: fmt.Errorf("oh well"),
 				WantData: &Data{Values: map[string]interface{}{
 					"lf": []string{"ab", ""},
@@ -7312,13 +7308,13 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
 					FlagProcessor(
-						ListFlag[string]("lf", 'f', testDesc, 0, UnboundedList, DeferredCompleter[[]string](
+						ListFlag[string]("lf", 'f', testDesc, 0, UnboundedList, DeferredCompleter(
 							SerialNodes(
 								ListArg[string]("la", testDesc, 4, UnboundedList, SimpleCompleter[[]string]("un", "deux")),
 							),
-							func(d *Data) (*Completion, error) {
+							CompleterFromFunc(func([]string, *Data) (*Completion, error) {
 								return &Completion{Suggestions: []string{"abc", "def"}}, fmt.Errorf("oh well")
-							})),
+							}))),
 					),
 				),
 				Args:    "cmd v1 v2 other --lf ab ",

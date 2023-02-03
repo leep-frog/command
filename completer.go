@@ -110,13 +110,20 @@ type DeferredCompletion struct {
 	F func(*Data) (*Completion, error)
 }
 
-// DeferredCompleter returns a completer that defers completion after the provided
-// graph is run. See the `DeferredCompletion` object for more info.
-// When using this with `Argument` or `Flag` nodes, you will need to explicitly
-// run `RunArgumentCompletion` (which is normally taken care of automatically
-// by those objects).
-func DeferredCompleter[T any](graph Node, f func(*Data) (*Completion, error)) Completer[T] {
-	return AsCompleter[T](&Completion{DeferredCompletion: &DeferredCompletion{graph, f}})
+// DeferredCompleter returns an argument/flag `Completer` that defers completion
+// until after the provided graph is run. See the `DeferredCompletion` object
+// for more info.
+func DeferredCompleter[T any](graph Node, completer Completer[T]) Completer[T] {
+	return CompleterFromFunc(func(t T, d *Data) (*Completion, error) {
+		return &Completion{
+			DeferredCompletion: &DeferredCompletion{
+				graph,
+				func(d *Data) (*Completion, error) {
+					return RunArgumentCompleter(completer, t, d)
+				},
+			},
+		}, nil
+	})
 }
 
 func (c *Completion) Clone() *Completion {
@@ -185,7 +192,7 @@ func BoolCompleter() Completer[bool] {
 
 // RunArgumentCompleter generates a `Completion` object from the provided
 // `Completer` and inputs.
-func RunArgumentCompleter[T any](c Completer[T], rawValue string, value T, data *Data) (*Completion, error) {
+func RunArgumentCompleter[T any](c Completer[T], value T, data *Data) (*Completion, error) {
 	if c == nil {
 		return nil, nil
 	}
@@ -195,12 +202,12 @@ func RunArgumentCompleter[T any](c Completer[T], rawValue string, value T, data 
 		return nil, err
 	}
 
-	return RunArgumentCompletion(completion, rawValue, value, data)
+	return RunArgumentCompletion(completion, value, data)
 }
 
 // RunArgumentCompletion generates a `Completion` object from the provided
 // `Completion` and inputs.
-func RunArgumentCompletion[T any](completion *Completion, rawValue string, value T, data *Data) (*Completion, error) {
+func RunArgumentCompletion[T any](completion *Completion, value T, data *Data) (*Completion, error) {
 
 	op := getOperator[T]()
 
