@@ -15,6 +15,7 @@ var (
 	RelevantPackages = []string{
 		"cd",
 		"command",
+		"differ",
 		"emacs",
 		"gocli",
 		"grep",
@@ -293,7 +294,7 @@ func (*Debugger) Node() command.Node {
 }
 
 func main() {
-	os.Exit(sourcerer.Source([]sourcerer.CLI{
+	clis := []sourcerer.CLI{
 		// TODO: Command to clear go/bin of leep-frog files
 		&SourcererCommand{},
 		&UpdateLeepPackageCommand{},
@@ -301,5 +302,9 @@ func main() {
 		&AliaserCommand{},
 		&GoLeep{},
 		&Debugger{},
-	}))
+	}
+	opts := []sourcerer.Option{
+		sourcerer.NewAliaser("gl", "goleep"),
+	}
+	os.Exit(sourcerer.Source(clis, opts...))
 }
