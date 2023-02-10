@@ -251,6 +251,15 @@ func Run(cli CLI) int {
 		o.Err(err)
 		return 1
 	}
+	if err := command.RunNodesWithOutput(cli.Node(), o); err != nil {
+		return 1
+	}
+	if cli.Changed() {
+		if err := save(cli); err != nil {
+			o.Stderrf("failed to save cli data: %v\n", err)
+			return 1
+		}
+	}
 	o.Close()
 	return 0
 }
