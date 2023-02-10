@@ -267,13 +267,20 @@ func Execute(n Node, input *Input, output Output) (*ExecuteData, error) {
 
 // RunNodes executes the provided node. This function can be used when nodes
 // aren't used for CLI tools (such as in regular main.go files that are
-// executed via "go run"). Using in this in conjunction with the `goleep`
-// command is incredibly useful.
+// executed via "go run"). While this is useful to use in conjunction
+// with the `goleep` command, consider using `sourcerer.Run` to ensure
+// your CLI data is also load from persistent memory.
 func RunNodes(n Node) error {
 	o := NewOutput()
-	err := runNodes(n, o, &Data{}, os.Args[1:])
+	err := RunNodesWithOutput(n, o)
 	o.Close()
 	return err
+}
+
+// RunNodesWithOutput is similar to `RunNodes`, but accepts the output to use.
+// Note: this function does *not* close the output channel.
+func RunNodesWithOutput(n Node, o Output) error {
+	return runNodes(n, o, &Data{}, os.Args[1:])
 }
 
 const (
