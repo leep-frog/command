@@ -135,10 +135,15 @@ func (*SourcererCommand) Name() string {
 var (
 	sourcererDirArg    = command.FileArgument("DIRECTORY", "Directory in which to create CLI", command.IsDir())
 	sourcererSuffixArg = command.Arg[string]("BINARY_SUFFIX", "Suffix for the name", command.MinLength[string, string](1))
+	loadOnlyFlag       = command.BoolValueFlag("load-only", 'l', "If set to true, the binaries are assumed to exist and only the aliases and completion setups are generated", "-l")
 )
 
 func (*SourcererCommand) Node() command.Node {
 	return command.SerialNodes(
+		command.FlagProcessor(
+			// Note: this must be identical to the loadOnlyFlag in sourcerer.go
+			loadOnlyFlag,
+		),
 		sourcererDirArg,
 		sourcererSuffixArg,
 		command.ExecutableProcessor(func(_ command.Output, d *command.Data) ([]string, error) {
@@ -146,7 +151,7 @@ func (*SourcererCommand) Node() command.Node {
 				"pushd . > /dev/null",
 				fmt.Sprintf("cd %q", sourcererDirArg.Get(d)),
 				`local tmpFile="$(mktemp)"`,
-				fmt.Sprintf("go run . %q > $tmpFile && source $tmpFile ", sourcererSuffixArg.Get(d)),
+				fmt.Sprintf("go run . %q %s > $tmpFile && source $tmpFile ", sourcererSuffixArg.Get(d), loadOnlyFlag.Get(d)),
 				"popd > /dev/null",
 			}, nil
 		}),

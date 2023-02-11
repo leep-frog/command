@@ -302,12 +302,11 @@ func (s *sourcerer) getCLI(cli string) (CLI, error) {
 	return nil, fmt.Errorf("unknown CLI %q", cli)
 }
 
-func (s *sourcerer) Node() command.Node {
-	generateBinaryNode := command.SerialNodes(
-		targetNameArg,
-		&command.ExecutorProcessor{F: s.generateFile},
-	)
+var (
+	loadOnlyFlag = command.BoolFlag("load-only", 'l', "If set to true, the binaries are assumed to exist and only the aliases and completion setups are generated")
+)
 
+func (s *sourcerer) Node() command.Node {
 	return &command.BranchNode{
 		Branches: map[string]command.Node{
 			"autocomplete": command.SerialNodes(
@@ -329,7 +328,13 @@ func (s *sourcerer) Node() command.Node {
 				&command.ExecutorProcessor{F: s.executeExecutor},
 			),
 		},
-		Default: generateBinaryNode,
+		Default: command.SerialNodes(
+			command.FlagProcessor(
+				loadOnlyFlag,
+			),
+			targetNameArg,
+			&command.ExecutorProcessor{F: s.generateFile},
+		),
 	}
 }
 
@@ -434,7 +439,9 @@ func (s *sourcerer) generateFile(o command.Output, d *command.Data) error {
 	}
 
 	// cd into the directory of the file that is actually calling this and install dependencies.
-	o.Stdoutf(generateBinary, s.sl, filename)
+	if !loadOnlyFlag.Get(d) {
+		o.Stdoutf(generateBinary, s.sl, filename)
+	}
 
 	// define the autocomplete function
 	o.Stdoutf(autocompleteFunction, filename, filename)

@@ -7647,7 +7647,7 @@ func TestComplete(t *testing.T) {
 		},
 		{
 			name:        "FileCompleter works with absolute path",
-			filepathAbs: filepath.Join("."),
+			filepathAbs: filepath.Join(),
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
 					Arg[string]("fn", testDesc, CompleterFromFunc(func(s string, d *Data) (*Completion, error) {

@@ -391,7 +391,32 @@ func TestExecute(t *testing.T) {
 						"pushd . > /dev/null",
 						fmt.Sprintf(`cd %q`, command.FilepathAbs(t, "..", "..", "..", "testdata")),
 						`local tmpFile="$(mktemp)"`,
-						`go run . "ING" > $tmpFile && source $tmpFile `,
+						`go run . "ING"  > $tmpFile && source $tmpFile `,
+						"popd > /dev/null",
+					},
+				},
+			},
+		},
+		{
+			name: "Sources directory with load only",
+			cli:  &SourcererCommand{},
+			etc: &command.ExecuteTestCase{
+				Args: []string{
+					filepath.Join("..", "..", "..", "testdata"),
+					"ING",
+					"-l",
+				},
+				WantData: &command.Data{Values: map[string]interface{}{
+					sourcererDirArg.Name():    command.FilepathAbs(t, "..", "..", "..", "testdata"),
+					sourcererSuffixArg.Name(): "ING",
+					loadOnlyFlag.Name():       "-l",
+				}},
+				WantExecuteData: &command.ExecuteData{
+					Executable: []string{
+						"pushd . > /dev/null",
+						fmt.Sprintf(`cd %q`, command.FilepathAbs(t, "..", "..", "..", "testdata")),
+						`local tmpFile="$(mktemp)"`,
+						`go run . "ING" -l > $tmpFile && source $tmpFile `,
 						"popd > /dev/null",
 					},
 				},

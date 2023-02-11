@@ -505,11 +505,12 @@ type runResponseTester struct {
 
 var (
 	allowedCmdPaths = map[string]bool{
-		"bash":                            true,
-		"C:\\msys64\\usr\\bin\\bash.exe":  true,
-		"C:\\Windows\\system32\\bash.exe": true,
-		"C:\\WINDOWS\\system32\\bash.exe": true,
-		"/usr/bin/bash":                   true,
+		"bash":                                       true,
+		"C:\\msys64\\usr\\bin\\bash.exe":             true,
+		"C:\\Windows\\system32\\bash.exe":            true,
+		"C:\\WINDOWS\\system32\\bash.exe":            true,
+		"/usr/bin/bash":                              true,
+		"C:\\Program Files\\Git\\usr\\bin\\bash.exe": true,
 	}
 )
 
