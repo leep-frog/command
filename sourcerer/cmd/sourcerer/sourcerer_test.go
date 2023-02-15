@@ -507,7 +507,7 @@ func TestAutocomplete(t *testing.T) {
 			},
 		},
 		{
-			name: "completes args",
+			name: "completes empty args",
 			ctc: &command.CompleteTestCase{
 				Args: "cmd ",
 				RunResponses: []*command.FakeRun{
@@ -528,6 +528,29 @@ func TestAutocomplete(t *testing.T) {
 				WantData: &command.Data{Values: map[string]interface{}{
 					goDirectory.Name():   ".",
 					passAlongArgs.Name(): []string{""},
+				}},
+			},
+		},
+		{
+			name: "completes present args with quotes",
+			ctc: &command.CompleteTestCase{
+				Args: "cmd abc d\"e'f",
+				RunResponses: []*command.FakeRun{
+					{
+						Stdout: []string{"un", "deux", "trois", "de'finitely"},
+					},
+				},
+				WantRunContents: [][]string{{
+					"set -e",
+					"set -o pipefail",
+					`go run . autocomplete "dummyCommand abc de'f"`,
+				}},
+				Want: []string{
+					"de'finitely",
+				},
+				WantData: &command.Data{Values: map[string]interface{}{
+					goDirectory.Name():   ".",
+					passAlongArgs.Name(): []string{"abc", `de'f`},
 				}},
 			},
 		},
