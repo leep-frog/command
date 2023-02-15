@@ -323,6 +323,8 @@ func (ff *FileCompleter[T]) modifyArgumentOption(ao *argumentOption[T]) {
 var (
 	// ioutilReadDir is a var so it can be stubbed out for tests.
 	ioutilReadDir = ioutil.ReadDir
+	// filepathRel is a var so it can be stubbed out for tests.
+	filepathRel = filepath.Rel
 )
 
 // filepathDepth returns the depth of the provided directory

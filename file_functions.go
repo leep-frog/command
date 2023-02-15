@@ -50,3 +50,21 @@ func Stat(name string) (os.FileInfo, error) {
 	}
 	return fi, nil
 }
+
+// FileContents converts a filename into the file's contents.
+func FileContents(name, desc string, opts ...ArgumentOption[string]) Processor {
+	fc := FileArgument(name, desc, opts...)
+	return SimpleProcessor(func(i *Input, o Output, d *Data, ed *ExecuteData) error {
+		if err := processOrExecute(fc, i, o, d, ed); err != nil {
+			return err
+		}
+		b, err := os.ReadFile(d.String(name))
+		if err != nil {
+			return o.Annotatef(err, "failed to read fileee")
+		}
+		d.Set(name, strings.Split(strings.TrimSpace(string(b)), "\n"))
+		return nil
+	}, func(i *Input, d *Data) (*Completion, error) {
+		return processOrComplete(fc, i, d)
+	})
+}

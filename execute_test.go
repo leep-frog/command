@@ -4778,183 +4778,6 @@ func TestExecute(t *testing.T) {
 				}},
 			},
 		},
-		// ArgFilter tests.
-		{
-			name: "empty arg doesn't get filtered",
-			etc: &ExecuteTestCase{
-				Node: SerialNodes(
-					ListArg[string]("sl", testDesc, 0, UnboundedList),
-					ArgFilter[string](
-						ListArg[string]("sl", testDesc, 0, UnboundedList),
-						func(s string, d *Data) (bool, error) {
-							return strings.Contains(s, "y"), nil
-						},
-					),
-				),
-			},
-		},
-		{
-			name: "args get filtered",
-			etc: &ExecuteTestCase{
-				Node: SerialNodes(
-					ListArg[string]("sl", testDesc, 0, UnboundedList),
-					ArgFilter[string](
-						ListArg[string]("sl", testDesc, 0, UnboundedList),
-						func(s string, d *Data) (bool, error) {
-							return strings.Contains(s, "y"), nil
-						},
-					),
-				),
-				Args: []string{"hey", "hi", "howdy", "hello"},
-				WantData: &Data{Values: map[string]interface{}{
-					"sl": []string{"hey", "howdy"},
-				}},
-				wantInput: &Input{
-					args: []*inputArg{
-						{value: "hey"},
-						{value: "hi"},
-						{value: "howdy"},
-						{value: "hello"},
-					},
-				},
-			},
-		},
-		{
-			name: "flags get filtered",
-			etc: &ExecuteTestCase{
-				Node: SerialNodes(
-					FlagProcessor(
-						ListFlag[string]("sl", 's', testDesc, 0, UnboundedList),
-					),
-					ArgFilter[string](
-						ListArg[string]("sl", testDesc, 0, UnboundedList),
-						func(s string, d *Data) (bool, error) {
-							return strings.Contains(s, "y"), nil
-						},
-					),
-				),
-				Args: []string{"-s", "hey", "hi", "howdy", "hello"},
-				WantData: &Data{Values: map[string]interface{}{
-					"sl": []string{"hey", "howdy"},
-				}},
-				wantInput: &Input{
-					args: []*inputArg{
-						{value: "-s"},
-						{value: "hey"},
-						{value: "hi"},
-						{value: "howdy"},
-						{value: "hello"},
-					},
-				},
-			},
-		},
-		{
-			name: "args filter returns error",
-			etc: &ExecuteTestCase{
-				Node: SerialNodes(
-					ListArg[string]("sl", testDesc, 0, UnboundedList),
-					ArgFilter[string](
-						ListArg[string]("sl", testDesc, 0, UnboundedList),
-						func(s string, d *Data) (bool, error) {
-							return strings.Contains(s, "y"), fmt.Errorf("my b")
-						},
-					),
-				),
-				Args:       []string{"hey", "hi", "howdy", "hello"},
-				WantErr:    fmt.Errorf("my b"),
-				WantStderr: "my b\n",
-				WantData: &Data{Values: map[string]interface{}{
-					"sl": []string{"hey", "hi", "howdy", "hello"},
-				}},
-				wantInput: &Input{
-					args: []*inputArg{
-						{value: "hey"},
-						{value: "hi"},
-						{value: "howdy"},
-						{value: "hello"},
-					},
-				},
-			},
-		},
-		{
-			name: "flag filter returns error",
-			etc: &ExecuteTestCase{
-				Node: SerialNodes(
-					FlagProcessor(
-						ListFlag[string]("sl", 's', testDesc, 0, UnboundedList),
-					),
-					ArgFilter[string](
-						ListArg[string]("sl", testDesc, 0, UnboundedList),
-						func(s string, d *Data) (bool, error) {
-							return strings.Contains(s, "y"), fmt.Errorf("my b")
-						},
-					),
-				),
-				Args:       []string{"--sl", "hey", "hi", "howdy", "hello"},
-				WantErr:    fmt.Errorf("my b"),
-				WantStderr: "my b\n",
-				WantData: &Data{Values: map[string]interface{}{
-					"sl": []string{"hey", "hi", "howdy", "hello"},
-				}},
-				wantInput: &Input{
-					args: []*inputArg{
-						{value: "--sl"},
-						{value: "hey"},
-						{value: "hi"},
-						{value: "howdy"},
-						{value: "hello"},
-					},
-				},
-			},
-		},
-		// EmptyArgFilter tests.
-		{
-			name: "empty strings get filtered",
-			etc: &ExecuteTestCase{
-				Node: SerialNodes(
-					ListArg[string]("sl", testDesc, 0, UnboundedList),
-					EmptyArgFilter[string](ListArg[string]("sl", testDesc, 0, UnboundedList)),
-				),
-				Args: []string{"hey", "hi", "", "hello", "", "howdy"},
-				WantData: &Data{Values: map[string]interface{}{
-					"sl": []string{"hey", "hi", "hello", "howdy"},
-				}},
-				wantInput: &Input{
-					args: []*inputArg{
-						{value: "hey"},
-						{value: "hi"},
-						{value: ""},
-						{value: "hello"},
-						{value: ""},
-						{value: "howdy"},
-					},
-				},
-			},
-		},
-		{
-			name: "empty ints get filtered",
-			etc: &ExecuteTestCase{
-				Node: SerialNodes(
-					ListArg[int]("il", testDesc, 0, UnboundedList),
-					EmptyArgFilter[int](ListArg[int]("il", testDesc, 0, UnboundedList)),
-				),
-				Args: []string{"123", "456", "000", "-7", "00", "89", "0"},
-				WantData: &Data{Values: map[string]interface{}{
-					"il": []int{123, 456, -7, 89},
-				}},
-				wantInput: &Input{
-					args: []*inputArg{
-						{value: "123"},
-						{value: "456"},
-						{value: "0"},
-						{value: "-7"},
-						{value: "0"},
-						{value: "89"},
-						{value: "0"},
-					},
-				},
-			},
-		},
 		// Transformer tests.
 		{
 			name: "args get transformed",
@@ -7325,47 +7148,6 @@ func TestComplete(t *testing.T) {
 				}},
 			},
 		},
-		// ArgFilter tests.
-		{
-			name: "args get filtered",
-			ctc: &CompleteTestCase{
-				Node: SerialNodes(
-					ListArg[string]("sl", testDesc, 0, 4),
-					ArgFilter[string](
-						ListArg[string]("sl", testDesc, 0, 4),
-						func(s string, d *Data) (bool, error) {
-							return strings.Contains(s, "y"), nil
-						},
-					),
-					Arg[string]("s", testDesc),
-				),
-				Args: "cmd hey hi howdy hello ",
-				WantData: &Data{Values: map[string]interface{}{
-					"sl": []string{"hey", "howdy"},
-					"s":  "",
-				}},
-			},
-		},
-		{
-			name: "ArgFilter returns error",
-			ctc: &CompleteTestCase{
-				Node: SerialNodes(
-					ListArg[string]("sl", testDesc, 0, 4),
-					ArgFilter[string](
-						ListArg[string]("sl", testDesc, 0, 4),
-						func(s string, d *Data) (bool, error) {
-							return strings.Contains(s, "y"), fmt.Errorf("rats")
-						},
-					),
-					Arg[string]("s", testDesc),
-				),
-				Args:    "cmd hey hi howdy hello ",
-				WantErr: fmt.Errorf("rats"),
-				WantData: &Data{Values: map[string]interface{}{
-					"sl": []string{"hey", "hi", "howdy", "hello"},
-				}},
-			},
-		},
 		// Transformer arg tests.
 		{
 			name: "handles nil option",
@@ -7569,22 +7351,25 @@ func TestComplete(t *testing.T) {
 					"bash_node.go",
 					"bash_node_test.go",
 					"bool_operator.go",
+					"branch_node.go",
 					"cache.go",
 					"cache/",
 					"cache_test.go",
 					"cmd/",
 					"color/",
+					"command.go",
 					"commandtest.go",
 					"completer.go",
 					"completer_test.go",
 					"conditional.go",
-					"custom_nodes.go",
 					"data.go",
 					"data_test.go",
 					"debug.go",
 					"docs/",
+					"echo.go",
 					"execute.go",
 					"execute_test.go",
+					"executor.go",
 					"file_functions.go",
 					"file_functions.txt",
 					"flag.go",
@@ -7596,6 +7381,10 @@ func TestComplete(t *testing.T) {
 					"int_operator.go",
 					"int_operator_test.go",
 					"LICENSE",
+					"list_breaker.go",
+					"map_arg.go",
+					"menu.go",
+					"node_repeater.go",
 					"option.go",
 					"os.go",
 					"osenv.go",
@@ -7603,16 +7392,22 @@ func TestComplete(t *testing.T) {
 					"output_test.go",
 					"prompt.go",
 					"README.md",
+					"serial_nodes.go",
+					"setup.go",
 					"shortcut.go",
 					"shortcut_test.go",
+					"simple_node.go",
+					"simple_processor.go",
 					"sourcerer/",
 					"static_cli.go",
 					"static_cli_test.go",
 					"stdin.go",
 					"string_operator.go",
 					"testdata/",
+					"usage.go",
 					"usage_test.go",
 					"validator.go",
+					"working_directory.go",
 					" ",
 				},
 			},

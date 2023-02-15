@@ -814,8 +814,8 @@ func TestTypedCompleters(t *testing.T) {
 			c:    &FileCompleter[[]string]{},
 			args: "cmd execu",
 			want: []string{
-				"execute",
-				"execute_",
+				"execut",
+				"execut_",
 			},
 		},
 		&completerTest[string]{
@@ -823,9 +823,9 @@ func TestTypedCompleters(t *testing.T) {
 			c: &FileCompleter[[]string]{
 				Distinct: true,
 			},
-			args: "cmd execute.go execu",
+			args: "cmd execute.go execute_test.go ex",
 			want: []string{
-				"execute_test.go",
+				"executor.go",
 			},
 		},
 		&completerTest[string]{
@@ -833,8 +833,8 @@ func TestTypedCompleters(t *testing.T) {
 			singleC: &FileCompleter[string]{},
 			args:    "cmd execu",
 			want: []string{
-				"execute",
-				"execute_",
+				"execut",
+				"execut_",
 			},
 		},
 		&completerTest[string]{
@@ -1300,11 +1300,11 @@ func TestTypedCompleters(t *testing.T) {
 				"cache_test.go",
 				"cmd/",
 				"color/",
+				"command.go",
 				"commandtest.go",
 				"completer.go",
 				"completer_test.go",
 				"conditional.go",
-				"custom_nodes.go",
 				" ",
 			},
 		},
@@ -1313,7 +1313,7 @@ func TestTypedCompleters(t *testing.T) {
 			c: &FileCompleter[[]string]{
 				Distinct: true,
 			},
-			args: "cmd custom_nodes.go comp",
+			args: "cmd command.go comp",
 			want: []string{
 				"completer",
 				"completer_",
@@ -1331,10 +1331,10 @@ func TestTypedCompleters(t *testing.T) {
 				"cache_test.go",
 				"cmd/",
 				"color/",
+				"command.go",
 				"commandtest.go",
 				"completer_test.go",
 				"conditional.go",
-				"custom_nodes.go",
 				" ",
 			},
 		},
@@ -1350,9 +1350,9 @@ func TestTypedCompleters(t *testing.T) {
 				"cache_test.go",
 				"cmd/",
 				"color/",
+				"command.go",
 				"commandtest.go",
 				"conditional.go",
-				"custom_nodes.go",
 				" ",
 			},
 		},
