@@ -518,7 +518,7 @@ func TestAutocomplete(t *testing.T) {
 				WantRunContents: [][]string{{
 					"set -e",
 					"set -o pipefail",
-					`go run . autocomplete ""`,
+					`go run . autocomplete "dummyCommand "`,
 				}},
 				Want: []string{
 					"deux",
@@ -545,7 +545,7 @@ func TestAutocomplete(t *testing.T) {
 				WantRunContents: [][]string{{
 					"set -e",
 					"set -o pipefail",
-					`go run . autocomplete ""`,
+					`go run . autocomplete "dummyCommand "`,
 				}},
 				WantData: &command.Data{Values: map[string]interface{}{
 					goDirectory.Name():   ".",

@@ -253,14 +253,16 @@ func (gl *GoLeep) Node() command.Node {
 		Branches: map[string]command.Node{
 			"usage": usageNode,
 		},
-		Default: exNode, DefaultCompletion: true,
+		Default:           exNode,
+		DefaultCompletion: true,
 	}
 }
 
 func (gl *GoLeep) completer() command.Completer[[]string] {
 	return command.CompleterFromFunc(func(s []string, data *command.Data) (*command.Completion, error) {
 		extraArgs := []string{
-			fmt.Sprintf("%q", strings.Join(passAlongArgs.Get(data), " ")),
+			// Add a "dummyCommand" prefix to be removed by the command.Autocomplete function.
+			fmt.Sprintf("%q", "dummyCommand "+strings.Join(passAlongArgs.Get(data), " ")),
 		}
 		bc := &command.BashCommand[[]string]{ArgName: "BASH_OUTPUT", Contents: gl.runCommand(data, "autocomplete", extraArgs), HideStderr: true}
 		v, err := bc.Run(nil, data)
