@@ -48,3 +48,12 @@ func processGraphCompletion(n Node, input *Input, data *Data, checkInput bool) (
 	}
 	return nil, nil
 }
+
+// processOrComplete checks if the provided processor is a `Node` or just a `Processor`
+// and traverses the subgraph or completes the processor accordingly.
+func processOrComplete(p Processor, input *Input, data *Data) (*Completion, error) {
+	if n, ok := p.(Node); ok {
+		return processGraphCompletion(n, input, data, false)
+	}
+	return p.Complete(input, data)
+}

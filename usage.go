@@ -15,6 +15,21 @@ const (
 	SymbolSection = "Symbols"
 )
 
+// GetUsage constructs a `Usage` object from the head `Node` of a command graph.
+func GetUsage(n Node) *Usage {
+	return getUsage(n, &Usage{
+		UsageSection: &UsageSection{},
+	})
+}
+
+func getUsage(n Node, u *Usage) *Usage {
+	for n != nil {
+		n.Usage(u)
+		n = n.UsageNext()
+	}
+	return u
+}
+
 // Usage contains all data needed for constructing a command's usage text.
 type Usage struct {
 	// UsageSection is a map from section name to key phrase for that section to description for that key.
@@ -122,4 +137,10 @@ func (u *Usage) string(r []string, depth int) []string {
 		}
 	}
 	return r
+}
+
+// ShowUsageAfterError returns a string containing the the provided
+// Node's usage doc along with a prefix to separate it from the printed error.
+func ShowUsageAfterError(n Node) string {
+	return fmt.Sprintf("\n======= Command Usage =======\n%s", GetUsage(n).String())
 }
