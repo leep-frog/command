@@ -259,22 +259,6 @@ func (*sourcerer) Name() string {
 	return "_internal_sourcerer"
 }
 
-func (s *sourcerer) getCLI(cli string) (CLI, error) {
-	if cli == s.Name() {
-		return s, nil
-	}
-
-	for _, c := range s.clis {
-		if c.Name() == cli {
-			if err := load(c); err != nil {
-				return nil, fmt.Errorf("failed to load cli: %v", err)
-			}
-			return c, nil
-		}
-	}
-	return nil, fmt.Errorf("unknown CLI %q", cli)
-}
-
 var (
 	loadOnlyFlag = command.BoolFlag("load-only", 'l', "If set to true, the binaries are assumed to exist and only the aliases and completion setups are generated")
 )
@@ -308,14 +292,23 @@ func (s *sourcerer) Node() command.Node {
 				passthroughArgs,
 				&command.ExecutorProcessor{F: s.executeExecutor},
 			),
+			"source": command.SerialNodes(
+				command.FlagProcessor(
+					loadOnlyFlag,
+				),
+				targetNameArg,
+				&command.ExecutorProcessor{F: s.generateFile},
+			),
 		},
 		HideUsage: true,
 		Default: command.SerialNodes(
-			command.FlagProcessor(
-				loadOnlyFlag,
-			),
-			targetNameArg,
-			&command.ExecutorProcessor{F: s.generateFile},
+			// Just eat the remaining args
+			// command.ListArg[string]("UNUSED", "", 0, command.UnboundedList),
+			&command.ExecutorProcessor{func(o command.Output, d *command.Data) error {
+				// Add echo so it's a comment if included in sourced output
+				o.Stderrf("echo %q", "Executing a sourcerer.CLI directly through `go run` is tricky. Either generate a CLI or use the `goleep` command to directly run the file.")
+				return nil
+			}},
 		),
 	}
 }

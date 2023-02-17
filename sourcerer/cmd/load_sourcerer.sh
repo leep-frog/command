@@ -6,7 +6,7 @@ function _initial_load() {
   pushd . > /dev/null
   cd "$(dirname -- "${BASH_SOURCE[0]}")"
   tmpFile="$(mktemp)"
-  go run . sourcerer > $tmpFile && source $tmpFile
+  go run . source sourcerer > $tmpFile && source $tmpFile
   popd > /dev/null
 }
 _initial_load

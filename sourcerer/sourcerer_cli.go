@@ -38,7 +38,7 @@ func (*SourcererCommand) Node() command.Node {
 				"pushd . > /dev/null",
 				fmt.Sprintf("cd %q", sourcererDirArg.Get(d)),
 				`local tmpFile="$(mktemp)"`,
-				fmt.Sprintf("go run . %q %s > $tmpFile && source $tmpFile ", sourcererSuffixArg.Get(d), externalLoadOnlyFlag.Get(d)),
+				fmt.Sprintf("go run . source %q %s > $tmpFile && source $tmpFile ", sourcererSuffixArg.Get(d), externalLoadOnlyFlag.Get(d)),
 				"popd > /dev/null",
 			}, nil
 		}),

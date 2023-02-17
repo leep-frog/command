@@ -7,7 +7,7 @@ import (
 
 /* To test, cd into this directory and then run the following commands:
 # Load the goleep command
-source "$(go run ../goleeper/goleeper.go goleeper)"
+source "$(go run source ../goleeper/goleeper.go goleeper)"
 
 # Test usage and wildcards
 goleep usage main.go

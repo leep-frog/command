@@ -36,6 +36,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 	}{
 		{
 			name: "generates source file when no CLIs",
+			args: []string{"source"},
 			wantExecuteFile: []string{
 				`function _custom_execute_leep-frog-source {`,
 				`  # tmpFile is the file to which we write ExecuteData.Executable`,
@@ -76,6 +77,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 		},
 		{
 			name: "adds multiple Aliaser (singular) options at the end",
+			args: []string{"source"},
 			opts: []Option{
 				NewAliaser("a1", "do", "some", "stuff"),
 				NewAliaser("otherAlias", "flaggable", "--args", "--at", "once"),
@@ -147,7 +149,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 		},
 		{
 			name: "load only flag doesn't generate binaries",
-			args: []string{"-l"},
+			args: []string{"source", "-l"},
 			opts: []Option{
 				NewAliaser("a1", "do", "some", "stuff"),
 				NewAliaser("otherAlias", "flaggable", "--args", "--at", "once"),
@@ -219,6 +221,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 		},
 		{
 			name: "only verifies each CLI once",
+			args: []string{"source"},
 			opts: []Option{
 				// Note the CLI in both of these is "do"
 				NewAliaser("a1", "do", "some", "stuff"),
@@ -287,6 +290,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 		},
 		{
 			name: "adds Aliasers (plural) at the end",
+			args: []string{"source"},
 			opts: []Option{
 				Aliasers(map[string][]string{
 					"a1":         {"do", "some", "stuff"},
@@ -360,7 +364,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 		},
 		{
 			name: "generates source file with custom filename",
-			args: []string{"custom-output_file"},
+			args: []string{"source", "custom-output_file"},
 			wantExecuteFile: []string{
 				`function _custom_execute_custom-output_file {`,
 				`  # tmpFile is the file to which we write ExecuteData.Executable`,
@@ -401,6 +405,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 		},
 		{
 			name: "generates source file with CLIs",
+			args: []string{"source"},
 			clis: append(SimpleCommands(map[string]string{
 				"x": "exit",
 				"l": "ls -la",
@@ -455,6 +460,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 		},
 		{
 			name: "generates source file with CLIs ignoring nosort",
+			args: []string{"source"},
 			clis: append(SimpleCommands(map[string]string{
 				"x": "exit",
 				"l": "ls -la",
@@ -559,16 +565,6 @@ func TestSourcerer(t *testing.T) {
 		t.Fatalf("failed to create tmp file: %v", err)
 	}
 
-	baseUsage := strings.Join([]string{
-		usagePrefixString,
-		`[ TARGET_NAME ] --load-only|-l`,
-		``,
-		`Arguments:`,
-		`  TARGET_NAME: The name of the created target in $GOPATH/bin`,
-		``,
-		`Flags:`,
-		`  [l] load-only: If set to true, the binaries are assumed to exist and only the aliases and completion setups are generated`,
-	}, "\n")
 	for _, test := range []struct {
 		name            string
 		clis            []CLI
@@ -585,11 +581,9 @@ func TestSourcerer(t *testing.T) {
 			name: "fails if invalid command branch",
 			args: []string{"wizardry", "stuff"},
 			wantStderr: []string{
-				"Unprocessed extra args: [stuff]",
-				baseUsage,
+				"Unprocessed extra args: [wizardry stuff]",
 			},
-			wantErr:         fmt.Errorf("Unprocessed extra args: [stuff]"),
-			noStderrNewline: true,
+			wantErr: fmt.Errorf("Unprocessed extra args: [wizardry stuff]"),
 		},
 		// Execute tests
 		{
@@ -597,10 +591,8 @@ func TestSourcerer(t *testing.T) {
 			args: []string{"execute"},
 			wantStderr: []string{
 				`Argument "CLI" requires at least 1 argument, got 0`,
-				baseUsage,
 			},
-			wantErr:         fmt.Errorf(`Argument "CLI" requires at least 1 argument, got 0`),
-			noStderrNewline: true,
+			wantErr: fmt.Errorf(`Argument "CLI" requires at least 1 argument, got 0`),
 		},
 		{
 			name: "fails if no file arg",
@@ -608,10 +600,8 @@ func TestSourcerer(t *testing.T) {
 			clis: []CLI{&bashCLI{name: "bc"}},
 			wantStderr: []string{
 				`Argument "FILE" requires at least 1 argument, got 0`,
-				baseUsage,
 			},
-			wantErr:         fmt.Errorf(`Argument "FILE" requires at least 1 argument, got 0`),
-			noStderrNewline: true,
+			wantErr: fmt.Errorf(`Argument "FILE" requires at least 1 argument, got 0`),
 		},
 		{
 			name: "fails if unknown CLI",
@@ -891,10 +881,8 @@ func TestSourcerer(t *testing.T) {
 			args: []string{"autocomplete"},
 			wantStderr: []string{
 				`Argument "CLI" requires at least 1 argument, got 0`,
-				baseUsage,
 			},
-			wantErr:         fmt.Errorf(`Argument "CLI" requires at least 1 argument, got 0`),
-			noStderrNewline: true,
+			wantErr: fmt.Errorf(`Argument "CLI" requires at least 1 argument, got 0`),
 		},
 		{
 			name: "autocomplete requires comp_type",
@@ -902,10 +890,8 @@ func TestSourcerer(t *testing.T) {
 			clis: []CLI{&usageErrCLI{}},
 			wantStderr: []string{
 				`Argument "COMP_TYPE" requires at least 1 argument, got 0`,
-				baseUsage,
 			},
-			wantErr:         fmt.Errorf(`Argument "COMP_TYPE" requires at least 1 argument, got 0`),
-			noStderrNewline: true,
+			wantErr: fmt.Errorf(`Argument "COMP_TYPE" requires at least 1 argument, got 0`),
 		},
 		{
 			name: "autocomplete requires comp_point",
@@ -913,10 +899,8 @@ func TestSourcerer(t *testing.T) {
 			clis: []CLI{&usageErrCLI{}},
 			wantStderr: []string{
 				`Argument "COMP_POINT" requires at least 1 argument, got 0`,
-				baseUsage,
 			},
-			wantErr:         fmt.Errorf(`Argument "COMP_POINT" requires at least 1 argument, got 0`),
-			noStderrNewline: true,
+			wantErr: fmt.Errorf(`Argument "COMP_POINT" requires at least 1 argument, got 0`),
 		},
 		{
 			name: "autocomplete requires comp_line",
@@ -924,10 +908,8 @@ func TestSourcerer(t *testing.T) {
 			clis: []CLI{&usageErrCLI{}},
 			wantStderr: []string{
 				`Argument "COMP_LINE" requires at least 1 argument, got 0`,
-				baseUsage,
 			},
-			wantErr:         fmt.Errorf(`Argument "COMP_LINE" requires at least 1 argument, got 0`),
-			noStderrNewline: true,
+			wantErr: fmt.Errorf(`Argument "COMP_LINE" requires at least 1 argument, got 0`),
 		},
 		{
 			name:    "autocomplete doesn't require passthrough args",
@@ -1089,10 +1071,8 @@ func TestSourcerer(t *testing.T) {
 			args: []string{"usage"},
 			wantStderr: []string{
 				`Argument "CLI" requires at least 1 argument, got 0`,
-				baseUsage,
 			},
-			wantErr:         fmt.Errorf(`Argument "CLI" requires at least 1 argument, got 0`),
-			noStderrNewline: true,
+			wantErr: fmt.Errorf(`Argument "CLI" requires at least 1 argument, got 0`),
 		},
 		{
 			name: "usage fails if too many args",
