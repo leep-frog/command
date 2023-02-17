@@ -280,10 +280,15 @@ var (
 )
 
 func (s *sourcerer) Node() command.Node {
+	loadCLIArg := command.SuperSimpleProcessor(func(i *command.Input, d *command.Data) error {
+		// TODO: Test this
+		return load(s.cliArg.Get(d))
+	})
 	return &command.BranchNode{
 		Branches: map[string]command.Node{
 			"autocomplete": command.SerialNodes(
 				s.cliArg,
+				loadCLIArg,
 				compTypeArg,
 				compPointArg,
 				compLineArg,
@@ -292,11 +297,13 @@ func (s *sourcerer) Node() command.Node {
 			),
 			"usage": command.SerialNodes(
 				s.cliArg,
+				loadCLIArg,
 				passthroughArgs,
 				command.SimpleProcessor(s.usageExecutor, nil),
 			),
 			"execute": command.SerialNodes(
 				s.cliArg,
+				loadCLIArg,
 				fileArg,
 				passthroughArgs,
 				&command.ExecutorProcessor{F: s.executeExecutor},
