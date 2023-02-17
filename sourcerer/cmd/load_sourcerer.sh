@@ -4,11 +4,11 @@
 # command is run in a function (for local variables).
 function _initial_load() {
   pushd . > /dev/null
-  cd "$(dirname -- "${BASH_SOURCE[0]}")/sourcerer"
+  cd "$(dirname -- "${BASH_SOURCE[0]}")"
   tmpFile="$(mktemp)"
   go run . sourcerer > $tmpFile && source $tmpFile
   popd > /dev/null
 }
 _initial_load
 
-alias u=mancli
+aliaser u mancli

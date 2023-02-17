@@ -632,11 +632,11 @@ func TestSourcerer(t *testing.T) {
 		},
 		{
 			name: "fails if unknown CLI",
-			args: []string{"execute", fakeFile, "idk"},
+			args: []string{"execute", "idk"},
 			wantStderr: []string{
-				"validation for \"CLI\" failed: [MapArg] key is not in map",
+				"validation for \"CLI\" failed: [MapArg] key (idk) is not in map",
 			},
-			wantErr: fmt.Errorf("validation for \"CLI\" failed: [MapArg] key is not in map"),
+			wantErr: fmt.Errorf("validation for \"CLI\" failed: [MapArg] key (idk) is not in map"),
 		},
 		{
 			name: "properly executes CLI",
@@ -988,9 +988,9 @@ func TestSourcerer(t *testing.T) {
 			name: "autocomplete requires valid cli",
 			args: []string{"autocomplete", "idk", "63", "2", "a"},
 			wantStderr: []string{
-				"validation for \"CLI\" failed: [MapArg] key is not in map\n",
+				"validation for \"CLI\" failed: [MapArg] key (idk) is not in map\n",
 			},
-			wantErr:         fmt.Errorf("validation for \"CLI\" failed: [MapArg] key is not in map"),
+			wantErr:         fmt.Errorf("validation for \"CLI\" failed: [MapArg] key (idk) is not in map"),
 			noStderrNewline: true,
 		},
 		{
