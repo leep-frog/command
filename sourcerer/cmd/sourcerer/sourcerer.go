@@ -265,9 +265,15 @@ func (gl *GoLeep) completer() command.Completer[[]string] {
 			fmt.Sprintf("%q", "dummyCommand "+strings.Join(passAlongArgs.Get(data), " ")),
 		}
 		bc := &command.BashCommand[[]string]{ArgName: "BASH_OUTPUT", Contents: gl.runCommand(data, "autocomplete", extraArgs)}
-		v, err := bc.Run(nil, data)
+		fo := command.NewFakeOutput()
+		v, err := bc.Run(fo, data)
+		fo.Close()
 		if err != nil {
-			return nil, err
+			stderr := fo.GetStderr()
+			if stderr != "" {
+				stderr = fmt.Sprintf("\n\nStderr:\n%s", stderr)
+			}
+			return nil, fmt.Errorf("failed to run goleep completion: %v%s", err, stderr)
 		}
 		return &command.Completion{
 			Suggestions: v,

@@ -564,7 +564,7 @@ func TestAutocomplete(t *testing.T) {
 						Stdout: []string{"un", "deux", "trois"},
 					},
 				},
-				WantErr: fmt.Errorf(`failed to execute bash command: whoops`),
+				WantErr: fmt.Errorf(`failed to run goleep completion: failed to execute bash command: whoops`),
 				WantRunContents: [][]string{{
 					"set -e",
 					"set -o pipefail",
