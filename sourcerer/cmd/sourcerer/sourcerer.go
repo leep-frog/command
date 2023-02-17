@@ -170,7 +170,7 @@ var (
 		&command.FileCompleter[string]{IgnoreFiles: true},
 		command.Default("."),
 	)
-	passAlongArgs = command.ListArg[string](command.PassthroughArgs, "Args to pass through to the command", 0, command.UnboundedList)
+	passAlongArgs = command.ListArg[string]("PASSTHROUGH_ARGS", "Args to pass through to the command", 0, command.UnboundedList)
 )
 
 func (gl *GoLeep) Name() string {

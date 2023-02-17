@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/leep-frog/command"
+	"github.com/leep-frog/command/sourcerer"
 )
 
 /* To test, cd into this directory and then run the following commands:
@@ -25,11 +26,13 @@ goleep main.go
 */
 
 func main() {
-	command.RunNodes(command.SerialNodes(
-		command.ListArg[string]("SL", "", 1, 2, command.SimpleCompleter[[]string]("un", "deux", "trois")),
-		&command.ExecutorProcessor{F: func(o command.Output, d *command.Data) error {
-			o.Stdoutf("%v\n", d.StringList("SL"))
-			return nil
-		}},
-	))
+	sourcerer.Source([]sourcerer.CLI{
+		sourcerer.ToCLI("simple", command.SerialNodes(
+			command.ListArg[string]("SL", "", 1, 2, command.SimpleCompleter[[]string]("un", "deux", "trois")),
+			&command.ExecutorProcessor{F: func(o command.Output, d *command.Data) error {
+				o.Stdoutf("%v\n", d.StringList("SL"))
+				return nil
+			}},
+		)),
+	})
 }

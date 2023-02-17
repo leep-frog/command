@@ -236,27 +236,6 @@ var (
 	}
 )
 
-// Run loads and runs the provided CLI. This is especially useful
-// when used in conjunction with the `goleep` tool. The return value is an exit status.
-func Run(cli CLI) int {
-	o := command.NewOutput()
-	if err := load(cli); err != nil {
-		o.Err(err)
-		return 1
-	}
-	if err := command.RunNodesWithOutput(cli.Node(), o); err != nil {
-		return 1
-	}
-	if cli.Changed() {
-		if err := save(cli); err != nil {
-			o.Stderrf("failed to save cli data: %v\n", err)
-			return 1
-		}
-	}
-	o.Close()
-	return 0
-}
-
 func load(cli CLI) error {
 	ck := cacheKey(cli)
 	cash, err := getCache()
