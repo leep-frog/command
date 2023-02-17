@@ -235,5 +235,5 @@ func (as *addShortcut) Execute(input *Input, output Output, data *Data, _ *Execu
 }
 
 func (as *addShortcut) Complete(input *Input, data *Data) (*Completion, error) {
-	return processGraphCompletion(as.node, input, data, false)
+	return processGraphCompletion(as.node, input, data)
 }

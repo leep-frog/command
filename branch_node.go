@@ -61,7 +61,7 @@ func (bn *BranchNode) Complete(input *Input, data *Data) (*Completion, error) {
 	if bn.DefaultCompletion {
 		// Need to iterate over the remaining nodes in case the immediately next node
 		// doesn't process any args and the one after it does.
-		return processGraphCompletion(bn.Default, input, data, false)
+		return processGraphCompletion(bn.Default, input, data)
 	}
 
 	var names []string

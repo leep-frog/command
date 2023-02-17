@@ -127,7 +127,7 @@ func (cc *commandCache) Usage(input *Input, data *Data, u *Usage) error {
 }
 
 func (cc *commandCache) Complete(input *Input, data *Data) (*Completion, error) {
-	return processGraphCompletion(cc.n, input, data, true)
+	return processGraphCompletion(cc.n, input, data)
 }
 
 func (cc *commandCache) Execute(input *Input, output Output, data *Data, eData *ExecuteData) error {

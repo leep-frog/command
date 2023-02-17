@@ -15,17 +15,21 @@ func Autocomplete(n Node, compLine string, passthroughArgs []string) ([]string, 
 // constructed by callers).
 func autocomplete(n Node, compLine string, passthroughArgs []string, data *Data) ([]string, error) {
 	input := ParseCompLine(compLine, passthroughArgs)
-	c, err := processGraphCompletion(n, input, data, true)
+	c, err := processGraphCompletion(n, input, data)
 
 	var r []string
 	if c != nil {
 		r = c.ProcessInput(input)
 	}
+
+	if c == nil && err == nil && !input.FullyProcessed() {
+		err = ExtraArgsErr(input)
+	}
 	return r, err
 }
 
 // Separate method for use by modifiers (shortcut.go, cache.go, etc.)
-func processGraphCompletion(n Node, input *Input, data *Data, checkInput bool) (*Completion, error) {
+func processGraphCompletion(n Node, input *Input, data *Data) (*Completion, error) {
 	for n != nil {
 		c, err := n.Complete(input, data)
 		if c != nil || err != nil {
@@ -43,11 +47,6 @@ func processGraphCompletion(n Node, input *Input, data *Data, checkInput bool) (
 		}
 	}
 
-	if checkInput {
-		if !input.FullyProcessed() {
-			return nil, ExtraArgsErr(input)
-		}
-	}
 	return nil, nil
 }
 
@@ -55,7 +54,7 @@ func processGraphCompletion(n Node, input *Input, data *Data, checkInput bool) (
 // and traverses the subgraph or completes the processor accordingly.
 func processOrComplete(p Processor, input *Input, data *Data) (*Completion, error) {
 	if n, ok := p.(Node); ok {
-		return processGraphCompletion(n, input, data, false)
+		return processGraphCompletion(n, input, data)
 	}
 	return p.Complete(input, data)
 }
