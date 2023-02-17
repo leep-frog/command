@@ -42,7 +42,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 				`  local tmpFile=$(mktemp)`,
 				``,
 				`  # Run the go-only code`,
-				`  $GOPATH/bin/_leep-frog-source_runner execute $tmpFile "$@"`,
+				`  $GOPATH/bin/_leep-frog-source_runner execute "$1" $tmpFile "${@:2}"`,
 				`  # Return the error code if go code terminated with an error`,
 				`  local errorCode=$?`,
 				`  if [ $errorCode -ne 0 ]; then return $errorCode; fi`,
@@ -86,7 +86,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 				`  local tmpFile=$(mktemp)`,
 				``,
 				`  # Run the go-only code`,
-				`  $GOPATH/bin/_leep-frog-source_runner execute $tmpFile "$@"`,
+				`  $GOPATH/bin/_leep-frog-source_runner execute "$1" $tmpFile "${@:2}"`,
 				`  # Return the error code if go code terminated with an error`,
 				`  local errorCode=$?`,
 				`  if [ $errorCode -ne 0 ]; then return $errorCode; fi`,
@@ -158,7 +158,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 				`  local tmpFile=$(mktemp)`,
 				``,
 				`  # Run the go-only code`,
-				`  $GOPATH/bin/_leep-frog-source_runner execute $tmpFile "$@"`,
+				`  $GOPATH/bin/_leep-frog-source_runner execute "$1" $tmpFile "${@:2}"`,
 				`  # Return the error code if go code terminated with an error`,
 				`  local errorCode=$?`,
 				`  if [ $errorCode -ne 0 ]; then return $errorCode; fi`,
@@ -230,7 +230,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 				`  local tmpFile=$(mktemp)`,
 				``,
 				`  # Run the go-only code`,
-				`  $GOPATH/bin/_leep-frog-source_runner execute $tmpFile "$@"`,
+				`  $GOPATH/bin/_leep-frog-source_runner execute "$1" $tmpFile "${@:2}"`,
 				`  # Return the error code if go code terminated with an error`,
 				`  local errorCode=$?`,
 				`  if [ $errorCode -ne 0 ]; then return $errorCode; fi`,
@@ -299,7 +299,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 				`  local tmpFile=$(mktemp)`,
 				``,
 				`  # Run the go-only code`,
-				`  $GOPATH/bin/_leep-frog-source_runner execute $tmpFile "$@"`,
+				`  $GOPATH/bin/_leep-frog-source_runner execute "$1" $tmpFile "${@:2}"`,
 				`  # Return the error code if go code terminated with an error`,
 				`  local errorCode=$?`,
 				`  if [ $errorCode -ne 0 ]; then return $errorCode; fi`,
@@ -367,7 +367,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 				`  local tmpFile=$(mktemp)`,
 				``,
 				`  # Run the go-only code`,
-				`  $GOPATH/bin/_custom-output_file_runner execute $tmpFile "$@"`,
+				`  $GOPATH/bin/_custom-output_file_runner execute "$1" $tmpFile "${@:2}"`,
 				`  # Return the error code if go code terminated with an error`,
 				`  local errorCode=$?`,
 				`  if [ $errorCode -ne 0 ]; then return $errorCode; fi`,
@@ -411,7 +411,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 				`  local tmpFile=$(mktemp)`,
 				``,
 				`  # Run the go-only code`,
-				`  $GOPATH/bin/_leep-frog-source_runner execute $tmpFile "$@"`,
+				`  $GOPATH/bin/_leep-frog-source_runner execute "$1" $tmpFile "${@:2}"`,
 				`  # Return the error code if go code terminated with an error`,
 				`  local errorCode=$?`,
 				`  if [ $errorCode -ne 0 ]; then return $errorCode; fi`,
@@ -466,7 +466,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 				`  local tmpFile=$(mktemp)`,
 				``,
 				`  # Run the go-only code`,
-				`  $GOPATH/bin/_leep-frog-source_runner execute $tmpFile "$@"`,
+				`  $GOPATH/bin/_leep-frog-source_runner execute "$1" $tmpFile "${@:2}"`,
 				`  # Return the error code if go code terminated with an error`,
 				`  local errorCode=$?`,
 				`  if [ $errorCode -ne 0 ]; then return $errorCode; fi`,
@@ -610,23 +610,24 @@ func TestSourcerer(t *testing.T) {
 		},
 		// Execute tests
 		{
-			name: "fails if no file arg",
-			args: []string{"execute"},
-			wantStderr: []string{
-				`Argument "FILE" requires at least 1 argument, got 0`,
-				baseUsage,
-			},
-			wantErr:         fmt.Errorf(`Argument "FILE" requires at least 1 argument, got 0`),
-			noStderrNewline: true,
-		},
-		{
 			name: "fails if no cli arg",
-			args: []string{"execute", fakeFile},
+			args: []string{"execute"},
 			wantStderr: []string{
 				`Argument "CLI" requires at least 1 argument, got 0`,
 				baseUsage,
 			},
 			wantErr:         fmt.Errorf(`Argument "CLI" requires at least 1 argument, got 0`),
+			noStderrNewline: true,
+		},
+		{
+			name: "fails if no file arg",
+			args: []string{"execute", "bc"},
+			clis: []CLI{&bashCLI{name: "bc"}},
+			wantStderr: []string{
+				`Argument "FILE" requires at least 1 argument, got 0`,
+				baseUsage,
+			},
+			wantErr:         fmt.Errorf(`Argument "FILE" requires at least 1 argument, got 0`),
 			noStderrNewline: true,
 		},
 		{
@@ -656,7 +657,7 @@ func TestSourcerer(t *testing.T) {
 					},
 				},
 			},
-			args:       []string{"execute", fakeFile, "basic"},
+			args:       []string{"execute", "basic", fakeFile},
 			wantStdout: []string{"Output:"},
 		},
 		{
@@ -669,7 +670,7 @@ func TestSourcerer(t *testing.T) {
 					},
 				},
 			},
-			args:       []string{"execute", fakeFile, "basic"},
+			args:       []string{"execute", "basic", fakeFile},
 			wantStderr: []string{"oops"},
 			wantErr:    fmt.Errorf("oops"),
 		},
@@ -695,7 +696,7 @@ func TestSourcerer(t *testing.T) {
 					},
 				},
 			},
-			args: []string{"execute", fakeFile, "basic", "un", "deux", "trois"},
+			args: []string{"execute", "basic", fakeFile, "un", "deux", "trois"},
 			wantStdout: []string{
 				"Output:",
 				`sl: [un deux trois]`,
@@ -709,7 +710,7 @@ func TestSourcerer(t *testing.T) {
 					processors: []command.Processor{command.ListArg[string]("SL", "test", 1, 1)},
 				},
 			},
-			args: []string{"execute", fakeFile, "basic", "un", "deux", "trois", "quatre"},
+			args: []string{"execute", "basic", fakeFile, "un", "deux", "trois", "quatre"},
 			wantStderr: []string{
 				"Unprocessed extra args: [trois quatre]",
 				strings.Join([]string{
@@ -735,7 +736,7 @@ func TestSourcerer(t *testing.T) {
 					},
 				},
 			},
-			args: []string{"execute", fakeFile, "basic"},
+			args: []string{"execute", "basic", fakeFile},
 			wantCLIs: map[string]CLI{
 				"basic": &testCLI{
 					Stuff: "things",
@@ -753,7 +754,7 @@ func TestSourcerer(t *testing.T) {
 					},
 				},
 			},
-			args: []string{"execute", f.Name(), "basic"},
+			args: []string{"execute", "basic", f.Name()},
 			wantOutput: []string{
 				"echo",
 				"hello",
@@ -772,7 +773,7 @@ func TestSourcerer(t *testing.T) {
 					},
 				},
 			},
-			args: []string{"execute", f.Name(), "basic"},
+			args: []string{"execute", "basic", f.Name()},
 			wantOutput: []string{
 				"function _leep_execute_data_function_wrap {",
 				"echo",
@@ -797,7 +798,7 @@ func TestSourcerer(t *testing.T) {
 				},
 			},
 			args: []string{
-				"execute", fakeFile, "basic",
+				"execute", "basic", fakeFile,
 			},
 			wantErr: fmt.Errorf(`Argument "SETUP_FILE" requires at least 1 argument, got 0`),
 			wantStderr: []string{
@@ -820,8 +821,8 @@ func TestSourcerer(t *testing.T) {
 			},
 			args: []string{
 				"execute",
-				fakeFile,
 				"basic",
+				fakeFile,
 				// SetupArg needs to be a real file, hence why it's this.
 				"sourcerer.go",
 			},
@@ -847,8 +848,8 @@ func TestSourcerer(t *testing.T) {
 			},
 			args: []string{
 				"execute",
-				fakeFile,
 				"basic",
+				fakeFile,
 				// SetupArg needs to be a real file, hence why it's this.
 				"sourcerer.go",
 				"5",
@@ -862,7 +863,7 @@ func TestSourcerer(t *testing.T) {
 		{
 			name: "prints command usage for missing branch error",
 			clis: []CLI{&usageErrCLI{}},
-			args: []string{"execute", fakeFile, "uec"},
+			args: []string{"execute", "uec", fakeFile},
 			wantStderr: []string{
 				"Branching argument must be one of [a b]",
 				uecUsage(),
@@ -873,7 +874,7 @@ func TestSourcerer(t *testing.T) {
 		{
 			name: "prints command usage for bad branch arg error",
 			clis: []CLI{&usageErrCLI{}},
-			args: []string{"execute", fakeFile, "uec", "uh"},
+			args: []string{"execute", "uec", fakeFile, "uh"},
 			wantStderr: []string{
 				"Branching argument must be one of [a b]",
 				uecUsage(),
@@ -884,7 +885,7 @@ func TestSourcerer(t *testing.T) {
 		{
 			name: "prints command usage for missing args error",
 			clis: []CLI{&usageErrCLI{}},
-			args: []string{"execute", fakeFile, "uec", "b"},
+			args: []string{"execute", "uec", fakeFile, "b"},
 			wantStderr: []string{
 				`Argument "B_SL" requires at least 1 argument, got 0`,
 				uecUsage(),
@@ -895,7 +896,7 @@ func TestSourcerer(t *testing.T) {
 		{
 			name: "prints command usage for missing args error",
 			clis: []CLI{&usageErrCLI{}},
-			args: []string{"execute", fakeFile, "uec", "a", "un", "deux", "trois"},
+			args: []string{"execute", "uec", fakeFile, "a", "un", "deux", "trois"},
 			wantStderr: []string{
 				"Unprocessed extra args: [deux trois]",
 				uecUsage(),

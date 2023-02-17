@@ -70,7 +70,7 @@ var (
 		`  local tmpFile=$(mktemp)`,
 		``,
 		`  # Run the go-only code`,
-		`  $GOPATH/bin/_%s_runner execute $tmpFile "$@"`,
+		`  $GOPATH/bin/_%s_runner execute "$1" $tmpFile "${@:2}"`,
 		`  # Return the error code if go code terminated with an error`,
 		`  local errorCode=$?`,
 		`  if [ $errorCode -ne 0 ]; then return $errorCode; fi`,
@@ -317,9 +317,8 @@ func (s *sourcerer) Node() command.Node {
 				command.SimpleProcessor(s.usageExecutor, nil),
 			),
 			"execute": command.SerialNodes(
-				// TODO: cliArg should be first
-				fileArg,
 				s.cliArg,
+				fileArg,
 				passthroughArgs,
 				&command.ExecutorProcessor{F: s.executeExecutor},
 			),
