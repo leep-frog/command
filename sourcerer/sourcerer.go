@@ -6,7 +6,6 @@ package sourcerer
 import (
 	"fmt"
 	"os"
-	"os/exec"
 	"runtime"
 	"sort"
 	"strings"
@@ -498,32 +497,4 @@ func save(c CLI) error {
 
 func cacheKey(cli CLI) string {
 	return fmt.Sprintf("leep-frog-cache-key-%s.json", cli.Name())
-}
-
-// SimpleCommands returns a list of CLIs that are simply aliased
-// to a bash command.
-func SimpleCommands(m map[string]string) []CLI {
-	cs := []CLI{}
-	for name, cmd := range m {
-		cs = append(cs, &bashCLI{name, cmd})
-	}
-	return cs
-}
-
-type bashCLI struct {
-	name          string
-	commandString string
-}
-
-func (bc *bashCLI) Changed() bool              { return false }
-func (bc *bashCLI) Setup() []string            { return nil }
-func (bc *bashCLI) UnmarshalJSON([]byte) error { return nil }
-func (bc *bashCLI) Name() string               { return bc.name }
-func (bc *bashCLI) Node() command.Node {
-	return command.SerialNodes(&command.ExecutorProcessor{F: func(o command.Output, d *command.Data) error {
-		cmd := exec.Command("bash", "-c", bc.commandString)
-		cmd.Stdout = command.StdoutWriter(o)
-		cmd.Stderr = command.StderrWriter(o)
-		return cmd.Run()
-	}})
 }

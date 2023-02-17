@@ -406,10 +406,11 @@ func TestGenerateBinaryNode(t *testing.T) {
 		{
 			name: "generates source file with CLIs",
 			args: []string{"source"},
-			clis: append(SimpleCommands(map[string]string{
-				"x": "exit",
-				"l": "ls -la",
-			}), &testCLI{name: "basic", setup: []string{"his", "story"}}),
+			clis: []CLI{
+				ToCLI("x", nil),
+				ToCLI("l", nil),
+				&testCLI{name: "basic", setup: []string{"his", "story"}},
+			},
 			wantExecuteFile: []string{
 				`function _custom_execute_leep-frog-source {`,
 				`  # tmpFile is the file to which we write ExecuteData.Executable`,
@@ -461,10 +462,11 @@ func TestGenerateBinaryNode(t *testing.T) {
 		{
 			name: "generates source file with CLIs ignoring nosort",
 			args: []string{"source"},
-			clis: append(SimpleCommands(map[string]string{
-				"x": "exit",
-				"l": "ls -la",
-			}), &testCLI{name: "basic", setup: []string{"his", "story"}}),
+			clis: []CLI{
+				ToCLI("x", nil),
+				ToCLI("l", nil),
+				&testCLI{name: "basic", setup: []string{"his", "story"}},
+			},
 			ignoreNosort: true,
 			wantExecuteFile: []string{
 				`function _custom_execute_leep-frog-source {`,
@@ -597,7 +599,7 @@ func TestSourcerer(t *testing.T) {
 		{
 			name: "fails if no file arg",
 			args: []string{"execute", "bc"},
-			clis: []CLI{&bashCLI{name: "bc"}},
+			clis: []CLI{ToCLI("bc", nil)},
 			wantStderr: []string{
 				`Argument "FILE" requires at least 1 argument, got 0`,
 			},
