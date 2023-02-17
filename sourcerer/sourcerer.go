@@ -40,7 +40,7 @@ var (
 		"",
 	}, "\n")
 
-	GlobalAutocompleteForAliasFunction = strings.Join([]string{
+	globalAutocompleteForAliasFunction = strings.Join([]string{
 		`function _leep_frog_autocompleter {`,
 		fmt.Sprintf("  %s", FileStringFromCLI(`"$1"`)),
 		`  local tFile=$(mktemp)`,

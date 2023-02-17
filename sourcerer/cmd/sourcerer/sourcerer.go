@@ -264,7 +264,7 @@ func (gl *GoLeep) completer() command.Completer[[]string] {
 			// Add a "dummyCommand" prefix to be removed by the command.Autocomplete function.
 			fmt.Sprintf("%q", "dummyCommand "+strings.Join(passAlongArgs.Get(data), " ")),
 		}
-		bc := &command.BashCommand[[]string]{ArgName: "BASH_OUTPUT", Contents: gl.runCommand(data, "autocomplete", extraArgs), HideStderr: true}
+		bc := &command.BashCommand[[]string]{ArgName: "BASH_OUTPUT", Contents: gl.runCommand(data, "autocomplete", extraArgs)}
 		v, err := bc.Run(nil, data)
 		if err != nil {
 			return nil, err

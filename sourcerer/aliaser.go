@@ -18,6 +18,7 @@ func (a *Aliaser) modifyCompiledOpts(co *compiledOpts) {
 	co.aliasers[a.alias] = a
 }
 
+// AliasSourcery outputs all alias source commands to the provided `command.Output`.
 func AliasSourcery(o command.Output, as ...*Aliaser) {
 	if len(as) == 0 {
 		return
@@ -27,7 +28,7 @@ func AliasSourcery(o command.Output, as ...*Aliaser) {
 		return this.alias < that.alias
 	})
 
-	o.Stdoutln(GlobalAutocompleteForAliasFunction)
+	o.Stdoutln(globalAutocompleteForAliasFunction)
 
 	verifiedCLIs := map[string]bool{}
 	for _, a := range as {
