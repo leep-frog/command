@@ -30,7 +30,7 @@ func processGraphCompletion(n Node, input *Input, data *Data, checkInput bool) (
 		c, err := n.Complete(input, data)
 		if c != nil || err != nil {
 			if c != nil && c.DeferredCompletion != nil {
-				if err := processGraphExecution(c.DeferredCompletion.Graph, input, NewIgnoreAllOutput(), data, &ExecuteData{}, false); err != nil {
+				if err := processGraphExecution(c.DeferredCompletion.Graph, input, NewIgnoreAllOutput(), data, &ExecuteData{}); err != nil {
 					return nil, fmt.Errorf("failed to execute DeferredCompletion graph: %v", err)
 				}
 				return c.DeferredCompletion.F(data)
@@ -44,7 +44,9 @@ func processGraphCompletion(n Node, input *Input, data *Data, checkInput bool) (
 	}
 
 	if checkInput {
-		return nil, input.CheckForExtraArgsError()
+		if !input.FullyProcessed() {
+			return nil, ExtraArgsErr(input)
+		}
 	}
 	return nil, nil
 }

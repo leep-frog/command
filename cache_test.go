@@ -56,9 +56,20 @@ func TestCacheExecution(t *testing.T) {
 				Node: CacheNode("money", cc, SerialNodes(
 					Arg[string]("s", testDesc),
 				)),
-				Args:       []string{"dollar", "bills"},
-				WantErr:    fmt.Errorf("Unprocessed extra args: [bills]"),
-				WantStderr: "Unprocessed extra args: [bills]\n",
+				Args:    []string{"dollar", "bills"},
+				WantErr: fmt.Errorf("Unprocessed extra args: [bills]"),
+				WantStderr: strings.Join([]string{
+					"Unprocessed extra args: [bills]",
+					``,
+					UsageErrorSectionStart,
+					`^ s`,
+					``,
+					`Arguments:`,
+					`  s: test desc`,
+					``,
+					`Symbols:`,
+					`  ^: Start of new cachable section`,
+				}, "\n"),
 				WantData: &Data{Values: map[string]interface{}{
 					"s": "dollar",
 				}},

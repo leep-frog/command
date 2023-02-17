@@ -145,7 +145,7 @@ func UsageTest(t *testing.T, utc *UsageTestCase) {
 		utc = &UsageTestCase{}
 	}
 
-	got, err := Use(utc.Node, ParseExecuteArgs(utc.Args), true)
+	got, err := Use(utc.Node, ParseExecuteArgs(utc.Args))
 	CmpError(t, fmt.Sprintf("Use(%v)", utc.Args), utc.WantErr, err)
 
 	if diff := cmp.Diff(strings.Join(utc.WantString, "\n"), got.String()); diff != "" {

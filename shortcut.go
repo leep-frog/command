@@ -216,9 +216,14 @@ func (as *addShortcut) Execute(input *Input, output Output, data *Data, _ *Execu
 	// We don't want to output not enough args error, because we actually
 	// don't mind those when adding shortcuts.
 	ieo := NewIgnoreErrOutput(output, IsNotEnoughArgsError)
-	err := processGraphExecution(as.node, input, ieo, data, fakeEData, true)
-	if err != nil && !IsNotEnoughArgsError(err) {
+	if err := processGraphExecution(as.node, input, ieo, data, fakeEData); err != nil && !IsNotEnoughArgsError(err) {
 		return err
+	}
+
+	// Don't create the shortcut since it will always result in an error (the input check
+	// will be done by the outer calls).
+	if !input.FullyProcessed() {
+		return nil
 	}
 
 	sl := input.GetSnapshot(snapshot)

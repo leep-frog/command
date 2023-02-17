@@ -25,12 +25,14 @@ func execute(n Node, input *Input, output Output, data *Data) (*ExecuteData, err
 			}
 			wg.Done()
 		}()
-		if err := processGraphExecution(n, input, output, data, eData, true); err != nil {
+
+		if err := processGraphExecution(n, input, output, data, eData); err != nil {
 			termErr = err
 			return
 		}
 
-		if err := input.CheckForExtraArgsError(); err != nil {
+		if !input.FullyProcessed() {
+			err := ExtraArgsErr(input)
 			output.Stderrln(err)
 			// TODO: Make this the last node we reached?
 			ShowUsageAfterError(n, output)
@@ -53,13 +55,13 @@ func execute(n Node, input *Input, output Output, data *Data) (*ExecuteData, err
 // and traverses the subgraph or executes the processor accordingly.
 func processOrExecute(p Processor, input *Input, output Output, data *Data, eData *ExecuteData) error {
 	if n, ok := p.(Node); ok {
-		return processGraphExecution(n, input, output, data, eData, false)
+		return processGraphExecution(n, input, output, data, eData)
 	}
 	return p.Execute(input, output, data, eData)
 }
 
 // processGraphExecution processes the provided graph
-func processGraphExecution(root Node, input *Input, output Output, data *Data, eData *ExecuteData, checkInput bool) error {
+func processGraphExecution(root Node, input *Input, output Output, data *Data, eData *ExecuteData) error {
 	for n := root; n != nil; {
 		if err := n.Execute(input, output, data, eData); err != nil {
 			return err
@@ -69,10 +71,6 @@ func processGraphExecution(root Node, input *Input, output Output, data *Data, e
 		if n, err = n.Next(input, data); err != nil {
 			return err
 		}
-	}
-
-	if checkInput {
-		return output.Err(input.CheckForExtraArgsError())
 	}
 	return nil
 }

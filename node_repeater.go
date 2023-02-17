@@ -35,7 +35,7 @@ type nodeRepeater struct {
 }
 
 func (nr *nodeRepeater) Usage(i *Input, d *Data, u *Usage) error {
-	nu, err := Use(nr.n, i, false)
+	nu, err := processNewGraphUse(nr.n, i)
 	if err != nil {
 		return err
 	}
@@ -86,9 +86,8 @@ func (nr *nodeRepeater) proceedCondition(exCount int, i *Input) bool {
 }
 
 func (nr *nodeRepeater) Execute(i *Input, o Output, d *Data, e *ExecuteData) error {
-	ieo := NewIgnoreErrOutput(o, IsExtraArgsError)
 	for exCount := 0; nr.proceedCondition(exCount, i); exCount++ {
-		if err := processGraphExecution(nr.n, i, ieo, d, e, false); err != nil && !IsExtraArgsError(err) {
+		if err := processGraphExecution(nr.n, i, o, d, e); err != nil {
 			return err
 		}
 	}
@@ -100,7 +99,7 @@ func (nr *nodeRepeater) Execute(i *Input, o Output, d *Data, e *ExecuteData) err
 func (nr *nodeRepeater) Complete(i *Input, d *Data) (*Completion, error) {
 	for exCount := 0; nr.proceedCondition(exCount, i); exCount++ {
 		c, err := processGraphCompletion(nr.n, i, d, false)
-		if c != nil || (err != nil && !IsExtraArgsError(err)) {
+		if c != nil || (err != nil) {
 			return c, err
 		}
 	}

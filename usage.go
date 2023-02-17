@@ -13,57 +13,31 @@ const (
 	FlagSection = "Flags"
 	// SymbolSection is the title of the symbols usage section.
 	SymbolSection = "Symbols"
-	// UsageDocDataKey is the key used to store the usage doc in `Data`.
-	UsageDocDataKey = "UsageDoc"
 )
 
-// UsageDocProcessor returns a `Processor` that generates the usage doc
-// for the provided graph and stores it in `Data` under the `UsageDocDataKey`.
-func UsageDocGenerator(root Node) Processor {
-	return SimpleProcessor(func(i *Input, o Output, d *Data, ed *ExecuteData) error {
-		u, err := Use(root, i, true)
-		if err != nil {
-			return err
-		}
-		d.Set(UsageDocDataKey, u.String())
-		return nil
-	}, nil)
-}
-
-// UsageDocPrinter returns an `Executor` that prints the usage doc generated
-// from `UsageDocGenerator`.
-func UsageDocPrinter() Processor {
-	return &ExecutorProcessor{func(o Output, d *Data) error {
-		o.Stdoutln(GetUsageDoc(d))
-		return nil
-	}}
-}
-
-// GetUsageDoc retrieves the usage doc stored in data from the `UsageDocGenerator` `Processor`.
-func GetUsageDoc(d *Data) string {
-	return d.String(UsageDocDataKey)
-}
-
 // Use constructs a `Usage` object from the root `Node` of a command graph.
-func Use(root Node, input *Input, checkInput bool) (*Usage, error) {
+func Use(root Node, input *Input) (*Usage, error) {
+	u, err := processNewGraphUse(root, input)
+	if err != nil {
+		return nil, err
+	}
+
+	if !input.FullyProcessed() {
+		return nil, ExtraArgsErr(input)
+	}
+	return u, nil
+}
+
+// processNewGraphUse processes the usage for provided graph
+func processNewGraphUse(root Node, input *Input) (*Usage, error) {
 	u := &Usage{
 		UsageSection: &UsageSection{},
 	}
-	return u, processGraphUse(root, input, &Data{}, u, checkInput)
-}
-
-// processOrUsage checks if the provided `Processor` is a `Node` or just a `Processor`
-// and traverses the subgraph or executes the processor accordingly.
-func processOrUsage(p Processor, i *Input, d *Data, usage *Usage) error {
-	if n, ok := p.(Node); ok {
-		return processGraphUse(n, i, d, usage, true)
-	} else {
-		return p.Usage(i, d, usage)
-	}
+	return u, processGraphUse(root, input, &Data{}, u)
 }
 
 // processGraphUse processes the usage for provided graph
-func processGraphUse(root Node, input *Input, data *Data, usage *Usage, checkInput bool) error {
+func processGraphUse(root Node, input *Input, data *Data, usage *Usage) error {
 	for n := root; n != nil; {
 		if err := n.Usage(input, data, usage); err != nil {
 			return err
@@ -75,11 +49,17 @@ func processGraphUse(root Node, input *Input, data *Data, usage *Usage, checkInp
 		}
 	}
 
-	if checkInput {
-		return input.CheckForExtraArgsError()
-	}
-
 	return nil
+}
+
+// processOrUsage checks if the provided `Processor` is a `Node` or just a `Processor`
+// and traverses the subgraph or executes the processor accordingly.
+func processOrUsage(p Processor, i *Input, d *Data, usage *Usage) error {
+	if n, ok := p.(Node); ok {
+		return processGraphUse(n, i, d, usage)
+	} else {
+		return p.Usage(i, d, usage)
+	}
 }
 
 // Usage contains all data needed for constructing a command's usage text.
@@ -191,13 +171,17 @@ func (u *Usage) string(r []string, depth int) []string {
 	return r
 }
 
+const (
+	UsageErrorSectionStart = "======= Command Usage ======="
+)
+
 // ShowUsageAfterError generates the usage doc for the provided `Node`. If there
 // is no error generating the usage doc, then the doc is sent to stderr; otherwise,
 // no output is sent.
 func ShowUsageAfterError(n Node, o Output) {
-	if u, err := Use(n, ParseExecuteArgs(nil), true); err == nil {
-		o.Stderrf("\n======= Command Usage =======\n%v", u)
-	} else {
-		o.Stderrf("\n======= Command Usage =======\nfailed to get command usage: %v\n", err)
+	if u, err := processNewGraphUse(n, ParseExecuteArgs(nil)); err != nil {
+		o.Stderrf("\n%s\nfailed to get command usage: %v\n", UsageErrorSectionStart, err)
+	} else if usageDoc := u.String(); len(strings.TrimSpace(usageDoc)) != 0 {
+		o.Stderrf("\n%s\n%v", UsageErrorSectionStart, u)
 	}
 }

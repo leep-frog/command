@@ -185,13 +185,6 @@ func (i *Input) Pop() (string, bool) {
 	return *sl[0], true
 }
 
-func (i *Input) CheckForExtraArgsError() error {
-	if !i.FullyProcessed() {
-		return ExtraArgsErr(i)
-	}
-	return nil
-}
-
 type InputValidator interface {
 	Validate(string) error
 	DiscardBreak() bool

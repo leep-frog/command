@@ -158,7 +158,7 @@ func (s *sourcerer) executeExecutor(output command.Output, d *command.Data) erro
 
 	eData, err := command.Execute(n, command.ParseExecuteArgs(args), output)
 	if err != nil {
-		if command.IsUsageError(err) && !s.printedUsageError && !s.forAutocomplete {
+		if command.IsUsageError(err) && !s.printedUsageError && !s.forAutocomplete && !command.IsExtraArgsError(err) {
 			s.printedUsageError = true
 			command.ShowUsageAfterError(n, output)
 		}
@@ -323,9 +323,14 @@ func (s *sourcerer) Node() command.Node {
 func (s *sourcerer) usageExecutor(i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
 	cli := s.cliArg.Get(d)
 	ed.Executor = append(ed.Executor, func(o command.Output, d *command.Data) error {
-		u, err := command.Use(cli.Node(), command.ParseExecuteArgs(passthroughArgs.Get(d)), true)
+		n := cli.Node()
+		u, err := command.Use(n, command.ParseExecuteArgs(passthroughArgs.Get(d)))
 		if err != nil {
-			return o.Err(err)
+			o.Err(err)
+			if command.IsUsageError(err) {
+				command.ShowUsageAfterError(n, o)
+			}
+			return err
 		}
 		o.Stdout(u.String())
 		return nil

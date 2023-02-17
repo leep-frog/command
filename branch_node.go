@@ -210,14 +210,14 @@ func (bn *BranchNode) Usage(input *Input, data *Data, u *Usage) error {
 	})
 
 	if bn.Default != nil {
-		if err := processGraphUse(bn.Default, input, data, u, true); err != nil {
+		if err := processGraphUse(bn.Default, input, data, u); err != nil {
 			return err
 		}
 	}
 
 	for _, bs := range bss {
 		// Input is empty at this point, so fine to pass the same input to all branches
-		su, err := Use(bs.n, input, true)
+		su, err := processNewGraphUse(bs.n, input)
 		if err != nil {
 			return err
 		}

@@ -136,16 +136,20 @@ func (cc *commandCache) Execute(input *Input, output Output, data *Data, eData *
 		if sls, ok := cc.c.Cache()[cc.name]; ok {
 			input.PushFront(sls[len(sls)-1]...)
 		}
-		return processGraphExecution(cc.n, input, output, data, eData, false)
+		return processGraphExecution(cc.n, input, output, data, eData)
 	}
 
 	snapshot := input.Snapshot()
-	err := processGraphExecution(cc.n, input, output, data, eData, true)
+	err := processGraphExecution(cc.n, input, output, data, eData)
 
 	// Don't cache if retrying will never fix the issue (outside of a change
 	// to the code for the specific CLI).
-	if IsExtraArgsError(err) || IsNotEnoughArgsError(err) {
+	if IsNotEnoughArgsError(err) {
 		return err
+	}
+	if !input.FullyProcessed() {
+		// Extra args error will happen upstream
+		return nil
 	}
 
 	// Even if it resulted in an error, we want to add the command to the cache.

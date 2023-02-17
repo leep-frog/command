@@ -559,13 +559,6 @@ func TestSourcerer(t *testing.T) {
 		t.Fatalf("failed to create tmp file: %v", err)
 	}
 
-	// use, err := command.Use((&sourcerer{
-	// 	cliArg: command.MapArg("CLI", "", map[string]CLI{}, false),
-	// }).Node(), command.ParseExecuteArgs(nil))
-	// if err != nil {
-	// 	t.Fatalf("Failed to generate sourcerer usage: %v", err)
-	// }
-
 	baseUsage := strings.Join([]string{
 		usagePrefixString,
 		`[ TARGET_NAME ] --load-only|-l`,
@@ -576,16 +569,6 @@ func TestSourcerer(t *testing.T) {
 		`Flags:`,
 		`  [l] load-only: If set to true, the binaries are assumed to exist and only the aliases and completion setups are generated`,
 	}, "\n")
-	executeUsage := strings.Join([]string{
-		usagePrefixString,
-		`FILE CLI [ ARG ... ]`,
-		``,
-		`Arguments:`,
-		`  ARG: Arguments that get passed through to relevant CLI command`,
-		`  FILE: Temporary file for execution`,
-		`    FileExists()`,
-	}, "\n")
-	_ = baseUsage + executeUsage
 	for _, test := range []struct {
 		name            string
 		clis            []CLI
@@ -803,9 +786,7 @@ func TestSourcerer(t *testing.T) {
 			wantErr: fmt.Errorf(`Argument "SETUP_FILE" requires at least 1 argument, got 0`),
 			wantStderr: []string{
 				`Argument "SETUP_FILE" requires at least 1 argument, got 0`,
-				usagePrefixString + "\n",
 			},
-			noStderrNewline: true,
 		},
 		{
 			name: "SetupArg is properly populated",
@@ -1119,7 +1100,7 @@ func TestSourcerer(t *testing.T) {
 			clis: []CLI{&usageErrCLI{}},
 			wantStderr: []string{
 				"Unprocessed extra args: [deux]",
-				baseUsage,
+				uecUsage(),
 			},
 			wantErr:         fmt.Errorf("Unprocessed extra args: [deux]"),
 			noStderrNewline: true,
