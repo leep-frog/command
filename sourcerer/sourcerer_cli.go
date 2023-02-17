@@ -12,6 +12,11 @@ var (
 	externalLoadOnlyFlag = command.BoolValueFlag(loadOnlyFlag.Name(), loadOnlyFlag.ShortName(), loadOnlyFlag.Desc(), fmt.Sprintf("--%s", loadOnlyFlag.Name()))
 )
 
+func SourcererCLI() CLI {
+	return &SourcererCommand{}
+}
+
+// SourcererCommand is a command that creates CLIs from main files. Use the `SourcererCLI` function to initialize.
 type SourcererCommand struct{}
 
 func (*SourcererCommand) Setup() []string { return nil }
