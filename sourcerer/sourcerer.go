@@ -156,7 +156,7 @@ func (s *sourcerer) executeExecutor(output command.Output, d *command.Data) erro
 		n = command.PreprendSetupArg(n)
 	}
 
-	fmt.Println("args", len(args), args)
+	fmt.Println("# args", len(args), args)
 	eData, err := command.Execute(n, command.ParseExecuteArgs(args), output)
 	if err != nil {
 		if command.IsUsageError(err) && !s.printedUsageError && !s.forAutocomplete && !command.IsExtraArgsError(err) {
