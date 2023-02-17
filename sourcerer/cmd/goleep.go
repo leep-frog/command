@@ -40,8 +40,10 @@ func (gl *GoLeep) runCommand(d *command.Data, subCmd, cli string, extraArgs []st
 		ea = fmt.Sprintf(" %s", strings.Join(extraArgs, " "))
 	}
 
+	c := fmt.Sprintf("go run %s %q %q%s", d.String(goDirectory.Name()), subCmd, cli, ea)
+	fmt.Println("C:", c)
 	return []string{
-		fmt.Sprintf("go run %s %q %q%s", d.String(goDirectory.Name()), subCmd, cli, ea),
+		c,
 	}
 }
 
