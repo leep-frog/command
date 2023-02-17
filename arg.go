@@ -65,9 +65,22 @@ func (an *Argument[T]) Set(v T, data *Data) {
 }
 
 // Usage adds the command info to the provided `Usage` object.
-func (an *Argument[T]) Usage(u *Usage) {
+func (an *Argument[T]) Usage(i *Input, d *Data, u *Usage) error {
+	noneRemaining := i.NumRemaining() == 0
+	err := an.Execute(i, NewIgnoreAllOutput(), d, nil)
+	// If enough arguments have been provided, then no need to print usage.
+	if err == nil && !noneRemaining {
+		return nil
+	}
+
+	// If actual error, then return
+	if err != nil && !IsNotEnoughArgsError(err) {
+		return err
+	}
+
+	// Otherwise, there weren't enough args, so generate usage info.
 	if an.opt != nil && an.opt.hideUsage {
-		return
+		return nil
 	}
 
 	if an.desc != "" {
@@ -97,6 +110,7 @@ func (an *Argument[T]) Usage(u *Usage) {
 	for _, b := range an.opt.breakers {
 		b.Usage(u)
 	}
+	return nil
 }
 
 // Execute fulfills the `Processor` interface for `Argument`.

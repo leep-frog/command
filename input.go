@@ -468,4 +468,4 @@ func (it *InputTransformer) Complete(input *Input, data *Data) (*Completion, err
 	return nil, it.Transform(input, NewIgnoreAllOutput(), data, true)
 }
 
-func (it *InputTransformer) Usage(*Usage) {}
+func (it *InputTransformer) Usage(*Input, *Data, *Usage) error { return nil }

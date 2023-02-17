@@ -12,16 +12,6 @@ const (
 	PassthroughArgs = "PASSTHROUGH_ARGS"
 )
 
-// processOrUsage checks if the provided `Processor` is a `Node` or just a `Processor`
-// and traverses the subgraph or executes the processor accordingly.
-func processOrUsage(p Processor, usage *Usage) {
-	if n, ok := p.(Node); ok {
-		getUsage(n, usage)
-	} else {
-		p.Usage(usage)
-	}
-}
-
 // RunNodes executes the provided node. This function can be used when nodes
 // aren't used for CLI tools (such as in regular main.go files that are
 // executed via "go run"). While this is useful to use in conjunction
@@ -59,10 +49,8 @@ func runNodes(n Node, o Output, d *Data, args []string) error {
 		Branches: map[string]Node{
 			"execute": exNode,
 			"usage": SerialNodes(
-				&ExecutorProcessor{func(o Output, d *Data) error {
-					o.Stdoutln(GetUsage(n).String())
-					return nil
-				}},
+				UsageDocGenerator(n),
+				UsageDocPrinter(),
 			),
 			"autocomplete": SerialNodes(
 				// Don't need comp point because input will have already been trimmed by goleep processing.
@@ -89,7 +77,8 @@ func runNodes(n Node, o Output, d *Data, args []string) error {
 			if IsExtraArgsError(err) {
 				o.Err(err)
 			}
-			o.Stderrln(ShowUsageAfterError(n))
+
+			ShowUsageAfterError(n, o)
 		}
 		return err
 	}

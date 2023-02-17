@@ -558,8 +558,34 @@ func TestSourcerer(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create tmp file: %v", err)
 	}
-	u := command.GetUsage((&sourcerer{}).Node()).String()
-	uStr := fmt.Sprintf("%s\n%s", usagePrefixString, u)
+
+	// use, err := command.Use((&sourcerer{
+	// 	cliArg: command.MapArg("CLI", "", map[string]CLI{}, false),
+	// }).Node(), command.ParseExecuteArgs(nil))
+	// if err != nil {
+	// 	t.Fatalf("Failed to generate sourcerer usage: %v", err)
+	// }
+
+	baseUsage := strings.Join([]string{
+		usagePrefixString,
+		`[ TARGET_NAME ] --load-only|-l`,
+		``,
+		`Arguments:`,
+		`  TARGET_NAME: The name of the created target in $GOPATH/bin`,
+		``,
+		`Flags:`,
+		`  [l] load-only: If set to true, the binaries are assumed to exist and only the aliases and completion setups are generated`,
+	}, "\n")
+	executeUsage := strings.Join([]string{
+		usagePrefixString,
+		`FILE CLI [ ARG ... ]`,
+		``,
+		`Arguments:`,
+		`  ARG: Arguments that get passed through to relevant CLI command`,
+		`  FILE: Temporary file for execution`,
+		`    FileExists()`,
+	}, "\n")
+	_ = baseUsage + executeUsage
 	for _, test := range []struct {
 		name            string
 		clis            []CLI
@@ -567,6 +593,7 @@ func TestSourcerer(t *testing.T) {
 		wantErr         error
 		wantStdout      []string
 		wantStderr      []string
+		noStdoutNewline bool
 		noStderrNewline bool
 		wantCLIs        map[string]CLI
 		wantOutput      []string
@@ -576,9 +603,10 @@ func TestSourcerer(t *testing.T) {
 			args: []string{"wizardry", "stuff"},
 			wantStderr: []string{
 				"Unprocessed extra args: [stuff]",
-				uStr,
+				baseUsage,
 			},
-			wantErr: fmt.Errorf("Unprocessed extra args: [stuff]"),
+			wantErr:         fmt.Errorf("Unprocessed extra args: [stuff]"),
+			noStderrNewline: true,
 		},
 		// Execute tests
 		{
@@ -586,26 +614,28 @@ func TestSourcerer(t *testing.T) {
 			args: []string{"execute"},
 			wantStderr: []string{
 				`Argument "FILE" requires at least 1 argument, got 0`,
-				uStr,
+				baseUsage,
 			},
-			wantErr: fmt.Errorf(`Argument "FILE" requires at least 1 argument, got 0`),
+			wantErr:         fmt.Errorf(`Argument "FILE" requires at least 1 argument, got 0`),
+			noStderrNewline: true,
 		},
 		{
 			name: "fails if no cli arg",
 			args: []string{"execute", fakeFile},
 			wantStderr: []string{
 				`Argument "CLI" requires at least 1 argument, got 0`,
-				uStr,
+				baseUsage,
 			},
-			wantErr: fmt.Errorf(`Argument "CLI" requires at least 1 argument, got 0`),
+			wantErr:         fmt.Errorf(`Argument "CLI" requires at least 1 argument, got 0`),
+			noStderrNewline: true,
 		},
 		{
 			name: "fails if unknown CLI",
 			args: []string{"execute", fakeFile, "idk"},
 			wantStderr: []string{
-				`unknown CLI "idk"`,
+				"validation for \"CLI\" failed: [MapArg] key is not in map",
 			},
-			wantErr: fmt.Errorf(`unknown CLI "idk"`),
+			wantErr: fmt.Errorf("validation for \"CLI\" failed: [MapArg] key is not in map"),
 		},
 		{
 			name: "properly executes CLI",
@@ -690,7 +720,8 @@ func TestSourcerer(t *testing.T) {
 					"  SL: test",
 				}, "\n"),
 			},
-			wantErr: fmt.Errorf("Unprocessed extra args: [trois quatre]"),
+			wantErr:         fmt.Errorf("Unprocessed extra args: [trois quatre]"),
+			noStderrNewline: true,
 		},
 		{
 			name: "properly marks CLI as changed",
@@ -773,6 +804,7 @@ func TestSourcerer(t *testing.T) {
 				`Argument "SETUP_FILE" requires at least 1 argument, got 0`,
 				usagePrefixString + "\n",
 			},
+			noStderrNewline: true,
 		},
 		{
 			name: "SetupArg is properly populated",
@@ -835,7 +867,8 @@ func TestSourcerer(t *testing.T) {
 				"Branching argument must be one of [a b]",
 				uecUsage(),
 			},
-			wantErr: fmt.Errorf("Branching argument must be one of [a b]"),
+			wantErr:         fmt.Errorf("Branching argument must be one of [a b]"),
+			noStderrNewline: true,
 		},
 		{
 			name: "prints command usage for bad branch arg error",
@@ -845,7 +878,8 @@ func TestSourcerer(t *testing.T) {
 				"Branching argument must be one of [a b]",
 				uecUsage(),
 			},
-			wantErr: fmt.Errorf("Branching argument must be one of [a b]"),
+			wantErr:         fmt.Errorf("Branching argument must be one of [a b]"),
+			noStderrNewline: true,
 		},
 		{
 			name: "prints command usage for missing args error",
@@ -855,7 +889,8 @@ func TestSourcerer(t *testing.T) {
 				`Argument "B_SL" requires at least 1 argument, got 0`,
 				uecUsage(),
 			},
-			wantErr: fmt.Errorf(`Argument "B_SL" requires at least 1 argument, got 0`),
+			wantErr:         fmt.Errorf(`Argument "B_SL" requires at least 1 argument, got 0`),
+			noStderrNewline: true,
 		},
 		{
 			name: "prints command usage for missing args error",
@@ -865,7 +900,8 @@ func TestSourcerer(t *testing.T) {
 				"Unprocessed extra args: [deux trois]",
 				uecUsage(),
 			},
-			wantErr: fmt.Errorf("Unprocessed extra args: [deux trois]"),
+			wantErr:         fmt.Errorf("Unprocessed extra args: [deux trois]"),
+			noStderrNewline: true,
 		},
 		// Autocomplete tests
 		{
@@ -873,36 +909,43 @@ func TestSourcerer(t *testing.T) {
 			args: []string{"autocomplete"},
 			wantStderr: []string{
 				`Argument "CLI" requires at least 1 argument, got 0`,
-				uStr,
+				baseUsage,
 			},
-			wantErr: fmt.Errorf(`Argument "CLI" requires at least 1 argument, got 0`),
+			wantErr:         fmt.Errorf(`Argument "CLI" requires at least 1 argument, got 0`),
+			noStderrNewline: true,
 		},
 		{
 			name: "autocomplete requires comp_type",
-			args: []string{"autocomplete", "idk"},
+			args: []string{"autocomplete", "uec"},
+			clis: []CLI{&usageErrCLI{}},
 			wantStderr: []string{
 				`Argument "COMP_TYPE" requires at least 1 argument, got 0`,
-				uStr,
+				baseUsage,
 			},
-			wantErr: fmt.Errorf(`Argument "COMP_TYPE" requires at least 1 argument, got 0`),
+			wantErr:         fmt.Errorf(`Argument "COMP_TYPE" requires at least 1 argument, got 0`),
+			noStderrNewline: true,
 		},
 		{
 			name: "autocomplete requires comp_point",
-			args: []string{"autocomplete", "idk", "63"},
+			args: []string{"autocomplete", "uec", "63"},
+			clis: []CLI{&usageErrCLI{}},
 			wantStderr: []string{
 				`Argument "COMP_POINT" requires at least 1 argument, got 0`,
-				uStr,
+				baseUsage,
 			},
-			wantErr: fmt.Errorf(`Argument "COMP_POINT" requires at least 1 argument, got 0`),
+			wantErr:         fmt.Errorf(`Argument "COMP_POINT" requires at least 1 argument, got 0`),
+			noStderrNewline: true,
 		},
 		{
 			name: "autocomplete requires comp_line",
-			args: []string{"autocomplete", "idk", "63", "2"},
+			args: []string{"autocomplete", "uec", "63", "2"},
+			clis: []CLI{&usageErrCLI{}},
 			wantStderr: []string{
 				`Argument "COMP_LINE" requires at least 1 argument, got 0`,
-				uStr,
+				baseUsage,
 			},
-			wantErr: fmt.Errorf(`Argument "COMP_LINE" requires at least 1 argument, got 0`),
+			wantErr:         fmt.Errorf(`Argument "COMP_LINE" requires at least 1 argument, got 0`),
+			noStderrNewline: true,
 		},
 		{
 			name:    "autocomplete doesn't require passthrough args",
@@ -944,9 +987,10 @@ func TestSourcerer(t *testing.T) {
 			name: "autocomplete requires valid cli",
 			args: []string{"autocomplete", "idk", "63", "2", "a"},
 			wantStderr: []string{
-				`unknown CLI "idk"`,
+				"validation for \"CLI\" failed: [MapArg] key is not in map\n",
 			},
-			wantErr: fmt.Errorf(`unknown CLI "idk"`),
+			wantErr:         fmt.Errorf("validation for \"CLI\" failed: [MapArg] key is not in map"),
+			noStderrNewline: true,
 		},
 		{
 			name: "autocomplete passes empty string along for completion",
@@ -1063,18 +1107,21 @@ func TestSourcerer(t *testing.T) {
 			args: []string{"usage"},
 			wantStderr: []string{
 				`Argument "CLI" requires at least 1 argument, got 0`,
-				uStr,
+				baseUsage,
 			},
-			wantErr: fmt.Errorf(`Argument "CLI" requires at least 1 argument, got 0`),
+			wantErr:         fmt.Errorf(`Argument "CLI" requires at least 1 argument, got 0`),
+			noStderrNewline: true,
 		},
 		{
 			name: "usage fails if too many args",
-			args: []string{"usage", "idk", "and"},
+			args: []string{"usage", "uec", "b", "un", "deux"},
+			clis: []CLI{&usageErrCLI{}},
 			wantStderr: []string{
-				"Unprocessed extra args: [and]",
-				uStr,
+				"Unprocessed extra args: [deux]",
+				baseUsage,
 			},
-			wantErr: fmt.Errorf("Unprocessed extra args: [and]"),
+			wantErr:         fmt.Errorf("Unprocessed extra args: [deux]"),
+			noStderrNewline: true,
 		},
 		{
 			name: "usage prints command's usage",
@@ -1097,6 +1144,7 @@ func TestSourcerer(t *testing.T) {
 				"  IS: ints",
 				"  S: desc",
 			}, "\n")},
+			noStdoutNewline: true,
 		},
 		/* Useful for commenting out tests */
 	} {
@@ -1131,7 +1179,10 @@ func TestSourcerer(t *testing.T) {
 			if !test.noStderrNewline {
 				test.wantStderr = append(test.wantStderr, "")
 			}
-			if diff := cmp.Diff(strings.Join(append(test.wantStdout, ""), "\n"), o.GetStdout()); diff != "" {
+			if !test.noStdoutNewline {
+				test.wantStdout = append(test.wantStdout, "")
+			}
+			if diff := cmp.Diff(strings.Join(test.wantStdout, "\n"), o.GetStdout()); diff != "" {
 				t.Errorf("source(%v) sent incorrect stdout (-want, +got):\n%s", test.args, diff)
 			}
 			if diff := cmp.Diff(strings.Join(test.wantStderr, "\n"), o.GetStderr()); diff != "" {
@@ -1216,5 +1267,19 @@ func (uec *usageErrCLI) Changed() bool   { return false }
 func (uec *usageErrCLI) Setup() []string { return nil }
 
 func uecUsage() string {
-	return command.ShowUsageAfterError((&usageErrCLI{}).Node())
+	return strings.Join([]string{
+		usagePrefixString,
+		`<`,
+		``,
+		`  a [ A_SL ]`,
+		``,
+		`  b B_SL`,
+		``,
+		`Arguments:`,
+		`  A_SL: str list`,
+		`  B_SL: str list`,
+		``,
+		`Symbols:`,
+		`  <: Start of subcommand branches`,
+	}, "\n")
 }

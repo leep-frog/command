@@ -33,7 +33,7 @@ func execute(n Node, input *Input, output Output, data *Data) (*ExecuteData, err
 		if err := input.CheckForExtraArgsError(); err != nil {
 			output.Stderrln(err)
 			// TODO: Make this the last node we reached?
-			ShowUsageAfterError(n)
+			ShowUsageAfterError(n, output)
 			termErr = err
 			return
 		}

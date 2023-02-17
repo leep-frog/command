@@ -59,8 +59,12 @@ const (
 type UsageTestCase struct {
 	// Node is the root `Node` of the command to test.
 	Node Node
+	// Args is the list of arguments provided to the command.
+	Args []string
 	// WantString is the expected usage output.
 	WantString []string
+	// WantErr is the error that should be returned.
+	WantErr error
 }
 
 // ExecuteTestCase is a test case object for testing command execution.
@@ -141,8 +145,11 @@ func UsageTest(t *testing.T, utc *UsageTestCase) {
 		utc = &UsageTestCase{}
 	}
 
-	if diff := cmp.Diff(strings.Join(utc.WantString, "\n"), GetUsage(utc.Node).String()); diff != "" {
-		t.Errorf("UsageString() returned incorrect response (-want, +got):\n%s", diff)
+	got, err := Use(utc.Node, ParseExecuteArgs(utc.Args), true)
+	CmpError(t, fmt.Sprintf("Use(%v)", utc.Args), utc.WantErr, err)
+
+	if diff := cmp.Diff(strings.Join(utc.WantString, "\n"), got.String()); diff != "" {
+		t.Errorf("Use(%v) returned incorrect response (-want, +got):\n%s", utc.Args, diff)
 	}
 }
 

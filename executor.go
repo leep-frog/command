@@ -14,9 +14,7 @@ func (e *ExecutorProcessor) Complete(*Input, *Data) (*Completion, error) {
 	return nil, nil
 }
 
-func (e *ExecutorProcessor) Usage(u *Usage) {
-	return
-}
+func (e *ExecutorProcessor) Usage(*Input, *Data, *Usage) error { return nil }
 
 type executableAppender struct {
 	f func(Output, *Data) ([]string, error)
@@ -35,7 +33,7 @@ func (ea *executableAppender) Complete(*Input, *Data) (*Completion, error) {
 	return nil, nil
 }
 
-func (ea *executableAppender) Usage(*Usage) {}
+func (ea *executableAppender) Usage(*Input, *Data, *Usage) error { return nil }
 
 // SimpleExecutableProcessor returns a `Processor` that adds to the command's `Executable`.
 func SimpleExecutableProcessor(sl ...string) Processor {

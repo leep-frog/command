@@ -104,7 +104,6 @@ var (
 )
 
 var (
-	cliArg          = command.Arg[string]("CLI", "Name of the CLI command to use")
 	fileArg         = command.FileArgument("FILE", "Temporary file for execution")
 	targetNameArg   = command.OptionalArg[string]("TARGET_NAME", "The name of the created target in $GOPATH/bin")
 	passthroughArgs = command.ListArg[string]("ARG", "Arguments that get passed through to relevant CLI command", 0, command.UnboundedList)
@@ -145,10 +144,7 @@ type CLI interface {
 
 // Returns if there was an error
 func (s *sourcerer) executeExecutor(output command.Output, d *command.Data) error {
-	cli, err := s.getCLI(d.String(cliArg.Name()))
-	if err != nil {
-		return output.Err(err)
-	}
+	cli := s.cliArg.Get(d)
 
 	sourcingFile := d.String(fileArg.Name())
 	args := d.StringList(passthroughArgs.Name())
@@ -164,7 +160,7 @@ func (s *sourcerer) executeExecutor(output command.Output, d *command.Data) erro
 	if err != nil {
 		if command.IsUsageError(err) && !s.printedUsageError && !s.forAutocomplete {
 			s.printedUsageError = true
-			output.Stderrln(command.ShowUsageAfterError(n))
+			command.ShowUsageAfterError(n, output)
 		}
 		// Commands are responsible for printing out error messages so
 		// we just return if there are any issues here
@@ -209,10 +205,7 @@ func (s *sourcerer) executeExecutor(output command.Output, d *command.Data) erro
 
 func (s *sourcerer) autocompleteExecutor(o command.Output, d *command.Data) error {
 	s.forAutocomplete = true
-	cli, err := s.getCLI(d.String(cliArg.Name()))
-	if err != nil {
-		return o.Err(err)
-	}
+	cli := s.cliArg.Get(d)
 
 	g, err := command.Autocomplete(cli.Node(), compLineArg.Get(d), autocompletePassthroughArgs.Get(d))
 	if err != nil {
@@ -272,7 +265,8 @@ func load(cli CLI) error {
 }
 
 type sourcerer struct {
-	clis              []CLI
+	clis              map[string]CLI
+	cliArg            *command.MapArgument[string, CLI]
 	sl                string
 	printedUsageError bool
 	opts              *compiledOpts
@@ -310,7 +304,7 @@ func (s *sourcerer) Node() command.Node {
 	return &command.BranchNode{
 		Branches: map[string]command.Node{
 			"autocomplete": command.SerialNodes(
-				cliArg,
+				s.cliArg,
 				compTypeArg,
 				compPointArg,
 				compLineArg,
@@ -318,16 +312,18 @@ func (s *sourcerer) Node() command.Node {
 				&command.ExecutorProcessor{F: s.autocompleteExecutor},
 			),
 			"usage": command.SerialNodes(
-				cliArg,
-				&command.ExecutorProcessor{F: s.usageExecutor},
+				s.cliArg,
+				passthroughArgs,
+				command.SimpleProcessor(s.usageExecutor, nil),
 			),
 			"execute": command.SerialNodes(
 				fileArg,
-				cliArg,
+				s.cliArg,
 				passthroughArgs,
 				&command.ExecutorProcessor{F: s.executeExecutor},
 			),
 		},
+		HideUsage: true,
 		Default: command.SerialNodes(
 			command.FlagProcessor(
 				loadOnlyFlag,
@@ -338,12 +334,16 @@ func (s *sourcerer) Node() command.Node {
 	}
 }
 
-func (s *sourcerer) usageExecutor(o command.Output, d *command.Data) error {
-	cli, err := s.getCLI(d.String(cliArg.Name()))
-	if err != nil {
-		return o.Err(err)
-	}
-	o.Stdoutln(command.GetUsage(cli.Node()).String())
+func (s *sourcerer) usageExecutor(i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
+	cli := s.cliArg.Get(d)
+	ed.Executor = append(ed.Executor, func(o command.Output, d *command.Data) error {
+		u, err := command.Use(cli.Node(), command.ParseExecuteArgs(passthroughArgs.Get(d)), true)
+		if err != nil {
+			return o.Err(err)
+		}
+		o.Stdout(u.String())
+		return nil
+	})
 	return nil
 }
 
@@ -394,17 +394,23 @@ func source(clis []CLI, osArgs []string, o command.Output, opts ...Option) error
 		oi.modifyCompiledOpts(cos)
 	}
 
+	cliMap := map[string]CLI{}
+	for _, c := range clis {
+		cliMap[c.Name()] = c
+	}
+
 	s := &sourcerer{
-		clis: clis,
-		sl:   sl,
-		opts: cos,
+		clis:   cliMap,
+		cliArg: command.MapArg("CLI", "", cliMap, false),
+		sl:     sl,
+		opts:   cos,
 	}
 
 	// Sourcerer is always executed. Its execution branches into the relevant CLI's
 	// execution/autocomplete/usage path.
 	d := &command.Data{
 		Values: map[string]interface{}{
-			cliArg.Name(): s.Name(),
+			s.cliArg.Name(): s,
 			// Don't need execute file here
 			passthroughArgs.Name(): osArgs,
 		},
@@ -459,8 +465,9 @@ func (s *sourcerer) generateFile(o command.Output, d *command.Data) error {
 		return o.Stderrf("failed to write to execute function file: %v\n", err)
 	}
 
-	sort.SliceStable(s.clis, func(i, j int) bool { return s.clis[i].Name() < s.clis[j].Name() })
-	for _, cli := range s.clis {
+	cliArr := maps.Values(s.clis)
+	sort.SliceStable(cliArr, func(i, j int) bool { return cliArr[i].Name() < cliArr[j].Name() })
+	for _, cli := range cliArr {
 		alias := cli.Name()
 
 		aliasCommand := fmt.Sprintf(aliasFormat, alias, filename, alias)

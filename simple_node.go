@@ -13,11 +13,11 @@ func (sn *SimpleNode) Next(i *Input, d *Data) (Node, error) {
 	return sn.Edge.Next(i, d)
 }
 
-func (sn *SimpleNode) UsageNext() Node {
+func (sn *SimpleNode) UsageNext(input *Input, data *Data) (Node, error) {
 	if sn.Edge == nil {
-		return nil
+		return nil, nil
 	}
-	return sn.Edge.UsageNext()
+	return sn.Edge.UsageNext(input, data)
 }
 
 func (sn *SimpleNode) Execute(input *Input, output Output, data *Data, exData *ExecuteData) error {
@@ -34,10 +34,11 @@ func (sn *SimpleNode) Complete(input *Input, data *Data) (*Completion, error) {
 	return processOrComplete(sn.Processor, input, data)
 }
 
-func (sn *SimpleNode) Usage(usage *Usage) {
+func (sn *SimpleNode) Usage(i *Input, d *Data, u *Usage) error {
 	if sn.Processor != nil {
-		processOrUsage(sn.Processor, usage)
+		return processOrUsage(sn.Processor, i, d, u)
 	}
+	return nil
 }
 
 // SimpleEdge implements the `Edge` interface and points to the provided `Node`.
@@ -50,6 +51,6 @@ func (se *SimpleEdge) Next(*Input, *Data) (Node, error) {
 	return se.N, nil
 }
 
-func (se *SimpleEdge) UsageNext() Node {
-	return se.N
+func (se *SimpleEdge) UsageNext(input *Input, data *Data) (Node, error) {
+	return se.N, nil
 }

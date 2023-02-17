@@ -19,9 +19,10 @@ type Processor interface {
 	// to construct the command completion suggestions.
 	Complete(*Input, *Data) (*Completion, error)
 	// Usage is the function called when the usage data for a command
-	// graph is being constructed. The input `Usage` object should be
+	// graph is being constructed. A
+	// The input `Usage` object should be
 	// updated for each `Node`.
-	Usage(*Usage)
+	Usage(*Input, *Data, *Usage) error
 }
 
 // Edge determines which `Node` to execute next.
@@ -33,7 +34,7 @@ type Edge interface {
 	// command graph usage is being constructed. This is separate from
 	// the `Next` function because `Next` is input-dependent whereas `UsageNext`
 	// receives no input arguments.
-	UsageNext() Node
+	UsageNext(*Input, *Data) (Node, error)
 }
 
 // ExecuteData contains operations to resolve after all nodes have been processed.

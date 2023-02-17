@@ -27,6 +27,7 @@ type BranchNode struct {
 	DefaultCompletion bool
 	// HideUsage is wheter or not usage info for this node should be
 	// hidden.
+	// TODO: Change to HideBranchUsage and HideDefaultUsage
 	HideUsage bool
 
 	next Node
@@ -76,6 +77,9 @@ func (bn *BranchNode) Complete(input *Input, data *Data) (*Completion, error) {
 }
 
 func (bn *BranchNode) getNext(input *Input, data *Data) error {
+	// Set next to nil in case used multiple times
+	bn.next = nil
+
 	s, ok := input.Peek()
 	if !ok {
 		if bn.Default == nil {
@@ -140,11 +144,13 @@ func IsBranchingError(err error) bool {
 }
 
 func (bn *BranchNode) Next(input *Input, data *Data) (Node, error) {
-	return bn.next, nil
+	n := bn.next
+	bn.next = nil
+	return n, nil
 }
 
-func (bn *BranchNode) UsageNext() Node {
-	return bn.Default
+func (bn *BranchNode) UsageNext(input *Input, data *Data) (Node, error) {
+	return bn.Next(input, data)
 }
 
 func (bn *BranchNode) splitBranch(b string) (string, []string) {
@@ -180,9 +186,19 @@ func (bn *BranchNode) getSyns() map[string]*branchSyn {
 	return nameToSyns
 }
 
-func (bn *BranchNode) Usage(u *Usage) {
+func (bn *BranchNode) Usage(input *Input, data *Data, u *Usage) error {
+	// Don't display usage if a branching argument is provided
+	// if !input.FullyProcessed() {
+	if input.NumRemaining() > 0 {
+		return bn.getNext(input, data)
+	}
+
 	if bn.HideUsage {
-		return
+		// Proceed to default
+		if bn.Default != nil {
+			return bn.getNext(input, data)
+		}
+		return nil
 	}
 
 	u.UsageSection.Set(SymbolSection, "<", "Start of subcommand branches")
@@ -193,8 +209,18 @@ func (bn *BranchNode) Usage(u *Usage) {
 		return this.name < that.name
 	})
 
+	if bn.Default != nil {
+		if err := processGraphUse(bn.Default, input, data, u, true); err != nil {
+			return err
+		}
+	}
+
 	for _, bs := range bss {
-		su := GetUsage(bs.n)
+		// Input is empty at this point, so fine to pass the same input to all branches
+		su, err := Use(bs.n, input, true)
+		if err != nil {
+			return err
+		}
 		v := bs.name
 		if len(bs.values) > 0 {
 			v = fmt.Sprintf("[%s|%s]", bs.name, strings.Join(bs.values, "|"))
@@ -202,4 +228,5 @@ func (bn *BranchNode) Usage(u *Usage) {
 		su.Usage = append([]string{v}, su.Usage...)
 		u.SubSections = append(u.SubSections, su)
 	}
+	return nil
 }

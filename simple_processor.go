@@ -27,10 +27,11 @@ type simpleProcessor struct {
 	desc string
 }
 
-func (sp *simpleProcessor) Usage(u *Usage) {
+func (sp *simpleProcessor) Usage(i *Input, d *Data, u *Usage) error {
 	if sp.desc != "" {
 		u.Description = sp.desc
 	}
+	return nil
 }
 
 func (sp *simpleProcessor) Execute(i *Input, o Output, d *Data, e *ExecuteData) error {

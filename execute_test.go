@@ -19,8 +19,8 @@ func (ee *errorEdge) Next(*Input, *Data) (Node, error) {
 	return nil, ee.e
 }
 
-func (ee *errorEdge) UsageNext() Node {
-	return nil
+func (ee *errorEdge) UsageNext(input *Input, data *Data) (Node, error) {
+	return nil, nil
 }
 
 func TestExecute(t *testing.T) {
@@ -6258,7 +6258,7 @@ func abc() Node {
 
 type tt struct{}
 
-func (t *tt) Usage(*Usage) {}
+func (t *tt) Usage(*Input, *Data, *Usage) error { return nil }
 func (t *tt) Execute(input *Input, output Output, data *Data, e *ExecuteData) error {
 	t.do(input)
 	return nil
@@ -8536,6 +8536,14 @@ func TestRunNodes(t *testing.T) {
 		}},
 	)
 
+	getUsage := func(n Node) *Usage {
+		u, err := Use(n, ParseExecuteArgs(nil), true)
+		if err != nil {
+			t.Fatalf("failed to get usage: %v", err)
+		}
+		return u
+	}
+
 	for _, test := range []struct {
 		name string
 		rtc  *RunNodeTestCase
@@ -8547,8 +8555,7 @@ func TestRunNodes(t *testing.T) {
 				Node: sum,
 				WantStderr: strings.Join([]string{
 					`Argument "A" requires at least 1 argument, got 0`,
-					fmt.Sprintf("\n======= Command Usage =======\n%s", GetUsage(sum).String()),
-					"",
+					fmt.Sprintf("\n======= Command Usage =======\n%s", getUsage(sum).String()),
 				}, "\n"),
 				WantErr: fmt.Errorf(`Argument "A" requires at least 1 argument, got 0`),
 			},
@@ -8560,8 +8567,7 @@ func TestRunNodes(t *testing.T) {
 				Args: []string{"5", "7", "9"},
 				WantStderr: strings.Join([]string{
 					`Unprocessed extra args: [9]`,
-					fmt.Sprintf("\n======= Command Usage =======\n%s", GetUsage(sum).String()),
-					"",
+					fmt.Sprintf("\n======= Command Usage =======\n%v", getUsage(sum)),
 				}, "\n"),
 				WantErr: fmt.Errorf(`Unprocessed extra args: [9]`),
 			},
@@ -8582,8 +8588,7 @@ func TestRunNodes(t *testing.T) {
 				Args: []string{"execute", "TMP_FILE"},
 				WantStderr: strings.Join([]string{
 					`Argument "A" requires at least 1 argument, got 0`,
-					fmt.Sprintf("\n======= Command Usage =======\n%s", GetUsage(sum).String()),
-					"",
+					fmt.Sprintf("\n======= Command Usage =======\n%v", getUsage(sum)),
 				}, "\n"),
 				WantErr: fmt.Errorf(`Argument "A" requires at least 1 argument, got 0`),
 			},
@@ -8595,8 +8600,7 @@ func TestRunNodes(t *testing.T) {
 				Args: []string{"execute", "TMP_FILE", "5", "7", "9"},
 				WantStderr: strings.Join([]string{
 					`Unprocessed extra args: [9]`,
-					fmt.Sprintf("\n======= Command Usage =======\n%s", GetUsage(sum).String()),
-					"",
+					fmt.Sprintf("\n======= Command Usage =======\n%v", getUsage(sum)),
 				}, "\n"),
 				WantErr: fmt.Errorf(`Unprocessed extra args: [9]`),
 			},
@@ -8699,7 +8703,7 @@ func TestRunNodes(t *testing.T) {
 			rtc: &RunNodeTestCase{
 				Node:       sum,
 				Args:       []string{"usage"},
-				WantStdout: GetUsage(sum).String() + "\n",
+				WantStdout: getUsage(sum).String() + "\n",
 			},
 		},
 		/* Useful for commenting out tests. */

@@ -315,7 +315,7 @@ func (fn *flagProcessor) Execute(input *Input, output Output, data *Data, eData 
 	return nil
 }
 
-func (fn *flagProcessor) Usage(u *Usage) {
+func (fn *flagProcessor) Usage(i *Input, d *Data, u *Usage) error {
 	var flags []FlagInterface
 	for k, f := range fn.flagMap {
 		// flagMap contains entries for name and short name, so ensure we only do each one once.
@@ -333,6 +333,7 @@ func (fn *flagProcessor) Usage(u *Usage) {
 
 		u.Flags = append(u.Flags, fmt.Sprintf("%s|%s", flagName(f), flagShortName(f)))
 	}
+	return nil
 }
 
 type flag[T any] struct {
@@ -472,10 +473,11 @@ func (bf *boolFlag[T]) Complete(input *Input, data *Data) (*Completion, error) {
 	return nil, nil
 }
 
-func (bf *boolFlag[T]) Usage(u *Usage) {
+func (bf *boolFlag[T]) Usage(i *Input, d *Data, u *Usage) error {
 	// Since flag processors are added at the beginning, the usage statements can be a bit awkward
 	// Instead add another row for supported flags
 	u.UsageSection.Add(FlagSection, bf.name, bf.desc)
+	return nil
 }
 
 func (bf *boolFlag[T]) Execute(_ *Input, _ Output, data *Data, _ *ExecuteData) error {
@@ -546,8 +548,8 @@ func (of *optionalFlag[T]) Complete(input *Input, data *Data) (*Completion, erro
 	return nil, nil
 }
 
-func (of *optionalFlag[T]) Usage(u *Usage) {
-	of.FlagWithType.Processor().Usage(u)
+func (of *optionalFlag[T]) Usage(i *Input, d *Data, u *Usage) error {
+	return of.FlagWithType.Processor().Usage(i, d, u)
 }
 
 // TODO: Node that populates a struct from arguments.
@@ -621,8 +623,8 @@ func (ilf *itemizedListFlag[T]) Complete(input *Input, data *Data) (*Completion,
 	return nil, nil
 }
 
-func (ilf *itemizedListFlag[T]) Usage(u *Usage) {
-	ilf.FlagWithType.Processor().Usage(u)
+func (ilf *itemizedListFlag[T]) Usage(i *Input, d *Data, u *Usage) error {
+	return ilf.FlagWithType.Processor().Usage(i, d, u)
 }
 
 // ListFlag creates a `FlagInterface` from list argument info.

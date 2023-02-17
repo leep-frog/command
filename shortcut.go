@@ -176,10 +176,11 @@ type executeShortcut struct {
 	name string
 }
 
-func (ea *executeShortcut) Usage(u *Usage) {
+func (ea *executeShortcut) Usage(i *Input, d *Data, u *Usage) error {
 	u.UsageSection.Add(SymbolSection, "*", "Start of new shortcut-able section")
 	// TODO: show shortcut subcommands on --help
 	u.Usage = append(u.Usage, "*")
+	return nil
 }
 
 func (ea *executeShortcut) Execute(input *Input, output Output, data *Data, eData *ExecuteData) error {
@@ -196,9 +197,7 @@ type addShortcut struct {
 	name string
 }
 
-func (as *addShortcut) Usage(*Usage) {
-	return
-}
+func (as *addShortcut) Usage(*Input, *Data, *Usage) error { return nil }
 
 func (as *addShortcut) Execute(input *Input, output Output, data *Data, _ *ExecuteData) error {
 	shortcut := data.String(ShortcutArg.Name())

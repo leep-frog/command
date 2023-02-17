@@ -106,8 +106,9 @@ func (bn *BashCommand[T]) Complete(input *Input, data *Data) (*Completion, error
 }
 
 // Usage fulfills the `Processor` interface for `BashCommand`.
-func (bn *BashCommand[T]) Usage(u *Usage) {
+func (bn *BashCommand[T]) Usage(i *Input, d *Data, u *Usage) error {
 	u.Description = bn.Desc
+	return nil
 }
 
 func (bn *BashCommand[T]) set(v T, d *Data) {

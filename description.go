@@ -16,8 +16,9 @@ type descNode struct {
 	desc string
 }
 
-func (dn *descNode) Usage(u *Usage) {
+func (dn *descNode) Usage(i *Input, d *Data, u *Usage) error {
 	u.Description = dn.desc
+	return nil
 }
 
 func (dn *descNode) Execute(*Input, Output, *Data, *ExecuteData) error {

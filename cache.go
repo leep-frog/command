@@ -92,8 +92,8 @@ func (cun *cacheUsageNode) Next(i *Input, d *Data) (Node, error) {
 	return nil, nil
 }
 
-func (cun *cacheUsageNode) UsageNext() Node {
-	return cun.n
+func (cun *cacheUsageNode) UsageNext(input *Input, data *Data) (Node, error) {
+	return cun.n, nil
 }
 
 type commandCache struct {
@@ -120,9 +120,10 @@ func (cc *commandCache) history(input *Input, output Output, data *Data, _ *Exec
 	return nil
 }
 
-func (cc *commandCache) Usage(u *Usage) {
+func (cc *commandCache) Usage(input *Input, data *Data, u *Usage) error {
 	u.UsageSection.Add(SymbolSection, "^", "Start of new cachable section")
 	u.Usage = append(u.Usage, "^")
+	return nil
 }
 
 func (cc *commandCache) Complete(input *Input, data *Data) (*Completion, error) {

@@ -34,7 +34,7 @@ func (e *EchoExecuteDataProcessor) Complete(*Input, *Data) (*Completion, error) 
 	return nil, nil
 }
 
-func (e *EchoExecuteDataProcessor) Usage(*Usage) {}
+func (e *EchoExecuteDataProcessor) Usage(i *Input, d *Data, u *Usage) error { return nil }
 
 // EchoExecuteData returns a `Processor` that sends the `ExecuteData` contents
 // to stdout.

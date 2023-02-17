@@ -34,8 +34,11 @@ type nodeRepeater struct {
 	n         Node
 }
 
-func (nr *nodeRepeater) Usage(u *Usage) {
-	nu := GetUsage(nr.n)
+func (nr *nodeRepeater) Usage(i *Input, d *Data, u *Usage) error {
+	nu, err := Use(nr.n, i, false)
+	if err != nil {
+		return err
+	}
 
 	// Merge UsageSection
 	for k1, m := range *nu.UsageSection {
@@ -70,6 +73,7 @@ func (nr *nodeRepeater) Usage(u *Usage) {
 	// We don't add flags because those are, presumably, done all at once at the beginning.
 	// Additionally, SubSections are only used by BranchNodes, and I can't imagine those being used inside of NodeRepeater
 	// If I am ever proven wrong on either of those claims, that person can implement usage updating in that case.
+	return nil
 }
 
 func (nr *nodeRepeater) proceedCondition(exCount int, i *Input) bool {
