@@ -213,8 +213,8 @@ func (s *sourcerer) autocompleteExecutor(o command.Output, d *command.Data) erro
 		if compTypeArg.Get(d) == 63 { /* code 63 = '?' character */
 			// Add newline so we're outputting stderr on a newline (and not line with cursor)
 			o.Stderrf("\n%v", err)
-			// Also suggest non-overlapping strings so comp line is reprinted
-			o.Stdoutf(" \n\t\n")
+			// Suggest non-overlapping strings (one space and one tab) so COMP_LINE is reprinted
+			o.Stdoutf("\t\n \n")
 		}
 		return err
 	}
@@ -317,6 +317,7 @@ func (s *sourcerer) Node() command.Node {
 				command.SimpleProcessor(s.usageExecutor, nil),
 			),
 			"execute": command.SerialNodes(
+				// TODO: cliArg should be first
 				fileArg,
 				s.cliArg,
 				passthroughArgs,

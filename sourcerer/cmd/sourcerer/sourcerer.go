@@ -177,14 +177,14 @@ func (gl *GoLeep) Name() string {
 	return "goleep"
 }
 
-func (gl *GoLeep) runCommand(d *command.Data, subCmd string, extraArgs []string) []string {
+func (gl *GoLeep) runCommand(d *command.Data, subCmd, cli string, extraArgs []string) []string {
 	var ea string
 	if len(extraArgs) > 0 {
 		ea = fmt.Sprintf(" %s", strings.Join(extraArgs, " "))
 	}
 
 	return []string{
-		fmt.Sprintf("go run %s %s%s", d.String(goDirectory.Name()), subCmd, ea),
+		fmt.Sprintf("go run %s %q %q%s", d.String(goDirectory.Name()), subCmd, cli, ea),
 	}
 }
 
@@ -193,6 +193,7 @@ var (
 	getTmpFile = func() (*os.File, error) {
 		return ioutil.TempFile("", "goleep-node-runner")
 	}
+	goleepCLIArg = command.Arg[string]("CLI", "CLI to use")
 )
 
 func (gl *GoLeep) Load(json string) error { return nil }
@@ -203,7 +204,7 @@ func (gl *GoLeep) Node() command.Node {
 		command.Description("Get the usage of the provided go files"),
 		command.FlagProcessor(goDirectory),
 		command.SimpleProcessor(func(i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
-			ed.Executable = gl.runCommand(d, "usage", nil)
+			ed.Executable = gl.runCommand(d, "usage", goleepCLIArg.Get(d), nil)
 			return nil
 		}, nil),
 	)
@@ -222,7 +223,7 @@ func (gl *GoLeep) Node() command.Node {
 
 			// Run the command
 			// Need to use ToSlash because mingw
-			cmd := gl.runCommand(d, "execute", append([]string{filepath.ToSlash(f.Name())}, d.StringList(passAlongArgs.Name())...))
+			cmd := gl.runCommand(d, "execute", goleepCLIArg.Get(d), append([]string{filepath.ToSlash(f.Name())}, d.StringList(passAlongArgs.Name())...))
 			bc := &command.BashCommand[[]string]{ArgName: "BASH_OUTPUT", Contents: cmd, ForwardStdout: true}
 			if _, err := bc.Run(o, d); err != nil {
 				return o.Stderrf("failed to run bash script: %v\n", err)
@@ -249,22 +250,37 @@ func (gl *GoLeep) Node() command.Node {
 		}, nil),
 	)
 
-	return &command.BranchNode{
-		Branches: map[string]command.Node{
-			"usage": usageNode,
+	return command.SerialNodes(
+		goleepCLIArg,
+		&command.BranchNode{
+			Branches: map[string]command.Node{
+				"usage": usageNode,
+			},
+			Default:           exNode,
+			DefaultCompletion: true,
 		},
-		Default:           exNode,
-		DefaultCompletion: true,
-	}
+	)
 }
 
 func (gl *GoLeep) completer() command.Completer[[]string] {
 	return command.CompleterFromFunc(func(s []string, data *command.Data) (*command.Completion, error) {
+		// Add a "dummyCommand" prefix to be removed by the command.Autocomplete function.
+		compLine := "dummyCommand " + strings.Join(passAlongArgs.Get(data), " ")
+		// TODO: This should also consider the quotes (before input processing). e.g. `abc "def"` should be 9 not 7
+		compPoint := fmt.Sprintf("%d", len(compLine))
+		compLine = fmt.Sprintf("%q", compLine)
+
 		extraArgs := []string{
-			// Add a "dummyCommand" prefix to be removed by the command.Autocomplete function.
-			fmt.Sprintf("%q", "dummyCommand "+strings.Join(passAlongArgs.Get(data), " ")),
+			// COMP_TYPE: by setting to '?', we ensure that an error is always printed.
+			// TODO: Get this from data.
+			"63",
+			// COMP_POINT (-2 for quotes)
+			compPoint,
+			// COMP_LINE
+			compLine,
+			// No passthrough args needed since that's only used for aliaser autocomplete
 		}
-		bc := &command.BashCommand[[]string]{ArgName: "BASH_OUTPUT", Contents: gl.runCommand(data, "autocomplete", extraArgs)}
+		bc := &command.BashCommand[[]string]{ArgName: "BASH_OUTPUT", Contents: gl.runCommand(data, "autocomplete", goleepCLIArg.Get(data), extraArgs)}
 		fo := command.NewFakeOutput()
 		v, err := bc.Run(fo, data)
 		fo.Close()

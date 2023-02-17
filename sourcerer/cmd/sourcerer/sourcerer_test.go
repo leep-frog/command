@@ -24,26 +24,41 @@ func TestExecute(t *testing.T) {
 	}{
 		// goleep tests
 		{
+			name: "requires cli arg",
+			cli:  &GoLeep{},
+			etc: &command.ExecuteTestCase{
+				WantStderr: "Argument \"CLI\" requires at least 1 argument, got 0\n",
+				WantErr:    fmt.Errorf("Argument \"CLI\" requires at least 1 argument, got 0"),
+			},
+		},
+		{
 			name: "requires go-dir arg",
 			cli:  &GoLeep{},
 			etc: &command.ExecuteTestCase{
-				Args:       []string{"--go-dir"},
+				Args:       []string{"c", "--go-dir"},
 				WantStderr: "Argument \"go-dir\" requires at least 1 argument, got 0\n",
 				WantErr:    fmt.Errorf(`Argument "go-dir" requires at least 1 argument, got 0`),
+				WantData: &command.Data{Values: map[string]interface{}{
+					goleepCLIArg.Name(): "c",
+				}},
 			},
 		},
 		{
 			name: "runs with no go file",
 			cli:  &GoLeep{},
 			etc: &command.ExecuteTestCase{
+				Args: []string{
+					"c",
+				},
 				RunResponses: []*command.FakeRun{{}},
 				WantRunContents: [][]string{{
 					"set -e",
 					"set -o pipefail",
-					"go run . execute TMP_FILE",
+					`go run . "execute" "c" TMP_FILE`,
 				}},
 				WantData: &command.Data{Values: map[string]interface{}{
-					goDirectory.Name(): ".",
+					goleepCLIArg.Name(): "c",
+					goDirectory.Name():  ".",
 				}},
 			},
 		},
@@ -52,6 +67,7 @@ func TestExecute(t *testing.T) {
 			cli:  &GoLeep{},
 			etc: &command.ExecuteTestCase{
 				Args: []string{
+					"dc",
 					"-d",
 					filepath.Join("..", "..", "..", "testdata"),
 				},
@@ -59,10 +75,11 @@ func TestExecute(t *testing.T) {
 				WantRunContents: [][]string{{
 					"set -e",
 					"set -o pipefail",
-					fmt.Sprintf(`go run %s execute TMP_FILE`, filepath.Join("..", "..", "..", "testdata")),
+					fmt.Sprintf(`go run %s "execute" "dc" TMP_FILE`, filepath.Join("..", "..", "..", "testdata")),
 				}},
 				WantData: &command.Data{Values: map[string]interface{}{
-					goDirectory.Name(): filepath.Join("..", "..", "..", "testdata"),
+					goleepCLIArg.Name(): "dc",
+					goDirectory.Name():  filepath.Join("..", "..", "..", "testdata"),
 				}},
 			},
 		},
@@ -74,11 +91,14 @@ func TestExecute(t *testing.T) {
 				"echo goodbye",
 			},
 			etc: &command.ExecuteTestCase{
+				Args: []string{
+					"ec",
+				},
 				RunResponses: []*command.FakeRun{{}},
 				WantRunContents: [][]string{{
 					"set -e",
 					"set -o pipefail",
-					`go run . execute TMP_FILE`,
+					`go run . "execute" "ec" TMP_FILE`,
 				}},
 				WantExecuteData: &command.ExecuteData{
 					Executable: []string{
@@ -87,7 +107,8 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantData: &command.Data{Values: map[string]interface{}{
-					goDirectory.Name(): ".",
+					goDirectory.Name():  ".",
+					goleepCLIArg.Name(): "ec",
 				}},
 			},
 		},
@@ -95,6 +116,9 @@ func TestExecute(t *testing.T) {
 			name: "passes along stdout and stderr",
 			cli:  &GoLeep{},
 			etc: &command.ExecuteTestCase{
+				Args: []string{
+					"sc",
+				},
 				RunResponses: []*command.FakeRun{{
 					Stdout: []string{
 						"hello there",
@@ -110,10 +134,11 @@ func TestExecute(t *testing.T) {
 				WantRunContents: [][]string{{
 					"set -e",
 					"set -o pipefail",
-					`go run . execute TMP_FILE`,
+					`go run . "execute" "sc" TMP_FILE`,
 				}},
 				WantData: &command.Data{Values: map[string]interface{}{
-					goDirectory.Name(): ".",
+					goleepCLIArg.Name(): "sc",
+					goDirectory.Name():  ".",
 				}},
 			},
 		},
@@ -121,6 +146,9 @@ func TestExecute(t *testing.T) {
 			name: "handles bash command error",
 			cli:  &GoLeep{},
 			etc: &command.ExecuteTestCase{
+				Args: []string{
+					"bc",
+				},
 				RunResponses: []*command.FakeRun{{
 					Err: fmt.Errorf("bad news bears"),
 					Stdout: []string{
@@ -141,10 +169,11 @@ func TestExecute(t *testing.T) {
 				WantRunContents: [][]string{{
 					"set -e",
 					"set -o pipefail",
-					`go run . execute TMP_FILE`,
+					`go run . "execute" "bc" TMP_FILE`,
 				}},
 				WantData: &command.Data{Values: map[string]interface{}{
-					goDirectory.Name(): ".",
+					goleepCLIArg.Name(): "bc",
+					goDirectory.Name():  ".",
 				}},
 			},
 		},
@@ -153,6 +182,7 @@ func TestExecute(t *testing.T) {
 			cli:  &GoLeep{},
 			etc: &command.ExecuteTestCase{
 				Args: []string{
+					"c",
 					"arg1",
 					"arg2",
 				},
@@ -160,9 +190,10 @@ func TestExecute(t *testing.T) {
 				WantRunContents: [][]string{{
 					"set -e",
 					"set -o pipefail",
-					`go run . execute TMP_FILE arg1 arg2`,
+					`go run . "execute" "c" TMP_FILE arg1 arg2`,
 				}},
 				WantData: &command.Data{Values: map[string]interface{}{
+					goleepCLIArg.Name(): "c",
 					passAlongArgs.Name(): []string{
 						"arg1",
 						"arg2",
@@ -177,15 +208,17 @@ func TestExecute(t *testing.T) {
 			cli:  &GoLeep{},
 			etc: &command.ExecuteTestCase{
 				Args: []string{
+					"c",
 					"usage",
 				},
 				WantExecuteData: &command.ExecuteData{
 					Executable: []string{
-						"go run . usage",
+						`go run . "usage" "c"`,
 					},
 				},
 				WantData: &command.Data{Values: map[string]interface{}{
-					goDirectory.Name(): ".",
+					goleepCLIArg.Name(): "c",
+					goDirectory.Name():  ".",
 				}},
 			},
 		},
@@ -194,17 +227,19 @@ func TestExecute(t *testing.T) {
 			cli:  &GoLeep{},
 			etc: &command.ExecuteTestCase{
 				Args: []string{
+					"c",
 					"usage",
 					"--go-dir",
 					filepath.Join("..", "..", "..", "color"),
 				},
 				WantExecuteData: &command.ExecuteData{
 					Executable: []string{
-						fmt.Sprintf("go run %s usage", filepath.Join("..", "..", "..", "color")),
+						fmt.Sprintf(`go run %s "usage" "c"`, filepath.Join("..", "..", "..", "color")),
 					},
 				},
 				WantData: &command.Data{Values: map[string]interface{}{
-					goDirectory.Name(): filepath.Join("..", "..", "..", "color"),
+					goleepCLIArg.Name(): "c",
+					goDirectory.Name():  filepath.Join("..", "..", "..", "color"),
 				}},
 			},
 		},
@@ -494,7 +529,7 @@ func TestAutocomplete(t *testing.T) {
 		{
 			name: "completes directories",
 			ctc: &command.CompleteTestCase{
-				Args: fmt.Sprintf("cmd -d %s", filepath.Join("..", "..", "..", "c")),
+				Args: fmt.Sprintf("cmd c -d %s", filepath.Join("..", "..", "..", "c")),
 				Want: []string{
 					"cache/",
 					"cmd/",
@@ -502,14 +537,15 @@ func TestAutocomplete(t *testing.T) {
 					" ",
 				},
 				WantData: &command.Data{Values: map[string]interface{}{
-					goDirectory.Name(): filepath.Join("..", "..", "..", "c"),
+					goleepCLIArg.Name(): "c",
+					goDirectory.Name():  filepath.Join("..", "..", "..", "c"),
 				}},
 			},
 		},
 		{
 			name: "completes empty args",
 			ctc: &command.CompleteTestCase{
-				Args: "cmd ",
+				Args: "cmd acli ",
 				RunResponses: []*command.FakeRun{
 					{
 						Stdout: []string{"un", "deux", "trois"},
@@ -518,7 +554,7 @@ func TestAutocomplete(t *testing.T) {
 				WantRunContents: [][]string{{
 					"set -e",
 					"set -o pipefail",
-					`go run . autocomplete "dummyCommand "`,
+					`go run . "autocomplete" "acli" 63 13 "dummyCommand "`,
 				}},
 				Want: []string{
 					"deux",
@@ -527,6 +563,7 @@ func TestAutocomplete(t *testing.T) {
 				},
 				WantData: &command.Data{Values: map[string]interface{}{
 					goDirectory.Name():   ".",
+					goleepCLIArg.Name():  "acli",
 					passAlongArgs.Name(): []string{""},
 				}},
 			},
@@ -534,7 +571,7 @@ func TestAutocomplete(t *testing.T) {
 		{
 			name: "completes present args with quotes",
 			ctc: &command.CompleteTestCase{
-				Args: "cmd abc d\"e'f",
+				Args: "cmd aCLI abc d\"e'f",
 				RunResponses: []*command.FakeRun{
 					{
 						Stdout: []string{"un", "deux", "trois", "de'finitely"},
@@ -543,13 +580,14 @@ func TestAutocomplete(t *testing.T) {
 				WantRunContents: [][]string{{
 					"set -e",
 					"set -o pipefail",
-					`go run . autocomplete "dummyCommand abc de'f"`,
+					`go run . "autocomplete" "aCLI" 63 21 "dummyCommand abc de'f"`,
 				}},
 				Want: []string{
 					"de'finitely",
 				},
 				WantData: &command.Data{Values: map[string]interface{}{
 					goDirectory.Name():   ".",
+					goleepCLIArg.Name():  "aCLI",
 					passAlongArgs.Name(): []string{"abc", `de'f`},
 				}},
 			},
@@ -557,7 +595,7 @@ func TestAutocomplete(t *testing.T) {
 		{
 			name: "handles run response error",
 			ctc: &command.CompleteTestCase{
-				Args: "cmd ",
+				Args: "cmd someCLI ",
 				RunResponses: []*command.FakeRun{
 					{
 						Err:    fmt.Errorf("whoops"),
@@ -568,10 +606,11 @@ func TestAutocomplete(t *testing.T) {
 				WantRunContents: [][]string{{
 					"set -e",
 					"set -o pipefail",
-					`go run . autocomplete "dummyCommand "`,
+					`go run . "autocomplete" "someCLI" 63 13 "dummyCommand "`,
 				}},
 				WantData: &command.Data{Values: map[string]interface{}{
 					goDirectory.Name():   ".",
+					goleepCLIArg.Name():  "someCLI",
 					passAlongArgs.Name(): []string{""},
 				}},
 			},
@@ -591,12 +630,13 @@ func TestUsage(t *testing.T) {
 		Node: (&GoLeep{}).Node(),
 		WantString: []string{
 			"Execute the provided go files",
-			"< [ PASSTHROUGH_ARGS ... ] --go-dir|-d",
+			"CLI < [ PASSTHROUGH_ARGS ... ] --go-dir|-d",
 			"",
 			"  Get the usage of the provided go files",
 			"  usage --go-dir|-d",
 			"",
 			"Arguments:",
+			"  CLI: CLI to use",
 			"  PASSTHROUGH_ARGS: Args to pass through to the command",
 			"",
 			"Flags:",

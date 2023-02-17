@@ -953,8 +953,8 @@ func TestSourcerer(t *testing.T) {
 			clis:    []CLI{&testCLI{name: "basic"}},
 			wantErr: fmt.Errorf("Unprocessed extra args: []"),
 			wantStdout: []string{
-				" ",
 				"\t",
+				" ",
 			},
 			wantStderr: []string{
 				"",
@@ -968,8 +968,8 @@ func TestSourcerer(t *testing.T) {
 			clis:    []CLI{&testCLI{name: "basic"}},
 			wantErr: fmt.Errorf("Unprocessed extra args: [ther]"),
 			wantStdout: []string{
-				" ",
 				"\t",
+				" ",
 			},
 			wantStderr: []string{
 				"",
