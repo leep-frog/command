@@ -41,7 +41,7 @@ func TestAliaser(t *testing.T) {
 						`  return 1`,
 						`fi`,
 						``,
-						`alias -- some-alias="someCLI "`,
+						`alias -- some-alias="someCLI"`,
 						`function _custom_autocomplete_for_alias_some-alias {`,
 						`  _leep_frog_autocompleter "someCLI" `,
 						`}`,

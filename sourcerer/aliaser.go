@@ -52,7 +52,9 @@ func AliasSourcery(o command.Output, as ...*Aliaser) {
 			qas = append(qas, fmt.Sprintf("%q", v))
 		}
 		quotedArgs := strings.Join(qas, " ")
-		aliasTo := fmt.Sprintf("%s %s", a.cli, quotedArgs)
+
+		// The trailing space causes issues, so we need to make sure we remove that if necessary.
+		aliasTo := strings.TrimSpace(fmt.Sprintf("%s %s", a.cli, quotedArgs))
 		o.Stdoutf(strings.Join([]string{
 			fmt.Sprintf("alias -- %s=%q", a.alias, aliasTo),
 			fmt.Sprintf(autocompleteForAliasFunction, a.alias, a.cli, quotedArgs),
