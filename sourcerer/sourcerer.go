@@ -13,6 +13,7 @@ import (
 	"github.com/leep-frog/command"
 	"github.com/leep-frog/command/cache"
 	"golang.org/x/exp/maps"
+	"golang.org/x/exp/slices"
 )
 
 var (
@@ -262,6 +263,14 @@ var (
 	loadOnlyFlag = command.BoolFlag("load-only", 'l', "If set to true, the binaries are assumed to exist and only the aliases and completion setups are generated")
 )
 
+const (
+	AutocompleteBranchName = "autocomplete"
+	ExecuteBranchName      = "execute"
+	ListBranchName         = "listCLIs"
+	SourceBranchName       = "source"
+	UsageBranchName        = "usage"
+)
+
 func (s *sourcerer) Node() command.Node {
 	loadCLIArg := command.SuperSimpleProcessor(func(i *command.Input, d *command.Data) error {
 		// TODO: Test this
@@ -269,7 +278,7 @@ func (s *sourcerer) Node() command.Node {
 	})
 	return &command.BranchNode{
 		Branches: map[string]command.Node{
-			"autocomplete": command.SerialNodes(
+			AutocompleteBranchName: command.SerialNodes(
 				s.cliArg,
 				loadCLIArg,
 				compTypeArg,
@@ -278,20 +287,23 @@ func (s *sourcerer) Node() command.Node {
 				autocompletePassthroughArgs,
 				&command.ExecutorProcessor{F: s.autocompleteExecutor},
 			),
-			"usage": command.SerialNodes(
+			UsageBranchName: command.SerialNodes(
 				s.cliArg,
 				loadCLIArg,
 				passthroughArgs,
 				command.SimpleProcessor(s.usageExecutor, nil),
 			),
-			"execute": command.SerialNodes(
+			ListBranchName: command.SerialNodes(
+				command.SimpleProcessor(s.listCLIExecutor, nil),
+			),
+			ExecuteBranchName: command.SerialNodes(
 				s.cliArg,
 				loadCLIArg,
 				fileArg,
 				passthroughArgs,
 				&command.ExecutorProcessor{F: s.executeExecutor},
 			),
-			"source": command.SerialNodes(
+			SourceBranchName: command.SerialNodes(
 				command.FlagProcessor(
 					loadOnlyFlag,
 				),
@@ -305,11 +317,17 @@ func (s *sourcerer) Node() command.Node {
 			// command.ListArg[string]("UNUSED", "", 0, command.UnboundedList),
 			&command.ExecutorProcessor{func(o command.Output, d *command.Data) error {
 				// Add echo so it's a comment if included in sourced output
-				o.Stderrf("echo %q", "Executing a sourcerer.CLI directly through `go run` is tricky. Either generate a CLI or use the `goleep` command to directly run the file.")
-				return nil
+				return o.Stderrf("echo %q\n", "Executing a sourcerer.CLI directly through `go run` is tricky. Either generate a CLI or use the `goleep` command to directly run the file.")
 			}},
 		),
 	}
+}
+
+func (s *sourcerer) listCLIExecutor(i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
+	clis := maps.Keys(s.clis)
+	slices.Sort(clis)
+	o.Stdoutln(strings.Join(clis, "\n"))
+	return nil
 }
 
 func (s *sourcerer) usageExecutor(i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {

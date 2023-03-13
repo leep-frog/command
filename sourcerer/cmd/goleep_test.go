@@ -26,6 +26,9 @@ func TestGoLeep(t *testing.T) {
 			etc: &command.ExecuteTestCase{
 				WantStderr: "Argument \"CLI\" requires at least 1 argument, got 0\n",
 				WantErr:    fmt.Errorf("Argument \"CLI\" requires at least 1 argument, got 0"),
+				WantData: &command.Data{Values: map[string]interface{}{
+					goDirectory.Name(): ".",
+				}},
 			},
 		},
 		{
@@ -34,9 +37,6 @@ func TestGoLeep(t *testing.T) {
 				Args:       []string{"c", "--go-dir"},
 				WantStderr: "Argument \"go-dir\" requires at least 1 argument, got 0\n",
 				WantErr:    fmt.Errorf(`Argument "go-dir" requires at least 1 argument, got 0`),
-				WantData: &command.Data{Values: map[string]interface{}{
-					goleepCLIArg.Name(): "c",
-				}},
 			},
 		},
 		{
@@ -302,8 +302,32 @@ func TestGoLeepAutocomplete(t *testing.T) {
 					" ",
 				},
 				WantData: &command.Data{Values: map[string]interface{}{
-					goleepCLIArg.Name(): "c",
-					goDirectory.Name():  filepath.Join("..", "..", "c"),
+					goDirectory.Name(): filepath.Join("..", "..", "c"),
+				}},
+			},
+		},
+		{
+			name: "completes a cli",
+			ctc: &command.CompleteTestCase{
+				Args: "cmd ",
+				RunResponses: []*command.FakeRun{
+					{
+						Stdout: []string{"cliOne", "cliTwo", "cliThree"},
+					},
+				},
+				WantRunContents: [][]string{{
+					"set -e",
+					"set -o pipefail",
+					`go run . "listCLIs"`,
+				}},
+				Want: []string{
+					"cliOne",
+					"cliThree",
+					"cliTwo",
+				},
+				WantData: &command.Data{Values: map[string]interface{}{
+					goleepCLIArg.Name(): "",
+					goDirectory.Name():  ".",
 				}},
 			},
 		},
@@ -439,7 +463,7 @@ func TestUsage(t *testing.T) {
 			"CLI < [ PASSTHROUGH_ARGS ... ] --go-dir|-d",
 			"",
 			"  Get the usage of the provided go files",
-			"  usage --go-dir|-d",
+			"  usage",
 			"",
 			"Arguments:",
 			"  CLI: CLI to use",

@@ -597,6 +597,14 @@ func TestSourcerer(t *testing.T) {
 			wantErr: fmt.Errorf(`Argument "CLI" requires at least 1 argument, got 0`),
 		},
 		{
+			name: "fails if no cli arg other",
+			args: []string{},
+			wantStderr: []string{
+				"echo \"Executing a sourcerer.CLI directly through `go run` is tricky. Either generate a CLI or use the `goleep` command to directly run the file.\"",
+			},
+			wantErr: fmt.Errorf("echo \"Executing a sourcerer.CLI directly through `go run` is tricky. Either generate a CLI or use the `goleep` command to directly run the file.\""),
+		},
+		{
 			name: "fails if no file arg",
 			args: []string{"execute", "bc"},
 			clis: []CLI{ToCLI("bc", nil)},
@@ -876,6 +884,26 @@ func TestSourcerer(t *testing.T) {
 			},
 			wantErr:         fmt.Errorf("Unprocessed extra args: [deux trois]"),
 			noStderrNewline: true,
+		},
+		// List CLI tests
+		{
+			name:       "lists none",
+			args:       []string{ListBranchName},
+			wantStdout: []string{""},
+		},
+		{
+			name: "lists clis",
+			args: []string{ListBranchName},
+			clis: []CLI{
+				&testCLI{name: "un"},
+				&testCLI{name: "deux"},
+				&testCLI{name: "trois"},
+			},
+			wantStdout: []string{
+				"deux",
+				"trois",
+				"un",
+			},
 		},
 		// Autocomplete tests
 		{
