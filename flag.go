@@ -118,7 +118,7 @@ func (fn *flagProcessor) ListBreaker() *ListBreaker[any] {
 	return ListUntil[any](
 		// Don't eat any full flags (e.g. --my-flag)
 		&ValidatorOption[string]{
-			func(s string) error {
+			func(s string, d *Data) error {
 				if _, ok := fn.flagMap[s]; ok {
 					return fmt.Errorf("value %q is a flag in the flag map", s)
 				}
@@ -128,7 +128,7 @@ func (fn *flagProcessor) ListBreaker() *ListBreaker[any] {
 		},
 		// Don't eat any multi-flags where all flags are in the FlagProcessor.
 		&ValidatorOption[string]{
-			func(s string) error {
+			func(s string, d *Data) error {
 				if !MultiFlagRegex.MatchString(s) {
 					return nil
 				}
@@ -200,7 +200,7 @@ func (fn *flagProcessor) Complete(input *Input, data *Data) (*Completion, error)
 			// This is outside of the for-loop so we only remove
 			// the multi-flag arg (not one arg per flag).
 			input.offset = i
-			input.Pop()
+			input.Pop(data)
 			input.offset = 0
 		} else if f, ok := fn.flagMap[a]; ok {
 			// If regular flag
@@ -212,7 +212,7 @@ func (fn *flagProcessor) Complete(input *Input, data *Data) (*Completion, error)
 
 			input.offset = i
 			// Remove flag argument (e.g. --flagName).
-			input.Pop()
+			input.Pop(data)
 			input.pushValidators(fn.ListBreaker())
 			c, err := processOrComplete(f.Processor(), input, data)
 			input.popValidators(1)
@@ -275,7 +275,7 @@ func (fn *flagProcessor) Execute(input *Input, output Output, data *Data, eData 
 			// the multi-flag arg (not one arg per flag).
 			// TODO: PopAt function?
 			input.offset = i
-			input.Pop()
+			input.Pop(data)
 			input.offset = 0
 		} else if f, ok := fn.flagMap[a]; ok {
 			// If regular flag
@@ -287,7 +287,7 @@ func (fn *flagProcessor) Execute(input *Input, output Output, data *Data, eData 
 
 			input.offset = i
 			// Remove flag argument (e.g. --flagName).
-			input.Pop()
+			input.Pop(data)
 			input.pushValidators(fn.ListBreaker())
 			err := processOrExecute(f.Processor(), input, output, data, eData)
 			input.popValidators(1)
@@ -599,7 +599,7 @@ func (ilf *itemizedListFlag[T]) Processor() Processor {
 }
 
 func (ilf *itemizedListFlag[T]) Execute(input *Input, output Output, data *Data, eData *ExecuteData) error {
-	s, ok := input.Pop()
+	s, ok := input.Pop(data)
 	if !ok {
 		return output.Err(NotEnoughArgs(ilf.Name(), 1, 0))
 	}
@@ -614,7 +614,7 @@ func (ilf *itemizedListFlag[T]) Complete(input *Input, data *Data) (*Completion,
 		// the input will always have at least one more argument.
 		return nil, nil
 	}
-	s, _ := input.Pop()
+	s, _ := input.Pop(data)
 	ilf.rawArgs = append(ilf.rawArgs, s)
 	if input.FullyProcessed() {
 		c, e := processOrComplete(ilf.FlagWithType.Processor(), NewInput(ilf.rawArgs, nil), data)

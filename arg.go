@@ -117,7 +117,7 @@ func (an *Argument[T]) Usage(i *Input, d *Data, u *Usage) error {
 func (an *Argument[T]) Execute(i *Input, o Output, data *Data, eData *ExecuteData) error {
 	an.shortcutCheck(i, o, data, false)
 
-	sl, enough := i.PopN(an.minN, an.optionalN, an.opt.breakers)
+	sl, enough := i.PopN(an.minN, an.optionalN, an.opt.breakers, data)
 
 	// Don't set at all if no arguments provided for arg.
 	if len(sl) == 0 {
@@ -187,7 +187,7 @@ func (an *Argument[T]) Execute(i *Input, o Output, data *Data, eData *ExecuteDat
 
 	if an.opt != nil {
 		for _, validator := range an.opt.validators {
-			if err := validator.RunValidation(an, v); err != nil {
+			if err := validator.RunValidation(an, v, data); err != nil {
 				return o.Err(err)
 			}
 		}
@@ -244,7 +244,7 @@ func (an *Argument[T]) shortcutCheck(input *Input, output Output, data *Data, co
 func (an *Argument[T]) Complete(input *Input, data *Data) (*Completion, error) {
 	an.shortcutCheck(input, NewIgnoreAllOutput(), data, true)
 
-	sl, enough := input.PopN(an.minN, an.optionalN, an.opt.breakers)
+	sl, enough := input.PopN(an.minN, an.optionalN, an.opt.breakers, data)
 
 	// If this is the last arg, we want the node walkthrough to stop (which
 	// doesn't happen if c and err are nil).

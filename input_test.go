@@ -103,7 +103,7 @@ func TestPop(t *testing.T) {
 		{},
 		{},
 	} {
-		got, gotOK := input.Pop()
+		got, gotOK := input.Pop(nil)
 		if want.ok != gotOK {
 			t.Fatalf("Pop() (%d) returned %v for okay, want %v", idx, gotOK, want.ok)
 		}
@@ -137,7 +137,7 @@ func TestSnapshots(t *testing.T) {
 			wantSnapshot: []string{"two", "two.one", "two.two", "three"},
 		},
 		{
-			f:            func() { input.PopN(3, 0, nil) },
+			f:            func() { input.PopN(3, 0, nil, nil) },
 			wantSnapshot: []string{"three"},
 		},
 		{
@@ -153,7 +153,7 @@ func TestSnapshots(t *testing.T) {
 			wantSnapshot: []string{"one", "three"},
 		},
 		{
-			f:            func() { input.Pop() },
+			f:            func() { input.Pop(nil) },
 			wantSnapshot: []string{"three"},
 		},
 		{
@@ -165,11 +165,11 @@ func TestSnapshots(t *testing.T) {
 			wantSnapshot: []string{"negative.one", "zero.one", "zero.two", "zero.three", "three"},
 		},
 		{
-			f:            func() { input.PopN(1, 2, nil) },
+			f:            func() { input.PopN(1, 2, nil, nil) },
 			wantSnapshot: []string{"zero.three", "three"},
 		},
 		{
-			f: func() { input.PopN(0, 100, nil) },
+			f: func() { input.PopN(0, 100, nil, nil) },
 		},
 	} {
 		if test.f != nil {
@@ -325,7 +325,7 @@ func TestPopN(t *testing.T) {
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			input := NewInput(test.input, nil)
-			gotPtrs, gotOK := input.PopN(test.n, test.optN, test.breakers)
+			gotPtrs, gotOK := input.PopN(test.n, test.optN, test.breakers, nil)
 			var got []string
 			for _, p := range gotPtrs {
 				got = append(got, *p)
@@ -533,7 +533,7 @@ func TestPopNOffset(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			input := NewInput(test.input, nil)
 			input.offset = test.offset
-			gotPtrs, gotOK := input.PopN(test.n, test.optN, nil)
+			gotPtrs, gotOK := input.PopN(test.n, test.optN, nil, nil)
 			var got []string
 			for _, p := range gotPtrs {
 				got = append(got, *p)

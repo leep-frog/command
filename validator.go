@@ -37,12 +37,12 @@ func IsValidationError(err error) bool {
 
 // ValidatorOption is an `ArgumentOption` and `BashOption` for validating arguments.
 type ValidatorOption[T any] struct {
-	Validate func(T) error
+	Validate func(T, *Data) error
 	Usage    string
 }
 
-func (vo *ValidatorOption[T]) RunValidation(arg validatable, t T) error {
-	if err := vo.Validate(t); err != nil {
+func (vo *ValidatorOption[T]) RunValidation(arg validatable, t T, d *Data) error {
+	if err := vo.Validate(t, d); err != nil {
 		return newValidationErr(arg, err)
 	}
 	return nil
@@ -55,9 +55,9 @@ func (vo *ValidatorOption[T]) modifyArgumentOption(ao *argumentOption[T]) {
 // ValidatorList changes a single-arg validator (`Validator[T]`) to a list-arg validator (`Validator[[]T]`).
 func ValidatorList[T any](vo *ValidatorOption[T]) *ValidatorOption[[]T] {
 	return &ValidatorOption[[]T]{
-		func(ts []T) error {
+		func(ts []T, d *Data) error {
 			for _, t := range ts {
-				if err := vo.Validate(t); err != nil {
+				if err := vo.Validate(t, d); err != nil {
 					return err
 				}
 			}
@@ -70,7 +70,7 @@ func ValidatorList[T any](vo *ValidatorOption[T]) *ValidatorOption[[]T] {
 // Contains [`ValidatorOption`] validates an argument contains the provided string.
 func Contains(s string) *ValidatorOption[string] {
 	return &ValidatorOption[string]{
-		func(vs string) error {
+		func(vs string, d *Data) error {
 			if !strings.Contains(vs, s) {
 				return fmt.Errorf("[Contains] value doesn't contain substring %q", s)
 			}
@@ -87,7 +87,7 @@ func MatchesRegex(pattern ...string) *ValidatorOption[string] {
 		rs = append(rs, regexp.MustCompile(p))
 	}
 	return &ValidatorOption[string]{
-		func(vs string) error {
+		func(vs string, d *Data) error {
 			for _, r := range rs {
 				if !r.MatchString(vs) {
 					return fmt.Errorf("[MatchesRegex] value %q doesn't match regex %q", vs, r.String())
@@ -102,7 +102,7 @@ func MatchesRegex(pattern ...string) *ValidatorOption[string] {
 // IsRegex [`ValidatorOption`] validates an argument is a valid regex.
 func IsRegex() *ValidatorOption[string] {
 	return &ValidatorOption[string]{
-		func(s string) error {
+		func(s string, d *Data) error {
 			if _, err := regexp.Compile(s); err != nil {
 				return fmt.Errorf("[IsRegex] value %q isn't a valid regex: %v", s, err)
 			}
@@ -115,7 +115,7 @@ func IsRegex() *ValidatorOption[string] {
 // InList [`ValidatorOption`] validates an argument is one of the provided choices.
 func InList[T comparable](choices ...T) *ValidatorOption[T] {
 	return &ValidatorOption[T]{
-		func(vs T) error {
+		func(vs T, d *Data) error {
 			for _, c := range choices {
 				if vs == c {
 					return nil
@@ -134,7 +134,7 @@ type Lengthable[T any] interface {
 // MinLength [`ValidatorOption`] validates an argument is at least `length` long.
 func MinLength[K any, T Lengthable[K]](length int) *ValidatorOption[T] {
 	return &ValidatorOption[T]{
-		func(vs T) error {
+		func(vs T, d *Data) error {
 			if len(vs) < length {
 				return fmt.Errorf("[MinLength] length must be at least %d", length)
 			}
@@ -147,7 +147,7 @@ func MinLength[K any, T Lengthable[K]](length int) *ValidatorOption[T] {
 // MaxLength [`ValidatorOption`] validates an argument is at most `length` long.
 func MaxLength[K any, T Lengthable[K]](length int) *ValidatorOption[T] {
 	return &ValidatorOption[T]{
-		func(vs T) error {
+		func(vs T, d *Data) error {
 			if len(vs) > length {
 				return fmt.Errorf("[MaxLength] length must be at most %d", length)
 			}
@@ -160,7 +160,7 @@ func MaxLength[K any, T Lengthable[K]](length int) *ValidatorOption[T] {
 // Length [`ValidatorOption`] validates an argument is exactly length.
 func Length[K any, T Lengthable[K]](length int) *ValidatorOption[T] {
 	return &ValidatorOption[T]{
-		func(vs T) error {
+		func(vs T, d *Data) error {
 			if len(vs) != length {
 				return fmt.Errorf("[Length] length must be exactly %d", length)
 			}
@@ -184,7 +184,7 @@ func fileExists(vName, s string) (os.FileInfo, error) {
 // FileExists [`ValidatorOption`] validates the file or directory exists.
 func FileExists() *ValidatorOption[string] {
 	return &ValidatorOption[string]{
-		func(s string) error {
+		func(s string, d *Data) error {
 			_, err := fileExists("FileExists", s)
 			return err
 		},
@@ -206,7 +206,7 @@ func isDir(vName, s string) error {
 // IsDir [`ValidatorOption`] validates an argument is a directory.
 func IsDir() *ValidatorOption[string] {
 	return &ValidatorOption[string]{
-		func(s string) error {
+		func(s string, d *Data) error {
 			return isDir("IsDir", s)
 		},
 		"IsDir()",
@@ -227,7 +227,7 @@ func isFile(vName, s string) error {
 // IsFile [`ValidatorOption`] validates an argument is a file.
 func IsFile() *ValidatorOption[string] {
 	return &ValidatorOption[string]{
-		func(s string) error {
+		func(s string, d *Data) error {
 			return isFile("IsFile", s)
 		},
 		"IsFile()",
@@ -239,7 +239,7 @@ func IsFile() *ValidatorOption[string] {
 // EQ [`ValidatorOption`] validates an argument equals `n`.
 func EQ[T constraints.Ordered](n T) *ValidatorOption[T] {
 	return &ValidatorOption[T]{
-		func(v T) error {
+		func(v T, d *Data) error {
 			if v == n {
 				return nil
 			}
@@ -252,7 +252,7 @@ func EQ[T constraints.Ordered](n T) *ValidatorOption[T] {
 // NEQ [`ValidatorOption`] validates an argument does not equal `n`.
 func NEQ[T constraints.Ordered](n T) *ValidatorOption[T] {
 	return &ValidatorOption[T]{
-		func(v T) error {
+		func(v T, d *Data) error {
 			if v != n {
 				return nil
 			}
@@ -265,7 +265,7 @@ func NEQ[T constraints.Ordered](n T) *ValidatorOption[T] {
 // LT [`ValidatorOption`] validates an argument is less than `n`.
 func LT[T constraints.Ordered](n T) *ValidatorOption[T] {
 	return &ValidatorOption[T]{
-		func(v T) error {
+		func(v T, d *Data) error {
 			if v < n {
 				return nil
 			}
@@ -278,7 +278,7 @@ func LT[T constraints.Ordered](n T) *ValidatorOption[T] {
 // LTE [`ValidatorOption`] validates an argument is less than or equal to `n`.
 func LTE[T constraints.Ordered](n T) *ValidatorOption[T] {
 	return &ValidatorOption[T]{
-		func(v T) error {
+		func(v T, d *Data) error {
 			if v <= n {
 				return nil
 			}
@@ -291,7 +291,7 @@ func LTE[T constraints.Ordered](n T) *ValidatorOption[T] {
 // GT [`ValidatorOption`] validates an argument is greater than `n`.
 func GT[T constraints.Ordered](n T) *ValidatorOption[T] {
 	return &ValidatorOption[T]{
-		func(v T) error {
+		func(v T, d *Data) error {
 			if v > n {
 				return nil
 			}
@@ -304,7 +304,7 @@ func GT[T constraints.Ordered](n T) *ValidatorOption[T] {
 // GTE [`ValidatorOption`] validates an argument is greater than or equal to `n`.
 func GTE[T constraints.Ordered](n T) *ValidatorOption[T] {
 	return &ValidatorOption[T]{
-		func(v T) error {
+		func(v T, d *Data) error {
 			if v >= n {
 				return nil
 			}
@@ -317,7 +317,7 @@ func GTE[T constraints.Ordered](n T) *ValidatorOption[T] {
 // Positive [`ValidatorOption`] validates an argument is positive.
 func Positive[T constraints.Ordered]() *ValidatorOption[T] {
 	return &ValidatorOption[T]{
-		func(v T) error {
+		func(v T, d *Data) error {
 			var t T
 			if v > t {
 				return nil
@@ -331,7 +331,7 @@ func Positive[T constraints.Ordered]() *ValidatorOption[T] {
 // NonNegative [`ValidatorOption`] validates an argument is non-negative.
 func NonNegative[T constraints.Ordered]() *ValidatorOption[T] {
 	return &ValidatorOption[T]{
-		func(v T) error {
+		func(v T, d *Data) error {
 			var t T
 			if v >= t {
 				return nil
@@ -345,7 +345,7 @@ func NonNegative[T constraints.Ordered]() *ValidatorOption[T] {
 // Negative [`ValidatorOption`] validates an argument is negative.
 func Negative[T constraints.Ordered]() *ValidatorOption[T] {
 	return &ValidatorOption[T]{
-		func(v T) error {
+		func(v T, d *Data) error {
 			var t T
 			if v < t {
 				return nil
@@ -359,7 +359,7 @@ func Negative[T constraints.Ordered]() *ValidatorOption[T] {
 // Between [`ValidatorOption`] validates an argument is between two numbers.
 func Between[T constraints.Ordered](start, end T, inclusive bool) *ValidatorOption[T] {
 	return &ValidatorOption[T]{
-		func(v T) error {
+		func(v T, d *Data) error {
 			if v < start {
 				return fmt.Errorf("[Between] value is less than lower bound (%v)", start)
 			}

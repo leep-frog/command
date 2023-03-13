@@ -6297,21 +6297,21 @@ type tt struct{}
 
 func (t *tt) Usage(*Input, *Data, *Usage) error { return nil }
 func (t *tt) Execute(input *Input, output Output, data *Data, e *ExecuteData) error {
-	t.do(input)
+	t.do(input, data)
 	return nil
 }
 
-func (t *tt) do(input *Input) {
+func (t *tt) do(input *Input, data *Data) {
 	if s, ok := input.Peek(); ok && strings.Contains(s, ":") {
 		if ss := strings.Split(s, ":"); len(ss) == 2 {
-			input.Pop()
+			input.Pop(data)
 			input.PushFront(ss...)
 		}
 	}
 }
 
 func (t *tt) Complete(input *Input, data *Data) (*Completion, error) {
-	t.do(input)
+	t.do(input, data)
 	return nil, nil
 }
 

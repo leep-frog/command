@@ -52,9 +52,9 @@ type ListBreaker[T any] struct {
 	u          func(*Usage)
 }
 
-func (lb *ListBreaker[T]) Validate(s string) error {
+func (lb *ListBreaker[T]) Validate(s string, d *Data) error {
 	for _, v := range lb.validators {
-		if err := v.Validate(s); err != nil {
+		if err := v.Validate(s, d); err != nil {
 			return err
 		}
 	}

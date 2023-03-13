@@ -98,14 +98,14 @@ func (bn *BranchNode) getNext(input *Input, data *Data) error {
 	for branch, n := range bn.Branches {
 		name, syns := bn.splitBranch(branch)
 		if s == name {
-			input.Pop()
+			input.Pop(data)
 			bn.next = n
 			return nil
 		}
 
 		for _, b := range syns {
 			if s == b {
-				input.Pop()
+				input.Pop(data)
 				bn.next = n
 				return nil
 			}

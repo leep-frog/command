@@ -24,7 +24,7 @@ func MapArg[K constraints.Ordered, V any](name, desc string, m map[K]V, allowMis
 
 	if !allowMissing {
 		opts = append(opts, &ValidatorOption[K]{
-			func(k K) error {
+			func(k K, d *Data) error {
 				if _, ok := m[k]; !ok {
 					return fmt.Errorf("[MapArg] key (%v) is not in map", k)
 				}
