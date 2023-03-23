@@ -25,7 +25,7 @@ const (
 	Cyan
 	White
 	unused
-	Reset
+	ResetColor
 )
 
 var (
@@ -79,7 +79,17 @@ func Underline() *Format {
 	return newF("smul")
 }
 
-// Underline is a `Format` that un-applies underline.
+// EndUnderline is a `Format` that un-applies underline.
 func EndUnderline() *Format {
 	return newF("rmul")
+}
+
+// Reset is a `Format` that resets all tput formatting and clears the terminal screen.
+func Reset() *Format {
+	return newF("reset")
+}
+
+// Init is a `Format` that resets all tput formatting.
+func Init() *Format {
+	return newF("init")
 }

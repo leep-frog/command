@@ -25,5 +25,11 @@ func main() {
 	o.Stderrln("Errput 3")
 	fmt.Println("Fmt 3")
 
+	color.Init().Apply()
+
+	o.Stdoutln("Output 4")
+	o.Stderrln("Errput 4")
+	fmt.Println("Fmt 4")
+
 	o.Close()
 }

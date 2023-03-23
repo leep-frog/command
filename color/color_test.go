@@ -54,6 +54,22 @@ func TestFormat(t *testing.T) {
 			}},
 		},
 		{
+			name:   "Reset",
+			format: Reset(),
+			wantCalls: []*call{{
+				Name: "tput",
+				Args: []interface{}{"reset"},
+			}},
+		},
+		{
+			name:   "Init",
+			format: Init(),
+			wantCalls: []*call{{
+				Name: "tput",
+				Args: []interface{}{"init"},
+			}},
+		},
+		{
 			name: "Multi format",
 			format: MultiFormat(
 				Text(5),
