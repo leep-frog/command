@@ -56,7 +56,7 @@ func TestFormat(t *testing.T) {
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			var calls []*call
-			command.StubValue(t, &tputCommand, func(name string, args ...interface{}) error {
+			command.StubValue(t, &TputCommand, func(name string, args ...interface{}) error {
 				calls = append(calls, &call{name, args})
 				return nil
 			})

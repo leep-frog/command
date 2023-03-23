@@ -12,11 +12,11 @@ import (
 // Format is a format (bold, color, etc.) that can be applied to output.
 type Format []string
 
-// TPUTColorCode is the tput code for specific colors.
-type TPUTColorCode int
+// TputColorCode is the tput code for specific colors.
+type TputColorCode int
 
 const (
-	Black TPUTColorCode = iota
+	Black TputColorCode = iota
 	Red
 	Green
 	Yellow
@@ -29,7 +29,9 @@ const (
 )
 
 var (
-	tputCommand = func(name string, args ...interface{}) error {
+	// TputCommand is a function that applies a format via tput. It is a variable
+	// so it can be stubbed out by tests in other packages.
+	TputCommand = func(name string, args ...interface{}) error {
 		return sh.Command(name, args...).Run()
 	}
 )
@@ -45,16 +47,16 @@ func (f *Format) Apply() {
 	for _, j := range *f {
 		i = append(i, j)
 	}
-	tputCommand("tput", i...)
+	TputCommand("tput", i...)
 }
 
 // BackgroundColor is a `Format` that applies color to the background.
-func BackgroundColor(color TPUTColorCode) *Format {
+func BackgroundColor(color TputColorCode) *Format {
 	return newF("setab", strconv.Itoa(int(color)))
 }
 
 // Color is a `Format` that applies color to text.
-func Color(color TPUTColorCode) *Format {
+func Color(color TputColorCode) *Format {
 	return newF("setaf", strconv.Itoa(int(color)))
 }
 
