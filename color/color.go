@@ -59,13 +59,13 @@ func MultiFormat(fs ...*Format) *Format {
 	return newF(s...)
 }
 
-// BackgroundColor is a `Format` that applies color to the background.
-func BackgroundColor(color TputColorCode) *Format {
+// Background is a `Format` that applies color to the background.
+func Background(color TputColorCode) *Format {
 	return newF("setab", strconv.Itoa(int(color)))
 }
 
-// Color is a `Format` that applies color to text.
-func Color(color TputColorCode) *Format {
+// Text is a `Format` that applies color to text.
+func Text(color TputColorCode) *Format {
 	return newF("setaf", strconv.Itoa(int(color)))
 }
 

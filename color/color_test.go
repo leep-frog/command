@@ -15,7 +15,7 @@ func TestFormat(t *testing.T) {
 	}{
 		{
 			name:   "Background color",
-			format: BackgroundColor(3),
+			format: Background(3),
 			wantCalls: []*call{{
 				Name: "tput",
 				Args: []interface{}{"setab", "3"},
@@ -23,7 +23,7 @@ func TestFormat(t *testing.T) {
 		},
 		{
 			name:   "Text color",
-			format: Color(6),
+			format: Text(6),
 			wantCalls: []*call{{
 				Name: "tput",
 				Args: []interface{}{"setaf", "6"},
@@ -56,11 +56,11 @@ func TestFormat(t *testing.T) {
 		{
 			name: "Multi format",
 			format: MultiFormat(
-				Color(5),
+				Text(5),
 				Bold(),
 				Underline(),
-				BackgroundColor(7),
-				Color(11),
+				Background(7),
+				Text(11),
 			),
 			wantCalls: []*call{{
 				Name: "tput",

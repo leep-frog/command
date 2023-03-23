@@ -13,13 +13,13 @@ func main() {
 	o.Stderrln("Errput 1")
 	fmt.Println("Fmt 1")
 
-	color.Color(color.Blue).Apply()
+	color.Text(color.Blue).Apply()
 
 	o.Stdoutln("Output 2")
 	o.Stderrln("Errput 2")
 	fmt.Println("Fmt 2")
 
-	color.MultiFormat(color.Bold(), color.Color(color.Green)).Apply()
+	color.MultiFormat(color.Bold(), color.Text(color.Green)).Apply()
 
 	o.Stdoutln("Output 3")
 	o.Stderrln("Errput 3")
