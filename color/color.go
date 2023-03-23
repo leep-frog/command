@@ -50,6 +50,15 @@ func (f *Format) Apply() {
 	TputCommand("tput", i...)
 }
 
+// MultiFormat combines multiple formats into one format.
+func MultiFormat(fs ...*Format) *Format {
+	var s []string
+	for _, f := range fs {
+		s = append(s, []string(*f)...)
+	}
+	return newF(s...)
+}
+
 // BackgroundColor is a `Format` that applies color to the background.
 func BackgroundColor(color TputColorCode) *Format {
 	return newF("setab", strconv.Itoa(int(color)))

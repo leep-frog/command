@@ -53,6 +53,26 @@ func TestFormat(t *testing.T) {
 				Args: []interface{}{"rmul"},
 			}},
 		},
+		{
+			name: "Multi format",
+			format: MultiFormat(
+				Color(5),
+				Bold(),
+				Underline(),
+				BackgroundColor(7),
+				Color(11),
+			),
+			wantCalls: []*call{{
+				Name: "tput",
+				Args: []interface{}{
+					"setaf", "5",
+					"bold",
+					"smul",
+					"setab", "7",
+					"setaf", "11",
+				},
+			}},
+		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			var calls []*call
