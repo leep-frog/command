@@ -11,62 +11,55 @@ func TestFormat(t *testing.T) {
 	for _, test := range []struct {
 		name      string
 		format    *Format
-		wantCalls []*call
+		wantCalls [][]interface{}
 	}{
 		{
 			name:   "Background color",
 			format: Background(3),
-			wantCalls: []*call{{
-				Name: "tput",
-				Args: []interface{}{"setab", "3"},
+			wantCalls: [][]interface{}{{
+				"setab", "3",
 			}},
 		},
 		{
 			name:   "Text color",
 			format: Text(6),
-			wantCalls: []*call{{
-				Name: "tput",
-				Args: []interface{}{"setaf", "6"},
+			wantCalls: [][]interface{}{{
+				"setaf", "6",
 			}},
 		},
 		{
 			name:   "Bold",
 			format: Bold(),
-			wantCalls: []*call{{
-				Name: "tput",
-				Args: []interface{}{"bold"},
+			wantCalls: [][]interface{}{{
+				"bold",
 			}},
 		},
 		{
 			name:   "Underline",
 			format: Underline(),
-			wantCalls: []*call{{
-				Name: "tput",
-				Args: []interface{}{"smul"},
+			wantCalls: [][]interface{}{{
+				"smul",
 			}},
 		},
 		{
 			name:   "End Unerline",
 			format: EndUnderline(),
-			wantCalls: []*call{{
-				Name: "tput",
-				Args: []interface{}{"rmul"},
+			wantCalls: [][]interface{}{{
+				"rmul",
 			}},
 		},
 		{
 			name:   "Reset",
 			format: Reset(),
-			wantCalls: []*call{{
-				Name: "tput",
-				Args: []interface{}{"reset"},
+			wantCalls: [][]interface{}{{
+				"reset",
 			}},
 		},
 		{
 			name:   "Init",
 			format: Init(),
-			wantCalls: []*call{{
-				Name: "tput",
-				Args: []interface{}{"init"},
+			wantCalls: [][]interface{}{{
+				"init",
 			}},
 		},
 		{
@@ -78,34 +71,26 @@ func TestFormat(t *testing.T) {
 				Background(7),
 				Text(11),
 			),
-			wantCalls: []*call{{
-				Name: "tput",
-				Args: []interface{}{
-					"setaf", "5",
-					"bold",
-					"smul",
-					"setab", "7",
-					"setaf", "11",
-				},
+			wantCalls: [][]interface{}{{
+				"setaf", "5",
+				"bold",
+				"smul",
+				"setab", "7",
+				"setaf", "11",
 			}},
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			var calls []*call
-			command.StubValue(t, &TputCommand, func(name string, args ...interface{}) error {
-				calls = append(calls, &call{name, args})
+			var calls [][]interface{}
+			command.StubValue(t, &TputCommand, func(output command.Output, args ...interface{}) error {
+				calls = append(calls, args)
 				return nil
 			})
 
-			test.format.Apply()
+			test.format.Apply(nil)
 			if diff := cmp.Diff(test.wantCalls, calls); diff != "" {
 				t.Errorf("Format %v produced incorrect tput calls (-want, +got):\n%s", test.format, diff)
 			}
 		})
 	}
-}
-
-type call struct {
-	Name string
-	Args []interface{}
 }

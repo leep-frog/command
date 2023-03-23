@@ -1,12 +1,15 @@
 // Package color makes it easy to output formatted text (via tput). See the tput
 // documentation for more info:
 // https://linuxcommand.org/lc3_adv_tput.php
+// This package is specifically implemented to work well with the base `command`
+// package, both in terms of usage and testing.
 package color
 
 import (
 	"strconv"
 
 	"github.com/codeskyblue/go-sh"
+	"github.com/leep-frog/command"
 )
 
 // Format is a format (bold, color, etc.) that can be applied to output.
@@ -31,8 +34,8 @@ const (
 var (
 	// TputCommand is a function that applies a format via tput. It is a variable
 	// so it can be stubbed out by tests in other packages.
-	TputCommand = func(name string, args ...interface{}) error {
-		return sh.Command(name, args...).Run()
+	TputCommand = func(output command.Output, args ...interface{}) error {
+		return sh.Command("tput", args...).Run()
 	}
 )
 
@@ -42,12 +45,12 @@ func newF(args ...string) *Format {
 }
 
 // Apply applies the `Format`.
-func (f *Format) Apply() {
+func (f *Format) Apply(output command.Output) {
 	var i []interface{}
 	for _, j := range *f {
 		i = append(i, j)
 	}
-	TputCommand("tput", i...)
+	TputCommand(output, i...)
 }
 
 // MultiFormat combines multiple formats into one format.
