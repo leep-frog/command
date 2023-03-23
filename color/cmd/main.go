@@ -19,7 +19,7 @@ func main() {
 	o.Stderrln("Errput 2")
 	fmt.Println("Fmt 2")
 
-	color.Bold().Apply()
+	color.MultiFormat(color.Bold(), color.Color(color.Green)).Apply()
 
 	o.Stdoutln("Output 3")
 	o.Stderrln("Errput 3")
