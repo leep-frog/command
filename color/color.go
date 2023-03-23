@@ -1,136 +1,74 @@
-// Package color makes it easy to wrap strings with bash coloring.
+// Package color makes it easy to output formatted text (via tput). See the tput
+// documentation for more info:
+// https://linuxcommand.org/lc3_adv_tput.php
 package color
 
 import (
-	"fmt"
-	"sort"
-	"strings"
+	"strconv"
+
+	"github.com/codeskyblue/go-sh"
 )
 
-type Format struct {
-	Color     Color
-	Thickness Thickness
-}
+// Format is a format (bold, color, etc.) that can be applied to output.
+type Format []string
 
-type Color string
-type Thickness bool
+// TPUTColorCode is the tput code for specific colors.
+type TPUTColorCode int
+
+const (
+	Black TPUTColorCode = iota
+	Red
+	Green
+	Yellow
+	Blue
+	Magenta
+	Cyan
+	White
+	unused
+	Reset
+)
 
 var (
-	Bold Thickness = true
-	Shy  Thickness = false
-)
-
-func (t Thickness) ToString() string {
-	if t {
-		return "bold"
-	}
-	return "shy"
-}
-
-var (
-	reset          = "\033[0m"
-	bold           = "\033[1m"
-	Default  Color = "default"
-	Red      Color = "red"
-	Green    Color = "green"
-	Yellow   Color = "yellow"
-	Blue     Color = "blue"
-	Purple   Color = "purple"
-	Cyan     Color = "cyan"
-	Gray     Color = "gray"
-	White    Color = "white"
-	colorMap       = map[Color]string{
-		Default: "",
-		Red:     "\033[31m",
-		Green:   "\033[32m",
-		Yellow:  "\033[33m",
-		Blue:    "\033[34m",
-		Purple:  "\033[35m",
-		Cyan:    "\033[36m",
-		Gray:    "\033[37m",
-		White:   "\033[97m",
+	tputCommand = func(name string, args ...interface{}) error {
+		return sh.Command(name, args...).Run()
 	}
 )
 
-func (f *Format) AddAttribute(s string) error {
-	s = strings.ToLower(s)
-	if s == "bold" {
-		f.Thickness = Bold
-		return nil
-	}
-	if s == "shy" {
-		f.Thickness = Shy
-		return nil
-	}
-	c := Color(s)
-	if !c.Valid() {
-		return fmt.Errorf("invalid attribute: %s", s)
-	}
-	f.Color = c
-	return nil
+func newF(args ...string) *Format {
+	f := Format(args)
+	return &f
 }
 
-func (f *Format) RemoveAttribute(s string) error {
-	s = strings.ToLower(s)
-	if s == "bold" {
-		f.Thickness = Shy
+// Apply applies the `Format`.
+func (f *Format) Apply() {
+	var i []interface{}
+	for _, j := range *f {
+		i = append(i, j)
 	}
-	if s == "shy" {
-		f.Thickness = Bold
-		return nil
-	}
-	c := Color(s)
-	if c != f.Color {
-		return fmt.Errorf("format has color %q, not %q", f.Color, c)
-	}
-	return nil
+	tputCommand("tput", i...)
 }
 
-func (f *Format) Attributes() []string {
-	r := make([]string, 0, 2)
-	if f.Thickness {
-		r = append(r, "bold")
-	}
-	if f.Color != "" {
-		r = append(r, string(f.Color))
-	}
-	return r
+// BackgroundColor is a `Format` that applies color to the background.
+func BackgroundColor(color TPUTColorCode) *Format {
+	return newF("setab", strconv.Itoa(int(color)))
 }
 
-func Attributes() []string {
-	r := make([]string, 0, len(colorMap)+1)
-	r = append(r, "bold")
-	r = append(r, "shy")
-	for c := range colorMap {
-		r = append(r, string(c))
-	}
-	sort.Strings(r)
-	return r
+// Color is a `Format` that applies color to text.
+func Color(color TPUTColorCode) *Format {
+	return newF("setaf", strconv.Itoa(int(color)))
 }
 
-func (f *Format) Format(s string) string {
-	if f == nil {
-		return s
-	}
-	return f.Color.Format(f.Thickness.Format(s))
+// Bold is a `Format` that applies bold.
+func Bold() *Format {
+	return newF("bold")
 }
 
-func (c Color) Format(s string) string {
-	code := Color(strings.ToLower(string(c)))
-	if colorPrefix, ok := colorMap[code]; ok {
-		return colorPrefix + s + reset
-	}
-	return s
+// Underline is a `Format` that applies underline.
+func Underline() *Format {
+	return newF("smul")
 }
 
-func (t Thickness) Format(s string) string {
-	if t {
-		return bold + s + reset
-	}
-	return s
-}
-
-func (c Color) Valid() bool {
-	_, ok := colorMap[c]
-	return ok
+// Underline is a `Format` that un-applies underline.
+func EndUnderline() *Format {
+	return newF("rmul")
 }
