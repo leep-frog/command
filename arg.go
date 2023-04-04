@@ -43,7 +43,7 @@ func (an *Argument[T]) Get(data *Data) T {
 	return GetData[T](data, an.name)
 }
 
-func (an *Argument[T]) Has(data *Data) bool {
+func (an *Argument[T]) Provided(data *Data) bool {
 	return data.Has(an.name)
 }
 

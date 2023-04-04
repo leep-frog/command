@@ -75,6 +75,12 @@ type FlagWithType[T any] interface {
 	FlagInterface
 	// Get returns the flags value from a `Data` object.
 	Get(*Data) T
+	// GetOrDefault returns the flags value from a `Data` object, if the flag was set.
+	// Otherwise, it returns the provided input.
+	GetOrDefault(*Data, T) T
+	// Provided returns whether or not the flag was provided
+	Provided(*Data) bool
+
 	// AddOptions adds options to a `FlagWithType`. Although chaining isn't
 	// conventional in go, it is done here because flags are usually declared as
 	// package-level variables.
@@ -380,7 +386,14 @@ func (f *flag[T]) Get(d *Data) T {
 	return GetData[T](d, f.name)
 }
 
-func (f *flag[T]) Has(d *Data) bool {
+func (f *flag[T]) GetOrDefault(d *Data, t T) T {
+	if f.Provided(d) {
+		return GetData[T](d, f.name)
+	}
+	return t
+}
+
+func (f *flag[T]) Provided(d *Data) bool {
 	return d.Has(f.name)
 }
 
@@ -487,6 +500,17 @@ func (bf *boolFlag[T]) Execute(_ *Input, _ Output, data *Data, _ *ExecuteData) e
 
 func (bf *boolFlag[T]) Get(d *Data) T {
 	return GetData[T](d, bf.name)
+}
+
+func (bf *boolFlag[T]) GetOrDefault(d *Data, t T) T {
+	if bf.Provided(d) {
+		return GetData[T](d, bf.name)
+	}
+	return t
+}
+
+func (bf *boolFlag[T]) Provided(d *Data) bool {
+	return d.Has(bf.name)
 }
 
 func (bf *boolFlag[T]) AddOptions(opts ...ArgumentOption[T]) FlagWithType[T] {
