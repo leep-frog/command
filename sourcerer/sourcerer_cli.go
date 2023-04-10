@@ -34,13 +34,7 @@ func (*SourcererCommand) Node() command.Node {
 		sourcererDirArg,
 		sourcererSuffixArg,
 		command.ExecutableProcessor(func(_ command.Output, d *command.Data) ([]string, error) {
-			return []string{
-				"pushd . > /dev/null",
-				fmt.Sprintf("cd %q", sourcererDirArg.Get(d)),
-				`local tmpFile="$(mktemp)"`,
-				fmt.Sprintf("go run . source %q %s > $tmpFile && source $tmpFile ", sourcererSuffixArg.Get(d), externalLoadOnlyFlag.Get(d)),
-				"popd > /dev/null",
-			}, nil
+			return CurrentOS.SourcererGoCLI(sourcererDirArg.Get(d), sourcererSuffixArg.Get(d), externalLoadOnlyFlag.Get(d)), nil
 		}),
 	)
 }

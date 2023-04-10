@@ -23,6 +23,9 @@ type OS interface {
 	// `pushd . && cd ${sourceLocation} && go build -o /some/path/_${targetName}_runner && popd`
 	CreateGoFiles(sourceLocation string, targetName string) string
 
+	//
+	SourcererGoCLI(dir string, targetName string, loadOnly string) []string
+
 	// RegisterCLIs
 	RegisterCLIs(output command.Output, targetName string, cli []CLI) error
 

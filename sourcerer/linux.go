@@ -77,6 +77,16 @@ func (l *linux) CreateGoFiles(sourceLocation string, targetName string) string {
 	}, "\n")
 }
 
+func (l *linux) SourcererGoCLI(dir string, targetName string, loadFlag string) []string {
+	return []string{
+		"pushd . > /dev/null",
+		fmt.Sprintf("cd %q", dir),
+		`local tmpFile="$(mktemp)"`,
+		fmt.Sprintf("go run . source %q %s > $tmpFile && source $tmpFile ", targetName, loadFlag),
+		"popd > /dev/null",
+	}
+}
+
 func (l *linux) RegisterCLIs(output command.Output, targetName string, clis []CLI) error {
 	// Generate the autocomplete function
 	output.Stdoutln(l.autocompleteFunction(targetName))
