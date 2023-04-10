@@ -12,95 +12,9 @@ import (
 
 	"github.com/leep-frog/command"
 	"github.com/leep-frog/command/cache"
+	"github.com/leep-frog/command/sourceros"
 	"golang.org/x/exp/maps"
 	"golang.org/x/exp/slices"
-)
-
-var (
-	// The file that was used to create the source file will also
-	// be used for executing and autocompleting cli commands.
-	generateBinary = strings.Join([]string{
-		"pushd . > /dev/null",
-		`cd "$(dirname %s)"`,
-		"go build -o $GOPATH/bin/_%s_runner",
-		"popd > /dev/null",
-		"",
-	}, "\n")
-
-	// autocompleteFunction defines a bash function for CLI autocompletion.
-	autocompleteFunction = strings.Join([]string{
-		"function _custom_autocomplete_%s {",
-		`  local tFile=$(mktemp)`,
-		// The last argument is for extra passthrough arguments to be passed for aliaser autocompletes.
-		`  $GOPATH/bin/_%s_runner autocomplete ${COMP_WORDS[0]} "$COMP_TYPE" $COMP_POINT "$COMP_LINE" > $tFile`,
-		`  local IFS=$'\n'`,
-		`  COMPREPLY=( $(cat $tFile) )`,
-		`  rm $tFile`,
-		"}",
-		"",
-	}, "\n")
-
-	globalAutocompleteForAliasFunction = strings.Join([]string{
-		`function _leep_frog_autocompleter {`,
-		fmt.Sprintf("  %s", FileStringFromCLI(`"$1"`)),
-		`  local tFile=$(mktemp)`,
-		// The last argument is for extra passthrough arguments to be passed for aliaser autocompletes.
-		`  $GOPATH/bin/_${file}_runner autocomplete "$1" "$COMP_TYPE" $COMP_POINT "$COMP_LINE" "${@:2}" > $tFile`,
-		`  local IFS='`,
-		`';`,
-		`  COMPREPLY=( $(cat $tFile) )`,
-		`  rm $tFile`,
-		`}`,
-		``,
-	}, "\n")
-
-	// autocompleteForAliasFunction defines a bash function for CLI autocompletion for aliased commands.
-	// See AliaserCommand.
-	autocompleteForAliasFunction = strings.Join([]string{
-		"function _custom_autocomplete_for_alias_%s {",
-		`  _leep_frog_autocompleter %q %s`,
-		"}",
-		"",
-	}, "\n")
-
-	// executeFileContents defines a bash function for CLI execution.
-	executeFileContents = strings.Join([]string{
-		`function _custom_execute_%s {`,
-		`  # tmpFile is the file to which we write ExecuteData.Executable`,
-		`  local tmpFile=$(mktemp)`,
-		``,
-		`  # Run the go-only code`,
-		`  $GOPATH/bin/_%s_runner execute "$1" $tmpFile "${@:2}"`,
-		`  # Return the error code if go code terminated with an error`,
-		`  local errorCode=$?`,
-		`  if [ $errorCode -ne 0 ]; then return $errorCode; fi`,
-		``,
-		`  # Otherwise, run the ExecuteData.Executable data`,
-		`  source $tmpFile`,
-		`  local errorCode=$?`,
-		fmt.Sprintf(`  if [ -z "$%s" ]; then`, command.DebugEnvVar),
-		`    rm $tmpFile`,
-		`  else`,
-		`    echo $tmpFile`,
-		`  fi`,
-		`  return $errorCode`,
-		`}`,
-		`_custom_execute_%s "$@"`,
-		``,
-	}, "\n")
-
-	// setupFunctionFormat is used to run setup functions prior to a CLI command execution.
-	setupFunctionFormat = strings.Join([]string{
-		`function %s {`,
-		`  %s`,
-		"}",
-		"",
-	}, "\n")
-
-	// aliasWithSetupFormat is an alias definition template for commands that require a setup function.
-	aliasWithSetupFormat = "alias %s='o=$(mktemp) && %s > $o && source $GOPATH/bin/_custom_execute_%s %s $o'"
-	// aliasFormat is an alias definition template for commands that don't require a setup function.
-	aliasFormat = "alias %s='source $GOPATH/bin/_custom_execute_%s %s'"
 )
 
 var (
@@ -447,15 +361,15 @@ func (s *sourcerer) generateFile(o command.Output, d *command.Data) error {
 
 	// cd into the directory of the file that is actually calling this and install dependencies.
 	if !loadOnlyFlag.Get(d) {
-		o.Stdoutf(generateBinary, s.sl, filename)
+		o.Stdoutln(sourceros.Current.GenerateBinary(s.sl, filename))
 	}
 
 	// define the autocomplete function
-	o.Stdoutf(autocompleteFunction, filename, filename)
+	o.Stdoutln(sourceros.Current.AutocompleteFunction(filename))
 
 	// The execute logic is put in an actual file so it can be used by other
 	// bash environments that don't actually source sourcerer-related commands.
-	efc := fmt.Sprintf(executeFileContents, filename, filename, filename)
+	efc := sourceros.Current.ExecuteFileContents(filename)
 
 	f, err := os.OpenFile(getExecuteFile(filename), os.O_WRONLY|os.O_CREATE, command.CmdOS.DefaultFilePerm())
 	if err != nil {
@@ -471,11 +385,11 @@ func (s *sourcerer) generateFile(o command.Output, d *command.Data) error {
 	for _, cli := range cliArr {
 		alias := cli.Name()
 
-		aliasCommand := fmt.Sprintf(aliasFormat, alias, filename, alias)
+		aliasCommand := fmt.Sprintf(sourceros.Current.AliasFormat(), alias, filename, alias)
 		if scs := cli.Setup(); len(scs) > 0 {
 			setupFunctionName := fmt.Sprintf("_setup_for_%s_cli", alias)
-			o.Stdoutf(setupFunctionFormat, setupFunctionName, strings.Join(scs, "  \n  "))
-			aliasCommand = fmt.Sprintf(aliasWithSetupFormat, alias, setupFunctionName, filename, alias)
+			o.Stdoutf(sourceros.Current.SetupFunctionFormat(), setupFunctionName, strings.Join(scs, "  \n  "))
+			aliasCommand = fmt.Sprintf(sourceros.Current.AliasSetupFormat(), alias, setupFunctionName, filename, alias)
 		}
 
 		o.Stdoutln(aliasCommand)

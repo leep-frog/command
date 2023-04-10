@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/leep-frog/command"
+	"github.com/leep-frog/command/sourceros"
 	"golang.org/x/exp/slices"
 )
 
@@ -28,22 +29,14 @@ func AliasSourcery(o command.Output, as ...*Aliaser) {
 		return this.alias < that.alias
 	})
 
-	o.Stdoutln(globalAutocompleteForAliasFunction)
+	o.Stdoutln(sourceros.Current.AliaserGlobalAutocompleteFunction())
 
 	verifiedCLIs := map[string]bool{}
 	for _, a := range as {
 		// Verify the CLI is a leep-frog CLI (if we haven't already).
 		if _, ok := verifiedCLIs[a.cli]; !ok {
 			verifiedCLIs[a.cli] = true
-			o.Stdoutf(strings.Join([]string{
-				FileStringFromCLI(a.cli),
-				`if [ -z "$file" ]; then`,
-				fmt.Sprintf(`  echo Provided CLI %q is not a CLI generated with github.com/leep-frog/command`, a.cli),
-				`  return 1`,
-				`fi`,
-				``,
-				``,
-			}, "\n"))
+			o.Stdoutln(sourceros.Current.AliaserVerify(a.cli))
 		}
 
 		// Output the bash alias and completion commands
@@ -57,7 +50,7 @@ func AliasSourcery(o command.Output, as ...*Aliaser) {
 		aliasTo := strings.TrimSpace(fmt.Sprintf("%s %s", a.cli, quotedArgs))
 		o.Stdoutf(strings.Join([]string{
 			fmt.Sprintf("alias -- %s=%q", a.alias, aliasTo),
-			fmt.Sprintf(autocompleteForAliasFunction, a.alias, a.cli, quotedArgs),
+			sourceros.Current.AliaserAutocompleteFunction(a.alias, a.cli, quotedArgs),
 			fmt.Sprintf("complete -F _custom_autocomplete_for_alias_%s %s %s", a.alias, NosortString(), a.alias),
 			``,
 			``,
@@ -75,10 +68,4 @@ func Aliasers(m map[string][]string) Option {
 		opts = append(opts, NewAliaser(a, vs[0], vs[1:]...))
 	}
 	return multiOpts(opts...)
-}
-
-// FileStringFromCLI returns a bash command that retrieves the binary file that
-// is actually executed for a leep-frog-generated CLI.
-func FileStringFromCLI(cli string) string {
-	return fmt.Sprintf(`local file="$(type %s | head -n 1 | grep "is aliased to.*_custom_execute_" | grep "_custom_execute_[^[:space:]]*" -o | sed s/_custom_execute_//g)"`, cli)
 }

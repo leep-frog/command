@@ -5,7 +5,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/leep-frog/command"
-	"github.com/leep-frog/command/sourcerer"
+	"github.com/leep-frog/command/sourceros"
 )
 
 func TestMancli(t *testing.T) {
@@ -24,7 +24,7 @@ func TestMancli(t *testing.T) {
 				}},
 				WantExecuteData: &command.ExecuteData{
 					Executable: []string{
-						sourcerer.FileStringFromCLI("someCLI"),
+						sourceros.FileStringFromCLI("someCLI"),
 						`if [ -z "$file" ]; then`,
 						`  echo someCLI is not a CLI generated via github.com/leep-frog/command`,
 						`  return 1`,

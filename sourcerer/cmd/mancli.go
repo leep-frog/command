@@ -1,10 +1,8 @@
 package main
 
 import (
-	"fmt"
-
 	"github.com/leep-frog/command"
-	"github.com/leep-frog/command/sourcerer"
+	"github.com/leep-frog/command/sourceros"
 )
 
 // UsageCommand is a CLI for printing out usage info for a CLI.
@@ -24,16 +22,7 @@ func (*UsageCommand) Node() command.Node {
 		usageCLIArg,
 		command.ExecutableProcessor(func(o command.Output, d *command.Data) ([]string, error) {
 			cli := usageCLIArg.Get(d)
-			return []string{
-				// Extract the custom execute function so that this function
-				// can work regardless of file name
-				sourcerer.FileStringFromCLI(cli),
-				`if [ -z "$file" ]; then`,
-				fmt.Sprintf(`  echo %s is not a CLI generated via github.com/leep-frog/command`, cli),
-				`  return 1`,
-				`fi`,
-				fmt.Sprintf(`  "$GOPATH/bin/_${file}_runner" usage %s`, cli),
-			}, nil
+			return sourceros.Current.Mancli(cli), nil
 		}),
 	)
 }
