@@ -101,13 +101,7 @@ func (s *sourcerer) executeExecutor(output command.Output, d *command.Data) erro
 	v := strings.Join(eData.Executable, "\n")
 
 	if eData.FunctionWrap {
-		v = strings.Join([]string{
-			"function _leep_execute_data_function_wrap {",
-			v,
-			"}",
-			"_leep_execute_data_function_wrap",
-			"",
-		}, "\n")
+		v = sourceros.Current.FunctionWrap(v)
 	}
 
 	if _, err := f.WriteString(v); err != nil {
@@ -123,17 +117,11 @@ func (s *sourcerer) autocompleteExecutor(o command.Output, d *command.Data) erro
 
 	g, err := command.Autocomplete(cli.Node(), compLineArg.Get(d), autocompletePassthroughArgs.Get(d))
 	if err != nil {
-		// Only display the error if the user is requesting completion via successive tabs (so distinct completions are guaranteed to be displayed)
-		if compTypeArg.Get(d) == 63 { /* code 63 = '?' character */
-			// Add newline so we're outputting stderr on a newline (and not line with cursor)
-			o.Stderrf("\n%v", err)
-			// Suggest non-overlapping strings (one space and one tab) so COMP_LINE is reprinted
-			o.Stdoutf("\t\n \n")
-		}
+		sourceros.Current.HandleAutocompleteError(o, compTypeArg.Get(d), err)
 		return err
 	}
 	if len(g) > 0 {
-		o.Stdoutf("%s\n", strings.Join(g, "\n"))
+		sourceros.Current.HandleAutocompleteSuccess(o, g)
 	}
 
 	return nil
@@ -354,10 +342,7 @@ var (
 )
 
 func (s *sourcerer) generateFile(o command.Output, d *command.Data) error {
-	filename := "leep-frog-source"
-	if d.Has(targetNameArg.Name()) {
-		filename = d.String(targetNameArg.Name())
-	}
+	filename := targetNameArg.GetOrDefault(d, "leep-frog-source")
 
 	// cd into the directory of the file that is actually calling this and install dependencies.
 	if !loadOnlyFlag.Get(d) {

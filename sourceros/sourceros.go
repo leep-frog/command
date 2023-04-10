@@ -1,11 +1,6 @@
 package sourceros
 
-/*function heyo {
-Write-Output "heyo"
-foreach ($arg in $args) {
-Write-Output "Arg $arg"
-}
-}*/
+import "github.com/leep-frog/command"
 
 var (
 	Current = func() OS {
@@ -14,6 +9,14 @@ var (
 )
 
 type OS interface {
+	// FunctionWrap wraps the provided commands in another function.
+	FunctionWrap(string) string
+
+	// HandleAutocompleteSuccess should output the suggestions for autocomplete consumption
+	HandleAutocompleteSuccess(command.Output, []string)
+	// HandleAutocompleteError should output error info on `Autocomplete` failure
+	HandleAutocompleteError(output command.Output, compType int, err error)
+
 	// GenerateBinary should cd into the directory of the provided file,
 	// build the go file with the provided target name.
 	GenerateBinary(sl string, filename string) string

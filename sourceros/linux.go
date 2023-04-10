@@ -13,6 +13,30 @@ func Linux() OS {
 	return &linux{}
 }
 
+func (l *linux) FunctionWrap(fn string) string {
+	return strings.Join([]string{
+		"function _leep_execute_data_function_wrap {",
+		fn,
+		"}",
+		"_leep_execute_data_function_wrap",
+		"",
+	}, "\n")
+}
+
+func (l *linux) HandleAutocompleteSuccess(o command.Output, suggestions []string) {
+	o.Stdoutf("%s\n", strings.Join(suggestions, "\n"))
+}
+
+func (l *linux) HandleAutocompleteError(o command.Output, compType int, err error) {
+	// Only display the error if the user is requesting completion via successive tabs (so distinct completions are guaranteed to be displayed)
+	if compType == 63 { /* code 63 = '?' character */
+		// Add newline so we're outputting stderr on a newline (and not line with cursor)
+		o.Stderrf("\n%v", err)
+		// Suggest non-overlapping strings (one space and one tab) so COMP_LINE is reprinted
+		o.Stdoutf("\t\n \n")
+	}
+}
+
 func (l *linux) GenerateBinary(sl string, filename string) string {
 	return strings.Join([]string{
 		"pushd . > /dev/null",
