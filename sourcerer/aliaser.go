@@ -1,11 +1,7 @@
 package sourcerer
 
 import (
-	"fmt"
-	"strings"
-
 	"github.com/leep-frog/command"
-	"github.com/leep-frog/command/sourceros"
 	"golang.org/x/exp/slices"
 )
 
@@ -29,32 +25,17 @@ func AliasSourcery(o command.Output, as ...*Aliaser) {
 		return this.alias < that.alias
 	})
 
-	o.Stdoutln(sourceros.Current.AliaserGlobalAutocompleteFunction())
+	CurrentOS.GlobalAliaserFunc(o)
 
 	verifiedCLIs := map[string]bool{}
 	for _, a := range as {
 		// Verify the CLI is a leep-frog CLI (if we haven't already).
 		if _, ok := verifiedCLIs[a.cli]; !ok {
 			verifiedCLIs[a.cli] = true
-			o.Stdoutln(sourceros.Current.AliaserVerify(a.cli))
+			CurrentOS.VerifyAliaser(o, a)
 		}
 
-		// Output the bash alias and completion commands
-		var qas []string
-		for _, v := range a.values {
-			qas = append(qas, fmt.Sprintf("%q", v))
-		}
-		quotedArgs := strings.Join(qas, " ")
-
-		// The trailing space causes issues, so we need to make sure we remove that if necessary.
-		aliasTo := strings.TrimSpace(fmt.Sprintf("%s %s", a.cli, quotedArgs))
-		o.Stdoutf(strings.Join([]string{
-			fmt.Sprintf("alias -- %s=%q", a.alias, aliasTo),
-			sourceros.Current.AliaserAutocompleteFunction(a.alias, a.cli, quotedArgs),
-			fmt.Sprintf("complete -F _custom_autocomplete_for_alias_%s %s %s", a.alias, NosortString(), a.alias),
-			``,
-			``,
-		}, "\n"))
+		CurrentOS.RegisterAliaser(o, a)
 	}
 }
 

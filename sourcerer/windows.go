@@ -1,4 +1,4 @@
-package sourceros
+package sourcerer
 
 type windows struct{}
 

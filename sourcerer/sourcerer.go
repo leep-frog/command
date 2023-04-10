@@ -7,12 +7,10 @@ import (
 	"fmt"
 	"os"
 	"runtime"
-	"sort"
 	"strings"
 
 	"github.com/leep-frog/command"
 	"github.com/leep-frog/command/cache"
-	"github.com/leep-frog/command/sourceros"
 	"golang.org/x/exp/maps"
 	"golang.org/x/exp/slices"
 )
@@ -101,7 +99,7 @@ func (s *sourcerer) executeExecutor(output command.Output, d *command.Data) erro
 	v := strings.Join(eData.Executable, "\n")
 
 	if eData.FunctionWrap {
-		v = sourceros.Current.FunctionWrap(v)
+		v = CurrentOS.FunctionWrap(v)
 	}
 
 	if _, err := f.WriteString(v); err != nil {
@@ -117,11 +115,11 @@ func (s *sourcerer) autocompleteExecutor(o command.Output, d *command.Data) erro
 
 	g, err := command.Autocomplete(cli.Node(), compLineArg.Get(d), autocompletePassthroughArgs.Get(d))
 	if err != nil {
-		sourceros.Current.HandleAutocompleteError(o, compTypeArg.Get(d), err)
+		CurrentOS.HandleAutocompleteError(o, compTypeArg.Get(d), err)
 		return err
 	}
 	if len(g) > 0 {
-		sourceros.Current.HandleAutocompleteSuccess(o, g)
+		CurrentOS.HandleAutocompleteSuccess(o, g)
 	}
 
 	return nil
@@ -148,7 +146,7 @@ func load(cli CLI) error {
 type sourcerer struct {
 	clis              map[string]CLI
 	cliArg            *command.MapArgument[string, CLI]
-	sl                string
+	sourceLocation    string
 	printedUsageError bool
 	opts              *compiledOpts
 	forAutocomplete   bool
@@ -303,10 +301,10 @@ func source(clis []CLI, osArgs []string, o command.Output, opts ...Option) error
 	}
 
 	s := &sourcerer{
-		clis:   cliMap,
-		cliArg: command.MapArg("CLI", "", cliMap, false),
-		sl:     sl,
-		opts:   cos,
+		clis:           cliMap,
+		cliArg:         command.MapArg("CLI", "", cliMap, false),
+		sourceLocation: sl,
+		opts:           cos,
 	}
 
 	// Sourcerer is always executed. Its execution branches into the relevant CLI's
@@ -333,71 +331,22 @@ var (
 	}
 )
 
-var (
-	// getExecuteFile returns the name of the file to which execute file logic is written.
-	// It is a separte function so it can be stubbed out for testing.
-	getExecuteFile = func(filename string) string {
-		return fmt.Sprintf("%s/bin/_custom_execute_%s", os.Getenv("GOPATH"), filename)
-	}
-)
-
 func (s *sourcerer) generateFile(o command.Output, d *command.Data) error {
-	filename := targetNameArg.GetOrDefault(d, "leep-frog-source")
+	targetName := targetNameArg.GetOrDefault(d, "leep-frog-source")
 
 	// cd into the directory of the file that is actually calling this and install dependencies.
 	if !loadOnlyFlag.Get(d) {
-		o.Stdoutln(sourceros.Current.GenerateBinary(s.sl, filename))
+		o.Stdoutln(CurrentOS.CreateGoFiles(s.sourceLocation, targetName))
 	}
 
-	// define the autocomplete function
-	o.Stdoutln(sourceros.Current.AutocompleteFunction(filename))
-
-	// The execute logic is put in an actual file so it can be used by other
-	// bash environments that don't actually source sourcerer-related commands.
-	efc := sourceros.Current.ExecuteFileContents(filename)
-
-	f, err := os.OpenFile(getExecuteFile(filename), os.O_WRONLY|os.O_CREATE, command.CmdOS.DefaultFilePerm())
-	if err != nil {
-		return o.Stderrf("failed to open execute function file: %v\n", err)
-	}
-
-	if _, err := f.WriteString(efc); err != nil {
-		return o.Stderrf("failed to write to execute function file: %v\n", err)
-	}
-
-	cliArr := maps.Values(s.clis)
-	sort.SliceStable(cliArr, func(i, j int) bool { return cliArr[i].Name() < cliArr[j].Name() })
-	for _, cli := range cliArr {
-		alias := cli.Name()
-
-		aliasCommand := fmt.Sprintf(sourceros.Current.AliasFormat(), alias, filename, alias)
-		if scs := cli.Setup(); len(scs) > 0 {
-			setupFunctionName := fmt.Sprintf("_setup_for_%s_cli", alias)
-			o.Stdoutf(sourceros.Current.SetupFunctionFormat(), setupFunctionName, strings.Join(scs, "  \n  "))
-			aliasCommand = fmt.Sprintf(sourceros.Current.AliasSetupFormat(), alias, setupFunctionName, filename, alias)
-		}
-
-		o.Stdoutln(aliasCommand)
-
-		// We sort ourselves, hence the no sort.
-		o.Stdoutf("complete -F _custom_autocomplete_%s %s %s\n", filename, NosortString(), alias)
+	if err := CurrentOS.RegisterCLIs(o, targetName, maps.Values(s.clis)); err != nil {
+		return err
 	}
 
 	AliasSourcery(o, maps.Values(s.opts.aliasers)...)
 
 	return nil
 }
-
-var (
-	// NosortString returns the complete option to ignore sorting.
-	// It returns nothing if the IGNORE_NOSORT environment variable is set.
-	NosortString = func() string {
-		if _, ignore := os.LookupEnv("IGNORE_NOSORT"); ignore {
-			return ""
-		}
-		return "-o nosort"
-	}
-)
 
 func save(c CLI) error {
 	ck := cacheKey(c)

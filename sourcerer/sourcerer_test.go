@@ -11,7 +11,6 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/leep-frog/command"
 	"github.com/leep-frog/command/cache"
-	"github.com/leep-frog/command/sourceros"
 )
 
 const (
@@ -123,7 +122,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 				`  rm $tFile`,
 				`}`,
 				``,
-				sourceros.Linux().AliaserGlobalAutocompleteFunction(),
+				(&linux{}).aliaserGlobalAutocompleteFunction(),
 				`local file="$(type do | head -n 1 | grep "is aliased to.*_custom_execute_" | grep "_custom_execute_[^[:space:]]*" -o | sed s/_custom_execute_//g)"`,
 				`if [ -z "$file" ]; then`,
 				`  echo Provided CLI "do" is not a CLI generated with github.com/leep-frog/command`,
@@ -198,7 +197,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 				`  rm $tFile`,
 				`}`,
 				``,
-				sourceros.Linux().AliaserGlobalAutocompleteFunction(),
+				(&linux{}).aliaserGlobalAutocompleteFunction(),
 				`local file="$(type do | head -n 1 | grep "is aliased to.*_custom_execute_" | grep "_custom_execute_[^[:space:]]*" -o | sed s/_custom_execute_//g)"`,
 				`if [ -z "$file" ]; then`,
 				`  echo Provided CLI "do" is not a CLI generated with github.com/leep-frog/command`,
@@ -275,7 +274,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 				`  rm $tFile`,
 				`}`,
 				``,
-				sourceros.Linux().AliaserGlobalAutocompleteFunction(),
+				(&linux{}).aliaserGlobalAutocompleteFunction(),
 				`local file="$(type do | head -n 1 | grep "is aliased to.*_custom_execute_" | grep "_custom_execute_[^[:space:]]*" -o | sed s/_custom_execute_//g)"`,
 				`if [ -z "$file" ]; then`,
 				`  echo Provided CLI "do" is not a CLI generated with github.com/leep-frog/command`,
@@ -348,7 +347,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 				`  rm $tFile`,
 				`}`,
 				``,
-				sourceros.Linux().AliaserGlobalAutocompleteFunction(),
+				(&linux{}).aliaserGlobalAutocompleteFunction(),
 				`local file="$(type do | head -n 1 | grep "is aliased to.*_custom_execute_" | grep "_custom_execute_[^[:space:]]*" -o | sed s/_custom_execute_//g)"`,
 				`if [ -z "$file" ]; then`,
 				`  echo Provided CLI "do" is not a CLI generated with github.com/leep-frog/command`,
