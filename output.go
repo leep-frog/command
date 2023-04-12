@@ -4,11 +4,12 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"runtime"
 	"strings"
 	"sync"
+
+	"github.com/leep-frog/command/glog"
 )
 
 // Output defines methods for writing output.
@@ -167,8 +168,11 @@ func (o *output) Close() {
 
 // NewOutput returns an output that points to stdout and stderr.
 func NewOutput() Output {
-	stdout := log.New(os.Stdout, "", 0)
-	stderr := log.New(os.Stderr, "", 0)
+	// The built-in go `log` package automatically appends a newline
+	// to all inputs. To avoid this, I created a separate glog
+	// package which is identical aside from that rule.
+	stdout := glog.New(os.Stdout, "", 0)
+	stderr := glog.New(os.Stderr, "", 0)
 	so := func(s string) {
 		stdout.Print(s)
 	}
