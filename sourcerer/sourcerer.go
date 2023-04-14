@@ -139,6 +139,9 @@ var (
 func load(cli CLI) error {
 	ck := cacheKey(cli)
 	cash, err := getCache()
+	if err != nil {
+		return fmt.Errorf("failed to load cache from environment variable: %v", err)
+	}
 	_, err = cash.GetStruct(ck, cli)
 	return err
 }

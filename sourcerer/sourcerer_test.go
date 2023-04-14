@@ -593,6 +593,7 @@ func TestSourcerer(t *testing.T) {
 		name            string
 		clis            []CLI
 		args            []string
+		cacheErr        error
 		wantErr         error
 		wantStdout      []string
 		wantStderr      []string
@@ -642,6 +643,18 @@ func TestSourcerer(t *testing.T) {
 				"validation for \"CLI\" failed: [MapArg] key (idk) is not in map",
 			},
 			wantErr: fmt.Errorf("validation for \"CLI\" failed: [MapArg] key (idk) is not in map"),
+		},
+		{
+			name:     "fails if getCache error",
+			cacheErr: fmt.Errorf("rats"),
+			clis: []CLI{
+				&testCLI{
+					name: "basic",
+				},
+			},
+			args:       []string{"execute", "basic", fakeFile},
+			wantErr:    fmt.Errorf("failed to load cache from environment variable: rats"),
+			wantStderr: []string{"failed to load cache from environment variable: rats"},
 		},
 		{
 			name: "properly executes CLI",
@@ -1180,6 +1193,9 @@ func TestSourcerer(t *testing.T) {
 			// Stub out real cache
 			cash := cache.NewTestCache(t)
 			command.StubValue(t, &getCache, func() (*cache.Cache, error) {
+				if test.cacheErr != nil {
+					return nil, test.cacheErr
+				}
 				return cash, nil
 			})
 
