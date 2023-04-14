@@ -33,9 +33,9 @@ var (
 		return fmt.Sprintf("%s/bin/_custom_execute_%s", os.Getenv("GOPATH"), filename)
 	}
 
-	registerCommandFormat          = "alias %s='source $GOPATH/bin/_custom_execute_%s %s'"
-	registerCommandWithSetupFormat = "alias %s='o=$(mktemp) && %s > $o && source $GOPATH/bin/_custom_execute_%s %s $o'"
-	setupFunctionFormat            = strings.Join([]string{
+	linuxRegisterCommandFormat          = "alias %s='source $GOPATH/bin/_custom_execute_%s %s'"
+	linuxRegisterCommandWithSetupFormat = "alias %s='o=$(mktemp) && %s > $o && source $GOPATH/bin/_custom_execute_%s %s $o'"
+	linuxSetupFunctionFormat            = strings.Join([]string{
 		`function %s {`,
 		`  %s`,
 		"}",
@@ -108,11 +108,11 @@ func (l *linux) RegisterCLIs(output command.Output, targetName string, clis []CL
 	for _, cli := range clis {
 		alias := cli.Name()
 
-		aliasCommand := fmt.Sprintf(registerCommandFormat, alias, targetName, alias)
+		aliasCommand := fmt.Sprintf(linuxRegisterCommandFormat, alias, targetName, alias)
 		if scs := cli.Setup(); len(scs) > 0 {
 			setupFunctionName := fmt.Sprintf("_setup_for_%s_cli", alias)
-			output.Stdoutf(setupFunctionFormat, setupFunctionName, strings.Join(scs, "  \n  "))
-			aliasCommand = fmt.Sprintf(registerCommandWithSetupFormat, alias, setupFunctionName, targetName, alias)
+			output.Stdoutf(linuxSetupFunctionFormat, setupFunctionName, strings.Join(scs, "  \n  "))
+			aliasCommand = fmt.Sprintf(linuxRegisterCommandWithSetupFormat, alias, setupFunctionName, targetName, alias)
 		}
 
 		output.Stdoutln(aliasCommand)

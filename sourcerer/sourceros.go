@@ -6,7 +6,8 @@ import (
 
 var (
 	CurrentOS = func() OS {
-		return Linux()
+		// return Linux()
+		return Windows()
 	}()
 )
 
