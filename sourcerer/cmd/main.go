@@ -11,5 +11,6 @@ func main() {
 		goleep,
 		&UpdateLeepPackageCommand{},
 		&UsageCommand{},
+		&Eko{},
 	}, goleep.Aliasers())
 }
