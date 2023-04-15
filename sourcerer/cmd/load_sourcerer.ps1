@@ -4,7 +4,8 @@ function _sourcerer_initializer {
   Set-Location (Split-Path $PSCommandPath)
   $Local:tmpOut = New-TemporaryFile
   go run . source sourcerer > $Local:tmpOut
-  . $Local:tmpOut
+  Copy-Item "$Local:tmpOut" "$Local:tmpOut.ps1"
+  . "$Local:tmpOut.ps1"
   Pop-Location
 }
-_sourcerer_initializer
+. _sourcerer_initializer

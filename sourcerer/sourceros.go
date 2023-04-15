@@ -1,13 +1,25 @@
 package sourcerer
 
 import (
+	"fmt"
+	"runtime"
+
 	"github.com/leep-frog/command"
 )
 
 var (
+	oses = []OS{
+		Linux(),
+		Windows(),
+	}
+
 	CurrentOS = func() OS {
-		// return Linux()
-		return Linux()
+		for _, os := range oses {
+			if os.Name() == runtime.GOOS {
+				return os
+			}
+		}
+		panic(fmt.Sprintf("unknown os: %q", runtime.GOOS))
 	}()
 )
 

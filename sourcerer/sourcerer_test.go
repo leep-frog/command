@@ -1341,42 +1341,79 @@ func TestSourcerer(t *testing.T) {
 				name: "autocomplete doesn't require passthrough args",
 				args: []string{"autocomplete", "basic", "63", "0", "h"},
 				clis: []CLI{&testCLI{name: "basic"}},
-				osCheck: &osCheck{
-					wantErr: fmt.Errorf("Unprocessed extra args: []"),
-					wantStdout: []string{
-						"\t",
-						" ",
+				osChecks: map[string]*osCheck{
+					osLinux: {
+						wantErr: fmt.Errorf("Unprocessed extra args: []"),
+						wantStdout: []string{
+							"\t",
+							" ",
+						},
+						wantStderr: []string{
+							"",
+							"Autocomplete Error: Unprocessed extra args: []",
+						},
+						noStderrNewline: true,
 					},
-					wantStderr: []string{
-						"",
-						"Autocomplete Error: Unprocessed extra args: []",
+					osWindows: {
+						wantErr: fmt.Errorf("Unprocessed extra args: []"),
+						wantStdout: []string{
+							"",
+						},
+						wantStderr: []string{
+							"",
+							"Autocomplete Error: Unprocessed extra args: []",
+						},
+						noStderrNewline: true,
 					},
-					noStderrNewline: true,
 				},
 			},
 			{
 				name: "autocomplete re-prints comp line",
 				args: []string{"autocomplete", "basic", "63", "10", "hello ther"},
 				clis: []CLI{&testCLI{name: "basic"}},
-				osCheck: &osCheck{
-					wantErr: fmt.Errorf("Unprocessed extra args: [ther]"),
-					wantStdout: []string{
-						"\t",
-						" ",
+				osChecks: map[string]*osCheck{
+					osLinux: {
+						wantErr: fmt.Errorf("Unprocessed extra args: [ther]"),
+						wantStdout: []string{
+							"\t",
+							" ",
+						},
+						wantStderr: []string{
+							"",
+							"Autocomplete Error: Unprocessed extra args: [ther]",
+						},
+						noStderrNewline: true,
 					},
-					wantStderr: []string{
-						"",
-						"Autocomplete Error: Unprocessed extra args: [ther]",
+					osWindows: {
+						wantErr: fmt.Errorf("Unprocessed extra args: [ther]"),
+						wantStdout: []string{
+							"",
+						},
+						wantStderr: []string{
+							"",
+							"Autocomplete Error: Unprocessed extra args: [ther]",
+						},
+						noStderrNewline: true,
 					},
-					noStderrNewline: true,
 				},
 			},
 			{
 				name: "autocomplete doesn't re-print comp line if different COMP_TYPE",
 				args: []string{"autocomplete", "basic", "64", "10", "hello ther"},
 				clis: []CLI{&testCLI{name: "basic"}},
-				osCheck: &osCheck{
-					wantErr: fmt.Errorf("Unprocessed extra args: [ther]"),
+				osChecks: map[string]*osCheck{
+					osLinux: {
+						wantErr: fmt.Errorf("Unprocessed extra args: [ther]"),
+					},
+					osWindows: {
+						wantStdout: []string{""},
+						wantStderr: []string{
+							"",
+							"Autocomplete Error: Unprocessed extra args: [ther]",
+						},
+						wantErr:         fmt.Errorf("Unprocessed extra args: [ther]"),
+						noStderrNewline: true,
+					},
 				},
 			},
 			{
