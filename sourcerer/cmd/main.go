@@ -1,6 +1,8 @@
 package main
 
-import "github.com/leep-frog/command/sourcerer"
+import (
+	"github.com/leep-frog/command/sourcerer"
+)
 
 func main() {
 	goleep := &GoLeep{}

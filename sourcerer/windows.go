@@ -61,7 +61,7 @@ func (w *windows) RegisterCLIs(output command.Output, targetName string, clis []
 
 	// The execute logic is put in an actual file so it can be used by other
 	// bash environments that don't actually source sourcerer-related commands.
-	efc := w.executeFileContents(targetName)
+	// efc := w.executeFileContents(targetName)
 
 	// f, err := os.OpenFile(getExecuteFile(targetName), os.O_WRONLY|os.O_CREATE, command.CmdOS.DefaultFilePerm())
 	// if err != nil {
@@ -72,23 +72,25 @@ func (w *windows) RegisterCLIs(output command.Output, targetName string, clis []
 	// return output.Stderrf("failed to write to execute function file: %v\n", err)
 	// }
 
-	output.Stdoutln(efc)
+	// output.Stdoutln(efc)
 
 	sort.SliceStable(clis, func(i, j int) bool { return clis[i].Name() < clis[j].Name() })
 	for _, cli := range clis {
 		alias := cli.Name()
 
-		aliasCommand := fmt.Sprintf(windowsRegisterCommandFormat, alias, targetName, alias)
+		// aliasCommand := fmt.Sprintf(windowsRegisterCommandFormat, alias, targetName, alias)
+		aliasCommand := w.executeFunction(targetName, alias, false, "")
 		if scs := cli.Setup(); len(scs) > 0 {
 			setupFunctionName := fmt.Sprintf("_setup_for_%s_cli", alias)
 			output.Stdoutf(windowsSetupFunctionFormat, setupFunctionName, strings.Join(scs, "  \n  "))
-			aliasCommand = fmt.Sprintf(windowsRegisterCommandWithSetupFormat, alias, setupFunctionName, targetName, alias)
+			aliasCommand = w.executeFunction(targetName, alias, true, setupFunctionName)
 		}
 
 		output.Stdoutln(aliasCommand)
 
+		output.Stdoutf("Set-Alias %s _custom_execute_%s_%s\n", alias, targetName, alias)
+
 		// We sort ourselves, hence the no sort.
-		// output.Stdoutf("complete -F _custom_autocomplete_%s %s %s\n", targetName, NosortString(), alias)
 		output.Stdoutf("Register-ArgumentCompleter -CommandName %s -ScriptBlock $_custom_autocomplete_%s\n", alias, targetName)
 	}
 	return nil
@@ -98,11 +100,11 @@ func (*windows) autocompleteFunction(targetName string) string {
 	return strings.Join([]string{
 		fmt.Sprintf("$_custom_autocomplete_%s = {", targetName),
 		// This order might be messed up because parameter name doesn't seem to be what I think it actually is
-		`  param($wordToComplete, $commandAst, $compLine)`,
+		`  param($wordToComplete, $commandAst, $compPoint)`,
 		// `  $Local:tFile = New-TemporaryFile`,
 		// The last argument is for extra passthrough arguments to be passed for aliaser autocompletes.
 		// 0 for comp type
-		fmt.Sprintf(`  (& $env:GOPATH\bin\_%s_runner.exe autocomplete "$commandAst" "0" $compPoint "$commandAst") | ForEach-Object {`, targetName),
+		fmt.Sprintf(`  (& $env:GOPATH\bin\_%s_runner.exe autocomplete ($commandAst.CommandElements | Select-Object -first 1) "0" $compPoint "$commandAst") | ForEach-Object {`, targetName),
 		`    $_`,
 		`  }`,
 		"}",
@@ -110,23 +112,29 @@ func (*windows) autocompleteFunction(targetName string) string {
 	}, "\n")
 }
 
-func (*windows) executeFileContents(targetName string) string {
+func (*windows) executeFunction(targetName, cli string, withSetup bool, setupFunctionName string) string {
+	runnerLine := fmt.Sprintf(`  & $env:GOPATH/bin/_%s_runner.exe execute %q $tmpFile $args`, targetName, cli)
+	if withSetup {
+		runnerLine = strings.Join([]string{
+			`  $Local:setupTmpFile = New-TemporaryFile`,
+			fmt.Sprintf(`  %s -and _custom_execute_%s %s $Local:setupTpmFile $args`, setupFunctionName, targetName, cli),
+		}, "\n")
+	}
 	return strings.Join([]string{
-		fmt.Sprintf(`function _custom_execute_%s {`, targetName),
-		`  param ([String] $CLI)`,
+		fmt.Sprintf(`function _custom_execute_%s_%s {`, targetName, cli),
 		``,
 		`  # tmpFile is the file to which we write ExecuteData.Executable`,
 		`  $Local:tmpFile = New-TemporaryFile`,
 		``,
 		`  # Run the go-only code`,
-		fmt.Sprintf(`  & $env:GOPATH/bin/_%s_runner.exe execute "$CLI" $tmpFile $args`, targetName),
+		runnerLine,
 		`  # Return error if failed`,
 		// TODO: Use -ErrorAction (https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_commonparameters?view=powershell-7.3#-erroraction)
 		`  If (!$?) { throw "Go execution failed" }`,
 		``,
 		`  # If success, run the ExecuteData.Executable data`,
 		`  . $tmpFile`,
-		`  If (!$?) { throw "Go execution failed" }`,
+		`  If (!$?) { throw "ExecuteData execution failed" }`,
 		// TODO: Leave file as is if DebugEnvVar is set
 		`  Remove-Item $tmpFile`,
 		`}`,
