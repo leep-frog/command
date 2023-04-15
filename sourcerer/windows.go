@@ -153,13 +153,20 @@ func (w *windows) HandleAutocompleteSuccess(output command.Output, suggestions [
 
 func (w *windows) HandleAutocompleteError(output command.Output, compType int, err error) {
 	// Stderr gets hidden, so we need to write to stdout
-	output.Stdoutf("ERROR: %v\n", err)
+	output.Stderrf("\nAutocomplete Error: %v", err)
 	// Print another string so text isn't autocompleted to error text
 	output.Stdoutln()
 }
 
-// TODO:
-func (w *windows) FunctionWrap(string) string { return "" }
+func (w *windows) FunctionWrap(fn string) string {
+	return strings.Join([]string{
+		"function _leep_execute_data_function_wrap {",
+		fn,
+		"}",
+		"_leep_execute_data_function_wrap",
+		"",
+	}, "\n")
+}
 
 // TODO: Aliasers
 func (w *windows) GlobalAliaserFunc(command.Output)         {}

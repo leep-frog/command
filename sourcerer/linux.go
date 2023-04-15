@@ -65,7 +65,7 @@ func (l *linux) HandleAutocompleteError(output command.Output, compType int, err
 	// Only display the error if the user is requesting completion via successive tabs (so distinct completions are guaranteed to be displayed)
 	if compType == 63 { /* code 63 = '?' character */
 		// Add newline so we're outputting stderr on a newline (and not line with cursor)
-		output.Stderrf("\n%v", err)
+		output.Stderrf("\nAutocomplete Error: %v", err)
 		// Suggest non-overlapping strings (one space and one tab) so COMP_LINE is reprinted
 		output.Stdoutf("\t\n \n")
 	}

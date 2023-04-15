@@ -1349,7 +1349,7 @@ func TestSourcerer(t *testing.T) {
 					},
 					wantStderr: []string{
 						"",
-						"Unprocessed extra args: []",
+						"Autocomplete Error: Unprocessed extra args: []",
 					},
 					noStderrNewline: true,
 				},
@@ -1366,7 +1366,7 @@ func TestSourcerer(t *testing.T) {
 					},
 					wantStderr: []string{
 						"",
-						"Unprocessed extra args: [ther]",
+						"Autocomplete Error: Unprocessed extra args: [ther]",
 					},
 					noStderrNewline: true,
 				},
@@ -1561,6 +1561,7 @@ func TestSourcerer(t *testing.T) {
 			/* Useful for commenting out tests */
 		} {
 			t.Run(fmt.Sprintf("[%s] %s", curOS.Name(), test.name), func(t *testing.T) {
+				command.StubValue(t, &CurrentOS, curOS)
 				oschk, ok := test.osChecks[curOS.Name()]
 				if !ok {
 					oschk = test.osCheck
