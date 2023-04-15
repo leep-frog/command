@@ -10,9 +10,14 @@ import (
 )
 
 func TestExecute(t *testing.T) {
+	type osCheck struct {
+		WantExecuteData *command.ExecuteData
+	}
+
 	for _, test := range []struct {
-		name string
-		etc  *command.ExecuteTestCase
+		name     string
+		etc      *command.ExecuteTestCase
+		osChecks map[string]*osCheck
 	}{
 		{
 			name: "Sources directory",
@@ -25,13 +30,28 @@ func TestExecute(t *testing.T) {
 					sourcererDirArg.Name():    command.FilepathAbs(t, "..", "testdata"),
 					sourcererSuffixArg.Name(): "ING",
 				}},
-				WantExecuteData: &command.ExecuteData{
-					Executable: []string{
-						"pushd . > /dev/null",
-						fmt.Sprintf(`cd %q`, command.FilepathAbs(t, "..", "testdata")),
-						`local tmpFile="$(mktemp)"`,
-						`go run . source "ING"  > $tmpFile && source $tmpFile `,
-						"popd > /dev/null",
+			},
+			osChecks: map[string]*osCheck{
+				osLinux: {
+					WantExecuteData: &command.ExecuteData{
+						Executable: []string{
+							"pushd . > /dev/null",
+							fmt.Sprintf(`cd %q`, command.FilepathAbs(t, "..", "testdata")),
+							`local tmpFile="$(mktemp)"`,
+							`go run . source "ING"  > $tmpFile && source $tmpFile `,
+							"popd > /dev/null",
+						},
+					},
+				},
+				osWindows: {
+					WantExecuteData: &command.ExecuteData{
+						Executable: []string{
+							"Push-Location",
+							fmt.Sprintf(`cd %q`, command.FilepathAbs(t, "..", "testdata")),
+							`Local:tmpFile = New-TemporaryFile`,
+							`go run . source "ING"  > $tmpFile && source $tmpFile `,
+							"Pop-Location",
+						},
 					},
 				},
 			},
@@ -49,24 +69,48 @@ func TestExecute(t *testing.T) {
 					sourcererSuffixArg.Name(): "ING",
 					loadOnlyFlag.Name():       "--load-only",
 				}},
-				WantExecuteData: &command.ExecuteData{
-					Executable: []string{
-						"pushd . > /dev/null",
-						fmt.Sprintf(`cd %q`, command.FilepathAbs(t, "..", "testdata")),
-						`local tmpFile="$(mktemp)"`,
-						`go run . source "ING" --load-only > $tmpFile && source $tmpFile `,
-						"popd > /dev/null",
+			},
+			osChecks: map[string]*osCheck{
+				osLinux: {
+					WantExecuteData: &command.ExecuteData{
+						Executable: []string{
+							"pushd . > /dev/null",
+							fmt.Sprintf(`cd %q`, command.FilepathAbs(t, "..", "testdata")),
+							`local tmpFile="$(mktemp)"`,
+							`go run . source "ING" --load-only > $tmpFile && source $tmpFile `,
+							"popd > /dev/null",
+						},
+					},
+				},
+				osWindows: {
+					WantExecuteData: &command.ExecuteData{
+						Executable: []string{
+							"Push-Location",
+							fmt.Sprintf(`cd %q`, command.FilepathAbs(t, "..", "testdata")),
+							`Local:tmpFile = New-TemporaryFile`,
+							`go run . source "ING" --load-only > $tmpFile && source $tmpFile `,
+							"Pop-Location",
+						},
 					},
 				},
 			},
 		},
 	} {
-		t.Run(test.name, func(t *testing.T) {
-			cli := &SourcererCommand{}
-			test.etc.Node = cli.Node()
-			command.ExecuteTest(t, test.etc)
-			command.ChangeTest(t, nil, cli)
-		})
+		for _, curOS := range []OS{Linux(), Windows()} {
+			t.Run(fmt.Sprintf("[%s] %s", curOS.Name(), test.name), func(t *testing.T) {
+				oschk, ok := test.osChecks[curOS.Name()]
+				if !ok {
+					t.Skipf("No osCheck set for this OS")
+				}
+
+				command.StubValue(t, &CurrentOS, curOS)
+				cli := &SourcererCommand{}
+				test.etc.Node = cli.Node()
+				test.etc.WantExecuteData = oschk.WantExecuteData
+				command.ExecuteTest(t, test.etc)
+				command.ChangeTest(t, nil, cli)
+			})
+		}
 	}
 }
 

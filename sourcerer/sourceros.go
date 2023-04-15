@@ -7,11 +7,14 @@ import (
 var (
 	CurrentOS = func() OS {
 		// return Linux()
-		return Windows()
+		return Linux()
 	}()
 )
 
 type OS interface {
+	// Name is the name used in goos
+	Name() string
+
 	// FunctionWrap wraps the provided commands in another function.
 	FunctionWrap(string) string
 

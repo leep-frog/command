@@ -35,6 +35,10 @@ var (
 	}, "\n")
 )
 
+func (*windows) Name() string {
+	return "windows"
+}
+
 func (w *windows) CreateGoFiles(sourceLocation string, targetName string) string {
 	return strings.Join([]string{
 		"pushd",
@@ -47,11 +51,11 @@ func (w *windows) CreateGoFiles(sourceLocation string, targetName string) string
 
 func (w *windows) SourcererGoCLI(dir string, targetName string, loadFlag string) []string {
 	return []string{
-		"pushd",
+		"Push-Location",
 		fmt.Sprintf("cd %q", dir),
 		`Local:tmpFile = New-TemporaryFile`,
 		fmt.Sprintf("go run . source %q %s > $tmpFile && source $tmpFile ", targetName, loadFlag),
-		"popd",
+		"Pop-Location",
 	}
 }
 
