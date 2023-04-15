@@ -12,7 +12,9 @@ func (*Eko) Changed() bool   { return false }
 func (*Eko) Name() string    { return "eko" }
 
 func (*Eko) Node() command.Node {
-	la := command.ListArg[string]("LIST", "", 0, command.UnboundedList, command.SimpleCompleter[[]string]("uny", "deuxy", "troisy"))
+	la := command.ListArg[string]("LIST", "", 0, command.UnboundedList,
+		command.SimpleDistinctCompleter[[]string]("uny", "deuxy", "troisy"),
+	)
 	return command.SerialNodes(
 		la,
 		&command.ExecutorProcessor{func(o command.Output, d *command.Data) error {
