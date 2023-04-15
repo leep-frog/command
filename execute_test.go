@@ -747,14 +747,14 @@ func TestExecute(t *testing.T) {
 			name: "FileCompleter with Complexecute properly completes nested file",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(FileArgument("s", testDesc, Complexecute[string]())),
-				Args: []string{filepath.Join("sourcerer", "cmd", "l")},
+				Args: []string{filepath.Join("sourcerer", "cmd", "o")},
 				wantInput: &Input{
 					args: []*inputArg{
-						{value: FilepathAbs(t, "sourcerer", "cmd", "load_sourcerer.sh")},
+						{value: FilepathAbs(t, "sourcerer", "cmd", "other.sh")},
 					},
 				},
 				WantData: &Data{Values: map[string]interface{}{
-					"s": FilepathAbs(t, "sourcerer", "cmd", "load_sourcerer.sh"),
+					"s": FilepathAbs(t, "sourcerer", "cmd", "other.sh"),
 				}},
 			},
 		},
