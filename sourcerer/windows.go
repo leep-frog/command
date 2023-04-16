@@ -66,34 +66,11 @@ func (w *windows) RegisterCLIs(output command.Output, targetName string, clis []
 	// Generate the autocomplete function
 	output.Stdoutln(w.autocompleteFunction(targetName))
 
-	// The execute logic is put in an actual file so it can be used by other
-	// bash environments that don't actually source sourcerer-related commands.
-	// efc := w.executeFileContents(targetName)
-
-	// f, err := os.OpenFile(getExecuteFile(targetName), os.O_WRONLY|os.O_CREATE, command.CmdOS.DefaultFilePerm())
-	// if err != nil {
-	// return output.Stderrf("failed to open execute function file: %v\n", err)
-	// }
-
-	// if _, err := f.WriteString(efc); err != nil {
-	// return output.Stderrf("failed to write to execute function file: %v\n", err)
-	// }
-
-	// output.Stdoutln(efc)
-
 	sort.SliceStable(clis, func(i, j int) bool { return clis[i].Name() < clis[j].Name() })
 	for _, cli := range clis {
 		alias := cli.Name()
 
-		// aliasCommand := fmt.Sprintf(windowsRegisterCommandFormat, alias, targetName, alias)
-		aliasCommand := w.executeFunction(targetName, alias, false, "")
-		if scs := cli.Setup(); len(scs) > 0 {
-			setupFunctionName := fmt.Sprintf("_setup_for_%s_cli", alias)
-			output.Stdoutf(windowsSetupFunctionFormat, setupFunctionName, strings.Join(scs, "  \n  "))
-			aliasCommand = w.executeFunction(targetName, alias, true, setupFunctionName)
-		}
-
-		output.Stdoutln(aliasCommand)
+		output.Stdoutln(w.executeFunction(targetName, alias, cli.Setup()))
 
 		output.Stdoutf("Set-Alias %s _custom_execute_%s_%s\n", alias, targetName, alias)
 
@@ -117,18 +94,24 @@ func (*windows) autocompleteFunction(targetName string) string {
 	}, "\n")
 }
 
-func (*windows) executeFunction(targetName, cli string, withSetup bool, setupFunctionName string) string {
-	runnerLine := fmt.Sprintf(`  & $env:GOPATH/bin/_%s_runner.exe execute %q $Local:tmpFile $args`, targetName, cli)
-	if withSetup {
+func (*windows) executeFunction(targetName, cliName string, setup []string) string {
+	runnerLine := fmt.Sprintf(`  & $env:GOPATH/bin/_%s_runner.exe execute %q $Local:tmpFile $args`, targetName, cliName)
+	var prefix string
+	if len(setup) > 0 {
+		setupFunctionName := fmt.Sprintf("_setup_for_%s_cli", cliName)
+		prefix = strings.Join([]string{
+			fmt.Sprintf(windowsSetupFunctionFormat, setupFunctionName, strings.Join(setup, "\n  ")),
+		}, "\n")
 		runnerLine = strings.Join([]string{
 			`  $Local:setupTmpFile = New-TemporaryFile`,
 			fmt.Sprintf(`  %s > $Local:setupTmpFile`, setupFunctionName),
 			// Same as original command, but with the $Local:setupTmpFile provided as the first regular argument
-			fmt.Sprintf(`  & $env:GOPATH/bin/_%s_runner.exe execute %q $Local:tmpFile $Local:setupTmpFile $args`, targetName, cli),
+			fmt.Sprintf(`  & $env:GOPATH/bin/_%s_runner.exe execute %q $Local:tmpFile $Local:setupTmpFile $args`, targetName, cliName),
 		}, "\n")
 	}
 	return strings.Join([]string{
-		fmt.Sprintf(`function _custom_execute_%s_%s {`, targetName, cli),
+		prefix,
+		fmt.Sprintf(`function _custom_execute_%s_%s {`, targetName, cliName),
 		``,
 		`  # tmpFile is the file to which we write ExecuteData.Executable`,
 		`  $Local:tmpFile = New-TemporaryFile`,

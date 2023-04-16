@@ -107,7 +107,7 @@ func TestExecute(t *testing.T) {
 			t.Run(fmt.Sprintf("[%s] %s", curOS.Name(), test.name), func(t *testing.T) {
 				oschk, ok := test.osChecks[curOS.Name()]
 				if !ok {
-					t.Skipf("No osCheck set for this OS")
+					t.Fatalf("No osCheck set for this OS")
 				}
 
 				command.StubValue(t, &CurrentOS, curOS)

@@ -115,7 +115,7 @@ func (l *linux) RegisterCLIs(output command.Output, targetName string, clis []CL
 		aliasCommand := fmt.Sprintf(linuxRegisterCommandFormat, alias, targetName, alias)
 		if scs := cli.Setup(); len(scs) > 0 {
 			setupFunctionName := fmt.Sprintf("_setup_for_%s_cli", alias)
-			output.Stdoutf(linuxSetupFunctionFormat, setupFunctionName, strings.Join(scs, "  \n  "))
+			output.Stdoutf(linuxSetupFunctionFormat, setupFunctionName, strings.Join(scs, "\n  "))
 			aliasCommand = fmt.Sprintf(linuxRegisterCommandWithSetupFormat, alias, setupFunctionName, targetName, alias)
 		}
 
