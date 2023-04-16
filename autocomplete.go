@@ -7,8 +7,8 @@ import "fmt"
 // The returned slice is a list of autocompletion suggestions, and the returned error
 // indicates if there was an issue. The error can be sent to stderr without
 // causing any autocompletion issues.
-func Autocomplete(n Node, compLine string, passthroughArgs []string) ([]string, error) {
-	return autocomplete(n, compLine, passthroughArgs, &Data{})
+func Autocomplete(n Node, compLine string, passthroughArgs []string, os OS) ([]string, error) {
+	return autocomplete(n, compLine, passthroughArgs, &Data{OS: os})
 }
 
 // Separate method for testing purposes (and so Data doesn't need to be

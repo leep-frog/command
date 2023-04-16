@@ -162,3 +162,11 @@ func (w *windows) RegisterAliaser(command.Output, *Aliaser) {}
 
 // TODO: Mancli
 func (w *windows) Mancli(cli string) []string { return nil }
+
+func (*windows) SetEnvVar(envVar, value string) string {
+	return fmt.Sprintf("$env:%s = %q", envVar, value)
+}
+
+func (*windows) UnsetEnvVar(envVar string) string {
+	return fmt.Sprintf("Remove-Item $env:%s", envVar)
+}

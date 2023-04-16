@@ -29,7 +29,7 @@ var (
 			if err != nil {
 				return fmt.Errorf("failed to create temporary directory: %v", err)
 			}
-			command.SetEnvVar(ShellOSEnvVar, v, ed)
+			ed.Executable = append(ed.Executable, d.OS.SetEnvVar(ShellOSEnvVar, v))
 		}
 		c, err := ForDir(v)
 		if err != nil {

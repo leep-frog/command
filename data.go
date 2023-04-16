@@ -7,12 +7,26 @@ import (
 	"strings"
 )
 
+type OS interface {
+	// SetEnvVar returns a shell command that sets the environment variable
+	// `envVar` to `value`. Environment variable modifications can't and shouldn't
+	// be done by os.Setenv because the go CLI executable is run in a sub-shell.
+	SetEnvVar(envVar, value string) string
+
+	// UnsetEnvVar returns a shell command that unsets the environment variable
+	// `envVar`. Environment variable changes can't and shouldn't be done by
+	// os.Unsetenv because the go CLI executable is run in a sub-shell.
+	UnsetEnvVar(envVar string) string
+}
+
 // Data contains argument data.
 type Data struct {
 	// Values is a map from argument name to the data for that argument.
 	Values map[string]interface{}
 	// complexecute indictes whether we are running complexecute logic.
 	complexecute bool
+	// OS is the current operating system
+	OS OS
 }
 
 // Set sets the provided key-value pair in the `Data` object.

@@ -241,6 +241,14 @@ func (*linux) Mancli(cli string) []string {
 	}
 }
 
+func (*linux) SetEnvVar(envVar, value string) string {
+	return fmt.Sprintf("export %q=%q", envVar, value)
+}
+
+func (*linux) UnsetEnvVar(envVar string) string {
+	return fmt.Sprintf("unset %q", envVar)
+}
+
 /*
 // autocompleteForAliasFunction
 	// See AliaserCommand.

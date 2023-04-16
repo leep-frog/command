@@ -1160,7 +1160,7 @@ func TestSourcerer(t *testing.T) {
 						name:  "basic",
 						setup: []string{"his", "story"},
 						f: func(tc *testCLI, i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
-							o.Stdoutf("stdout: %v\n", d)
+							o.Stdoutf("stdout: %v\n", d.Values)
 							return nil
 						},
 					},
@@ -1182,7 +1182,7 @@ func TestSourcerer(t *testing.T) {
 						name:  "basic",
 						setup: []string{"his", "story"},
 						f: func(tc *testCLI, i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
-							o.Stdoutf("stdout: %v\n", d)
+							o.Stdoutf("stdout: %v\n", d.Values)
 							return nil
 						},
 					},
@@ -1197,7 +1197,7 @@ func TestSourcerer(t *testing.T) {
 				osCheck: &osCheck{
 					wantStdout: []string{
 						// false is for data.complexecute
-						fmt.Sprintf(`stdout: &{map[SETUP_FILE:%s] false}`, command.FilepathAbs(t, "sourcerer.go")),
+						fmt.Sprintf(`stdout: map[SETUP_FILE:%s]`, command.FilepathAbs(t, "sourcerer.go")),
 					},
 				},
 			},
@@ -1211,7 +1211,7 @@ func TestSourcerer(t *testing.T) {
 							command.Arg[int]("i", "desc"),
 						},
 						f: func(tc *testCLI, i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
-							o.Stdoutf("stdout: %v\n", d)
+							o.Stdoutf("stdout: %v\n", d.Values)
 							return nil
 						},
 					},
@@ -1227,7 +1227,7 @@ func TestSourcerer(t *testing.T) {
 				osCheck: &osCheck{
 					wantStdout: []string{
 						// false is for data.complexecute
-						fmt.Sprintf(`stdout: &{map[SETUP_FILE:%s i:5] false}`, command.FilepathAbs(t, "sourcerer.go")),
+						fmt.Sprintf(`stdout: map[SETUP_FILE:%s i:5]`, command.FilepathAbs(t, "sourcerer.go")),
 					},
 				},
 			},

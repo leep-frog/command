@@ -71,7 +71,7 @@ func (s *sourcerer) executeExecutor(output command.Output, d *command.Data) erro
 		n = command.PreprendSetupArg(n)
 	}
 
-	eData, err := command.Execute(n, command.ParseExecuteArgs(args), output)
+	eData, err := command.Execute(n, command.ParseExecuteArgs(args), output, CurrentOS)
 	if err != nil {
 		if command.IsUsageError(err) && !s.printedUsageError && !s.forAutocomplete && !command.IsExtraArgsError(err) {
 			s.printedUsageError = true
@@ -116,7 +116,7 @@ func (s *sourcerer) autocompleteExecutor(o command.Output, d *command.Data) erro
 	s.forAutocomplete = true
 	cli := s.cliArg.Get(d)
 
-	g, err := command.Autocomplete(cli.Node(), compLineArg.Get(d), autocompletePassthroughArgs.Get(d))
+	g, err := command.Autocomplete(cli.Node(), compLineArg.Get(d), autocompletePassthroughArgs.Get(d), CurrentOS)
 	if err != nil {
 		CurrentOS.HandleAutocompleteError(o, compTypeArg.Get(d), err)
 		return err

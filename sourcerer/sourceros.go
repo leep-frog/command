@@ -30,7 +30,9 @@ var (
 )
 
 type OS interface {
-	// Name is the name used in goos
+	command.OS
+
+	// Name is the operating system as specified by runtime.GOOS
 	Name() string
 
 	// FunctionWrap wraps the provided commands in another function.

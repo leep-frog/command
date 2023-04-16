@@ -687,9 +687,9 @@ func (test *completerTest[T]) run(t *testing.T) {
 		var got []string
 		var err error
 		if test.singleC != nil {
-			got, err = Autocomplete(SerialNodes(Arg[T]("test", testDesc, test.singleC)), test.args, test.ptArgs)
+			got, err = Autocomplete(SerialNodes(Arg[T]("test", testDesc, test.singleC)), test.args, test.ptArgs, nil)
 		} else {
-			got, err = Autocomplete(SerialNodes(ListArg[T]("test", testDesc, 2, 5, test.c)), test.args, test.ptArgs)
+			got, err = Autocomplete(SerialNodes(ListArg[T]("test", testDesc, 2, 5, test.c)), test.args, test.ptArgs, nil)
 		}
 
 		if diff := cmp.Diff(test.want, got); diff != "" {

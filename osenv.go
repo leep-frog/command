@@ -1,7 +1,6 @@
 package command
 
 import (
-	"fmt"
 	"os"
 	"testing"
 )
@@ -22,24 +21,10 @@ func EnvArg(name string) Processor {
 	})
 }
 
-// SetEnvVar updates the provided ExecuteData to set `envVar` to `value`.
-// This can't and shouldn't be done by os.Setenv because the go CLI executable
-// is run in a sub-shell.
-func SetEnvVar(envVar, value string, ed *ExecuteData) {
-	ed.Executable = append(ed.Executable, fmt.Sprintf("export %q=%q", envVar, value))
-}
-
-// UnsetEnvVar updates the provided ExecuteData to unset the provided environment variable.
-// This can't and shouldn't be done by os.Unsetenv because the go CLI executable
-// is run in a sub-shell.
-func UnsetEnvVar(envVar string, ed *ExecuteData) {
-	ed.Executable = append(ed.Executable, fmt.Sprintf("unset %q", envVar))
-}
-
 // SetEnvVarProcessor returns a `Processor` that sets the environment variable to the provided value.
 func SetEnvVarProcessor(envVar, value string) Processor {
 	return SimpleProcessor(func(i *Input, o Output, d *Data, ed *ExecuteData) error {
-		SetEnvVar(envVar, value, ed)
+		ed.Executable = append(ed.Executable, d.OS.SetEnvVar(envVar, value))
 		return nil
 	}, nil)
 }
@@ -47,7 +32,7 @@ func SetEnvVarProcessor(envVar, value string) Processor {
 // UnsetEnvVarProcessor returns a `Processor` that unsets the environment variable.
 func UnsetEnvVarProcessor(envVar string) Processor {
 	return SimpleProcessor(func(i *Input, o Output, d *Data, ed *ExecuteData) error {
-		UnsetEnvVar(envVar, ed)
+		ed.Executable = append(ed.Executable, d.OS.UnsetEnvVar(envVar))
 		return nil
 	}, nil)
 }

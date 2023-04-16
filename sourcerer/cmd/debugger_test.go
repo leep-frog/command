@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -9,6 +8,7 @@ import (
 )
 
 func TestDebugger(t *testing.T) {
+	fos := &command.FakeOS{}
 	for _, test := range []struct {
 		name string
 		etc  *command.ExecuteTestCase
@@ -19,7 +19,7 @@ func TestDebugger(t *testing.T) {
 				WantStdout: "Entering debug mode.\n",
 				WantExecuteData: &command.ExecuteData{
 					Executable: []string{
-						fmt.Sprintf("export %q=%q", command.DebugEnvVar, "1"),
+						fos.SetEnvVar(command.DebugEnvVar, "1"),
 					},
 				},
 			},
@@ -33,7 +33,7 @@ func TestDebugger(t *testing.T) {
 				},
 				WantExecuteData: &command.ExecuteData{
 					Executable: []string{
-						fmt.Sprintf("unset %q", command.DebugEnvVar),
+						fos.UnsetEnvVar(command.DebugEnvVar),
 					},
 				},
 				WantData: &command.Data{Values: map[string]interface{}{
@@ -46,6 +46,7 @@ func TestDebugger(t *testing.T) {
 			t.Run(test.name, func(t *testing.T) {
 				cli := &Debugger{}
 				test.etc.Node = cli.Node()
+				test.etc.OS = fos
 				command.ExecuteTest(t, test.etc)
 				command.ChangeTest(t, nil, cli)
 			})

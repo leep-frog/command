@@ -452,6 +452,7 @@ func TestExecute(t *testing.T) {
 			if test.etc == nil {
 				test.etc = &command.ExecuteTestCase{}
 			}
+			test.etc.OS = &command.FakeOS{}
 			test.etc.Node = test.c.Node()
 			test.etc.SkipDataCheck = true
 			command.ExecuteTest(t, test.etc)
@@ -748,6 +749,7 @@ func TestNewShell(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)
 	}
+	fos := &command.FakeOS{}
 
 	for _, test := range []struct {
 		name      string
@@ -797,7 +799,7 @@ func TestNewShell(t *testing.T) {
 			etc: &command.ExecuteTestCase{
 				WantExecuteData: &command.ExecuteData{
 					Executable: []string{
-						fmt.Sprintf("export %q=%q", ShellOSEnvVar, dir),
+						fos.SetEnvVar(ShellOSEnvVar, dir),
 					},
 				},
 				WantData: &command.Data{Values: map[string]interface{}{
@@ -822,9 +824,10 @@ func TestNewShell(t *testing.T) {
 				}),
 			)
 			test.etc.SkipDataCheck = true
+			test.etc.OS = fos
 			command.ExecuteTest(t, test.etc)
 
-			if diff := cmp.Diff(test.etc.WantData, d, cmp.AllowUnexported(Cache{}, command.Data{})); diff != "" {
+			if diff := cmp.Diff(test.etc.WantData, d, cmp.AllowUnexported(Cache{}, command.Data{}), cmpopts.IgnoreFields(command.Data{}, "OS")); diff != "" {
 				t.Errorf("ShellProcessor() produced incorrect data (-want, +got):\n%s", diff)
 			}
 			if diff := cmp.Diff(test.wantCache, c, cmp.AllowUnexported(Cache{})); diff != "" {

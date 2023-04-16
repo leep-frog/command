@@ -24,6 +24,7 @@ func (ee *errorEdge) UsageNext(input *Input, data *Data) (Node, error) {
 }
 
 func TestExecute(t *testing.T) {
+	fos := &FakeOS{}
 	for _, test := range []struct {
 		name       string
 		etc        *ExecuteTestCase
@@ -1709,12 +1710,12 @@ func TestExecute(t *testing.T) {
 			name: "SetEnvVar sets variable",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(SimpleProcessor(func(i *Input, o Output, d *Data, ed *ExecuteData) error {
-					SetEnvVar("abc", "def", ed)
+					ed.Executable = append(ed.Executable, d.OS.SetEnvVar("abc", "def"))
 					return nil
 				}, nil)),
 				WantExecuteData: &ExecuteData{
 					Executable: []string{
-						`export "abc"="def"`,
+						fos.SetEnvVar("abc", "def"),
 					},
 				},
 			},
@@ -1723,12 +1724,12 @@ func TestExecute(t *testing.T) {
 			name: "UnsetEnvVar unsets variable",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(SimpleProcessor(func(i *Input, o Output, d *Data, ed *ExecuteData) error {
-					UnsetEnvVar("abc", ed)
+					ed.Executable = append(ed.Executable, d.OS.UnsetEnvVar("abc"))
 					return nil
 				}, nil)),
 				WantExecuteData: &ExecuteData{
 					Executable: []string{
-						`unset "abc"`,
+						fos.UnsetEnvVar("abc"),
 					},
 				},
 			},
@@ -1741,7 +1742,7 @@ func TestExecute(t *testing.T) {
 				),
 				WantExecuteData: &ExecuteData{
 					Executable: []string{
-						`export "abc"="def"`,
+						fos.SetEnvVar("abc", "def"),
 					},
 				},
 			},
@@ -1754,7 +1755,7 @@ func TestExecute(t *testing.T) {
 				),
 				WantExecuteData: &ExecuteData{
 					Executable: []string{
-						`unset "abc"`,
+						fos.UnsetEnvVar("abc"),
 					},
 				},
 			},
@@ -1765,8 +1766,10 @@ func TestExecute(t *testing.T) {
 				Node: SerialNodes(
 					SimpleExecutableProcessor("do some", "stuff"),
 					SimpleProcessor(func(i *Input, o Output, d *Data, ed *ExecuteData) error {
-						SetEnvVar("abc", "def", ed)
-						UnsetEnvVar("ghi", ed)
+						ed.Executable = append(ed.Executable,
+							d.OS.SetEnvVar("abc", "def"),
+							d.OS.UnsetEnvVar("ghi"),
+						)
 						return nil
 					}, nil),
 				),
@@ -1774,8 +1777,8 @@ func TestExecute(t *testing.T) {
 					Executable: []string{
 						"do some",
 						"stuff",
-						`export "abc"="def"`,
-						`unset "ghi"`,
+						fos.SetEnvVar("abc", "def"),
+						fos.UnsetEnvVar("ghi"),
 					},
 				},
 			},
@@ -1792,8 +1795,8 @@ func TestExecute(t *testing.T) {
 					Executable: []string{
 						"do some",
 						"stuff",
-						`export "abc"="def"`,
-						`unset "ghi"`,
+						fos.SetEnvVar("abc", "def"),
+						fos.UnsetEnvVar("ghi"),
 					},
 				},
 			},
@@ -6276,6 +6279,7 @@ func TestExecute(t *testing.T) {
 			if test.etc == nil {
 				test.etc = &ExecuteTestCase{}
 			}
+			test.etc.OS = fos
 			test.etc.testInput = true
 			ExecuteTest(t, test.etc)
 		})

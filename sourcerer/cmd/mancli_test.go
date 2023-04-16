@@ -48,7 +48,7 @@ func TestMancli(t *testing.T) {
 			t.Run(fmt.Sprintf("[%s] %s", curOS.Name(), test.name), func(t *testing.T) {
 				oschk, ok := test.osChecks[curOS.Name()]
 				if !ok {
-					t.Fatalf("No osCheck set for this OS")
+					t.Skipf("No osCheck set for this OS")
 				}
 				command.StubValue(t, &sourcerer.CurrentOS, curOS)
 

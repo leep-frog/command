@@ -5,8 +5,8 @@ import (
 )
 
 // Execute executes a node with the provided `Input` and `Output`.
-func Execute(n Node, input *Input, output Output) (*ExecuteData, error) {
-	return execute(n, input, output, &Data{})
+func Execute(n Node, input *Input, output Output, os OS) (*ExecuteData, error) {
+	return execute(n, input, output, &Data{OS: os})
 }
 
 // Separate method for testing purposes.

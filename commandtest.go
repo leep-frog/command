@@ -75,6 +75,8 @@ type ExecuteTestCase struct {
 	Args []string
 	// Env is the map of os environment variables to stub. If nil, this is not stubbed.
 	Env map[string]string
+	// OS is the OS to use for the test
+	OS OS
 
 	// WantData is the `Data` object that should be constructed.
 	WantData *Data
@@ -173,7 +175,7 @@ func ExecuteTest(t *testing.T, etc *ExecuteTestCase) {
 	tc := &testContext{
 		prefix:   fmt.Sprintf("Execute(%v)", etc.Args),
 		testCase: etc,
-		data:     &Data{},
+		data:     &Data{OS: etc.OS},
 		fo:       NewFakeOutput(),
 	}
 	t.Cleanup(tc.fo.Close)
@@ -364,7 +366,7 @@ func (dt *dataTester) check(t *testing.T, tc *testContext) {
 		dt.want = &Data{}
 	}
 
-	if diff := cmp.Diff(dt.want, tc.data, cmpopts.EquateEmpty(), cmpopts.IgnoreUnexported(Data{}), dt.opts); diff != "" {
+	if diff := cmp.Diff(dt.want, tc.data, cmpopts.EquateEmpty(), cmpopts.IgnoreUnexported(Data{}), cmpopts.IgnoreFields(Data{}, "OS"), dt.opts); diff != "" {
 		t.Errorf("%s produced incorrect Data (-want, +got):\n%s", tc.prefix, diff)
 	}
 }
@@ -538,4 +540,15 @@ func FilepathAbs(t *testing.T, s ...string) string {
 		t.Fatalf("Failed to get absolute path for file: %v", err)
 	}
 	return r
+}
+
+// FakeOS is a fake OS that can be used for testing purposes.
+type FakeOS struct{}
+
+func (*FakeOS) SetEnvVar(variable, value string) string {
+	return fmt.Sprintf("FAKE_SET[(variable=%s), (value=%s)]", variable, value)
+}
+
+func (*FakeOS) UnsetEnvVar(variable string) string {
+	return fmt.Sprintf("FAKE_UNSET[(variable=%s)]", variable)
 }
