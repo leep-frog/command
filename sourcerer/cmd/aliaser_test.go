@@ -63,6 +63,13 @@ func TestAliaser(t *testing.T) {
 							},
 						},
 					},
+					"windows": {
+						WantExecuteData: &command.ExecuteData{
+							Executable: []string{
+								``,
+							},
+						},
+					},
 				},
 			},
 			{

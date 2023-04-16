@@ -72,8 +72,6 @@ func (w *windows) RegisterCLIs(output command.Output, targetName string, clis []
 
 		output.Stdoutln(w.executeFunction(targetName, alias, cli.Setup()))
 
-		output.Stdoutf("Set-Alias %s _custom_execute_%s_%s\n", alias, targetName, alias)
-
 		// We sort ourselves, hence the no sort.
 		output.Stdoutf("Register-ArgumentCompleter -CommandName %s -ScriptBlock $_custom_autocomplete_%s\n", alias, targetName)
 	}
@@ -132,6 +130,7 @@ func (*windows) executeFunction(targetName, cliName string, setup []string) stri
 		`}`,
 		// fmt.Sprintf(`_custom_execute_%s $args`, targetName),
 		``,
+		fmt.Sprintf("Set-Alias %s _custom_execute_%s_%s\n", cliName, targetName, cliName),
 	}, "\n")
 }
 
