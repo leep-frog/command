@@ -2,6 +2,7 @@ package sourcerer
 
 import (
 	"fmt"
+	"os"
 	"runtime"
 
 	"github.com/leep-frog/command"
@@ -14,12 +15,17 @@ var (
 	}
 
 	CurrentOS = func() OS {
+		curOS, ok := os.LookupEnv("LEEP_FROG_CLI_OS_OVERRIDE")
+		if !ok {
+			curOS = runtime.GOOS
+		}
+
 		for _, os := range oses {
 			if os.Name() == runtime.GOOS {
 				return os
 			}
 		}
-		panic(fmt.Sprintf("unknown os: %q", runtime.GOOS))
+		panic(fmt.Sprintf("Unsupported leep-frog/command os: %q", curOS))
 	}()
 )
 
