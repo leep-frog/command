@@ -55,7 +55,7 @@ func (w *windows) SourcererGoCLI(dir string, targetName string, loadFlag string)
 	return []string{
 		"Push-Location",
 		fmt.Sprintf("cd %q", dir),
-		`Local:tmpFile = New-TemporaryFile`,
+		`$Local:tmpFile = New-TemporaryFile`,
 		fmt.Sprintf("go run . source %q %s > $Local:tmpFile", targetName, loadFlag),
 		`Copy-Item "$Local:tmpFile" "$Local:tmpFile.ps1"`,
 		`. "$Local:tmpFile.ps1"`,
@@ -141,7 +141,6 @@ func (*windows) executeFunction(targetName, cli string, withSetup bool, setupFun
 		``,
 		`  # If success, run the ExecuteData.Executable data`,
 		`  Copy-Item "$Local:tmpFile" "$Local:tmpFile.ps1"`,
-		`  Write-Output "$Local:tmpFile.ps1"`,
 		`  . "$Local:tmpFile.ps1"`,
 		`  If (!$?) { throw "ExecuteData execution failed" }`,
 		// TODO: Leave file as is if DebugEnvVar is set
