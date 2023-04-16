@@ -24,7 +24,8 @@ var (
 	windowsRegisterCommandWithSetupFormat = strings.Join([]string{
 		`function %s {`,
 		`  $Local:o = New-TemporaryFile`,
-		`  %s -and _custom_execute_%s %s $Local:o $args`,
+		`  %s > $Local:o`,
+		`  _custom_execute_%s %s $Local:o $args`,
 		`}`,
 	}, "\n")
 	windowsSetupFunctionFormat = strings.Join([]string{
@@ -41,10 +42,11 @@ func (*windows) Name() string {
 
 func (w *windows) CreateGoFiles(sourceLocation string, targetName string) string {
 	return strings.Join([]string{
-		"pushd",
-		fmt.Sprintf(`cd "$(Split-Path %s)"`, sourceLocation),
+		"Push-Location",
+		fmt.Sprintf(`Write-Output "cd to $(Split-Path %s)"`, sourceLocation),
+		fmt.Sprintf(`Set-Location "$(Split-Path %s)"`, sourceLocation),
 		fmt.Sprintf("go build -o %s", filepath.Join("$env:GOPATH", "bin", fmt.Sprintf("_%s_runner.exe", targetName))),
-		"popd",
+		"Pop-Location",
 		"",
 	}, "\n")
 }
@@ -54,8 +56,10 @@ func (w *windows) SourcererGoCLI(dir string, targetName string, loadFlag string)
 		"Push-Location",
 		fmt.Sprintf("cd %q", dir),
 		`Local:tmpFile = New-TemporaryFile`,
-		fmt.Sprintf("go run . source %q %s > $tmpFile && source $tmpFile ", targetName, loadFlag),
-		"Pop-Location",
+		fmt.Sprintf("go run . source %q %s > $Local:tmpFile", targetName, loadFlag),
+		`Copy-Item "$Local:tmpFile" "$Local:tmpFile.ps1"`,
+		`. "$Local:tmpFile.ps1"`,
+		`Pop-Location`,
 	}
 }
 
@@ -103,9 +107,7 @@ func (w *windows) RegisterCLIs(output command.Output, targetName string, clis []
 func (*windows) autocompleteFunction(targetName string) string {
 	return strings.Join([]string{
 		fmt.Sprintf("$_custom_autocomplete_%s = {", targetName),
-		// This order might be messed up because parameter name doesn't seem to be what I think it actually is
 		`  param($wordToComplete, $commandAst, $compPoint)`,
-		// `  $Local:tFile = New-TemporaryFile`,
 		// The last argument is for extra passthrough arguments to be passed for aliaser autocompletes.
 		// 0 for comp type
 		fmt.Sprintf(`  (& $env:GOPATH\bin\_%s_runner.exe autocomplete ($commandAst.CommandElements | Select-Object -first 1) "0" $compPoint "$commandAst") | ForEach-Object {`, targetName),
@@ -117,11 +119,12 @@ func (*windows) autocompleteFunction(targetName string) string {
 }
 
 func (*windows) executeFunction(targetName, cli string, withSetup bool, setupFunctionName string) string {
-	runnerLine := fmt.Sprintf(`  & $env:GOPATH/bin/_%s_runner.exe execute %q $tmpFile $args`, targetName, cli)
+	runnerLine := fmt.Sprintf(`  & $env:GOPATH/bin/_%s_runner.exe execute %q $Local:tmpFile $args`, targetName, cli)
 	if withSetup {
 		runnerLine = strings.Join([]string{
 			`  $Local:setupTmpFile = New-TemporaryFile`,
-			fmt.Sprintf(`  %s -and _custom_execute_%s %s $Local:setupTpmFile $args`, setupFunctionName, targetName, cli),
+			fmt.Sprintf(`  %s > $Local:setupTmpFile`, setupFunctionName),
+			fmt.Sprintf(`  _custom_execute_%s %s $Local:tmpFile $Local:setupTmpFile $args`, targetName, cli),
 		}, "\n")
 	}
 	return strings.Join([]string{
@@ -137,10 +140,13 @@ func (*windows) executeFunction(targetName, cli string, withSetup bool, setupFun
 		`  If (!$?) { throw "Go execution failed" }`,
 		``,
 		`  # If success, run the ExecuteData.Executable data`,
-		`  . $tmpFile`,
+		`  Copy-Item "$Local:tmpFile" "$Local:tmpFile.ps1"`,
+		`  Write-Output "$Local:tmpFile.ps1"`,
+		`  . "$Local:tmpFile.ps1"`,
 		`  If (!$?) { throw "ExecuteData execution failed" }`,
 		// TODO: Leave file as is if DebugEnvVar is set
-		`  Remove-Item $tmpFile`,
+		// `  Remove-Item "$Local:tmpFile"`,
+		// `  Remove-Item "$Local:tmpFile.ps1"`,
 		`}`,
 		// fmt.Sprintf(`_custom_execute_%s $args`, targetName),
 		``,
