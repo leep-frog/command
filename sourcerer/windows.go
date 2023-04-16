@@ -43,7 +43,6 @@ func (*windows) Name() string {
 func (w *windows) CreateGoFiles(sourceLocation string, targetName string) string {
 	return strings.Join([]string{
 		"Push-Location",
-		fmt.Sprintf(`Write-Output "cd to $(Split-Path %s)"`, sourceLocation),
 		fmt.Sprintf(`Set-Location "$(Split-Path %s)"`, sourceLocation),
 		fmt.Sprintf("go build -o %s", filepath.Join("$env:GOPATH", "bin", fmt.Sprintf("_%s_runner.exe", targetName))),
 		"Pop-Location",
