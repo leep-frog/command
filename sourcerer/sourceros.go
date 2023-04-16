@@ -21,7 +21,7 @@ var (
 		}
 
 		for _, os := range oses {
-			if os.Name() == runtime.GOOS {
+			if os.Name() == curOS {
 				return os
 			}
 		}
