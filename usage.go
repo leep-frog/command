@@ -182,6 +182,6 @@ func ShowUsageAfterError(n Node, o Output) {
 	if u, err := processNewGraphUse(n, ParseExecuteArgs(nil)); err != nil {
 		o.Stderrf("\n%s\nfailed to get command usage: %v\n", UsageErrorSectionStart, err)
 	} else if usageDoc := u.String(); len(strings.TrimSpace(usageDoc)) != 0 {
-		o.Stderrf("\n%s\n%v", UsageErrorSectionStart, u)
+		o.Stderrf("\n%s\n%v\n", UsageErrorSectionStart, u)
 	}
 }

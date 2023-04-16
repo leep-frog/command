@@ -69,6 +69,7 @@ func TestCacheExecution(t *testing.T) {
 					``,
 					`Symbols:`,
 					`  ^: Start of new cachable section`,
+					``,
 				}, "\n"),
 				WantData: &Data{Values: map[string]interface{}{
 					"s": "dollar",

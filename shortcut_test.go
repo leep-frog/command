@@ -192,6 +192,7 @@ func TestShortcutExecute(t *testing.T) {
 					``,
 					`Symbols:`,
 					`  *: Start of new shortcut-able section`,
+					``,
 				}, "\n"),
 			},
 		},

@@ -123,7 +123,8 @@ func (*windows) executeFunction(targetName, cli string, withSetup bool, setupFun
 		runnerLine = strings.Join([]string{
 			`  $Local:setupTmpFile = New-TemporaryFile`,
 			fmt.Sprintf(`  %s > $Local:setupTmpFile`, setupFunctionName),
-			fmt.Sprintf(`  _custom_execute_%s %s $Local:tmpFile $Local:setupTmpFile $args`, targetName, cli),
+			// Same as original command, but with the $Local:setupTmpFile provided as the first regular argument
+			fmt.Sprintf(`  & $env:GOPATH/bin/_%s_runner.exe execute %q $Local:tmpFile $Local:setupTmpFile $args`, targetName, cli),
 		}, "\n")
 	}
 	return strings.Join([]string{
