@@ -17,6 +17,12 @@ type OS interface {
 	// `envVar`. Environment variable changes can't and shouldn't be done by
 	// os.Unsetenv because the go CLI executable is run in a sub-shell.
 	UnsetEnvVar(envVar string) string
+
+	// AddsSpaceToSingleAutocompletion() is whether or not the OS
+	// adds a space when there is only one autocomplete suggestion.
+	// NOTE: This is *NOT* a feature that this package implements, but rather
+	// information needed by this package for it to work properly.
+	AddsSpaceToSingleAutocompletion() bool
 }
 
 // Data contains argument data.

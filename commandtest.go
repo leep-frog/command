@@ -75,7 +75,7 @@ type ExecuteTestCase struct {
 	Args []string
 	// Env is the map of os environment variables to stub. If nil, this is not stubbed.
 	Env map[string]string
-	// OS is the OS to use for the test
+	// OS is the OS to use for the test.
 	OS OS
 
 	// WantData is the `Data` object that should be constructed.
@@ -257,6 +257,8 @@ type CompleteTestCase struct {
 	PassthroughArgs []string
 	// Env is the map of os environment variables to stub. If nil, this is not stubbed.
 	Env map[string]string
+	// OS is the OS to use for the test.
+	OS OS
 
 	// Want is the expected set of completion suggestions.
 	Want []string
@@ -295,7 +297,7 @@ func CompleteTest(t *testing.T, ctc *CompleteTestCase) {
 	tc := &testContext{
 		prefix:   fmt.Sprintf("Autocomplete(%v)", ctc.Args),
 		testCase: ctc,
-		data:     &Data{},
+		data:     &Data{OS: ctc.OS},
 	}
 
 	testers := []commandTester{
@@ -543,7 +545,10 @@ func FilepathAbs(t *testing.T, s ...string) string {
 }
 
 // FakeOS is a fake OS that can be used for testing purposes.
-type FakeOS struct{}
+type FakeOS struct {
+	// AddsSpace is the bit for the `AddsSpaceToSingleAutocompletion` function
+	AddsSpace bool
+}
 
 func (*FakeOS) SetEnvVar(variable, value string) string {
 	return fmt.Sprintf("FAKE_SET[(variable=%s), (value=%s)]", variable, value)
@@ -551,4 +556,8 @@ func (*FakeOS) SetEnvVar(variable, value string) string {
 
 func (*FakeOS) UnsetEnvVar(variable string) string {
 	return fmt.Sprintf("FAKE_UNSET[(variable=%s)]", variable)
+}
+
+func (fos *FakeOS) AddsSpaceToSingleAutocompletion() bool {
+	return fos.AddsSpace
 }

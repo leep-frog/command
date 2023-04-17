@@ -651,6 +651,7 @@ type completerTest[T any] struct {
 	cleanup        func(*testing.T)
 	absErr         error
 	commandBranch  bool
+	doesntAddSpace bool
 	want           []string
 	wantErr        error
 	getwd          func() (string, error)
@@ -663,6 +664,7 @@ func (test *completerTest[T]) Name() string {
 
 func (test *completerTest[T]) run(t *testing.T) {
 	t.Run(test.name, func(t *testing.T) {
+		fos := &FakeOS{!test.doesntAddSpace}
 		if test.getwd != nil {
 			StubValue(t, &osGetwd, test.getwd)
 		}
@@ -687,9 +689,9 @@ func (test *completerTest[T]) run(t *testing.T) {
 		var got []string
 		var err error
 		if test.singleC != nil {
-			got, err = Autocomplete(SerialNodes(Arg[T]("test", testDesc, test.singleC)), test.args, test.ptArgs, nil)
+			got, err = Autocomplete(SerialNodes(Arg[T]("test", testDesc, test.singleC)), test.args, test.ptArgs, fos)
 		} else {
-			got, err = Autocomplete(SerialNodes(ListArg[T]("test", testDesc, 2, 5, test.c)), test.args, test.ptArgs, nil)
+			got, err = Autocomplete(SerialNodes(ListArg[T]("test", testDesc, 2, 5, test.c)), test.args, test.ptArgs, fos)
 		}
 
 		if diff := cmp.Diff(test.want, got); diff != "" {
@@ -811,12 +813,21 @@ func TestTypedCompleters(t *testing.T) {
 			},
 		},
 		&completerTest[string]{
-			name: "file completer works with string list arg",
+			name: "file completer works with string list arg, and autofills letters with space",
 			c:    &FileCompleter[[]string]{},
 			args: "cmd execu",
 			want: []string{
 				"execut",
 				"execut_",
+			},
+		},
+		&completerTest[string]{
+			name:           "file completer works with string list arg, and autofills letters with no space",
+			c:              &FileCompleter[[]string]{},
+			args:           "cmd execu",
+			doesntAddSpace: true,
+			want: []string{
+				"execut",
 			},
 		},
 		&completerTest[string]{
@@ -961,6 +972,15 @@ func TestTypedCompleters(t *testing.T) {
 			want: []string{
 				"testdata/dir1/",
 				"testdata/dir1/_",
+			},
+		},
+		&completerTest[string]{
+			name:           "file completer completes to directory when no space",
+			c:              &FileCompleter[[]string]{},
+			args:           "cmd testdata/dir1",
+			doesntAddSpace: true,
+			want: []string{
+				"testdata/dir1/",
 			},
 		},
 		&completerTest[string]{

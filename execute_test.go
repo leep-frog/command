@@ -775,8 +775,24 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "FileCompleter with Complexecute fails if multiple options",
+			name: "FileCompleter with Complexecute fails if multiple options (autofilling letters) with suffix char",
 			etc: &ExecuteTestCase{
+				OS:   &FakeOS{AddsSpace: true},
+				Node: SerialNodes(FileArgument("s", testDesc, Complexecute[string]())),
+				Args: []string{"ca"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "ca"},
+					},
+				},
+				WantStderr: "[Complexecute] requires exactly one suggestion to be returned for \"s\", got 2: [cache cache_]\n",
+				WantErr:    fmt.Errorf("[Complexecute] requires exactly one suggestion to be returned for \"s\", got 2: [cache cache_]"),
+			},
+		},
+		{
+			name: "FileCompleter with Complexecute fails if multiple options (autofilling letters) with no suffix char",
+			etc: &ExecuteTestCase{
+				OS:   &FakeOS{AddsSpace: false},
 				Node: SerialNodes(FileArgument("s", testDesc, Complexecute[string]())),
 				Args: []string{"ca"},
 				wantInput: &Input{
@@ -6279,7 +6295,9 @@ func TestExecute(t *testing.T) {
 			if test.etc == nil {
 				test.etc = &ExecuteTestCase{}
 			}
-			test.etc.OS = fos
+			if test.etc.OS == nil {
+				test.etc.OS = fos
+			}
 			test.etc.testInput = true
 			ExecuteTest(t, test.etc)
 		})

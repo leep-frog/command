@@ -249,6 +249,10 @@ func (*linux) UnsetEnvVar(envVar string) string {
 	return fmt.Sprintf("unset %q", envVar)
 }
 
+func (*linux) AddsSpaceToSingleAutocompletion() bool {
+	return true
+}
+
 /*
 // autocompleteForAliasFunction
 	// See AliaserCommand.

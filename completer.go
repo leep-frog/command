@@ -472,7 +472,8 @@ func (ff *FileCompleter[T]) Complete(value T, data *Data) (*Completion, error) {
 		c.Suggestions[0] = fmt.Sprintf("%s%s", laDir, c.Suggestions[0])
 
 		// If complexecuting, then just complete to the directory
-		if onlyDir && !data.complexecute && !tooDeep {
+		// Also, if the OS does not add a space, then no need to do this.
+		if onlyDir && !data.complexecute && !tooDeep && data.OS.AddsSpaceToSingleAutocompletion() {
 			// This does "dir1/" and "dir1/_" so that the user's command is
 			// autocompleted to "dir1/" without a space after it.
 			c.Suggestions = append(c.Suggestions, fmt.Sprintf("%s%s", c.Suggestions[0], suffixChar))
@@ -495,7 +496,9 @@ func (ff *FileCompleter[T]) Complete(value T, data *Data) (*Completion, error) {
 	autoFill = laDir + autoFill
 	c.Suggestions = []string{
 		autoFill,
-		autoFill + suffixChar,
+	}
+	if data.OS.AddsSpaceToSingleAutocompletion() || data.complexecute {
+		c.Suggestions = append(c.Suggestions, autoFill+suffixChar)
 	}
 
 	return c, nil

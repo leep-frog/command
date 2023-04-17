@@ -170,3 +170,7 @@ func (*windows) SetEnvVar(envVar, value string) string {
 func (*windows) UnsetEnvVar(envVar string) string {
 	return fmt.Sprintf("Remove-Item $env:%s", envVar)
 }
+
+func (*windows) AddsSpaceToSingleAutocompletion() bool {
+	return false
+}
