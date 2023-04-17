@@ -94,7 +94,7 @@ func (*windows) executeFunction(targetName, cliName string, setup []string) stri
 		}, "\n")
 		runnerLine = strings.Join([]string{
 			`  $Local:setupTmpFile = New-TemporaryFile`,
-			fmt.Sprintf(`  %s > "$Local:setupTmpFile.txt"`, setupFunctionName),
+			fmt.Sprintf(`  %s > "$Local:setupTmpFile"`, setupFunctionName),
 			`  Copy-Item "$Local:setupTmpFile" "$Local:setupTmpFile.txt"`,
 			`  Write-Output "setup $Local:setupTmpFile"`,
 			`  Write-Output "setup.txt $Local:setupTmpFile.txt"`,
