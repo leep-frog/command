@@ -777,7 +777,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "FileCompleter with Complexecute fails if multiple options (autofilling letters) with suffix char",
 			etc: &ExecuteTestCase{
-				OS:   &FakeOS{AddsSpace: true},
+				OS:   &FakeOS{NoSpace: false},
 				Node: SerialNodes(FileArgument("s", testDesc, Complexecute[string]())),
 				Args: []string{"ca"},
 				wantInput: &Input{
@@ -792,7 +792,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "FileCompleter with Complexecute fails if multiple options (autofilling letters) with no suffix char",
 			etc: &ExecuteTestCase{
-				OS:   &FakeOS{AddsSpace: false},
+				OS:   &FakeOS{NoSpace: true},
 				Node: SerialNodes(FileArgument("s", testDesc, Complexecute[string]())),
 				Args: []string{"ca"},
 				wantInput: &Input{

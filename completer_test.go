@@ -664,7 +664,9 @@ func (test *completerTest[T]) Name() string {
 
 func (test *completerTest[T]) run(t *testing.T) {
 	t.Run(test.name, func(t *testing.T) {
-		fos := &FakeOS{!test.doesntAddSpace}
+		fos := &FakeOS{
+			NoSpace: test.doesntAddSpace,
+		}
 		if test.getwd != nil {
 			StubValue(t, &osGetwd, test.getwd)
 		}

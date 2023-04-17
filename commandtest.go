@@ -546,8 +546,9 @@ func FilepathAbs(t *testing.T, s ...string) string {
 
 // FakeOS is a fake OS that can be used for testing purposes.
 type FakeOS struct {
-	// AddsSpace is the bit for the `AddsSpaceToSingleAutocompletion` function
-	AddsSpace bool
+	// NoSpace is the flipped bit for the `AddsSpaceToSingleAutocompletion` function.
+	// The field is `NoSpace` so the default value is true.
+	NoSpace bool
 }
 
 func (*FakeOS) SetEnvVar(variable, value string) string {
@@ -559,5 +560,5 @@ func (*FakeOS) UnsetEnvVar(variable string) string {
 }
 
 func (fos *FakeOS) AddsSpaceToSingleAutocompletion() bool {
-	return fos.AddsSpace
+	return !fos.NoSpace
 }
