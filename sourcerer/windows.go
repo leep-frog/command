@@ -94,12 +94,12 @@ func (*windows) executeFunction(targetName, cliName string, setup []string) stri
 		}, "\n")
 		runnerLine = strings.Join([]string{
 			`  $Local:setupTmpFile = New-TemporaryFile`,
+			fmt.Sprintf(`  %s > "$Local:setupTmpFile.txt"`, setupFunctionName),
 			`  Copy-Item "$Local:setupTmpFile" "$Local:setupTmpFile.txt"`,
 			`  Write-Output "setup $Local:setupTmpFile"`,
 			`  Write-Output "setup.txt $Local:setupTmpFile.txt"`,
-			fmt.Sprintf(`  %s > "$Local:setupTmpFile.txt"`, setupFunctionName),
 			// Same as original command, but with the $Local:setupTmpFile provided as the first regular argument
-			fmt.Sprintf(`  & $env:GOPATH/bin/_%s_runner.exe execute %q $Local:tmpFile $Local:setupTmpFile $args`, targetName, cliName),
+			fmt.Sprintf(`  & $env:GOPATH/bin/_%s_runner.exe execute %q $Local:tmpFile "$Local:setupTmpFile.txt" $args`, targetName, cliName),
 		}, "\n")
 	}
 	return strings.Join([]string{
