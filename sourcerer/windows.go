@@ -25,7 +25,10 @@ var (
 		`function %s {`,
 		`  $Local:o = New-TemporaryFile`,
 		`  %s > $Local:o`,
-		`  _custom_execute_%s %s $Local:o $args`,
+		`  Copy-Item "$Local:o" "$Local:o.txt"`,
+		`  Write-Output "setup: $Local:o"`,
+		`  Write-Output "setup.txt: $Local:o.txt"`,
+		`  _custom_execute_%s %s "$Local:o.txt" $args`,
 		`}`,
 	}, "\n")
 	windowsSetupFunctionFormat = strings.Join([]string{
