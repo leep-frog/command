@@ -166,10 +166,18 @@ func (w *windows) RegisterAliaser(output command.Output, a *Aliaser) {
 	}
 	quotedArgs := strings.Join(qas, " ")
 
+	// Recursively passing `$args` sometimes lumps all args as one parameter. The expression
+	// object is used in conjunction with `Invoke-Expression` to get around this issue.
+	expression := `($Local:functionName $args)`
+	if len(quotedArgs) > 0 {
+		expression = fmt.Sprintf(`($Local:functionName + " " + %s + " " + $args)`, strings.Join(qas, ` + " " + `))
+	}
+
 	output.Stdoutln(strings.Join([]string{
 		// Create the execute function
 		fmt.Sprintf(`function _sourcerer_alias_execute_%s {`, a.alias),
-		fmt.Sprintf(` & %s %s $args`, a.cli, quotedArgs),
+		fmt.Sprintf(`  $Local:functionName = "$((Get-Alias %q).DEFINITION)"`, a.cli),
+		fmt.Sprintf(`  Invoke-Expression %s`, expression),
 		`}`,
 		// Create the autocomplete function
 		fmt.Sprintf(`$_sourcerer_alias_autocomplete_%s = {`, a.alias),
