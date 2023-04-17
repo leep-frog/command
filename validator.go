@@ -67,6 +67,19 @@ func ValidatorList[T any](vo *ValidatorOption[T]) *ValidatorOption[[]T] {
 	}
 }
 
+// Not [`ValidatorOption`] inverts the provided validator.
+func Not[T any](vo *ValidatorOption[T]) *ValidatorOption[T] {
+	return &ValidatorOption[T]{
+		func(t T, d *Data) error {
+			if err := vo.Validate(t, d); err == nil {
+				return fmt.Errorf("[Not(%s)] failed", vo.Usage)
+			}
+			return nil
+		},
+		fmt.Sprintf("Not(%s)", vo.Usage),
+	}
+}
+
 // Contains [`ValidatorOption`] validates an argument contains the provided string.
 func Contains(s string) *ValidatorOption[string] {
 	return &ValidatorOption[string]{

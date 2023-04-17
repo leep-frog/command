@@ -98,7 +98,7 @@ type ExecuteTestCase struct {
 	testInput bool
 	wantInput *Input
 
-	// WantRunContents are the set of commands that should have been run in bash.
+	// WantRunContents are the set of shell commands that should have been run.
 	WantRunContents []*RunContents
 
 	// RequiresSetup indicates whether or not the command requires setup
@@ -117,7 +117,7 @@ func (etc *ExecuteTestCase) getEnv() map[string]string {
 	return etc.Env
 }
 
-// FakeRun is a fake bash run.
+// FakeRun is a fake shell command run.
 type FakeRun struct {
 	Stdout []string
 	Stderr []string
@@ -275,7 +275,7 @@ type CompleteTestCase struct {
 	// RunResponses are the stubbed responses to return from exec.Cmd.Run.
 	RunResponses []*FakeRun
 
-	// WantRunContents are the set of commands that should have been run in bash.
+	// WantRunContents are the set of shell commands that should have been run.
 	WantRunContents []*RunContents
 }
 
@@ -458,7 +458,7 @@ func (rrt *runResponseTester) check(t *testing.T, tc *testContext) {
 
 	// Check proper commands were run.
 	if diff := cmp.Diff(rrt.want, rrt.gotRunContents); diff != "" {
-		t.Errorf("%s produced unexpected bash commands:\n%s", tc.prefix, diff)
+		t.Errorf("%s produced unexpected shell commands:\n%s", tc.prefix, diff)
 	}
 }
 

@@ -17,7 +17,7 @@ import (
 
 var (
 	fileArg         = command.FileArgument("FILE", "Temporary file for execution")
-	targetNameArg   = command.OptionalArg[string]("TARGET_NAME", "The name of the created target in $GOPATH/bin")
+	targetNameArg   = command.OptionalArg[string]("TARGET_NAME", "The name of the created target in $GOPATH/bin", command.Default("leep-frog-source"), command.Not(command.Contains("_")))
 	passthroughArgs = command.ListArg[string]("ARG", "Arguments that get passed through to relevant CLI command", 0, command.UnboundedList)
 	// See the below link for more details on COMP_* details:
 	// https://www.gnu.org/software/bash/manual/html_node/Bash-Variables.html#Bash-Variables
@@ -338,7 +338,7 @@ var (
 )
 
 func (s *sourcerer) generateFile(o command.Output, d *command.Data) error {
-	targetName := targetNameArg.GetOrDefault(d, "leep-frog-source")
+	targetName := targetNameArg.Get(d)
 
 	// cd into the directory of the file that is actually calling this and install dependencies.
 	if !loadOnlyFlag.Get(d) {

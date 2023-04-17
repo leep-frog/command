@@ -14,5 +14,5 @@ func main() {
 		&UpdateLeepPackageCommand{},
 		&UsageCommand{},
 		&Eko{},
-	}, goleep.Aliasers())
+	}, /*Ugoleep.Aliasers()*/ EkoAliasers())
 }

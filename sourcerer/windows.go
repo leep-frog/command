@@ -150,9 +150,40 @@ func (w *windows) FunctionWrap(fn string) string {
 }
 
 // TODO: Aliasers
-func (w *windows) GlobalAliaserFunc(command.Output)         {}
-func (w *windows) VerifyAliaser(command.Output, *Aliaser)   {}
-func (w *windows) RegisterAliaser(command.Output, *Aliaser) {}
+func (w *windows) GlobalAliaserFunc(command.Output) {}
+func (w *windows) VerifyAliaser(output command.Output, a *Aliaser) {
+	output.Stdoutln(strings.Join([]string{
+		fmt.Sprintf(`if (!(Get-Alias %s | where {$_.DEFINITION -match "_custom_execute"}).NAME) {`, a.cli),
+		fmt.Sprintf(`  throw "The CLI provided (%s) is not a sourcerer-generated command"`, a.cli),
+		`}`,
+	}, "\n"))
+}
+
+func (w *windows) RegisterAliaser(output command.Output, a *Aliaser) {
+	var qas []string
+	for _, v := range a.values {
+		qas = append(qas, fmt.Sprintf("%q", v))
+	}
+	quotedArgs := strings.Join(qas, " ")
+
+	output.Stdoutln(strings.Join([]string{
+		// Create the execute function
+		fmt.Sprintf(`function _sourcerer_alias_execute_%s {`, a.alias),
+		fmt.Sprintf(` & %s %s $args`, a.cli, quotedArgs),
+		`}`,
+		// Create the autocomplete function
+		fmt.Sprintf(`$_sourcerer_alias_autocomplete_%s = {`, a.alias),
+		`  param($wordToComplete, $commandAst, $compPoint)`,
+		// targetNameArg ensures the target doesn't contain a '_' character
+		fmt.Sprintf(`  $Local:def = ((Get-Alias %s).DEFINITION -split "_").Get(3)`, a.cli),
+		fmt.Sprintf(`  (Invoke-Expression '& $env:GOPATH\bin\_${Local:def}_runner.exe autocomplete %q "0" $compPoint "$commandAst" %s') | ForEach-Object {`, a.cli, quotedArgs),
+		`    $_`,
+		`  }`,
+		`}`,
+		fmt.Sprintf(`Set-Alias %s _sourcerer_alias_execute_%s`, a.alias, a.alias),
+		fmt.Sprintf("Register-ArgumentCompleter -CommandName %s -ScriptBlock $_sourcerer_alias_autocomplete_%s", a.alias, a.alias),
+	}, "\n"))
+}
 
 // TODO: Mancli
 func (w *windows) Mancli(cli string) []string { return nil }

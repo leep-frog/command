@@ -1995,6 +1995,43 @@ func TestExecute(t *testing.T) {
 				WantErr:    fmt.Errorf(`validation for "strArg" failed: [Contains] value doesn't contain substring "good"`),
 			},
 		},
+		// Not works
+		{
+			name: "not fails",
+			etc: &ExecuteTestCase{
+				Node: &SimpleNode{
+					Processor: Arg[string]("strArg", testDesc, Not(Contains("good"))),
+				},
+				Args: []string{"goodbye"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "goodbye"},
+					},
+				},
+				WantData: &Data{Values: map[string]interface{}{
+					"strArg": "goodbye",
+				}},
+				WantStderr: "validation for \"strArg\" failed: [Not(Contains(\"good\"))] failed\n",
+				WantErr:    fmt.Errorf(`validation for "strArg" failed: [Not(Contains("good"))] failed`),
+			},
+		},
+		{
+			name: "not works",
+			etc: &ExecuteTestCase{
+				Node: &SimpleNode{
+					Processor: Arg[string]("strArg", testDesc, Not(Contains("good"))),
+				},
+				Args: []string{"hello"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "hello"},
+					},
+				},
+				WantData: &Data{Values: map[string]interface{}{
+					"strArg": "hello",
+				}},
+			},
+		},
 		// MatchesRegex
 		{
 			name: "matches regex works",
