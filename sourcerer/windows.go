@@ -168,3 +168,7 @@ func (*windows) UnsetEnvVar(envVar string) string {
 func (*windows) AddsSpaceToSingleAutocompletion() bool {
 	return false
 }
+
+func (*windows) ShellCommandFileRunner(file string) (string, []string) {
+	return `powershell.exe`, []string{`-NoProfile`, file}
+}

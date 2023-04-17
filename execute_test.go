@@ -7411,8 +7411,6 @@ func TestComplete(t *testing.T) {
 					"_testdata_symlink/",
 					"arg.go",
 					"autocomplete.go",
-					"bash_node.go",
-					"bash_node_test.go",
 					"bool_operator.go",
 					"branch_node.go",
 					"cache.go",
@@ -7460,6 +7458,8 @@ func TestComplete(t *testing.T) {
 					"README.md",
 					"serial_nodes.go",
 					"setup.go",
+					"shell_command_node.go",
+					"shell_command_node_test.go",
 					"shortcut.go",
 					"shortcut_test.go",
 					"simple_node.go",
@@ -8161,22 +8161,18 @@ func TestComplete(t *testing.T) {
 				},
 			},
 		},
-		// BashNode
+		// ShellCommandNode
 		{
-			name: "BashNode runs in Completion context",
+			name: "ShellCommandNode runs in Completion context",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					&BashCommand[string]{ArgName: "b", Contents: []string{"echo haha"}},
+					&ShellCommand[string]{ArgName: "b", CommandName: "echo", Args: []string{"haha"}},
 					Arg[string]("s", testDesc),
 				),
 				RunResponses: []*FakeRun{{
 					Stdout: []string{"hehe"},
 				}},
-				WantRunContents: [][]string{{
-					"set -e",
-					"set -o pipefail",
-					"echo haha",
-				}},
+				WantRunContents: []*RunContents{{"echo", []string{"haha"}}},
 				WantData: &Data{Values: map[string]interface{}{
 					"b": "hehe",
 					"s": "",
@@ -8184,28 +8180,24 @@ func TestComplete(t *testing.T) {
 			},
 		},
 		{
-			name: "BashNode fails in Completion context",
+			name: "ShellCommandNode fails in Completion context",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					&BashCommand[string]{ArgName: "b", Contents: []string{"echo haha"}},
+					&ShellCommand[string]{ArgName: "b", CommandName: "echo", Args: []string{"haha"}},
 					Arg[string]("s", testDesc),
 				),
 				RunResponses: []*FakeRun{{
 					Err: fmt.Errorf("argh"),
 				}},
-				WantRunContents: [][]string{{
-					"set -e",
-					"set -o pipefail",
-					"echo haha",
-				}},
-				WantErr: fmt.Errorf("failed to execute bash command: argh"),
+				WantRunContents: []*RunContents{{"echo", []string{"haha"}}},
+				WantErr:         fmt.Errorf("failed to execute shell command: argh"),
 			},
 		},
 		{
-			name: "BashNode does not run in Completion context when option provided",
+			name: "ShellCommandNode does not run in Completion context when option provided",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					&BashCommand[string]{ArgName: "b", Contents: []string{"echo haha"}, DontRunOnComplete: true},
+					&ShellCommand[string]{ArgName: "b", CommandName: "echo", Args: []string{"haha"}, DontRunOnComplete: true},
 					Arg[string]("s", testDesc),
 				),
 				WantData: &Data{Values: map[string]interface{}{
@@ -8213,30 +8205,26 @@ func TestComplete(t *testing.T) {
 				}},
 			},
 		},
-		// BashCompleter
+		// ShellCommandCompleter
 		{
-			name: "BashCompleter doesn't complete if bash failure",
+			name: "ShellCommandCompleter doesn't complete if shell failure",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					Arg[string]("s", testDesc, BashCompleter[string]("echo abc def ghi")),
+					Arg[string]("s", testDesc, ShellCommandCompleter[string]("echo", "abc", "def", "ghi")),
 				),
 				RunResponses: []*FakeRun{{
 					Err: fmt.Errorf("oopsie"),
 				}},
-				WantRunContents: [][]string{{
-					"set -e",
-					"set -o pipefail",
-					"echo abc def ghi",
-				}},
-				WantErr:  fmt.Errorf("failed to fetch autocomplete suggestions with bash command: failed to execute bash command: oopsie"),
-				WantData: &Data{Values: map[string]interface{}{"s": ""}},
+				WantRunContents: []*RunContents{{"echo", []string{"abc", "def", "ghi"}}},
+				WantErr:         fmt.Errorf("failed to fetch autocomplete suggestions with shell command: failed to execute shell command: oopsie"),
+				WantData:        &Data{Values: map[string]interface{}{"s": ""}},
 			},
 		},
 		{
-			name: "BashCompleter completes even if wrong type returned (since just fetches string list)",
+			name: "ShellCommandCompleter completes even if wrong type returned (since just fetches string list)",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					Arg[int]("i", testDesc, BashCompleter[int]("echo abc def ghi")),
+					Arg[int]("i", testDesc, ShellCommandCompleter[int]("echo", "abc", "def", "ghi")),
 				),
 				RunResponses: []*FakeRun{{
 					Stdout: []string{
@@ -8250,19 +8238,15 @@ func TestComplete(t *testing.T) {
 					"def",
 					"ghi",
 				},
-				WantRunContents: [][]string{{
-					"set -e",
-					"set -o pipefail",
-					"echo abc def ghi",
-				}},
-				WantData: &Data{Values: map[string]interface{}{}},
+				WantRunContents: []*RunContents{{"echo", []string{"abc", "def", "ghi"}}},
+				WantData:        &Data{Values: map[string]interface{}{}},
 			},
 		},
 		{
-			name: "BashCompleter completes arg",
+			name: "ShellCommandCompleter completes arg",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(
-					Arg[string]("s", testDesc, BashCompleter[string]("echo abc def ghi")),
+					Arg[string]("s", testDesc, ShellCommandCompleter[string]("echo", "abc", "def", "ghi")),
 				),
 				RunResponses: []*FakeRun{{
 					Stdout: []string{
@@ -8276,21 +8260,17 @@ func TestComplete(t *testing.T) {
 					"def",
 					"ghi",
 				},
-				WantRunContents: [][]string{{
-					"set -e",
-					"set -o pipefail",
-					"echo abc def ghi",
-				}},
-				//WantErr: fmt.Errorf(`failed to fetch autocomplete suggestions with bash command: strconv.Atoi: parsing "abc def ghi": invalid syntax`),
+				WantRunContents: []*RunContents{{"echo", []string{"abc", "def", "ghi"}}},
+				//WantErr: fmt.Errorf(`failed to fetch autocomplete suggestions with shell command: strconv.Atoi: parsing "abc def ghi": invalid syntax`),
 				WantData: &Data{Values: map[string]interface{}{"s": ""}},
 			},
 		},
 		{
-			name: "BashCompleter completes arg with partial completion",
+			name: "ShellCommandCompleter completes arg with partial completion",
 			ctc: &CompleteTestCase{
 				Args: "cmd d",
 				Node: SerialNodes(
-					Arg[string]("s", testDesc, BashCompleter[string]("echo abc def ghi")),
+					Arg[string]("s", testDesc, ShellCommandCompleter[string]("echo", "abc", "def", "ghi")),
 				),
 				RunResponses: []*FakeRun{{
 					Stdout: []string{
@@ -8302,20 +8282,16 @@ func TestComplete(t *testing.T) {
 				Want: []string{
 					"def",
 				},
-				WantRunContents: [][]string{{
-					"set -e",
-					"set -o pipefail",
-					"echo abc def ghi",
-				}},
-				WantData: &Data{Values: map[string]interface{}{"s": "d"}},
+				WantRunContents: []*RunContents{{"echo", []string{"abc", "def", "ghi"}}},
+				WantData:        &Data{Values: map[string]interface{}{"s": "d"}},
 			},
 		},
 		{
-			name: "BashCompleter completes arg with opts",
+			name: "ShellCommandCompleter completes arg with opts",
 			ctc: &CompleteTestCase{
 				Args: "cmd abc ghi ",
 				Node: SerialNodes(
-					ListArg[string]("sl", testDesc, 1, 2, BashCompleterWithOpts[[]string](&Completion{Distinct: true}, "echo abc def ghi")),
+					ListArg[string]("sl", testDesc, 1, 2, ShellCommandCompleterWithOpts[[]string](&Completion{Distinct: true}, "echo", "abc", "def", "ghi")),
 				),
 				RunResponses: []*FakeRun{{
 					Stdout: []string{
@@ -8327,12 +8303,8 @@ func TestComplete(t *testing.T) {
 				Want: []string{
 					"def",
 				},
-				WantRunContents: [][]string{{
-					"set -e",
-					"set -o pipefail",
-					"echo abc def ghi",
-				}},
-				WantData: &Data{Values: map[string]interface{}{"sl": []string{"abc", "ghi", ""}}},
+				WantRunContents: []*RunContents{{"echo", []string{"abc", "def", "ghi"}}},
+				WantData:        &Data{Values: map[string]interface{}{"sl": []string{"abc", "ghi", ""}}},
 			},
 		},
 		// If tests

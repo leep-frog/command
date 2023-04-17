@@ -99,7 +99,7 @@ type ExecuteTestCase struct {
 	wantInput *Input
 
 	// WantRunContents are the set of commands that should have been run in bash.
-	WantRunContents [][]string
+	WantRunContents []*RunContents
 
 	// RequiresSetup indicates whether or not the command requires setup
 	RequiresSetup bool
@@ -276,7 +276,7 @@ type CompleteTestCase struct {
 	RunResponses []*FakeRun
 
 	// WantRunContents are the set of commands that should have been run in bash.
-	WantRunContents [][]string
+	WantRunContents []*RunContents
 }
 
 func (ctc *CompleteTestCase) getEnv() map[string]string {
@@ -414,39 +414,24 @@ func (it *inputTester) check(t *testing.T, tc *testContext) {
 
 type runResponseTester struct {
 	runResponses   []*FakeRun
-	want           [][]string
-	gotRunContents [][]string
+	want           []*RunContents
+	gotRunContents []*RunContents
 }
 
-var (
-	allowedCmdPaths = map[string]bool{
-		"bash":                                       true,
-		"C:\\msys64\\usr\\bin\\bash.exe":             true,
-		"C:\\Windows\\system32\\bash.exe":            true,
-		"C:\\WINDOWS\\system32\\bash.exe":            true,
-		"/usr/bin/bash":                              true,
-		"C:\\Program Files\\Git\\usr\\bin\\bash.exe": true,
-	}
-)
+type RunContents struct {
+	Name string
+	Args []string
+}
 
 func (rrt *runResponseTester) stubRunResponses(t *testing.T) func(cmd *exec.Cmd) error {
 	return func(cmd *exec.Cmd) error {
-		if !allowedCmdPaths[cmd.Path] {
-			t.Fatalf(`expected cmd path to be "bash"; got %q`, cmd.Path)
-		}
-		if len(cmd.Args) != 2 {
-			t.Fatalf("expected two args ('bash filename'), but got %v", cmd.Args)
-		}
 		if len(rrt.runResponses) == 0 {
 			t.Fatalf("ran out of stubbed run responses")
 		}
 
-		content, err := ioutil.ReadFile(cmd.Args[1])
-		if err != nil {
-			t.Fatalf("unable to read file: %v", err)
-		}
-		lines := strings.Split(string(content), "\n")
-		rrt.gotRunContents = append(rrt.gotRunContents, lines)
+		// `cmd.Args[0]` is used instead of `cmd.Path` because `cmd.Path` can be modified,
+		// like by msys for example.
+		rrt.gotRunContents = append(rrt.gotRunContents, &RunContents{cmd.Args[0], cmd.Args[1:]})
 
 		r := rrt.runResponses[0]
 		rrt.runResponses = rrt.runResponses[1:]

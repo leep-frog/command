@@ -23,6 +23,10 @@ type OS interface {
 	// NOTE: This is *NOT* a feature that this package implements, but rather
 	// information needed by this package for it to work properly.
 	AddsSpaceToSingleAutocompletion() bool
+
+	// ShellCommandFileRunner returns the command and command arguments
+	// to run a file in the shell
+	// ShellCommandFileRunner(file string) (string, []string)
 }
 
 // Data contains argument data.

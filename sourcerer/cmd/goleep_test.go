@@ -46,10 +46,15 @@ func TestGoLeep(t *testing.T) {
 					"c",
 				},
 				RunResponses: []*command.FakeRun{{}},
-				WantRunContents: [][]string{{
-					"set -e",
-					"set -o pipefail",
-					`go run . "execute" "c" TMP_FILE`,
+				WantRunContents: []*command.RunContents{{
+					Name: `go`,
+					Args: []string{
+						`run`,
+						`.`,
+						"execute",
+						"c",
+						`TMP_FILE`,
+					},
 				}},
 				WantData: &command.Data{Values: map[string]interface{}{
 					goleepCLIArg.Name(): "c",
@@ -66,10 +71,15 @@ func TestGoLeep(t *testing.T) {
 					filepath.Join("..", "..", "testdata"),
 				},
 				RunResponses: []*command.FakeRun{{}},
-				WantRunContents: [][]string{{
-					"set -e",
-					"set -o pipefail",
-					fmt.Sprintf(`go run %s "execute" "dc" TMP_FILE`, filepath.Join("..", "..", "testdata")),
+				WantRunContents: []*command.RunContents{{
+					Name: `go`,
+					Args: []string{
+						`run`,
+						filepath.Join("..", "..", "testdata"),
+						"execute",
+						"dc",
+						`TMP_FILE`,
+					},
 				}},
 				WantData: &command.Data{Values: map[string]interface{}{
 					goleepCLIArg.Name(): "dc",
@@ -88,10 +98,15 @@ func TestGoLeep(t *testing.T) {
 					"ec",
 				},
 				RunResponses: []*command.FakeRun{{}},
-				WantRunContents: [][]string{{
-					"set -e",
-					"set -o pipefail",
-					`go run . "execute" "ec" TMP_FILE`,
+				WantRunContents: []*command.RunContents{{
+					Name: `go`,
+					Args: []string{
+						`run`,
+						`.`,
+						"execute",
+						"ec",
+						`TMP_FILE`,
+					},
 				}},
 				WantExecuteData: &command.ExecuteData{
 					Executable: []string{
@@ -123,10 +138,15 @@ func TestGoLeep(t *testing.T) {
 				}},
 				WantStdout: "hello there\ngeneral Kenobi",
 				WantStderr: "goodbye then\ngeneral Grevious",
-				WantRunContents: [][]string{{
-					"set -e",
-					"set -o pipefail",
-					`go run . "execute" "sc" TMP_FILE`,
+				WantRunContents: []*command.RunContents{{
+					Name: `go`,
+					Args: []string{
+						`run`,
+						`.`,
+						"execute",
+						"sc",
+						`TMP_FILE`,
+					},
 				}},
 				WantData: &command.Data{Values: map[string]interface{}{
 					goleepCLIArg.Name(): "sc",
@@ -135,7 +155,7 @@ func TestGoLeep(t *testing.T) {
 			},
 		},
 		{
-			name: "handles bash command error",
+			name: "handles shell command error",
 			etc: &command.ExecuteTestCase{
 				Args: []string{
 					"bc",
@@ -154,13 +174,18 @@ func TestGoLeep(t *testing.T) {
 				WantStdout: "hello there\ngeneral Kenobi",
 				WantStderr: strings.Join([]string{
 					"goodbye then\ngeneral Grevious",
-					"failed to run bash script: failed to execute bash command: bad news bears\n",
+					"failed to run shell script: failed to execute shell command: bad news bears\n",
 				}, ""),
-				WantErr: fmt.Errorf("failed to run bash script: failed to execute bash command: bad news bears"),
-				WantRunContents: [][]string{{
-					"set -e",
-					"set -o pipefail",
-					`go run . "execute" "bc" TMP_FILE`,
+				WantErr: fmt.Errorf("failed to run shell script: failed to execute shell command: bad news bears"),
+				WantRunContents: []*command.RunContents{{
+					Name: `go`,
+					Args: []string{
+						`run`,
+						`.`,
+						"execute",
+						"bc",
+						`TMP_FILE`,
+					},
 				}},
 				WantData: &command.Data{Values: map[string]interface{}{
 					goleepCLIArg.Name(): "bc",
@@ -177,10 +202,17 @@ func TestGoLeep(t *testing.T) {
 					"arg2",
 				},
 				RunResponses: []*command.FakeRun{{}},
-				WantRunContents: [][]string{{
-					"set -e",
-					"set -o pipefail",
-					`go run . "execute" "c" TMP_FILE arg1 arg2`,
+				WantRunContents: []*command.RunContents{{
+					Name: `go`,
+					Args: []string{
+						`run`,
+						`.`,
+						"execute",
+						"c",
+						`TMP_FILE`,
+						"arg1",
+						"arg2",
+					},
 				}},
 				WantData: &command.Data{Values: map[string]interface{}{
 					goleepCLIArg.Name(): "c",
@@ -223,7 +255,7 @@ func TestGoLeep(t *testing.T) {
 				},
 				WantExecuteData: &command.ExecuteData{
 					Executable: []string{
-						`go run . "usage" "c"`,
+						`go run . usage "c"`,
 					},
 				},
 				WantData: &command.Data{Values: map[string]interface{}{
@@ -243,7 +275,7 @@ func TestGoLeep(t *testing.T) {
 				},
 				WantExecuteData: &command.ExecuteData{
 					Executable: []string{
-						fmt.Sprintf(`go run %s "usage" "c"`, filepath.Join("..", "..", "color")),
+						fmt.Sprintf(`go run %s usage "c"`, filepath.Join("..", "..", "color")),
 					},
 				},
 				WantData: &command.Data{Values: map[string]interface{}{
@@ -273,8 +305,10 @@ func TestGoLeep(t *testing.T) {
 			}
 
 			for _, sets := range test.etc.WantRunContents {
-				for i, line := range sets {
-					sets[i] = strings.ReplaceAll(line, "TMP_FILE", filepath.ToSlash(f.Name()))
+				for i, a := range sets.Args {
+					if a == "TMP_FILE" {
+						sets.Args[i] = filepath.ToSlash(f.Name())
+					}
 				}
 			}
 
@@ -315,10 +349,13 @@ func TestGoLeepAutocomplete(t *testing.T) {
 						Stdout: []string{"cliOne", "cliTwo", "cliThree"},
 					},
 				},
-				WantRunContents: [][]string{{
-					"set -e",
-					"set -o pipefail",
-					`go run . "listCLIs"`,
+				WantRunContents: []*command.RunContents{{
+					Name: `go`,
+					Args: []string{
+						`run`,
+						`.`,
+						`listCLIs`,
+					},
 				}},
 				Want: []string{
 					"cliOne",
@@ -340,10 +377,17 @@ func TestGoLeepAutocomplete(t *testing.T) {
 						Stdout: []string{"un", "deux", "trois"},
 					},
 				},
-				WantRunContents: [][]string{{
-					"set -e",
-					"set -o pipefail",
-					`go run . "autocomplete" "acli" 63 13 "dummyCommand "`,
+				WantRunContents: []*command.RunContents{{
+					Name: `go`,
+					Args: []string{
+						`run`,
+						`.`,
+						`autocomplete`,
+						`acli`,
+						`63`,
+						`13`,
+						`dummyCommand `,
+					},
 				}},
 				Want: []string{
 					"deux",
@@ -366,10 +410,17 @@ func TestGoLeepAutocomplete(t *testing.T) {
 						Stdout: []string{"un", "deux", "trois", "de'finitely"},
 					},
 				},
-				WantRunContents: [][]string{{
-					"set -e",
-					"set -o pipefail",
-					`go run . "autocomplete" "aCLI" 63 21 "dummyCommand abc de'f"`,
+				WantRunContents: []*command.RunContents{{
+					Name: `go`,
+					Args: []string{
+						`run`,
+						`.`,
+						`autocomplete`,
+						`aCLI`,
+						`63`,
+						`21`,
+						`dummyCommand abc de'f`,
+					},
 				}},
 				Want: []string{
 					"de'finitely",
@@ -391,11 +442,18 @@ func TestGoLeepAutocomplete(t *testing.T) {
 						Stdout: []string{"un", "deux", "trois"},
 					},
 				},
-				WantErr: fmt.Errorf(`failed to run goleep completion: failed to execute bash command: whoops`),
-				WantRunContents: [][]string{{
-					"set -e",
-					"set -o pipefail",
-					`go run . "autocomplete" "someCLI" 63 13 "dummyCommand "`,
+				WantErr: fmt.Errorf(`failed to run goleep completion: failed to execute shell command: whoops`),
+				WantRunContents: []*command.RunContents{{
+					Name: `go`,
+					Args: []string{
+						`run`,
+						`.`,
+						`autocomplete`,
+						`someCLI`,
+						`63`,
+						`13`,
+						`dummyCommand `,
+					},
 				}},
 				WantData: &command.Data{Values: map[string]interface{}{
 					goDirectory.Name():   ".",
@@ -416,16 +474,23 @@ func TestGoLeepAutocomplete(t *testing.T) {
 					},
 				},
 				WantErr: fmt.Errorf(strings.Join([]string{
-					`failed to run goleep completion: failed to execute bash command: whoops`,
+					`failed to run goleep completion: failed to execute shell command: whoops`,
 					``,
 					`Stderr:`,
 					`argh`,
 					`matey`,
 				}, "\n")),
-				WantRunContents: [][]string{{
-					"set -e",
-					"set -o pipefail",
-					`go run . "autocomplete" "someCLI" 63 13 "dummyCommand "`,
+				WantRunContents: []*command.RunContents{{
+					Name: `go`,
+					Args: []string{
+						`run`,
+						`.`,
+						`autocomplete`,
+						`someCLI`,
+						`63`,
+						`13`,
+						`dummyCommand `,
+					},
 				}},
 				WantData: &command.Data{Values: map[string]interface{}{
 					goDirectory.Name():   ".",

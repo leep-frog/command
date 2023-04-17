@@ -253,6 +253,10 @@ func (*linux) AddsSpaceToSingleAutocompletion() bool {
 	return true
 }
 
+func (*linux) ShellCommandFileRunner(file string) (string, []string) {
+	return `bash`, []string{file}
+}
+
 /*
 // autocompleteForAliasFunction
 	// See AliaserCommand.
