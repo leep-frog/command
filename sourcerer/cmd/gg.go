@@ -82,5 +82,6 @@ func (*UpdateLeepPackageCommand) Node() command.Node {
 			}
 			return r, nil
 		}),
+		command.EchoExecuteData(),
 	)
 }
