@@ -29,6 +29,17 @@ var (
 	}, "\n")
 )
 
+func (w *windows) setAlias(alias, value, completer string) string {
+	return strings.Join([]string{
+		// Delete the alias if it exists
+		fmt.Sprintf("(Get-Alias) | Where { $_.NAME -match '^%s$'} | ForEach-Object { del alias:${_} -Force }", alias),
+		// Set the alias
+		fmt.Sprintf("Set-Alias %s %s", alias, value),
+		// Register the autocompleter
+		fmt.Sprintf("Register-ArgumentCompleter -CommandName %s -ScriptBlock $%s", alias, completer),
+	}, "\n")
+}
+
 func (*windows) Name() string {
 	return "windows"
 }
@@ -84,7 +95,7 @@ func (*windows) autocompleteFunction(targetName string) string {
 	}, "\n")
 }
 
-func (*windows) executeFunction(targetName, cliName string, setup []string) string {
+func (w *windows) executeFunction(targetName, cliName string, setup []string) string {
 	runnerLine := fmt.Sprintf(`  & $env:GOPATH/bin/_%s_runner.exe execute %q $Local:tmpFile $args`, targetName, cliName)
 	var prefix string
 	if len(setup) > 0 {
@@ -123,8 +134,11 @@ func (*windows) executeFunction(targetName, cliName string, setup []string) stri
 		`}`,
 		// fmt.Sprintf(`_custom_execute_%s $args`, targetName),
 		``,
-		fmt.Sprintf("Set-Alias %s _custom_execute_%s_%s", cliName, targetName, cliName),
-		fmt.Sprintf("Register-ArgumentCompleter -CommandName %s -ScriptBlock $_custom_autocomplete_%s\n", cliName, targetName),
+		w.setAlias(
+			cliName,
+			fmt.Sprintf("_custom_execute_%s_%s", targetName, cliName),
+			fmt.Sprintf("_custom_autocomplete_%s", targetName),
+		),
 	}, "\n")
 }
 
@@ -188,8 +202,11 @@ func (w *windows) RegisterAliaser(output command.Output, a *Aliaser) {
 		`    $_`,
 		`  }`,
 		`}`,
-		fmt.Sprintf(`Set-Alias %s _sourcerer_alias_execute_%s`, a.alias, a.alias),
-		fmt.Sprintf("Register-ArgumentCompleter -CommandName %s -ScriptBlock $_sourcerer_alias_autocomplete_%s", a.alias, a.alias),
+		w.setAlias(
+			a.alias,
+			fmt.Sprintf("_sourcerer_alias_execute_%s", a.alias),
+			fmt.Sprintf("_sourcerer_alias_autocomplete_%s", a.alias),
+		),
 	}, "\n"))
 }
 
