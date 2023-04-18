@@ -54,7 +54,6 @@ func (*UpdateLeepPackageCommand) Node() command.Node {
 						"ls-remote",
 						fmt.Sprintf("git@github.com:leep-frog/%s.git", p),
 					},
-					ForwardStdout: true,
 				}
 				result, err := sc.Run(o, d)
 				if err != nil {
