@@ -215,8 +215,10 @@ func ExecuteTest(t *testing.T, etc *ExecuteTestCase) {
 }
 
 func write(t *testing.T, iow io.Writer, contents []string) {
-	if _, err := bytes.NewBufferString(strings.Join(contents, "\n")).WriteTo(iow); err != nil {
-		t.Fatalf("failed to write buffer to io.Writer: %v", err)
+	for _, c := range contents {
+		if _, err := bytes.NewBufferString(fmt.Sprintf("%s\n", c)).WriteTo(iow); err != nil {
+			t.Fatalf("failed to write buffer to io.Writer: %v", err)
+		}
 	}
 }
 

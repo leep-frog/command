@@ -33,9 +33,11 @@ func TestShellCommand(t *testing.T) {
 				WantRunContents: []*RunContents{{"echo", []string{"hello"}}},
 				WantErr:         fmt.Errorf("failed to execute shell command: oops"),
 				WantStderr: strings.Join([]string{
-					"un\ndeux\ntrois",
+					"un",
+					"deux",
+					"trois",
 					"failed to execute shell command: oops\n",
-				}, ""),
+				}, "\n"),
 				RunResponses: []*FakeRun{
 					{
 						Stdout: []string{"one", "two", "three"},
@@ -95,7 +97,7 @@ func TestShellCommand(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"s": "aloha",
 				}},
-				WantStderr: "ahola",
+				WantStderr: "ahola\n",
 				RunResponses: []*FakeRun{
 					{
 						Stdout: []string{"aloha"},
@@ -141,7 +143,44 @@ func TestShellCommand(t *testing.T) {
 			etc: &ExecuteTestCase{
 				Node:            SerialNodes(&ShellCommand[[]string]{ArgName: "s", CommandName: "echo", Args: []string{"hello"}, ForwardStdout: true}),
 				WantRunContents: []*RunContents{{"echo", []string{"hello"}}},
-				WantStdout:      "aloha\nhello there\nhowdy",
+				WantStdout:      "aloha\nhello there\nhowdy\n",
+				WantData: &Data{Values: map[string]interface{}{
+					"s": []string{"aloha", "hello there", "howdy"},
+				}},
+				RunResponses: []*FakeRun{
+					{
+						Stdout: []string{"aloha", "hello there", "howdy"},
+					},
+				},
+			},
+		},
+		{
+			name: "shell node with output streamer",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					&ShellCommand[[]string]{
+						ArgName:       "s",
+						CommandName:   "echo",
+						Args:          []string{"hello"},
+						ForwardStdout: true,
+						OutputStreamProcessor: func(o Output, d *Data, s string) error {
+							o.Stdoutf("Streamer received: %s", s)
+							return nil
+						},
+					},
+				),
+				WantRunContents: []*RunContents{{"echo", []string{
+					"hello",
+				}}},
+				WantStdout: strings.Join([]string{
+					"aloha",
+					"Streamer received: aloha",
+					"hello there",
+					"Streamer received: hello there",
+					"howdy",
+					"Streamer received: howdy",
+					"",
+				}, "\n"),
 				WantData: &Data{Values: map[string]interface{}{
 					"s": []string{"aloha", "hello there", "howdy"},
 				}},

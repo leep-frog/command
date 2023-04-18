@@ -136,8 +136,8 @@ func TestGoLeep(t *testing.T) {
 						"general Grevious",
 					},
 				}},
-				WantStdout: "hello there\ngeneral Kenobi",
-				WantStderr: "goodbye then\ngeneral Grevious",
+				WantStdout: "hello there\ngeneral Kenobi\n",
+				WantStderr: "goodbye then\ngeneral Grevious\n",
 				WantRunContents: []*command.RunContents{{
 					Name: `go`,
 					Args: []string{
@@ -171,11 +171,13 @@ func TestGoLeep(t *testing.T) {
 						"general Grevious",
 					},
 				}},
-				WantStdout: "hello there\ngeneral Kenobi",
+				WantStdout: "hello there\ngeneral Kenobi\n",
 				WantStderr: strings.Join([]string{
-					"goodbye then\ngeneral Grevious",
-					"failed to run shell script: failed to execute shell command: bad news bears\n",
-				}, ""),
+					"goodbye then",
+					"general Grevious",
+					"failed to run shell script: failed to execute shell command: bad news bears",
+					"",
+				}, "\n"),
 				WantErr: fmt.Errorf("failed to run shell script: failed to execute shell command: bad news bears"),
 				WantRunContents: []*command.RunContents{{
 					Name: `go`,
@@ -479,6 +481,7 @@ func TestGoLeepAutocomplete(t *testing.T) {
 					`Stderr:`,
 					`argh`,
 					`matey`,
+					``,
 				}, "\n")),
 				WantRunContents: []*command.RunContents{{
 					Name: `go`,

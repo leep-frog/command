@@ -33,13 +33,20 @@ func ShellCommandCompleterWithOpts[T any](opts *Completion, name string, args ..
 		if err != nil {
 			return nil, fmt.Errorf("failed to fetch autocomplete suggestions with shell command: %v", err)
 		}
+		var filtered []string
+		for _, r := range resp {
+			f := strings.TrimSpace(r)
+			if f != "" {
+				filtered = append(filtered, f)
+			}
+		}
 		if opts == nil {
 			return &Completion{
-				Suggestions: resp,
+				Suggestions: filtered,
 			}, nil
 		}
 		c := opts.Clone()
-		c.Suggestions = resp
+		c.Suggestions = filtered
 		return c, nil
 	}}
 }
@@ -64,6 +71,8 @@ type ShellCommand[T any] struct {
 	ForwardStdout bool
 	// DontRunOnComplete indicates whether or not the shell command should be run when we are completing a command arg.
 	DontRunOnComplete bool
+	// OutputStreamProcessor is a function that will be run with every item written to stdout.
+	OutputStreamProcessor func(Output, *Data, string) error
 }
 
 // TODO: This from `ShellCommandFileRunner`
@@ -154,18 +163,32 @@ func (bn *ShellCommand[T]) execute(output Output, data *Data) error {
 	return nil
 }
 
+type outputStreamer struct {
+	f func(Output, *Data, string) error
+	d *Data
+	o Output
+}
+
+func (os *outputStreamer) Write(b []byte) (int, error) {
+	return len(b), os.f(os.o, os.d, string(b))
+}
+
 // Run runs the `ShellCommand` with the provided `Output` object.
 func (bn *ShellCommand[T]) Run(output Output, data *Data) (T, error) {
 	var nill T
 
 	// Execute the command
 	var rawOut bytes.Buffer
+	stdoutWriters := []io.Writer{&rawOut}
 	cmd := exec.Command(bn.CommandName, bn.Args...)
-	if !bn.ForwardStdout || output == nil {
-		cmd.Stdout = &rawOut
-	} else {
-		cmd.Stdout = io.MultiWriter(StdoutWriter(output), &rawOut)
+	if bn.ForwardStdout && output != nil {
+		stdoutWriters = append(stdoutWriters, StdoutWriter(output))
 	}
+	if bn.OutputStreamProcessor != nil {
+		stdoutWriters = append(stdoutWriters, &outputStreamer{bn.OutputStreamProcessor, data, output})
+	}
+	cmd.Stdout = io.MultiWriter(stdoutWriters...)
+
 	if bn.HideStderr || output == nil {
 		cmd.Stderr = DevNull()
 	} else {
@@ -200,16 +223,14 @@ func outToSlice(rawOut bytes.Buffer) ([]*string, error) {
 	var err error
 	var sl []*string
 	var s string
-	var atLeastOnce bool
 	for s, err = rawOut.ReadString('\n'); err != io.EOF; s, err = rawOut.ReadString('\n') {
-		atLeastOnce = true
 		k := strings.TrimSpace(s)
 		sl = append(sl, &k)
 	}
 	if err != io.EOF {
 		return nil, fmt.Errorf("failed to read output: %v", err)
 	}
-	if atLeastOnce || s != "" {
+	if s != "" {
 		s = strings.TrimSpace(s)
 		sl = append(sl, &s)
 	}

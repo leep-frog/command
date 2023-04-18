@@ -73,7 +73,7 @@ func (*UpdateLeepPackageCommand) Node() command.Node {
 				}
 
 				if sha == "" {
-					o.Stderrf("No main or master branch: %v", branches)
+					o.Stderrf("No main or master branch for package %q: %v\n", p, branches)
 					continue
 				}
 

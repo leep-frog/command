@@ -1,11 +1,23 @@
 package main
 
 import (
+	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/leep-frog/command"
 )
+
+func rc(pkg string) *command.RunContents {
+	return &command.RunContents{
+		Name: "git",
+		Args: []string{
+			"ls-remote",
+			fmt.Sprintf("git@github.com:leep-frog/%s.git", pkg),
+		},
+	}
+}
 
 func TestGG(t *testing.T) {
 	for _, test := range []struct {
@@ -23,12 +35,84 @@ func TestGG(t *testing.T) {
 						"some-package",
 					},
 				}},
-				WantExecuteData: &command.ExecuteData{
-					Executable: []string{
-						`local commitSha="$(git ls-remote git@github.com:leep-frog/some-package.git | grep ma[is][nt] | awk '{print $1}')"`,
-						`go get -v "github.com/leep-frog/some-package@$commitSha"`,
+				WantRunContents: []*command.RunContents{
+					rc("some-package"),
+				},
+				RunResponses: []*command.FakeRun{
+					{
+						Stdout: []string{
+							"1234567890abcdef HEAD",
+							"246810 refs/heads/main",
+						},
 					},
 				},
+				WantStdout: strings.Join([]string{
+					`go get -v "github.com/leep-frog/some-package@246810"`,
+					``,
+				}, "\n"),
+				WantExecuteData: &command.ExecuteData{
+					Executable: []string{
+						`go get -v "github.com/leep-frog/some-package@246810"`,
+					},
+				},
+			},
+		},
+		{
+			name: "Handles no known main branch",
+			etc: &command.ExecuteTestCase{
+				Args: []string{
+					"some-package",
+				},
+				WantData: &command.Data{Values: map[string]interface{}{
+					packageArg.Name(): []string{
+						"some-package",
+					},
+				}},
+				WantRunContents: []*command.RunContents{
+					rc("some-package"),
+				},
+				RunResponses: []*command.FakeRun{
+					{
+						Stdout: []string{
+							"1234567890abcdef HEAD",
+							"246810abdabdbadb FOOT",
+						},
+					},
+				},
+				WantStderr: strings.Join([]string{
+					`No main or master branch for package "some-package": [HEAD FOOT]`,
+					``,
+				}, "\n"),
+			},
+		},
+		{
+			name: "Handles shell command error",
+			etc: &command.ExecuteTestCase{
+				Args: []string{
+					"some-package",
+				},
+				WantData: &command.Data{Values: map[string]interface{}{
+					packageArg.Name(): []string{
+						"some-package",
+					},
+				}},
+				WantRunContents: []*command.RunContents{
+					rc("some-package"),
+				},
+				RunResponses: []*command.FakeRun{
+					{
+						Stdout: []string{
+							"1234567890abcdef HEAD",
+							"246810abdabdbadb refs/heads/main",
+						},
+						Stderr: []string{"rats"},
+						Err:    fmt.Errorf("oops"),
+					},
+				},
+				WantStderr: strings.Join([]string{
+					"rats",
+					`Failed to fetch commit info for package "some-package"`,
+				}, "\n"),
 			},
 		},
 		{
@@ -46,14 +130,95 @@ func TestGG(t *testing.T) {
 						"usps",
 					},
 				}},
+				WantRunContents: []*command.RunContents{
+					rc("ups"),
+					rc("fedex"),
+					rc("usps"),
+				},
+				RunResponses: []*command.FakeRun{
+					{
+						Stdout: []string{
+							"1a refs/heads/main",
+						},
+					},
+					{
+						Stdout: []string{
+							"2b refs/heads/master",
+						},
+					},
+					{
+						Stdout: []string{
+							"3c refs/heads/main",
+						},
+					},
+				},
+				WantStdout: strings.Join([]string{
+					`go get -v "github.com/leep-frog/ups@1a"`,
+					`go get -v "github.com/leep-frog/fedex@2b"`,
+					`go get -v "github.com/leep-frog/usps@3c"`,
+					``,
+				}, "\n"),
 				WantExecuteData: &command.ExecuteData{
 					Executable: []string{
-						`local commitSha="$(git ls-remote git@github.com:leep-frog/ups.git | grep ma[is][nt] | awk '{print $1}')"`,
-						`go get -v "github.com/leep-frog/ups@$commitSha"`,
-						`local commitSha="$(git ls-remote git@github.com:leep-frog/fedex.git | grep ma[is][nt] | awk '{print $1}')"`,
-						`go get -v "github.com/leep-frog/fedex@$commitSha"`,
-						`local commitSha="$(git ls-remote git@github.com:leep-frog/usps.git | grep ma[is][nt] | awk '{print $1}')"`,
-						`go get -v "github.com/leep-frog/usps@$commitSha"`,
+						`go get -v "github.com/leep-frog/ups@1a"`,
+						`go get -v "github.com/leep-frog/fedex@2b"`,
+						`go get -v "github.com/leep-frog/usps@3c"`,
+					},
+				},
+			},
+		},
+		{
+			name: "Gets multiple packages with errors",
+			etc: &command.ExecuteTestCase{
+				Args: []string{
+					"ups",
+					"fedex",
+					"usps",
+				},
+				WantData: &command.Data{Values: map[string]interface{}{
+					packageArg.Name(): []string{
+						"ups",
+						"fedex",
+						"usps",
+					},
+				}},
+				WantRunContents: []*command.RunContents{
+					rc("ups"),
+					rc("fedex"),
+					rc("usps"),
+				},
+				RunResponses: []*command.FakeRun{
+					{
+						Stdout: []string{
+							"1a refs/heads/main",
+						},
+					},
+					{
+						Stdout: []string{
+							"2b refs/heads/main",
+						},
+						Stderr: []string{"who"},
+						Err:    fmt.Errorf("what"),
+					},
+					{
+						Stdout: []string{
+							"3c refs/heads/master",
+						},
+					},
+				},
+				WantStdout: strings.Join([]string{
+					`go get -v "github.com/leep-frog/ups@1a"`,
+					`go get -v "github.com/leep-frog/usps@3c"`,
+					``,
+				}, "\n"),
+				WantStderr: strings.Join([]string{
+					"who",
+					`Failed to fetch commit info for package "fedex"`,
+				}, "\n"),
+				WantExecuteData: &command.ExecuteData{
+					Executable: []string{
+						`go get -v "github.com/leep-frog/ups@1a"`,
+						`go get -v "github.com/leep-frog/usps@3c"`,
 					},
 				},
 			},
