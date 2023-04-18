@@ -72,7 +72,7 @@ type ShellCommand[T any] struct {
 	// DontRunOnComplete indicates whether or not the shell command should be run when we are completing a command arg.
 	DontRunOnComplete bool
 	// OutputStreamProcessor is a function that will be run with every item written to stdout.
-	OutputStreamProcessor func(Output, *Data, string) error
+	OutputStreamProcessor func(Output, *Data, []byte) error
 }
 
 // TODO: This from `ShellCommandFileRunner`
@@ -164,13 +164,13 @@ func (bn *ShellCommand[T]) execute(output Output, data *Data) error {
 }
 
 type outputStreamer struct {
-	f func(Output, *Data, string) error
+	f func(Output, *Data, []byte) error
 	d *Data
 	o Output
 }
 
 func (os *outputStreamer) Write(b []byte) (int, error) {
-	return len(b), os.f(os.o, os.d, string(b))
+	return len(b), os.f(os.o, os.d, b)
 }
 
 // Run runs the `ShellCommand` with the provided `Output` object.

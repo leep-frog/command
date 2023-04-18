@@ -163,8 +163,8 @@ func TestShellCommand(t *testing.T) {
 						CommandName:   "echo",
 						Args:          []string{"hello"},
 						ForwardStdout: true,
-						OutputStreamProcessor: func(o Output, d *Data, s string) error {
-							o.Stdoutf("Streamer received: %s", s)
+						OutputStreamProcessor: func(o Output, d *Data, b []byte) error {
+							o.Stdoutf("Streamer received: %s", string(b))
 							return nil
 						},
 					},
