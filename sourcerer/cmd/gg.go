@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"regexp"
 
 	"github.com/leep-frog/command"
 )
@@ -36,7 +37,8 @@ func (*UpdateLeepPackageCommand) Name() string {
 }
 
 var (
-	packageArg = command.ListArg[string]("PACKAGE", "Package name", 1, command.UnboundedList, command.SimpleDistinctCompleter[[]string](RelevantPackages...))
+	packageArg    = command.ListArg[string]("PACKAGE", "Package name", 1, command.UnboundedList, command.SimpleDistinctCompleter[[]string](RelevantPackages...))
+	lsRemoteRegex = regexp.MustCompile(`^([0-9a-f]+)\s+([^\s]+)$`)
 )
 
 func (*UpdateLeepPackageCommand) Node() command.Node {
@@ -46,12 +48,37 @@ func (*UpdateLeepPackageCommand) Node() command.Node {
 		command.ExecutableProcessor(func(o command.Output, d *command.Data) ([]string, error) {
 			var r []string
 			for _, p := range packageArg.Get(d) {
-				r = append(r,
-					fmt.Sprintf(`local commitSha="$(git ls-remote git@github.com:leep-frog/%s.git | grep ma[is][nt] | awk '{print $1}')"`, p),
-					fmt.Sprintf(`go get -v "github.com/leep-frog/%s@$commitSha"`, p),
-					// else:
-					// fmt.Sprintf(`go get -u "github.com/leep-frog/%s"`, p),
-				)
+				sc := &command.ShellCommand[[]string]{
+					CommandName: "git",
+					Args: []string{
+						"ls-remote",
+						fmt.Sprintf("git@github.com:leep-frog/%s.git", p),
+					},
+					ForwardStdout: true,
+				}
+				result, err := sc.Run(o, d)
+				if err != nil {
+					o.Stderrf("Failed to fetch commit info for package %q", p)
+					continue
+				}
+
+				var sha string
+				var branches []string
+				for _, res := range result {
+					m := lsRemoteRegex.FindStringSubmatch(res)
+					branches = append(branches, m[2])
+					if m != nil && (m[2] == "refs/heads/main" || m[2] == "refs/heads/master") {
+						sha = m[1]
+						break
+					}
+				}
+
+				if sha == "" {
+					o.Stderrf("No main or master branch: %v", branches)
+					continue
+				}
+
+				r = append(r, fmt.Sprintf(`go get -v "github.com/leep-frog/%s@%s"`, p, sha))
 			}
 			return r, nil
 		}),
