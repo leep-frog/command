@@ -121,18 +121,22 @@ func (w *windows) executeFunction(targetName, cliName string, setup []string) st
 		`  # Run the go-only code`,
 		runnerLine,
 		`  # Return error if failed`,
-		// TODO: Use -ErrorAction (https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_commonparameters?view=powershell-7.3#-erroraction)
-		`  If (!$?) { throw "Go execution failed" }`,
+		// Powershell doesn't really support a way to set exit codes for functions.
+		// Looked online and it's not a thing.
+		// It is up to the command to display appropriate test output (as is the case in linux)
+		`  If (!$?) { break }`,
 		``,
 		`  # If success, run the ExecuteData.Executable data`,
 		`  Copy-Item "$Local:tmpFile" "$Local:tmpFile.ps1"`,
 		`  . "$Local:tmpFile.ps1"`,
+		// Unlike the go execution case, we explicitly throw here because the
+		// ExecuteData execution can be more subtle.
 		`  If (!$?) { throw "ExecuteData execution failed" }`,
-		// TODO: Leave file as is if DebugEnvVar is set
-		// `  Remove-Item "$Local:tmpFile"`,
-		// `  Remove-Item "$Local:tmpFile.ps1"`,
+		`  Remove-Item "$Local:tmpFile"`,
+		`  Remove-Item "$Local:tmpFile.ps1"`,
+		`  Remove-Item "$Local:setupTmpFile"`,
+		`  Remove-Item "$Local:setupTmpFile.txt"`,
 		`}`,
-		// fmt.Sprintf(`_custom_execute_%s $args`, targetName),
 		``,
 		w.setAlias(
 			cliName,
