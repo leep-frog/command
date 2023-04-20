@@ -132,10 +132,6 @@ func (w *windows) executeFunction(targetName, cliName string, setup []string) st
 		// Unlike the go execution case, we explicitly throw here because the
 		// ExecuteData execution can be more subtle.
 		`  If (!$?) { throw "ExecuteData execution failed" }`,
-		`  Remove-Item "$Local:tmpFile"`,
-		`  Remove-Item "$Local:tmpFile.ps1"`,
-		`  Remove-Item "$Local:setupTmpFile"`,
-		`  Remove-Item "$Local:setupTmpFile.txt"`,
 		`}`,
 		``,
 		w.setAlias(
