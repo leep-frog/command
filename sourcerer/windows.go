@@ -121,17 +121,18 @@ func (w *windows) executeFunction(targetName, cliName string, setup []string) st
 		`  # Run the go-only code`,
 		runnerLine,
 		`  # Return error if failed`,
-		// Powershell doesn't really support a way to set exit codes for functions.
-		// Looked online and it's not a thing.
-		// It is up to the command to display appropriate test output (as is the case in linux)
-		`  If (!$?) { break }`,
-		``,
-		`  # If success, run the ExecuteData.Executable data`,
-		`  Copy-Item "$Local:tmpFile" "$Local:tmpFile.ps1"`,
-		`  . "$Local:tmpFile.ps1"`,
-		// Unlike the go execution case, we explicitly throw here because the
-		// ExecuteData execution can be more subtle.
-		`  If (!$?) { throw "ExecuteData execution failed" }`,
+		`  If (!$?) {`,
+		`    Write-Error "Go execution failed"`,
+		// We need the else (rather than using return or break)
+		// so that the return status ($?) of the function is false.
+		`  } else {`,
+		`    # If success, run the ExecuteData.Executable data`,
+		`    Copy-Item "$Local:tmpFile" "$Local:tmpFile.ps1"`,
+		`    . "$Local:tmpFile.ps1"`,
+		`    If (!$?) {`,
+		`      Write-Error "ExecuteData execution failed"`,
+		`    }`,
+		`  }`,
 		`}`,
 		``,
 		w.setAlias(
