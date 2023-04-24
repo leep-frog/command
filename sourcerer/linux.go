@@ -99,7 +99,7 @@ func (l *linux) RegisterCLIs(output command.Output, targetName string, clis []CL
 	// bash environments that don't actually source sourcerer-related commands.
 	efc := l.executeFileContents(targetName)
 
-	f, err := os.OpenFile(getExecuteFile(targetName), os.O_WRONLY|os.O_CREATE, command.CmdOS.DefaultFilePerm())
+	f, err := os.OpenFile(getExecuteFile(targetName), os.O_WRONLY|os.O_CREATE, 0644)
 	if err != nil {
 		return output.Stderrf("failed to open execute function file: %v\n", err)
 	}

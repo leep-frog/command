@@ -1778,7 +1778,7 @@ func TestSourcerer(t *testing.T) {
 					oschk = test.osCheck
 				}
 
-				if err := ioutil.WriteFile(f.Name(), nil, command.CmdOS.DefaultFilePerm()); err != nil {
+				if err := ioutil.WriteFile(f.Name(), nil, 0644); err != nil {
 					t.Fatalf("failed to clear file: %v", err)
 				}
 

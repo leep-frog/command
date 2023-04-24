@@ -7487,7 +7487,6 @@ func TestComplete(t *testing.T) {
 					"menu.go",
 					"node_repeater.go",
 					"option.go",
-					"os.go",
 					"osenv.go",
 					"output.go",
 					"output_test.go",

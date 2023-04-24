@@ -94,7 +94,7 @@ func (s *sourcerer) executeExecutor(output command.Output, d *command.Data) erro
 		return nil
 	}
 
-	f, err := os.OpenFile(sourcingFile, os.O_WRONLY|os.O_CREATE, command.CmdOS.DefaultFilePerm())
+	f, err := os.OpenFile(sourcingFile, os.O_WRONLY|os.O_CREATE, 0644)
 	if err != nil {
 		return output.Stderrf("failed to open file: %v\n", err)
 	}

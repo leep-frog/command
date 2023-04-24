@@ -301,7 +301,7 @@ func TestGoLeep(t *testing.T) {
 			})
 
 			if test.writeToFile != nil {
-				if err := ioutil.WriteFile(f.Name(), []byte(strings.Join(test.writeToFile, "\n")), command.CmdOS.DefaultFilePerm()); err != nil {
+				if err := ioutil.WriteFile(f.Name(), []byte(strings.Join(test.writeToFile, "\n")), 0644); err != nil {
 					t.Fatalf("failed to write to file: %v", err)
 				}
 			}

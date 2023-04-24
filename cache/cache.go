@@ -169,7 +169,7 @@ func (c *Cache) Put(key, data string) error {
 	if err != nil {
 		return fmt.Errorf("failed to get file for key: %v", err)
 	}
-	if err := ioutil.WriteFile(filename, []byte(data), command.CmdOS.DefaultFilePerm()); err != nil {
+	if err := ioutil.WriteFile(filename, []byte(data), 0644); err != nil {
 		return fmt.Errorf("failed to write file: %v", err)
 	}
 	return nil
