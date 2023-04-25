@@ -48,7 +48,7 @@ func TestMancli(t *testing.T) {
 								`if (!(Test-Path alias:someCLI) -or !(Get-Alias someCLI | where {$_.DEFINITION -match "_custom_execute"}).NAME) {`,
 								`  throw "The CLI provided (someCLI) is not a sourcerer-generated command"`,
 								`}`,
-								`$Local:targetName = (Get-Alias someCLI).DEFINITION.spli("_")[3]`,
+								`$Local:targetName = (Get-Alias someCLI).DEFINITION.split("_")[3]`,
 								`Invoke-Expression "$env:GOPATH\bin\_${Local:targetName}_runner.exe usage someCLI"`,
 							},
 						},

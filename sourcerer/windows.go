@@ -219,7 +219,7 @@ func (w *windows) RegisterAliaser(output command.Output, a *Aliaser) {
 func (w *windows) Mancli(cli string) []string {
 	return append(
 		w.verifyAliaserCommand(cli),
-		fmt.Sprintf(`$Local:targetName = (Get-Alias %s).DEFINITION.spli("_")[3]`, cli),
+		fmt.Sprintf(`$Local:targetName = (Get-Alias %s).DEFINITION.split("_")[3]`, cli),
 		fmt.Sprintf(`Invoke-Expression "$env:GOPATH\bin\_${Local:targetName}_runner.exe usage %s"`, cli),
 	)
 }
