@@ -42,13 +42,24 @@ func TestMancli(t *testing.T) {
 							},
 						},
 					},
+					"windows": {
+						WantExecuteData: &command.ExecuteData{
+							Executable: []string{
+								`if (!(Test-Path alias:g) -or !(Get-Alias someCLI | where {$_.DEFINITION -match "_custom_execute"}).NAME) {`,
+								`  throw "The CLI provided (someCLI) is not a sourcerer-generated command"`,
+								`}`,
+								`$Local:targetName = (Get-Alias someCLI).DEFINITION.spli("_")[3]`,
+								`Invoke-Expression "$env:GOPATH\bin\_${Local:targetName}_runner.exe usage someCLI"`,
+							},
+						},
+					},
 				},
 			},
 		} {
 			t.Run(fmt.Sprintf("[%s] %s", curOS.Name(), test.name), func(t *testing.T) {
 				oschk, ok := test.osChecks[curOS.Name()]
 				if !ok {
-					t.Skipf("No osCheck set for this OS")
+					t.Fatalf("No osCheck set for this OS")
 				}
 				command.StubValue(t, &sourcerer.CurrentOS, curOS)
 

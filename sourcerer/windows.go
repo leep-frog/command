@@ -167,11 +167,15 @@ func (w *windows) FunctionWrap(fn string) string {
 // TODO: Aliasers
 func (w *windows) GlobalAliaserFunc(command.Output) {}
 func (w *windows) VerifyAliaser(output command.Output, a *Aliaser) {
-	output.Stdoutln(strings.Join([]string{
-		fmt.Sprintf(`if (!(Get-Alias %s | where {$_.DEFINITION -match "_custom_execute"}).NAME) {`, a.cli),
-		fmt.Sprintf(`  throw "The CLI provided (%s) is not a sourcerer-generated command"`, a.cli),
+	output.Stdoutln(strings.Join(w.verifyAliaserCommand(a.cli), "\n"))
+}
+
+func (w *windows) verifyAliaserCommand(cli string) []string {
+	return []string{
+		fmt.Sprintf(`if (!(Test-Path alias:g) -or !(Get-Alias %s | where {$_.DEFINITION -match "_custom_execute"}).NAME) {`, cli),
+		fmt.Sprintf(`  throw "The CLI provided (%s) is not a sourcerer-generated command"`, cli),
 		`}`,
-	}, "\n"))
+	}
 }
 
 func (w *windows) RegisterAliaser(output command.Output, a *Aliaser) {
@@ -212,7 +216,13 @@ func (w *windows) RegisterAliaser(output command.Output, a *Aliaser) {
 }
 
 // TODO: Mancli
-func (w *windows) Mancli(cli string) []string { return nil }
+func (w *windows) Mancli(cli string) []string {
+	return append(
+		w.verifyAliaserCommand(cli),
+		fmt.Sprintf(`$Local:targetName = (Get-Alias %s).DEFINITION.spli("_")[3]`, cli),
+		fmt.Sprintf(`Invoke-Expression "$env:GOPATH\bin\_${Local:targetName}_runner.exe usage %s"`, cli),
+	)
+}
 
 func (*windows) SetEnvVar(envVar, value string) string {
 	return fmt.Sprintf("$env:%s = %q", envVar, value)
