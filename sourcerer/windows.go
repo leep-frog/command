@@ -172,7 +172,7 @@ func (w *windows) VerifyAliaser(output command.Output, a *Aliaser) {
 
 func (w *windows) verifyAliaserCommand(cli string) []string {
 	return []string{
-		fmt.Sprintf(`if (!(Test-Path alias:g) -or !(Get-Alias %s | where {$_.DEFINITION -match "_custom_execute"}).NAME) {`, cli),
+		fmt.Sprintf(`if (!(Test-Path alias:%s) -or !(Get-Alias %s | where {$_.DEFINITION -match "_custom_execute"}).NAME) {`, cli, cli),
 		fmt.Sprintf(`  throw "The CLI provided (%s) is not a sourcerer-generated command"`, cli),
 		`}`,
 	}

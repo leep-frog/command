@@ -66,7 +66,7 @@ func TestAliaser(t *testing.T) {
 					"windows": {
 						WantExecuteData: &command.ExecuteData{
 							Executable: []string{
-								`if (!(Test-Path alias:g) -or !(Get-Alias someCLI | where {$_.DEFINITION -match "_custom_execute"}).NAME) {`,
+								`if (!(Test-Path alias:someCLI) -or !(Get-Alias someCLI | where {$_.DEFINITION -match "_custom_execute"}).NAME) {`,
 								`  throw "The CLI provided (someCLI) is not a sourcerer-generated command"`,
 								"}",
 								"function _sourcerer_alias_execute_some-alias {",
