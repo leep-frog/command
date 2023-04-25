@@ -1765,6 +1765,7 @@ func TestSourcerer(t *testing.T) {
 						"  FS: floats",
 						"  IS: ints",
 						"  S: desc",
+						"",
 					}, "\n")},
 					noStdoutNewline: true,
 				},

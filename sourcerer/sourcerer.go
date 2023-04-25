@@ -248,7 +248,7 @@ func (s *sourcerer) usageExecutor(i *command.Input, o command.Output, d *command
 			}
 			return err
 		}
-		o.Stdout(u.String())
+		o.Stdoutln(u.String())
 		return nil
 	})
 	return nil
