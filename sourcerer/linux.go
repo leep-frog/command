@@ -228,7 +228,15 @@ func (*linux) aliaserAutocompleteFunction(alias string, cli string, quotedArg st
 	}, "\n")
 }
 
-func (*linux) Mancli(cli string) []string {
+func quotedArgs(args ...string) string {
+	var q []string
+	for _, a := range args {
+		q = append(q, fmt.Sprintf("%q", a))
+	}
+	return strings.Join(q, " ")
+}
+
+func (*linux) Mancli(cli string, args ...string) []string {
 	return []string{
 		// Extract the custom execute function so that this function
 		// can work regardless of file name
@@ -237,7 +245,7 @@ func (*linux) Mancli(cli string) []string {
 		fmt.Sprintf(`  echo %s is not a CLI generated via github.com/leep-frog/command`, cli),
 		`  return 1`,
 		`fi`,
-		fmt.Sprintf(`  "$GOPATH/bin/_${file}_runner" usage %s`, cli),
+		fmt.Sprintf(`  "$GOPATH/bin/_${file}_runner" usage %s %s`, cli, quotedArgs(args...)),
 	}
 }
 

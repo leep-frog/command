@@ -59,5 +59,5 @@ type OS interface {
 	RegisterAliaser(command.Output, *Aliaser)
 
 	// Mancli returns shell commands that run the usage file
-	Mancli(cli string) []string
+	Mancli(cli string, args ...string) []string
 }

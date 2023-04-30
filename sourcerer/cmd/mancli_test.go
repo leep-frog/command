@@ -38,7 +38,7 @@ func TestMancli(t *testing.T) {
 								`  echo someCLI is not a CLI generated via github.com/leep-frog/command`,
 								`  return 1`,
 								`fi`,
-								`  "$GOPATH/bin/_${file}_runner" usage someCLI`,
+								`  "$GOPATH/bin/_${file}_runner" usage someCLI `,
 							},
 						},
 					},
@@ -49,7 +49,53 @@ func TestMancli(t *testing.T) {
 								`  throw "The CLI provided (someCLI) is not a sourcerer-generated command"`,
 								`}`,
 								`$Local:targetName = (Get-Alias someCLI).DEFINITION.split("_")[3]`,
-								`Invoke-Expression "$env:GOPATH\bin\_${Local:targetName}_runner.exe usage someCLI"`,
+								`Invoke-Expression "$env:GOPATH\bin\_${Local:targetName}_runner.exe usage someCLI "`,
+							},
+						},
+					},
+				},
+			},
+			{
+				name: "Gets usage with args",
+				etc: &command.ExecuteTestCase{
+					Args: []string{
+						"someCLI",
+						"arg1",
+						"arg 2",
+						`arg " 3`,
+						`arg'4 `,
+					},
+					WantData: &command.Data{Values: map[string]interface{}{
+						usageCLIArg.Name(): "someCLI",
+						extraMancliArgs.Name(): []string{
+							"arg1",
+							"arg 2",
+							`arg " 3`,
+							`arg'4 `,
+						},
+					}},
+				},
+				osChecks: map[string]*osCheck{
+					"linux": {
+						WantExecuteData: &command.ExecuteData{
+							Executable: []string{
+								sourcerer.FileStringFromCLI("someCLI"),
+								`if [ -z "$file" ]; then`,
+								`  echo someCLI is not a CLI generated via github.com/leep-frog/command`,
+								`  return 1`,
+								`fi`,
+								`  "$GOPATH/bin/_${file}_runner" usage someCLI "arg1" "arg 2" "arg \" 3" "arg'4 "`,
+							},
+						},
+					},
+					"windows": {
+						WantExecuteData: &command.ExecuteData{
+							Executable: []string{
+								`if (!(Test-Path alias:someCLI) -or !(Get-Alias someCLI | where {$_.DEFINITION -match "_custom_execute"}).NAME) {`,
+								`  throw "The CLI provided (someCLI) is not a sourcerer-generated command"`,
+								`}`,
+								`$Local:targetName = (Get-Alias someCLI).DEFINITION.split("_")[3]`,
+								`Invoke-Expression "$env:GOPATH\bin\_${Local:targetName}_runner.exe usage someCLI arg1 arg_2 arg___3 arg_4_"`,
 							},
 						},
 					},
