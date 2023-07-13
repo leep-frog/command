@@ -401,8 +401,9 @@ type InputTransformer struct {
 	F func(Output, *Data, string) ([]string, error)
 	// UpToIndex is the input argument index that F will be run through.
 	// This is zero-indexed so default behavior (UpToIndex: 0) will run on the
-	// first argument.
-	UpToIndex int
+	// first argument. If UpToIndex is less than zero, then this will run
+	// on all remaining arguments.
+	UpToIndex int // TODO: Test this
 }
 
 // FileNumberInputTransformer transforms input arguments of the format "input.go:123"
@@ -439,7 +440,7 @@ func (it *InputTransformer) Transform(input *Input, output Output, data *Data, c
 		k = -1
 	}
 
-	for j := input.offset; j < input.NumRemaining()+k && j <= input.offset+it.UpToIndex; {
+	for j := input.offset; j < input.NumRemaining()+k && (it.UpToIndex < 0 || j <= input.offset+it.UpToIndex); {
 		sl, err := it.F(output, data, input.get(j).value)
 		if err != nil {
 			return err
