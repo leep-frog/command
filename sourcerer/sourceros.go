@@ -61,3 +61,13 @@ type OS interface {
 	// Mancli returns shell commands that run the usage file
 	Mancli(cli string, args ...string) []string
 }
+
+// ValueByOS will return the value that is associated
+// with the current OS. If there is no match, then the
+// function will panic.
+func ValueByOS[T any](values map[string]T) T {
+	if v, ok := values[CurrentOS.Name()]; ok {
+		return v
+	}
+	panic(fmt.Sprintf("No value provided for the current OS (%s)", CurrentOS.Name()))
+}
