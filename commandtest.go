@@ -423,6 +423,7 @@ type runResponseTester struct {
 type RunContents struct {
 	Name string
 	Args []string
+	Dir  string
 }
 
 func (rrt *runResponseTester) stubRunResponses(t *testing.T) func(cmd *exec.Cmd) error {
@@ -433,7 +434,7 @@ func (rrt *runResponseTester) stubRunResponses(t *testing.T) func(cmd *exec.Cmd)
 
 		// `cmd.Args[0]` is used instead of `cmd.Path` because `cmd.Path` can be modified,
 		// like by msys for example.
-		rrt.gotRunContents = append(rrt.gotRunContents, &RunContents{cmd.Args[0], cmd.Args[1:]})
+		rrt.gotRunContents = append(rrt.gotRunContents, &RunContents{cmd.Args[0], cmd.Args[1:], cmd.Dir})
 
 		r := rrt.runResponses[0]
 		rrt.runResponses = rrt.runResponses[1:]

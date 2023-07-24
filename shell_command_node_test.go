@@ -2,6 +2,7 @@ package command
 
 import (
 	"fmt"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -15,10 +16,13 @@ func TestShellCommand(t *testing.T) {
 		{
 			name: "shell command returns an error",
 			etc: &ExecuteTestCase{
-				Node:            SerialNodes(&ShellCommand[string]{ArgName: "s", CommandName: "echo", Args: []string{"hello"}}),
-				WantRunContents: []*RunContents{{"echo", []string{"hello"}}},
-				WantErr:         fmt.Errorf("failed to execute shell command: oops"),
-				WantStderr:      "failed to execute shell command: oops\n",
+				Node: SerialNodes(&ShellCommand[string]{ArgName: "s", CommandName: "echo", Args: []string{"hello"}}),
+				WantRunContents: []*RunContents{{
+					Name: "echo",
+					Args: []string{"hello"},
+				}},
+				WantErr:    fmt.Errorf("failed to execute shell command: oops"),
+				WantStderr: "failed to execute shell command: oops\n",
 				RunResponses: []*FakeRun{
 					{
 						Err: fmt.Errorf("oops"),
@@ -29,9 +33,12 @@ func TestShellCommand(t *testing.T) {
 		{
 			name: "shell command prints stderr on error",
 			etc: &ExecuteTestCase{
-				Node:            SerialNodes(&ShellCommand[string]{ArgName: "s", CommandName: "echo", Args: []string{"hello"}}),
-				WantRunContents: []*RunContents{{"echo", []string{"hello"}}},
-				WantErr:         fmt.Errorf("failed to execute shell command: oops"),
+				Node: SerialNodes(&ShellCommand[string]{ArgName: "s", CommandName: "echo", Args: []string{"hello"}}),
+				WantRunContents: []*RunContents{{
+					Name: "echo",
+					Args: []string{"hello"},
+				}},
+				WantErr: fmt.Errorf("failed to execute shell command: oops"),
 				WantStderr: strings.Join([]string{
 					"un",
 					"deux",
@@ -50,9 +57,12 @@ func TestShellCommand(t *testing.T) {
 		{
 			name: "shell command hides stderr on error",
 			etc: &ExecuteTestCase{
-				Node:            SerialNodes(&ShellCommand[string]{ArgName: "s", CommandName: "echo", Args: []string{"hello"}, HideStderr: true}),
-				WantRunContents: []*RunContents{{"echo", []string{"hello"}}},
-				WantErr:         fmt.Errorf("failed to execute shell command: oops"),
+				Node: SerialNodes(&ShellCommand[string]{ArgName: "s", CommandName: "echo", Args: []string{"hello"}, HideStderr: true}),
+				WantRunContents: []*RunContents{{
+					Name: "echo",
+					Args: []string{"hello"},
+				}},
+				WantErr: fmt.Errorf("failed to execute shell command: oops"),
 				RunResponses: []*FakeRun{
 					{
 						Stdout: []string{"one", "two", "three"},
@@ -62,12 +72,39 @@ func TestShellCommand(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "shell command node runs in other directory",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(&ShellCommand[string]{
+					ArgName:     "s",
+					CommandName: "echo",
+					Args:        []string{"hello"},
+					Dir:         filepath.Join("some", "other", "dir"),
+				}),
+				WantRunContents: []*RunContents{{
+					Name: "echo",
+					Args: []string{"hello"},
+					Dir:  filepath.Join("some", "other", "dir"),
+				}},
+				WantData: &Data{Values: map[string]interface{}{
+					"s": "aloha",
+				}},
+				RunResponses: []*FakeRun{
+					{
+						Stdout: []string{"aloha"},
+					},
+				},
+			},
+		},
 		// String
 		{
 			name: "shell node for string",
 			etc: &ExecuteTestCase{
-				Node:            SerialNodes(&ShellCommand[string]{ArgName: "s", CommandName: "echo", Args: []string{"hello"}}),
-				WantRunContents: []*RunContents{{"echo", []string{"hello"}}},
+				Node: SerialNodes(&ShellCommand[string]{ArgName: "s", CommandName: "echo", Args: []string{"hello"}}),
+				WantRunContents: []*RunContents{{
+					Name: "echo",
+					Args: []string{"hello"},
+				}},
 				WantData: &Data{Values: map[string]interface{}{
 					"s": "aloha",
 				}},
@@ -81,8 +118,11 @@ func TestShellCommand(t *testing.T) {
 		{
 			name: "shell node for string works with empty output",
 			etc: &ExecuteTestCase{
-				Node:            SerialNodes(&ShellCommand[string]{ArgName: "s", CommandName: "don't", Args: []string{"echo", "hello"}}),
-				WantRunContents: []*RunContents{{"don't", []string{"echo", "hello"}}},
+				Node: SerialNodes(&ShellCommand[string]{ArgName: "s", CommandName: "don't", Args: []string{"echo", "hello"}}),
+				WantRunContents: []*RunContents{{
+					Name: "don't",
+					Args: []string{"echo", "hello"},
+				}},
 				WantData: &Data{Values: map[string]interface{}{
 					"s": "",
 				}},
@@ -92,8 +132,11 @@ func TestShellCommand(t *testing.T) {
 		{
 			name: "successful command shows stderr",
 			etc: &ExecuteTestCase{
-				Node:            SerialNodes(&ShellCommand[string]{ArgName: "s", CommandName: "echo", Args: []string{"hello"}}),
-				WantRunContents: []*RunContents{{"echo", []string{"hello"}}},
+				Node: SerialNodes(&ShellCommand[string]{ArgName: "s", CommandName: "echo", Args: []string{"hello"}}),
+				WantRunContents: []*RunContents{{
+					Name: "echo",
+					Args: []string{"hello"},
+				}},
 				WantData: &Data{Values: map[string]interface{}{
 					"s": "aloha",
 				}},
@@ -109,8 +152,11 @@ func TestShellCommand(t *testing.T) {
 		{
 			name: "successful command hides stderr",
 			etc: &ExecuteTestCase{
-				Node:            SerialNodes(&ShellCommand[string]{ArgName: "s", CommandName: "echo", Args: []string{"hello"}, HideStderr: true}),
-				WantRunContents: []*RunContents{{"echo", []string{"hello"}}},
+				Node: SerialNodes(&ShellCommand[string]{ArgName: "s", CommandName: "echo", Args: []string{"hello"}, HideStderr: true}),
+				WantRunContents: []*RunContents{{
+					Name: "echo",
+					Args: []string{"hello"},
+				}},
 				WantData: &Data{Values: map[string]interface{}{
 					"s": "aloha",
 				}},
@@ -126,8 +172,11 @@ func TestShellCommand(t *testing.T) {
 		{
 			name: "shell node for string list",
 			etc: &ExecuteTestCase{
-				Node:            SerialNodes(&ShellCommand[[]string]{ArgName: "s", CommandName: "echo", Args: []string{"hello"}}),
-				WantRunContents: []*RunContents{{"echo", []string{"hello"}}},
+				Node: SerialNodes(&ShellCommand[[]string]{ArgName: "s", CommandName: "echo", Args: []string{"hello"}}),
+				WantRunContents: []*RunContents{{
+					Name: "echo",
+					Args: []string{"hello"},
+				}},
 				WantData: &Data{Values: map[string]interface{}{
 					"s": []string{"aloha", "hello there", "howdy"},
 				}},
@@ -141,9 +190,12 @@ func TestShellCommand(t *testing.T) {
 		{
 			name: "shell node for string list forwards stdout",
 			etc: &ExecuteTestCase{
-				Node:            SerialNodes(&ShellCommand[[]string]{ArgName: "s", CommandName: "echo", Args: []string{"hello"}, ForwardStdout: true}),
-				WantRunContents: []*RunContents{{"echo", []string{"hello"}}},
-				WantStdout:      "aloha\nhello there\nhowdy\n",
+				Node: SerialNodes(&ShellCommand[[]string]{ArgName: "s", CommandName: "echo", Args: []string{"hello"}, ForwardStdout: true}),
+				WantRunContents: []*RunContents{{
+					Name: "echo",
+					Args: []string{"hello"},
+				}},
+				WantStdout: "aloha\nhello there\nhowdy\n",
 				WantData: &Data{Values: map[string]interface{}{
 					"s": []string{"aloha", "hello there", "howdy"},
 				}},
@@ -169,9 +221,11 @@ func TestShellCommand(t *testing.T) {
 						},
 					},
 				),
-				WantRunContents: []*RunContents{{"echo", []string{
-					"hello",
-				}}},
+				WantRunContents: []*RunContents{{
+					Name: "echo",
+					Args: []string{
+						"hello",
+					}}},
 				WantStdout: strings.Join([]string{
 					"aloha",
 					"Streamer received: aloha",
@@ -194,8 +248,11 @@ func TestShellCommand(t *testing.T) {
 		{
 			name: "shell node for string list gets empty new lines at end",
 			etc: &ExecuteTestCase{
-				Node:            SerialNodes(&ShellCommand[[]string]{ArgName: "s", CommandName: "echo", Args: []string{"hello"}}),
-				WantRunContents: []*RunContents{{"echo", []string{"hello"}}},
+				Node: SerialNodes(&ShellCommand[[]string]{ArgName: "s", CommandName: "echo", Args: []string{"hello"}}),
+				WantRunContents: []*RunContents{{
+					Name: "echo",
+					Args: []string{"hello"},
+				}},
 				WantData: &Data{Values: map[string]interface{}{
 					"s": []string{"aloha", "hello there", "howdy", "", ""},
 				}},
@@ -210,8 +267,11 @@ func TestShellCommand(t *testing.T) {
 		{
 			name: "shell node for int",
 			etc: &ExecuteTestCase{
-				Node:            SerialNodes(&ShellCommand[int]{ArgName: "i", CommandName: "echo", Args: []string{"1248"}}),
-				WantRunContents: []*RunContents{{"echo", []string{"1248"}}},
+				Node: SerialNodes(&ShellCommand[int]{ArgName: "i", CommandName: "echo", Args: []string{"1248"}}),
+				WantRunContents: []*RunContents{{
+					Name: "echo",
+					Args: []string{"1248"},
+				}},
 				WantData: &Data{Values: map[string]interface{}{
 					"i": 1248,
 				}},
@@ -225,8 +285,11 @@ func TestShellCommand(t *testing.T) {
 		{
 			name: "shell node for int works with empty output",
 			etc: &ExecuteTestCase{
-				Node:            SerialNodes(&ShellCommand[int]{ArgName: "i", CommandName: "don't", Args: []string{"echo", "1248"}}),
-				WantRunContents: []*RunContents{{"don't", []string{"echo", "1248"}}},
+				Node: SerialNodes(&ShellCommand[int]{ArgName: "i", CommandName: "don't", Args: []string{"echo", "1248"}}),
+				WantRunContents: []*RunContents{{
+					Name: "don't",
+					Args: []string{"echo", "1248"},
+				}},
 				WantData: &Data{Values: map[string]interface{}{
 					"i": 0,
 				}},
@@ -236,10 +299,13 @@ func TestShellCommand(t *testing.T) {
 		{
 			name: "error when not an int",
 			etc: &ExecuteTestCase{
-				Node:            SerialNodes(&ShellCommand[int]{ArgName: "i", CommandName: "echo", Args: []string{"two"}}),
-				WantRunContents: []*RunContents{{"echo", []string{"two"}}},
-				WantErr:         fmt.Errorf(`strconv.Atoi: parsing "two": invalid syntax`),
-				WantStderr:      "strconv.Atoi: parsing \"two\": invalid syntax\n",
+				Node: SerialNodes(&ShellCommand[int]{ArgName: "i", CommandName: "echo", Args: []string{"two"}}),
+				WantRunContents: []*RunContents{{
+					Name: "echo",
+					Args: []string{"two"},
+				}},
+				WantErr:    fmt.Errorf(`strconv.Atoi: parsing "two": invalid syntax`),
+				WantStderr: "strconv.Atoi: parsing \"two\": invalid syntax\n",
 				RunResponses: []*FakeRun{
 					{
 						Stdout: []string{"two"},
@@ -251,8 +317,11 @@ func TestShellCommand(t *testing.T) {
 		{
 			name: "shell node for int list",
 			etc: &ExecuteTestCase{
-				Node:            SerialNodes(&ShellCommand[[]int]{ArgName: "i", CommandName: "echo", Args: []string{"primes"}}),
-				WantRunContents: []*RunContents{{"echo", []string{"primes"}}},
+				Node: SerialNodes(&ShellCommand[[]int]{ArgName: "i", CommandName: "echo", Args: []string{"primes"}}),
+				WantRunContents: []*RunContents{{
+					Name: "echo",
+					Args: []string{"primes"},
+				}},
 				WantData: &Data{Values: map[string]interface{}{
 					"i": []int{2, 3, 5, 7},
 				}},
@@ -266,10 +335,13 @@ func TestShellCommand(t *testing.T) {
 		{
 			name: "error when not an int in list",
 			etc: &ExecuteTestCase{
-				Node:            SerialNodes(&ShellCommand[[]int]{ArgName: "i", CommandName: "echo", Args: []string{"two"}}),
-				WantRunContents: []*RunContents{{"echo", []string{"two"}}},
-				WantErr:         fmt.Errorf(`strconv.Atoi: parsing "two": invalid syntax`),
-				WantStderr:      "strconv.Atoi: parsing \"two\": invalid syntax\n",
+				Node: SerialNodes(&ShellCommand[[]int]{ArgName: "i", CommandName: "echo", Args: []string{"two"}}),
+				WantRunContents: []*RunContents{{
+					Name: "echo",
+					Args: []string{"two"},
+				}},
+				WantErr:    fmt.Errorf(`strconv.Atoi: parsing "two": invalid syntax`),
+				WantStderr: "strconv.Atoi: parsing \"two\": invalid syntax\n",
 				RunResponses: []*FakeRun{
 					{
 						Stdout: []string{"2", "two", "200"},
@@ -281,8 +353,11 @@ func TestShellCommand(t *testing.T) {
 		{
 			name: "shell node for int",
 			etc: &ExecuteTestCase{
-				Node:            SerialNodes(&ShellCommand[int]{ArgName: "i", CommandName: "echo", Args: []string{"1248"}}),
-				WantRunContents: []*RunContents{{"echo", []string{"1248"}}},
+				Node: SerialNodes(&ShellCommand[int]{ArgName: "i", CommandName: "echo", Args: []string{"1248"}}),
+				WantRunContents: []*RunContents{{
+					Name: "echo",
+					Args: []string{"1248"},
+				}},
 				WantData: &Data{Values: map[string]interface{}{
 					"i": 1248,
 				}},
@@ -296,10 +371,13 @@ func TestShellCommand(t *testing.T) {
 		{
 			name: "error when not an int",
 			etc: &ExecuteTestCase{
-				Node:            SerialNodes(&ShellCommand[int]{ArgName: "i", CommandName: "echo", Args: []string{"two"}}),
-				WantRunContents: []*RunContents{{"echo", []string{"two"}}},
-				WantErr:         fmt.Errorf(`strconv.Atoi: parsing "two": invalid syntax`),
-				WantStderr:      "strconv.Atoi: parsing \"two\": invalid syntax\n",
+				Node: SerialNodes(&ShellCommand[int]{ArgName: "i", CommandName: "echo", Args: []string{"two"}}),
+				WantRunContents: []*RunContents{{
+					Name: "echo",
+					Args: []string{"two"},
+				}},
+				WantErr:    fmt.Errorf(`strconv.Atoi: parsing "two": invalid syntax`),
+				WantStderr: "strconv.Atoi: parsing \"two\": invalid syntax\n",
 				RunResponses: []*FakeRun{
 					{
 						Stdout: []string{"two"},
@@ -311,8 +389,11 @@ func TestShellCommand(t *testing.T) {
 		{
 			name: "shell node for int list",
 			etc: &ExecuteTestCase{
-				Node:            SerialNodes(&ShellCommand[[]int]{ArgName: "i", CommandName: "echo", Args: []string{"primes"}}),
-				WantRunContents: []*RunContents{{"echo", []string{"primes"}}},
+				Node: SerialNodes(&ShellCommand[[]int]{ArgName: "i", CommandName: "echo", Args: []string{"primes"}}),
+				WantRunContents: []*RunContents{{
+					Name: "echo",
+					Args: []string{"primes"},
+				}},
 				WantData: &Data{Values: map[string]interface{}{
 					"i": []int{2, 3, 5, 7},
 				}},
@@ -326,10 +407,13 @@ func TestShellCommand(t *testing.T) {
 		{
 			name: "error when not an int in list",
 			etc: &ExecuteTestCase{
-				Node:            SerialNodes(&ShellCommand[[]int]{ArgName: "i", CommandName: "echo", Args: []string{"two"}}),
-				WantRunContents: []*RunContents{{"echo", []string{"two"}}},
-				WantErr:         fmt.Errorf(`strconv.Atoi: parsing "two": invalid syntax`),
-				WantStderr:      "strconv.Atoi: parsing \"two\": invalid syntax\n",
+				Node: SerialNodes(&ShellCommand[[]int]{ArgName: "i", CommandName: "echo", Args: []string{"two"}}),
+				WantRunContents: []*RunContents{{
+					Name: "echo",
+					Args: []string{"two"},
+				}},
+				WantErr:    fmt.Errorf(`strconv.Atoi: parsing "two": invalid syntax`),
+				WantStderr: "strconv.Atoi: parsing \"two\": invalid syntax\n",
 				RunResponses: []*FakeRun{
 					{
 						Stdout: []string{"2", "two", "200"},
@@ -344,8 +428,11 @@ func TestShellCommand(t *testing.T) {
 		{
 			name: "shell node with validators",
 			etc: &ExecuteTestCase{
-				Node:            SerialNodes(&ShellCommand[int]{ArgName: "i", CommandName: "echo", Args: []string{"1248"}, Validators: []*ValidatorOption[int]{NonNegative[int]()}}),
-				WantRunContents: []*RunContents{{"echo", []string{"1248"}}},
+				Node: SerialNodes(&ShellCommand[int]{ArgName: "i", CommandName: "echo", Args: []string{"1248"}, Validators: []*ValidatorOption[int]{NonNegative[int]()}}),
+				WantRunContents: []*RunContents{{
+					Name: "echo",
+					Args: []string{"1248"},
+				}},
 				WantData: &Data{Values: map[string]interface{}{
 					"i": 1248,
 				}},
@@ -359,10 +446,13 @@ func TestShellCommand(t *testing.T) {
 		{
 			name: "shell node with failing validators",
 			etc: &ExecuteTestCase{
-				Node:            SerialNodes(&ShellCommand[int]{ArgName: "i", CommandName: "echo", Args: []string{"-1248"}, Validators: []*ValidatorOption[int]{NonNegative[int]()}}),
-				WantRunContents: []*RunContents{{"echo", []string{"-1248"}}},
-				WantStderr:      "validation for \"i\" failed: [NonNegative] value isn't non-negative\n",
-				WantErr:         fmt.Errorf("validation for \"i\" failed: [NonNegative] value isn't non-negative"),
+				Node: SerialNodes(&ShellCommand[int]{ArgName: "i", CommandName: "echo", Args: []string{"-1248"}, Validators: []*ValidatorOption[int]{NonNegative[int]()}}),
+				WantRunContents: []*RunContents{{
+					Name: "echo",
+					Args: []string{"-1248"},
+				}},
+				WantStderr: "validation for \"i\" failed: [NonNegative] value isn't non-negative\n",
+				WantErr:    fmt.Errorf("validation for \"i\" failed: [NonNegative] value isn't non-negative"),
 
 				RunResponses: []*FakeRun{
 					{
@@ -374,9 +464,12 @@ func TestShellCommand(t *testing.T) {
 		{
 			name: "shell node with failing validators and hidden stderr",
 			etc: &ExecuteTestCase{
-				Node:            SerialNodes(&ShellCommand[int]{ArgName: "i", CommandName: "echo", Args: []string{"-1248"}, HideStderr: true, Validators: []*ValidatorOption[int]{NonNegative[int]()}}),
-				WantRunContents: []*RunContents{{"echo", []string{"-1248"}}},
-				WantErr:         fmt.Errorf("validation for \"i\" failed: [NonNegative] value isn't non-negative"),
+				Node: SerialNodes(&ShellCommand[int]{ArgName: "i", CommandName: "echo", Args: []string{"-1248"}, HideStderr: true, Validators: []*ValidatorOption[int]{NonNegative[int]()}}),
+				WantRunContents: []*RunContents{{
+					Name: "echo",
+					Args: []string{"-1248"},
+				}},
+				WantErr: fmt.Errorf("validation for \"i\" failed: [NonNegative] value isn't non-negative"),
 				RunResponses: []*FakeRun{
 					{
 						Stdout: []string{"-1248"},

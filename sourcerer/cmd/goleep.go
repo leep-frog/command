@@ -21,7 +21,7 @@ var (
 		"Directory of package to run",
 		command.IsDir(),
 		&command.FileCompleter[string]{IgnoreFiles: true},
-		command.Default("."),
+		command.Default(""),
 	)
 	passAlongArgs = command.ListArg[string]("PASSTHROUGH_ARGS", "Args to pass through to the command", 0, command.UnboundedList)
 )
@@ -34,13 +34,17 @@ func (gl *GoLeep) Name() string {
 	return "goleep"
 }
 
-func (gl *GoLeep) runCommand(d *command.Data, subCmd, cli string, extraArgs []string) (string, []string) {
-	return "go", append([]string{
-		"run",
-		goDirectory.Get(d),
-		subCmd,
-		cli,
-	}, extraArgs...)
+func runCommand[T any](d *command.Data, subCmd, cli string, extraArgs []string) *command.ShellCommand[T] {
+	return &command.ShellCommand[T]{
+		CommandName: "go",
+		Dir:         goDirectory.Get(d),
+		Args: append([]string{
+			"run",
+			".", // directory is set by ShellCommand.Dir
+			subCmd,
+			cli,
+		}, extraArgs...),
+	}
 }
 
 // Separate method for testing
@@ -51,9 +55,10 @@ var (
 	goleepCLIArg = command.Arg[string]("CLI", "CLI to use", command.CompleterFromFunc(func(s string, d *command.Data) (*command.Completion, error) {
 		bc := &command.ShellCommand[[]string]{
 			CommandName: "go",
+			Dir:         goDirectory.Get(d),
 			Args: []string{
 				"run",
-				goDirectory.Get(d),
+				".",
 				sourcerer.ListBranchName,
 			},
 			ForwardStdout: false,
@@ -75,9 +80,10 @@ func (gl *GoLeep) Node() command.Node {
 	usageNode := command.SerialNodes(
 		command.Description("Get the usage of the provided go files"),
 		command.SimpleProcessor(func(i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
-			cmd, args := gl.runCommand(d, sourcerer.UsageBranchName, fmt.Sprintf("%q", goleepCLIArg.Get(d)), nil)
-			ed.Executable = append(ed.Executable, fmt.Sprintf("%s %s", cmd, strings.Join(args, " ")))
-			return nil
+			sc := runCommand[[]string](d, sourcerer.UsageBranchName, fmt.Sprintf("%q", goleepCLIArg.Get(d)), nil)
+			sc.ForwardStdout = true
+			_, err := sc.Run(o, d)
+			return o.Annotatef(err, "failed to run goleep usage command")
 		}, nil),
 	)
 
@@ -94,8 +100,9 @@ func (gl *GoLeep) Node() command.Node {
 
 			// Run the command
 			// Need to use ToSlash because mingw
-			cmd, args := gl.runCommand(d, sourcerer.ExecuteBranchName, goleepCLIArg.Get(d), append([]string{filepath.ToSlash(f.Name())}, d.StringList(passAlongArgs.Name())...))
-			bc := &command.ShellCommand[[]string]{ArgName: "SHELL_OUTPUT", CommandName: cmd, Args: args, ForwardStdout: true}
+			bc := runCommand[[]string](d, sourcerer.ExecuteBranchName, goleepCLIArg.Get(d), append([]string{filepath.ToSlash(f.Name())}, d.StringList(passAlongArgs.Name())...))
+			bc.ArgName = "SHELL_OUTPUT"
+			bc.ForwardStdout = true
 			if _, err := bc.Run(o, d); err != nil {
 				return o.Stderrf("failed to run shell script: %v\n", err)
 			}
@@ -151,8 +158,8 @@ func (gl *GoLeep) completer() command.Completer[[]string] {
 			compLine,
 			// No passthrough args needed since that's only used for aliaser autocomplete
 		}
-		cmd, args := gl.runCommand(data, sourcerer.AutocompleteBranchName, goleepCLIArg.Get(data), extraArgs)
-		bc := &command.ShellCommand[[]string]{ArgName: "SHELL_OUTPUT", CommandName: cmd, Args: args}
+		bc := runCommand[[]string](data, sourcerer.AutocompleteBranchName, goleepCLIArg.Get(data), extraArgs)
+		bc.ArgName = "SHELL_OUTPUT"
 		fo := command.NewFakeOutput()
 		v, err := bc.Run(fo, data)
 		fo.Close()

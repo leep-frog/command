@@ -8208,7 +8208,10 @@ func TestComplete(t *testing.T) {
 				RunResponses: []*FakeRun{{
 					Stdout: []string{"hehe"},
 				}},
-				WantRunContents: []*RunContents{{"echo", []string{"haha"}}},
+				WantRunContents: []*RunContents{{
+					Name: "echo",
+					Args: []string{"haha"},
+				}},
 				WantData: &Data{Values: map[string]interface{}{
 					"b": "hehe",
 					"s": "",
@@ -8225,8 +8228,11 @@ func TestComplete(t *testing.T) {
 				RunResponses: []*FakeRun{{
 					Err: fmt.Errorf("argh"),
 				}},
-				WantRunContents: []*RunContents{{"echo", []string{"haha"}}},
-				WantErr:         fmt.Errorf("failed to execute shell command: argh"),
+				WantRunContents: []*RunContents{{
+					Name: "echo",
+					Args: []string{"haha"},
+				}},
+				WantErr: fmt.Errorf("failed to execute shell command: argh"),
 			},
 		},
 		{
@@ -8251,9 +8257,12 @@ func TestComplete(t *testing.T) {
 				RunResponses: []*FakeRun{{
 					Err: fmt.Errorf("oopsie"),
 				}},
-				WantRunContents: []*RunContents{{"echo", []string{"abc", "def", "ghi"}}},
-				WantErr:         fmt.Errorf("failed to fetch autocomplete suggestions with shell command: failed to execute shell command: oopsie"),
-				WantData:        &Data{Values: map[string]interface{}{"s": ""}},
+				WantRunContents: []*RunContents{{
+					Name: "echo",
+					Args: []string{"abc", "def", "ghi"},
+				}},
+				WantErr:  fmt.Errorf("failed to fetch autocomplete suggestions with shell command: failed to execute shell command: oopsie"),
+				WantData: &Data{Values: map[string]interface{}{"s": ""}},
 			},
 		},
 		{
@@ -8274,8 +8283,11 @@ func TestComplete(t *testing.T) {
 					"def",
 					"ghi",
 				},
-				WantRunContents: []*RunContents{{"echo", []string{"abc", "def", "ghi"}}},
-				WantData:        &Data{Values: map[string]interface{}{}},
+				WantRunContents: []*RunContents{{
+					Name: "echo",
+					Args: []string{"abc", "def", "ghi"},
+				}},
+				WantData: &Data{Values: map[string]interface{}{}},
 			},
 		},
 		{
@@ -8296,7 +8308,10 @@ func TestComplete(t *testing.T) {
 					"def",
 					"ghi",
 				},
-				WantRunContents: []*RunContents{{"echo", []string{"abc", "def", "ghi"}}},
+				WantRunContents: []*RunContents{{
+					Name: "echo",
+					Args: []string{"abc", "def", "ghi"},
+				}},
 				//WantErr: fmt.Errorf(`failed to fetch autocomplete suggestions with shell command: strconv.Atoi: parsing "abc def ghi": invalid syntax`),
 				WantData: &Data{Values: map[string]interface{}{"s": ""}},
 			},
@@ -8318,8 +8333,11 @@ func TestComplete(t *testing.T) {
 				Want: []string{
 					"def",
 				},
-				WantRunContents: []*RunContents{{"echo", []string{"abc", "def", "ghi"}}},
-				WantData:        &Data{Values: map[string]interface{}{"s": "d"}},
+				WantRunContents: []*RunContents{{
+					Name: "echo",
+					Args: []string{"abc", "def", "ghi"},
+				}},
+				WantData: &Data{Values: map[string]interface{}{"s": "d"}},
 			},
 		},
 		{
@@ -8339,8 +8357,11 @@ func TestComplete(t *testing.T) {
 				Want: []string{
 					"def",
 				},
-				WantRunContents: []*RunContents{{"echo", []string{"abc", "def", "ghi"}}},
-				WantData:        &Data{Values: map[string]interface{}{"sl": []string{"abc", "ghi", ""}}},
+				WantRunContents: []*RunContents{{
+					Name: "echo",
+					Args: []string{"abc", "def", "ghi"},
+				}},
+				WantData: &Data{Values: map[string]interface{}{"sl": []string{"abc", "ghi", ""}}},
 			},
 		},
 		// If tests
