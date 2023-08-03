@@ -417,7 +417,7 @@ func (ff *FileCompleter[T]) Complete(value T, data *Data) (*Completion, error) {
 			if tooDeep {
 				suggestions = append(suggestions, f.Name())
 			} else {
-				suggestions = append(suggestions, fmt.Sprintf("%s/", f.Name()))
+				suggestions = append(suggestions, filepath.FromSlash(fmt.Sprintf("%s/", f.Name())))
 			}
 		} else if len(allowedFileTypes) == 0 || allowedFileTypes[filepath.Ext(f.Name())] {
 			onlyDir = false

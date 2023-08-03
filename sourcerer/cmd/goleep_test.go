@@ -371,9 +371,9 @@ func TestGoLeepAutocomplete(t *testing.T) {
 			ctc: &command.CompleteTestCase{
 				Args: fmt.Sprintf("cmd c -d %s", filepath.Join("..", "..", "c")),
 				Want: []string{
-					"cache/",
-					"cmd/",
-					"color/",
+					filepath.FromSlash("cache/"),
+					filepath.FromSlash("cmd/"),
+					filepath.FromSlash("color/"),
 					" ",
 				},
 				WantData: &command.Data{Values: map[string]interface{}{
