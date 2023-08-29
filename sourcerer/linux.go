@@ -71,11 +71,16 @@ func (l *linux) HandleAutocompleteError(output command.Output, compType int, err
 	}
 }
 
+func (l *linux) BinaryFileName(targetName string) string {
+	// Don't use filepath.Join so tests work in all os environments.
+	return fmt.Sprintf("$GOPATH/bin/_%s_runner", targetName)
+}
+
 func (l *linux) CreateGoFiles(sourceLocation string, targetName string) string {
 	return strings.Join([]string{
 		"pushd . > /dev/null",
 		fmt.Sprintf(`cd "$(dirname %s)"`, sourceLocation),
-		fmt.Sprintf("go build -o $GOPATH/bin/_%s_runner", targetName),
+		fmt.Sprintf("go build -o %s", l.BinaryFileName(targetName)),
 		"popd > /dev/null",
 		"",
 	}, "\n")

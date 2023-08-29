@@ -337,11 +337,19 @@ var (
 	}
 )
 
+var (
+	commandStat = command.Stat
+)
+
 func (s *sourcerer) generateFile(o command.Output, d *command.Data) error {
 	targetName := targetNameArg.Get(d)
 
-	// cd into the directory of the file that is actually calling this and install dependencies.
-	if !loadOnlyFlag.Get(d) {
+	fileInfo, err := commandStat(CurrentOS.BinaryFileName(targetName))
+	if err != nil {
+		return fmt.Errorf("failed to get file info for binary file: %v", err)
+	}
+	// Create the go files if load-only flag isn't set, or if the binary files don't exist.
+	if !loadOnlyFlag.Get(d) || fileInfo == nil {
 		o.Stdoutln(CurrentOS.CreateGoFiles(s.sourceLocation, targetName))
 	}
 

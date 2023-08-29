@@ -43,6 +43,8 @@ type OS interface {
 	// HandleAutocompleteError should output error info on `Autocomplete` failure
 	HandleAutocompleteError(output command.Output, compType int, err error)
 
+	// BinaryFileName returns the binary file created by CreateGoFiles
+	BinaryFileName(targetName string) string
 	// CreateGoFiles builds the executable files needed for this script. Generally of the format:
 	// `pushd . && cd ${sourceLocation} && go build -o /some/path/_${targetName}_runner && popd`
 	CreateGoFiles(sourceLocation string, targetName string) string

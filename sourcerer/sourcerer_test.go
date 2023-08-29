@@ -3,9 +3,11 @@ package sourcerer
 import (
 	"fmt"
 	"io/ioutil"
+	"os"
 	"sort"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -44,7 +46,20 @@ func TestGenerateBinaryNode(t *testing.T) {
 			opts            []Option
 			getSourceLocErr error
 			osChecks        map[string]*osCheck
+			commandStatFile os.FileInfo
+			commandStatErr  error
+			wantErr         error
 		}{
+			{
+				name: "fails if error getting binary file",
+				args: []string{"source"},
+				osChecks: map[string]*osCheck{
+					osLinux:   {},
+					osWindows: {},
+				},
+				wantErr:        fmt.Errorf("failed to get file info for binary file: bad news"),
+				commandStatErr: fmt.Errorf("bad news"),
+			},
 			{
 				name: "generates source file when no CLIs",
 				args: []string{"source"},
@@ -241,8 +256,9 @@ func TestGenerateBinaryNode(t *testing.T) {
 				},
 			},
 			{
-				name: "load only flag doesn't generate binaries",
-				args: []string{"source", "-l"},
+				name:            "load only flag doesn't generate binaries if they already exist",
+				commandStatFile: fakeFI,
+				args:            []string{"source", "-l"},
 				opts: []Option{
 					NewAliaser("a1", "do", "some", "stuff"),
 					NewAliaser("otherAlias", "flaggable", "--args", "--at", "once"),
@@ -320,6 +336,138 @@ func TestGenerateBinaryNode(t *testing.T) {
 					osWindows: {
 						wantExecuteFile: []string{""},
 						wantStdout: []string{
+							`$_custom_autocomplete_leepFrogSource = {`,
+							`  param($wordToComplete, $commandAst, $compPoint)`,
+							`  (& $env:GOPATH\bin\_leepFrogSource_runner.exe autocomplete ($commandAst.CommandElements | Select-Object -first 1) "0" $compPoint "$commandAst") | ForEach-Object {`,
+							`    $_`,
+							`  }`,
+							`}`,
+							``,
+							`if (!(Test-Path alias:do) -or !(Get-Alias do | where {$_.DEFINITION -match "_custom_execute"}).NAME) {`,
+							`  throw "The CLI provided (do) is not a sourcerer-generated command"`,
+							`}`,
+							`function _sourcerer_alias_execute_a1 {`,
+							`  $Local:functionName = "$((Get-Alias "do").DEFINITION)"`,
+							`  Invoke-Expression ($Local:functionName + " " + "some" + " " + "stuff" + " " + $args)`,
+							`}`,
+							`$_sourcerer_alias_autocomplete_a1 = {`,
+							`  param($wordToComplete, $commandAst, $compPoint)`,
+							`  $Local:def = ((Get-Alias do).DEFINITION -split "_").Get(3)`,
+							`  (Invoke-Expression '& $env:GOPATH\bin\_${Local:def}_runner.exe autocomplete "do" "0" $compPoint "$commandAst" "some" "stuff"') | ForEach-Object {`,
+							`    $_`,
+							`  }`,
+							`}`,
+							`(Get-Alias) | Where { $_.NAME -match '^a1$'} | ForEach-Object { del alias:${_} -Force }`,
+							`Set-Alias a1 _sourcerer_alias_execute_a1`,
+							`Register-ArgumentCompleter -CommandName a1 -ScriptBlock $_sourcerer_alias_autocomplete_a1`,
+							`if (!(Test-Path alias:flaggable) -or !(Get-Alias flaggable | where {$_.DEFINITION -match "_custom_execute"}).NAME) {`,
+							`  throw "The CLI provided (flaggable) is not a sourcerer-generated command"`,
+							`}`,
+							`function _sourcerer_alias_execute_otherAlias {`,
+							`  $Local:functionName = "$((Get-Alias "flaggable").DEFINITION)"`,
+							`  Invoke-Expression ($Local:functionName + " " + "--args" + " " + "--at" + " " + "once" + " " + $args)`,
+							`}`,
+							`$_sourcerer_alias_autocomplete_otherAlias = {`,
+							`  param($wordToComplete, $commandAst, $compPoint)`,
+							`  $Local:def = ((Get-Alias flaggable).DEFINITION -split "_").Get(3)`,
+							`  (Invoke-Expression '& $env:GOPATH\bin\_${Local:def}_runner.exe autocomplete "flaggable" "0" $compPoint "$commandAst" "--args" "--at" "once"') | ForEach-Object {`,
+							`    $_`,
+							`  }`,
+							`}`,
+							`(Get-Alias) | Where { $_.NAME -match '^otherAlias$'} | ForEach-Object { del alias:${_} -Force }`,
+							`Set-Alias otherAlias _sourcerer_alias_execute_otherAlias`,
+							`Register-ArgumentCompleter -CommandName otherAlias -ScriptBlock $_sourcerer_alias_autocomplete_otherAlias`,
+						},
+					},
+				},
+			},
+			{
+				name:            "load only flag is ignored if files don't exist",
+				commandStatFile: nil,
+				args:            []string{"source", "-l"},
+				opts: []Option{
+					NewAliaser("a1", "do", "some", "stuff"),
+					NewAliaser("otherAlias", "flaggable", "--args", "--at", "once"),
+				},
+				osChecks: map[string]*osCheck{
+					osLinux: {
+						wantExecuteFile: []string{
+							`function _custom_execute_leepFrogSource {`,
+							`  # tmpFile is the file to which we write ExecuteData.Executable`,
+							`  local tmpFile=$(mktemp)`,
+							``,
+							`  # Run the go-only code`,
+							`  $GOPATH/bin/_leepFrogSource_runner execute "$1" $tmpFile "${@:2}"`,
+							`  # Return the error code if go code terminated with an error`,
+							`  local errorCode=$?`,
+							`  if [ $errorCode -ne 0 ]; then return $errorCode; fi`,
+							``,
+							`  # Otherwise, run the ExecuteData.Executable data`,
+							`  source $tmpFile`,
+							`  local errorCode=$?`,
+							`  if [ -z "$LEEP_FROG_DEBUG" ]; then`,
+							`    rm $tmpFile`,
+							`  else`,
+							`    echo $tmpFile`,
+							`  fi`,
+							`  return $errorCode`,
+							`}`,
+							`_custom_execute_leepFrogSource "$@"`,
+							``,
+						},
+						wantStdout: []string{
+							`pushd . > /dev/null`,
+							`cd "$(dirname /fake/source/location)"`,
+							`go build -o $GOPATH/bin/_leepFrogSource_runner`,
+							`popd > /dev/null`,
+							``,
+							`function _custom_autocomplete_leepFrogSource {`,
+							`  local tFile=$(mktemp)`,
+							`  $GOPATH/bin/_leepFrogSource_runner autocomplete ${COMP_WORDS[0]} "$COMP_TYPE" $COMP_POINT "$COMP_LINE" > $tFile`,
+							`  local IFS=$'\n'`,
+							`  COMPREPLY=( $(cat $tFile) )`,
+							`  rm $tFile`,
+							`}`,
+							``,
+							(&linux{}).aliaserGlobalAutocompleteFunction(),
+							`local file="$(type do | head -n 1 | grep "is aliased to.*_custom_execute_" | grep "_custom_execute_[^[:space:]]*" -o | sed s/_custom_execute_//g)"`,
+							`if [ -z "$file" ]; then`,
+							`  echo Provided CLI "do" is not a CLI generated with github.com/leep-frog/command`,
+							`  return 1`,
+							`fi`,
+							``,
+							``,
+							`alias -- a1="do \"some\" \"stuff\""`,
+							`function _custom_autocomplete_for_alias_a1 {`,
+							`  _leep_frog_autocompleter "do" "some" "stuff"`,
+							`}`,
+							``,
+							`complete -F _custom_autocomplete_for_alias_a1 -o nosort a1`,
+							``,
+							`local file="$(type flaggable | head -n 1 | grep "is aliased to.*_custom_execute_" | grep "_custom_execute_[^[:space:]]*" -o | sed s/_custom_execute_//g)"`,
+							`if [ -z "$file" ]; then`,
+							`  echo Provided CLI "flaggable" is not a CLI generated with github.com/leep-frog/command`,
+							`  return 1`,
+							`fi`,
+							``,
+							``,
+							`alias -- otherAlias="flaggable \"--args\" \"--at\" \"once\""`,
+							`function _custom_autocomplete_for_alias_otherAlias {`,
+							`  _leep_frog_autocompleter "flaggable" "--args" "--at" "once"`,
+							`}`,
+							``,
+							`complete -F _custom_autocomplete_for_alias_otherAlias -o nosort otherAlias`,
+							``,
+						},
+					},
+					osWindows: {
+						wantExecuteFile: []string{""},
+						wantStdout: []string{
+							`Push-Location`,
+							`Set-Location "$(Split-Path /fake/source/location)"`,
+							`go build -o $env:GOPATH\bin\_leepFrogSource_runner.exe`,
+							`Pop-Location`,
+							``,
 							`$_custom_autocomplete_leepFrogSource = {`,
 							`  param($wordToComplete, $commandAst, $compPoint)`,
 							`  (& $env:GOPATH\bin\_leepFrogSource_runner.exe autocomplete ($commandAst.CommandElements | Select-Object -first 1) "0" $compPoint "$commandAst") | ForEach-Object {`,
@@ -1011,6 +1159,9 @@ func TestGenerateBinaryNode(t *testing.T) {
 				}
 
 				command.StubValue(t, &CurrentOS, curOS)
+				command.StubValue(t, &commandStat, func(name string) (os.FileInfo, error) {
+					return test.commandStatFile, test.commandStatErr
+				})
 
 				tmp := command.TempFile(t, "leepFrogSourcerer-test")
 				command.StubValue(t, &getExecuteFile, func(string) string {
@@ -1020,7 +1171,8 @@ func TestGenerateBinaryNode(t *testing.T) {
 					command.StubValue(t, &NosortString, func() string { return "" })
 				}
 				o := command.NewFakeOutput()
-				source(test.clis, test.args, o, test.opts...)
+				err := source(test.clis, test.args, o, test.opts...)
+				command.CmpError(t, "source(...)", test.wantErr, err)
 				o.Close()
 
 				if o.GetStderrByCalls() != nil {
@@ -1921,3 +2073,18 @@ func uecUsage() string {
 		``,
 	}, "\n")
 }
+
+type fakeFileInfo struct {
+	isDir bool
+}
+
+func (*fakeFileInfo) Name() string       { return "" }
+func (*fakeFileInfo) Size() int64        { return 0 }
+func (*fakeFileInfo) Mode() os.FileMode  { return 0 }
+func (*fakeFileInfo) ModTime() time.Time { return time.Now() }
+func (ffi *fakeFileInfo) IsDir() bool    { return ffi.isDir }
+func (*fakeFileInfo) Sys() interface{}   { return nil }
+
+var (
+	fakeFI = &fakeFileInfo{}
+)

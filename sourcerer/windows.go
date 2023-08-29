@@ -2,7 +2,6 @@ package sourcerer
 
 import (
 	"fmt"
-	"path/filepath"
 	"regexp"
 	"sort"
 	"strings"
@@ -45,11 +44,16 @@ func (*windows) Name() string {
 	return "windows"
 }
 
+func (w *windows) BinaryFileName(targetName string) string {
+	// Don't use filepath.Join so tests work in all os environments.
+	return fmt.Sprintf(`$env:GOPATH\bin\_%s_runner.exe`, targetName)
+}
+
 func (w *windows) CreateGoFiles(sourceLocation string, targetName string) string {
 	return strings.Join([]string{
 		"Push-Location",
 		fmt.Sprintf(`Set-Location "$(Split-Path %s)"`, sourceLocation),
-		fmt.Sprintf("go build -o %s", filepath.Join("$env:GOPATH", "bin", fmt.Sprintf("_%s_runner.exe", targetName))),
+		fmt.Sprintf("go build -o %s", w.BinaryFileName(targetName)),
 		"Pop-Location",
 		"",
 	}, "\n")
