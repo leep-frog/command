@@ -24,15 +24,19 @@ func (ee *errorEdge) UsageNext(input *Input, data *Data) (Node, error) {
 }
 
 func TestExecute(t *testing.T) {
+
+	StubRuntimeCaller(t, "some/file/path", true)
+	rcNode := RuntimeCaller()
+	StubRuntimeCaller(t, "some/file/path", false)
+	rcErrNode := RuntimeCaller()
+
 	fos := &FakeOS{}
 	for _, test := range []struct {
-		name             string
-		etc              *ExecuteTestCase
-		osGetwd          string
-		osGetwdErr       error
-		runtimeCaller    string
-		runtimeCallerErr bool
-		postCheck        func(*testing.T)
+		name       string
+		etc        *ExecuteTestCase
+		osGetwd    string
+		osGetwdErr error
+		postCheck  func(*testing.T)
 	}{
 		{
 			name: "handles nil node",
@@ -1860,11 +1864,10 @@ func TestExecute(t *testing.T) {
 		},
 		// RuntimeCaller tests
 		{
-			name:          "sets and gets data with RuntimeCaller",
-			runtimeCaller: "some/file/path",
+			name: "sets and gets data with RuntimeCaller",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					RuntimeCaller(),
+					rcNode,
 					&ExecutorProcessor{F: func(o Output, d *Data) error {
 						o.Stdoutf("rc: %s", RuntimeCaller().Get(d))
 						return nil
@@ -1879,11 +1882,10 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
-			name:             "returns error from RuntimeCaller",
-			runtimeCallerErr: true,
+			name: "returns error from RuntimeCaller",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					RuntimeCaller(),
+					rcErrNode,
 				),
 				WantErr:    fmt.Errorf("runtime.Caller failed to retrieve filepath info"),
 				WantStderr: "runtime.Caller failed to retrieve filepath info\n",
@@ -6370,7 +6372,6 @@ func TestExecute(t *testing.T) {
 			StubValue(t, &osGetwd, func() (string, error) {
 				return test.osGetwd, test.osGetwdErr
 			})
-			StubRuntimeCaller(t, test.runtimeCaller, !test.runtimeCallerErr)
 
 			if test.etc == nil {
 				test.etc = &ExecuteTestCase{}

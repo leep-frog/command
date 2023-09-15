@@ -8,7 +8,7 @@ import (
 
 const (
 	// RuntimeCallerKey is the `Data` key used by `RuntimeCaller`.
-	RuntimeCallerKey = "GETWD"
+	RuntimeCallerKey = "RUNTIME_CALLER"
 )
 
 var (
@@ -17,22 +17,18 @@ var (
 
 // RuntimeCaller is a `GetProcessor` that retrieves the filepath of the file that
 func RuntimeCaller() *GetProcessor[string] {
-	f := func() (string, bool) {
-		_, filename, _, ok := runtimeCaller(4)
-		return filename, ok
-	}
+	_, filename, _, ok := runtimeCaller(1)
 
 	return &GetProcessor[string]{
 		SuperSimpleProcessor(func(i *Input, d *Data) error {
-			filename, ok := f()
 			if !ok {
 				return fmt.Errorf("runtime.Caller failed to retrieve filepath info")
 			}
-			d.Set(GetwdKey, filename)
+			d.Set(RuntimeCallerKey, filename)
 			return nil
 		}),
 		func(d *Data) string {
-			return d.String(GetwdKey)
+			return d.String(RuntimeCallerKey)
 		},
 	}
 }
