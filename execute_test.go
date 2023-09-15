@@ -7537,6 +7537,7 @@ func TestComplete(t *testing.T) {
 					"prompt.go",
 					"README.md",
 					"runtime_caller.go",
+					"runtime_caller_test.go",
 					"serial_nodes.go",
 					"setup.go",
 					"shell_command_node.go",

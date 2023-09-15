@@ -18,7 +18,7 @@ var (
 // RuntimeCaller is a `GetProcessor` that retrieves the filepath of the file that
 func RuntimeCaller() *GetProcessor[string] {
 	f := func() (string, bool) {
-		_, filename, _, ok := runtimeCaller(1)
+		_, filename, _, ok := runtimeCaller(4)
 		return filename, ok
 	}
 
