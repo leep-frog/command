@@ -26,11 +26,13 @@ func (ee *errorEdge) UsageNext(input *Input, data *Data) (Node, error) {
 func TestExecute(t *testing.T) {
 	fos := &FakeOS{}
 	for _, test := range []struct {
-		name       string
-		etc        *ExecuteTestCase
-		osGetwd    string
-		osGetwdErr error
-		postCheck  func(*testing.T)
+		name             string
+		etc              *ExecuteTestCase
+		osGetwd          string
+		osGetwdErr       error
+		runtimeCaller    string
+		runtimeCallerErr bool
+		postCheck        func(*testing.T)
 	}{
 		{
 			name: "handles nil node",
@@ -1832,7 +1834,14 @@ func TestExecute(t *testing.T) {
 			name:    "sets data with Getwd",
 			osGetwd: "some/dir",
 			etc: &ExecuteTestCase{
-				Node: SerialNodes(Getwd),
+				Node: SerialNodes(
+					Getwd,
+					&ExecutorProcessor{F: func(o Output, d *Data) error {
+						o.Stdoutf("wd: %s", Getwd.Get(d))
+						return nil
+					}},
+				),
+				WantStdout: "wd: some/dir",
 				WantData: &Data{
 					Values: map[string]interface{}{
 						GetwdKey: "some/dir",
@@ -1849,6 +1858,38 @@ func TestExecute(t *testing.T) {
 				WantStderr: "failed to get current directory: whoops\n",
 			},
 		},
+		// RuntimeCaller tests
+		{
+			name:          "sets and gets data with RuntimeCaller",
+			runtimeCaller: "some/file/path",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					RuntimeCaller(),
+					&ExecutorProcessor{F: func(o Output, d *Data) error {
+						o.Stdoutf("rc: %s", RuntimeCaller().Get(d))
+						return nil
+					}},
+				),
+				WantStdout: "rc: some/file/path",
+				WantData: &Data{
+					Values: map[string]interface{}{
+						RuntimeCallerKey: "some/file/path",
+					},
+				},
+			},
+		},
+		{
+			name:             "returns error from RuntimeCaller",
+			runtimeCallerErr: true,
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					RuntimeCaller(),
+				),
+				WantErr:    fmt.Errorf("runtime.Caller failed to retrieve filepath info"),
+				WantStderr: "runtime.Caller failed to retrieve filepath info\n",
+			},
+		},
+		// Other tests
 		{
 			name: "executes with proper data",
 			etc: &ExecuteTestCase{
@@ -6329,6 +6370,8 @@ func TestExecute(t *testing.T) {
 			StubValue(t, &osGetwd, func() (string, error) {
 				return test.osGetwd, test.osGetwdErr
 			})
+			StubRuntimeCaller(t, test.runtimeCaller, !test.runtimeCallerErr)
+
 			if test.etc == nil {
 				test.etc = &ExecuteTestCase{}
 			}
@@ -7493,6 +7536,7 @@ func TestComplete(t *testing.T) {
 					"output_test.go",
 					"prompt.go",
 					"README.md",
+					"runtime_caller.go",
 					"serial_nodes.go",
 					"setup.go",
 					"shell_command_node.go",
