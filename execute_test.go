@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"sort"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -13,6 +14,11 @@ import (
 
 type errorEdge struct {
 	e error
+}
+
+type simpleType struct {
+	S string
+	N int
 }
 
 func (ee *errorEdge) Next(*Input, *Data) (Node, error) {
@@ -1701,6 +1707,93 @@ func TestExecute(t *testing.T) {
 						"key": "value",
 					},
 				},
+			},
+		},
+		// DataTransformer tests
+		{
+			name: "DataTransformer transforms simple types",
+			etc: &ExecuteTestCase{
+				Args: []string{"123"},
+				Node: SerialNodes(
+					Arg[string]("S", testDesc),
+					DataTransformer[string, int]("S", func(s string) (int, error) {
+						return strconv.Atoi(s)
+					}),
+				),
+				WantData: &Data{
+					Values: map[string]interface{}{
+						"S": 123,
+					},
+				},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "123"},
+					},
+				},
+			},
+		},
+		{
+			name: "DataTransformer transforms to struct types",
+			etc: &ExecuteTestCase{
+				Args: []string{"hello"},
+				Node: SerialNodes(
+					Arg[string]("S", testDesc),
+					DataTransformer[string, *simpleType]("S", func(s string) (*simpleType, error) {
+						return &simpleType{fmt.Sprintf("%s there", s), 12}, nil
+					}),
+					DataTransformer[*simpleType, *simpleType]("S", func(st *simpleType) (*simpleType, error) {
+						return &simpleType{fmt.Sprintf("%s; General Kenobi", st.S), st.N * st.N}, nil
+					}),
+				),
+				WantData: &Data{
+					Values: map[string]interface{}{
+						"S": &simpleType{
+							S: "hello there; General Kenobi",
+							N: 144,
+						},
+					},
+				},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "hello"},
+					},
+				},
+			},
+		},
+		{
+			name: "DataTransformer fails if not set",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					DataTransformer[string, int]("S", func(s string) (int, error) {
+						return strconv.Atoi(s)
+					}),
+				),
+				WantStderr: "[DataTransformer] key is not set in Data\n",
+				WantErr:    fmt.Errorf("[DataTransformer] key is not set in Data"),
+			},
+		},
+		{
+			name: "DataTransformer fails if function error",
+			etc: &ExecuteTestCase{
+				Args: []string{"twelve"},
+				Node: SerialNodes(
+					Arg[string]("S", testDesc),
+					DataTransformer[string, int]("S", func(s string) (int, error) {
+						return strconv.Atoi(s)
+					}),
+				),
+				WantData: &Data{
+					Values: map[string]interface{}{
+						"S": "twelve",
+					},
+				},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "twelve"},
+					},
+				},
+				WantStderr: "[DataTransformer] failed to convert data: strconv.Atoi: parsing \"twelve\": invalid syntax\n",
+				WantErr:    fmt.Errorf("[DataTransformer] failed to convert data: strconv.Atoi: parsing \"twelve\": invalid syntax"),
 			},
 		},
 		// osenv tests
@@ -7506,6 +7599,7 @@ func TestComplete(t *testing.T) {
 					"conditional.go",
 					"data.go",
 					"data_test.go",
+					"data_transformer.go",
 					"debug.go",
 					"description.go",
 					filepath.FromSlash("docs/"),
