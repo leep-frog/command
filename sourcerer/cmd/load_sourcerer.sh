@@ -11,4 +11,4 @@ function _initial_load() {
 }
 _initial_load
 
-aliaser u mancli
+aliaser mc mancli

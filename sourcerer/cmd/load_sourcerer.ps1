@@ -9,3 +9,5 @@ function _sourcerer_initializer {
   Pop-Location
 }
 . _sourcerer_initializer
+
+Set-Alias mc mancli
