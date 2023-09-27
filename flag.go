@@ -13,7 +13,7 @@ var (
 	// MultiFlagRegex is the regex used to determine a multi-flag (`-qwer -> -q -w -e -r`).
 	// It explicitly doesn't allow short number flags.
 	MultiFlagRegex = regexp.MustCompile("^-[a-zA-Z]{2,}$")
-	ShortFlagRegex = regexp.MustCompile("^[a-zA-Z]$")
+	ShortFlagRegex = regexp.MustCompile("^[a-zA-Z0-9]$")
 )
 
 // FlagInterface defines a flag argument that is parsed regardless of it's position in
@@ -104,7 +104,7 @@ func FlagProcessor(fs ...FlagInterface) *flagProcessor {
 		// For example, if they wanted to override a flag from a separate package
 		m[flagName(f)] = f
 		if !ShortFlagRegex.MatchString(string(f.ShortName())) {
-			panic(fmt.Sprintf("Short flag name %c must match regex %v", f.ShortName(), ShortFlagRegex))
+			panic(fmt.Sprintf("Short flag name %q must match regex %v", f.ShortName(), ShortFlagRegex))
 		}
 		m[flagShortName(f)] = f
 	}

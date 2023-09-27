@@ -8833,10 +8833,10 @@ func TestPanics(t *testing.T) {
 			name: "Flag with improper short name panics",
 			f: func() {
 				FlagProcessor(
-					Flag[string]("five", '5', testDesc),
+					Flag[string]("ampersand", '&', testDesc),
 				)
 			},
-			want: "Short flag name 5 must match regex ^[a-zA-Z]$",
+			want: "Short flag name '&' must match regex ^[a-zA-Z0-9]$",
 		},
 		{
 			name: "Can't add options to a boolean flag",
