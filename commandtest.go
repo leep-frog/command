@@ -421,9 +421,10 @@ type runResponseTester struct {
 }
 
 type RunContents struct {
-	Name string
-	Args []string
-	Dir  string
+	Name          string
+	Args          []string
+	Dir           string
+	StdinContents string
 }
 
 func (rrt *runResponseTester) stubRunResponses(t *testing.T) func(cmd *exec.Cmd) error {
@@ -432,9 +433,18 @@ func (rrt *runResponseTester) stubRunResponses(t *testing.T) func(cmd *exec.Cmd)
 			t.Fatalf("ran out of stubbed run responses")
 		}
 
+		var stdinContents string
+		if cmd.Stdin != nil {
+			b, err := io.ReadAll(cmd.Stdin)
+			if err != nil {
+				t.Fatalf("Failed to read data from cmd.Stdin: %v", err)
+			}
+			stdinContents = string(b)
+		}
+
 		// `cmd.Args[0]` is used instead of `cmd.Path` because `cmd.Path` can be modified,
 		// like by msys for example.
-		rrt.gotRunContents = append(rrt.gotRunContents, &RunContents{cmd.Args[0], cmd.Args[1:], cmd.Dir})
+		rrt.gotRunContents = append(rrt.gotRunContents, &RunContents{cmd.Args[0], cmd.Args[1:], cmd.Dir, stdinContents})
 
 		r := rrt.runResponses[0]
 		rrt.runResponses = rrt.runResponses[1:]

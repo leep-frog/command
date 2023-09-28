@@ -96,6 +96,30 @@ func TestShellCommand(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "shell command forwards stdin",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(&ShellCommand[string]{
+					ArgName:     "s",
+					CommandName: "echo",
+					Args:        []string{"hello"},
+					Stdin:       strings.NewReader("hello there.\nGeneral Kenobi"),
+				}),
+				WantRunContents: []*RunContents{{
+					Name:          "echo",
+					Args:          []string{"hello"},
+					StdinContents: "hello there.\nGeneral Kenobi",
+				}},
+				WantData: &Data{Values: map[string]interface{}{
+					"s": "aloha",
+				}},
+				RunResponses: []*FakeRun{
+					{
+						Stdout: []string{"aloha"},
+					},
+				},
+			},
+		},
 		// String
 		{
 			name: "shell node for string",

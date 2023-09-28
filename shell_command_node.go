@@ -64,6 +64,8 @@ type ShellCommand[T any] struct {
 	Desc string
 	// Dir is the directory in which to run the command. Defaults to the current directory.
 	Dir string
+	// Stdin is the `io.Reader` to forward for use in `exec.Command`
+	Stdin io.Reader
 
 	// Validators contains a list of validators to run with the shell command output.
 	Validators []*ValidatorOption[T]
@@ -183,6 +185,7 @@ func (bn *ShellCommand[T]) Run(output Output, data *Data) (T, error) {
 	var rawOut bytes.Buffer
 	stdoutWriters := []io.Writer{&rawOut}
 	cmd := exec.Command(bn.CommandName, bn.Args...)
+	cmd.Stdin = bn.Stdin
 	cmd.Dir = bn.Dir
 	if bn.ForwardStdout && output != nil {
 		stdoutWriters = append(stdoutWriters, StdoutWriter(output))
