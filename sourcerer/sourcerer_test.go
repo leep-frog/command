@@ -1886,6 +1886,13 @@ func TestSourcerer(t *testing.T) {
 						"charlie",
 					),
 				},
+				osChecks: map[string]*osCheck{
+					osWindows: {
+						wantStdout: autocompleteSuggestions(
+							"charlie ",
+						),
+					},
+				},
 			},
 			// Usage tests
 			{

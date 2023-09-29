@@ -149,6 +149,10 @@ func (w *windows) executeFunction(targetName, cliName string, setup []string) st
 }
 
 func (w *windows) HandleAutocompleteSuccess(output command.Output, suggestions []string) {
+	// Add a trailing space because powershell doesn't do that for us for single-guaranteed completions
+	if len(suggestions) == 1 {
+		suggestions[0] = fmt.Sprintf("%s ", suggestions[0])
+	}
 	output.Stdoutf("%s\n", strings.Join(suggestions, "\n"))
 }
 
