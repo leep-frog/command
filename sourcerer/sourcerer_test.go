@@ -1773,6 +1773,21 @@ func TestSourcerer(t *testing.T) {
 				},
 			},
 			{
+				name: "autocomplete handles no suggestions empty string along for completion",
+				args: []string{"autocomplete", "basic", "63", "4", "cmd "},
+				clis: []CLI{
+					&testCLI{
+						name: "basic",
+						processors: []command.Processor{
+							command.Arg[string]("s", "desc", command.SimpleCompleter[string]()),
+						},
+					},
+				},
+				osCheck: &osCheck{
+					wantStdout: []string{""},
+				},
+			},
+			{
 				name: "autocomplete doesn't complete passthrough args",
 				args: []string{"autocomplete", "basic", "63", "4", "cmd ", "al"},
 				clis: []CLI{

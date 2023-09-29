@@ -121,10 +121,8 @@ func (s *sourcerer) autocompleteExecutor(o command.Output, d *command.Data) erro
 		CurrentOS.HandleAutocompleteError(o, compTypeArg.Get(d), err)
 		return err
 	}
-	if len(g) > 0 {
-		CurrentOS.HandleAutocompleteSuccess(o, g)
-	}
 
+	CurrentOS.HandleAutocompleteSuccess(o, g)
 	return nil
 }
 
