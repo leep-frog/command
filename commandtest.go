@@ -150,8 +150,10 @@ func UsageTest(t *testing.T, utc *UsageTestCase) {
 	got, err := Use(utc.Node, ParseExecuteArgs(utc.Args))
 	CmpError(t, fmt.Sprintf("Use(%v)", utc.Args), utc.WantErr, err)
 
-	if diff := cmp.Diff(strings.Join(utc.WantString, "\n"), got.String()); diff != "" {
-		t.Errorf("Use(%v) returned incorrect response (-want, +got):\n%s", utc.Args, diff)
+	if err == nil {
+		if diff := cmp.Diff(strings.Join(utc.WantString, "\n"), got.String()); diff != "" {
+			t.Errorf("Use(%v) returned incorrect response (-want, +got):\n%s", utc.Args, diff)
+		}
 	}
 }
 

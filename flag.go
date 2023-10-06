@@ -331,6 +331,10 @@ func (fn *flagProcessor) Execute(input *Input, output Output, data *Data, eData 
 }
 
 func (fn *flagProcessor) Usage(i *Input, d *Data, u *Usage) error {
+	if err := fn.Execute(i, NewIgnoreAllOutput(), d, nil); err != nil && !IsNotEnoughArgsError(err) {
+		return err
+	}
+
 	var flags []FlagInterface
 	for k, f := range fn.flagMap {
 		// flagMap contains entries for name and short name, so ensure we only do each one once.

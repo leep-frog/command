@@ -22,9 +22,7 @@ func Use(root Node, input *Input) (*Usage, error) {
 		return nil, err
 	}
 
-	if !input.FullyProcessed() {
-		return nil, ExtraArgsErr(input)
-	}
+	// Note, we ignore ExtraArgsErr (by not checking input.FullyProcessed()
 	return u, nil
 }
 

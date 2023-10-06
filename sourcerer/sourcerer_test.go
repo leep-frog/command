@@ -1467,18 +1467,32 @@ func TestSourcerer(t *testing.T) {
 				name: "Execute shows usage if help flag included with no other arguments",
 				clis: []CLI{
 					&testCLI{
-						name:       "basic",
-						processors: []command.Processor{command.ListArg[string]("SL", "test", 2, 1)},
+						name: "basic",
+						processors: []command.Processor{
+							command.FlagProcessor(
+								command.Flag[string]("strFlag", 's', "strDesc"),
+								command.Flag[string]("strFlag2", '2', "str2Desc"),
+								command.BoolFlag("boolFlag", 'b', "bDesc"),
+								command.BoolFlag("bool2Flag", command.FlagNoShortName, "b2Desc"),
+							),
+							command.ListArg[string]("SL", "test", 2, 1),
+						},
 					},
 				},
 				args: []string{"execute", "basic", fakeFile, "--help"},
 				osCheck: &osCheck{
 					wantStdout: []string{
 						strings.Join([]string{
-							"SL SL [ SL ]",
+							"SL SL [ SL ] --bool2Flag --boolFlag|-b --strFlag|-s --strFlag2|-2",
 							"",
 							"Arguments:",
 							"  SL: test",
+							"",
+							"Flags:",
+							"      bool2Flag: b2Desc",
+							"  [b] boolFlag: bDesc",
+							"  [s] strFlag: strDesc",
+							"  [2] strFlag2: str2Desc",
 						}, "\n"),
 					},
 				},
@@ -1487,18 +1501,126 @@ func TestSourcerer(t *testing.T) {
 				name: "Execute shows usage if help flag included with some arguments",
 				clis: []CLI{
 					&testCLI{
-						name:       "basic",
-						processors: []command.Processor{command.ListArg[string]("SL", "test", 2, 1)},
+						name: "basic",
+						processors: []command.Processor{
+							command.FlagProcessor(
+								command.Flag[string]("strFlag", 's', "strDesc"),
+								command.Flag[string]("strFlag2", '2', "str2Desc"),
+								command.BoolFlag("boolFlag", 'b', "bDesc"),
+								command.BoolFlag("bool2Flag", command.FlagNoShortName, "b2Desc"),
+							),
+							command.ListArg[string]("SL", "test", 2, 1),
+						},
 					},
 				},
 				args: []string{"execute", "basic", fakeFile, "--help", "un"},
 				osCheck: &osCheck{
 					wantStdout: []string{
 						strings.Join([]string{
-							"SL SL [ SL ]",
+							"SL SL [ SL ] --bool2Flag --boolFlag|-b --strFlag|-s --strFlag2|-2",
 							"",
 							"Arguments:",
 							"  SL: test",
+							"",
+							"Flags:",
+							"      bool2Flag: b2Desc",
+							"  [b] boolFlag: bDesc",
+							"  [s] strFlag: strDesc",
+							"  [2] strFlag2: str2Desc",
+						}, "\n"),
+					},
+				},
+			},
+			{
+				name: "Execute shows usage if all arguments provided",
+				clis: []CLI{
+					&testCLI{
+						name: "basic",
+						processors: []command.Processor{
+							command.FlagProcessor(
+								command.Flag[string]("strFlag", 's', "strDesc"),
+								command.Flag[string]("strFlag2", '2', "str2Desc"),
+								command.BoolFlag("boolFlag", 'b', "bDesc"),
+								command.BoolFlag("bool2Flag", command.FlagNoShortName, "b2Desc"),
+							),
+							command.ListArg[string]("SL", "test", 2, 1),
+						},
+					},
+				},
+				args: []string{"execute", "basic", fakeFile, "--help", "un", "deux"},
+				osCheck: &osCheck{
+					wantStdout: []string{
+						strings.Join([]string{
+							"--bool2Flag --boolFlag|-b --strFlag|-s --strFlag2|-2",
+							"",
+							"Flags:",
+							"      bool2Flag: b2Desc",
+							"  [b] boolFlag: bDesc",
+							"  [s] strFlag: strDesc",
+							"  [2] strFlag2: str2Desc",
+						}, "\n"),
+					},
+				},
+			},
+			{
+				name: "Execute shows usage if all arguments provided and some flags",
+				clis: []CLI{
+					&testCLI{
+						name: "basic",
+						processors: []command.Processor{
+							command.FlagProcessor(
+								command.Flag[string]("strFlag", 's', "strDesc"),
+								command.Flag[string]("strFlag2", '2', "str2Desc"),
+								command.BoolFlag("boolFlag", 'b', "bDesc"),
+								command.BoolFlag("bool2Flag", command.FlagNoShortName, "b2Desc"),
+							),
+							command.ListArg[string]("SL", "test", 2, 1),
+						},
+					},
+				},
+				args: []string{"execute", "basic", fakeFile, "-b", "un", "deux", "-s", "hi", "--help"},
+				osCheck: &osCheck{
+					wantStdout: []string{
+						strings.Join([]string{
+							"--bool2Flag --boolFlag|-b --strFlag|-s --strFlag2|-2",
+							"",
+							"Flags:",
+							"      bool2Flag: b2Desc",
+							"  [b] boolFlag: bDesc",
+							"  [s] strFlag: strDesc",
+							"  [2] strFlag2: str2Desc",
+						}, "\n"),
+					},
+				},
+			},
+			{
+				name: "Execute shows full usage if extra arguments provided",
+				clis: []CLI{
+					&testCLI{
+						name: "basic",
+						processors: []command.Processor{
+							command.FlagProcessor(
+								command.Flag[string]("strFlag", 's', "strDesc"),
+								command.Flag[string]("strFlag2", '2', "str2Desc"),
+								command.BoolFlag("boolFlag", 'b', "bDesc"),
+								command.BoolFlag("bool2Flag", command.FlagNoShortName, "b2Desc"),
+							),
+							command.ListArg[string]("SL", "test", 2, 1),
+						},
+					},
+				},
+				args: []string{"execute", "basic", fakeFile, "--help", "un", "deux", "trois", "quatre"},
+				osCheck: &osCheck{
+					// wantErr: fmt.Errorf("Unprocessed extra args: [quatre]"),
+					wantStdout: []string{
+						strings.Join([]string{
+							"--bool2Flag --boolFlag|-b --strFlag|-s --strFlag2|-2",
+							"",
+							"Flags:",
+							"      bool2Flag: b2Desc",
+							"  [b] boolFlag: bDesc",
+							"  [s] strFlag: strDesc",
+							"  [2] strFlag2: str2Desc",
 						}, "\n"),
 					},
 				},
@@ -1946,16 +2068,31 @@ func TestSourcerer(t *testing.T) {
 				},
 			},
 			{
-				name: "usage fails if too many args",
+				name: "usage handles too many args with no errors",
 				args: []string{"usage", "uec", "b", "un", "deux"},
 				clis: []CLI{&usageErrCLI{}},
 				osCheck: &osCheck{
-					wantStderr: []string{
-						"Unprocessed extra args: [deux]",
-						uecUsage(),
+					wantStdout: []string{""},
+				},
+			},
+			{
+				name: "usage handles too many args with flags",
+				args: []string{"usage", "basic", "b", "un", "deux", "--sf", "hey"},
+				clis: []CLI{&testCLI{
+					name: "basic",
+					processors: []command.Processor{command.FlagProcessor(
+						command.BoolFlag("bf", 'b', "desc"),
+						command.Flag[string]("sf", 's', "desc string"),
+					)},
+				}},
+				osCheck: &osCheck{
+					wantStdout: []string{
+						"--bf|-b --sf|-s",
+						"",
+						"Flags:",
+						"  [b] bf: desc",
+						"  [s] sf: desc string",
 					},
-					wantErr:         fmt.Errorf("Unprocessed extra args: [deux]"),
-					noStderrNewline: true,
 				},
 			},
 			{
@@ -2082,13 +2219,12 @@ func (tc *testCLI) Name() string {
 
 func (tc *testCLI) UnmarshalJSON([]byte) error { return nil }
 func (tc *testCLI) Node() command.Node {
-	ns := append(tc.processors, command.SimpleProcessor(func(i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
+	return command.SerialNodes(append(tc.processors, command.SimpleProcessor(func(i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
 		if tc.f != nil {
 			return tc.f(tc, i, o, d, ed)
 		}
 		return nil
-	}, nil))
-	return command.SerialNodes(ns...)
+	}, nil))...)
 }
 func (tc *testCLI) Changed() bool   { return tc.changed }
 func (tc *testCLI) Setup() []string { return tc.setup }

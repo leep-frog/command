@@ -1,8 +1,26 @@
 package command
 
 import (
+	"fmt"
 	"testing"
 )
+
+type usageNode struct {
+	usageErr     error
+	usageNextErr error
+}
+
+func (un *usageNode) Usage(*Input, *Data, *Usage) error {
+	return un.usageErr
+}
+
+func (un *usageNode) UsageNext(*Input, *Data) (Node, error) {
+	return nil, un.usageNextErr
+}
+
+func (un *usageNode) Execute(*Input, Output, *Data, *ExecuteData) error { return nil }
+func (un *usageNode) Complete(*Input, *Data) (*Completion, error)       { return nil, nil }
+func (un *usageNode) Next(*Input, *Data) (Node, error)                  { return nil, nil }
 
 func TestUsage(t *testing.T) {
 	for _, test := range []struct {
@@ -11,6 +29,20 @@ func TestUsage(t *testing.T) {
 	}{
 		{
 			name: "works with empty node",
+		},
+		{
+			name: "fails if node.Usage() returns error",
+			utc: &UsageTestCase{
+				Node:    &usageNode{fmt.Errorf("oops"), nil},
+				WantErr: fmt.Errorf("oops"),
+			},
+		},
+		{
+			name: "fails if node.UsageNext() returns error",
+			utc: &UsageTestCase{
+				Node:    &usageNode{nil, fmt.Errorf("whoops")},
+				WantErr: fmt.Errorf("whoops"),
+			},
 		},
 		{
 			name: "works with basic Description node",
@@ -401,6 +433,81 @@ func TestUsage(t *testing.T) {
 					"Flags:",
 					"  [d] debug: debug stuff",
 					"  [n] new: new files",
+				},
+			},
+		},
+		{
+			name: "Works with input flag and no args",
+			utc: &UsageTestCase{
+				Args: []string{"--str"},
+				Node: SerialNodes(FlagProcessor(
+					ListFlag[string]("str", 's', "strings", 2, 1),
+				)),
+				WantString: []string{
+					"--str|-s",
+					"",
+					"Flags:",
+					"  [s] str: strings",
+				},
+			},
+		},
+		{
+			name: "Works with input flag and some args",
+			utc: &UsageTestCase{
+				Args: []string{"--str", "un"},
+				Node: SerialNodes(FlagProcessor(
+					ListFlag[string]("str", 's', "strings", 2, 1),
+				)),
+				WantString: []string{
+					"--str|-s",
+					"",
+					"Flags:",
+					"  [s] str: strings",
+				},
+			},
+		},
+		{
+			name: "Works with input flag and required args",
+			utc: &UsageTestCase{
+				Args: []string{"--str", "un", "deux"},
+				Node: SerialNodes(FlagProcessor(
+					ListFlag[string]("str", 's', "strings", 2, 1),
+				)),
+				WantString: []string{
+					"--str|-s",
+					"",
+					"Flags:",
+					"  [s] str: strings",
+				},
+			},
+		},
+		{
+			name: "Works with input flag and all args",
+			utc: &UsageTestCase{
+				Args: []string{"--str", "un", "deux", "trois"},
+				Node: SerialNodes(FlagProcessor(
+					ListFlag[string]("str", 's', "strings", 2, 1),
+				)),
+				WantString: []string{
+					"--str|-s",
+					"",
+					"Flags:",
+					"  [s] str: strings",
+				},
+			},
+		},
+		{
+			name: "Works with input flag and extra args",
+			utc: &UsageTestCase{
+				Args: []string{"--str", "un", "deux", "trois", "quatre"},
+				Node: SerialNodes(FlagProcessor(
+					ListFlag[string]("str", 's', "strings", 2, 1),
+				)),
+				WantString: []string{
+					"--str|-s",
+					"",
+					"Flags:",
+					"  [s] str: strings",
 				},
 			},
 		},
