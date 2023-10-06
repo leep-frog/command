@@ -19,6 +19,7 @@ var (
 	fileArg         = command.FileArgument("FILE", "Temporary file for execution")
 	targetNameArg   = command.OptionalArg[string]("TARGET_NAME", "The name of the created target in $GOPATH/bin", command.Default("leepFrogSource"), command.MatchesRegex("^[a-zA-Z]+$"))
 	passthroughArgs = command.ListArg[string]("ARG", "Arguments that get passed through to relevant CLI command", 0, command.UnboundedList)
+	helpFlag        = command.BoolFlag("help", command.FlagNoShortName, "Display command's usage doc")
 	// See the below link for more details on COMP_* details:
 	// https://www.gnu.org/software/bash/manual/html_node/Bash-Variables.html#Bash-Variables
 	compTypeArg  = command.Arg[int]("COMP_TYPE", "COMP_TYPE variable from bash complete function")
@@ -63,6 +64,10 @@ func (s *sourcerer) executeExecutor(output command.Output, d *command.Data) erro
 
 	sourcingFile := d.String(fileArg.Name())
 	args := d.StringList(passthroughArgs.Name())
+
+	if helpFlag.Get(d) {
+		return s.usageExecutorHelper(cli, args)(output, d)
+	}
 
 	// Add the setup arg if relevant. This should be identical to
 	// setup in commandtest.go.
@@ -204,6 +209,9 @@ func (s *sourcerer) Node() command.Node {
 				s.cliArg,
 				loadCLIArg,
 				fileArg,
+				command.FlagProcessor(
+					helpFlag,
+				),
 				passthroughArgs,
 				&command.ExecutorProcessor{F: s.executeExecutor},
 			),
@@ -235,10 +243,14 @@ func (s *sourcerer) listCLIExecutor(i *command.Input, o command.Output, d *comma
 }
 
 func (s *sourcerer) usageExecutor(i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
-	cli := s.cliArg.Get(d)
-	ed.Executor = append(ed.Executor, func(o command.Output, d *command.Data) error {
+	ed.Executor = append(ed.Executor, s.usageExecutorHelper(s.cliArg.Get(d), passthroughArgs.Get(d)))
+	return nil
+}
+
+func (s *sourcerer) usageExecutorHelper(cli CLI, args []string) func(o command.Output, d *command.Data) error {
+	return func(o command.Output, d *command.Data) error {
 		n := cli.Node()
-		u, err := command.Use(n, command.ParseExecuteArgs(passthroughArgs.Get(d)))
+		u, err := command.Use(n, command.ParseExecuteArgs(args))
 		if err != nil {
 			o.Err(err)
 			if command.IsUsageError(err) {
@@ -248,8 +260,7 @@ func (s *sourcerer) usageExecutor(i *command.Input, o command.Output, d *command
 		}
 		o.Stdoutln(u.String())
 		return nil
-	})
-	return nil
+	}
 }
 
 type Option interface {

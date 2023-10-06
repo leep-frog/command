@@ -9,6 +9,11 @@ import (
 	"golang.org/x/exp/slices"
 )
 
+const (
+	// FlagNoShortName is the rune value for flags that indicates no short flag should be included.
+	FlagNoShortName rune = -1 // Runes are actually int32. Negative values indicate unknown rune
+)
+
 var (
 	// MultiFlagRegex is the regex used to determine a multi-flag (`-qwer -> -q -w -e -r`).
 	// It explicitly doesn't allow short number flags.
@@ -103,6 +108,10 @@ func FlagProcessor(fs ...FlagInterface) *flagProcessor {
 		// We explicitly don't check for duplicate keys to give more freedom to users
 		// For example, if they wanted to override a flag from a separate package
 		m[flagName(f)] = f
+		sn := f.ShortName()
+		if sn == FlagNoShortName {
+			continue
+		}
 		if !ShortFlagRegex.MatchString(string(f.ShortName())) {
 			panic(fmt.Sprintf("Short flag name %q must match regex %v", f.ShortName(), ShortFlagRegex))
 		}
@@ -333,11 +342,21 @@ func (fn *flagProcessor) Usage(i *Input, d *Data, u *Usage) error {
 	sort.SliceStable(flags, func(i, j int) bool { return flags[i].Name() < flags[j].Name() })
 
 	for _, f := range flags {
+		sn := f.ShortName()
 		if f.Desc() != "" {
-			u.UsageSection.Add(FlagSection, fmt.Sprintf("[%c] %s", f.ShortName(), f.Name()), f.Desc())
+			if sn == FlagNoShortName {
+				u.UsageSection.Add(FlagSection, fmt.Sprintf("    %s", f.Name()), f.Desc())
+			} else {
+				u.UsageSection.Add(FlagSection, fmt.Sprintf("[%c] %s", f.ShortName(), f.Name()), f.Desc())
+			}
 		}
 
-		u.Flags = append(u.Flags, fmt.Sprintf("%s|%s", flagName(f), flagShortName(f)))
+		if sn == FlagNoShortName {
+			u.Flags = append(u.Flags, fmt.Sprintf("%s", flagName(f)))
+		} else {
+			u.Flags = append(u.Flags, fmt.Sprintf("%s|%s", flagName(f), flagShortName(f)))
+		}
+
 	}
 	return nil
 }

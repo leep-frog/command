@@ -2,7 +2,6 @@ package sourcerer
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"sort"
 	"strings"
@@ -1195,7 +1194,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 
 func cmpFile(t *testing.T, prefix, filename string, want []string) {
 	t.Helper()
-	contents, err := ioutil.ReadFile(filename)
+	contents, err := os.ReadFile(filename)
 	if err != nil {
 		t.Fatalf("failed to read file: %v", err)
 	}
@@ -1209,7 +1208,7 @@ func cmpFile(t *testing.T, prefix, filename string, want []string) {
 }
 
 func TestSourcerer(t *testing.T) {
-	f, err := ioutil.TempFile("", "test-leep-frog")
+	f, err := os.CreateTemp("", "test-leep-frog")
 	if err != nil {
 		t.Fatalf("failed to create tmp file: %v", err)
 	}
@@ -1460,6 +1459,47 @@ func TestSourcerer(t *testing.T) {
 						`}`,
 						"_leep_execute_data_function_wrap",
 						"",
+					},
+				},
+			},
+			// Execute with usage tests
+			{
+				name: "Execute shows usage if help flag included with no other arguments",
+				clis: []CLI{
+					&testCLI{
+						name:       "basic",
+						processors: []command.Processor{command.ListArg[string]("SL", "test", 2, 1)},
+					},
+				},
+				args: []string{"execute", "basic", fakeFile, "--help"},
+				osCheck: &osCheck{
+					wantStdout: []string{
+						strings.Join([]string{
+							"SL SL [ SL ]",
+							"",
+							"Arguments:",
+							"  SL: test",
+						}, "\n"),
+					},
+				},
+			},
+			{
+				name: "Execute shows usage if help flag included with some arguments",
+				clis: []CLI{
+					&testCLI{
+						name:       "basic",
+						processors: []command.Processor{command.ListArg[string]("SL", "test", 2, 1)},
+					},
+				},
+				args: []string{"execute", "basic", fakeFile, "--help", "un"},
+				osCheck: &osCheck{
+					wantStdout: []string{
+						strings.Join([]string{
+							"SL SL [ SL ]",
+							"",
+							"Arguments:",
+							"  SL: test",
+						}, "\n"),
 					},
 				},
 			},
@@ -1953,11 +1993,11 @@ func TestSourcerer(t *testing.T) {
 					oschk = test.osCheck
 				}
 
-				if err := ioutil.WriteFile(f.Name(), nil, 0644); err != nil {
+				if err := os.WriteFile(f.Name(), nil, 0644); err != nil {
 					t.Fatalf("failed to clear file: %v", err)
 				}
 
-				fake, err := ioutil.TempFile("", "leepFrogSourcerer-test")
+				fake, err := os.CreateTemp("", "leepFrogSourcerer-test")
 				if err != nil {
 					t.Fatalf("failed to create temp file: %v", err)
 				}

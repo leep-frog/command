@@ -449,6 +449,32 @@ func TestUsage(t *testing.T) {
 			},
 		},
 		{
+			name: "flags without short names work",
+			utc: &UsageTestCase{
+				Node: SerialNodes(
+					FlagProcessor(
+						BoolFlag("first", FlagNoShortName, "un"),
+						BoolFlag("second", '2', "deux"),
+						Flag[string]("third", '3', "trois"),
+						Flag[string]("fourth", FlagNoShortName, "quatre"),
+					),
+					Arg[string]("SN", "node for a string"),
+				),
+				WantString: []string{
+					"SN --first --fourth --second|-2 --third|-3",
+					"",
+					"Arguments:",
+					"  SN: node for a string",
+					"",
+					"Flags:",
+					"      first: un",
+					"      fourth: quatre",
+					"  [2] second: deux",
+					"  [3] third: trois",
+				},
+			},
+		},
+		{
 			name: "NodeRepeater usage works for finite optional",
 			utc: &UsageTestCase{
 				Node: SerialNodes(sampleRepeaterProcessor(2, 1)),

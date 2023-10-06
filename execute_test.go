@@ -4096,6 +4096,22 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
+			name: "flag processor handles FlagNoShortName",
+			etc: &ExecuteTestCase{
+				Node: &SimpleNode{Processor: FlagProcessor(Flag[string]("strFlag", FlagNoShortName, testDesc))},
+				Args: []string{"--strFlag", "hello"},
+				WantData: &Data{Values: map[string]interface{}{
+					"strFlag": "hello",
+				}},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "--strFlag"},
+						{value: "hello"},
+					},
+				},
+			},
+		},
+		{
 			name: "flag processor parses flag in the middle",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
