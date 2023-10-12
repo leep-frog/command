@@ -52,7 +52,7 @@ func StubValue[T any](t *testing.T, originalValue *T, newValue T) {
 const (
 	ShortcutDesc = "  *: Start of new shortcut-able section"
 	CacheDesc    = "  ^: Start of new cachable section"
-	BranchDesc   = "  <: Start of subcommand branches"
+	BranchDesc   = "  ┳: Start of subcommand branches"
 )
 
 // UsageTestCase is a test case object for testing command usage.

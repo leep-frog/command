@@ -567,8 +567,8 @@ func TestUsage(t *testing.T) {
 		Node: (&GoLeep{}).Node(),
 		WantString: []string{
 			"Execute the provided go files",
-			"CLI < [ PASSTHROUGH_ARGS ... ] --go-dir|-d",
-			"┃",
+			"CLI ┳ [ PASSTHROUGH_ARGS ... ] --go-dir|-d",
+			"┏━━━┛",
 			"┃   Get the usage of the provided go files",
 			"┗━━ usage",
 			"",

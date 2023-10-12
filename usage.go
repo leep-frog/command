@@ -199,10 +199,11 @@ func (u *Usage) string(r, noItemPrefixParts, middleItemPrefixParts, finalItemPre
 		r = append(r, noItemPrefix+u.Description)
 	}
 
+	usageString := strings.Join(append(u.Usage, u.Flags...), " ")
 	if finalSubSection {
-		r = append(r, finalItemPrefix+strings.Join(append(u.Usage, u.Flags...), " "))
+		r = append(r, finalItemPrefix+usageString)
 	} else {
-		r = append(r, middleItemPrefix+strings.Join(append(u.Usage, u.Flags...), " "))
+		r = append(r, middleItemPrefix+usageString)
 	}
 
 	if len(u.SubSections) > 0 {
@@ -211,7 +212,13 @@ func (u *Usage) string(r, noItemPrefixParts, middleItemPrefixParts, finalItemPre
 			prefixStartParts[len(prefixStartParts)-1] = "    "
 		}
 
-		r = append(r, strings.Join(prefixStartParts, "")+"\u2503")
+		prefix := strings.Join(prefixStartParts, "")
+		index := strings.Index(usageString, "\u2533")
+		if index == 0 {
+			r = append(r, prefix+"\u2503")
+		} else {
+			r = append(r, prefix+"\u250f"+strings.Repeat("\u2501", index-1)+"\u251b")
+		}
 
 		for i, su := range u.SubSections {
 			isFinal := i == (len(u.SubSections) - 1)
@@ -221,8 +228,8 @@ func (u *Usage) string(r, noItemPrefixParts, middleItemPrefixParts, finalItemPre
 				append(slices.Clone(prefixStartParts), NO_ITEM_PREFIX[drawLines]),
 				append(slices.Clone(prefixStartParts), MIDDLE_ITEM_PREFIX[drawLines]),
 				append(slices.Clone(prefixStartParts), END_ITEM_PREFIX[drawLines]),
-				i == 0, isFinal)
-			//
+				i == 0, isFinal,
+			)
 
 			if su.UsageSection != nil {
 				for section, m := range *su.UsageSection {

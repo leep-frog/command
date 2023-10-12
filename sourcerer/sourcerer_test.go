@@ -2256,7 +2256,7 @@ func (uec *usageErrCLI) Setup() []string { return nil }
 func uecUsage() string {
 	return strings.Join([]string{
 		usagePrefixString,
-		`<`,
+		`┳`,
 		`┃`,
 		`┣━━ a [ A_SL ]`,
 		`┃`,
@@ -2267,7 +2267,7 @@ func uecUsage() string {
 		`  B_SL: str list`,
 		``,
 		`Symbols:`,
-		`  <: Start of subcommand branches`,
+		`  ┳: Start of subcommand branches`,
 		``,
 	}, "\n")
 }
