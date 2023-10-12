@@ -568,9 +568,9 @@ func TestUsage(t *testing.T) {
 		WantString: []string{
 			"Execute the provided go files",
 			"CLI < [ PASSTHROUGH_ARGS ... ] --go-dir|-d",
-			"",
-			"  Get the usage of the provided go files",
-			"  usage",
+			"┃",
+			"┃   Get the usage of the provided go files",
+			"┗━━ usage",
 			"",
 			"Arguments:",
 			"  CLI: CLI to use",

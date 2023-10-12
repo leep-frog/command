@@ -2,6 +2,7 @@ package command
 
 import (
 	"fmt"
+	"regexp"
 	"sort"
 	"strings"
 )
@@ -74,7 +75,16 @@ type Usage struct {
 	Flags []string
 
 	// Subsections is a set of `Usage` objects that are indented from the current `Usage` object.
-	SubSections []*Usage
+	SubSections []*SubSection
+}
+
+// SubSection is a sub-usage section that will be indented accordingly.
+type SubSection struct {
+	// Usage is the usage info for the sub-section
+	Usage *Usage
+
+	// Lines is whether or not to draw lines to the nested elements
+	DrawLines bool
 }
 
 // UsageSection is a map from section name to key phrase for that section to description for that key.
@@ -98,10 +108,11 @@ func (us *UsageSection) Set(section, key string, value ...string) {
 // String crates the full usage text as a single string.
 func (u *Usage) String() string {
 	var r []string
-	r = u.string(r, 0)
+	r = u.string(r, nil, 0, true)
 
 	var sections []string
-	if u.UsageSection != nil {
+	if u.UsageSection != nil && len(*u.UsageSection) > 0 {
+		r = append(r, "")
 		for s := range *u.UsageSection {
 			sections = append(sections, s)
 		}
@@ -133,29 +144,56 @@ func (u *Usage) String() string {
 
 			}
 
-			// Since already split by newlines, this statement actually adds one newline.
+			// Since already split by newlines, this statement simply adds one ore newline.
 			r = append(r, "")
 		}
 	}
 
-	i := len(r) - 1
-	for ; i > 0 && r[i-1] == ""; i-- {
+	// Remove all trailing newlines
+	for ; len(r) > 0 && r[len(r)-1] == ""; r = r[:len(r)-1] {
 	}
-	r = r[:i]
 
 	return strings.Join(r, "\n")
 }
 
-func (u *Usage) string(r []string, depth int) []string {
-	prefix := strings.Repeat(" ", depth*2)
+var (
+	trailingNestedUsageRegex = regexp.MustCompile("\u2503(\\s*)$")
+	trailingWhitspaceRegex   = regexp.MustCompile(`\s*$`)
+)
+
+func (u *Usage) string(r, prefixParts []string, depth int, finalSubSection bool) []string {
+	prefix := strings.Join(prefixParts, "")
+	emptyPrefix := trailingWhitspaceRegex.ReplaceAllString(prefix, "")
+	if depth != 0 {
+		r = append(r, emptyPrefix)
+	}
 	if u.Description != "" {
 		r = append(r, prefix+u.Description)
 	}
-	r = append(r, prefix+strings.Join(append(u.Usage, u.Flags...), " "))
-	r = append(r, "") // since we join with newlines, this just adds one extra newline
 
-	for _, su := range u.SubSections {
-		r = su.string(r, depth+1)
+	m := trailingNestedUsageRegex.FindStringSubmatch(prefix)
+	if len(m) > 0 {
+		lineChar := "\u2523"
+		if finalSubSection {
+			lineChar = "\u2517"
+		}
+		prefix = trailingNestedUsageRegex.ReplaceAllString(prefix, lineChar+strings.Repeat("\u2501", len(m[1])-1)) + " "
+	}
+
+	r = append(r, prefix+strings.Join(append(u.Usage, u.Flags...), " "))
+
+	if finalSubSection && len(prefixParts) > 0 {
+		prefixParts[len(prefixParts)-1] = trailingNestedUsageRegex.ReplaceAllString(prefixParts[len(prefixParts)-1], "    ")
+	}
+
+	for i, ss := range u.SubSections {
+		isFinal := i == (len(u.SubSections) - 1)
+		su := ss.Usage
+		if ss.DrawLines {
+			r = su.string(r, append(prefixParts, "\u2503   "), depth+1, isFinal)
+		} else {
+			r = su.string(r, append(prefixParts, "  "), depth+1, isFinal)
+		}
 
 		if su.UsageSection != nil {
 			for section, m := range *su.UsageSection {
