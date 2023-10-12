@@ -5,6 +5,8 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+
+	"golang.org/x/exp/slices"
 )
 
 const (
@@ -75,7 +77,9 @@ type Usage struct {
 	Flags []string
 
 	// Subsections is a set of `Usage` objects that are indented from the current `Usage` object.
-	SubSections []*SubSection
+	SubSections []*Usage
+	// SubSectionLines indicates whether or not to draw lines to the usage sub sections.
+	SubSectionLines bool
 }
 
 // SubSection is a sub-usage section that will be indented accordingly.
@@ -108,7 +112,7 @@ func (us *UsageSection) Set(section, key string, value ...string) {
 // String crates the full usage text as a single string.
 func (u *Usage) String() string {
 	var r []string
-	r = u.string(r, nil, 0, true)
+	r = u.string(r, nil, nil, nil, true, true)
 
 	var sections []string
 	if u.UsageSection != nil && len(*u.UsageSection) > 0 {
@@ -156,51 +160,77 @@ func (u *Usage) String() string {
 	return strings.Join(r, "\n")
 }
 
+func trimRightSpace(s string) string {
+	return trailingWhitspaceRegex.ReplaceAllString(s, "")
+}
+
+const (
+	noDrawLinePrefix = "  "
+)
+
 var (
 	trailingNestedUsageRegex = regexp.MustCompile("\u2503(\\s*)$")
 	trailingWhitspaceRegex   = regexp.MustCompile(`\s*$`)
+	MIDDLE_ITEM_PREFIX       = map[bool]string{
+		true:  "┣━━ ",
+		false: noDrawLinePrefix,
+	}
+	NO_ITEM_PREFIX = map[bool]string{
+		true:  "┃   ",
+		false: noDrawLinePrefix,
+	}
+	END_ITEM_PREFIX = map[bool]string{
+		true:  "┗━━ ",
+		false: noDrawLinePrefix,
+	}
 )
 
-func (u *Usage) string(r, prefixParts []string, depth int, finalSubSection bool) []string {
-	prefix := strings.Join(prefixParts, "")
-	emptyPrefix := trailingWhitspaceRegex.ReplaceAllString(prefix, "")
-	if depth != 0 {
+func (u *Usage) string(r, noItemPrefixParts, middleItemPrefixParts, finalItemPrefixParts []string, rootSection, finalSubSection bool) []string {
+	noItemPrefix := strings.Join(noItemPrefixParts, "")
+	middleItemPrefix := strings.Join(middleItemPrefixParts, "")
+	finalItemPrefix := strings.Join(finalItemPrefixParts, "")
+
+	emptyPrefix := trimRightSpace(noItemPrefix)
+	if !rootSection {
 		r = append(r, emptyPrefix)
 	}
+
 	if u.Description != "" {
-		r = append(r, prefix+u.Description)
+		r = append(r, noItemPrefix+u.Description)
 	}
 
-	m := trailingNestedUsageRegex.FindStringSubmatch(prefix)
-	if len(m) > 0 {
-		lineChar := "\u2523"
-		if finalSubSection {
-			lineChar = "\u2517"
-		}
-		prefix = trailingNestedUsageRegex.ReplaceAllString(prefix, lineChar+strings.Repeat("\u2501", len(m[1])-1)) + " "
+	if finalSubSection {
+		r = append(r, finalItemPrefix+strings.Join(append(u.Usage, u.Flags...), " "))
+	} else {
+		r = append(r, middleItemPrefix+strings.Join(append(u.Usage, u.Flags...), " "))
 	}
 
-	r = append(r, prefix+strings.Join(append(u.Usage, u.Flags...), " "))
-
-	if finalSubSection && len(prefixParts) > 0 {
-		prefixParts[len(prefixParts)-1] = trailingNestedUsageRegex.ReplaceAllString(prefixParts[len(prefixParts)-1], "    ")
-	}
-
-	for i, ss := range u.SubSections {
-		isFinal := i == (len(u.SubSections) - 1)
-		su := ss.Usage
-		if ss.DrawLines {
-			r = su.string(r, append(prefixParts, "\u2503   "), depth+1, isFinal)
-		} else {
-			r = su.string(r, append(prefixParts, "  "), depth+1, isFinal)
+	if len(u.SubSections) > 0 {
+		prefixStartParts := slices.Clone(noItemPrefixParts)
+		if finalSubSection && len(prefixStartParts) > 0 && prefixStartParts[len(prefixStartParts)-1] != noDrawLinePrefix {
+			prefixStartParts[len(prefixStartParts)-1] = "    "
 		}
 
-		if su.UsageSection != nil {
-			for section, m := range *su.UsageSection {
-				for k, v := range m {
-					// Subsections override the higher-level section
-					// Mostly needed for duplicate sections (like nested branch nodes).
-					u.UsageSection.Set(section, k, v...)
+		r = append(r, strings.Join(prefixStartParts, "")+"\u2503")
+
+		for i, su := range u.SubSections {
+			isFinal := i == (len(u.SubSections) - 1)
+
+			drawLines := su.SubSectionLines
+			r = su.string(r,
+				append(slices.Clone(prefixStartParts), NO_ITEM_PREFIX[drawLines]),
+				append(slices.Clone(prefixStartParts), MIDDLE_ITEM_PREFIX[drawLines]),
+				append(slices.Clone(prefixStartParts), END_ITEM_PREFIX[drawLines]),
+				i == 0, isFinal)
+			//
+
+			if su.UsageSection != nil {
+				for section, m := range *su.UsageSection {
+					for k, v := range m {
+						// Subsections override the higher-level section
+						// Mostly needed for duplicate sections (like nested branch nodes).
+						u.UsageSection.Set(section, k, v...)
+					}
 				}
 			}
 		}

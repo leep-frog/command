@@ -226,7 +226,8 @@ func (bn *BranchNode) Usage(input *Input, data *Data, u *Usage) error {
 			v = fmt.Sprintf("[%s|%s]", bs.name, strings.Join(bs.values, "|"))
 		}
 		su.Usage = append([]string{v}, su.Usage...)
-		u.SubSections = append(u.SubSections, &SubSection{su, true})
+		u.SubSections = append(u.SubSections, su)
+		su.SubSectionLines = true
 	}
 	return nil
 }
