@@ -201,8 +201,13 @@ func (bn *BranchNode) Usage(input *Input, data *Data, u *Usage) error {
 		return nil
 	}
 
-	u.UsageSection.Set(SymbolSection, "\u2533", "Start of subcommand branches")
-	u.Usage = append(u.Usage, "\u2533")
+	if bn.Default != nil {
+		u.UsageSection.Set(SymbolSection, usageBoxLeftRightDown, "Start of subcommand branches (with default node)")
+		u.Usage = append(u.Usage, usageBoxLeftRightDown)
+	} else {
+		u.UsageSection.Set(SymbolSection, usageBoxLeftDown, "Start of subcommand branches (without default node)")
+		u.Usage = append(u.Usage, usageBoxLeftDown)
+	}
 
 	bss := maps.Values(bn.getSyns())
 	slices.SortFunc(bss, func(this, that *branchSyn) bool {

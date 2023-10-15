@@ -580,7 +580,7 @@ func TestUsage(t *testing.T) {
 			"  [d] go-dir: Directory of package to run",
 			"",
 			"Symbols:",
-			command.BranchDesc,
+			command.BranchDescWithDefault,
 		},
 	})
 }

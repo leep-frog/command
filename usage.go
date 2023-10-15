@@ -166,11 +166,19 @@ func trimRightSpace(s string) string {
 
 const (
 	noDrawLinePrefix = "  "
+	// https://en.wikipedia.org/wiki/List_of_Unicode_characters#Box_Drawing
+	usageBoxUpDown        = "\u2503" // ┃
+	usageBoxLeftRightDown = "\u2533" // ┳
+	usageBoxLeftRight     = "\u2501" // ━
+	usageBoxRightDown     = "\u250f" // ┏
+	usageBoxLeftUp        = "\u251b" // ┛
+	usageBoxLeftDown      = "\u2513" // ┓
 )
 
 var (
-	trailingNestedUsageRegex = regexp.MustCompile("\u2503(\\s*)$")
+	trailingNestedUsageRegex = regexp.MustCompile(fmt.Sprintf(`%s(\s*)$`, usageBoxUpDown))
 	trailingWhitspaceRegex   = regexp.MustCompile(`\s*$`)
+	branchStartRegex         = regexp.MustCompile(fmt.Sprintf(`[%s%s]`, usageBoxLeftRightDown, usageBoxLeftDown))
 	MIDDLE_ITEM_PREFIX       = map[bool]string{
 		true:  "┣━━ ",
 		false: noDrawLinePrefix,
@@ -207,17 +215,18 @@ func (u *Usage) string(r, noItemPrefixParts, middleItemPrefixParts, finalItemPre
 	}
 
 	if len(u.SubSections) > 0 {
+
 		prefixStartParts := slices.Clone(noItemPrefixParts)
 		if finalSubSection && len(prefixStartParts) > 0 && prefixStartParts[len(prefixStartParts)-1] != noDrawLinePrefix {
 			prefixStartParts[len(prefixStartParts)-1] = "    "
 		}
 
 		prefix := strings.Join(prefixStartParts, "")
-		index := strings.Index(usageString, "\u2533")
-		if index == 0 {
-			r = append(r, prefix+"\u2503")
+		index := branchStartRegex.FindStringIndex(usageString)
+		if index[0] == 0 {
+			r = append(r, prefix+usageBoxUpDown)
 		} else {
-			r = append(r, prefix+"\u250f"+strings.Repeat("\u2501", index-1)+"\u251b")
+			r = append(r, prefix+usageBoxRightDown+strings.Repeat(usageBoxLeftRight, index[0]-1)+usageBoxLeftUp)
 		}
 
 		for i, su := range u.SubSections {
