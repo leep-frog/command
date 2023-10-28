@@ -1,4 +1,4 @@
-package main
+package sourcerer
 
 import (
 	"fmt"
@@ -6,14 +6,13 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/leep-frog/command"
-	"github.com/leep-frog/command/sourcerer"
 )
 
 func TestAliaser(t *testing.T) {
 	type osCheck struct {
 		WantExecuteData *command.ExecuteData
 	}
-	for _, curOS := range []sourcerer.OS{sourcerer.Linux(), sourcerer.Windows()} {
+	for _, curOS := range []OS{Linux(), Windows()} {
 		for _, test := range []struct {
 			name     string
 			etc      *command.ExecuteTestCase
@@ -149,7 +148,7 @@ func TestAliaser(t *testing.T) {
 				if !ok {
 					t.Skipf("No osCheck set for this OS")
 				}
-				command.StubValue(t, &sourcerer.CurrentOS, curOS)
+				command.StubValue(t, &CurrentOS, curOS)
 
 				cli := &AliaserCommand{}
 				test.etc.Node = cli.Node()

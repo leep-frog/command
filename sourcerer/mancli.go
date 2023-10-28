@@ -1,8 +1,7 @@
-package main
+package sourcerer
 
 import (
 	"github.com/leep-frog/command"
-	"github.com/leep-frog/command/sourcerer"
 )
 
 // UsageCommand is a CLI for printing out usage info for a CLI.
@@ -24,7 +23,7 @@ func (*UsageCommand) Node() command.Node {
 		extraMancliArgs,
 		command.ExecutableProcessor(func(o command.Output, d *command.Data) ([]string, error) {
 			cli := usageCLIArg.Get(d)
-			return sourcerer.CurrentOS.Mancli(cli, extraMancliArgs.Get(d)...), nil
+			return CurrentOS.Mancli(cli, extraMancliArgs.Get(d)...), nil
 		}),
 	)
 }

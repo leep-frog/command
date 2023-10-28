@@ -1,4 +1,4 @@
-package main
+package sourcerer
 
 import (
 	"fmt"
@@ -68,12 +68,12 @@ func TestGoLeep(t *testing.T) {
 				Args: []string{
 					"dc",
 					"-d",
-					filepath.Join("..", "..", "testdata"),
+					filepath.Join("..", "testdata"),
 				},
 				RunResponses: []*command.FakeRun{{}},
 				WantRunContents: []*command.RunContents{{
 					Name: `go`,
-					Dir:  filepath.Join("..", "..", "testdata"),
+					Dir:  filepath.Join("..", "testdata"),
 					Args: []string{
 						`run`,
 						".",
@@ -84,7 +84,7 @@ func TestGoLeep(t *testing.T) {
 				}},
 				WantData: &command.Data{Values: map[string]interface{}{
 					goleepCLIArg.Name(): "dc",
-					goDirectory.Name():  filepath.Join("..", "..", "testdata"),
+					goDirectory.Name():  filepath.Join("..", "testdata"),
 				}},
 			},
 		},
@@ -306,12 +306,12 @@ func TestGoLeep(t *testing.T) {
 					"c",
 					"usage",
 					"--go-dir",
-					filepath.Join("..", "..", "color"),
+					filepath.Join("..", "color"),
 				},
 				RunResponses: []*command.FakeRun{{}},
 				WantRunContents: []*command.RunContents{{
 					Name: `go`,
-					Dir:  filepath.Join("..", "..", "color"),
+					Dir:  filepath.Join("..", "color"),
 					Args: []string{
 						`run`,
 						`.`,
@@ -321,7 +321,7 @@ func TestGoLeep(t *testing.T) {
 				}},
 				WantData: &command.Data{Values: map[string]interface{}{
 					goleepCLIArg.Name(): "c",
-					goDirectory.Name():  filepath.Join("..", "..", "color"),
+					goDirectory.Name():  filepath.Join("..", "color"),
 				}},
 			},
 		},
@@ -369,7 +369,7 @@ func TestGoLeepAutocomplete(t *testing.T) {
 		{
 			name: "completes directories",
 			ctc: &command.CompleteTestCase{
-				Args: fmt.Sprintf("cmd c -d %s", filepath.Join("..", "..", "c")),
+				Args: fmt.Sprintf("cmd c -d %s", filepath.Join("..", "c")),
 				Want: []string{
 					filepath.FromSlash("cache/"),
 					filepath.FromSlash("cmd/"),
@@ -377,7 +377,7 @@ func TestGoLeepAutocomplete(t *testing.T) {
 					" ",
 				},
 				WantData: &command.Data{Values: map[string]interface{}{
-					goDirectory.Name(): filepath.Join("..", "..", "c"),
+					goDirectory.Name(): filepath.Join("..", "c"),
 				}},
 			},
 		},

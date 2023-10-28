@@ -1,4 +1,4 @@
-package main
+package sourcerer
 
 import (
 	"fmt"
@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/leep-frog/command"
-	"github.com/leep-frog/command/sourcerer"
 )
 
 // GoLeep is a CLI that runs command nodes that are defined in "main" packages.
@@ -26,8 +25,8 @@ var (
 	passAlongArgs = command.ListArg[string]("PASSTHROUGH_ARGS", "Args to pass through to the command", 0, command.UnboundedList)
 )
 
-func (gl *GoLeep) Aliasers() sourcerer.Option {
-	return sourcerer.NewAliaser("gl", gl.Name())
+func (gl *GoLeep) Aliasers() Option {
+	return NewAliaser("gl", gl.Name())
 }
 
 func (gl *GoLeep) Name() string {
@@ -59,7 +58,7 @@ var (
 			Args: []string{
 				"run",
 				".",
-				sourcerer.ListBranchName,
+				ListBranchName,
 			},
 			ForwardStdout: false,
 			HideStderr:    true,
@@ -80,7 +79,7 @@ func (gl *GoLeep) Node() command.Node {
 	usageNode := command.SerialNodes(
 		command.Description("Get the usage of the provided go files"),
 		command.SimpleProcessor(func(i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
-			sc := runCommand[[]string](d, sourcerer.UsageBranchName, fmt.Sprintf("%q", goleepCLIArg.Get(d)), nil)
+			sc := runCommand[[]string](d, UsageBranchName, fmt.Sprintf("%q", goleepCLIArg.Get(d)), nil)
 			sc.ForwardStdout = true
 			_, err := sc.Run(o, d)
 			return o.Annotatef(err, "failed to run goleep usage command")
@@ -100,7 +99,7 @@ func (gl *GoLeep) Node() command.Node {
 
 			// Run the command
 			// Need to use ToSlash because mingw
-			bc := runCommand[[]string](d, sourcerer.ExecuteBranchName, goleepCLIArg.Get(d), append([]string{filepath.ToSlash(f.Name())}, d.StringList(passAlongArgs.Name())...))
+			bc := runCommand[[]string](d, ExecuteBranchName, goleepCLIArg.Get(d), append([]string{filepath.ToSlash(f.Name())}, d.StringList(passAlongArgs.Name())...))
 			bc.ArgName = "SHELL_OUTPUT"
 			bc.ForwardStdout = true
 			if _, err := bc.Run(o, d); err != nil {
@@ -158,7 +157,7 @@ func (gl *GoLeep) completer() command.Completer[[]string] {
 			compLine,
 			// No passthrough args needed since that's only used for aliaser autocomplete
 		}
-		bc := runCommand[[]string](data, sourcerer.AutocompleteBranchName, goleepCLIArg.Get(data), extraArgs)
+		bc := runCommand[[]string](data, AutocompleteBranchName, goleepCLIArg.Get(data), extraArgs)
 		bc.ArgName = "SHELL_OUTPUT"
 		fo := command.NewFakeOutput()
 		v, err := bc.Run(fo, data)

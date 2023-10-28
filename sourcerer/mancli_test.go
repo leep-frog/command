@@ -1,4 +1,4 @@
-package main
+package sourcerer
 
 import (
 	"fmt"
@@ -6,14 +6,13 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/leep-frog/command"
-	"github.com/leep-frog/command/sourcerer"
 )
 
 func TestMancli(t *testing.T) {
 	type osCheck struct {
 		WantExecuteData *command.ExecuteData
 	}
-	for _, curOS := range []sourcerer.OS{sourcerer.Linux(), sourcerer.Windows()} {
+	for _, curOS := range []OS{Linux(), Windows()} {
 		for _, test := range []struct {
 			name     string
 			etc      *command.ExecuteTestCase
@@ -33,7 +32,7 @@ func TestMancli(t *testing.T) {
 					"linux": {
 						WantExecuteData: &command.ExecuteData{
 							Executable: []string{
-								sourcerer.FileStringFromCLI("someCLI"),
+								FileStringFromCLI("someCLI"),
 								`if [ -z "$file" ]; then`,
 								`  echo someCLI is not a CLI generated via github.com/leep-frog/command`,
 								`  return 1`,
@@ -79,7 +78,7 @@ func TestMancli(t *testing.T) {
 					"linux": {
 						WantExecuteData: &command.ExecuteData{
 							Executable: []string{
-								sourcerer.FileStringFromCLI("someCLI"),
+								FileStringFromCLI("someCLI"),
 								`if [ -z "$file" ]; then`,
 								`  echo someCLI is not a CLI generated via github.com/leep-frog/command`,
 								`  return 1`,
@@ -107,7 +106,7 @@ func TestMancli(t *testing.T) {
 				if !ok {
 					t.Fatalf("No osCheck set for this OS")
 				}
-				command.StubValue(t, &sourcerer.CurrentOS, curOS)
+				command.StubValue(t, &CurrentOS, curOS)
 
 				cli := &UsageCommand{}
 				test.etc.Node = cli.Node()

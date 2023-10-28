@@ -12,3 +12,8 @@ function _initial_load() {
 _initial_load
 
 aliaser mc mancli
+
+# On pre-commit, build a new executable file
+# Executable file (generated from `go build -o sourcerer.exe/bin`) will be used to run the following:
+# tmpFile="$(mktemp)"
+# sourcerer.exe/bin > $tmpFile && source $tmpFile
