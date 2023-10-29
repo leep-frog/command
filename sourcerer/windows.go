@@ -71,28 +71,35 @@ func (w *windows) SourcererGoCLI(dir string, targetName string, loadFlag string)
 	}
 }
 
-func (w *windows) RegisterCLIs(output command.Output, targetName string, clis []CLI) error {
+func (w *windows) RegisterCLIs(builtin bool, output command.Output, targetName string, clis []CLI) error {
 	// Generate the autocomplete function
-	output.Stdoutln(w.autocompleteFunction(targetName))
+	output.Stdoutln(w.autocompleteFunction(builtin, targetName))
 
 	sort.SliceStable(clis, func(i, j int) bool { return clis[i].Name() < clis[j].Name() })
 	for _, cli := range clis {
 		alias := cli.Name()
 
-		output.Stdoutln(w.executeFunction(targetName, alias, cli.Setup()))
+		output.Stdoutln(w.executeFunction(builtin, targetName, alias, cli.Setup()))
 
 		// We sort ourselves, hence the no sort.
 	}
 	return nil
 }
 
-func (*windows) autocompleteFunction(targetName string) string {
+func (*windows) getBranchString(builtin bool, branchName string) string {
+	if builtin {
+		return fmt.Sprintf("%s %s", BuiltInCommandParameter, branchName)
+	}
+	return branchName
+}
+
+func (w *windows) autocompleteFunction(builtin bool, targetName string) string {
 	return strings.Join([]string{
 		fmt.Sprintf("$_custom_autocomplete_%s = {", targetName),
 		`  param($wordToComplete, $commandAst, $compPoint)`,
 		// The last argument is for extra passthrough arguments to be passed for aliaser autocompletes.
 		// 0 for comp type
-		fmt.Sprintf(`  (& $env:GOPATH\bin\_%s_runner.exe autocomplete ($commandAst.CommandElements | Select-Object -first 1) "0" $compPoint "$commandAst") | ForEach-Object {`, targetName),
+		fmt.Sprintf(`  (& $env:GOPATH\bin\_%s_runner.exe %s ($commandAst.CommandElements | Select-Object -first 1) "0" $compPoint "$commandAst") | ForEach-Object {`, targetName, w.getBranchString(builtin, AutocompleteBranchName)),
 		`    $_`,
 		`  }`,
 		"}",
@@ -100,8 +107,8 @@ func (*windows) autocompleteFunction(targetName string) string {
 	}, "\n")
 }
 
-func (w *windows) executeFunction(targetName, cliName string, setup []string) string {
-	runnerLine := fmt.Sprintf(`  & $env:GOPATH/bin/_%s_runner.exe execute %q $Local:tmpFile $args`, targetName, cliName)
+func (w *windows) executeFunction(builtin bool, targetName, cliName string, setup []string) string {
+	runnerLine := fmt.Sprintf(`  & $env:GOPATH/bin/_%s_runner.exe %s %q $Local:tmpFile $args`, targetName, w.getBranchString(builtin, ExecuteBranchName), cliName)
 	var prefix string
 	if len(setup) > 0 {
 		setupFunctionName := fmt.Sprintf("_setup_for_%s_cli", cliName)
@@ -230,7 +237,7 @@ var (
 	windowsMancliRegex = regexp.MustCompile("[\\s'\"`]")
 )
 
-func (w *windows) Mancli(cli string, args ...string) []string {
+func (w *windows) Mancli(builtin bool, cli string, args ...string) []string {
 	// We can't use quotedArgs because this string is being used inside of a Windows string
 	// and Windows uses backticks for escaping (not backslashes)
 	// so we can't use built in go string format quoting.
@@ -242,7 +249,7 @@ func (w *windows) Mancli(cli string, args ...string) []string {
 	return append(
 		w.verifyAliaserCommand(cli),
 		fmt.Sprintf(`$Local:targetName = (Get-Alias %s).DEFINITION.split("_")[3]`, cli),
-		fmt.Sprintf(`Invoke-Expression "$env:GOPATH\bin\_${Local:targetName}_runner.exe usage %s %s"`, cli, strings.Join(formattedArgs, " ")),
+		fmt.Sprintf(`Invoke-Expression "$env:GOPATH\bin\_${Local:targetName}_runner.exe %s %s %s"`, w.getBranchString(builtin, UsageBranchName), cli, strings.Join(formattedArgs, " ")),
 	)
 }
 

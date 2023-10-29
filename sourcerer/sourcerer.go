@@ -17,7 +17,7 @@ import (
 
 var (
 	fileArg         = command.FileArgument("FILE", "Temporary file for execution")
-	targetNameArg   = command.OptionalArg[string]("TARGET_NAME", "The name of the created target in $GOPATH/bin", command.Default("leepFrogSource"), command.MatchesRegex("^[a-zA-Z]+$"))
+	targetNameArg   = command.Arg[string]("TARGET_NAME", "The name of the created target in $GOPATH/bin", command.MatchesRegex("^[a-zA-Z]+$"))
 	passthroughArgs = command.ListArg[string]("ARG", "Arguments that get passed through to relevant CLI command", 0, command.UnboundedList)
 	helpFlag        = command.BoolFlag("help", command.FlagNoShortName, "Display command's usage doc")
 	// See the below link for more details on COMP_* details:
@@ -60,7 +60,7 @@ type CLI interface {
 
 // Returns if there was an error
 func (s *sourcerer) executeExecutor(output command.Output, d *command.Data) error {
-	cli := s.cliArg.Get(d)
+	cli := s.cliArg.GetProcessor().Get(d)
 
 	sourcingFile := d.String(fileArg.Name())
 	args := d.StringList(passthroughArgs.Name())
@@ -119,7 +119,7 @@ func (s *sourcerer) executeExecutor(output command.Output, d *command.Data) erro
 
 func (s *sourcerer) autocompleteExecutor(o command.Output, d *command.Data) error {
 	s.forAutocomplete = true
-	cli := s.cliArg.Get(d)
+	cli := s.cliArg.GetProcessor().Get(d)
 
 	g, err := command.Autocomplete(cli.Node(), compLineArg.Get(d), autocompletePassthroughArgs.Get(d), CurrentOS)
 	if err != nil {
@@ -154,11 +154,12 @@ func load(cli CLI) error {
 
 type sourcerer struct {
 	clis              map[string]CLI
-	cliArg            *command.MapArgument[string, CLI]
+	cliArg            *refProcessor[*command.MapArgument[string, CLI]]
 	sourceLocation    string
 	printedUsageError bool
 	opts              *compiledOpts
 	forAutocomplete   bool
+	builtin           bool
 }
 
 func (*sourcerer) UnmarshalJSON(jsn []byte) error { return nil }
@@ -178,61 +179,102 @@ const (
 	ListBranchName         = "listCLIs"
 	SourceBranchName       = "source"
 	UsageBranchName        = "usage"
+
+	BuiltInCommandParameter = "builtin"
 )
+
+// TODO: Make this a first-class type
+type refProcessor[P command.Processor] struct {
+	Processor *P
+}
+
+func newRefProcessor[P command.Processor](p P) *refProcessor[P] {
+	return &refProcessor[P]{&p}
+}
+
+func (rp *refProcessor[P]) Execute(i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
+	return (*rp.Processor).Execute(i, o, d, ed)
+}
+
+func (rp *refProcessor[P]) Complete(i *command.Input, d *command.Data) (*command.Completion, error) {
+	return (*rp.Processor).Complete(i, d)
+}
+
+func (rp *refProcessor[P]) Usage(i *command.Input, d *command.Data, u *command.Usage) error {
+	return (*rp.Processor).Usage(i, d, u)
+}
+
+func (rp *refProcessor[P]) GetProcessor() P {
+	return *rp.Processor
+}
+
+func (rp *refProcessor[P]) SetProcessor(p P) {
+	rp.Processor = &p
+}
 
 func (s *sourcerer) Node() command.Node {
 	loadCLIArg := command.SuperSimpleProcessor(func(i *command.Input, d *command.Data) error {
 		// TODO: Test this
-		return load(s.cliArg.Get(d))
+		return load(s.cliArg.GetProcessor().Get(d))
 	})
-	return &command.BranchNode{
-		Branches: map[string]command.Node{
-			AutocompleteBranchName: command.SerialNodes(
-				s.cliArg,
-				loadCLIArg,
-				compTypeArg,
-				compPointArg,
-				compLineArg,
-				autocompletePassthroughArgs,
-				&command.ExecutorProcessor{F: s.autocompleteExecutor},
-			),
-			UsageBranchName: command.SerialNodes(
-				s.cliArg,
-				loadCLIArg,
-				passthroughArgs,
-				command.SimpleProcessor(s.usageExecutor, nil),
-			),
-			ListBranchName: command.SerialNodes(
-				command.SimpleProcessor(s.listCLIExecutor, nil),
-			),
-			ExecuteBranchName: command.SerialNodes(
-				s.cliArg,
-				loadCLIArg,
-				fileArg,
-				command.FlagProcessor(
-					helpFlag,
+	return command.SerialNodes(
+		command.SuperSimpleProcessor(func(i *command.Input, d *command.Data) error {
+			// If the first argument is the built-in parameter, then only use the built-in commands
+			if p, _ := i.Peek(); p == BuiltInCommandParameter {
+				i.Pop(d)
+				s.initBuiltInSourcerer()
+			}
+			return nil
+		}),
+		&command.BranchNode{
+			Branches: map[string]command.Node{
+				AutocompleteBranchName: command.SerialNodes(
+					s.cliArg,
+					loadCLIArg,
+					compTypeArg,
+					compPointArg,
+					compLineArg,
+					autocompletePassthroughArgs,
+					&command.ExecutorProcessor{F: s.autocompleteExecutor},
 				),
-				passthroughArgs,
-				&command.ExecutorProcessor{F: s.executeExecutor},
-			),
-			SourceBranchName: command.SerialNodes(
-				command.FlagProcessor(
-					loadOnlyFlag,
+				UsageBranchName: command.SerialNodes(
+					s.cliArg,
+					loadCLIArg,
+					passthroughArgs,
+					command.SimpleProcessor(s.usageExecutor, nil),
 				),
-				targetNameArg,
-				&command.ExecutorProcessor{F: s.generateFile},
+				ListBranchName: command.SerialNodes(
+					command.SimpleProcessor(s.listCLIExecutor, nil),
+				),
+				ExecuteBranchName: command.SerialNodes(
+					s.cliArg,
+					loadCLIArg,
+					fileArg,
+					command.FlagProcessor(
+						helpFlag,
+					),
+					passthroughArgs,
+					&command.ExecutorProcessor{F: s.executeExecutor},
+				),
+				SourceBranchName: command.SerialNodes(
+					command.FlagProcessor(
+						loadOnlyFlag,
+					),
+					targetNameArg,
+					&command.ExecutorProcessor{F: s.generateFile},
+				),
+			},
+			HideUsage: true,
+			Default: command.SerialNodes(
+				// Just eat the remaining args
+				// command.ListArg[string]("UNUSED", "", 0, command.UnboundedList),
+				&command.ExecutorProcessor{func(o command.Output, d *command.Data) error {
+					// Add echo so it's a comment if included in sourced output
+					return o.Stderrf("echo %q\n", "Executing a sourcerer.CLI directly through `go run` is tricky. Either generate a CLI or use the `goleep` command to directly run the file.")
+				}},
 			),
 		},
-		HideUsage: true,
-		Default: command.SerialNodes(
-			// Just eat the remaining args
-			// command.ListArg[string]("UNUSED", "", 0, command.UnboundedList),
-			&command.ExecutorProcessor{func(o command.Output, d *command.Data) error {
-				// Add echo so it's a comment if included in sourced output
-				return o.Stderrf("echo %q\n", "Executing a sourcerer.CLI directly through `go run` is tricky. Either generate a CLI or use the `goleep` command to directly run the file.")
-			}},
-		),
-	}
+	)
 }
 
 func (s *sourcerer) listCLIExecutor(i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
@@ -243,7 +285,7 @@ func (s *sourcerer) listCLIExecutor(i *command.Input, o command.Output, d *comma
 }
 
 func (s *sourcerer) usageExecutor(i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
-	ed.Executor = append(ed.Executor, s.usageExecutorHelper(s.cliArg.Get(d), passthroughArgs.Get(d)))
+	ed.Executor = append(ed.Executor, s.usageExecutorHelper(s.cliArg.GetProcessor().Get(d), passthroughArgs.Get(d)))
 	return nil
 }
 
@@ -296,13 +338,20 @@ func Source(clis []CLI, opts ...Option) int {
 	return 0
 }
 
-// Separate method used for testing.
-func source(clis []CLI, osArgs []string, o command.Output, opts ...Option) error {
-	sl, err := getSourceLoc()
-	if err != nil {
-		return o.Annotate(err, "failed to get source location")
-	}
+func (s *sourcerer) initBuiltInSourcerer() {
+	s.initSourcerer(true, []CLI{
+		&SourcererCommand{},
+		&AliaserCommand{},
+		&Debugger{},
+		&GoLeep{},
+		&UpdateLeepPackageCommand{},
+		&UsageCommand{},
+	}, s.sourceLocation, []Option{
+		// TODO: Add aliasers?
+	})
+}
 
+func (s *sourcerer) initSourcerer(builtin bool, clis []CLI, sourceLocation string, opts []Option) {
 	cos := &compiledOpts{
 		aliasers: map[string]*Aliaser{},
 	}
@@ -315,18 +364,31 @@ func source(clis []CLI, osArgs []string, o command.Output, opts ...Option) error
 		cliMap[c.Name()] = c
 	}
 
-	s := &sourcerer{
-		clis:           cliMap,
-		cliArg:         command.MapArg("CLI", "", cliMap, false),
-		sourceLocation: sl,
-		opts:           cos,
+	s.clis = cliMap
+	s.cliArg.SetProcessor(command.MapArg("CLI", "", cliMap, false))
+
+	s.sourceLocation = sourceLocation
+	s.opts = cos
+	s.builtin = builtin
+}
+
+// Separate method used for testing.
+func source(clis []CLI, osArgs []string, o command.Output, opts ...Option) error {
+	sl, err := getSourceLoc()
+	if err != nil {
+		return o.Annotate(err, "failed to get source location")
 	}
+
+	s := &sourcerer{
+		cliArg: &refProcessor[*command.MapArgument[string, CLI]]{},
+	}
+	s.initSourcerer(false, clis, sl, opts)
 
 	// Sourcerer is always executed. Its execution branches into the relevant CLI's
 	// execution/autocomplete/usage path.
 	d := &command.Data{
 		Values: map[string]interface{}{
-			s.cliArg.Name(): s,
+			s.cliArg.GetProcessor().Name(): s,
 			// Don't need execute file here
 			passthroughArgs.Name(): osArgs,
 		},
@@ -362,7 +424,7 @@ func (s *sourcerer) generateFile(o command.Output, d *command.Data) error {
 		o.Stdoutln(CurrentOS.CreateGoFiles(s.sourceLocation, targetName))
 	}
 
-	if err := CurrentOS.RegisterCLIs(o, targetName, maps.Values(s.clis)); err != nil {
+	if err := CurrentOS.RegisterCLIs(s.builtin, o, targetName, maps.Values(s.clis)); err != nil {
 		return err
 	}
 

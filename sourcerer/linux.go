@@ -96,13 +96,13 @@ func (l *linux) SourcererGoCLI(dir string, targetName string, loadFlag string) [
 	}
 }
 
-func (l *linux) RegisterCLIs(output command.Output, targetName string, clis []CLI) error {
+func (l *linux) RegisterCLIs(builtin bool, output command.Output, targetName string, clis []CLI) error {
 	// Generate the autocomplete function
-	output.Stdoutln(l.autocompleteFunction(targetName))
+	output.Stdoutln(l.autocompleteFunction(builtin, targetName))
 
 	// The execute logic is put in an actual file so it can be used by other
 	// bash environments that don't actually source sourcerer-related commands.
-	efc := l.executeFileContents(targetName)
+	efc := l.executeFileContents(builtin, targetName)
 
 	f, err := os.OpenFile(getExecuteFile(targetName), os.O_WRONLY|os.O_CREATE, 0644)
 	if err != nil {
@@ -132,12 +132,20 @@ func (l *linux) RegisterCLIs(output command.Output, targetName string, clis []CL
 	return nil
 }
 
-func (*linux) autocompleteFunction(filename string) string {
+func (*linux) getBranchString(builtin bool, branchName string) string {
+	if builtin {
+		return fmt.Sprintf("%s %s", BuiltInCommandParameter, branchName)
+	}
+	return branchName
+}
+
+func (l *linux) autocompleteFunction(builtin bool, filename string) string {
+	branchStr := l.getBranchString(builtin, AutocompleteBranchName)
 	return strings.Join([]string{
 		fmt.Sprintf("function _custom_autocomplete_%s {", filename),
 		`  local tFile=$(mktemp)`,
 		// The last argument is for extra passthrough arguments to be passed for aliaser autocompletes.
-		fmt.Sprintf(`  $GOPATH/bin/_%s_runner autocomplete ${COMP_WORDS[0]} "$COMP_TYPE" $COMP_POINT "$COMP_LINE" > $tFile`, filename),
+		fmt.Sprintf(`  $GOPATH/bin/_%s_runner %s ${COMP_WORDS[0]} "$COMP_TYPE" $COMP_POINT "$COMP_LINE" > $tFile`, filename, branchStr),
 		`  local IFS=$'\n'`,
 		`  COMPREPLY=( $(cat $tFile) )`,
 		`  rm $tFile`,
@@ -146,14 +154,15 @@ func (*linux) autocompleteFunction(filename string) string {
 	}, "\n")
 }
 
-func (*linux) executeFileContents(filename string) string {
+func (l *linux) executeFileContents(builtin bool, filename string) string {
+	branchStr := l.getBranchString(builtin, ExecuteBranchName)
 	return strings.Join([]string{
 		fmt.Sprintf(`function _custom_execute_%s {`, filename),
 		`  # tmpFile is the file to which we write ExecuteData.Executable`,
 		`  local tmpFile=$(mktemp)`,
 		``,
 		`  # Run the go-only code`,
-		fmt.Sprintf(`  $GOPATH/bin/_%s_runner execute "$1" $tmpFile "${@:2}"`, filename),
+		fmt.Sprintf(`  $GOPATH/bin/_%s_runner %s "$1" $tmpFile "${@:2}"`, filename, branchStr),
 		`  # Return the error code if go code terminated with an error`,
 		`  local errorCode=$?`,
 		`  if [ $errorCode -ne 0 ]; then return $errorCode; fi`,
@@ -241,7 +250,7 @@ func quotedArgs(args ...string) string {
 	return strings.Join(q, " ")
 }
 
-func (*linux) Mancli(cli string, args ...string) []string {
+func (l *linux) Mancli(builtin bool, cli string, args ...string) []string {
 	return []string{
 		// Extract the custom execute function so that this function
 		// can work regardless of file name
@@ -250,7 +259,7 @@ func (*linux) Mancli(cli string, args ...string) []string {
 		fmt.Sprintf(`  echo %s is not a CLI generated via github.com/leep-frog/command`, cli),
 		`  return 1`,
 		`fi`,
-		fmt.Sprintf(`  "$GOPATH/bin/_${file}_runner" usage %s %s`, cli, quotedArgs(args...)),
+		fmt.Sprintf(`  "$GOPATH/bin/_${file}_runner" %s %s %s`, l.getBranchString(builtin, UsageBranchName), cli, quotedArgs(args...)),
 	}
 }
 

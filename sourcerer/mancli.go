@@ -4,6 +4,8 @@ import (
 	"github.com/leep-frog/command"
 )
 
+// TODO: Remove mancli now that we have help command?
+
 // UsageCommand is a CLI for printing out usage info for a CLI.
 type UsageCommand struct{}
 
@@ -23,7 +25,7 @@ func (*UsageCommand) Node() command.Node {
 		extraMancliArgs,
 		command.ExecutableProcessor(func(o command.Output, d *command.Data) ([]string, error) {
 			cli := usageCLIArg.Get(d)
-			return CurrentOS.Mancli(cli, extraMancliArgs.Get(d)...), nil
+			return CurrentOS.Mancli(false, cli, extraMancliArgs.Get(d)...), nil
 		}),
 	)
 }

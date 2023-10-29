@@ -53,7 +53,7 @@ type OS interface {
 	SourcererGoCLI(dir string, targetName string, loadOnly string) []string
 
 	// RegisterCLIs
-	RegisterCLIs(output command.Output, targetName string, cli []CLI) error
+	RegisterCLIs(builtin bool, output command.Output, targetName string, cli []CLI) error
 
 	// RegisterAliasers
 	GlobalAliaserFunc(command.Output)
@@ -61,7 +61,7 @@ type OS interface {
 	RegisterAliaser(command.Output, *Aliaser)
 
 	// Mancli returns shell commands that run the usage file
-	Mancli(cli string, args ...string) []string
+	Mancli(builtin bool, cli string, args ...string) []string
 }
 
 // ValueByOS will return the value that is associated

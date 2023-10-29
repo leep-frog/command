@@ -51,7 +51,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 		}{
 			{
 				name: "fails if error getting binary file",
-				args: []string{"source"},
+				args: []string{"source", "someTarget"},
 				osChecks: map[string]*osCheck{
 					osLinux:   {},
 					osWindows: {},
@@ -61,7 +61,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 			},
 			{
 				name: "generates source file when no CLIs",
-				args: []string{"source"},
+				args: []string{"source", "leepFrogSource"},
 				osChecks: map[string]*osCheck{
 					osLinux: {
 						wantExecuteFile: []string{
@@ -125,7 +125,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 			},
 			{
 				name: "adds multiple Aliaser (singular) options at the end",
-				args: []string{"source"},
+				args: []string{"source", "leepFrogSource"},
 				opts: []Option{
 					NewAliaser("a1", "do", "some", "stuff"),
 					NewAliaser("otherAlias", "flaggable", "--args", "--at", "once"),
@@ -257,7 +257,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 			{
 				name:            "load only flag doesn't generate binaries if they already exist",
 				commandStatFile: fakeFI,
-				args:            []string{"source", "-l"},
+				args:            []string{"source", "leepFrogSource", "-l"},
 				opts: []Option{
 					NewAliaser("a1", "do", "some", "stuff"),
 					NewAliaser("otherAlias", "flaggable", "--args", "--at", "once"),
@@ -383,7 +383,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 			{
 				name:            "load only flag is ignored if files don't exist",
 				commandStatFile: nil,
-				args:            []string{"source", "-l"},
+				args:            []string{"source", "leepFrogSource", "-l"},
 				opts: []Option{
 					NewAliaser("a1", "do", "some", "stuff"),
 					NewAliaser("otherAlias", "flaggable", "--args", "--at", "once"),
@@ -514,7 +514,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 			},
 			{
 				name: "only verifies each CLI once",
-				args: []string{"source"},
+				args: []string{"source", "leepFrogSource"},
 				opts: []Option{
 					// Note the CLI in both of these is "do"
 					NewAliaser("a1", "do", "some", "stuff"),
@@ -638,7 +638,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 			},
 			{
 				name: "adds Aliasers (plural) at the end",
-				args: []string{"source"},
+				args: []string{"source", "leepFrogSource"},
 				opts: []Option{
 					Aliasers(map[string][]string{
 						"a1":         {"do", "some", "stuff"},
@@ -835,7 +835,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 			},
 			{
 				name: "generates source file with CLIs",
-				args: []string{"source"},
+				args: []string{"source", "leepFrogSource"},
 				clis: []CLI{
 					ToCLI("x", nil),
 					ToCLI("l", nil),
@@ -993,7 +993,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 			},
 			{
 				name: "generates source file with CLIs ignoring nosort",
-				args: []string{"source"},
+				args: []string{"source", "leepFrogSource"},
 				clis: []CLI{
 					ToCLI("x", nil),
 					ToCLI("l", nil),
@@ -1150,6 +1150,233 @@ func TestGenerateBinaryNode(t *testing.T) {
 					},
 				},
 			},
+			// Test `builtin` keyword
+			{
+				name: "generates builtin source files",
+				args: []string{"builtin", "source", "leepFrogBuiltIns"},
+				// These should be ignored
+				clis: []CLI{
+					ToCLI("x", nil),
+					ToCLI("l", nil),
+					&testCLI{name: "basic", setup: []string{"his", "story"}},
+				},
+				osChecks: map[string]*osCheck{
+					osLinux: {
+						wantExecuteFile: []string{
+							`function _custom_execute_leepFrogBuiltIns {`,
+							`  # tmpFile is the file to which we write ExecuteData.Executable`,
+							`  local tmpFile=$(mktemp)`,
+							``,
+							`  # Run the go-only code`,
+							`  $GOPATH/bin/_leepFrogBuiltIns_runner builtin execute "$1" $tmpFile "${@:2}"`,
+							`  # Return the error code if go code terminated with an error`,
+							`  local errorCode=$?`,
+							`  if [ $errorCode -ne 0 ]; then return $errorCode; fi`,
+							``,
+							`  # Otherwise, run the ExecuteData.Executable data`,
+							`  source $tmpFile`,
+							`  local errorCode=$?`,
+							`  if [ -z "$LEEP_FROG_DEBUG" ]; then`,
+							`    rm $tmpFile`,
+							`  else`,
+							`    echo $tmpFile`,
+							`  fi`,
+							`  return $errorCode`,
+							`}`,
+							`_custom_execute_leepFrogBuiltIns "$@"`,
+							``,
+						},
+						wantStdout: []string{
+							`pushd . > /dev/null`,
+							`cd "$(dirname /fake/source/location)"`,
+							`go build -o $GOPATH/bin/_leepFrogBuiltIns_runner`,
+							`popd > /dev/null`,
+							``,
+							`function _custom_autocomplete_leepFrogBuiltIns {`,
+							`  local tFile=$(mktemp)`,
+							`  $GOPATH/bin/_leepFrogBuiltIns_runner builtin autocomplete ${COMP_WORDS[0]} "$COMP_TYPE" $COMP_POINT "$COMP_LINE" > $tFile`,
+							`  local IFS=$'\n'`,
+							`  COMPREPLY=( $(cat $tFile) )`,
+							`  rm $tFile`,
+							`}`,
+							``,
+							`alias aliaser='source $GOPATH/bin/_custom_execute_leepFrogBuiltIns aliaser'`,
+							`complete -F _custom_autocomplete_leepFrogBuiltIns -o nosort aliaser`,
+							`alias gg='source $GOPATH/bin/_custom_execute_leepFrogBuiltIns gg'`,
+							`complete -F _custom_autocomplete_leepFrogBuiltIns -o nosort gg`,
+							`alias goleep='source $GOPATH/bin/_custom_execute_leepFrogBuiltIns goleep'`,
+							`complete -F _custom_autocomplete_leepFrogBuiltIns -o nosort goleep`,
+							`alias leep_debug='source $GOPATH/bin/_custom_execute_leepFrogBuiltIns leep_debug'`,
+							`complete -F _custom_autocomplete_leepFrogBuiltIns -o nosort leep_debug`,
+							`alias mancli='source $GOPATH/bin/_custom_execute_leepFrogBuiltIns mancli'`,
+							`complete -F _custom_autocomplete_leepFrogBuiltIns -o nosort mancli`,
+							`alias sourcerer='source $GOPATH/bin/_custom_execute_leepFrogBuiltIns sourcerer'`,
+							`complete -F _custom_autocomplete_leepFrogBuiltIns -o nosort sourcerer`,
+						},
+					},
+					osWindows: {
+						wantExecuteFile: []string{""},
+						wantStdout: []string{
+							`Push-Location`,
+							`Set-Location "$(Split-Path /fake/source/location)"`,
+							`go build -o $env:GOPATH\bin\_leepFrogBuiltIns_runner.exe`,
+							`Pop-Location`,
+							``,
+							`$_custom_autocomplete_leepFrogBuiltIns = {`,
+							`  param($wordToComplete, $commandAst, $compPoint)`,
+							`  (& $env:GOPATH\bin\_leepFrogBuiltIns_runner.exe builtin autocomplete ($commandAst.CommandElements | Select-Object -first 1) "0" $compPoint "$commandAst") | ForEach-Object {`,
+							`    $_`,
+							`  }`,
+							`}`,
+							``,
+							``,
+							`function _custom_execute_leepFrogBuiltIns_aliaser {`,
+							``,
+							`  # tmpFile is the file to which we write ExecuteData.Executable`,
+							`  $Local:tmpFile = New-TemporaryFile`,
+							``,
+							`  # Run the go-only code`,
+							`  & $env:GOPATH/bin/_leepFrogBuiltIns_runner.exe builtin execute "aliaser" $Local:tmpFile $args`,
+							`  # Return error if failed`,
+							`  If (!$?) {`,
+							`    Write-Error "Go execution failed"`,
+							`  } else {`,
+							`    # If success, run the ExecuteData.Executable data`,
+							`    Copy-Item "$Local:tmpFile" "$Local:tmpFile.ps1"`,
+							`    . "$Local:tmpFile.ps1"`,
+							`    If (!$?) {`,
+							`      Write-Error "ExecuteData execution failed"`,
+							`    }`,
+							`  }`,
+							`}`,
+							``,
+							`(Get-Alias) | Where { $_.NAME -match '^aliaser$'} | ForEach-Object { del alias:${_} -Force }`,
+							`Set-Alias aliaser _custom_execute_leepFrogBuiltIns_aliaser`,
+							`Register-ArgumentCompleter -CommandName aliaser -ScriptBlock $_custom_autocomplete_leepFrogBuiltIns`,
+							``,
+							`function _custom_execute_leepFrogBuiltIns_gg {`,
+							``,
+							`  # tmpFile is the file to which we write ExecuteData.Executable`,
+							`  $Local:tmpFile = New-TemporaryFile`,
+							``,
+							`  # Run the go-only code`,
+							`  & $env:GOPATH/bin/_leepFrogBuiltIns_runner.exe builtin execute "gg" $Local:tmpFile $args`,
+							`  # Return error if failed`,
+							`  If (!$?) {`,
+							`    Write-Error "Go execution failed"`,
+							`  } else {`,
+							`    # If success, run the ExecuteData.Executable data`,
+							`    Copy-Item "$Local:tmpFile" "$Local:tmpFile.ps1"`,
+							`    . "$Local:tmpFile.ps1"`,
+							`    If (!$?) {`,
+							`      Write-Error "ExecuteData execution failed"`,
+							`    }`,
+							`  }`,
+							`}`,
+							``,
+							`(Get-Alias) | Where { $_.NAME -match '^gg$'} | ForEach-Object { del alias:${_} -Force }`,
+							`Set-Alias gg _custom_execute_leepFrogBuiltIns_gg`,
+							`Register-ArgumentCompleter -CommandName gg -ScriptBlock $_custom_autocomplete_leepFrogBuiltIns`,
+							``,
+							`function _custom_execute_leepFrogBuiltIns_goleep {`,
+							``,
+							`  # tmpFile is the file to which we write ExecuteData.Executable`,
+							`  $Local:tmpFile = New-TemporaryFile`,
+							``,
+							`  # Run the go-only code`,
+							`  & $env:GOPATH/bin/_leepFrogBuiltIns_runner.exe builtin execute "goleep" $Local:tmpFile $args`,
+							`  # Return error if failed`,
+							`  If (!$?) {`,
+							`    Write-Error "Go execution failed"`,
+							`  } else {`,
+							`    # If success, run the ExecuteData.Executable data`,
+							`    Copy-Item "$Local:tmpFile" "$Local:tmpFile.ps1"`,
+							`    . "$Local:tmpFile.ps1"`,
+							`    If (!$?) {`,
+							`      Write-Error "ExecuteData execution failed"`,
+							`    }`,
+							`  }`,
+							`}`,
+							``,
+							`(Get-Alias) | Where { $_.NAME -match '^goleep$'} | ForEach-Object { del alias:${_} -Force }`,
+							`Set-Alias goleep _custom_execute_leepFrogBuiltIns_goleep`,
+							`Register-ArgumentCompleter -CommandName goleep -ScriptBlock $_custom_autocomplete_leepFrogBuiltIns`,
+							``,
+							`function _custom_execute_leepFrogBuiltIns_leep_debug {`,
+							``,
+							`  # tmpFile is the file to which we write ExecuteData.Executable`,
+							`  $Local:tmpFile = New-TemporaryFile`,
+							``,
+							`  # Run the go-only code`,
+							`  & $env:GOPATH/bin/_leepFrogBuiltIns_runner.exe builtin execute "leep_debug" $Local:tmpFile $args`,
+							`  # Return error if failed`,
+							`  If (!$?) {`,
+							`    Write-Error "Go execution failed"`,
+							`  } else {`,
+							`    # If success, run the ExecuteData.Executable data`,
+							`    Copy-Item "$Local:tmpFile" "$Local:tmpFile.ps1"`,
+							`    . "$Local:tmpFile.ps1"`,
+							`    If (!$?) {`,
+							`      Write-Error "ExecuteData execution failed"`,
+							`    }`,
+							`  }`,
+							`}`,
+							``,
+							`(Get-Alias) | Where { $_.NAME -match '^leep_debug$'} | ForEach-Object { del alias:${_} -Force }`,
+							`Set-Alias leep_debug _custom_execute_leepFrogBuiltIns_leep_debug`,
+							`Register-ArgumentCompleter -CommandName leep_debug -ScriptBlock $_custom_autocomplete_leepFrogBuiltIns`,
+							``,
+							`function _custom_execute_leepFrogBuiltIns_mancli {`,
+							``,
+							`  # tmpFile is the file to which we write ExecuteData.Executable`,
+							`  $Local:tmpFile = New-TemporaryFile`,
+							``,
+							`  # Run the go-only code`,
+							`  & $env:GOPATH/bin/_leepFrogBuiltIns_runner.exe builtin execute "mancli" $Local:tmpFile $args`,
+							`  # Return error if failed`,
+							`  If (!$?) {`,
+							`    Write-Error "Go execution failed"`,
+							`  } else {`,
+							`    # If success, run the ExecuteData.Executable data`,
+							`    Copy-Item "$Local:tmpFile" "$Local:tmpFile.ps1"`,
+							`    . "$Local:tmpFile.ps1"`,
+							`    If (!$?) {`,
+							`      Write-Error "ExecuteData execution failed"`,
+							`    }`,
+							`  }`,
+							`}`,
+							``,
+							`(Get-Alias) | Where { $_.NAME -match '^mancli$'} | ForEach-Object { del alias:${_} -Force }`,
+							`Set-Alias mancli _custom_execute_leepFrogBuiltIns_mancli`,
+							`Register-ArgumentCompleter -CommandName mancli -ScriptBlock $_custom_autocomplete_leepFrogBuiltIns`,
+							``,
+							`function _custom_execute_leepFrogBuiltIns_sourcerer {`,
+							``,
+							`  # tmpFile is the file to which we write ExecuteData.Executable`,
+							`  $Local:tmpFile = New-TemporaryFile`,
+							``,
+							`  # Run the go-only code`,
+							`  & $env:GOPATH/bin/_leepFrogBuiltIns_runner.exe builtin execute "sourcerer" $Local:tmpFile $args`,
+							`  # Return error if failed`,
+							`  If (!$?) {`,
+							`    Write-Error "Go execution failed"`,
+							`  } else {`,
+							`    # If success, run the ExecuteData.Executable data`,
+							`    Copy-Item "$Local:tmpFile" "$Local:tmpFile.ps1"`,
+							`    . "$Local:tmpFile.ps1"`,
+							`    If (!$?) {`,
+							`      Write-Error "ExecuteData execution failed"`,
+							`    }`,
+							`  }`,
+							`}`,
+							``,
+							`(Get-Alias) | Where { $_.NAME -match '^sourcerer$'} | ForEach-Object { del alias:${_} -Force }`,
+							`Set-Alias sourcerer _custom_execute_leepFrogBuiltIns_sourcerer`,
+							`Register-ArgumentCompleter -CommandName sourcerer -ScriptBlock $_custom_autocomplete_leepFrogBuiltIns`,
+						},
+					},
+				},
+			},
 		} {
 			t.Run(fmt.Sprintf("[%s] %s", curOS.Name(), test.name), func(t *testing.T) {
 				oschk, ok := test.osChecks[curOS.Name()]
@@ -1213,14 +1440,24 @@ func TestSourcerer(t *testing.T) {
 		t.Fatalf("failed to create tmp file: %v", err)
 	}
 
+	someCLI := &testCLI{
+		name: "basic",
+		processors: []command.Processor{
+			command.Arg[string]("S", "desc"),
+			command.ListArg[int]("IS", "ints", 2, 0),
+			command.ListArg[float64]("FS", "floats", 0, command.UnboundedList),
+		},
+	}
+
 	type osCheck struct {
-		wantErr         error
-		wantStdout      []string
-		wantStderr      []string
-		noStdoutNewline bool
-		noStderrNewline bool
-		wantCLIs        map[string]CLI
-		wantOutput      []string
+		wantErr          error
+		wantStdout       []string
+		wantStderr       []string
+		noStdoutNewline  bool
+		noStderrNewline  bool
+		wantCLIs         map[string]CLI
+		wantOutput       []string
+		wantFileContents []string
 	}
 
 	// We loop the OS here (and not in the test), so any underlying test data for
@@ -2043,17 +2280,37 @@ func TestSourcerer(t *testing.T) {
 						},
 					},
 				},
-				osCheck: &osCheck{
-					wantStdout: autocompleteSuggestions(
-						"charlie",
-					),
-				},
 				osChecks: map[string]*osCheck{
+					osLinux: {
+						wantStdout: autocompleteSuggestions(
+							"charlie",
+						),
+					},
 					osWindows: {
 						wantStdout: autocompleteSuggestions(
 							"charlie ",
 						),
 					},
+				},
+			},
+			{
+				name: "autocomplete when COMP_POINT is greater than length of COMP_LINE",
+				args: []string{"autocomplete", "basic", "63", "6", "cmd c"},
+				clis: []CLI{
+					&testCLI{
+						name: "basic",
+						processors: []command.Processor{
+							command.Arg[string]("s", "desc", command.SimpleCompleter[string]("alpha", "bravo", "charlie", "brown", "baker")),
+							command.Arg[string]("z", "desz", command.SimpleCompleter[string]("un", "deux", "trois")),
+						},
+					},
+				},
+				osCheck: &osCheck{
+					wantStdout: autocompleteSuggestions(
+						"deux",
+						"trois",
+						"un",
+					),
 				},
 			},
 			// Usage tests
@@ -2107,7 +2364,7 @@ func TestSourcerer(t *testing.T) {
 						},
 					},
 				},
-				args: []string{"usage", "basic"},
+				args: []string{"usage", someCLI.name},
 				osCheck: &osCheck{
 					wantStdout: []string{strings.Join([]string{
 						"S IS IS [ FS ... ]",
@@ -2119,6 +2376,126 @@ func TestSourcerer(t *testing.T) {
 						"",
 					}, "\n")},
 					noStdoutNewline: true,
+				},
+			},
+			// Builtin command tests
+			{
+				name: "builtin usage doesn't work with provided CLIs",
+				clis: []CLI{someCLI},
+				args: []string{"builtin", "usage", someCLI.name},
+				osCheck: &osCheck{
+					wantStderr: []string{
+						"validation for \"CLI\" failed: [MapArg] key (basic) is not in map",
+					},
+					wantErr:         fmt.Errorf("validation for \"CLI\" failed: [MapArg] key (basic) is not in map"),
+					noStdoutNewline: true,
+				},
+			},
+			{
+				name: "builtin usage works with builtin CLIs",
+				clis: []CLI{someCLI},
+				args: []string{"builtin", "usage", "gg"},
+				osCheck: &osCheck{
+					wantStdout: []string{
+						"gg updates go packages from the github.com/leep-frog repository",
+						"PACKAGE [ PACKAGE ... ]",
+						"",
+						"Arguments:",
+						"  PACKAGE: Package name",
+					},
+				},
+			},
+			{
+				name: "builtin execute doesn't work with provided CLIs",
+				clis: []CLI{someCLI},
+				args: []string{"builtin", "execute", someCLI.name},
+				osCheck: &osCheck{
+					wantStderr: []string{
+						"validation for \"CLI\" failed: [MapArg] key (basic) is not in map",
+					},
+					wantErr:         fmt.Errorf("validation for \"CLI\" failed: [MapArg] key (basic) is not in map"),
+					noStdoutNewline: true,
+				},
+			},
+			{
+				name: "builtin execute works with builtin CLIs",
+				clis: []CLI{someCLI},
+				args: []string{"builtin", "execute", "aliaser", fakeFile, "bleh", "bloop", "er"},
+				osChecks: map[string]*osCheck{
+					osLinux: {
+						wantFileContents: []string{
+							"function _leep_frog_autocompleter {",
+							`  local file="$(type "$1" | head -n 1 | grep "is aliased to.*_custom_execute_" | grep "_custom_execute_[^[:space:]]*" -o | sed s/_custom_execute_//g)"`,
+							"  local tFile=$(mktemp)",
+							`  $GOPATH/bin/_${file}_runner autocomplete "$1" "$COMP_TYPE" $COMP_POINT "$COMP_LINE" "${@:2}" > $tFile`,
+							"  local IFS='",
+							"';",
+							"  COMPREPLY=( $(cat $tFile) )",
+							"  rm $tFile",
+							"}",
+							"",
+							`local file="$(type bloop | head -n 1 | grep "is aliased to.*_custom_execute_" | grep "_custom_execute_[^[:space:]]*" -o | sed s/_custom_execute_//g)"`,
+							`if [ -z "$file" ]; then`,
+							`  echo Provided CLI "bloop" is not a CLI generated with github.com/leep-frog/command`,
+							"  return 1",
+							"fi",
+							"",
+							"",
+							`alias -- bleh="bloop \"er\""`,
+							"function _custom_autocomplete_for_alias_bleh {",
+							`  _leep_frog_autocompleter "bloop" "er"`,
+							"}",
+							"",
+							"complete -F _custom_autocomplete_for_alias_bleh -o nosort bleh",
+							"",
+							"",
+						},
+					},
+					osWindows: {
+						wantFileContents: []string{
+							`if (!(Test-Path alias:bloop) -or !(Get-Alias bloop | where {$_.DEFINITION -match "_custom_execute"}).NAME) {`,
+							`  throw "The CLI provided (bloop) is not a sourcerer-generated command"`,
+							"}",
+							"function _sourcerer_alias_execute_bleh {",
+							`  $Local:functionName = "$((Get-Alias "bloop").DEFINITION)"`,
+							`  Invoke-Expression ($Local:functionName + " " + "er" + " " + $args)`,
+							"}",
+							"$_sourcerer_alias_autocomplete_bleh = {",
+							"  param($wordToComplete, $commandAst, $compPoint)",
+							`  $Local:def = ((Get-Alias bloop).DEFINITION -split "_").Get(3)`,
+							`  (Invoke-Expression '& $env:GOPATH\bin\_${Local:def}_runner.exe autocomplete "bloop" "0" $compPoint "$commandAst" "er"') | ForEach-Object {`,
+							"    $_",
+							"  }",
+							"}",
+							"(Get-Alias) | Where { $_.NAME -match '^bleh$'} | ForEach-Object { del alias:${_} -Force }",
+							"Set-Alias bleh _sourcerer_alias_execute_bleh",
+							"Register-ArgumentCompleter -CommandName bleh -ScriptBlock $_sourcerer_alias_autocomplete_bleh",
+							"",
+						},
+					},
+				},
+			},
+			{
+				name: "builtin autocomplete doesn't work with provided CLIs",
+				clis: []CLI{someCLI},
+				args: []string{"builtin", "autocomplete", someCLI.name},
+				osCheck: &osCheck{
+					wantStderr: []string{
+						"validation for \"CLI\" failed: [MapArg] key (basic) is not in map",
+					},
+					wantErr:         fmt.Errorf("validation for \"CLI\" failed: [MapArg] key (basic) is not in map"),
+					noStdoutNewline: true,
+				},
+			},
+			{
+				name: "builtin execute works with builtin CLIs",
+				clis: []CLI{someCLI},
+				args: []string{"builtin", "autocomplete", "gg", "63", "5", "cmd c"},
+				osCheck: &osCheck{
+					wantStdout: []string{
+						"cd",
+						"command",
+					},
 				},
 			},
 			/* Useful for commenting out tests */
@@ -2160,6 +2537,9 @@ func TestSourcerer(t *testing.T) {
 				o.Close()
 
 				// Check outputs
+
+				// Verify executeData file contains expected contents
+				cmpFile(t, "Output file contents", fake.Name(), oschk.wantFileContents)
 
 				// Make a separate variable so we don't edit variables on runs for different OS's.
 				wantStdout, wantStderr := oschk.wantStdout, oschk.wantStderr
