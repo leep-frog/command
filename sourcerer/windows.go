@@ -44,6 +44,22 @@ func (*windows) Name() string {
 	return "windows"
 }
 
+func (*windows) InitializationLogic(loadOnly bool, sourceLoc string) string {
+	var loadFlagString string
+	if loadOnly {
+		loadFlagString = fmt.Sprintf("--%s ", loadOnlyFlag.Name())
+	}
+	return strings.Join([]string{
+		`Push-Location ;`,
+		fmt.Sprintf(`Set-Location %q ;`, sourceLoc),
+		`$Local:tmpOut = New-TemporaryFile ;`,
+		fmt.Sprintf(`go run . builtin source builtinFunctions %s> $Local:tmpOut ;`, loadFlagString),
+		`Copy-Item "$Local:tmpOut" "$Local:tmpOut.ps1" ;`,
+		`. "$Local:tmpOut.ps1" ;`,
+		`Pop-Location ;`,
+	}, "\n")
+}
+
 func (w *windows) BinaryFileName(targetName string) string {
 	// Don't use filepath.Join so tests work in all os environments.
 	return fmt.Sprintf(`$env:GOPATH\bin\_%s_runner.exe`, targetName)

@@ -47,6 +47,20 @@ func (l *linux) Name() string {
 	return "linux"
 }
 
+func (*linux) InitializationLogic(loadOnly bool, sourceLoc string) string {
+	var loadFlagString string
+	if loadOnly {
+		loadFlagString = fmt.Sprintf("--%s ", loadOnlyFlag.Name())
+	}
+	return strings.Join([]string{
+		`pushd . > /dev/null`,
+		fmt.Sprintf(`cd %q`, sourceLoc),
+		`tmpFile="$(mktemp)"`,
+		fmt.Sprintf(`go run . builtin source builtinFunctions %s> $tmpFile && source $tmpFile`, loadFlagString),
+		`popd > /dev/null`,
+	}, "\n")
+}
+
 func (l *linux) FunctionWrap(fn string) string {
 	return strings.Join([]string{
 		"function _leep_execute_data_function_wrap {",

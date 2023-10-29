@@ -3,6 +3,7 @@ package sourcerer
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 	"testing"
@@ -1450,6 +1451,7 @@ func TestSourcerer(t *testing.T) {
 	}
 
 	type osCheck struct {
+		getSourceErr     error
 		wantErr          error
 		wantStdout       []string
 		wantStderr       []string
@@ -2498,6 +2500,46 @@ func TestSourcerer(t *testing.T) {
 					},
 				},
 			},
+			// Initialize tests
+			{
+				name: "Generates initialization code",
+				clis: []CLI{someCLI},
+				args: []string{"initialize"},
+				osChecks: map[string]*osCheck{
+					osLinux: {
+						wantStdout: []string{
+							`pushd . > /dev/null`,
+							fmt.Sprintf(`cd %q`, filepath.Dir(`/fake/source/location/main.go`)),
+							`tmpFile="$(mktemp)"`,
+							`go run . builtin source builtinFunctions > $tmpFile && source $tmpFile`,
+							`popd > /dev/null`,
+						},
+					},
+					osWindows: {
+						wantStdout: []string{
+							`Push-Location ;`,
+							fmt.Sprintf(`Set-Location %q ;`, filepath.Dir(`/fake/source/location/main.go`)),
+							`$Local:tmpOut = New-TemporaryFile ;`,
+							`go run . builtin source builtinFunctions > $Local:tmpOut ;`,
+							`Copy-Item "$Local:tmpOut" "$Local:tmpOut.ps1" ;`,
+							`. "$Local:tmpOut.ps1" ;`,
+							`Pop-Location ;`,
+						},
+					},
+				},
+			},
+			{
+				name: "Initialization fails if can't get source location",
+				clis: []CLI{someCLI},
+				args: []string{"initialize"},
+				osCheck: &osCheck{
+					getSourceErr: fmt.Errorf("whoops"),
+					wantErr:      fmt.Errorf("failed to get source location: whoops"),
+					wantStderr: []string{
+						"failed to get source location: whoops",
+					},
+				},
+			},
 			/* Useful for commenting out tests */
 		} {
 			t.Run(fmt.Sprintf("[%s] %s", curOS.Name(), test.name), func(t *testing.T) {
@@ -2506,6 +2548,10 @@ func TestSourcerer(t *testing.T) {
 				if !ok {
 					oschk = test.osCheck
 				}
+
+				command.StubValue(t, &getSourceLoc, func() (string, error) {
+					return "/fake/source/location/main.go", oschk.getSourceErr
+				})
 
 				if err := os.WriteFile(f.Name(), nil, 0644); err != nil {
 					t.Fatalf("failed to clear file: %v", err)
