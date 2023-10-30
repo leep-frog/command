@@ -19,6 +19,7 @@ import (
 
 var (
 	fileArg         = command.FileArgument("FILE", "Temporary file for execution")
+	goExecutableArg = command.FileArgument("GO_EXECUTABLE_FILE", "Full path to the go executable file")
 	targetNameArg   = command.Arg[string]("TARGET_NAME", "The name of the created target in $GOPATH/bin", command.MatchesRegex("^[a-zA-Z]+$"))
 	passthroughArgs = command.ListArg[string]("ARG", "Arguments that get passed through to relevant CLI command", 0, command.UnboundedList)
 	helpFlag        = command.BoolFlag("help", command.FlagNoShortName, "Display command's usage doc")
@@ -263,6 +264,7 @@ func (s *sourcerer) Node() command.Node {
 					&command.ExecutorProcessor{F: s.executeExecutor},
 				),
 				SourceBranchName: command.SerialNodes(
+					goExecutableArg,
 					targetNameArg,
 					&command.ExecutorProcessor{F: s.generateFile},
 				),
@@ -416,14 +418,15 @@ var (
 )
 
 func (s *sourcerer) generateFile(o command.Output, d *command.Data) error {
+	goExecutable := goExecutableArg.Get(d)
 	targetName := targetNameArg.Get(d)
 
-	fileData, err := CurrentOS.RegisterCLIs(s.builtin, targetName, maps.Values(s.clis))
+	fileData, err := CurrentOS.RegisterCLIs(s.builtin, goExecutable, targetName, maps.Values(s.clis))
 	if err != nil {
 		return o.Err(err)
 	}
 
-	fileData = append(fileData, AliasSourcery(maps.Values(s.opts.aliasers)...)...)
+	fileData = append(fileData, AliasSourcery(goExecutable, maps.Values(s.opts.aliasers)...)...)
 
 	o.Stdoutln(strings.Join(fileData, "\n"))
 

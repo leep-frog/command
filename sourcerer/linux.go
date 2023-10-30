@@ -75,21 +75,6 @@ func (l *linux) HandleAutocompleteError(output command.Output, compType int, err
 	}
 }
 
-func (l *linux) BinaryFileName(targetName string) string {
-	// Don't use filepath.Join so tests work in all os environments.
-	return fmt.Sprintf("$GOPATH/bin/_%s_runner", targetName)
-}
-
-func (l *linux) CreateGoFiles(sourceLocation string, targetName string) string {
-	return strings.Join([]string{
-		"pushd . > /dev/null",
-		fmt.Sprintf(`cd "$(dirname %s)"`, sourceLocation),
-		fmt.Sprintf("go build -o %s", l.BinaryFileName(targetName)),
-		"popd > /dev/null",
-		"",
-	}, "\n")
-}
-
 func (l *linux) SourcererGoCLI(dir string, targetName string) []string {
 	return []string{
 		"pushd . > /dev/null",
@@ -100,11 +85,11 @@ func (l *linux) SourcererGoCLI(dir string, targetName string) []string {
 	}
 }
 
-func (l *linux) RegisterCLIs(builtin bool, targetName string, clis []CLI) ([]string, error) {
+func (l *linux) RegisterCLIs(builtin bool, goExecutable, targetName string, clis []CLI) ([]string, error) {
 	// Generate the execute functions
-	r := l.executeFileContents(builtin, targetName)
+	r := l.executeFileContents(builtin, goExecutable, targetName)
 	// Generate the autocomplete function
-	r = append(r, l.autocompleteFunction(builtin, targetName)...)
+	r = append(r, l.autocompleteFunction(builtin, goExecutable, targetName)...)
 
 	sort.SliceStable(clis, func(i, j int) bool { return clis[i].Name() < clis[j].Name() })
 	for _, cli := range clis {
@@ -132,13 +117,13 @@ func (*linux) getBranchString(builtin bool, branchName string) string {
 	return branchName
 }
 
-func (l *linux) autocompleteFunction(builtin bool, filename string) []string {
+func (l *linux) autocompleteFunction(builtin bool, goExecutable, filename string) []string {
 	branchStr := l.getBranchString(builtin, AutocompleteBranchName)
 	return []string{
 		fmt.Sprintf("function _custom_autocomplete_%s {", filename),
 		`  local tFile=$(mktemp)`,
 		// The last argument is for extra passthrough arguments to be passed for aliaser autocompletes.
-		fmt.Sprintf(`  $GOPATH/bin/_%s_runner %s ${COMP_WORDS[0]} "$COMP_TYPE" $COMP_POINT "$COMP_LINE" > $tFile`, filename, branchStr),
+		fmt.Sprintf(`  %s %s ${COMP_WORDS[0]} "$COMP_TYPE" $COMP_POINT "$COMP_LINE" > $tFile`, goExecutable, branchStr),
 		`  local IFS=$'\n'`,
 		`  COMPREPLY=( $(cat $tFile) )`,
 		`  rm $tFile`,
@@ -147,7 +132,7 @@ func (l *linux) autocompleteFunction(builtin bool, filename string) []string {
 	}
 }
 
-func (l *linux) executeFileContents(builtin bool, filename string) []string {
+func (l *linux) executeFileContents(builtin bool, goExecutable, filename string) []string {
 	branchStr := l.getBranchString(builtin, ExecuteBranchName)
 	return []string{
 		fmt.Sprintf(`function _custom_execute_%s {`, filename),
@@ -155,7 +140,7 @@ func (l *linux) executeFileContents(builtin bool, filename string) []string {
 		`  local tmpFile=$(mktemp)`,
 		``,
 		`  # Run the go-only code`,
-		fmt.Sprintf(`  $GOPATH/bin/_%s_runner %s "$1" $tmpFile "${@:2}"`, filename, branchStr),
+		fmt.Sprintf(`  %s %s "$1" $tmpFile "${@:2}"`, goExecutable, branchStr),
 		`  # Return the error code if go code terminated with an error`,
 		`  local errorCode=$?`,
 		`  if [ $errorCode -ne 0 ]; then return $errorCode; fi`,
@@ -174,8 +159,8 @@ func (l *linux) executeFileContents(builtin bool, filename string) []string {
 	}
 }
 
-func (l *linux) GlobalAliaserFunc() []string {
-	return l.aliaserGlobalAutocompleteFunction()
+func (l *linux) GlobalAliaserFunc(goExecutable string) []string {
+	return l.aliaserGlobalAutocompleteFunction(goExecutable)
 }
 
 func (*linux) VerifyAliaser(aliaser *Aliaser) []string {
@@ -190,7 +175,7 @@ func (*linux) VerifyAliaser(aliaser *Aliaser) []string {
 	}
 }
 
-func (l *linux) RegisterAliaser(a *Aliaser) []string {
+func (l *linux) RegisterAliaser(goExecutable string, a *Aliaser) []string {
 	// Output the bash alias and completion commands
 	var qas []string
 	for _, v := range a.values {
@@ -211,13 +196,12 @@ func (l *linux) RegisterAliaser(a *Aliaser) []string {
 	)
 }
 
-func (*linux) aliaserGlobalAutocompleteFunction() []string {
+func (*linux) aliaserGlobalAutocompleteFunction(goExecutable string) []string {
 	return []string{
 		`function _leep_frog_autocompleter {`,
-		fmt.Sprintf("  %s", FileStringFromCLI(`"$1"`)),
 		`  local tFile=$(mktemp)`,
 		// The last argument is for extra passthrough arguments to be passed for aliaser autocompletes.
-		`  $GOPATH/bin/_${file}_runner autocomplete "$1" "$COMP_TYPE" $COMP_POINT "$COMP_LINE" "${@:2}" > $tFile`,
+		fmt.Sprintf(`  %s autocomplete "$1" "$COMP_TYPE" $COMP_POINT "$COMP_LINE" "${@:2}" > $tFile`, goExecutable),
 		`  local IFS='`,
 		`';`,
 		`  COMPREPLY=( $(cat $tFile) )`,
@@ -244,7 +228,7 @@ func quotedArgs(args ...string) string {
 	return strings.Join(q, " ")
 }
 
-func (l *linux) Mancli(builtin bool, cli string, args ...string) []string {
+func (l *linux) Mancli(builtin bool, goExecutable, cli string, args ...string) []string {
 	return []string{
 		// Extract the custom execute function so that this function
 		// can work regardless of file name
@@ -253,7 +237,7 @@ func (l *linux) Mancli(builtin bool, cli string, args ...string) []string {
 		fmt.Sprintf(`  echo %s is not a CLI generated via github.com/leep-frog/command`, cli),
 		`  return 1`,
 		`fi`,
-		fmt.Sprintf(`  "$GOPATH/bin/_${file}_runner" %s %s %s`, l.getBranchString(builtin, UsageBranchName), cli, quotedArgs(args...)),
+		fmt.Sprintf(`  %s %s %s %s`, goExecutable, l.getBranchString(builtin, UsageBranchName), cli, quotedArgs(args...)),
 	}
 }
 

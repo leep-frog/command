@@ -50,25 +50,19 @@ type OS interface {
 	// HandleAutocompleteError should output error info on `Autocomplete` failure
 	HandleAutocompleteError(output command.Output, compType int, err error)
 
-	// BinaryFileName returns the binary file created by CreateGoFiles
-	BinaryFileName(targetName string) string
-	// CreateGoFiles builds the executable files needed for this script. Generally of the format:
-	// `pushd . && cd ${sourceLocation} && go build -o /some/path/_${targetName}_runner && popd`
-	CreateGoFiles(sourceLocation string, targetName string) string
-
 	//
 	SourcererGoCLI(dir string, targetName string) []string
 
 	// RegisterCLIs generates the code for
-	RegisterCLIs(builtin bool, targetName string, cli []CLI) ([]string, error)
+	RegisterCLIs(builtin bool, goExecutable, targetName string, cli []CLI) ([]string, error)
 
 	// RegisterAliasers
-	GlobalAliaserFunc() []string
+	GlobalAliaserFunc(goExecutable string) []string
 	VerifyAliaser(*Aliaser) []string
-	RegisterAliaser(*Aliaser) []string
+	RegisterAliaser(goExecutable string, a *Aliaser) []string
 
 	// Mancli returns shell commands that run the usage file
-	Mancli(builtin bool, cli string, args ...string) []string
+	Mancli(builtin bool, goExecutable, cli string, args ...string) []string
 }
 
 // ValueByOS will return the value that is associated

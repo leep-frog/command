@@ -56,21 +56,6 @@ func (*windows) InitializationLogic(loadOnly bool, sourceLoc string) string {
 	}, "\n")
 }
 
-func (w *windows) BinaryFileName(targetName string) string {
-	// Don't use filepath.Join so tests work in all os environments.
-	return fmt.Sprintf(`$env:GOPATH\bin\_%s_runner.exe`, targetName)
-}
-
-func (w *windows) CreateGoFiles(sourceLocation string, targetName string) string {
-	return strings.Join([]string{
-		"Push-Location",
-		fmt.Sprintf(`Set-Location "$(Split-Path %s)"`, sourceLocation),
-		fmt.Sprintf("go build -o %s", w.BinaryFileName(targetName)),
-		"Pop-Location",
-		"",
-	}, "\n")
-}
-
 func (w *windows) SourcererGoCLI(dir string, targetName string) []string {
 	return []string{
 		"Push-Location",
@@ -83,15 +68,15 @@ func (w *windows) SourcererGoCLI(dir string, targetName string) []string {
 	}
 }
 
-func (w *windows) RegisterCLIs(builtin bool, targetName string, clis []CLI) ([]string, error) {
+func (w *windows) RegisterCLIs(builtin bool, goExecutable, targetName string, clis []CLI) ([]string, error) {
 	// Generate the autocomplete function
-	r := []string{w.autocompleteFunction(builtin, targetName)}
+	r := []string{w.autocompleteFunction(builtin, goExecutable, targetName)}
 
 	sort.SliceStable(clis, func(i, j int) bool { return clis[i].Name() < clis[j].Name() })
 	for _, cli := range clis {
 		alias := cli.Name()
 
-		r = append(r, w.executeFunction(builtin, targetName, alias, cli.Setup()))
+		r = append(r, w.executeFunction(builtin, goExecutable, targetName, alias, cli.Setup()))
 
 		// We sort ourselves, hence the no sort.
 	}
@@ -105,13 +90,13 @@ func (*windows) getBranchString(builtin bool, branchName string) string {
 	return branchName
 }
 
-func (w *windows) autocompleteFunction(builtin bool, targetName string) string {
+func (w *windows) autocompleteFunction(builtin bool, goExecutable, targetName string) string {
 	return strings.Join([]string{
 		fmt.Sprintf("$_custom_autocomplete_%s = {", targetName),
 		`  param($wordToComplete, $commandAst, $compPoint)`,
 		// The last argument is for extra passthrough arguments to be passed for aliaser autocompletes.
 		// 0 for comp type
-		fmt.Sprintf(`  (& $env:GOPATH\bin\_%s_runner.exe %s ($commandAst.CommandElements | Select-Object -first 1) "0" $compPoint "$commandAst") | ForEach-Object {`, targetName, w.getBranchString(builtin, AutocompleteBranchName)),
+		fmt.Sprintf(`  (& %s %s ($commandAst.CommandElements | Select-Object -first 1) "0" $compPoint "$commandAst") | ForEach-Object {`, goExecutable, w.getBranchString(builtin, AutocompleteBranchName)),
 		`    $_`,
 		`  }`,
 		"}",
@@ -119,8 +104,8 @@ func (w *windows) autocompleteFunction(builtin bool, targetName string) string {
 	}, "\n")
 }
 
-func (w *windows) executeFunction(builtin bool, targetName, cliName string, setup []string) string {
-	runnerLine := fmt.Sprintf(`  & $env:GOPATH/bin/_%s_runner.exe %s %q $Local:tmpFile $args`, targetName, w.getBranchString(builtin, ExecuteBranchName), cliName)
+func (w *windows) executeFunction(builtin bool, goExecutable, targetName, cliName string, setup []string) string {
+	runnerLine := fmt.Sprintf(`  & %s %s %q $Local:tmpFile $args`, goExecutable, w.getBranchString(builtin, ExecuteBranchName), cliName)
 	var prefix string
 	if len(setup) > 0 {
 		setupFunctionName := fmt.Sprintf("_setup_for_%s_cli", cliName)
@@ -132,7 +117,7 @@ func (w *windows) executeFunction(builtin bool, targetName, cliName string, setu
 			fmt.Sprintf(`  %s > "$Local:setupTmpFile"`, setupFunctionName),
 			`  Copy-Item "$Local:setupTmpFile" "$Local:setupTmpFile.txt"`,
 			// Same as original command, but with the $Local:setupTmpFile provided as the first regular argument
-			fmt.Sprintf(`  & $env:GOPATH/bin/_%s_runner.exe execute %q $Local:tmpFile "$Local:setupTmpFile.txt" $args`, targetName, cliName),
+			fmt.Sprintf(`  & %s execute %q $Local:tmpFile "$Local:setupTmpFile.txt" $args`, goExecutable, cliName),
 		}, "\n")
 	}
 	return strings.Join(append([]string{
@@ -192,7 +177,7 @@ func (w *windows) FunctionWrap(fn string) string {
 }
 
 // TODO: Aliasers
-func (w *windows) GlobalAliaserFunc() []string { return nil }
+func (w *windows) GlobalAliaserFunc(goExecutable string) []string { return nil }
 func (w *windows) VerifyAliaser(a *Aliaser) []string {
 	return w.verifyAliaserCommand(a.cli)
 }
@@ -205,7 +190,7 @@ func (w *windows) verifyAliaserCommand(cli string) []string {
 	}
 }
 
-func (w *windows) RegisterAliaser(a *Aliaser) []string {
+func (w *windows) RegisterAliaser(goExecutable string, a *Aliaser) []string {
 	var qas []string
 	for _, v := range a.values {
 		qas = append(qas, fmt.Sprintf("%q", v))
@@ -228,9 +213,7 @@ func (w *windows) RegisterAliaser(a *Aliaser) []string {
 		// Create the autocomplete function
 		fmt.Sprintf(`$_sourcerer_alias_autocomplete_%s = {`, a.alias),
 		`  param($wordToComplete, $commandAst, $compPoint)`,
-		// targetNameArg ensures the target doesn't contain a '_' character
-		fmt.Sprintf(`  $Local:def = ((Get-Alias %s).DEFINITION -split "_").Get(3)`, a.cli),
-		fmt.Sprintf(`  (Invoke-Expression '& $env:GOPATH\bin\_${Local:def}_runner.exe autocomplete %q "0" $compPoint "$commandAst" %s') | ForEach-Object {`, a.cli, quotedArgs),
+		fmt.Sprintf(`  (Invoke-Expression '& %s autocomplete %q "0" $compPoint "$commandAst" %s') | ForEach-Object {`, goExecutable, a.cli, quotedArgs),
 		`    $_`,
 		`  }`,
 		`}`,
@@ -247,7 +230,7 @@ var (
 	windowsMancliRegex = regexp.MustCompile("[\\s'\"`]")
 )
 
-func (w *windows) Mancli(builtin bool, cli string, args ...string) []string {
+func (w *windows) Mancli(builtin bool, goExecutable, cli string, args ...string) []string {
 	// We can't use quotedArgs because this string is being used inside of a Windows string
 	// and Windows uses backticks for escaping (not backslashes)
 	// so we can't use built in go string format quoting.
@@ -259,7 +242,7 @@ func (w *windows) Mancli(builtin bool, cli string, args ...string) []string {
 	return append(
 		w.verifyAliaserCommand(cli),
 		fmt.Sprintf(`$Local:targetName = (Get-Alias %s).DEFINITION.split("_")[3]`, cli),
-		fmt.Sprintf(`Invoke-Expression "$env:GOPATH\bin\_${Local:targetName}_runner.exe %s %s %s"`, w.getBranchString(builtin, UsageBranchName), cli, strings.Join(formattedArgs, " ")),
+		fmt.Sprintf(`Invoke-Expression "%s %s %s %s"`, goExecutable, w.getBranchString(builtin, UsageBranchName), cli, strings.Join(formattedArgs, " ")),
 	)
 }
 

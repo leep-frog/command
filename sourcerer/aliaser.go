@@ -16,7 +16,7 @@ func (a *Aliaser) modifyCompiledOpts(co *compiledOpts) {
 }
 
 // AliasSourcery outputs all alias source commands to the provided `command.Output`.
-func AliasSourcery(as ...*Aliaser) []string {
+func AliasSourcery(goExecutable string, as ...*Aliaser) []string {
 	if len(as) == 0 {
 		return nil
 	}
@@ -25,7 +25,7 @@ func AliasSourcery(as ...*Aliaser) []string {
 		return this.alias < that.alias
 	})
 
-	r := CurrentOS.GlobalAliaserFunc()
+	r := CurrentOS.GlobalAliaserFunc(goExecutable)
 
 	verifiedCLIs := map[string]bool{}
 	for _, a := range as {
@@ -35,7 +35,7 @@ func AliasSourcery(as ...*Aliaser) []string {
 			r = append(r, CurrentOS.VerifyAliaser(a)...)
 		}
 
-		r = append(r, CurrentOS.RegisterAliaser(a)...)
+		r = append(r, CurrentOS.RegisterAliaser(goExecutable, a)...)
 	}
 	return r
 }
@@ -68,12 +68,13 @@ func (*AliaserCommand) Name() string    { return "aliaser" }
 func (*AliaserCommand) Node() command.Node {
 	return command.SerialNodes(
 		command.Description("Alias a command to a cli with some args included"),
+		goExecutableArg,
 		aliasArg,
 		aliasCLIArg,
 		aliasPTArg,
 		command.ExecutableProcessor(func(_ command.Output, d *command.Data) ([]string, error) {
 			aliaser := NewAliaser(aliasArg.Get(d), aliasCLIArg.Get(d), aliasPTArg.Get(d)...)
-			return AliasSourcery(aliaser), nil
+			return AliasSourcery(goExecutableArg.Get(d), aliaser), nil
 		}),
 	)
 }

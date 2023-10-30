@@ -12,6 +12,7 @@ func TestAliaser(t *testing.T) {
 	type osCheck struct {
 		WantExecuteData *command.ExecuteData
 	}
+	fakeBinaryFile := command.TempFile(t, "leepFrogSourcerer-test")
 	for _, curOS := range []OS{Linux(), Windows()} {
 		for _, test := range []struct {
 			name     string
@@ -22,12 +23,14 @@ func TestAliaser(t *testing.T) {
 				name: "Creates aliaser with no passthrough args",
 				etc: &command.ExecuteTestCase{
 					Args: []string{
+						fakeBinaryFile.Name(),
 						"some-alias",
 						"someCLI",
 					},
 					WantData: &command.Data{Values: map[string]interface{}{
-						aliasArg.Name():    "some-alias",
-						aliasCLIArg.Name(): "someCLI",
+						aliasArg.Name():        "some-alias",
+						aliasCLIArg.Name():     "someCLI",
+						goExecutableArg.Name(): fakeBinaryFile.Name(),
 					}},
 				},
 				osChecks: map[string]*osCheck{
@@ -35,9 +38,8 @@ func TestAliaser(t *testing.T) {
 						WantExecuteData: &command.ExecuteData{
 							Executable: []string{
 								`function _leep_frog_autocompleter {`,
-								`  local file="$(type "$1" | head -n 1 | grep "is aliased to.*_custom_execute_" | grep "_custom_execute_[^[:space:]]*" -o | sed s/_custom_execute_//g)"`,
 								`  local tFile=$(mktemp)`,
-								`  $GOPATH/bin/_${file}_runner autocomplete "$1" "$COMP_TYPE" $COMP_POINT "$COMP_LINE" "${@:2}" > $tFile`,
+								fmt.Sprintf(`  %s autocomplete "$1" "$COMP_TYPE" $COMP_POINT "$COMP_LINE" "${@:2}" > $tFile`, fakeBinaryFile.Name()),
 								`  local IFS='`,
 								`';`,
 								`  COMPREPLY=( $(cat $tFile) )`,
@@ -73,8 +75,7 @@ func TestAliaser(t *testing.T) {
 								"}",
 								"$_sourcerer_alias_autocomplete_some-alias = {",
 								"  param($wordToComplete, $commandAst, $compPoint)",
-								`  $Local:def = ((Get-Alias someCLI).DEFINITION -split "_").Get(3)`,
-								`  (Invoke-Expression '& $env:GOPATH\bin\_${Local:def}_runner.exe autocomplete "someCLI" "0" $compPoint "$commandAst" ') | ForEach-Object {`,
+								fmt.Sprintf(`  (Invoke-Expression '& %s autocomplete "someCLI" "0" $compPoint "$commandAst" ') | ForEach-Object {`, fakeBinaryFile.Name()),
 								"    $_",
 								"  }",
 								"}",
@@ -90,6 +91,7 @@ func TestAliaser(t *testing.T) {
 				name: "Creates aliaser with passthrough args",
 				etc: &command.ExecuteTestCase{
 					Args: []string{
+						fakeBinaryFile.Name(),
 						"some-alias",
 						"someCLI",
 						"un",
@@ -104,6 +106,7 @@ func TestAliaser(t *testing.T) {
 							"2",
 							"trois",
 						},
+						goExecutableArg.Name(): fakeBinaryFile.Name(),
 					}},
 				},
 				osChecks: map[string]*osCheck{
@@ -111,9 +114,8 @@ func TestAliaser(t *testing.T) {
 						WantExecuteData: &command.ExecuteData{
 							Executable: []string{
 								`function _leep_frog_autocompleter {`,
-								`  local file="$(type "$1" | head -n 1 | grep "is aliased to.*_custom_execute_" | grep "_custom_execute_[^[:space:]]*" -o | sed s/_custom_execute_//g)"`,
 								`  local tFile=$(mktemp)`,
-								`  $GOPATH/bin/_${file}_runner autocomplete "$1" "$COMP_TYPE" $COMP_POINT "$COMP_LINE" "${@:2}" > $tFile`,
+								fmt.Sprintf(`  %s autocomplete "$1" "$COMP_TYPE" $COMP_POINT "$COMP_LINE" "${@:2}" > $tFile`, fakeBinaryFile.Name()),
 								`  local IFS='`,
 								`';`,
 								`  COMPREPLY=( $(cat $tFile) )`,

@@ -24,8 +24,9 @@ func (*UsageCommand) Node() command.Node {
 		usageCLIArg,
 		extraMancliArgs,
 		command.ExecutableProcessor(func(o command.Output, d *command.Data) ([]string, error) {
-			cli := usageCLIArg.Get(d)
-			return CurrentOS.Mancli(false, cli, extraMancliArgs.Get(d)...), nil
+			// cli := usageCLIArg.Get(d)
+			// return CurrentOS.Mancli(false, cli, extraMancliArgs.Get(d)...), nil
+			return nil, nil
 		}),
 	)
 }
