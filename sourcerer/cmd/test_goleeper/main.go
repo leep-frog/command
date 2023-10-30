@@ -1,8 +1,10 @@
 package main
 
 import (
-	"fmt"
-	"runtime"
+	"os"
+
+	"github.com/leep-frog/command"
+	"github.com/leep-frog/command/sourcerer"
 )
 
 /* To test, cd into this directory and then run the following commands:
@@ -26,8 +28,8 @@ goleep main.go
 */
 
 func main() {
-	fmt.Println(runtime.Caller(0))
-	/*os.Exit(sourcerer.Source([]sourcerer.CLI{
+	// fmt.Println(runtime.Caller(0))
+	os.Exit(sourcerer.Source([]sourcerer.CLI{
 		sourcerer.ToCLI("simple", command.SerialNodes(
 			command.ListArg[string]("SL", "", 1, 2, command.SimpleCompleter[[]string]("un", "deux", "trois")),
 			&command.ExecutorProcessor{F: func(o command.Output, d *command.Data) error {
@@ -35,5 +37,5 @@ func main() {
 				return nil
 			}},
 		)),
-	}))*/
+	}))
 }

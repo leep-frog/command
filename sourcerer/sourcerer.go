@@ -337,6 +337,7 @@ type compiledOpts struct {
 func Source(clis []CLI, opts ...Option) int {
 	o := command.NewOutput()
 	defer o.Close()
+	// TODO: Use os.Args[0] as goExecutableFile?
 	if source(clis, os.Args[1:], o, opts...) != nil {
 		return 1
 	}
