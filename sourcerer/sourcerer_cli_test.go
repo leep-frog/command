@@ -42,7 +42,7 @@ func TestExecute(t *testing.T) {
 								"pushd . > /dev/null",
 								fmt.Sprintf(`cd %q`, command.FilepathAbs(t, "..", "testdata")),
 								`local tmpFile="$(mktemp)"`,
-								`go run . source "ING"  > $tmpFile && source $tmpFile `,
+								`go run . source "ING" > $tmpFile && source $tmpFile `,
 								"popd > /dev/null",
 							},
 						},
@@ -53,48 +53,7 @@ func TestExecute(t *testing.T) {
 								"Push-Location",
 								fmt.Sprintf(`cd %q`, command.FilepathAbs(t, "..", "testdata")),
 								`$Local:tmpFile = New-TemporaryFile`,
-								`go run . source "ING"  > $Local:tmpFile`,
-								`Copy-Item "$Local:tmpFile" "$Local:tmpFile.ps1"`,
-								`. "$Local:tmpFile.ps1"`,
-								"Pop-Location",
-							},
-						},
-					},
-				},
-			},
-			{
-				name: "Sources directory with load only",
-				etc: &command.ExecuteTestCase{
-					Args: []string{
-						filepath.Join("..", "testdata"),
-						"ING",
-						"--load-only",
-					},
-					WantData: &command.Data{Values: map[string]interface{}{
-						sourcererDirArg.Name():    command.FilepathAbs(t, "..", "testdata"),
-						sourcererSuffixArg.Name(): "ING",
-						loadOnlyFlag.Name():       "--load-only",
-					}},
-				},
-				osChecks: map[string]*osCheck{
-					osLinux: {
-						WantExecuteData: &command.ExecuteData{
-							Executable: []string{
-								"pushd . > /dev/null",
-								fmt.Sprintf(`cd %q`, command.FilepathAbs(t, "..", "testdata")),
-								`local tmpFile="$(mktemp)"`,
-								`go run . source "ING" --load-only > $tmpFile && source $tmpFile `,
-								"popd > /dev/null",
-							},
-						},
-					},
-					osWindows: {
-						WantExecuteData: &command.ExecuteData{
-							Executable: []string{
-								"Push-Location",
-								fmt.Sprintf(`cd %q`, command.FilepathAbs(t, "..", "testdata")),
-								`$Local:tmpFile = New-TemporaryFile`,
-								`go run . source "ING" --load-only > $Local:tmpFile`,
+								`go run . source "ING" > $Local:tmpFile`,
 								`Copy-Item "$Local:tmpFile" "$Local:tmpFile.ps1"`,
 								`. "$Local:tmpFile.ps1"`,
 								"Pop-Location",

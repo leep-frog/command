@@ -1,15 +1,12 @@
 package sourcerer
 
 import (
-	"fmt"
-
 	"github.com/leep-frog/command"
 )
 
 var (
-	sourcererDirArg      = command.FileArgument("DIRECTORY", "Directory in which to create CLI", command.IsDir())
-	sourcererSuffixArg   = command.Arg[string]("BINARY_SUFFIX", "Suffix for the name", command.MinLength[string, string](1))
-	externalLoadOnlyFlag = command.BoolValueFlag(loadOnlyFlag.Name(), loadOnlyFlag.ShortName(), loadOnlyFlag.Desc(), fmt.Sprintf("--%s", loadOnlyFlag.Name()))
+	sourcererDirArg    = command.FileArgument("DIRECTORY", "Directory in which to create CLI", command.IsDir())
+	sourcererSuffixArg = command.Arg[string]("BINARY_SUFFIX", "Suffix for the name", command.MinLength[string, string](1))
 )
 
 func SourcererCLI() CLI {
@@ -28,13 +25,10 @@ func (*SourcererCommand) Name() string {
 
 func (*SourcererCommand) Node() command.Node {
 	return command.SerialNodes(
-		command.FlagProcessor(
-			externalLoadOnlyFlag,
-		),
 		sourcererDirArg,
 		sourcererSuffixArg,
 		command.ExecutableProcessor(func(_ command.Output, d *command.Data) ([]string, error) {
-			return CurrentOS.SourcererGoCLI(sourcererDirArg.Get(d), sourcererSuffixArg.Get(d), externalLoadOnlyFlag.Get(d)), nil
+			return CurrentOS.SourcererGoCLI(sourcererDirArg.Get(d), sourcererSuffixArg.Get(d)), nil
 		}),
 	)
 }

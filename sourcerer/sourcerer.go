@@ -6,7 +6,6 @@ package sourcerer
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 	"runtime"
 	"strings"
 
@@ -15,6 +14,8 @@ import (
 	"golang.org/x/exp/maps"
 	"golang.org/x/exp/slices"
 )
+
+// TODO: FileArgument to allow new files
 
 var (
 	fileArg         = command.FileArgument("FILE", "Temporary file for execution")
@@ -170,10 +171,6 @@ func (*sourcerer) Name() string {
 	return "_internal_sourcerer"
 }
 
-var (
-	loadOnlyFlag = command.BoolFlag("load-only", 'l', "If set to true, the binaries are assumed to exist and only the aliases and completion setups are generated")
-)
-
 const (
 	AutocompleteBranchName = "autocomplete"
 	ExecuteBranchName      = "execute"
@@ -230,16 +227,13 @@ func (s *sourcerer) Node() command.Node {
 		}),
 		&command.BranchNode{
 			Branches: map[string]command.Node{
-				InitializeBranchName: command.SerialNodes(
-					command.FlagProcessor(
-						loadOnlyFlag,
-					),
-					&command.ExecutorProcessor{func(o command.Output, d *command.Data) error {
-						// TODO: Set dirname on init
-						o.Stdoutln(CurrentOS.InitializationLogic(loadOnlyFlag.Get(d), filepath.Dir(s.sourceLocation)))
-						return nil
-					}},
-				),
+				// InitializeBranchName: command.SerialNodes(
+				// 	&command.ExecutorProcessor{func(o command.Output, d *command.Data) error {
+				// 		// TODO: Set dirname on init
+				// 		o.Stdoutln(CurrentOS.InitializationLogic(loadOnlyFlag.Get(d), filepath.Dir(s.sourceLocation)))
+				// 		return nil
+				// 	}},
+				// ),
 				AutocompleteBranchName: command.SerialNodes(
 					s.cliArg,
 					loadCLIArg,
@@ -269,9 +263,6 @@ func (s *sourcerer) Node() command.Node {
 					&command.ExecutorProcessor{F: s.executeExecutor},
 				),
 				SourceBranchName: command.SerialNodes(
-					command.FlagProcessor(
-						loadOnlyFlag,
-					),
 					targetNameArg,
 					&command.ExecutorProcessor{F: s.generateFile},
 				),
@@ -427,20 +418,14 @@ var (
 func (s *sourcerer) generateFile(o command.Output, d *command.Data) error {
 	targetName := targetNameArg.Get(d)
 
-	fileInfo, err := commandStat(CurrentOS.BinaryFileName(targetName))
+	fileData, err := CurrentOS.RegisterCLIs(s.builtin, targetName, maps.Values(s.clis))
 	if err != nil {
-		return fmt.Errorf("failed to get file info for binary file: %v", err)
-	}
-	// Create the go files if load-only flag isn't set, or if the binary files don't exist.
-	if !loadOnlyFlag.Get(d) || fileInfo == nil {
-		o.Stdoutln(CurrentOS.CreateGoFiles(s.sourceLocation, targetName))
+		return o.Err(err)
 	}
 
-	if err := CurrentOS.RegisterCLIs(s.builtin, o, targetName, maps.Values(s.clis)); err != nil {
-		return err
-	}
+	fileData = append(fileData, AliasSourcery(maps.Values(s.opts.aliasers)...)...)
 
-	AliasSourcery(o, maps.Values(s.opts.aliasers)...)
+	o.Stdoutln(strings.Join(fileData, "\n"))
 
 	return nil
 }

@@ -57,15 +57,15 @@ type OS interface {
 	CreateGoFiles(sourceLocation string, targetName string) string
 
 	//
-	SourcererGoCLI(dir string, targetName string, loadOnly string) []string
+	SourcererGoCLI(dir string, targetName string) []string
 
-	// RegisterCLIs
-	RegisterCLIs(builtin bool, output command.Output, targetName string, cli []CLI) error
+	// RegisterCLIs generates the code for
+	RegisterCLIs(builtin bool, targetName string, cli []CLI) ([]string, error)
 
 	// RegisterAliasers
-	GlobalAliaserFunc(command.Output)
-	VerifyAliaser(command.Output, *Aliaser)
-	RegisterAliaser(command.Output, *Aliaser)
+	GlobalAliaserFunc() []string
+	VerifyAliaser(*Aliaser) []string
+	RegisterAliaser(*Aliaser) []string
 
 	// Mancli returns shell commands that run the usage file
 	Mancli(builtin bool, cli string, args ...string) []string

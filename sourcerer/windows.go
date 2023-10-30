@@ -29,15 +29,15 @@ var (
 	}, "\n")
 )
 
-func (w *windows) setAlias(alias, value, completer string) string {
-	return strings.Join([]string{
+func (w *windows) setAlias(alias, value, completer string) []string {
+	return []string{
 		// Delete the alias if it exists
 		fmt.Sprintf("(Get-Alias) | Where { $_.NAME -match '^%s$'} | ForEach-Object { del alias:${_} -Force }", alias),
 		// Set the alias
 		fmt.Sprintf("Set-Alias %s %s", alias, value),
 		// Register the autocompleter
 		fmt.Sprintf("Register-ArgumentCompleter -CommandName %s -ScriptBlock $%s", alias, completer),
-	}, "\n")
+	}
 }
 
 func (*windows) Name() string {
@@ -45,15 +45,11 @@ func (*windows) Name() string {
 }
 
 func (*windows) InitializationLogic(loadOnly bool, sourceLoc string) string {
-	var loadFlagString string
-	if loadOnly {
-		loadFlagString = fmt.Sprintf("--%s ", loadOnlyFlag.Name())
-	}
 	return strings.Join([]string{
 		`Push-Location ;`,
 		fmt.Sprintf(`Set-Location %q ;`, sourceLoc),
 		`$Local:tmpOut = New-TemporaryFile ;`,
-		fmt.Sprintf(`go run . builtin source builtinFunctions %s> $Local:tmpOut ;`, loadFlagString),
+		`go run . builtin source builtinFunctions > $Local:tmpOut ;`,
 		`Copy-Item "$Local:tmpOut" "$Local:tmpOut.ps1" ;`,
 		`. "$Local:tmpOut.ps1" ;`,
 		`Pop-Location ;`,
@@ -75,31 +71,31 @@ func (w *windows) CreateGoFiles(sourceLocation string, targetName string) string
 	}, "\n")
 }
 
-func (w *windows) SourcererGoCLI(dir string, targetName string, loadFlag string) []string {
+func (w *windows) SourcererGoCLI(dir string, targetName string) []string {
 	return []string{
 		"Push-Location",
 		fmt.Sprintf("cd %q", dir),
 		`$Local:tmpFile = New-TemporaryFile`,
-		fmt.Sprintf("go run . source %q %s > $Local:tmpFile", targetName, loadFlag),
+		fmt.Sprintf("go run . source %q > $Local:tmpFile", targetName),
 		`Copy-Item "$Local:tmpFile" "$Local:tmpFile.ps1"`,
 		`. "$Local:tmpFile.ps1"`,
 		`Pop-Location`,
 	}
 }
 
-func (w *windows) RegisterCLIs(builtin bool, output command.Output, targetName string, clis []CLI) error {
+func (w *windows) RegisterCLIs(builtin bool, targetName string, clis []CLI) ([]string, error) {
 	// Generate the autocomplete function
-	output.Stdoutln(w.autocompleteFunction(builtin, targetName))
+	r := []string{w.autocompleteFunction(builtin, targetName)}
 
 	sort.SliceStable(clis, func(i, j int) bool { return clis[i].Name() < clis[j].Name() })
 	for _, cli := range clis {
 		alias := cli.Name()
 
-		output.Stdoutln(w.executeFunction(builtin, targetName, alias, cli.Setup()))
+		r = append(r, w.executeFunction(builtin, targetName, alias, cli.Setup()))
 
 		// We sort ourselves, hence the no sort.
 	}
-	return nil
+	return r, nil
 }
 
 func (*windows) getBranchString(builtin bool, branchName string) string {
@@ -139,7 +135,7 @@ func (w *windows) executeFunction(builtin bool, targetName, cliName string, setu
 			fmt.Sprintf(`  & $env:GOPATH/bin/_%s_runner.exe execute %q $Local:tmpFile "$Local:setupTmpFile.txt" $args`, targetName, cliName),
 		}, "\n")
 	}
-	return strings.Join([]string{
+	return strings.Join(append([]string{
 		prefix,
 		fmt.Sprintf(`function _custom_execute_%s_%s {`, targetName, cliName),
 		``,
@@ -163,12 +159,11 @@ func (w *windows) executeFunction(builtin bool, targetName, cliName string, setu
 		`  }`,
 		`}`,
 		``,
-		w.setAlias(
-			cliName,
-			fmt.Sprintf("_custom_execute_%s_%s", targetName, cliName),
-			fmt.Sprintf("_custom_autocomplete_%s", targetName),
-		),
-	}, "\n")
+	}, w.setAlias(
+		cliName,
+		fmt.Sprintf("_custom_execute_%s_%s", targetName, cliName),
+		fmt.Sprintf("_custom_autocomplete_%s", targetName),
+	)...), "\n")
 }
 
 func (w *windows) HandleAutocompleteSuccess(output command.Output, suggestions []string) {
@@ -197,9 +192,9 @@ func (w *windows) FunctionWrap(fn string) string {
 }
 
 // TODO: Aliasers
-func (w *windows) GlobalAliaserFunc(command.Output) {}
-func (w *windows) VerifyAliaser(output command.Output, a *Aliaser) {
-	output.Stdoutln(strings.Join(w.verifyAliaserCommand(a.cli), "\n"))
+func (w *windows) GlobalAliaserFunc() []string { return nil }
+func (w *windows) VerifyAliaser(a *Aliaser) []string {
+	return w.verifyAliaserCommand(a.cli)
 }
 
 func (w *windows) verifyAliaserCommand(cli string) []string {
@@ -210,7 +205,7 @@ func (w *windows) verifyAliaserCommand(cli string) []string {
 	}
 }
 
-func (w *windows) RegisterAliaser(output command.Output, a *Aliaser) {
+func (w *windows) RegisterAliaser(a *Aliaser) []string {
 	var qas []string
 	for _, v := range a.values {
 		qas = append(qas, fmt.Sprintf("%q", v))
@@ -224,7 +219,7 @@ func (w *windows) RegisterAliaser(output command.Output, a *Aliaser) {
 		expression = fmt.Sprintf(`($Local:functionName + " " + %s + " " + $args)`, strings.Join(qas, ` + " " + `))
 	}
 
-	output.Stdoutln(strings.Join([]string{
+	return append([]string{
 		// Create the execute function
 		fmt.Sprintf(`function _sourcerer_alias_execute_%s {`, a.alias),
 		fmt.Sprintf(`  $Local:functionName = "$((Get-Alias %q).DEFINITION)"`, a.cli),
@@ -239,12 +234,11 @@ func (w *windows) RegisterAliaser(output command.Output, a *Aliaser) {
 		`    $_`,
 		`  }`,
 		`}`,
-		w.setAlias(
-			a.alias,
-			fmt.Sprintf("_sourcerer_alias_execute_%s", a.alias),
-			fmt.Sprintf("_sourcerer_alias_autocomplete_%s", a.alias),
-		),
-	}, "\n"))
+	}, w.setAlias(
+		a.alias,
+		fmt.Sprintf("_sourcerer_alias_execute_%s", a.alias),
+		fmt.Sprintf("_sourcerer_alias_autocomplete_%s", a.alias),
+	)...)
 }
 
 // TODO: Mancli

@@ -27,14 +27,8 @@ func Linux() OS {
 }
 
 var (
-	// getExecuteFile returns the name of the file to which execute file logic is written.
-	// It is a separte function so it can be stubbed out for testing.
-	getExecuteFile = func(filename string) string {
-		return fmt.Sprintf("%s/bin/_custom_execute_%s", os.Getenv("GOPATH"), filename)
-	}
-
-	linuxRegisterCommandFormat          = "alias %s='source $GOPATH/bin/_custom_execute_%s %s'"
-	linuxRegisterCommandWithSetupFormat = "alias %s='o=$(mktemp) && %s > $o && source $GOPATH/bin/_custom_execute_%s %s $o'"
+	linuxRegisterCommandFormat          = "alias %s='source _custom_execute_%s %s'"
+	linuxRegisterCommandWithSetupFormat = "alias %s='o=$(mktemp) && %s > $o && source _custom_execute_%s %s $o'"
 	linuxSetupFunctionFormat            = strings.Join([]string{
 		`function %s {`,
 		`  %s`,
@@ -48,15 +42,11 @@ func (l *linux) Name() string {
 }
 
 func (*linux) InitializationLogic(loadOnly bool, sourceLoc string) string {
-	var loadFlagString string
-	if loadOnly {
-		loadFlagString = fmt.Sprintf("--%s ", loadOnlyFlag.Name())
-	}
 	return strings.Join([]string{
 		`pushd . > /dev/null`,
 		fmt.Sprintf(`cd %q`, sourceLoc),
 		`tmpFile="$(mktemp)"`,
-		fmt.Sprintf(`go run . builtin source builtinFunctions %s> $tmpFile && source $tmpFile`, loadFlagString),
+		`go run . builtin source builtinFunctions > $tmpFile && source $tmpFile`,
 		`popd > /dev/null`,
 	}, "\n")
 }
@@ -100,32 +90,21 @@ func (l *linux) CreateGoFiles(sourceLocation string, targetName string) string {
 	}, "\n")
 }
 
-func (l *linux) SourcererGoCLI(dir string, targetName string, loadFlag string) []string {
+func (l *linux) SourcererGoCLI(dir string, targetName string) []string {
 	return []string{
 		"pushd . > /dev/null",
 		fmt.Sprintf("cd %q", dir),
 		`local tmpFile="$(mktemp)"`,
-		fmt.Sprintf("go run . source %q %s > $tmpFile && source $tmpFile ", targetName, loadFlag),
+		fmt.Sprintf("go run . source %q > $tmpFile && source $tmpFile ", targetName),
 		"popd > /dev/null",
 	}
 }
 
-func (l *linux) RegisterCLIs(builtin bool, output command.Output, targetName string, clis []CLI) error {
+func (l *linux) RegisterCLIs(builtin bool, targetName string, clis []CLI) ([]string, error) {
+	// Generate the execute functions
+	r := l.executeFileContents(builtin, targetName)
 	// Generate the autocomplete function
-	output.Stdoutln(l.autocompleteFunction(builtin, targetName))
-
-	// The execute logic is put in an actual file so it can be used by other
-	// bash environments that don't actually source sourcerer-related commands.
-	efc := l.executeFileContents(builtin, targetName)
-
-	f, err := os.OpenFile(getExecuteFile(targetName), os.O_WRONLY|os.O_CREATE, 0644)
-	if err != nil {
-		return output.Stderrf("failed to open execute function file: %v\n", err)
-	}
-
-	if _, err := f.WriteString(efc); err != nil {
-		return output.Stderrf("failed to write to execute function file: %v\n", err)
-	}
+	r = append(r, l.autocompleteFunction(builtin, targetName)...)
 
 	sort.SliceStable(clis, func(i, j int) bool { return clis[i].Name() < clis[j].Name() })
 	for _, cli := range clis {
@@ -134,16 +113,16 @@ func (l *linux) RegisterCLIs(builtin bool, output command.Output, targetName str
 		aliasCommand := fmt.Sprintf(linuxRegisterCommandFormat, alias, targetName, alias)
 		if scs := cli.Setup(); len(scs) > 0 {
 			setupFunctionName := fmt.Sprintf("_setup_for_%s_cli", alias)
-			output.Stdoutf(linuxSetupFunctionFormat, setupFunctionName, strings.Join(scs, "\n  "))
+			r = append(r, fmt.Sprintf(linuxSetupFunctionFormat, setupFunctionName, strings.Join(scs, "\n  ")))
 			aliasCommand = fmt.Sprintf(linuxRegisterCommandWithSetupFormat, alias, setupFunctionName, targetName, alias)
 		}
 
-		output.Stdoutln(aliasCommand)
+		r = append(r, aliasCommand)
 
 		// We sort ourselves, hence the no sort.
-		output.Stdoutf("complete -F _custom_autocomplete_%s %s %s\n", targetName, NosortString(), alias)
+		r = append(r, fmt.Sprintf("complete -F _custom_autocomplete_%s %s %s", targetName, NosortString(), alias))
 	}
-	return nil
+	return r, nil
 }
 
 func (*linux) getBranchString(builtin bool, branchName string) string {
@@ -153,9 +132,9 @@ func (*linux) getBranchString(builtin bool, branchName string) string {
 	return branchName
 }
 
-func (l *linux) autocompleteFunction(builtin bool, filename string) string {
+func (l *linux) autocompleteFunction(builtin bool, filename string) []string {
 	branchStr := l.getBranchString(builtin, AutocompleteBranchName)
-	return strings.Join([]string{
+	return []string{
 		fmt.Sprintf("function _custom_autocomplete_%s {", filename),
 		`  local tFile=$(mktemp)`,
 		// The last argument is for extra passthrough arguments to be passed for aliaser autocompletes.
@@ -165,12 +144,12 @@ func (l *linux) autocompleteFunction(builtin bool, filename string) string {
 		`  rm $tFile`,
 		"}",
 		"",
-	}, "\n")
+	}
 }
 
-func (l *linux) executeFileContents(builtin bool, filename string) string {
+func (l *linux) executeFileContents(builtin bool, filename string) []string {
 	branchStr := l.getBranchString(builtin, ExecuteBranchName)
-	return strings.Join([]string{
+	return []string{
 		fmt.Sprintf(`function _custom_execute_%s {`, filename),
 		`  # tmpFile is the file to which we write ExecuteData.Executable`,
 		`  local tmpFile=$(mktemp)`,
@@ -191,17 +170,16 @@ func (l *linux) executeFileContents(builtin bool, filename string) string {
 		`  fi`,
 		`  return $errorCode`,
 		`}`,
-		fmt.Sprintf(`_custom_execute_%s "$@"`, filename),
 		``,
-	}, "\n")
+	}
 }
 
-func (l *linux) GlobalAliaserFunc(output command.Output) {
-	output.Stdoutln(l.aliaserGlobalAutocompleteFunction())
+func (l *linux) GlobalAliaserFunc() []string {
+	return l.aliaserGlobalAutocompleteFunction()
 }
 
-func (*linux) VerifyAliaser(output command.Output, aliaser *Aliaser) {
-	output.Stdoutln(strings.Join([]string{
+func (*linux) VerifyAliaser(aliaser *Aliaser) []string {
+	return []string{
 		FileStringFromCLI(aliaser.cli),
 		`if [ -z "$file" ]; then`,
 		fmt.Sprintf(`  echo Provided CLI %q is not a CLI generated with github.com/leep-frog/command`, aliaser.cli),
@@ -209,10 +187,10 @@ func (*linux) VerifyAliaser(output command.Output, aliaser *Aliaser) {
 		`fi`,
 		``,
 		``,
-	}, "\n"))
+	}
 }
 
-func (l *linux) RegisterAliaser(output command.Output, a *Aliaser) {
+func (l *linux) RegisterAliaser(a *Aliaser) []string {
 	// Output the bash alias and completion commands
 	var qas []string
 	for _, v := range a.values {
@@ -222,17 +200,19 @@ func (l *linux) RegisterAliaser(output command.Output, a *Aliaser) {
 
 	// The trailing space causes issues, so we need to make sure we remove that if necessary.
 	aliasTo := strings.TrimSpace(fmt.Sprintf("%s %s", a.cli, quotedArgs))
-	output.Stdoutf(strings.Join([]string{
+	r := []string{
 		fmt.Sprintf("alias -- %s=%q", a.alias, aliasTo),
-		l.aliaserAutocompleteFunction(a.alias, a.cli, quotedArgs),
+	}
+
+	r = append(r, l.aliaserAutocompleteFunction(a.alias, a.cli, quotedArgs)...)
+	return append(r,
 		fmt.Sprintf("complete -F _custom_autocomplete_for_alias_%s %s %s", a.alias, NosortString(), a.alias),
 		``,
-		``,
-	}, "\n"))
+	)
 }
 
-func (*linux) aliaserGlobalAutocompleteFunction() string {
-	return strings.Join([]string{
+func (*linux) aliaserGlobalAutocompleteFunction() []string {
+	return []string{
 		`function _leep_frog_autocompleter {`,
 		fmt.Sprintf("  %s", FileStringFromCLI(`"$1"`)),
 		`  local tFile=$(mktemp)`,
@@ -244,16 +224,16 @@ func (*linux) aliaserGlobalAutocompleteFunction() string {
 		`  rm $tFile`,
 		`}`,
 		``,
-	}, "\n")
+	}
 }
 
-func (*linux) aliaserAutocompleteFunction(alias string, cli string, quotedArg string) string {
-	return strings.Join([]string{
+func (*linux) aliaserAutocompleteFunction(alias string, cli string, quotedArg string) []string {
+	return []string{
 		fmt.Sprintf("function _custom_autocomplete_for_alias_%s {", alias),
 		fmt.Sprintf(`  _leep_frog_autocompleter %q %s`, cli, quotedArg),
 		"}",
 		"",
-	}, "\n")
+	}
 }
 
 func quotedArgs(args ...string) string {

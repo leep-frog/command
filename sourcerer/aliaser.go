@@ -1,8 +1,6 @@
 package sourcerer
 
 import (
-	"strings"
-
 	"github.com/leep-frog/command"
 	"golang.org/x/exp/slices"
 )
@@ -18,27 +16,28 @@ func (a *Aliaser) modifyCompiledOpts(co *compiledOpts) {
 }
 
 // AliasSourcery outputs all alias source commands to the provided `command.Output`.
-func AliasSourcery(o command.Output, as ...*Aliaser) {
+func AliasSourcery(as ...*Aliaser) []string {
 	if len(as) == 0 {
-		return
+		return nil
 	}
 
 	slices.SortFunc(as, func(this, that *Aliaser) bool {
 		return this.alias < that.alias
 	})
 
-	CurrentOS.GlobalAliaserFunc(o)
+	r := CurrentOS.GlobalAliaserFunc()
 
 	verifiedCLIs := map[string]bool{}
 	for _, a := range as {
 		// Verify the CLI is a leep-frog CLI (if we haven't already).
 		if _, ok := verifiedCLIs[a.cli]; !ok {
 			verifiedCLIs[a.cli] = true
-			CurrentOS.VerifyAliaser(o, a)
+			r = append(r, CurrentOS.VerifyAliaser(a)...)
 		}
 
-		CurrentOS.RegisterAliaser(o, a)
+		r = append(r, CurrentOS.RegisterAliaser(a)...)
 	}
+	return r
 }
 
 func NewAliaser(alias string, cli string, values ...string) *Aliaser {
@@ -74,10 +73,7 @@ func (*AliaserCommand) Node() command.Node {
 		aliasPTArg,
 		command.ExecutableProcessor(func(_ command.Output, d *command.Data) ([]string, error) {
 			aliaser := NewAliaser(aliasArg.Get(d), aliasCLIArg.Get(d), aliasPTArg.Get(d)...)
-			fo := command.NewFakeOutput()
-			AliasSourcery(fo, aliaser)
-			fo.Close()
-			return strings.Split(fo.GetStdout(), "\n"), nil
+			return AliasSourcery(aliaser), nil
 		}),
 	)
 }
