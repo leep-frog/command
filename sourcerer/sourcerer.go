@@ -9,6 +9,7 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/google/uuid"
 	"github.com/leep-frog/command"
 	"github.com/leep-frog/command/cache"
 	"golang.org/x/exp/maps"
@@ -34,6 +35,11 @@ var (
 		return s, nil
 	}})
 	autocompletePassthroughArgs = command.ListArg[string]("PASSTHROUGH_ARG", "Arguments that get passed through to autocomplete command", 0, command.UnboundedList)
+
+	// Made this a method so it can be stubbed out in tests
+	getUuid = func() string {
+		return uuid.NewString()
+	}
 )
 
 // CLI provides a way to construct CLIs in go, with tab-completion.
@@ -107,7 +113,7 @@ func (s *sourcerer) executeExecutor(output command.Output, d *command.Data) erro
 	v := strings.Join(eData.Executable, "\n")
 
 	if eData.FunctionWrap {
-		v = CurrentOS.FunctionWrap(v)
+		v = CurrentOS.FunctionWrap(fmt.Sprintf("_leep_execute_data_function_wrap_%s", strings.ReplaceAll(getUuid(), "-", "_")), v)
 	}
 
 	if _, err := f.WriteString(v); err != nil {
@@ -416,7 +422,7 @@ func (s *sourcerer) generateFile(o command.Output, d *command.Data) error {
 
 	fileData = append(fileData, AliasSourcery(s.goExecutableFilePath, maps.Values(s.opts.aliasers)...)...)
 
-	o.Stdoutln(strings.Join(fileData, "\n"))
+	o.Stdoutln(CurrentOS.FunctionWrap(fmt.Sprintf("_%s_wrap_function", targetName), strings.Join(fileData, "\n")))
 
 	return nil
 }

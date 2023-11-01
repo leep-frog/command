@@ -41,12 +41,12 @@ func (l *linux) Name() string {
 	return "linux"
 }
 
-func (l *linux) FunctionWrap(fn string) string {
+func (l *linux) FunctionWrap(name, fn string) string {
 	return strings.Join([]string{
-		"function _leep_execute_data_function_wrap {",
+		fmt.Sprintf("function %s {", name),
 		fn,
 		"}",
-		"_leep_execute_data_function_wrap",
+		name,
 		"",
 	}, "\n")
 }

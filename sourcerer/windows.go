@@ -153,12 +153,12 @@ func (w *windows) HandleAutocompleteError(output command.Output, compType int, e
 	output.Stdoutln()
 }
 
-func (w *windows) FunctionWrap(fn string) string {
+func (w *windows) FunctionWrap(name string, fn string) string {
 	return strings.Join([]string{
-		"function _leep_execute_data_function_wrap {",
+		fmt.Sprintf("function %s {", name),
 		fn,
 		"}",
-		"_leep_execute_data_function_wrap",
+		name,
 		"",
 	}, "\n")
 }

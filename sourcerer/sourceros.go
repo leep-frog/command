@@ -36,7 +36,7 @@ type OS interface {
 	Name() string
 
 	// FunctionWrap wraps the provided commands in another function.
-	FunctionWrap(string) string
+	FunctionWrap(name, fn string) string
 
 	// HandleAutocompleteSuccess should output the suggestions for autocomplete consumption
 	HandleAutocompleteSuccess(command.Output, []string)

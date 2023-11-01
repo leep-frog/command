@@ -55,6 +55,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 				osChecks: map[string]*osCheck{
 					osLinux: {
 						wantStdout: []string{
+							`function _leepFrogSource_wrap_function {`,
 							`function _custom_execute_leepFrogSource {`,
 							`  # tmpFile is the file to which we write ExecuteData.Executable`,
 							`  local tmpFile=$(mktemp)`,
@@ -84,16 +85,23 @@ func TestGenerateBinaryNode(t *testing.T) {
 							`  rm $tFile`,
 							`}`,
 							``,
+							`}`, // wrap function end bracket
+							`_leepFrogSource_wrap_function`,
+							``,
 						},
 					},
 					osWindows: {
 						wantStdout: []string{
+							`function _leepFrogSource_wrap_function {`,
 							`$_custom_autocomplete_leepFrogSource = {`,
 							`  param($wordToComplete, $commandAst, $compPoint)`,
 							fmt.Sprintf(`  (& %s autocomplete ($commandAst.CommandElements | Select-Object -first 1) "0" $compPoint "$commandAst") | ForEach-Object {`, fakeGoExecutableFilePath.Name()),
 							`    $_`,
 							`  }`,
 							`}`,
+							``,
+							`}`, // wrap function end bracket
+							`_leepFrogSource_wrap_function`,
 							``,
 						},
 					},
@@ -109,6 +117,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 				osChecks: map[string]*osCheck{
 					osLinux: {
 						wantStdout: []string{
+							`function _leepFrogSource_wrap_function {`,
 							`function _custom_execute_leepFrogSource {`,
 							`  # tmpFile is the file to which we write ExecuteData.Executable`,
 							`  local tmpFile=$(mktemp)`,
@@ -167,10 +176,14 @@ func TestGenerateBinaryNode(t *testing.T) {
 							``,
 							`complete -F _custom_autocomplete_for_alias_otherAlias -o nosort otherAlias`,
 							``,
+							`}`, // wrap function end bracket
+							`_leepFrogSource_wrap_function`,
+							``,
 						},
 					},
 					osWindows: {
 						wantStdout: []string{
+							`function _leepFrogSource_wrap_function {`,
 							`$_custom_autocomplete_leepFrogSource = {`,
 							`  param($wordToComplete, $commandAst, $compPoint)`,
 							fmt.Sprintf(`  (& %s autocomplete ($commandAst.CommandElements | Select-Object -first 1) "0" $compPoint "$commandAst") | ForEach-Object {`, fakeGoExecutableFilePath.Name()),
@@ -210,6 +223,9 @@ func TestGenerateBinaryNode(t *testing.T) {
 							`(Get-Alias) | Where { $_.NAME -match '^otherAlias$'} | ForEach-Object { del alias:${_} -Force }`,
 							`Set-Alias otherAlias _sourcerer_alias_execute_otherAlias`,
 							`Register-ArgumentCompleter -CommandName otherAlias -ScriptBlock $_sourcerer_alias_autocomplete_otherAlias`,
+							`}`, // wrap function end bracket
+							`_leepFrogSource_wrap_function`,
+							``,
 						},
 					},
 				},
@@ -225,6 +241,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 				osChecks: map[string]*osCheck{
 					osLinux: {
 						wantStdout: []string{
+							`function _leepFrogSource_wrap_function {`,
 							`function _custom_execute_leepFrogSource {`,
 							`  # tmpFile is the file to which we write ExecuteData.Executable`,
 							`  local tmpFile=$(mktemp)`,
@@ -278,10 +295,14 @@ func TestGenerateBinaryNode(t *testing.T) {
 							``,
 							`complete -F _custom_autocomplete_for_alias_otherAlias -o nosort otherAlias`,
 							``,
+							`}`, // wrap function end bracket
+							`_leepFrogSource_wrap_function`,
+							``,
 						},
 					},
 					osWindows: {
 						wantStdout: []string{
+							`function _leepFrogSource_wrap_function {`,
 							`$_custom_autocomplete_leepFrogSource = {`,
 							`  param($wordToComplete, $commandAst, $compPoint)`,
 							fmt.Sprintf(`  (& %s autocomplete ($commandAst.CommandElements | Select-Object -first 1) "0" $compPoint "$commandAst") | ForEach-Object {`, fakeGoExecutableFilePath.Name()),
@@ -318,6 +339,9 @@ func TestGenerateBinaryNode(t *testing.T) {
 							`(Get-Alias) | Where { $_.NAME -match '^otherAlias$'} | ForEach-Object { del alias:${_} -Force }`,
 							`Set-Alias otherAlias _sourcerer_alias_execute_otherAlias`,
 							`Register-ArgumentCompleter -CommandName otherAlias -ScriptBlock $_sourcerer_alias_autocomplete_otherAlias`,
+							`}`, // wrap function end bracket
+							`_leepFrogSource_wrap_function`,
+							``,
 						},
 					},
 				},
@@ -334,6 +358,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 				osChecks: map[string]*osCheck{
 					osLinux: {
 						wantStdout: []string{
+							`function _leepFrogSource_wrap_function {`,
 							`function _custom_execute_leepFrogSource {`,
 							`  # tmpFile is the file to which we write ExecuteData.Executable`,
 							`  local tmpFile=$(mktemp)`,
@@ -393,10 +418,14 @@ func TestGenerateBinaryNode(t *testing.T) {
 							``,
 							`complete -F _custom_autocomplete_for_alias_otherAlias -o nosort otherAlias`,
 							``,
+							`}`, // wrap function end bracket
+							`_leepFrogSource_wrap_function`,
+							``,
 						},
 					},
 					osWindows: {
 						wantStdout: []string{
+							`function _leepFrogSource_wrap_function {`,
 							`$_custom_autocomplete_leepFrogSource = {`,
 							`  param($wordToComplete, $commandAst, $compPoint)`,
 							fmt.Sprintf(`  (& %s autocomplete ($commandAst.CommandElements | Select-Object -first 1) "0" $compPoint "$commandAst") | ForEach-Object {`, fakeGoExecutableFilePath.Name()),
@@ -436,6 +465,9 @@ func TestGenerateBinaryNode(t *testing.T) {
 							`(Get-Alias) | Where { $_.NAME -match '^otherAlias$'} | ForEach-Object { del alias:${_} -Force }`,
 							`Set-Alias otherAlias _sourcerer_alias_execute_otherAlias`,
 							`Register-ArgumentCompleter -CommandName otherAlias -ScriptBlock $_sourcerer_alias_autocomplete_otherAlias`,
+							`}`, // wrap function end bracket
+							`_leepFrogSource_wrap_function`,
+							``,
 						},
 					},
 				},
@@ -446,6 +478,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 				osChecks: map[string]*osCheck{
 					osLinux: {
 						wantStdout: []string{
+							`function _customOutputFile_wrap_function {`,
 							`function _custom_execute_customOutputFile {`,
 							`  # tmpFile is the file to which we write ExecuteData.Executable`,
 							`  local tmpFile=$(mktemp)`,
@@ -475,16 +508,23 @@ func TestGenerateBinaryNode(t *testing.T) {
 							`  rm $tFile`,
 							`}`,
 							``,
+							`}`, // wrap function end bracket
+							`_customOutputFile_wrap_function`,
+							``,
 						},
 					},
 					osWindows: {
 						wantStdout: []string{
+							`function _customOutputFile_wrap_function {`,
 							`$_custom_autocomplete_customOutputFile = {`,
 							`  param($wordToComplete, $commandAst, $compPoint)`,
 							fmt.Sprintf(`  (& %s autocomplete ($commandAst.CommandElements | Select-Object -first 1) "0" $compPoint "$commandAst") | ForEach-Object {`, fakeGoExecutableFilePath.Name()),
 							`    $_`,
 							`  }`,
 							`}`,
+							``,
+							`}`, // wrap function end bracket
+							`_customOutputFile_wrap_function`,
 							``,
 						},
 					},
@@ -501,6 +541,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 				osChecks: map[string]*osCheck{
 					osLinux: {
 						wantStdout: []string{
+							`function _leepFrogSource_wrap_function {`,
 							`function _custom_execute_leepFrogSource {`,
 							`  # tmpFile is the file to which we write ExecuteData.Executable`,
 							`  local tmpFile=$(mktemp)`,
@@ -541,10 +582,14 @@ func TestGenerateBinaryNode(t *testing.T) {
 							"complete -F _custom_autocomplete_leepFrogSource -o nosort l",
 							"alias x='source _custom_execute_leepFrogSource x'",
 							"complete -F _custom_autocomplete_leepFrogSource -o nosort x",
+							`}`, // wrap function end bracket
+							`_leepFrogSource_wrap_function`,
+							``,
 						},
 					},
 					osWindows: {
 						wantStdout: []string{
+							`function _leepFrogSource_wrap_function {`,
 							`$_custom_autocomplete_leepFrogSource = {`,
 							`  param($wordToComplete, $commandAst, $compPoint)`,
 							fmt.Sprintf(`  (& %s autocomplete ($commandAst.CommandElements | Select-Object -first 1) "0" $compPoint "$commandAst") | ForEach-Object {`, fakeGoExecutableFilePath.Name()),
@@ -631,6 +676,9 @@ func TestGenerateBinaryNode(t *testing.T) {
 							`(Get-Alias) | Where { $_.NAME -match '^x$'} | ForEach-Object { del alias:${_} -Force }`,
 							`Set-Alias x _custom_execute_leepFrogSource_x`,
 							`Register-ArgumentCompleter -CommandName x -ScriptBlock $_custom_autocomplete_leepFrogSource`,
+							`}`, // wrap function end bracket
+							`_leepFrogSource_wrap_function`,
+							``,
 						},
 					},
 				},
@@ -647,6 +695,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 				osChecks: map[string]*osCheck{
 					osLinux: {
 						wantStdout: []string{
+							`function _leepFrogSource_wrap_function {`,
 							`function _custom_execute_leepFrogSource {`,
 							`  # tmpFile is the file to which we write ExecuteData.Executable`,
 							`  local tmpFile=$(mktemp)`,
@@ -687,10 +736,14 @@ func TestGenerateBinaryNode(t *testing.T) {
 							"complete -F _custom_autocomplete_leepFrogSource  l",
 							"alias x='source _custom_execute_leepFrogSource x'",
 							"complete -F _custom_autocomplete_leepFrogSource  x",
+							`}`, // wrap function end bracket
+							`_leepFrogSource_wrap_function`,
+							``,
 						},
 					},
 					osWindows: {
 						wantStdout: []string{
+							`function _leepFrogSource_wrap_function {`,
 							`$_custom_autocomplete_leepFrogSource = {`,
 							`  param($wordToComplete, $commandAst, $compPoint)`,
 							fmt.Sprintf(`  (& %s autocomplete ($commandAst.CommandElements | Select-Object -first 1) "0" $compPoint "$commandAst") | ForEach-Object {`, fakeGoExecutableFilePath.Name()),
@@ -777,6 +830,9 @@ func TestGenerateBinaryNode(t *testing.T) {
 							`(Get-Alias) | Where { $_.NAME -match '^x$'} | ForEach-Object { del alias:${_} -Force }`,
 							`Set-Alias x _custom_execute_leepFrogSource_x`,
 							`Register-ArgumentCompleter -CommandName x -ScriptBlock $_custom_autocomplete_leepFrogSource`,
+							`}`, // wrap function end bracket
+							`_leepFrogSource_wrap_function`,
+							``,
 						},
 					},
 				},
@@ -794,6 +850,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 				osChecks: map[string]*osCheck{
 					osLinux: {
 						wantStdout: []string{
+							`function _leepFrogBuiltIns_wrap_function {`,
 							`function _custom_execute_leepFrogBuiltIns {`,
 							`  # tmpFile is the file to which we write ExecuteData.Executable`,
 							`  local tmpFile=$(mktemp)`,
@@ -833,10 +890,14 @@ func TestGenerateBinaryNode(t *testing.T) {
 							`complete -F _custom_autocomplete_leepFrogBuiltIns -o nosort leep_debug`,
 							`alias sourcerer='source _custom_execute_leepFrogBuiltIns sourcerer'`,
 							`complete -F _custom_autocomplete_leepFrogBuiltIns -o nosort sourcerer`,
+							`}`, // wrap function end bracket
+							`_leepFrogBuiltIns_wrap_function`,
+							``,
 						},
 					},
 					osWindows: {
 						wantStdout: []string{
+							`function _leepFrogBuiltIns_wrap_function {`,
 							`$_custom_autocomplete_leepFrogBuiltIns = {`,
 							`  param($wordToComplete, $commandAst, $compPoint)`,
 							fmt.Sprintf(`  (& %s builtin autocomplete ($commandAst.CommandElements | Select-Object -first 1) "0" $compPoint "$commandAst") | ForEach-Object {`, fakeGoExecutableFilePath.Name()),
@@ -964,6 +1025,9 @@ func TestGenerateBinaryNode(t *testing.T) {
 							`(Get-Alias) | Where { $_.NAME -match '^sourcerer$'} | ForEach-Object { del alias:${_} -Force }`,
 							`Set-Alias sourcerer _custom_execute_leepFrogBuiltIns_sourcerer`,
 							`Register-ArgumentCompleter -CommandName sourcerer -ScriptBlock $_custom_autocomplete_leepFrogBuiltIns`,
+							`}`, // wrap function end bracket
+							`_leepFrogBuiltIns_wrap_function`,
+							``,
 						},
 					},
 				},
@@ -1059,6 +1123,7 @@ func TestSourcerer(t *testing.T) {
 			name     string
 			clis     []CLI
 			args     []string
+			uuids    []string
 			cacheErr error
 			osCheck  *osCheck
 			osChecks map[string]*osCheck
@@ -1266,15 +1331,16 @@ func TestSourcerer(t *testing.T) {
 						},
 					},
 				},
-				args: []string{"execute", "basic", f.Name()},
+				args:  []string{"execute", "basic", f.Name()},
+				uuids: []string{"some-uuid"},
 				osCheck: &osCheck{
 					wantOutput: []string{
-						"function _leep_execute_data_function_wrap {",
+						"function _leep_execute_data_function_wrap_some_uuid {",
 						"echo",
 						"hello",
 						"there",
 						`}`,
-						"_leep_execute_data_function_wrap",
+						"_leep_execute_data_function_wrap_some_uuid",
 						"",
 					},
 				},
@@ -2113,6 +2179,13 @@ func TestSourcerer(t *testing.T) {
 					oschk = test.osCheck
 				}
 
+				var uuidIdx int
+				command.StubValue(t, &getUuid, func() string {
+					r := test.uuids[uuidIdx]
+					uuidIdx++
+					return r
+				})
+
 				command.StubValue(t, &getSourceLoc, func() (string, error) {
 					return "/fake/source/location/main.go", oschk.getSourceErr
 				})
@@ -2159,6 +2232,10 @@ func TestSourcerer(t *testing.T) {
 				}
 				if diff := cmp.Diff(strings.Join(wantStderr, "\n"), o.GetStderr()); diff != "" {
 					t.Errorf("source(%v) sent incorrect stderr (-want, +got):\n%s", test.args, diff)
+				}
+
+				if uuidIdx != len(test.uuids) {
+					t.Errorf("Unnecessary uuid stubs. %d stubs, but only %d calls", len(test.uuids), uuidIdx)
 				}
 
 				// Check file contents
