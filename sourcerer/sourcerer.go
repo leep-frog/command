@@ -349,7 +349,6 @@ func (s *sourcerer) initBuiltInSourcerer() {
 		&Debugger{},
 		&GoLeep{},
 		&UpdateLeepPackageCommand{},
-		&UsageCommand{},
 	}, s.sourceLocation, []Option{
 		// TODO: Add aliasers?
 	})
