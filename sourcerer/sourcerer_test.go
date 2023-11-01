@@ -26,7 +26,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 	command.StubValue(t, &getSourceLoc, func() (string, error) {
 		return "/fake/source/location", nil
 	})
-	fakeBinaryFile := command.TempFile(t, "leepFrogSourcerer-test")
+	fakeGoExecutableFilePath := command.TempFile(t, "leepFrogSourcerer-test")
 
 	type osCheck struct {
 		wantStdout []string
@@ -51,7 +51,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 		}{
 			{
 				name: "generates source file when no CLIs",
-				args: []string{"source", fakeBinaryFile.Name(), "leepFrogSource"},
+				args: []string{"source", "leepFrogSource"},
 				osChecks: map[string]*osCheck{
 					osLinux: {
 						wantStdout: []string{
@@ -60,7 +60,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							`  local tmpFile=$(mktemp)`,
 							``,
 							`  # Run the go-only code`,
-							fmt.Sprintf(`  %s execute "$1" $tmpFile "${@:2}"`, fakeBinaryFile.Name()),
+							fmt.Sprintf(`  %s execute "$1" $tmpFile "${@:2}"`, fakeGoExecutableFilePath.Name()),
 							`  # Return the error code if go code terminated with an error`,
 							`  local errorCode=$?`,
 							`  if [ $errorCode -ne 0 ]; then return $errorCode; fi`,
@@ -78,7 +78,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							``,
 							`function _custom_autocomplete_leepFrogSource {`,
 							`  local tFile=$(mktemp)`,
-							fmt.Sprintf(`  %s autocomplete ${COMP_WORDS[0]} "$COMP_TYPE" $COMP_POINT "$COMP_LINE" > $tFile`, fakeBinaryFile.Name()),
+							fmt.Sprintf(`  %s autocomplete ${COMP_WORDS[0]} "$COMP_TYPE" $COMP_POINT "$COMP_LINE" > $tFile`, fakeGoExecutableFilePath.Name()),
 							`  local IFS=$'\n'`,
 							`  COMPREPLY=( $(cat $tFile) )`,
 							`  rm $tFile`,
@@ -90,7 +90,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 						wantStdout: []string{
 							`$_custom_autocomplete_leepFrogSource = {`,
 							`  param($wordToComplete, $commandAst, $compPoint)`,
-							fmt.Sprintf(`  (& %s autocomplete ($commandAst.CommandElements | Select-Object -first 1) "0" $compPoint "$commandAst") | ForEach-Object {`, fakeBinaryFile.Name()),
+							fmt.Sprintf(`  (& %s autocomplete ($commandAst.CommandElements | Select-Object -first 1) "0" $compPoint "$commandAst") | ForEach-Object {`, fakeGoExecutableFilePath.Name()),
 							`    $_`,
 							`  }`,
 							`}`,
@@ -101,7 +101,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 			},
 			{
 				name: "adds multiple Aliaser (singular) options at the end",
-				args: []string{"source", fakeBinaryFile.Name(), "leepFrogSource"},
+				args: []string{"source", "leepFrogSource"},
 				opts: []Option{
 					NewAliaser("a1", "do", "some", "stuff"),
 					NewAliaser("otherAlias", "flaggable", "--args", "--at", "once"),
@@ -114,7 +114,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							`  local tmpFile=$(mktemp)`,
 							``,
 							`  # Run the go-only code`,
-							fmt.Sprintf(`  %s execute "$1" $tmpFile "${@:2}"`, fakeBinaryFile.Name()),
+							fmt.Sprintf(`  %s execute "$1" $tmpFile "${@:2}"`, fakeGoExecutableFilePath.Name()),
 							`  # Return the error code if go code terminated with an error`,
 							`  local errorCode=$?`,
 							`  if [ $errorCode -ne 0 ]; then return $errorCode; fi`,
@@ -132,13 +132,13 @@ func TestGenerateBinaryNode(t *testing.T) {
 							``,
 							`function _custom_autocomplete_leepFrogSource {`,
 							`  local tFile=$(mktemp)`,
-							fmt.Sprintf(`  %s autocomplete ${COMP_WORDS[0]} "$COMP_TYPE" $COMP_POINT "$COMP_LINE" > $tFile`, fakeBinaryFile.Name()),
+							fmt.Sprintf(`  %s autocomplete ${COMP_WORDS[0]} "$COMP_TYPE" $COMP_POINT "$COMP_LINE" > $tFile`, fakeGoExecutableFilePath.Name()),
 							`  local IFS=$'\n'`,
 							`  COMPREPLY=( $(cat $tFile) )`,
 							`  rm $tFile`,
 							`}`,
 							``,
-							strings.Join((&linux{}).aliaserGlobalAutocompleteFunction(fakeBinaryFile.Name()), "\n"),
+							strings.Join((&linux{}).aliaserGlobalAutocompleteFunction(fakeGoExecutableFilePath.Name()), "\n"),
 							`local file="$(type do | head -n 1 | grep "is aliased to.*_custom_execute_" | grep "_custom_execute_[^[:space:]]*" -o | sed s/_custom_execute_//g)"`,
 							`if [ -z "$file" ]; then`,
 							`  echo Provided CLI "do" is not a CLI generated with github.com/leep-frog/command`,
@@ -173,7 +173,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 						wantStdout: []string{
 							`$_custom_autocomplete_leepFrogSource = {`,
 							`  param($wordToComplete, $commandAst, $compPoint)`,
-							fmt.Sprintf(`  (& %s autocomplete ($commandAst.CommandElements | Select-Object -first 1) "0" $compPoint "$commandAst") | ForEach-Object {`, fakeBinaryFile.Name()),
+							fmt.Sprintf(`  (& %s autocomplete ($commandAst.CommandElements | Select-Object -first 1) "0" $compPoint "$commandAst") | ForEach-Object {`, fakeGoExecutableFilePath.Name()),
 							`    $_`,
 							`  }`,
 							`}`,
@@ -187,7 +187,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							`}`,
 							`$_sourcerer_alias_autocomplete_a1 = {`,
 							`  param($wordToComplete, $commandAst, $compPoint)`,
-							fmt.Sprintf(`  (Invoke-Expression '& %s autocomplete "do" "0" $compPoint "$commandAst" "some" "stuff"') | ForEach-Object {`, fakeBinaryFile.Name()),
+							fmt.Sprintf(`  (Invoke-Expression '& %s autocomplete "do" "0" $compPoint "$commandAst" "some" "stuff"') | ForEach-Object {`, fakeGoExecutableFilePath.Name()),
 							`    $_`,
 							`  }`,
 							`}`,
@@ -203,7 +203,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							`}`,
 							`$_sourcerer_alias_autocomplete_otherAlias = {`,
 							`  param($wordToComplete, $commandAst, $compPoint)`,
-							fmt.Sprintf(`  (Invoke-Expression '& %s autocomplete "flaggable" "0" $compPoint "$commandAst" "--args" "--at" "once"') | ForEach-Object {`, fakeBinaryFile.Name()),
+							fmt.Sprintf(`  (Invoke-Expression '& %s autocomplete "flaggable" "0" $compPoint "$commandAst" "--args" "--at" "once"') | ForEach-Object {`, fakeGoExecutableFilePath.Name()),
 							`    $_`,
 							`  }`,
 							`}`,
@@ -216,7 +216,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 			},
 			{
 				name: "only verifies each CLI once",
-				args: []string{"source", fakeBinaryFile.Name(), "leepFrogSource"},
+				args: []string{"source", "leepFrogSource"},
 				opts: []Option{
 					// Note the CLI in both of these is "do"
 					NewAliaser("a1", "do", "some", "stuff"),
@@ -230,7 +230,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							`  local tmpFile=$(mktemp)`,
 							``,
 							`  # Run the go-only code`,
-							fmt.Sprintf(`  %s execute "$1" $tmpFile "${@:2}"`, fakeBinaryFile.Name()),
+							fmt.Sprintf(`  %s execute "$1" $tmpFile "${@:2}"`, fakeGoExecutableFilePath.Name()),
 							`  # Return the error code if go code terminated with an error`,
 							`  local errorCode=$?`,
 							`  if [ $errorCode -ne 0 ]; then return $errorCode; fi`,
@@ -248,13 +248,13 @@ func TestGenerateBinaryNode(t *testing.T) {
 							``,
 							`function _custom_autocomplete_leepFrogSource {`,
 							`  local tFile=$(mktemp)`,
-							fmt.Sprintf(`  %s autocomplete ${COMP_WORDS[0]} "$COMP_TYPE" $COMP_POINT "$COMP_LINE" > $tFile`, fakeBinaryFile.Name()),
+							fmt.Sprintf(`  %s autocomplete ${COMP_WORDS[0]} "$COMP_TYPE" $COMP_POINT "$COMP_LINE" > $tFile`, fakeGoExecutableFilePath.Name()),
 							`  local IFS=$'\n'`,
 							`  COMPREPLY=( $(cat $tFile) )`,
 							`  rm $tFile`,
 							`}`,
 							``,
-							strings.Join((&linux{}).aliaserGlobalAutocompleteFunction(fakeBinaryFile.Name()), "\n"),
+							strings.Join((&linux{}).aliaserGlobalAutocompleteFunction(fakeGoExecutableFilePath.Name()), "\n"),
 							`local file="$(type do | head -n 1 | grep "is aliased to.*_custom_execute_" | grep "_custom_execute_[^[:space:]]*" -o | sed s/_custom_execute_//g)"`,
 							`if [ -z "$file" ]; then`,
 							`  echo Provided CLI "do" is not a CLI generated with github.com/leep-frog/command`,
@@ -284,7 +284,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 						wantStdout: []string{
 							`$_custom_autocomplete_leepFrogSource = {`,
 							`  param($wordToComplete, $commandAst, $compPoint)`,
-							fmt.Sprintf(`  (& %s autocomplete ($commandAst.CommandElements | Select-Object -first 1) "0" $compPoint "$commandAst") | ForEach-Object {`, fakeBinaryFile.Name()),
+							fmt.Sprintf(`  (& %s autocomplete ($commandAst.CommandElements | Select-Object -first 1) "0" $compPoint "$commandAst") | ForEach-Object {`, fakeGoExecutableFilePath.Name()),
 							`    $_`,
 							`  }`,
 							`}`,
@@ -298,7 +298,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							`}`,
 							`$_sourcerer_alias_autocomplete_a1 = {`,
 							`  param($wordToComplete, $commandAst, $compPoint)`,
-							fmt.Sprintf(`  (Invoke-Expression '& %s autocomplete "do" "0" $compPoint "$commandAst" "some" "stuff"') | ForEach-Object {`, fakeBinaryFile.Name()),
+							fmt.Sprintf(`  (Invoke-Expression '& %s autocomplete "do" "0" $compPoint "$commandAst" "some" "stuff"') | ForEach-Object {`, fakeGoExecutableFilePath.Name()),
 							`    $_`,
 							`  }`,
 							`}`,
@@ -311,7 +311,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							`}`,
 							`$_sourcerer_alias_autocomplete_otherAlias = {`,
 							`  param($wordToComplete, $commandAst, $compPoint)`,
-							fmt.Sprintf(`  (Invoke-Expression '& %s autocomplete "do" "0" $compPoint "$commandAst" "other" "stuff"') | ForEach-Object {`, fakeBinaryFile.Name()),
+							fmt.Sprintf(`  (Invoke-Expression '& %s autocomplete "do" "0" $compPoint "$commandAst" "other" "stuff"') | ForEach-Object {`, fakeGoExecutableFilePath.Name()),
 							`    $_`,
 							`  }`,
 							`}`,
@@ -324,7 +324,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 			},
 			{
 				name: "adds Aliasers (plural) at the end",
-				args: []string{"source", fakeBinaryFile.Name(), "leepFrogSource"},
+				args: []string{"source", "leepFrogSource"},
 				opts: []Option{
 					Aliasers(map[string][]string{
 						"a1":         {"do", "some", "stuff"},
@@ -339,7 +339,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							`  local tmpFile=$(mktemp)`,
 							``,
 							`  # Run the go-only code`,
-							fmt.Sprintf(`  %s execute "$1" $tmpFile "${@:2}"`, fakeBinaryFile.Name()),
+							fmt.Sprintf(`  %s execute "$1" $tmpFile "${@:2}"`, fakeGoExecutableFilePath.Name()),
 							`  # Return the error code if go code terminated with an error`,
 							`  local errorCode=$?`,
 							`  if [ $errorCode -ne 0 ]; then return $errorCode; fi`,
@@ -357,14 +357,14 @@ func TestGenerateBinaryNode(t *testing.T) {
 							``,
 							`function _custom_autocomplete_leepFrogSource {`,
 							`  local tFile=$(mktemp)`,
-							fmt.Sprintf(`  %s autocomplete ${COMP_WORDS[0]} "$COMP_TYPE" $COMP_POINT "$COMP_LINE" > $tFile`, fakeBinaryFile.Name()),
+							fmt.Sprintf(`  %s autocomplete ${COMP_WORDS[0]} "$COMP_TYPE" $COMP_POINT "$COMP_LINE" > $tFile`, fakeGoExecutableFilePath.Name()),
 							`  local IFS=$'\n'`,
 							`  COMPREPLY=( $(cat $tFile) )`,
 							`  rm $tFile`,
 							`}`,
 							``,
 							// TODO: Replace these with strings
-							strings.Join((&linux{}).aliaserGlobalAutocompleteFunction(fakeBinaryFile.Name()), "\n"),
+							strings.Join((&linux{}).aliaserGlobalAutocompleteFunction(fakeGoExecutableFilePath.Name()), "\n"),
 							`local file="$(type do | head -n 1 | grep "is aliased to.*_custom_execute_" | grep "_custom_execute_[^[:space:]]*" -o | sed s/_custom_execute_//g)"`,
 							`if [ -z "$file" ]; then`,
 							`  echo Provided CLI "do" is not a CLI generated with github.com/leep-frog/command`,
@@ -399,7 +399,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 						wantStdout: []string{
 							`$_custom_autocomplete_leepFrogSource = {`,
 							`  param($wordToComplete, $commandAst, $compPoint)`,
-							fmt.Sprintf(`  (& %s autocomplete ($commandAst.CommandElements | Select-Object -first 1) "0" $compPoint "$commandAst") | ForEach-Object {`, fakeBinaryFile.Name()),
+							fmt.Sprintf(`  (& %s autocomplete ($commandAst.CommandElements | Select-Object -first 1) "0" $compPoint "$commandAst") | ForEach-Object {`, fakeGoExecutableFilePath.Name()),
 							`    $_`,
 							`  }`,
 							`}`,
@@ -413,7 +413,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							`}`,
 							`$_sourcerer_alias_autocomplete_a1 = {`,
 							`  param($wordToComplete, $commandAst, $compPoint)`,
-							fmt.Sprintf(`  (Invoke-Expression '& %s autocomplete "do" "0" $compPoint "$commandAst" "some" "stuff"') | ForEach-Object {`, fakeBinaryFile.Name()),
+							fmt.Sprintf(`  (Invoke-Expression '& %s autocomplete "do" "0" $compPoint "$commandAst" "some" "stuff"') | ForEach-Object {`, fakeGoExecutableFilePath.Name()),
 							`    $_`,
 							`  }`,
 							`}`,
@@ -429,7 +429,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							`}`,
 							`$_sourcerer_alias_autocomplete_otherAlias = {`,
 							`  param($wordToComplete, $commandAst, $compPoint)`,
-							fmt.Sprintf(`  (Invoke-Expression '& %s autocomplete "flaggable" "0" $compPoint "$commandAst" "--args" "--at" "once"') | ForEach-Object {`, fakeBinaryFile.Name()),
+							fmt.Sprintf(`  (Invoke-Expression '& %s autocomplete "flaggable" "0" $compPoint "$commandAst" "--args" "--at" "once"') | ForEach-Object {`, fakeGoExecutableFilePath.Name()),
 							`    $_`,
 							`  }`,
 							`}`,
@@ -442,7 +442,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 			},
 			{
 				name: "generates source file with custom filename",
-				args: []string{"source", fakeBinaryFile.Name(), "customOutputFile"},
+				args: []string{"source", "customOutputFile"},
 				osChecks: map[string]*osCheck{
 					osLinux: {
 						wantStdout: []string{
@@ -451,7 +451,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							`  local tmpFile=$(mktemp)`,
 							``,
 							`  # Run the go-only code`,
-							fmt.Sprintf(`  %s execute "$1" $tmpFile "${@:2}"`, fakeBinaryFile.Name()),
+							fmt.Sprintf(`  %s execute "$1" $tmpFile "${@:2}"`, fakeGoExecutableFilePath.Name()),
 							`  # Return the error code if go code terminated with an error`,
 							`  local errorCode=$?`,
 							`  if [ $errorCode -ne 0 ]; then return $errorCode; fi`,
@@ -469,7 +469,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							``,
 							`function _custom_autocomplete_customOutputFile {`,
 							`  local tFile=$(mktemp)`,
-							fmt.Sprintf(`  %s autocomplete ${COMP_WORDS[0]} "$COMP_TYPE" $COMP_POINT "$COMP_LINE" > $tFile`, fakeBinaryFile.Name()),
+							fmt.Sprintf(`  %s autocomplete ${COMP_WORDS[0]} "$COMP_TYPE" $COMP_POINT "$COMP_LINE" > $tFile`, fakeGoExecutableFilePath.Name()),
 							`  local IFS=$'\n'`,
 							`  COMPREPLY=( $(cat $tFile) )`,
 							`  rm $tFile`,
@@ -481,7 +481,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 						wantStdout: []string{
 							`$_custom_autocomplete_customOutputFile = {`,
 							`  param($wordToComplete, $commandAst, $compPoint)`,
-							fmt.Sprintf(`  (& %s autocomplete ($commandAst.CommandElements | Select-Object -first 1) "0" $compPoint "$commandAst") | ForEach-Object {`, fakeBinaryFile.Name()),
+							fmt.Sprintf(`  (& %s autocomplete ($commandAst.CommandElements | Select-Object -first 1) "0" $compPoint "$commandAst") | ForEach-Object {`, fakeGoExecutableFilePath.Name()),
 							`    $_`,
 							`  }`,
 							`}`,
@@ -492,7 +492,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 			},
 			{
 				name: "generates source file with CLIs",
-				args: []string{"source", fakeBinaryFile.Name(), "leepFrogSource"},
+				args: []string{"source", "leepFrogSource"},
 				clis: []CLI{
 					ToCLI("x", nil),
 					ToCLI("l", nil),
@@ -506,7 +506,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							`  local tmpFile=$(mktemp)`,
 							``,
 							`  # Run the go-only code`,
-							fmt.Sprintf(`  %s execute "$1" $tmpFile "${@:2}"`, fakeBinaryFile.Name()),
+							fmt.Sprintf(`  %s execute "$1" $tmpFile "${@:2}"`, fakeGoExecutableFilePath.Name()),
 							`  # Return the error code if go code terminated with an error`,
 							`  local errorCode=$?`,
 							`  if [ $errorCode -ne 0 ]; then return $errorCode; fi`,
@@ -524,7 +524,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							``,
 							`function _custom_autocomplete_leepFrogSource {`,
 							`  local tFile=$(mktemp)`,
-							fmt.Sprintf(`  %s autocomplete ${COMP_WORDS[0]} "$COMP_TYPE" $COMP_POINT "$COMP_LINE" > $tFile`, fakeBinaryFile.Name()),
+							fmt.Sprintf(`  %s autocomplete ${COMP_WORDS[0]} "$COMP_TYPE" $COMP_POINT "$COMP_LINE" > $tFile`, fakeGoExecutableFilePath.Name()),
 							`  local IFS=$'\n'`,
 							`  COMPREPLY=( $(cat $tFile) )`,
 							`  rm $tFile`,
@@ -547,7 +547,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 						wantStdout: []string{
 							`$_custom_autocomplete_leepFrogSource = {`,
 							`  param($wordToComplete, $commandAst, $compPoint)`,
-							fmt.Sprintf(`  (& %s autocomplete ($commandAst.CommandElements | Select-Object -first 1) "0" $compPoint "$commandAst") | ForEach-Object {`, fakeBinaryFile.Name()),
+							fmt.Sprintf(`  (& %s autocomplete ($commandAst.CommandElements | Select-Object -first 1) "0" $compPoint "$commandAst") | ForEach-Object {`, fakeGoExecutableFilePath.Name()),
 							`    $_`,
 							`  }`,
 							`}`,
@@ -566,7 +566,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							`  $Local:setupTmpFile = New-TemporaryFile`,
 							`  _setup_for_basic_cli > "$Local:setupTmpFile"`,
 							`  Copy-Item "$Local:setupTmpFile" "$Local:setupTmpFile.txt"`,
-							fmt.Sprintf(`  & %s execute "basic" $Local:tmpFile "$Local:setupTmpFile.txt" $args`, fakeBinaryFile.Name()),
+							fmt.Sprintf(`  & %s execute "basic" $Local:tmpFile "$Local:setupTmpFile.txt" $args`, fakeGoExecutableFilePath.Name()),
 							`  # Return error if failed`,
 							`  If (!$?) {`,
 							`    Write-Error "Go execution failed"`,
@@ -590,7 +590,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							`  $Local:tmpFile = New-TemporaryFile`,
 							``,
 							`  # Run the go-only code`,
-							fmt.Sprintf(`  & %s execute "l" $Local:tmpFile $args`, fakeBinaryFile.Name()),
+							fmt.Sprintf(`  & %s execute "l" $Local:tmpFile $args`, fakeGoExecutableFilePath.Name()),
 							`  # Return error if failed`,
 							`  If (!$?) {`,
 							`    Write-Error "Go execution failed"`,
@@ -614,7 +614,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							`  $Local:tmpFile = New-TemporaryFile`,
 							``,
 							`  # Run the go-only code`,
-							fmt.Sprintf(`  & %s execute "x" $Local:tmpFile $args`, fakeBinaryFile.Name()),
+							fmt.Sprintf(`  & %s execute "x" $Local:tmpFile $args`, fakeGoExecutableFilePath.Name()),
 							`  # Return error if failed`,
 							`  If (!$?) {`,
 							`    Write-Error "Go execution failed"`,
@@ -637,7 +637,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 			},
 			{
 				name: "generates source file with CLIs ignoring nosort",
-				args: []string{"source", fakeBinaryFile.Name(), "leepFrogSource"},
+				args: []string{"source", "leepFrogSource"},
 				clis: []CLI{
 					ToCLI("x", nil),
 					ToCLI("l", nil),
@@ -652,7 +652,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							`  local tmpFile=$(mktemp)`,
 							``,
 							`  # Run the go-only code`,
-							fmt.Sprintf(`  %s execute "$1" $tmpFile "${@:2}"`, fakeBinaryFile.Name()),
+							fmt.Sprintf(`  %s execute "$1" $tmpFile "${@:2}"`, fakeGoExecutableFilePath.Name()),
 							`  # Return the error code if go code terminated with an error`,
 							`  local errorCode=$?`,
 							`  if [ $errorCode -ne 0 ]; then return $errorCode; fi`,
@@ -670,7 +670,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							``,
 							`function _custom_autocomplete_leepFrogSource {`,
 							`  local tFile=$(mktemp)`,
-							fmt.Sprintf(`  %s autocomplete ${COMP_WORDS[0]} "$COMP_TYPE" $COMP_POINT "$COMP_LINE" > $tFile`, fakeBinaryFile.Name()),
+							fmt.Sprintf(`  %s autocomplete ${COMP_WORDS[0]} "$COMP_TYPE" $COMP_POINT "$COMP_LINE" > $tFile`, fakeGoExecutableFilePath.Name()),
 							`  local IFS=$'\n'`,
 							`  COMPREPLY=( $(cat $tFile) )`,
 							`  rm $tFile`,
@@ -693,7 +693,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 						wantStdout: []string{
 							`$_custom_autocomplete_leepFrogSource = {`,
 							`  param($wordToComplete, $commandAst, $compPoint)`,
-							fmt.Sprintf(`  (& %s autocomplete ($commandAst.CommandElements | Select-Object -first 1) "0" $compPoint "$commandAst") | ForEach-Object {`, fakeBinaryFile.Name()),
+							fmt.Sprintf(`  (& %s autocomplete ($commandAst.CommandElements | Select-Object -first 1) "0" $compPoint "$commandAst") | ForEach-Object {`, fakeGoExecutableFilePath.Name()),
 							`    $_`,
 							`  }`,
 							`}`,
@@ -712,7 +712,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							`  $Local:setupTmpFile = New-TemporaryFile`,
 							`  _setup_for_basic_cli > "$Local:setupTmpFile"`,
 							`  Copy-Item "$Local:setupTmpFile" "$Local:setupTmpFile.txt"`,
-							fmt.Sprintf(`  & %s execute "basic" $Local:tmpFile "$Local:setupTmpFile.txt" $args`, fakeBinaryFile.Name()),
+							fmt.Sprintf(`  & %s execute "basic" $Local:tmpFile "$Local:setupTmpFile.txt" $args`, fakeGoExecutableFilePath.Name()),
 							`  # Return error if failed`,
 							`  If (!$?) {`,
 							`    Write-Error "Go execution failed"`,
@@ -736,7 +736,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							`  $Local:tmpFile = New-TemporaryFile`,
 							``,
 							`  # Run the go-only code`,
-							fmt.Sprintf(`  & %s execute "l" $Local:tmpFile $args`, fakeBinaryFile.Name()),
+							fmt.Sprintf(`  & %s execute "l" $Local:tmpFile $args`, fakeGoExecutableFilePath.Name()),
 							`  # Return error if failed`,
 							`  If (!$?) {`,
 							`    Write-Error "Go execution failed"`,
@@ -760,7 +760,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							`  $Local:tmpFile = New-TemporaryFile`,
 							``,
 							`  # Run the go-only code`,
-							fmt.Sprintf(`  & %s execute "x" $Local:tmpFile $args`, fakeBinaryFile.Name()),
+							fmt.Sprintf(`  & %s execute "x" $Local:tmpFile $args`, fakeGoExecutableFilePath.Name()),
 							`  # Return error if failed`,
 							`  If (!$?) {`,
 							`    Write-Error "Go execution failed"`,
@@ -784,7 +784,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 			// Test `builtin` keyword
 			{
 				name: "generates builtin source files",
-				args: []string{"builtin", "source", fakeBinaryFile.Name(), "leepFrogBuiltIns"},
+				args: []string{"builtin", "source", "leepFrogBuiltIns"},
 				// These should be ignored
 				clis: []CLI{
 					ToCLI("x", nil),
@@ -799,7 +799,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							`  local tmpFile=$(mktemp)`,
 							``,
 							`  # Run the go-only code`,
-							fmt.Sprintf(`  %s builtin execute "$1" $tmpFile "${@:2}"`, fakeBinaryFile.Name()),
+							fmt.Sprintf(`  %s builtin execute "$1" $tmpFile "${@:2}"`, fakeGoExecutableFilePath.Name()),
 							`  # Return the error code if go code terminated with an error`,
 							`  local errorCode=$?`,
 							`  if [ $errorCode -ne 0 ]; then return $errorCode; fi`,
@@ -817,7 +817,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							``,
 							`function _custom_autocomplete_leepFrogBuiltIns {`,
 							`  local tFile=$(mktemp)`,
-							fmt.Sprintf(`  %s builtin autocomplete ${COMP_WORDS[0]} "$COMP_TYPE" $COMP_POINT "$COMP_LINE" > $tFile`, fakeBinaryFile.Name()),
+							fmt.Sprintf(`  %s builtin autocomplete ${COMP_WORDS[0]} "$COMP_TYPE" $COMP_POINT "$COMP_LINE" > $tFile`, fakeGoExecutableFilePath.Name()),
 							`  local IFS=$'\n'`,
 							`  COMPREPLY=( $(cat $tFile) )`,
 							`  rm $tFile`,
@@ -841,7 +841,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 						wantStdout: []string{
 							`$_custom_autocomplete_leepFrogBuiltIns = {`,
 							`  param($wordToComplete, $commandAst, $compPoint)`,
-							fmt.Sprintf(`  (& %s builtin autocomplete ($commandAst.CommandElements | Select-Object -first 1) "0" $compPoint "$commandAst") | ForEach-Object {`, fakeBinaryFile.Name()),
+							fmt.Sprintf(`  (& %s builtin autocomplete ($commandAst.CommandElements | Select-Object -first 1) "0" $compPoint "$commandAst") | ForEach-Object {`, fakeGoExecutableFilePath.Name()),
 							`    $_`,
 							`  }`,
 							`}`,
@@ -853,7 +853,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							`  $Local:tmpFile = New-TemporaryFile`,
 							``,
 							`  # Run the go-only code`,
-							fmt.Sprintf(`  & %s builtin execute "aliaser" $Local:tmpFile $args`, fakeBinaryFile.Name()),
+							fmt.Sprintf(`  & %s builtin execute "aliaser" $Local:tmpFile $args`, fakeGoExecutableFilePath.Name()),
 							`  # Return error if failed`,
 							`  If (!$?) {`,
 							`    Write-Error "Go execution failed"`,
@@ -877,7 +877,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							`  $Local:tmpFile = New-TemporaryFile`,
 							``,
 							`  # Run the go-only code`,
-							fmt.Sprintf(`  & %s builtin execute "gg" $Local:tmpFile $args`, fakeBinaryFile.Name()),
+							fmt.Sprintf(`  & %s builtin execute "gg" $Local:tmpFile $args`, fakeGoExecutableFilePath.Name()),
 							`  # Return error if failed`,
 							`  If (!$?) {`,
 							`    Write-Error "Go execution failed"`,
@@ -901,7 +901,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							`  $Local:tmpFile = New-TemporaryFile`,
 							``,
 							`  # Run the go-only code`,
-							fmt.Sprintf(`  & %s builtin execute "goleep" $Local:tmpFile $args`, fakeBinaryFile.Name()),
+							fmt.Sprintf(`  & %s builtin execute "goleep" $Local:tmpFile $args`, fakeGoExecutableFilePath.Name()),
 							`  # Return error if failed`,
 							`  If (!$?) {`,
 							`    Write-Error "Go execution failed"`,
@@ -925,7 +925,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							`  $Local:tmpFile = New-TemporaryFile`,
 							``,
 							`  # Run the go-only code`,
-							fmt.Sprintf(`  & %s builtin execute "leep_debug" $Local:tmpFile $args`, fakeBinaryFile.Name()),
+							fmt.Sprintf(`  & %s builtin execute "leep_debug" $Local:tmpFile $args`, fakeGoExecutableFilePath.Name()),
 							`  # Return error if failed`,
 							`  If (!$?) {`,
 							`    Write-Error "Go execution failed"`,
@@ -949,7 +949,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							`  $Local:tmpFile = New-TemporaryFile`,
 							``,
 							`  # Run the go-only code`,
-							fmt.Sprintf(`  & %s builtin execute "mancli" $Local:tmpFile $args`, fakeBinaryFile.Name()),
+							fmt.Sprintf(`  & %s builtin execute "mancli" $Local:tmpFile $args`, fakeGoExecutableFilePath.Name()),
 							`  # Return error if failed`,
 							`  If (!$?) {`,
 							`    Write-Error "Go execution failed"`,
@@ -973,7 +973,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							`  $Local:tmpFile = New-TemporaryFile`,
 							``,
 							`  # Run the go-only code`,
-							fmt.Sprintf(`  & %s builtin execute "sourcerer" $Local:tmpFile $args`, fakeBinaryFile.Name()),
+							fmt.Sprintf(`  & %s builtin execute "sourcerer" $Local:tmpFile $args`, fakeGoExecutableFilePath.Name()),
 							`  # Return error if failed`,
 							`  If (!$?) {`,
 							`    Write-Error "Go execution failed"`,
@@ -1011,7 +1011,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 					command.StubValue(t, &NosortString, func() string { return "" })
 				}
 				o := command.NewFakeOutput()
-				err := source(test.clis, test.args, o, test.opts...)
+				err := source(test.clis, fakeGoExecutableFilePath.Name(), test.args, o, test.opts...)
 				command.CmpError(t, "source(...)", test.wantErr, err)
 				o.Close()
 
@@ -1054,7 +1054,7 @@ func TestSourcerer(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create tmp file: %v", err)
 	}
-	fakeBinaryFile := command.TempFile(t, "leepFrogSourcerer-test")
+	fakeGoExecutableFilePath := command.TempFile(t, "leepFrogSourcerer-test")
 
 	someCLI := &testCLI{
 		name: "basic",
@@ -2026,13 +2026,13 @@ func TestSourcerer(t *testing.T) {
 			{
 				name: "builtin execute works with builtin CLIs",
 				clis: []CLI{someCLI},
-				args: []string{"builtin", "execute", "aliaser", fakeFile, fakeBinaryFile.Name(), "bleh", "bloop", "er"},
+				args: []string{"builtin", "execute", "aliaser", fakeFile, "bleh", "bloop", "er"},
 				osChecks: map[string]*osCheck{
 					osLinux: {
 						wantFileContents: []string{
 							"function _leep_frog_autocompleter {",
 							"  local tFile=$(mktemp)",
-							fmt.Sprintf(`  %s autocomplete "$1" "$COMP_TYPE" $COMP_POINT "$COMP_LINE" "${@:2}" > $tFile`, fakeBinaryFile.Name()),
+							fmt.Sprintf(`  %s autocomplete "$1" "$COMP_TYPE" $COMP_POINT "$COMP_LINE" "${@:2}" > $tFile`, fakeGoExecutableFilePath.Name()),
 							"  local IFS='",
 							"';",
 							"  COMPREPLY=( $(cat $tFile) )",
@@ -2066,7 +2066,7 @@ func TestSourcerer(t *testing.T) {
 							"}",
 							"$_sourcerer_alias_autocomplete_bleh = {",
 							"  param($wordToComplete, $commandAst, $compPoint)",
-							fmt.Sprintf(`  (Invoke-Expression '& %s autocomplete "bloop" "0" $compPoint "$commandAst" "er"') | ForEach-Object {`, fakeBinaryFile.Name()),
+							fmt.Sprintf(`  (Invoke-Expression '& %s autocomplete "bloop" "0" $compPoint "$commandAst" "er"') | ForEach-Object {`, fakeGoExecutableFilePath.Name()),
 							"    $_",
 							"  }",
 							"}",
@@ -2135,7 +2135,7 @@ func TestSourcerer(t *testing.T) {
 
 				// Run source command
 				o := command.NewFakeOutput()
-				err = source(test.clis, test.args, o)
+				err = source(test.clis, fakeGoExecutableFilePath.Name(), test.args, o)
 				command.CmpError(t, fmt.Sprintf("source(%v)", test.args), oschk.wantErr, err)
 				o.Close()
 

@@ -19,7 +19,6 @@ import (
 
 var (
 	fileArg         = command.FileArgument("FILE", "Temporary file for execution")
-	goExecutableArg = command.FileArgument("GO_EXECUTABLE_FILE", "Full path to the go executable file")
 	targetNameArg   = command.Arg[string]("TARGET_NAME", "The name of the created target in $GOPATH/bin", command.MatchesRegex("^[a-zA-Z]+$"))
 	passthroughArgs = command.ListArg[string]("ARG", "Arguments that get passed through to relevant CLI command", 0, command.UnboundedList)
 	helpFlag        = command.BoolFlag("help", command.FlagNoShortName, "Display command's usage doc")
@@ -156,13 +155,14 @@ func load(cli CLI) error {
 }
 
 type sourcerer struct {
-	clis              map[string]CLI
-	cliArg            *refProcessor[*command.MapArgument[string, CLI]]
-	sourceLocation    string
-	printedUsageError bool
-	opts              *compiledOpts
-	forAutocomplete   bool
-	builtin           bool
+	goExecutableFilePath string
+	clis                 map[string]CLI
+	cliArg               *refProcessor[*command.MapArgument[string, CLI]]
+	sourceLocation       string
+	printedUsageError    bool
+	opts                 *compiledOpts
+	forAutocomplete      bool
+	builtin              bool
 }
 
 func (*sourcerer) UnmarshalJSON(jsn []byte) error { return nil }
@@ -264,7 +264,6 @@ func (s *sourcerer) Node() command.Node {
 					&command.ExecutorProcessor{F: s.executeExecutor},
 				),
 				SourceBranchName: command.SerialNodes(
-					goExecutableArg,
 					targetNameArg,
 					&command.ExecutorProcessor{F: s.generateFile},
 				),
@@ -337,8 +336,7 @@ type compiledOpts struct {
 func Source(clis []CLI, opts ...Option) int {
 	o := command.NewOutput()
 	defer o.Close()
-	// TODO: Use os.Args[0] as goExecutableFile?
-	if source(clis, os.Args[1:], o, opts...) != nil {
+	if source(clis, os.Args[0], os.Args[1:], o, opts...) != nil {
 		return 1
 	}
 	return 0
@@ -347,7 +345,7 @@ func Source(clis []CLI, opts ...Option) int {
 func (s *sourcerer) initBuiltInSourcerer() {
 	s.initSourcerer(true, []CLI{
 		&SourcererCommand{},
-		&AliaserCommand{},
+		&AliaserCommand{s.goExecutableFilePath},
 		&Debugger{},
 		&GoLeep{},
 		&UpdateLeepPackageCommand{},
@@ -379,14 +377,15 @@ func (s *sourcerer) initSourcerer(builtin bool, clis []CLI, sourceLocation strin
 }
 
 // Separate method used for testing.
-func source(clis []CLI, osArgs []string, o command.Output, opts ...Option) error {
+func source(clis []CLI, goExecutableFilePath string, osArgs []string, o command.Output, opts ...Option) error {
 	sl, err := getSourceLoc()
 	if err != nil {
 		return o.Annotate(err, "failed to get source location")
 	}
 
 	s := &sourcerer{
-		cliArg: &refProcessor[*command.MapArgument[string, CLI]]{},
+		goExecutableFilePath: goExecutableFilePath,
+		cliArg:               &refProcessor[*command.MapArgument[string, CLI]]{},
 	}
 	s.initSourcerer(false, clis, sl, opts)
 
@@ -419,15 +418,14 @@ var (
 )
 
 func (s *sourcerer) generateFile(o command.Output, d *command.Data) error {
-	goExecutable := goExecutableArg.Get(d)
 	targetName := targetNameArg.Get(d)
 
-	fileData, err := CurrentOS.RegisterCLIs(s.builtin, goExecutable, targetName, maps.Values(s.clis))
+	fileData, err := CurrentOS.RegisterCLIs(s.builtin, s.goExecutableFilePath, targetName, maps.Values(s.clis))
 	if err != nil {
 		return o.Err(err)
 	}
 
-	fileData = append(fileData, AliasSourcery(goExecutable, maps.Values(s.opts.aliasers)...)...)
+	fileData = append(fileData, AliasSourcery(s.goExecutableFilePath, maps.Values(s.opts.aliasers)...)...)
 
 	o.Stdoutln(strings.Join(fileData, "\n"))
 

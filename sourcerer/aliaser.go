@@ -53,7 +53,9 @@ func Aliasers(m map[string][]string) Option {
 }
 
 // AliaserCommand creates an alias for another arg
-type AliaserCommand struct{}
+type AliaserCommand struct {
+	goExecutableFilePath string
+}
 
 var (
 	aliasArg    = command.Arg[string]("ALIAS", "Alias of new command", command.MinLength[string, string](1))
@@ -65,16 +67,15 @@ func (*AliaserCommand) Setup() []string { return nil }
 func (*AliaserCommand) Changed() bool   { return false }
 func (*AliaserCommand) Name() string    { return "aliaser" }
 
-func (*AliaserCommand) Node() command.Node {
+func (ac *AliaserCommand) Node() command.Node {
 	return command.SerialNodes(
 		command.Description("Alias a command to a cli with some args included"),
-		goExecutableArg,
 		aliasArg,
 		aliasCLIArg,
 		aliasPTArg,
 		command.ExecutableProcessor(func(_ command.Output, d *command.Data) ([]string, error) {
 			aliaser := NewAliaser(aliasArg.Get(d), aliasCLIArg.Get(d), aliasPTArg.Get(d)...)
-			return AliasSourcery(goExecutableArg.Get(d), aliaser), nil
+			return AliasSourcery(ac.goExecutableFilePath, aliaser), nil
 		}),
 	)
 }
