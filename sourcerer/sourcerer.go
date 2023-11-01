@@ -178,7 +178,6 @@ const (
 	ListBranchName         = "listCLIs"
 	SourceBranchName       = "source"
 	UsageBranchName        = "usage"
-	InitializeBranchName   = "initialize"
 
 	BuiltInCommandParameter = "builtin"
 )
@@ -228,13 +227,6 @@ func (s *sourcerer) Node() command.Node {
 		}),
 		&command.BranchNode{
 			Branches: map[string]command.Node{
-				// InitializeBranchName: command.SerialNodes(
-				// 	&command.ExecutorProcessor{func(o command.Output, d *command.Data) error {
-				// 		// TODO: Set dirname on init
-				// 		o.Stdoutln(CurrentOS.InitializationLogic(loadOnlyFlag.Get(d), filepath.Dir(s.sourceLocation)))
-				// 		return nil
-				// 	}},
-				// ),
 				AutocompleteBranchName: command.SerialNodes(
 					s.cliArg,
 					loadCLIArg,

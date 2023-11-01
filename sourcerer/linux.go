@@ -41,16 +41,6 @@ func (l *linux) Name() string {
 	return "linux"
 }
 
-func (*linux) InitializationLogic(loadOnly bool, sourceLoc string) string {
-	return strings.Join([]string{
-		`pushd . > /dev/null`,
-		fmt.Sprintf(`cd %q`, sourceLoc),
-		`tmpFile="$(mktemp)"`,
-		`go run . builtin source builtinFunctions > $tmpFile && source $tmpFile`,
-		`popd > /dev/null`,
-	}, "\n")
-}
-
 func (l *linux) FunctionWrap(fn string) string {
 	return strings.Join([]string{
 		"function _leep_execute_data_function_wrap {",

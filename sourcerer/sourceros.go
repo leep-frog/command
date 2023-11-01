@@ -35,13 +35,6 @@ type OS interface {
 	// Name is the operating system as specified by runtime.GOOS
 	Name() string
 
-	// InitializationLogic generates the shell commands to run
-	// to initialize the builtin commands. If `lazyLoad` is set
-	// to true, then the executables will only be generated if they
-	// don't already exist; otherwise, if `lazyLoad` is false,
-	// then all executables will be regenerated.
-	InitializationLogic(lazyLoad bool, sourceLocationDir string) string
-
 	// FunctionWrap wraps the provided commands in another function.
 	FunctionWrap(string) string
 

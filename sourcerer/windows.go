@@ -44,18 +44,6 @@ func (*windows) Name() string {
 	return "windows"
 }
 
-func (*windows) InitializationLogic(loadOnly bool, sourceLoc string) string {
-	return strings.Join([]string{
-		`Push-Location ;`,
-		fmt.Sprintf(`Set-Location %q ;`, sourceLoc),
-		`$Local:tmpOut = New-TemporaryFile ;`,
-		`go run . builtin source builtinFunctions > $Local:tmpOut ;`,
-		`Copy-Item "$Local:tmpOut" "$Local:tmpOut.ps1" ;`,
-		`. "$Local:tmpOut.ps1" ;`,
-		`Pop-Location ;`,
-	}, "\n")
-}
-
 func (w *windows) SourcererGoCLI(dir string, targetName string) []string {
 	return []string{
 		"Push-Location",
