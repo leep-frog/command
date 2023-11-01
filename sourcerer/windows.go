@@ -158,7 +158,8 @@ func (w *windows) FunctionWrap(name string, fn string) string {
 		fmt.Sprintf("function %s {", name),
 		fn,
 		"}",
-		name,
+		// . name so it runs in the same shell
+		fmt.Sprintf(". %s", name),
 		"",
 	}, "\n")
 }

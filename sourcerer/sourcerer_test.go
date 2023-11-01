@@ -101,7 +101,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							`}`,
 							``,
 							`}`, // wrap function end bracket
-							`_leepFrogSource_wrap_function`,
+							`. _leepFrogSource_wrap_function`,
 							``,
 						},
 					},
@@ -224,7 +224,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							`Set-Alias otherAlias _sourcerer_alias_execute_otherAlias`,
 							`Register-ArgumentCompleter -CommandName otherAlias -ScriptBlock $_sourcerer_alias_autocomplete_otherAlias`,
 							`}`, // wrap function end bracket
-							`_leepFrogSource_wrap_function`,
+							`. _leepFrogSource_wrap_function`,
 							``,
 						},
 					},
@@ -340,7 +340,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							`Set-Alias otherAlias _sourcerer_alias_execute_otherAlias`,
 							`Register-ArgumentCompleter -CommandName otherAlias -ScriptBlock $_sourcerer_alias_autocomplete_otherAlias`,
 							`}`, // wrap function end bracket
-							`_leepFrogSource_wrap_function`,
+							`. _leepFrogSource_wrap_function`,
 							``,
 						},
 					},
@@ -466,7 +466,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							`Set-Alias otherAlias _sourcerer_alias_execute_otherAlias`,
 							`Register-ArgumentCompleter -CommandName otherAlias -ScriptBlock $_sourcerer_alias_autocomplete_otherAlias`,
 							`}`, // wrap function end bracket
-							`_leepFrogSource_wrap_function`,
+							`. _leepFrogSource_wrap_function`,
 							``,
 						},
 					},
@@ -524,7 +524,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							`}`,
 							``,
 							`}`, // wrap function end bracket
-							`_customOutputFile_wrap_function`,
+							`. _customOutputFile_wrap_function`,
 							``,
 						},
 					},
@@ -677,7 +677,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							`Set-Alias x _custom_execute_leepFrogSource_x`,
 							`Register-ArgumentCompleter -CommandName x -ScriptBlock $_custom_autocomplete_leepFrogSource`,
 							`}`, // wrap function end bracket
-							`_leepFrogSource_wrap_function`,
+							`. _leepFrogSource_wrap_function`,
 							``,
 						},
 					},
@@ -831,7 +831,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							`Set-Alias x _custom_execute_leepFrogSource_x`,
 							`Register-ArgumentCompleter -CommandName x -ScriptBlock $_custom_autocomplete_leepFrogSource`,
 							`}`, // wrap function end bracket
-							`_leepFrogSource_wrap_function`,
+							`. _leepFrogSource_wrap_function`,
 							``,
 						},
 					},
@@ -1026,7 +1026,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							`Set-Alias sourcerer _custom_execute_leepFrogBuiltIns_sourcerer`,
 							`Register-ArgumentCompleter -CommandName sourcerer -ScriptBlock $_custom_autocomplete_leepFrogBuiltIns`,
 							`}`, // wrap function end bracket
-							`_leepFrogBuiltIns_wrap_function`,
+							`. _leepFrogBuiltIns_wrap_function`,
 							``,
 						},
 					},
@@ -1333,15 +1333,28 @@ func TestSourcerer(t *testing.T) {
 				},
 				args:  []string{"execute", "basic", f.Name()},
 				uuids: []string{"some-uuid"},
-				osCheck: &osCheck{
-					wantOutput: []string{
-						"function _leep_execute_data_function_wrap_some_uuid {",
-						"echo",
-						"hello",
-						"there",
-						`}`,
-						"_leep_execute_data_function_wrap_some_uuid",
-						"",
+				osChecks: map[string]*osCheck{
+					osLinux: {
+						wantOutput: []string{
+							"function _leep_execute_data_function_wrap_some_uuid {",
+							"echo",
+							"hello",
+							"there",
+							`}`,
+							"_leep_execute_data_function_wrap_some_uuid",
+							"",
+						},
+					},
+					osWindows: {
+						wantOutput: []string{
+							"function _leep_execute_data_function_wrap_some_uuid {",
+							"echo",
+							"hello",
+							"there",
+							`}`,
+							". _leep_execute_data_function_wrap_some_uuid",
+							"",
+						},
 					},
 				},
 			},
