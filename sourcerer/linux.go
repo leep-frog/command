@@ -226,12 +226,6 @@ func (*linux) ShellCommandFileRunner(file string) (string, []string) {
 	return `bash`, []string{file}
 }
 
-/*
-// autocompleteForAliasFunction
-	// See AliaserCommand.
-	autocompleteForAliasFunction =
-/**/
-
 // FileStringFromCLI returns a bash command that retrieves the binary file that
 // is actually executed for a leep-frog-generated CLI.
 func FileStringFromCLI(cli string) string {
