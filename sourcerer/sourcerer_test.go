@@ -1874,6 +1874,31 @@ func TestSourcerer(t *testing.T) {
 				},
 			},
 			{
+				name: "autocomplete when COMP_POINT is equal to length of COMP_LINE",
+				args: []string{"autocomplete", "basic", "63", "5", "cmd c"},
+				clis: []CLI{
+					&testCLI{
+						name: "basic",
+						processors: []command.Processor{
+							command.Arg[string]("s", "desc", command.SimpleCompleter[string]("alpha", "bravo", "charlie", "brown", "baker")),
+							command.Arg[string]("z", "desz", command.SimpleCompleter[string]("un", "deux", "trois")),
+						},
+					},
+				},
+				osChecks: map[string]*osCheck{
+					osLinux: {
+						wantStdout: autocompleteSuggestions(
+							"charlie",
+						),
+					},
+					osWindows: {
+						wantStdout: autocompleteSuggestions(
+							"charlie ",
+						),
+					},
+				},
+			},
+			{
 				name: "autocomplete when COMP_POINT is greater than length of COMP_LINE",
 				args: []string{"autocomplete", "basic", "63", "6", "cmd c"},
 				clis: []CLI{
@@ -1885,12 +1910,17 @@ func TestSourcerer(t *testing.T) {
 						},
 					},
 				},
-				osCheck: &osCheck{
-					wantStdout: autocompleteSuggestions(
-						"deux",
-						"trois",
-						"un",
-					),
+				osChecks: map[string]*osCheck{
+					osLinux: {
+						wantStdout: autocompleteSuggestions(
+							"charlie",
+						),
+					},
+					osWindows: {
+						wantStdout: autocompleteSuggestions(
+							"charlie ",
+						),
+					},
 				},
 			},
 			// Usage tests
