@@ -21,8 +21,11 @@ func AliasSourcery(goExecutable string, as ...*Aliaser) []string {
 		return nil
 	}
 
-	slices.SortFunc(as, func(this, that *Aliaser) bool {
-		return this.alias < that.alias
+	slices.SortFunc(as, func(this, that *Aliaser) int {
+		if this.alias < that.alias {
+			return -1
+		}
+		return 1
 	})
 
 	r := CurrentOS.GlobalAliaserFunc(goExecutable)
