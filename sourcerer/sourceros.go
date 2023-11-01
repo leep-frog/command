@@ -53,9 +53,6 @@ type OS interface {
 	GlobalAliaserFunc(goExecutable string) []string
 	VerifyAliaser(*Aliaser) []string
 	RegisterAliaser(goExecutable string, a *Aliaser) []string
-
-	// Mancli returns shell commands that run the usage file
-	Mancli(builtin bool, goExecutable, cli string, args ...string) []string
 }
 
 // ValueByOS will return the value that is associated

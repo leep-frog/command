@@ -2,7 +2,6 @@ package sourcerer
 
 import (
 	"fmt"
-	"regexp"
 	"sort"
 	"strings"
 
@@ -210,28 +209,6 @@ func (w *windows) RegisterAliaser(goExecutable string, a *Aliaser) []string {
 		fmt.Sprintf("_sourcerer_alias_execute_%s", a.alias),
 		fmt.Sprintf("_sourcerer_alias_autocomplete_%s", a.alias),
 	)...)
-}
-
-// TODO: Mancli
-
-var (
-	windowsMancliRegex = regexp.MustCompile("[\\s'\"`]")
-)
-
-func (w *windows) Mancli(builtin bool, goExecutable, cli string, args ...string) []string {
-	// We can't use quotedArgs because this string is being used inside of a Windows string
-	// and Windows uses backticks for escaping (not backslashes)
-	// so we can't use built in go string format quoting.
-	var formattedArgs []string
-	for _, a := range args {
-		formattedArgs = append(formattedArgs, windowsMancliRegex.ReplaceAllString(a, "_"))
-	}
-
-	return append(
-		w.verifyAliaserCommand(cli),
-		fmt.Sprintf(`$Local:targetName = (Get-Alias %s).DEFINITION.split("_")[3]`, cli),
-		fmt.Sprintf(`Invoke-Expression "%s %s %s %s"`, goExecutable, w.getBranchString(builtin, UsageBranchName), cli, strings.Join(formattedArgs, " ")),
-	)
 }
 
 func (*windows) SetEnvVar(envVar, value string) string {
