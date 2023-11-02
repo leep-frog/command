@@ -27,8 +27,8 @@ func Linux() OS {
 }
 
 var (
-	linuxRegisterCommandFormat          = "alias %s='source _custom_execute_%s %s'"
-	linuxRegisterCommandWithSetupFormat = "alias %s='o=$(mktemp) && %s > $o && source _custom_execute_%s %s $o'"
+	linuxRegisterCommandFormat          = "alias %s='_custom_execute_%s %s'"
+	linuxRegisterCommandWithSetupFormat = "alias %s='o=$(mktemp) && %s > $o && _custom_execute_%s %s $o'"
 	linuxSetupFunctionFormat            = strings.Join([]string{
 		`function %s {`,
 		`  %s`,
