@@ -55,6 +55,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 				osChecks: map[string]*osCheck{
 					osLinux: {
 						wantStdout: []string{
+							`#!/bin/bash`,
 							`function _leepFrogSource_wrap_function {`,
 							`function _custom_execute_leepFrogSource {`,
 							`  # tmpFile is the file to which we write ExecuteData.Executable`,
@@ -117,6 +118,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 				osChecks: map[string]*osCheck{
 					osLinux: {
 						wantStdout: []string{
+							`#!/bin/bash`,
 							`function _leepFrogSource_wrap_function {`,
 							`function _custom_execute_leepFrogSource {`,
 							`  # tmpFile is the file to which we write ExecuteData.Executable`,
@@ -241,6 +243,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 				osChecks: map[string]*osCheck{
 					osLinux: {
 						wantStdout: []string{
+							`#!/bin/bash`,
 							`function _leepFrogSource_wrap_function {`,
 							`function _custom_execute_leepFrogSource {`,
 							`  # tmpFile is the file to which we write ExecuteData.Executable`,
@@ -358,6 +361,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 				osChecks: map[string]*osCheck{
 					osLinux: {
 						wantStdout: []string{
+							`#!/bin/bash`,
 							`function _leepFrogSource_wrap_function {`,
 							`function _custom_execute_leepFrogSource {`,
 							`  # tmpFile is the file to which we write ExecuteData.Executable`,
@@ -478,6 +482,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 				osChecks: map[string]*osCheck{
 					osLinux: {
 						wantStdout: []string{
+							`#!/bin/bash`,
 							`function _customOutputFile_wrap_function {`,
 							`function _custom_execute_customOutputFile {`,
 							`  # tmpFile is the file to which we write ExecuteData.Executable`,
@@ -541,6 +546,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 				osChecks: map[string]*osCheck{
 					osLinux: {
 						wantStdout: []string{
+							`#!/bin/bash`,
 							`function _leepFrogSource_wrap_function {`,
 							`function _custom_execute_leepFrogSource {`,
 							`  # tmpFile is the file to which we write ExecuteData.Executable`,
@@ -695,6 +701,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 				osChecks: map[string]*osCheck{
 					osLinux: {
 						wantStdout: []string{
+							`#!/bin/bash`,
 							`function _leepFrogSource_wrap_function {`,
 							`function _custom_execute_leepFrogSource {`,
 							`  # tmpFile is the file to which we write ExecuteData.Executable`,
@@ -850,6 +857,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 				osChecks: map[string]*osCheck{
 					osLinux: {
 						wantStdout: []string{
+							`#!/bin/bash`,
 							`function _leepFrogBuiltIns_wrap_function {`,
 							`function _custom_execute_leepFrogBuiltIns {`,
 							`  # tmpFile is the file to which we write ExecuteData.Executable`,
@@ -1164,9 +1172,9 @@ func TestSourcerer(t *testing.T) {
 				args: []string{"execute", "idk"},
 				osCheck: &osCheck{
 					wantStderr: []string{
-						"validation for \"CLI\" failed: [MapArg] key (idk) is not in map",
+						"validation for \"CLI\" failed: [MapArg] key (idk) is not in map; expected one of []",
 					},
-					wantErr: fmt.Errorf("validation for \"CLI\" failed: [MapArg] key (idk) is not in map"),
+					wantErr: fmt.Errorf("validation for \"CLI\" failed: [MapArg] key (idk) is not in map; expected one of []"),
 				},
 			},
 			{
@@ -1336,6 +1344,7 @@ func TestSourcerer(t *testing.T) {
 				osChecks: map[string]*osCheck{
 					osLinux: {
 						wantOutput: []string{
+							`#!/bin/bash`,
 							"function _leep_execute_data_function_wrap_some_uuid {",
 							"echo",
 							"hello",
@@ -1805,9 +1814,9 @@ func TestSourcerer(t *testing.T) {
 				args: []string{"autocomplete", "idk", "63", "2", "a"},
 				osCheck: &osCheck{
 					wantStderr: []string{
-						"validation for \"CLI\" failed: [MapArg] key (idk) is not in map\n",
+						"validation for \"CLI\" failed: [MapArg] key (idk) is not in map; expected one of []\n",
 					},
-					wantErr:         fmt.Errorf("validation for \"CLI\" failed: [MapArg] key (idk) is not in map"),
+					wantErr:         fmt.Errorf("validation for \"CLI\" failed: [MapArg] key (idk) is not in map; expected one of []"),
 					noStderrNewline: true,
 				},
 			},
@@ -2074,9 +2083,9 @@ func TestSourcerer(t *testing.T) {
 				args: []string{"builtin", "usage", someCLI.name},
 				osCheck: &osCheck{
 					wantStderr: []string{
-						"validation for \"CLI\" failed: [MapArg] key (basic) is not in map",
+						"validation for \"CLI\" failed: [MapArg] key (basic) is not in map; expected one of [aliaser gg goleep leep_debug sourcerer]",
 					},
-					wantErr:         fmt.Errorf("validation for \"CLI\" failed: [MapArg] key (basic) is not in map"),
+					wantErr:         fmt.Errorf("validation for \"CLI\" failed: [MapArg] key (basic) is not in map; expected one of [aliaser gg goleep leep_debug sourcerer]"),
 					noStdoutNewline: true,
 				},
 			},
@@ -2100,9 +2109,9 @@ func TestSourcerer(t *testing.T) {
 				args: []string{"builtin", "execute", someCLI.name},
 				osCheck: &osCheck{
 					wantStderr: []string{
-						"validation for \"CLI\" failed: [MapArg] key (basic) is not in map",
+						"validation for \"CLI\" failed: [MapArg] key (basic) is not in map; expected one of [aliaser gg goleep leep_debug sourcerer]",
 					},
-					wantErr:         fmt.Errorf("validation for \"CLI\" failed: [MapArg] key (basic) is not in map"),
+					wantErr:         fmt.Errorf("validation for \"CLI\" failed: [MapArg] key (basic) is not in map; expected one of [aliaser gg goleep leep_debug sourcerer]"),
 					noStdoutNewline: true,
 				},
 			},
@@ -2166,9 +2175,9 @@ func TestSourcerer(t *testing.T) {
 				args: []string{"builtin", "autocomplete", someCLI.name},
 				osCheck: &osCheck{
 					wantStderr: []string{
-						"validation for \"CLI\" failed: [MapArg] key (basic) is not in map",
+						"validation for \"CLI\" failed: [MapArg] key (basic) is not in map; expected one of [aliaser gg goleep leep_debug sourcerer]",
 					},
-					wantErr:         fmt.Errorf("validation for \"CLI\" failed: [MapArg] key (basic) is not in map"),
+					wantErr:         fmt.Errorf("validation for \"CLI\" failed: [MapArg] key (basic) is not in map; expected one of [aliaser gg goleep leep_debug sourcerer]"),
 					noStdoutNewline: true,
 				},
 			},

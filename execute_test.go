@@ -6318,8 +6318,8 @@ func TestExecute(t *testing.T) {
 						{value: "four"},
 					},
 				},
-				WantStderr: "validation for \"m\" failed: [MapArg] key (four) is not in map\n",
-				WantErr:    fmt.Errorf("validation for \"m\" failed: [MapArg] key (four) is not in map"),
+				WantStderr: "validation for \"m\" failed: [MapArg] key (four) is not in map; expected one of [one three two]\n",
+				WantErr:    fmt.Errorf("validation for \"m\" failed: [MapArg] key (four) is not in map; expected one of [one three two]"),
 				WantData: &Data{Values: map[string]interface{}{
 					"m": 0,
 				}},
@@ -6341,8 +6341,8 @@ func TestExecute(t *testing.T) {
 						{value: "four"},
 					},
 				},
-				WantStderr: "validation for \"m\" failed: [MapArg] key (four) is not in map\n",
-				WantErr:    fmt.Errorf("validation for \"m\" failed: [MapArg] key (four) is not in map"),
+				WantStderr: "validation for \"m\" failed: [MapArg] key (four) is not in map; expected one of [one three two]\n",
+				WantErr:    fmt.Errorf("validation for \"m\" failed: [MapArg] key (four) is not in map; expected one of [one three two]"),
 				WantData: &Data{Values: map[string]interface{}{
 					"m": 0,
 				}},

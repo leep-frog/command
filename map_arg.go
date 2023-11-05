@@ -5,6 +5,7 @@ import (
 
 	"golang.org/x/exp/constraints"
 	"golang.org/x/exp/maps"
+	"golang.org/x/exp/slices"
 )
 
 // MapArg returns a `Processor` that converts an input key into it's value.
@@ -26,7 +27,9 @@ func MapArg[K constraints.Ordered, V any](name, desc string, m map[K]V, allowMis
 		opts = append(opts, &ValidatorOption[K]{
 			func(k K, d *Data) error {
 				if _, ok := m[k]; !ok {
-					return fmt.Errorf("[MapArg] key (%v) is not in map", k)
+					keys := maps.Keys(m)
+					slices.Sort(keys)
+					return fmt.Errorf("[MapArg] key (%v) is not in map; expected one of %v", k, keys)
 				}
 				return nil
 			},

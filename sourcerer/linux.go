@@ -43,6 +43,7 @@ func (l *linux) Name() string {
 
 func (l *linux) FunctionWrap(name, fn string) string {
 	return strings.Join([]string{
+		"#!/bin/bash",
 		fmt.Sprintf("function %s {", name),
 		fn,
 		"}",
