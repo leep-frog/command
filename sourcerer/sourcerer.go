@@ -141,7 +141,7 @@ func (s *sourcerer) autocompleteExecutor(o command.Output, d *command.Data) erro
 var (
 	// EnvCacheVar is the environment variable pointing to the path for caching.
 	// var so it can be modified for tests
-	EnvCacheVar = "LEEP_CLI_CACHE"
+	EnvCacheVar = "COMMAND_CLI_CACHE"
 	// getCache is a variable function so it can be swapped in tests
 	getCache = func() (*cache.Cache, error) {
 		return cache.FromEnvVar(EnvCacheVar)
