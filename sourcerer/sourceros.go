@@ -15,7 +15,7 @@ var (
 	}
 
 	CurrentOS = func() OS {
-		curOS, ok := os.LookupEnv("LEEP_FROG_CLI_OS_OVERRIDE")
+		curOS, ok := os.LookupEnv("COMMAND_CLI_OS_OVERRIDE")
 		if !ok {
 			curOS = runtime.GOOS
 		}
