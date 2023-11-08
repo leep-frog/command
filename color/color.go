@@ -34,8 +34,9 @@ var (
 	// TputCommand is a function that applies a format via tput. It is a variable
 	// so it can be stubbed out by tests in other packages.
 	TputCommand = func(output command.Output, args ...interface{}) error {
-		// TODO:
 		return nil
+		// TODO:
+		// import github.com/codeskyblue/go-sh
 		// return sh.Command("tput", args...).Run()
 	}
 )
