@@ -8,7 +8,6 @@ package color
 import (
 	"strconv"
 
-	"github.com/codeskyblue/go-sh"
 	"github.com/leep-frog/command"
 )
 
@@ -35,7 +34,9 @@ var (
 	// TputCommand is a function that applies a format via tput. It is a variable
 	// so it can be stubbed out by tests in other packages.
 	TputCommand = func(output command.Output, args ...interface{}) error {
-		return sh.Command("tput", args...).Run()
+		// TODO:
+		return nil
+		// return sh.Command("tput", args...).Run()
 	}
 )
 
