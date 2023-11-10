@@ -29,7 +29,7 @@ type BranchNode struct {
 	// hidden.
 	// TODO: Change to HideBranchUsage and HideDefaultUsage
 	HideUsage bool
-	// UsageOrderFunc allows you to set the order for branch usage docs.
+	// BranchUsageOrder allows you to set the order for branch usage docs.
 	// If this isn't provided, then branches are sorted in alphabetical order.
 	BranchUsageOrder []string
 
@@ -53,7 +53,7 @@ func (bn *BranchNode) sortBranchSyns(bss []*branchSyn) error {
 		bsNames = append(bsNames, bs.name)
 	}
 	sort.Strings(bsNames)
-	mismatchErr := fmt.Errorf("BranchUsageOrderFunc returned incorrect set of branches: expected %v; got %v", bsNames, customOrder)
+	mismatchErr := fmt.Errorf("BranchUsageOrder includes an incorrect set of branches: expected %v; got %v", bsNames, customOrder)
 
 	if len(customOrder) != len(want) {
 		return mismatchErr

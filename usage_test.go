@@ -621,7 +621,7 @@ func TestUsage(t *testing.T) {
 					Branches:         branchesForSorting,
 					Default:          SerialNodes(Description("the default command"), Arg[int]("INT_ARG", "an integer"), ListArg[string]("STRINGS", "unltd strings", 1, UnboundedList)),
 				},
-				WantErr: fmt.Errorf("BranchUsageOrderFunc returned incorrect set of branches: expected [alpha beta charlie delta echo]; got [alpha beta charlie delta echo foxtrot]"),
+				WantErr: fmt.Errorf("BranchUsageOrder includes an incorrect set of branches: expected [alpha beta charlie delta echo]; got [alpha beta charlie delta echo foxtrot]"),
 			},
 		},
 		{
@@ -632,7 +632,7 @@ func TestUsage(t *testing.T) {
 					Branches:         branchesForSorting,
 					Default:          SerialNodes(Description("the default command"), Arg[int]("INT_ARG", "an integer"), ListArg[string]("STRINGS", "unltd strings", 1, UnboundedList)),
 				},
-				WantErr: fmt.Errorf("BranchUsageOrderFunc returned incorrect set of branches: expected [alpha beta charlie delta echo]; got [alpha beta delta echo]"),
+				WantErr: fmt.Errorf("BranchUsageOrder includes an incorrect set of branches: expected [alpha beta charlie delta echo]; got [alpha beta delta echo]"),
 			},
 		},
 		{
@@ -643,7 +643,7 @@ func TestUsage(t *testing.T) {
 					Branches:         branchesForSorting,
 					Default:          SerialNodes(Description("the default command"), Arg[int]("INT_ARG", "an integer"), ListArg[string]("STRINGS", "unltd strings", 1, UnboundedList)),
 				},
-				WantErr: fmt.Errorf("BranchUsageOrderFunc returned incorrect set of branches: expected [alpha beta charlie delta echo]; got [alpha beta beta charlie delta echo]"),
+				WantErr: fmt.Errorf("BranchUsageOrder includes an incorrect set of branches: expected [alpha beta charlie delta echo]; got [alpha beta beta charlie delta echo]"),
 			},
 		},
 		{
@@ -654,7 +654,7 @@ func TestUsage(t *testing.T) {
 					Branches:         branchesForSorting,
 					Default:          SerialNodes(Description("the default command"), Arg[int]("INT_ARG", "an integer"), ListArg[string]("STRINGS", "unltd strings", 1, UnboundedList)),
 				},
-				WantErr: fmt.Errorf("BranchUsageOrderFunc returned incorrect set of branches: expected [alpha beta charlie delta echo]; got [alpha beta beta delta echo]"),
+				WantErr: fmt.Errorf("BranchUsageOrder includes an incorrect set of branches: expected [alpha beta charlie delta echo]; got [alpha beta beta delta echo]"),
 			},
 		},
 		{
