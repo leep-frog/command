@@ -29,8 +29,55 @@ type BranchNode struct {
 	// hidden.
 	// TODO: Change to HideBranchUsage and HideDefaultUsage
 	HideUsage bool
+	// UsageOrderFunc allows you to set the order for branch usage docs.
+	// If this isn't provided, then branches are sorted in alphabetical order.
+	BranchUsageOrderFunc func(bn *BranchNode) ([]string, error)
 
 	next Node
+}
+
+func (bn *BranchNode) sortBranchSyns(bss []*branchSyn) error {
+	var customOrder []string
+	if bn.BranchUsageOrderFunc == nil {
+		sort.Slice(bss, func(i, j int) bool {
+			this, that := bss[i], bss[j]
+			return this.name < that.name
+		})
+		return nil
+	}
+
+	var err error
+	customOrder, err = bn.BranchUsageOrderFunc(bn)
+	if err != nil {
+		return fmt.Errorf("failed to generate custom branch usage order: %v", err)
+	}
+
+	want := map[string]bool{}
+	var bsNames []string
+	for _, bs := range bss {
+		want[bs.name] = true
+		bsNames = append(bsNames, bs.name)
+	}
+	sort.Strings(bsNames)
+	mismatchErr := fmt.Errorf("BranchUsageOrderFunc returned incorrect set of branches: expected %v; got %v", bsNames, customOrder)
+
+	if len(customOrder) != len(want) {
+		return mismatchErr
+	}
+
+	for _, branch := range customOrder {
+		delete(want, branch)
+	}
+	if len(want) != 0 {
+		return mismatchErr
+	}
+
+	sort.Slice(bss, func(i, j int) bool {
+		this, that := bss[i], bss[j]
+		return slices.Index[[]string](customOrder, this.name) < slices.Index[[]string](customOrder, that.name)
+	})
+
+	return nil
 }
 
 // BranchSynonyms converts a map from branching argument to synonyms to a
@@ -210,10 +257,9 @@ func (bn *BranchNode) Usage(input *Input, data *Data, u *Usage) error {
 	}
 
 	bss := maps.Values(bn.getSyns())
-	sort.Slice(bss, func(i, j int) bool {
-		this, that := bss[i], bss[j]
-		return this.name < that.name
-	})
+	if err := bn.sortBranchSyns(bss); err != nil {
+		return err
+	}
 
 	if bn.Default != nil {
 		if err := processGraphUse(bn.Default, input, data, u); err != nil {

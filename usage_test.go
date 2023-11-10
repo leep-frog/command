@@ -23,6 +23,20 @@ func (un *usageNode) Complete(*Input, *Data) (*Completion, error)       { return
 func (un *usageNode) Next(*Input, *Data) (Node, error)                  { return nil, nil }
 
 func TestUsage(t *testing.T) {
+
+	branchesForSorting := map[string]Node{
+		"alpha": nil,
+		"beta":  SerialNodes(ListArg[string]("ROPES", "lots of strings", 2, 3)),
+		"charlie": &BranchNode{
+			Branches: map[string]Node{
+				"brown":  SerialNodes(Description("learn about cartoons"), Arg[float64]("FLOATER", "something bouyant")),
+				"yellow": SerialNodes(&ExecutorProcessor{}),
+			},
+		},
+		"delta": nil,
+		"echo":  nil,
+	}
+
 	for _, test := range []struct {
 		name string
 		utc  *UsageTestCase
@@ -259,8 +273,7 @@ func TestUsage(t *testing.T) {
 					Branches: map[string]Node{
 						"alpha": nil,
 					},
-					Default:           SerialNodes(Description("the default command"), Arg[int]("INT_ARG", "an integer"), ListArg[string]("STRINGS", "unltd strings", 1, UnboundedList)),
-					DefaultCompletion: true,
+					Default: SerialNodes(Description("the default command"), Arg[int]("INT_ARG", "an integer"), ListArg[string]("STRINGS", "unltd strings", 1, UnboundedList)),
 				},
 				WantString: []string{
 					"the default command",
@@ -284,7 +297,6 @@ func TestUsage(t *testing.T) {
 					Branches: map[string]Node{
 						"alpha": nil,
 					},
-					DefaultCompletion: true,
 				},
 				WantString: []string{
 					"┓",
@@ -293,6 +305,91 @@ func TestUsage(t *testing.T) {
 					"",
 					"Symbols:",
 					BranchDescWithoutDefault,
+				},
+			},
+		},
+		{
+			name: "BranchNode usage doesn't display if default node traversed",
+			utc: &UsageTestCase{
+				Args: []string{"123"},
+				Node: &BranchNode{
+					Branches: map[string]Node{
+						"alpha": nil,
+					},
+					Default: SerialNodes(Description("the default command"), Arg[int]("INT_ARG", "an integer"), ListArg[string]("STRINGS", "unltd strings", 1, UnboundedList)),
+				},
+				WantString: []string{
+					"the default command",
+					"STRINGS [ STRINGS ... ]",
+					"",
+					"Arguments:",
+					"  STRINGS: unltd strings",
+				},
+			},
+		},
+		{
+			name: "BranchNode usage doesn't display if branch traversed",
+			utc: &UsageTestCase{
+				Args: []string{"beta"},
+				Node: &BranchNode{
+					Branches: map[string]Node{
+						"alpha": nil,
+						"beta":  SerialNodes(ListArg[string]("ROPES", "lots of strings", 2, 3)),
+					},
+					Default: SerialNodes(Description("the default command"), Arg[int]("INT_ARG", "an integer"), ListArg[string]("STRINGS", "unltd strings", 1, UnboundedList)),
+				},
+				WantString: []string{
+					"ROPES ROPES [ ROPES ROPES ROPES ]",
+					"",
+					"Arguments:",
+					"  ROPES: lots of strings",
+				},
+			},
+		},
+		{
+			name: "branch node with HideUsage and default",
+			utc: &UsageTestCase{
+				Node: SerialNodes(
+					Description("command start"),
+					Arg[string]("STRING", "A string"),
+					&BranchNode{
+						Branches: map[string]Node{
+							"alpha": nil,
+						},
+						HideUsage: true,
+						Default:   SerialNodes(Description("the default command"), Arg[int]("INT_ARG", "an integer"), ListArg[string]("STRINGS", "unltd strings", 1, UnboundedList)),
+					},
+				),
+				WantString: []string{
+					"the default command",
+					"STRING INT_ARG STRINGS [ STRINGS ... ]",
+					"",
+					"Arguments:",
+					"  INT_ARG: an integer",
+					"  STRING: A string",
+					"  STRINGS: unltd strings",
+				},
+			},
+		},
+		{
+			name: "branch node with HideUsage and no default",
+			utc: &UsageTestCase{
+				Node: SerialNodes(
+					Description("command start"),
+					Arg[string]("STRING", "A string"),
+					&BranchNode{
+						Branches: map[string]Node{
+							"alpha": nil,
+						},
+						HideUsage: true,
+					},
+				),
+				WantString: []string{
+					"command start",
+					"STRING",
+					"",
+					"Arguments:",
+					"  STRING: A string",
 				},
 			},
 		},
@@ -310,8 +407,7 @@ func TestUsage(t *testing.T) {
 							},
 						},
 					},
-					Default:           SerialNodes(Description("the default command"), Arg[int]("INT_ARG", "an integer"), ListArg[string]("STRINGS", "unltd strings", 1, UnboundedList)),
-					DefaultCompletion: true,
+					Default: SerialNodes(Description("the default command"), Arg[int]("INT_ARG", "an integer"), ListArg[string]("STRINGS", "unltd strings", 1, UnboundedList)),
 				},
 				WantString: []string{
 					"the default command",
@@ -360,8 +456,7 @@ func TestUsage(t *testing.T) {
 						"charlie": {"charles", "chuck"},
 						"alpha":   {"omega"},
 					}),
-					Default:           SerialNodes(Description("the default command"), Arg[int]("INT_ARG", "an integer"), ListArg[string]("STRINGS", "unltd strings", 1, UnboundedList)),
-					DefaultCompletion: true,
+					Default: SerialNodes(Description("the default command"), Arg[int]("INT_ARG", "an integer"), ListArg[string]("STRINGS", "unltd strings", 1, UnboundedList)),
 				},
 				WantString: []string{
 					"the default command",
@@ -411,8 +506,7 @@ func TestUsage(t *testing.T) {
 						"charlie": {"charles", "chuck"},
 						"alpha":   {"omega2"},
 					}),
-					Default:           SerialNodes(Description("the default command"), Arg[int]("INT_ARG", "an integer"), ListArg[string]("STRINGS", "unltd strings", 1, UnboundedList)),
-					DefaultCompletion: true,
+					Default: SerialNodes(Description("the default command"), Arg[int]("INT_ARG", "an integer"), ListArg[string]("STRINGS", "unltd strings", 1, UnboundedList)),
 				},
 				WantString: []string{
 					"the default command",
@@ -469,8 +563,7 @@ func TestUsage(t *testing.T) {
 							},
 						},
 					},
-					Default:           SerialNodes(Description("the default command"), Arg[int]("INT_ARG", "an integer"), ListArg[string]("STRINGS", "unltd strings", 1, UnboundedList)),
-					DefaultCompletion: true,
+					Default: SerialNodes(Description("the default command"), Arg[int]("INT_ARG", "an integer"), ListArg[string]("STRINGS", "unltd strings", 1, UnboundedList)),
 				},
 				WantString: []string{
 					"the default command",
@@ -519,6 +612,114 @@ func TestUsage(t *testing.T) {
 				},
 			},
 		},
+		// BranchUsageOrderFunc tests
+		{
+			name: "BranchUsageOrderFunc returns error",
+			utc: &UsageTestCase{
+				Node: &BranchNode{
+					BranchUsageOrderFunc: func(bn *BranchNode) ([]string, error) {
+						return nil, fmt.Errorf("whoops")
+					},
+					Branches: branchesForSorting,
+					Default:  SerialNodes(Description("the default command"), Arg[int]("INT_ARG", "an integer"), ListArg[string]("STRINGS", "unltd strings", 1, UnboundedList)),
+				},
+				WantErr: fmt.Errorf("failed to generate custom branch usage order: whoops"),
+			},
+		},
+		{
+			name: "BranchUsageOrderFunc fails if extra strings",
+			utc: &UsageTestCase{
+				Node: &BranchNode{
+					BranchUsageOrderFunc: func(bn *BranchNode) ([]string, error) {
+						return []string{"alpha", "beta", "charlie", "delta", "echo", "foxtrot"}, nil
+					},
+					Branches: branchesForSorting,
+					Default:  SerialNodes(Description("the default command"), Arg[int]("INT_ARG", "an integer"), ListArg[string]("STRINGS", "unltd strings", 1, UnboundedList)),
+				},
+				WantErr: fmt.Errorf("BranchUsageOrderFunc returned incorrect set of branches: expected [alpha beta charlie delta echo]; got [alpha beta charlie delta echo foxtrot]"),
+			},
+		},
+		{
+			name: "BranchUsageOrderFunc fails if fewer strings",
+			utc: &UsageTestCase{
+				Node: &BranchNode{
+					BranchUsageOrderFunc: func(bn *BranchNode) ([]string, error) {
+						return []string{"alpha", "beta", "delta", "echo"}, nil
+					},
+					Branches: branchesForSorting,
+					Default:  SerialNodes(Description("the default command"), Arg[int]("INT_ARG", "an integer"), ListArg[string]("STRINGS", "unltd strings", 1, UnboundedList)),
+				},
+				WantErr: fmt.Errorf("BranchUsageOrderFunc returned incorrect set of branches: expected [alpha beta charlie delta echo]; got [alpha beta delta echo]"),
+			},
+		},
+		{
+			name: "BranchUsageOrderFunc fails if duplicate strings",
+			utc: &UsageTestCase{
+				Node: &BranchNode{
+					BranchUsageOrderFunc: func(bn *BranchNode) ([]string, error) {
+						return []string{"alpha", "beta", "beta", "charlie", "delta", "echo"}, nil
+					},
+					Branches: branchesForSorting,
+					Default:  SerialNodes(Description("the default command"), Arg[int]("INT_ARG", "an integer"), ListArg[string]("STRINGS", "unltd strings", 1, UnboundedList)),
+				},
+				WantErr: fmt.Errorf("BranchUsageOrderFunc returned incorrect set of branches: expected [alpha beta charlie delta echo]; got [alpha beta beta charlie delta echo]"),
+			},
+		},
+		{
+			name: "BranchUsageOrderFunc fails if duplicate strings but right number",
+			utc: &UsageTestCase{
+				Node: &BranchNode{
+					BranchUsageOrderFunc: func(bn *BranchNode) ([]string, error) {
+						return []string{"alpha", "beta", "beta", "delta", "echo"}, nil
+					},
+					Branches: branchesForSorting,
+					Default:  SerialNodes(Description("the default command"), Arg[int]("INT_ARG", "an integer"), ListArg[string]("STRINGS", "unltd strings", 1, UnboundedList)),
+				},
+				WantErr: fmt.Errorf("BranchUsageOrderFunc returned incorrect set of branches: expected [alpha beta charlie delta echo]; got [alpha beta beta delta echo]"),
+			},
+		},
+		{
+			name: "BranchUsageOrderFunc works",
+			utc: &UsageTestCase{
+				Node: &BranchNode{
+					BranchUsageOrderFunc: func(bn *BranchNode) ([]string, error) {
+						return []string{"alpha", "beta", "charlie", "delta", "echo"}, nil
+					},
+					Branches: branchesForSorting,
+					Default:  SerialNodes(Description("the default command"), Arg[int]("INT_ARG", "an integer"), ListArg[string]("STRINGS", "unltd strings", 1, UnboundedList)),
+				},
+				WantString: []string{
+					"the default command",
+					"┳ INT_ARG STRINGS [ STRINGS ... ]",
+					"┃",
+					"┣━━ alpha",
+					"┃",
+					"┣━━ beta ROPES ROPES [ ROPES ROPES ROPES ]",
+					"┃",
+					"┣━━ charlie ┓",
+					"┃   ┏━━━━━━━┛",
+					"┃   ┃   learn about cartoons",
+					"┃   ┣━━ brown FLOATER",
+					"┃   ┃",
+					"┃   ┗━━ yellow",
+					"┃",
+					"┣━━ delta",
+					"┃",
+					"┗━━ echo",
+					"",
+					"Arguments:",
+					"  FLOATER: something bouyant",
+					"  INT_ARG: an integer",
+					"  ROPES: lots of strings",
+					"  STRINGS: unltd strings",
+					"",
+					"Symbols:",
+					BranchDescWithoutDefault,
+					BranchDescWithDefault,
+				},
+			},
+		},
+		// Flag tests
 		{
 			name: "works with flags",
 			utc: &UsageTestCase{
