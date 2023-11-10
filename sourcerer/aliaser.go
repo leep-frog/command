@@ -1,8 +1,9 @@
 package sourcerer
 
 import (
+	"sort"
+
 	"github.com/leep-frog/command"
-	"golang.org/x/exp/slices"
 )
 
 type Aliaser struct {
@@ -21,11 +22,9 @@ func AliasSourcery(goExecutable string, as ...*Aliaser) []string {
 		return nil
 	}
 
-	slices.SortFunc(as, func(this, that *Aliaser) int {
-		if this.alias < that.alias {
-			return -1
-		}
-		return 1
+	sort.Slice(as, func(i, j int) bool {
+		this, that := as[i], as[j]
+		return this.alias < that.alias
 	})
 
 	r := CurrentOS.GlobalAliaserFunc(goExecutable)

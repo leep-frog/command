@@ -210,11 +210,9 @@ func (bn *BranchNode) Usage(input *Input, data *Data, u *Usage) error {
 	}
 
 	bss := maps.Values(bn.getSyns())
-	slices.SortFunc(bss, func(this, that *branchSyn) int {
-		if this.name < that.name {
-			return -1
-		}
-		return 1
+	sort.Slice(bss, func(i, j int) bool {
+		this, that := bss[i], bss[j]
+		return this.name < that.name
 	})
 
 	if bn.Default != nil {
