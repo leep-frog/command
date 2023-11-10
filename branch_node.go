@@ -74,7 +74,7 @@ func (bn *BranchNode) sortBranchSyns(bss []*branchSyn) error {
 
 	sort.Slice(bss, func(i, j int) bool {
 		this, that := bss[i], bss[j]
-		return slices.Index[[]string](customOrder, this.name) < slices.Index[[]string](customOrder, that.name)
+		return slices.Index(customOrder, this.name) < slices.Index(customOrder, that.name)
 	})
 
 	return nil
