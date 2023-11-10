@@ -31,14 +31,13 @@ type BranchNode struct {
 	HideUsage bool
 	// UsageOrderFunc allows you to set the order for branch usage docs.
 	// If this isn't provided, then branches are sorted in alphabetical order.
-	BranchUsageOrderFunc func(bn *BranchNode) ([]string, error)
+	BranchUsageOrder []string
 
 	next Node
 }
 
 func (bn *BranchNode) sortBranchSyns(bss []*branchSyn) error {
-	var customOrder []string
-	if bn.BranchUsageOrderFunc == nil {
+	if len(bn.BranchUsageOrder) == 0 {
 		sort.Slice(bss, func(i, j int) bool {
 			this, that := bss[i], bss[j]
 			return this.name < that.name
@@ -46,12 +45,7 @@ func (bn *BranchNode) sortBranchSyns(bss []*branchSyn) error {
 		return nil
 	}
 
-	var err error
-	customOrder, err = bn.BranchUsageOrderFunc(bn)
-	if err != nil {
-		return fmt.Errorf("failed to generate custom branch usage order: %v", err)
-	}
-
+	customOrder := bn.BranchUsageOrder
 	want := map[string]bool{}
 	var bsNames []string
 	for _, bs := range bss {

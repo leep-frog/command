@@ -614,27 +614,12 @@ func TestUsage(t *testing.T) {
 		},
 		// BranchUsageOrderFunc tests
 		{
-			name: "BranchUsageOrderFunc returns error",
-			utc: &UsageTestCase{
-				Node: &BranchNode{
-					BranchUsageOrderFunc: func(bn *BranchNode) ([]string, error) {
-						return nil, fmt.Errorf("whoops")
-					},
-					Branches: branchesForSorting,
-					Default:  SerialNodes(Description("the default command"), Arg[int]("INT_ARG", "an integer"), ListArg[string]("STRINGS", "unltd strings", 1, UnboundedList)),
-				},
-				WantErr: fmt.Errorf("failed to generate custom branch usage order: whoops"),
-			},
-		},
-		{
 			name: "BranchUsageOrderFunc fails if extra strings",
 			utc: &UsageTestCase{
 				Node: &BranchNode{
-					BranchUsageOrderFunc: func(bn *BranchNode) ([]string, error) {
-						return []string{"alpha", "beta", "charlie", "delta", "echo", "foxtrot"}, nil
-					},
-					Branches: branchesForSorting,
-					Default:  SerialNodes(Description("the default command"), Arg[int]("INT_ARG", "an integer"), ListArg[string]("STRINGS", "unltd strings", 1, UnboundedList)),
+					BranchUsageOrder: []string{"alpha", "beta", "charlie", "delta", "echo", "foxtrot"},
+					Branches:         branchesForSorting,
+					Default:          SerialNodes(Description("the default command"), Arg[int]("INT_ARG", "an integer"), ListArg[string]("STRINGS", "unltd strings", 1, UnboundedList)),
 				},
 				WantErr: fmt.Errorf("BranchUsageOrderFunc returned incorrect set of branches: expected [alpha beta charlie delta echo]; got [alpha beta charlie delta echo foxtrot]"),
 			},
@@ -643,11 +628,9 @@ func TestUsage(t *testing.T) {
 			name: "BranchUsageOrderFunc fails if fewer strings",
 			utc: &UsageTestCase{
 				Node: &BranchNode{
-					BranchUsageOrderFunc: func(bn *BranchNode) ([]string, error) {
-						return []string{"alpha", "beta", "delta", "echo"}, nil
-					},
-					Branches: branchesForSorting,
-					Default:  SerialNodes(Description("the default command"), Arg[int]("INT_ARG", "an integer"), ListArg[string]("STRINGS", "unltd strings", 1, UnboundedList)),
+					BranchUsageOrder: []string{"alpha", "beta", "delta", "echo"},
+					Branches:         branchesForSorting,
+					Default:          SerialNodes(Description("the default command"), Arg[int]("INT_ARG", "an integer"), ListArg[string]("STRINGS", "unltd strings", 1, UnboundedList)),
 				},
 				WantErr: fmt.Errorf("BranchUsageOrderFunc returned incorrect set of branches: expected [alpha beta charlie delta echo]; got [alpha beta delta echo]"),
 			},
@@ -656,11 +639,9 @@ func TestUsage(t *testing.T) {
 			name: "BranchUsageOrderFunc fails if duplicate strings",
 			utc: &UsageTestCase{
 				Node: &BranchNode{
-					BranchUsageOrderFunc: func(bn *BranchNode) ([]string, error) {
-						return []string{"alpha", "beta", "beta", "charlie", "delta", "echo"}, nil
-					},
-					Branches: branchesForSorting,
-					Default:  SerialNodes(Description("the default command"), Arg[int]("INT_ARG", "an integer"), ListArg[string]("STRINGS", "unltd strings", 1, UnboundedList)),
+					BranchUsageOrder: []string{"alpha", "beta", "beta", "charlie", "delta", "echo"},
+					Branches:         branchesForSorting,
+					Default:          SerialNodes(Description("the default command"), Arg[int]("INT_ARG", "an integer"), ListArg[string]("STRINGS", "unltd strings", 1, UnboundedList)),
 				},
 				WantErr: fmt.Errorf("BranchUsageOrderFunc returned incorrect set of branches: expected [alpha beta charlie delta echo]; got [alpha beta beta charlie delta echo]"),
 			},
@@ -669,11 +650,9 @@ func TestUsage(t *testing.T) {
 			name: "BranchUsageOrderFunc fails if duplicate strings but right number",
 			utc: &UsageTestCase{
 				Node: &BranchNode{
-					BranchUsageOrderFunc: func(bn *BranchNode) ([]string, error) {
-						return []string{"alpha", "beta", "beta", "delta", "echo"}, nil
-					},
-					Branches: branchesForSorting,
-					Default:  SerialNodes(Description("the default command"), Arg[int]("INT_ARG", "an integer"), ListArg[string]("STRINGS", "unltd strings", 1, UnboundedList)),
+					BranchUsageOrder: []string{"alpha", "beta", "beta", "delta", "echo"},
+					Branches:         branchesForSorting,
+					Default:          SerialNodes(Description("the default command"), Arg[int]("INT_ARG", "an integer"), ListArg[string]("STRINGS", "unltd strings", 1, UnboundedList)),
 				},
 				WantErr: fmt.Errorf("BranchUsageOrderFunc returned incorrect set of branches: expected [alpha beta charlie delta echo]; got [alpha beta beta delta echo]"),
 			},
@@ -682,11 +661,9 @@ func TestUsage(t *testing.T) {
 			name: "BranchUsageOrderFunc works",
 			utc: &UsageTestCase{
 				Node: &BranchNode{
-					BranchUsageOrderFunc: func(bn *BranchNode) ([]string, error) {
-						return []string{"alpha", "beta", "charlie", "delta", "echo"}, nil
-					},
-					Branches: branchesForSorting,
-					Default:  SerialNodes(Description("the default command"), Arg[int]("INT_ARG", "an integer"), ListArg[string]("STRINGS", "unltd strings", 1, UnboundedList)),
+					BranchUsageOrder: []string{"alpha", "beta", "charlie", "delta", "echo"},
+					Branches:         branchesForSorting,
+					Default:          SerialNodes(Description("the default command"), Arg[int]("INT_ARG", "an integer"), ListArg[string]("STRINGS", "unltd strings", 1, UnboundedList)),
 				},
 				WantString: []string{
 					"the default command",
