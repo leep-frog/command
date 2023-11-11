@@ -96,7 +96,7 @@ func (l *linux) RegisterCLIs(builtin bool, goExecutable, targetName string, clis
 		r = append(r, aliasCommand)
 
 		// We sort ourselves, hence the no sort.
-		r = append(r, fmt.Sprintf("complete -F _custom_autocomplete_%s %s %s", targetName, NosortString(), alias))
+		r = append(r, fmt.Sprintf("(type complete > /dev/null 2>&1) && complete -F _custom_autocomplete_%s %s %s", targetName, NosortString(), alias))
 	}
 	return r, nil
 }
@@ -182,7 +182,7 @@ func (l *linux) RegisterAliaser(goExecutable string, a *Aliaser) []string {
 
 	r = append(r, l.aliaserAutocompleteFunction(a.alias, a.cli, quotedArgs)...)
 	return append(r,
-		fmt.Sprintf("complete -F _custom_autocomplete_for_alias_%s %s %s", a.alias, NosortString(), a.alias),
+		fmt.Sprintf("(type complete > /dev/null 2>&1) && complete -F _custom_autocomplete_for_alias_%s %s %s", a.alias, NosortString(), a.alias),
 		``,
 	)
 }
