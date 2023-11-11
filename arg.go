@@ -43,6 +43,7 @@ func (an *Argument[T]) Get(data *Data) T {
 	return GetData[T](data, an.name)
 }
 
+// Provided returns whether or not the argument has been set in `Data`.
 func (an *Argument[T]) Provided(data *Data) bool {
 	return data.Has(an.name)
 }

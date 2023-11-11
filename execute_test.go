@@ -36,6 +36,9 @@ func TestExecute(t *testing.T) {
 	StubRuntimeCaller(t, "some/file/path", false)
 	rcErrNode := RuntimeCaller()
 
+	envArgProcessor := EnvArg("ENV_VAR")
+	optionalString := OptionalArg[string]("opt-arg", "desc")
+
 	fos := &FakeOS{}
 	for _, test := range []struct {
 		name       string
@@ -1104,17 +1107,57 @@ func TestExecute(t *testing.T) {
 				WantStderr: "[Complexecute] requires exactly one suggestion to be returned for \"s\", got 2: [five four]\n",
 			},
 		},
-		// Default value tests
+		// Arg convenience functions
 		{
-			name: "Uses default if no arg provided",
+			name: "Arg.Get",
 			etc: &ExecuteTestCase{
-				Node:      SerialNodes(OptionalArg("s", testDesc, Default("settled"))),
-				wantInput: &Input{},
+				Args: []string{"some-string"},
+				Node: SerialNodes(
+					optionalString,
+					&ExecutorProcessor{func(o Output, d *Data) error {
+						o.Stdoutln(optionalString.Get(d), optionalString.GetOrDefault(d, "dflt"))
+						return nil
+					}},
+				),
+				WantStdout: "some-string some-string\n",
 				WantData: &Data{Values: map[string]interface{}{
-					"s": "settled",
+					optionalString.Name(): "some-string",
 				}},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "some-string"},
+					},
+				},
 			},
 		},
+		{
+			name: "Arg.Provided and Arg.GetOrDefault",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					optionalString,
+					&ExecutorProcessor{func(o Output, d *Data) error {
+						o.Stdoutln(optionalString.Provided(d), optionalString.GetOrDefault(d, "dflt"))
+						return nil
+					}},
+				),
+				WantStdout: "false dflt\n",
+				wantInput:  &Input{},
+			},
+		},
+		{
+			name: "Arg.Desc",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					optionalString,
+					&ExecutorProcessor{func(o Output, d *Data) error {
+						o.Stdoutln(optionalString.Desc())
+						return nil
+					}},
+				),
+				WantStdout: "desc\n",
+			},
+		},
+		// Default value tests
 		{
 			name: "Uses DefaultFunc if no arg provided",
 			etc: &ExecuteTestCase{
@@ -1801,7 +1844,7 @@ func TestExecute(t *testing.T) {
 			name: "EnvArg returns nil if no env",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
-					EnvArg("SOME_VAR"),
+					envArgProcessor,
 				),
 			},
 		},
@@ -1809,16 +1852,35 @@ func TestExecute(t *testing.T) {
 			name: "EnvArg adds environment variable to data",
 			etc: &ExecuteTestCase{
 				Env: map[string]string{
-					"SOME_VAR": "heyo",
+					envArgProcessor.Name: "heyo",
+					"other":              "env-var",
 				},
 				Node: SerialNodes(
-					EnvArg("SOME_VAR"),
+					envArgProcessor,
+					&ExecutorProcessor{func(o Output, d *Data) error {
+						o.Stdoutln(envArgProcessor.Provided(d), envArgProcessor.Get(d))
+						return nil
+					}},
 				),
+				WantStdout: "true heyo\n",
 				WantData: &Data{
 					Values: map[string]interface{}{
-						"SOME_VAR": "heyo",
+						envArgProcessor.Name: "heyo",
 					},
 				},
+			},
+		},
+		{
+			name: "EnvArg does nothing if variable not defined",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					envArgProcessor,
+					&ExecutorProcessor{func(o Output, d *Data) error {
+						o.Stdoutln(envArgProcessor.Provided(d))
+						return nil
+					}},
+				),
+				WantStdout: "false\n",
 			},
 		},
 		{

@@ -203,6 +203,21 @@ func TestUsage(t *testing.T) {
 			},
 		},
 		{
+			name: "fails if validator returns error with some args",
+			utc: &UsageTestCase{
+				Args: []string{"12"},
+				Node: SerialNodes(
+					Arg[string]("SARG", "desc",
+						MinLength[string, string](3),
+						Contains("X"),
+						FileExists(),
+					),
+					Description("Does absolutely nothing"),
+				),
+				WantErr: fmt.Errorf(`validation for "SARG" failed: [MinLength] length must be at least 3`),
+			},
+		},
+		{
 			name: "works with list arg",
 			utc: &UsageTestCase{
 				Node: SerialNodes(ListArg[string]("SARG", testDesc, 2, 3)),

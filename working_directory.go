@@ -24,9 +24,7 @@ var (
 			d.Set(GetwdKey, s)
 			return nil
 		}),
-		func(d *Data) string {
-			return d.String(GetwdKey)
-		},
+		GetwdKey,
 	}
 )
 

@@ -12,13 +12,16 @@ var (
 
 // EnvArg loads the provided environment variable's value into `Data`.
 // The provided `name` is also used as the `Data` key.
-func EnvArg(name string) Processor {
-	return SuperSimpleProcessor(func(i *Input, d *Data) error {
-		if v, ok := OSLookupEnv(name); ok {
-			d.Set(name, v)
-		}
-		return nil
-	})
+func EnvArg(name string) *GetProcessor[string] {
+	return &GetProcessor[string]{
+		SuperSimpleProcessor(func(i *Input, d *Data) error {
+			if v, ok := OSLookupEnv(name); ok {
+				d.Set(name, v)
+			}
+			return nil
+		}),
+		name,
+	}
 }
 
 // SetEnvVarProcessor returns a `Processor` that sets the environment variable to the provided value.

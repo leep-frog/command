@@ -27,9 +27,7 @@ func RuntimeCaller() *GetProcessor[string] {
 			d.Set(RuntimeCallerKey, filename)
 			return nil
 		}),
-		func(d *Data) string {
-			return d.String(RuntimeCallerKey)
-		},
+		RuntimeCallerKey,
 	}
 }
 
