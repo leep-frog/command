@@ -759,6 +759,16 @@ func TestUsage(t *testing.T) {
 			},
 		},
 		{
+			name: "Fails if validation error",
+			utc: &UsageTestCase{
+				Args: []string{"--str", "nope"},
+				Node: SerialNodes(FlagProcessor(
+					Flag[string]("str", 's', "desc", Contains("t")),
+				)),
+				WantErr: fmt.Errorf(`validation for "str" failed: [Contains] value doesn't contain substring "t"`),
+			},
+		},
+		{
 			name: "Works with input flag and required args",
 			utc: &UsageTestCase{
 				Args: []string{"--str", "un", "deux"},
@@ -847,6 +857,30 @@ func TestUsage(t *testing.T) {
 				},
 			},
 		},
+		// TODO:
+		// {
+		// 	name: "flags with values",
+		// 	utc: &UsageTestCase{
+		// 		Args: []string{"--second", "2nd"},
+		// 		Node: SerialNodes(
+		// 			FlagProcessor(
+		// 				BoolFlag("first", 'b', "un"),
+		// 				BoolFlag("second", 'a', "deux"),
+		// 			),
+		// 			Arg[string]("SN", "node for a string"),
+		// 		),
+		// 		WantString: []string{
+		// 			"SN --first|-b --second|-a",
+		// 			"",
+		// 			"Arguments:",
+		// 			"  SN: node for a string",
+		// 			"",
+		// 			"Flags:",
+		// 			"  [b] first: un",
+		// 			"  [a] second: deux",
+		// 		},
+		// 	},
+		// },
 		{
 			name: "flags without short names work",
 			utc: &UsageTestCase{

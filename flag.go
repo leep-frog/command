@@ -510,6 +510,8 @@ func (bf *boolFlag[T]) Complete(input *Input, data *Data) (*Completion, error) {
 }
 
 func (bf *boolFlag[T]) Usage(i *Input, d *Data, u *Usage) error {
+	// I believe individual abcFlag.Usage functions aren't ever called (e.g. this, optionalFlag.Usage, etc.)
+
 	// Since flag processors are added at the beginning, the usage statements can be a bit awkward
 	// Instead add another row for supported flags
 	u.UsageSection.Add(FlagSection, bf.name, bf.desc)

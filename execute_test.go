@@ -38,6 +38,8 @@ func TestExecute(t *testing.T) {
 
 	envArgProcessor := EnvArg("ENV_VAR")
 	optionalString := OptionalArg[string]("opt-arg", "desc")
+	stringFlag := Flag[string]("opt-flag", 'o', "flag-desc")
+	simpleBoolFlag := BoolFlag("bool-flag", 'b', "bool-flag-desc")
 
 	fos := &FakeOS{}
 	for _, test := range []struct {
@@ -1115,11 +1117,11 @@ func TestExecute(t *testing.T) {
 				Node: SerialNodes(
 					optionalString,
 					&ExecutorProcessor{func(o Output, d *Data) error {
-						o.Stdoutln(optionalString.Get(d), optionalString.GetOrDefault(d, "dflt"))
+						o.Stdoutln(optionalString.Provided(d), optionalString.Get(d), optionalString.GetOrDefault(d, "dflt"))
 						return nil
 					}},
 				),
-				WantStdout: "some-string some-string\n",
+				WantStdout: "true some-string some-string\n",
 				WantData: &Data{Values: map[string]interface{}{
 					optionalString.Name(): "some-string",
 				}},
@@ -1155,6 +1157,119 @@ func TestExecute(t *testing.T) {
 					}},
 				),
 				WantStdout: "desc\n",
+			},
+		},
+		// Flag convenience functions
+		{
+			name: "Flag.Get",
+			etc: &ExecuteTestCase{
+				Args: []string{"--opt-flag", "some-string"},
+				Node: SerialNodes(
+					FlagProcessor(
+						stringFlag,
+					),
+					&ExecutorProcessor{func(o Output, d *Data) error {
+						o.Stdoutln(stringFlag.Provided(d), stringFlag.Get(d), stringFlag.GetOrDefault(d, "dflt"))
+						return nil
+					}},
+				),
+				WantStdout: "true some-string some-string\n",
+				WantData: &Data{Values: map[string]interface{}{
+					stringFlag.Name(): "some-string",
+				}},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "--opt-flag"},
+						{value: "some-string"},
+					},
+				},
+			},
+		},
+		{
+			name: "Flag.Provided and Flag.GetOrDefault",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					FlagProcessor(
+						stringFlag,
+					),
+					&ExecutorProcessor{func(o Output, d *Data) error {
+						o.Stdoutln(stringFlag.Provided(d), stringFlag.GetOrDefault(d, "dflt"))
+						return nil
+					}},
+				),
+				WantStdout: "false dflt\n",
+				wantInput:  &Input{},
+			},
+		},
+		{
+			name: "Flag.Desc",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					FlagProcessor(
+						stringFlag,
+					),
+					&ExecutorProcessor{func(o Output, d *Data) error {
+						o.Stdoutln(stringFlag.Desc())
+						return nil
+					}},
+				),
+				WantStdout: "flag-desc\n",
+			},
+		},
+		// BoolFlag convenience functions
+		{
+			name: "BoolFlag.Get",
+			etc: &ExecuteTestCase{
+				Args: []string{"--bool-flag"},
+				Node: SerialNodes(
+					FlagProcessor(
+						simpleBoolFlag,
+					),
+					&ExecutorProcessor{func(o Output, d *Data) error {
+						o.Stdoutln(simpleBoolFlag.Provided(d), simpleBoolFlag.Get(d), simpleBoolFlag.GetOrDefault(d, false))
+						return nil
+					}},
+				),
+				WantStdout: "true true true\n",
+				WantData: &Data{Values: map[string]interface{}{
+					simpleBoolFlag.Name(): true,
+				}},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "--bool-flag"},
+					},
+				},
+			},
+		},
+		{
+			name: "BoolFlag.Provided and BoolFlag.GetOrDefault",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					FlagProcessor(
+						simpleBoolFlag,
+					),
+					&ExecutorProcessor{func(o Output, d *Data) error {
+						o.Stdoutln(simpleBoolFlag.Provided(d), simpleBoolFlag.GetOrDefault(d, true))
+						return nil
+					}},
+				),
+				WantStdout: "false true\n",
+				wantInput:  &Input{},
+			},
+		},
+		{
+			name: "BoolFlag.Desc",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					FlagProcessor(
+						simpleBoolFlag,
+					),
+					&ExecutorProcessor{func(o Output, d *Data) error {
+						o.Stdoutln(simpleBoolFlag.Desc())
+						return nil
+					}},
+				),
+				WantStdout: "bool-flag-desc\n",
 			},
 		},
 		// Default value tests
@@ -7291,6 +7406,26 @@ func TestComplete(t *testing.T) {
 					),
 				),
 				Args: "cmd --of -",
+				Want: []string{
+					"--bf",
+				},
+			},
+		},
+		{
+			name: "Eats optional flag completion",
+			// Eats partial flag completion because there's no great way
+			// to know if the value is for this flag or not.
+			ctc: &CompleteTestCase{
+				Node: SerialNodes(
+					FlagProcessor(
+						OptionalFlag[string]("of", 'o', testDesc, "dfltValue", SimpleDistinctCompleter[string]("abc", "def", "ghi")),
+						BoolFlag("bf", 'b', testDesc),
+					),
+				),
+				Args: "cmd --of provided -",
+				WantData: &Data{Values: map[string]interface{}{
+					"of": "provided",
+				}},
 				Want: []string{
 					"--bf",
 				},
