@@ -2,6 +2,7 @@ package cache
 
 import (
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -189,6 +190,7 @@ func TestExecute(t *testing.T) {
 		puts          []*put
 		etc           *command.ExecuteTestCase
 		skipFileCheck bool
+		mkdirAllErr   error
 		want          map[string]string
 		wantC         *Cache
 	}{
@@ -202,15 +204,16 @@ func TestExecute(t *testing.T) {
 		},
 		// Get tests
 		{
-			name: "Gets fails if unknown dir",
+			name: "Gets fails if unknown dir and mkdir error",
 			c: &Cache{
 				Dir: filepath.Join("bob", "lob", "law"),
 			},
 			skipFileCheck: true,
+			mkdirAllErr:   fmt.Errorf("oops"),
 			etc: &command.ExecuteTestCase{
 				Args:       []string{"get", "here"},
-				WantStderr: "failed to get file for key: failed to get cache directory: cache directory does not exist\n",
-				WantErr:    fmt.Errorf("failed to get file for key: failed to get cache directory: cache directory does not exist"),
+				WantStderr: fmt.Sprintf("failed to get file for key: failed to get cache directory: cache directory does not exist and could not be created: oops\n"),
+				WantErr:    fmt.Errorf("failed to get file for key: failed to get cache directory: cache directory does not exist and could not be created: oops"),
 			},
 		},
 		{
@@ -263,10 +266,11 @@ func TestExecute(t *testing.T) {
 				Dir: filepath.Join("bob", "lob", "law"),
 			},
 			skipFileCheck: true,
+			mkdirAllErr:   fmt.Errorf("whoops"),
 			etc: &command.ExecuteTestCase{
 				Args:       []string{"put", "things", "here"},
-				WantStderr: "failed to get file for key: failed to get cache directory: cache directory does not exist\n",
-				WantErr:    fmt.Errorf("failed to get file for key: failed to get cache directory: cache directory does not exist"),
+				WantStderr: fmt.Sprintf("failed to get file for key: failed to get cache directory: cache directory does not exist and could not be created: whoops\n"),
+				WantErr:    fmt.Errorf("failed to get file for key: failed to get cache directory: cache directory does not exist and could not be created: whoops"),
 			},
 		},
 		{
@@ -330,10 +334,11 @@ func TestExecute(t *testing.T) {
 				Dir: filepath.Join("bob", "lob", "law"),
 			},
 			skipFileCheck: true,
+			mkdirAllErr:   fmt.Errorf("argh"),
 			etc: &command.ExecuteTestCase{
 				Args:       []string{"list"},
-				WantStderr: "cache directory does not exist\n",
-				WantErr:    fmt.Errorf("cache directory does not exist"),
+				WantStderr: fmt.Sprintf("cache directory does not exist and could not be created: argh\n"),
+				WantErr:    fmt.Errorf("cache directory does not exist and could not be created: argh"),
 			},
 		},
 		{
@@ -446,6 +451,9 @@ func TestExecute(t *testing.T) {
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
+			command.StubValue(t, &osMkdirAll, func(string, fs.FileMode) error {
+				return test.mkdirAllErr
+			})
 			for _, p := range test.puts {
 				Put(t, test.c, p.key, p.data)
 			}
@@ -540,19 +548,21 @@ func TestGetStruct(t *testing.T) {
 	}
 
 	for _, test := range []struct {
-		name    string
-		c       *Cache
-		key     string
-		obj     interface{}
-		wantOK  bool
-		wantErr error
-		wantObj interface{}
+		name        string
+		c           *Cache
+		key         string
+		obj         interface{}
+		mkdirAllErr error
+		wantOK      bool
+		wantErr     error
+		wantObj     interface{}
 	}{
 		{
-			name:    "get struct fails on bad cache dir",
-			c:       &Cache{"bleh", false},
-			key:     key,
-			wantErr: fmt.Errorf("failed to get file for key: failed to get cache directory: cache directory does not exist"),
+			name:        "get struct fails on bad cache dir",
+			c:           &Cache{filepath.Join("bleh", "eh"), false},
+			key:         key,
+			mkdirAllErr: fmt.Errorf("oops"),
+			wantErr:     fmt.Errorf("failed to get file for key: failed to get cache directory: cache directory does not exist and could not be created: oops"),
 		},
 		{
 			name: "get struct returns false on missingkey",
@@ -577,6 +587,9 @@ func TestGetStruct(t *testing.T) {
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
+			command.StubValue(t, &osMkdirAll, func(string, fs.FileMode) error {
+				return test.mkdirAllErr
+			})
 			prefix := fmt.Sprintf("GetStruct(%s)", test.key)
 
 			ok, err := test.c.GetStruct(test.key, test.obj)
@@ -752,11 +765,12 @@ func TestNewShell(t *testing.T) {
 	fos := &command.FakeOS{}
 
 	for _, test := range []struct {
-		name      string
-		etc       *command.ExecuteTestCase
-		mkdir     string
-		mkdirErr  error
-		wantCache *Cache
+		name         string
+		etc          *command.ExecuteTestCase
+		mkdirTemp    string
+		mkdirTempErr error
+		mkdirAllErr  error
+		wantCache    *Cache
 	}{
 		{
 			name: "returns existing shell cache",
@@ -773,26 +787,27 @@ func TestNewShell(t *testing.T) {
 			},
 		},
 		{
-			name: "returns error if existing shell cache doesn't point to a directory",
+			name:        "returns error if existing shell cache doesn't point to a directory and fail to create",
+			mkdirAllErr: fmt.Errorf("whoops"),
 			etc: &command.ExecuteTestCase{
 				Env: map[string]string{
-					ShellOSEnvVar: filepath.Join(dir, "bleh"),
+					ShellOSEnvVar: filepath.Join(dir, "bleh", "eh"),
 				},
-				WantErr:    fmt.Errorf("failed to create shell-level cache: invalid directory (%s) for cache: cache directory does not exist", filepath.Join(dir, "bleh")),
-				WantStderr: fmt.Sprintf("failed to create shell-level cache: invalid directory (%s) for cache: cache directory does not exist\n", filepath.Join(dir, "bleh")),
+				WantStderr: fmt.Sprintf("failed to create shell-level cache: invalid directory (%s) for cache: cache directory does not exist and could not be created: whoops\n", filepath.Join(dir, "bleh", "eh")),
+				WantErr:    fmt.Errorf("failed to create shell-level cache: invalid directory (%s) for cache: cache directory does not exist and could not be created: whoops", filepath.Join(dir, "bleh", "eh")),
 			},
 		},
 		{
-			name:     "Error if fails to create temp dir",
-			mkdirErr: fmt.Errorf("oops"),
+			name:         "Error if fails to create temp dir",
+			mkdirTempErr: fmt.Errorf("oops"),
 			etc: &command.ExecuteTestCase{
 				WantErr:    fmt.Errorf("failed to create temporary directory: oops"),
 				WantStderr: "failed to create temporary directory: oops\n",
 			},
 		},
 		{
-			name:  "Creates dir and sets env",
-			mkdir: dir,
+			name:      "Creates dir and sets env",
+			mkdirTemp: dir,
 			wantCache: &Cache{
 				Dir: dir,
 			},
@@ -810,7 +825,10 @@ func TestNewShell(t *testing.T) {
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			command.StubValue(t, &osMkdirTemp, func(string, string) (string, error) {
-				return dir, test.mkdirErr
+				return dir, test.mkdirTempErr
+			})
+			command.StubValue(t, &osMkdirAll, func(string, fs.FileMode) error {
+				return test.mkdirAllErr
 			})
 
 			var c *Cache

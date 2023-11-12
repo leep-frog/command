@@ -18,6 +18,10 @@ const (
 	keyRegex = `^([a-zA-Z0-9_\.-]+)$`
 )
 
+var (
+	osMkdirAll = os.MkdirAll
+)
+
 // Cache is a type for caching data in JSON files. It implements the `sourcerer.CLI` interface.
 type Cache struct {
 	// Dir is the location for storing the cache data.
@@ -163,6 +167,16 @@ func FromEnvVar(e string) (*Cache, error) {
 	return ForDir(v)
 }
 
+// FromEnvVar creates a new cache pointing to the directory specified
+// by the provided environment variable.
+func FromEnvVarOrDir(e, dir string) (*Cache, error) {
+	v, ok := command.OSLookupEnv(e)
+	if !ok || v == "" {
+		return ForDir(dir)
+	}
+	return ForDir(v)
+}
+
 // Put puts data in the cache.
 func (c *Cache) Put(key, data string) error {
 	filename, err := c.fileFromKey(key)
@@ -257,7 +271,9 @@ func (c *Cache) getCacheDir() (string, error) {
 
 	cacheDir, err := os.Stat(c.Dir)
 	if os.IsNotExist(err) {
-		return "", fmt.Errorf("cache directory does not exist")
+		if err := osMkdirAll(c.Dir, 0644); err != nil {
+			return "", fmt.Errorf("cache directory does not exist and could not be created: %v", err)
+		}
 	} else if err != nil {
 		return "", fmt.Errorf("failed to get info for cache: %v", err)
 	} else if !cacheDir.Mode().IsDir() {
