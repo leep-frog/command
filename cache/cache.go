@@ -271,7 +271,7 @@ func (c *Cache) getCacheDir() (string, error) {
 
 	cacheDir, err := os.Stat(c.Dir)
 	if os.IsNotExist(err) {
-		if err := osMkdirAll(c.Dir, 0644); err != nil {
+		if err := osMkdirAll(c.Dir, 0777); err != nil {
 			return "", fmt.Errorf("cache directory does not exist and could not be created: %v", err)
 		}
 	} else if err != nil {
