@@ -158,8 +158,11 @@ func (*linux) VerifyAliaser(aliaser *Aliaser) []string {
 	return []string{
 		FileStringFromCLI(aliaser.cli),
 		`if [ -z "$file" ]; then`,
-		fmt.Sprintf(`  echo Provided CLI %q is not a CLI generated with github.com/leep-frog/command`, aliaser.cli),
-		`  return 1`,
+		FileStringFromCLIZSH(aliaser.cli),
+		`  if [ -z "$file" ]; then`,
+		fmt.Sprintf(`    echo Provided CLI %q is not a CLI generated with github.com/leep-frog/command`, aliaser.cli),
+		`    return 1`,
+		`  fi`,
 		`fi`,
 		``,
 		``,
@@ -231,4 +234,8 @@ func (*linux) ShellCommandFileRunner(file string) (string, []string) {
 // is actually executed for a leep-frog-generated CLI.
 func FileStringFromCLI(cli string) string {
 	return fmt.Sprintf(`local file="$(type %s | head -n 1 | grep "is aliased to.*_custom_execute_" | grep "_custom_execute_[^[:space:]]*" -o | sed s/_custom_execute_//g)"`, cli)
+}
+
+func FileStringFromCLIZSH(cli string) string {
+	return fmt.Sprintf(`  local file="$(type %s | head -n 1 | grep "is an alias for.*_custom_execute_" | grep "_custom_execute_[^[:space:]]*" -o | sed s/_custom_execute_//g)"`, cli)
 }
