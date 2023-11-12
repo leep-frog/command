@@ -6,6 +6,7 @@ package sourcerer
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"runtime"
 	"strings"
 
@@ -144,7 +145,7 @@ var (
 	EnvCacheVar = "COMMAND_CLI_CACHE"
 	// getCache is a variable function so it can be swapped in tests
 	getCache = func() (*cache.Cache, error) {
-		return cache.FromEnvVar(EnvCacheVar)
+		return cache.FromEnvVarOrDir(EnvCacheVar, filepath.Join("~", ".command-cli-cache"))
 	}
 )
 
