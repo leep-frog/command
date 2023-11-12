@@ -145,7 +145,11 @@ var (
 	EnvCacheVar = "COMMAND_CLI_CACHE"
 	// getCache is a variable function so it can be swapped in tests
 	getCache = func() (*cache.Cache, error) {
-		return cache.FromEnvVarOrDir(EnvCacheVar, filepath.Join("~", ".command-cli-cache"))
+		home, err := os.UserHomeDir()
+		if err != nil {
+			return nil, fmt.Errorf("failed to get user's home directory: %v", err)
+		}
+		return cache.FromEnvVarOrDir(EnvCacheVar, filepath.Join(home, ".command-cli-cache"))
 	}
 )
 
