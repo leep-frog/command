@@ -3,7 +3,6 @@ package cache
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -19,7 +18,14 @@ const (
 )
 
 var (
-	osMkdirAll = os.MkdirAll
+	osMkdirAll  = os.MkdirAll
+	osMkdirTemp = os.MkdirTemp
+	osWriteFile = os.WriteFile
+	osReadDir   = os.ReadDir
+	osReadFile  = os.ReadFile
+	osRemoveAll = os.RemoveAll
+	osRemove    = os.Remove
+	osStat      = os.Stat
 )
 
 // Cache is a type for caching data in JSON files. It implements the `sourcerer.CLI` interface.
@@ -112,22 +118,24 @@ func completer(c *Cache) command.Completer[string] {
 	})
 }
 
+// TODO: Move to cachetest package
 // NewTestCache is a function useful for stubbing out caches in tests.
 func NewTestCache(t *testing.T) *Cache {
 	t.Helper()
 	return NewTestCacheWithData(t, nil)
 }
 
+// TODO: Move to cachetest package
 // NewTestCacheWithData creates a test cache with the provided key-values.
 // String values are set using Cache.Put. All other values are set with Cache.PutStruct.
 func NewTestCacheWithData(t *testing.T, m map[string]interface{}) *Cache {
 	t.Helper()
-	dir, err := ioutil.TempDir("", "test-leep-frog-command-cache")
+	dir, err := osMkdirTemp("", "test-leep-frog-command-cache")
 	if err != nil {
 		t.Fatalf("failed to create temp directory: %v", err)
 	}
 	t.Cleanup(func() {
-		if err := os.RemoveAll(dir); err != nil {
+		if err := osRemoveAll(dir); err != nil {
 			t.Logf("failed to clean up test cache: %v", err)
 		}
 	})
@@ -183,7 +191,7 @@ func (c *Cache) Put(key, data string) error {
 	if err != nil {
 		return fmt.Errorf("failed to get file for key: %v", err)
 	}
-	if err := ioutil.WriteFile(filename, []byte(data), 0644); err != nil {
+	if err := osWriteFile(filename, []byte(data), 0644); err != nil {
 		return fmt.Errorf("failed to write file: %v", err)
 	}
 	return nil
@@ -195,7 +203,7 @@ func (c *Cache) List() ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	fs, err := os.ReadDir(dir)
+	fs, err := osReadDir(dir)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read files in directory: %v", err)
 	}
@@ -212,7 +220,7 @@ func (c *Cache) Delete(key string) error {
 	if err != nil {
 		return fmt.Errorf("failed to get file for key: %v", err)
 	}
-	if err := os.Remove(filename); err != nil && !os.IsNotExist(err) {
+	if err := osRemove(filename); err != nil && !os.IsNotExist(err) {
 		return fmt.Errorf("failed to delete file: %v", err)
 	}
 	return nil
@@ -226,7 +234,7 @@ func (c *Cache) GetBytes(key string) ([]byte, bool, error) {
 	}
 
 	// Check if the file exists.
-	data, err := os.ReadFile(filename)
+	data, err := osReadFile(filename)
 	if os.IsNotExist(err) {
 		return nil, false, nil
 	}
@@ -269,7 +277,7 @@ func (c *Cache) getCacheDir() (string, error) {
 		return "", fmt.Errorf("cache directory cannot be empty")
 	}
 
-	cacheDir, err := os.Stat(c.Dir)
+	cacheDir, err := osStat(c.Dir)
 	if os.IsNotExist(err) {
 		if err := osMkdirAll(c.Dir, 0777); err != nil {
 			return "", fmt.Errorf("cache directory does not exist and could not be created: %v", err)

@@ -2,7 +2,6 @@ package cache
 
 import (
 	"fmt"
-	"os"
 	"testing"
 
 	"github.com/leep-frog/command"
@@ -19,8 +18,6 @@ const (
 )
 
 var (
-	osMkdirTemp = os.MkdirTemp
-
 	getShellCache = func(d *command.Data, ed *command.ExecuteData) error {
 		v, ok := command.OSLookupEnv(ShellOSEnvVar)
 		if !ok || v == "" {
