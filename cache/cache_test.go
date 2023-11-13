@@ -7,11 +7,220 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/leep-frog/command"
 )
+
+func TestCacheInitFunctions(t *testing.T) {
+	for _, test := range []struct {
+		name    string
+		osOps   []osOp
+		env     map[string]string
+		f       func() (*Cache, error)
+		want    *Cache
+		wantErr error
+	}{
+		// FromDir tests
+		{
+			name: "FromDir fails if filepathAbs err",
+			osOps: []osOp{
+				&absOp{
+					err:  fmt.Errorf("oops"),
+					want: ptr("inputDir"),
+				},
+			},
+			f:       func() (*Cache, error) { return FromDir("inputDir") },
+			wantErr: fmt.Errorf("failed to get absolute path for cache directory: oops"),
+		},
+		{
+			name: "FromDir fails if empty dir err",
+			osOps: []osOp{
+				&absOp{
+					resp: "",
+					want: ptr("inputDir"),
+				},
+			},
+			f:       func() (*Cache, error) { return FromDir("inputDir") },
+			wantErr: fmt.Errorf("invalid directory (inputDir) for cache: cache directory cannot be empty"),
+		},
+		{
+			name: "FromDir fails if osStat err",
+			osOps: []osOp{
+				&absOp{
+					resp: "full/path/inputDir",
+					want: ptr("inputDir"),
+				},
+				&statOp{
+					err:  fmt.Errorf("stat oops"),
+					want: ptr("full/path/inputDir"),
+				},
+			},
+			f:       func() (*Cache, error) { return FromDir("inputDir") },
+			wantErr: fmt.Errorf("invalid directory (inputDir) for cache: failed to get info for cache: stat oops"),
+		},
+		{
+			name: "FromDir fails if osMkdirAll err",
+			osOps: []osOp{
+				&absOp{
+					resp: "full/path/inputDir",
+					want: ptr("inputDir"),
+				},
+				&statOp{
+					err:  fs.ErrNotExist,
+					want: ptr("full/path/inputDir"),
+				},
+				&mkdirAllOp{
+					err:  fmt.Errorf("mkdir all oops"),
+					want: ptr("full/path/inputDir"),
+				},
+			},
+			f:       func() (*Cache, error) { return FromDir("inputDir") },
+			wantErr: fmt.Errorf("invalid directory (inputDir) for cache: cache directory does not exist and could not be created: mkdir all oops"),
+		},
+		{
+			name: "FromDir succeeds with non-existant directory",
+			osOps: []osOp{
+				&absOp{
+					resp: "full/path/inputDir",
+					want: ptr("inputDir"),
+				},
+				&statOp{
+					err:  fs.ErrNotExist,
+					want: ptr("full/path/inputDir"),
+				},
+				&mkdirAllOp{
+					want: ptr("full/path/inputDir"),
+				},
+			},
+			f: func() (*Cache, error) { return FromDir("inputDir") },
+			want: &Cache{
+				Dir: "full/path/inputDir",
+			},
+		},
+		{
+			name: "FromDir fails if not a directory",
+			osOps: []osOp{
+				&absOp{
+					resp: "full/path/inputDir",
+					want: ptr("inputDir"),
+				},
+				&statOp{
+					fi:   fakeFileType,
+					want: ptr("full/path/inputDir"),
+				},
+			},
+			f:       func() (*Cache, error) { return FromDir("inputDir") },
+			wantErr: fmt.Errorf("invalid directory (inputDir) for cache: cache directory must point to a directory, not a file"),
+		},
+		{
+			name: "FromDir succeeds with existing directory",
+			osOps: []osOp{
+				&absOp{
+					resp: "full/path/inputDir",
+					want: ptr("inputDir"),
+				},
+				&statOp{
+					fi:   fakeDirType,
+					want: ptr("full/path/inputDir"),
+				},
+			},
+			f: func() (*Cache, error) { return FromDir("inputDir") },
+			want: &Cache{
+				Dir: "full/path/inputDir",
+			},
+		},
+		// FromEnvVar tests
+		{
+			name:    "FromEnvVar fails if missing env var",
+			f:       func() (*Cache, error) { return FromEnvVar("ENV_VAR") },
+			wantErr: fmt.Errorf(`environment variable "ENV_VAR" is not set or is empty`),
+		},
+		{
+			name: "FromEnvVar fails if env var is empty",
+			env: map[string]string{
+				"ENV_VAR": "",
+			},
+			f:       func() (*Cache, error) { return FromEnvVar("ENV_VAR") },
+			wantErr: fmt.Errorf(`environment variable "ENV_VAR" is not set or is empty`),
+		},
+		{
+			name: "FromEnvVar succeeds",
+			env: map[string]string{
+				"ENV_VAR": "inputDir",
+			},
+			osOps: []osOp{
+				&absOp{
+					resp: "full/path/inputDir",
+					want: ptr("inputDir"),
+				},
+				&statOp{
+					fi:   fakeDirType,
+					want: ptr("full/path/inputDir"),
+				},
+			},
+			f: func() (*Cache, error) { return FromEnvVar("ENV_VAR") },
+			want: &Cache{
+				Dir: "full/path/inputDir",
+			},
+		},
+		{
+			name: "FromEnvVarOrDir succeeds when using env var",
+			env: map[string]string{
+				"ENV_VAR": "envVarDir",
+			},
+			osOps: []osOp{
+				&absOp{
+					resp: "full/path/envVarDir",
+					want: ptr("envVarDir"),
+				},
+				&statOp{
+					fi:   fakeDirType,
+					want: ptr("full/path/envVarDir"),
+				},
+			},
+			f: func() (*Cache, error) { return FromEnvVarOrDir("ENV_VAR", "default/dir") },
+			want: &Cache{
+				Dir: "full/path/envVarDir",
+			},
+		},
+		{
+			name: "FromEnvVarOrDir succeeds when using default dir",
+			osOps: []osOp{
+				&absOp{
+					resp: "full/path/default/dir",
+					want: ptr("default/dir"),
+				},
+				&statOp{
+					fi:   fakeDirType,
+					want: ptr("full/path/default/dir"),
+				},
+			},
+			f: func() (*Cache, error) { return FromEnvVarOrDir("ENV_VAR", "default/dir") },
+			want: &Cache{
+				Dir: "full/path/default/dir",
+			},
+		},
+		/* Useful for commenting out tests. */
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			command.StubEnv(t, test.env)
+			for _, osOp := range test.osOps {
+				osOp.setup(t)
+			}
+			c, err := test.f()
+			command.CmpError(t, "", test.wantErr, err)
+			if diff := cmp.Diff(test.want, c, cmpopts.IgnoreUnexported(Cache{})); diff != "" {
+				t.Errorf("Cache init produced incorrect cache (-want, +got):\n%s", diff)
+			}
+			for _, osOp := range test.osOps {
+				osOp.verify(t)
+			}
+		})
+	}
+}
 
 func TestPut(t *testing.T) {
 	for _, test := range []struct {
@@ -127,7 +336,7 @@ func Get(t *testing.T, c *Cache, key string) (string, bool) {
 	return s, b
 }
 
-func TestDelete(t *testing.T) {
+func TestDeleteOld(t *testing.T) {
 	c := NewTestCache(t)
 	key := "qwerty"
 
@@ -148,7 +357,25 @@ func TestDelete(t *testing.T) {
 	if got, _ := Get(t, c, key); got != "uiop" {
 		t.Fatalf("Get(%s) returned %s; want %s", key, got, "uiop")
 	}
-	t.Run("Delete works when file doesn't exist", func(t *testing.T) {
+
+	t.Run("Delete fails if osRemove error", func(t *testing.T) {
+		op := &removeOp{
+			err:  fmt.Errorf("remove oops"),
+			want: ptr(filepath.Join(c.Dir, key)),
+		}
+		op.setup(t)
+		wantErr := fmt.Errorf("failed to delete file: remove oops")
+		gotErr := c.Delete(key)
+		if gotErr == nil {
+			t.Fatalf("Delete(...) returned no error when should have returned (%v)", wantErr)
+		}
+		if diff := cmp.Diff(wantErr.Error(), gotErr.Error()); diff != "" {
+			t.Errorf("Delete(...) returned wrong error (-want, +got):\n%s", diff)
+		}
+		op.verify(t)
+	})
+
+	t.Run("Delete works", func(t *testing.T) {
 		if err := c.Delete(key); err != nil {
 			t.Errorf("Delete(%s) returned error (%v); want nil", key, err)
 		}
@@ -189,6 +416,7 @@ func TestExecute(t *testing.T) {
 		c             *Cache
 		puts          []*put
 		etc           *command.ExecuteTestCase
+		osOps         []osOp
 		skipFileCheck bool
 		mkdirAllErr   error
 		want          map[string]string
@@ -451,6 +679,9 @@ func TestExecute(t *testing.T) {
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
+			for _, osOp := range test.osOps {
+				osOp.setup(t)
+			}
 			command.StubValue(t, &osMkdirAll, func(string, fs.FileMode) error {
 				return test.mkdirAllErr
 			})
@@ -470,6 +701,9 @@ func TestExecute(t *testing.T) {
 				if diff := cmp.Diff(test.want, fullCache(t, test.c), cmpopts.EquateEmpty()); diff != "" {
 					t.Errorf("Execute(%v) resulted in incorrect cache (-want, +got):\n%s", test.etc.Args, diff)
 				}
+			}
+			for _, osOp := range test.osOps {
+				osOp.verify(t)
 			}
 		})
 	}
@@ -548,48 +782,166 @@ func TestGetStruct(t *testing.T) {
 	}
 
 	for _, test := range []struct {
-		name        string
-		c           *Cache
-		key         string
-		obj         interface{}
-		mkdirAllErr error
-		wantOK      bool
-		wantErr     error
-		wantObj     interface{}
+		name    string
+		c       *Cache
+		key     string
+		obj     interface{}
+		osOps   []osOp
+		wantOK  bool
+		wantErr error
+		wantObj interface{}
 	}{
 		{
-			name:        "get struct fails on bad cache dir",
-			c:           &Cache{filepath.Join("bleh", "eh"), false},
-			key:         key,
-			mkdirAllErr: fmt.Errorf("oops"),
-			wantErr:     fmt.Errorf("failed to get file for key: failed to get cache directory: cache directory does not exist and could not be created: oops"),
+			name:    "fails if invalid key",
+			key:     "abc!",
+			wantErr: fmt.Errorf("failed to get file for key: invalid key format"),
 		},
 		{
-			name: "get struct returns false on missingkey",
-			c:    c,
-			key:  fmt.Sprintf("missing_%s", key),
+			name:    "fails if empty cache dir",
+			c:       &Cache{},
+			key:     "abc-key",
+			wantErr: fmt.Errorf("failed to get file for key: failed to get cache directory: cache directory cannot be empty"),
 		},
 		{
-			name:    "get struct handles mismatched object",
-			c:       c,
-			obj:     &Cache{},
+			name: "fails if stat err",
+			c: &Cache{
+				Dir: "some/dir",
+			},
+			osOps: []osOp{
+				&statOp{
+					want: ptr("some/dir"),
+					err:  fmt.Errorf("stat oops"),
+				},
+			},
+			key:     "abc-key",
+			wantErr: fmt.Errorf("failed to get file for key: failed to get cache directory: failed to get info for cache: stat oops"),
+		},
+		{
+			name: "fails if stat returns file type",
+			c: &Cache{
+				Dir: "some/dir",
+			},
+			osOps: []osOp{
+				&statOp{
+					want: ptr("some/dir"),
+					fi:   fakeFileType,
+				},
+			},
+			key:     "abc-key",
+			wantErr: fmt.Errorf("failed to get file for key: failed to get cache directory: cache directory must point to a directory, not a file"),
+		},
+		{
+			name: "fails if not exist err and mkdirAllErr",
+			c: &Cache{
+				Dir: "some/dir",
+			},
+			osOps: []osOp{
+				&statOp{
+					want: ptr("some/dir"),
+					err:  fs.ErrNotExist,
+				},
+				&mkdirAllOp{
+					want: ptr("some/dir"),
+					err:  fmt.Errorf("mkdirAll oops"),
+				},
+			},
+			key:     "abc-key",
+			wantErr: fmt.Errorf("failed to get file for key: failed to get cache directory: cache directory does not exist and could not be created: mkdirAll oops"),
+		},
+		{
+			name: "fails if read file err",
+			c: &Cache{
+				Dir: "some/dir",
+			},
+			osOps: []osOp{
+				&statOp{
+					want: ptr("some/dir"),
+					fi:   fakeDirType,
+				},
+				&readFileOp{
+					want: ptr(filepath.Join("some/dir", "abc-key")),
+					err:  fmt.Errorf("readFile oops"),
+				},
+			},
+			key:     "abc-key",
+			wantErr: fmt.Errorf("failed to read file: readFile oops"),
+		},
+		{
+			name: "succeeds if read file err is not exist",
+			c: &Cache{
+				Dir: "some/dir",
+			},
+			osOps: []osOp{
+				&statOp{
+					want: ptr("some/dir"),
+					fi:   fakeDirType,
+				},
+				&readFileOp{
+					want: ptr(filepath.Join("some/dir", "abc-key")),
+					err:  fs.ErrNotExist,
+				},
+			},
+			key: "abc-key",
+		},
+		{
+			name: "fails if invalid json is returned",
+			c: &Cache{
+				Dir: "some/dir",
+			},
+			osOps: []osOp{
+				&statOp{
+					want: ptr("some/dir"),
+					fi:   fakeDirType,
+				},
+				&readFileOp{
+					want:     ptr(filepath.Join("some/dir", "abc-key")),
+					contents: "}{",
+				},
+			},
+			key:     "abc-key",
 			wantOK:  true,
-			key:     key,
-			wantObj: &Cache{},
+			wantErr: fmt.Errorf("failed to unmarshal cache data: invalid character '}' looking for beginning of value"),
 		},
 		{
-			name:    "get struct works",
-			c:       c,
-			obj:     &testStruct{},
-			wantOK:  true,
-			key:     key,
-			wantObj: val,
+			name: "succeeds if valid json",
+			c: &Cache{
+				Dir: "some/dir",
+			},
+			obj: &testStruct{},
+			wantObj: &testStruct{
+				A: 4,
+				C: map[string]bool{
+					"heyo": true,
+					"ohno": false,
+				},
+			},
+			osOps: []osOp{
+				&statOp{
+					want: ptr("some/dir"),
+					fi:   fakeDirType,
+				},
+				&readFileOp{
+					want: ptr(filepath.Join("some/dir", "abc-key")),
+					contents: strings.Join([]string{
+						`{`,
+						`  "A": 4,`,
+						`  "C": {`,
+						`    "heyo": true,`,
+						`    "ohno": false`,
+						`  }`,
+						`}`,
+					}, "\n"),
+				},
+			},
+			key:    "abc-key",
+			wantOK: true,
 		},
+		/* Useful for commenting out tests. */
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			command.StubValue(t, &osMkdirAll, func(string, fs.FileMode) error {
-				return test.mkdirAllErr
-			})
+			for _, osOp := range test.osOps {
+				osOp.setup(t)
+			}
 			prefix := fmt.Sprintf("GetStruct(%s)", test.key)
 
 			ok, err := test.c.GetStruct(test.key, test.obj)
@@ -602,30 +954,78 @@ func TestGetStruct(t *testing.T) {
 				t.Errorf("%s returned object diff (-want, +got):\n%s", prefix, diff)
 			}
 
+			for _, osOp := range test.osOps {
+				osOp.verify(t)
+			}
 		})
 	}
 }
 
 func TestPutStruct(t *testing.T) {
+	var listA []interface{}
+	listA = append(listA, &listA)
 	for _, test := range []struct {
-		name       string
-		key        string
-		data       interface{}
-		wantGet    string
-		wantGetErr error
-		wantGetOk  bool
-		wantErr    error
+		name         string
+		key          string
+		data         interface{}
+		osOps        []osOp
+		stubCacheDir string
+		wantGet      string
+		wantGetErr   error
+		wantGetOk    bool
+		wantErr      error
 	}{
 		{
 			name:       "put fails on empty",
 			wantErr:    fmt.Errorf("failed to get file for key: invalid key format"),
 			wantGetErr: fmt.Errorf("failed to get file for key: invalid key format"),
-		}, {
+		},
+		{
 			name:       "put fails on invalid key",
 			key:        "abc-$",
 			wantErr:    fmt.Errorf("failed to get file for key: invalid key format"),
 			wantGetErr: fmt.Errorf("failed to get file for key: invalid key format"),
-		}, {
+		},
+		{
+			name:    "put fails on marshal error",
+			key:     "abc",
+			data:    listA,
+			wantErr: fmt.Errorf("failed to marshal struct to json: json: unsupported value: encountered a cycle via []interface {}"),
+		},
+		{
+			name: "put fails on osWriteFile error",
+			key:  "abc",
+			data: &testStruct{
+				A: 1,
+				B: "two",
+				C: map[string]bool{
+					"three": true,
+				},
+			},
+			stubCacheDir: "fake-dir",
+			osOps: []osOp{
+				&statOp{
+					fi:        fakeDirType,
+					want:      ptr("fake-dir"),
+					allowReal: true,
+				},
+				&writeFileOp{
+					err:  fmt.Errorf("writeFile oops"),
+					want: ptr(filepath.Join("fake-dir", "abc")),
+					wantContents: ptr(strings.Join([]string{
+						"{",
+						`  "A": 1,`,
+						`  "B": "two",`,
+						`  "C": {`,
+						`    "three": true`,
+						"  }",
+						"}",
+					}, "\n")),
+				},
+			},
+			wantErr: fmt.Errorf("failed to write file: writeFile oops"),
+		},
+		{
 			name: "put succeeds",
 			key:  "abc",
 			data: &testStruct{
@@ -648,7 +1048,13 @@ func TestPutStruct(t *testing.T) {
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
+			for _, osOp := range test.osOps {
+				osOp.setup(t)
+			}
 			c := NewTestCache(t)
+			if test.stubCacheDir != "" {
+				c = &Cache{Dir: test.stubCacheDir}
+			}
 
 			prefix := fmt.Sprintf("PutStruct(%s, %v)", test.key, test.data)
 
@@ -662,6 +1068,9 @@ func TestPutStruct(t *testing.T) {
 			}
 			if diff := cmp.Diff(test.wantGet, stored); diff != "" {
 				t.Errorf("PutStruct(%s, %v) produced diff:\n%s", test.key, test.data, diff)
+			}
+			for _, osOp := range test.osOps {
+				osOp.verify(t)
 			}
 		})
 	}
@@ -860,4 +1269,180 @@ func TestMetadata(t *testing.T) {
 	if c.Setup() != nil {
 		t.Errorf("Cache returned unexpected setup: %v", c.Setup())
 	}
+	if c.Name() != "cash" {
+		t.Errorf("Cache.Name() returned unexpected name: expected 'cash'; got %q", c.Name())
+	}
 }
+
+type osOp interface {
+	setup(*testing.T)
+	verify(*testing.T)
+}
+
+type mkdirAllOp struct {
+	err  error
+	want *string
+	got  *string
+}
+
+func (ma *mkdirAllOp) setup(t *testing.T) {
+	command.StubValue(t, &osMkdirAll, func(s string, m fs.FileMode) error {
+		if ma.got != nil {
+			t.Fatalf("osMkdirAll called multiple times")
+		}
+		ma.got = &s
+		return ma.err
+	})
+}
+
+func (ma *mkdirAllOp) verify(t *testing.T) {
+	if diff := cmp.Diff(ma.want, ma.got); diff != "" {
+		t.Fatalf("osMkdirAll called with incorrect arguments (-want, +got):\n%s", diff)
+	}
+}
+
+type statOp struct {
+	err       error
+	fi        *fakeFileInfo
+	want      *string
+	got       *string
+	stubAt    int
+	stubCount int
+	allowReal bool
+}
+
+func (so *statOp) setup(t *testing.T) {
+	command.StubValue(t, &osStat, func(s string) (fs.FileInfo, error) {
+		defer func() { so.stubCount++ }()
+		if so.stubCount != so.stubAt {
+			if so.allowReal {
+				return os.Stat(s)
+			}
+			t.Fatalf("osStat called multiple times")
+		}
+
+		so.got = &s
+		return so.fi, so.err
+	})
+}
+
+func (so *statOp) verify(t *testing.T) {
+	if diff := cmp.Diff(so.want, so.got); diff != "" {
+		t.Fatalf("osStat called with incorrect arguments (-want, +got):\n%s", diff)
+	}
+}
+
+type readFileOp struct {
+	err      error
+	contents string
+	want     *string
+	got      *string
+}
+
+func (rfo *readFileOp) setup(t *testing.T) {
+	command.StubValue(t, &osReadFile, func(s string) ([]byte, error) {
+		if rfo.got != nil {
+			t.Fatalf("osReadFile called multiple times")
+		}
+		rfo.got = &s
+		return []byte(rfo.contents), rfo.err
+	})
+}
+
+func (rfo *readFileOp) verify(t *testing.T) {
+	if diff := cmp.Diff(rfo.want, rfo.got); diff != "" {
+		t.Fatalf("osReadFile called with incorrect arguments (-want, +got):\n%s", diff)
+	}
+}
+
+type writeFileOp struct {
+	err          error
+	want         *string
+	got          *string
+	wantContents *string
+	gotContents  *string
+}
+
+func (wfo *writeFileOp) setup(t *testing.T) {
+	command.StubValue(t, &osWriteFile, func(s string, data []byte, fm fs.FileMode) error {
+		if wfo.got != nil {
+			t.Fatalf("osReadFile called multiple times")
+		}
+		wfo.got = &s
+		dataS := string(data)
+		wfo.gotContents = &dataS
+		return wfo.err
+	})
+}
+
+func (wfo *writeFileOp) verify(t *testing.T) {
+	if diff := cmp.Diff(wfo.want, wfo.got); diff != "" {
+		t.Fatalf("osWriteFile called with incorrect filename (-want, +got):\n%s", diff)
+	}
+	if diff := cmp.Diff(wfo.wantContents, wfo.gotContents); diff != "" {
+		t.Fatalf("osWriteFile called with incorrect contents (-want, +got):\n%s", diff)
+	}
+}
+
+type removeOp struct {
+	err  error
+	want *string
+	got  *string
+}
+
+func (ro *removeOp) setup(t *testing.T) {
+	command.StubValue(t, &osRemove, func(s string) error {
+		if ro.got != nil {
+			t.Fatalf("osRemove called multiple times")
+		}
+		ro.got = &s
+		return ro.err
+	})
+}
+
+func (ro *removeOp) verify(t *testing.T) {
+	if diff := cmp.Diff(ro.want, ro.got); diff != "" {
+		t.Fatalf("osRemove called with incorrect arguments (-want, +got):\n%s", diff)
+	}
+}
+
+type absOp struct {
+	err  error
+	resp string
+	want *string
+	got  *string
+}
+
+func (ao *absOp) setup(t *testing.T) {
+	command.StubValue(t, &filepathAbs, func(s string) (string, error) {
+		if ao.got != nil {
+			t.Fatalf("filepathAbs called multiple times")
+		}
+		ao.got = &s
+		return ao.resp, ao.err
+	})
+}
+
+func (ao *absOp) verify(t *testing.T) {
+	if diff := cmp.Diff(ao.want, ao.got); diff != "" {
+		t.Fatalf("filepathAbs called with incorrect arguments (-want, +got):\n%s", diff)
+	}
+}
+
+func ptr[T any](t T) *T { return &t }
+
+type fakeFileInfo struct {
+	isDir bool
+}
+
+func (*fakeFileInfo) Name() string       { return "" }
+func (*fakeFileInfo) Size() int64        { return 0 }
+func (*fakeFileInfo) Mode() os.FileMode  { return 0 }
+func (*fakeFileInfo) ModTime() time.Time { return time.Now() }
+func (ffi *fakeFileInfo) IsDir() bool    { return ffi.isDir }
+func (*fakeFileInfo) Sys() interface{}   { return nil }
+
+var (
+	fakeFileType = &fakeFileInfo{}
+	fakeDirType  = &fakeFileInfo{true}
+)

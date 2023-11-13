@@ -14,10 +14,13 @@ import (
 )
 
 const (
-	keyRegex = `^([a-zA-Z0-9_\.-]+)$`
+	keyRegexString = `^([a-zA-Z0-9_\.-]+)$`
 )
 
 var (
+	keyRegex = regexp.MustCompile(keyRegexString)
+
+	filepathAbs = filepath.Abs
 	osMkdirAll  = os.MkdirAll
 	osMkdirTemp = os.MkdirTemp
 	osWriteFile = os.WriteFile
@@ -50,7 +53,7 @@ func (c *Cache) Setup() []string { return nil }
 
 // Node returns the `command.Node` for the cache CLI.
 func (c *Cache) Node() command.Node {
-	arg := command.Arg[string]("KEY", "Key of the data to get", command.MatchesRegex(keyRegex), completer(c))
+	arg := command.Arg[string]("KEY", "Key of the data to get", command.MatchesRegex(keyRegexString), completer(c))
 	return &command.BranchNode{
 		Branches: map[string]command.Node{
 			"setdir": command.SerialNodes(
@@ -154,10 +157,14 @@ func NewTestCacheWithData(t *testing.T, m map[string]interface{}) *Cache {
 	return c
 }
 
-// ForDir returns a cache pointing to the provided directory.
-func ForDir(dir string) (*Cache, error) {
+// FromDir returns a cache pointing to the provided directory.
+func FromDir(dir string) (*Cache, error) {
+	abs, err := filepathAbs(dir)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get absolute path for cache directory: %v", err)
+	}
 	c := &Cache{
-		Dir: dir,
+		Dir: abs,
 	}
 	if _, err := c.getCacheDir(); err != nil {
 		return nil, fmt.Errorf("invalid directory (%s) for cache: %v", dir, err)
@@ -170,9 +177,9 @@ func ForDir(dir string) (*Cache, error) {
 func FromEnvVar(e string) (*Cache, error) {
 	v, ok := command.OSLookupEnv(e)
 	if !ok || v == "" {
-		return nil, fmt.Errorf("environment variable %q is not set", e)
+		return nil, fmt.Errorf("environment variable %q is not set or is empty", e)
 	}
-	return ForDir(v)
+	return FromDir(v)
 }
 
 // FromEnvVar creates a new cache pointing to the directory specified
@@ -180,9 +187,9 @@ func FromEnvVar(e string) (*Cache, error) {
 func FromEnvVarOrDir(e, dir string) (*Cache, error) {
 	v, ok := command.OSLookupEnv(e)
 	if !ok || v == "" {
-		return ForDir(dir)
+		return FromDir(dir)
 	}
-	return ForDir(v)
+	return FromDir(v)
 }
 
 // Put puts data in the cache.
@@ -284,18 +291,14 @@ func (c *Cache) getCacheDir() (string, error) {
 		}
 	} else if err != nil {
 		return "", fmt.Errorf("failed to get info for cache: %v", err)
-	} else if !cacheDir.Mode().IsDir() {
+	} else if !cacheDir.IsDir() {
 		return "", fmt.Errorf("cache directory must point to a directory, not a file")
 	}
 	return c.Dir, nil
 }
 
 func (c *Cache) fileFromKey(key string) (string, error) {
-	r, err := regexp.Compile(keyRegex)
-	if err != nil {
-		return "", fmt.Errorf("invalid key regex: %v", err)
-	}
-	if !r.MatchString(key) {
+	if !keyRegex.MatchString(key) {
 		return "", fmt.Errorf("invalid key format")
 	}
 

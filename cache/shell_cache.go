@@ -28,7 +28,7 @@ var (
 			}
 			ed.Executable = append(ed.Executable, d.OS.SetEnvVar(ShellOSEnvVar, v))
 		}
-		c, err := ForDir(v)
+		c, err := FromDir(v)
 		if err != nil {
 			return fmt.Errorf("failed to create shell-level cache: %v", err)
 		}
