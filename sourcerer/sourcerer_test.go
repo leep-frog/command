@@ -1904,6 +1904,65 @@ func TestSourcerer(t *testing.T) {
 				},
 			},
 			{
+				name: "autocomplete handles single suggestion with SpacelssCompletion=true",
+				args: []string{"autocomplete", "basic", "63", "5", "cmd h"},
+				clis: []CLI{
+					&testCLI{
+						name: "basic",
+						processors: []command.Processor{
+							command.Arg[string]("s", "desc", command.CompleterFromFunc[string](func(s string, d *command.Data) (*command.Completion, error) {
+								return &command.Completion{
+									Suggestions:         []string{"howdy"},
+									SpacelessCompletion: true,
+								}, nil
+							})),
+						},
+					},
+				},
+				osChecks: map[string]*osCheck{
+					osLinux: {
+						wantStdout: []string{
+							"howdy",
+							"howdy_",
+						},
+					},
+					osWindows: {
+						wantStdout: []string{
+							"howdy",
+						},
+					},
+				},
+			},
+			{
+				name: "autocomplete handles single suggestion with SpacelssCompletion=false",
+				args: []string{"autocomplete", "basic", "63", "5", "cmd h"},
+				clis: []CLI{
+					&testCLI{
+						name: "basic",
+						processors: []command.Processor{
+							command.Arg[string]("s", "desc", command.CompleterFromFunc[string](func(s string, d *command.Data) (*command.Completion, error) {
+								return &command.Completion{
+									Suggestions:         []string{"howdy"},
+									SpacelessCompletion: false,
+								}, nil
+							})),
+						},
+					},
+				},
+				osChecks: map[string]*osCheck{
+					osLinux: {
+						wantStdout: []string{
+							"howdy",
+						},
+					},
+					osWindows: {
+						wantStdout: []string{
+							"howdy ",
+						},
+					},
+				},
+			},
+			{
 				name: "autocomplete doesn't complete passthrough args",
 				args: []string{"autocomplete", "basic", "63", "4", "cmd ", "al"},
 				clis: []CLI{
