@@ -332,7 +332,7 @@ func filepathDepth(path string) int {
 }
 
 func isAbs(dir string) bool {
-	return filepath.IsAbs(dir) || (len(dir) > 0 && dir[0] == '/')
+	return filepath.IsAbs(dir) || (len(dir) > 0 && (dir[0] == '/' || dir[0] == '\\'))
 }
 
 // Complete creates a `Completion` object with the relevant set of files.
@@ -343,7 +343,7 @@ func (ff *FileCompleter[T]) Complete(value T, data *Data) (*Completion, error) {
 		lastArg = args[len(args)-1]
 	}
 
-	laDir, laFile := filepath.Split(lastArg)
+	laDir, laFile := filepath.Split(filepath.FromSlash(lastArg))
 	tooDeep := ff.MaxDepth > 0 && filepathDepth(lastArg) >= ff.MaxDepth
 	var dir string
 	// Use extra check for mingw on windows

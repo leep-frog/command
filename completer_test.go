@@ -705,11 +705,14 @@ func (test *completerTest[T]) run(t *testing.T) {
 			got, err = Autocomplete(SerialNodes(ListArg[T]("test", testDesc, 2, 5, test.c)), test.args, test.ptArgs, fos)
 		}
 
+		if got == nil {
+			got = &Autocompletion{}
+		}
 		if test.want == nil {
 			test.want = &Autocompletion{}
 		}
-		if got == nil {
-			got = &Autocompletion{}
+		for i, v := range test.want.Suggestions {
+			test.want.Suggestions[i] = filepath.FromSlash(v)
 		}
 
 		if diff := cmp.Diff(test.want, got); diff != "" {
@@ -1946,7 +1949,7 @@ func fakeFile(name string) fs.DirEntry {
 func fakeReadDir(wantDir string, files ...fs.DirEntry) func(t *testing.T) {
 	return func(t *testing.T) {
 		StubValue(t, &osReadDir, func(dir string) ([]fs.DirEntry, error) {
-			if diff := cmp.Diff(wantDir, dir); diff != "" {
+			if diff := cmp.Diff(filepath.FromSlash(wantDir), dir); diff != "" {
 				t.Fatalf("ioutil.ReadDir received incorrect argument (-want, +got):\n%s", diff)
 			}
 			return files, nil
