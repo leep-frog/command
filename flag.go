@@ -263,12 +263,25 @@ func (fn *flagProcessor) Execute(input *Input, output Output, data *Data, eData 
 		}
 		// Check if combinable flag (e.g. `-qwer` -> `-q -w -e -r`).
 		if MultiFlagRegex.MatchString(a) {
+
+			var matchCount int
 			for j := 1; j < len(a); j++ {
 				shortCode := fmt.Sprintf("-%s", string(a[j]))
-				f, ok := fn.flagMap[shortCode]
-				if !ok {
-					return output.Stderrf("Unknown flag code %q used in multi-flag\n", shortCode)
+				if _, ok := fn.flagMap[shortCode]; ok {
+					matchCount++
 				}
+			}
+			if matchCount == 0 {
+				i++
+				continue
+			}
+			if matchCount != len(a)-1 {
+				return output.Stderrln("Either all or no flags in a multi-flag object must be relevant for a FlagProcessor group")
+			}
+
+			for j := 1; j < len(a); j++ {
+				shortCode := fmt.Sprintf("-%s", string(a[j]))
+				f := fn.flagMap[shortCode]
 				if !f.Options().combinable() {
 					return output.Stderrf("Flag %q is not combinable\n", f.Name())
 				}

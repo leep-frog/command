@@ -4842,7 +4842,7 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "Multi-flag fails if unknown flag",
+			name: "Multi-flag fails if partial set of matches",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(
 					FlagProcessor(
@@ -4860,12 +4860,33 @@ func TestExecute(t *testing.T) {
 					},
 					remaining: []int{0},
 				},
+				WantStderr: "Either all or no flags in a multi-flag object must be relevant for a FlagProcessor group\n",
+				WantErr:    fmt.Errorf(`Either all or no flags in a multi-flag object must be relevant for a FlagProcessor group`),
+			},
+		},
+		{
+			name: "Multi-flags are ignored if no matches",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					FlagProcessor(
+						BoolFlag("everyone", 'e', testDesc),
+						BoolFlag("quick", 'q', testDesc),
+						BoolFlag("run", 'r', testDesc),
+						BoolFlag("to", 't', testDesc),
+						BoolFlag("where", 'w', testDesc),
+					),
+					OptionalArg[string]("LEFTOVERS", testDesc),
+				),
+				Args: []string{"-nop"},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "-nop"},
+					},
+					remaining: []int{},
+				},
 				WantData: &Data{Values: map[string]interface{}{
-					"quick": true,
-					"where": true,
+					"LEFTOVERS": "-nop",
 				}},
-				WantStderr: "Unknown flag code \"-y\" used in multi-flag\n",
-				WantErr:    fmt.Errorf(`Unknown flag code "-y" used in multi-flag`),
 			},
 		},
 		{
