@@ -93,7 +93,7 @@ func (w *windows) autocompleteFunction(builtin bool, goExecutable, targetName st
 		// The last argument is for extra passthrough arguments to be passed for aliaser autocompletes.
 		// 0 for comp type
 		fmt.Sprintf(`  (& %s %s ($commandAst.CommandElements | Select-Object -first 1) --comp-line-file "0" $compPoint $Local:tmpPassthroughArgFile) | ForEach-Object {`, goExecutable, w.getBranchString(builtin, AutocompleteBranchName)),
-		`    $_`,
+		`    "$_"`,
 		`  }`,
 		"}",
 		"",
@@ -211,7 +211,7 @@ func (w *windows) RegisterAliaser(goExecutable string, a *Aliaser) []string {
 		fmt.Sprintf(`$_sourcerer_alias_autocomplete_%s = {`, a.alias),
 		`  param($wordToComplete, $commandAst, $compPoint)`,
 		fmt.Sprintf(`  (Invoke-Expression '& %s autocomplete %q "0" $compPoint "$commandAst" %s') | ForEach-Object {`, goExecutable, a.cli, quotedArgs),
-		`    $_`,
+		`    "$_"`,
 		`  }`,
 		`}`,
 	}, w.setAlias(

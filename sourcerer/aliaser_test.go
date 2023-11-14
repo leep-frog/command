@@ -77,7 +77,7 @@ func TestAliaser(t *testing.T) {
 								"$_sourcerer_alias_autocomplete_some-alias = {",
 								"  param($wordToComplete, $commandAst, $compPoint)",
 								fmt.Sprintf(`  (Invoke-Expression '& %s autocomplete "someCLI" "0" $compPoint "$commandAst" ') | ForEach-Object {`, fakeGoExecutableFilePath.Name()),
-								"    $_",
+								`    "$_"`,
 								"  }",
 								"}",
 								"(Get-Alias) | Where { $_.NAME -match '^some-alias$'} | ForEach-Object { del alias:${_} -Force }",
