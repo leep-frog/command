@@ -1160,13 +1160,17 @@ func TestSourcerer(t *testing.T) {
 	// across tests which can be error prone and difficult to debug).
 	for _, curOS := range []OS{Linux(), Windows()} {
 		for _, test := range []struct {
-			name                  string
-			clis                  []CLI
-			args                  []string
-			uuids                 []string
-			cacheErr              error
-			osCheck               *osCheck
-			osChecks              map[string]*osCheck
+			name     string
+			clis     []CLI
+			args     []string
+			uuids    []string
+			cacheErr error
+			osCheck  *osCheck
+			osChecks map[string]*osCheck
+			// We need to tsub osReadFile errors to be consistent across systems
+			osReadFileStub        bool
+			osReadFileResp        string
+			osReadFileErr         error
 			fakeInputFileContents []string
 		}{
 			{
@@ -1985,11 +1989,13 @@ func TestSourcerer(t *testing.T) {
 						},
 					},
 				},
+				osReadFileStub: true,
+				osReadFileErr:  fmt.Errorf("read oops"),
 				osCheck: &osCheck{
 					wantStderr: []string{
-						"Custom transformer failed: assumed COMP_LINE to be a file, but unable to read it: open not-a-file: The system cannot find the file specified.",
+						"Custom transformer failed: assumed COMP_LINE to be a file, but unable to read it: read oops",
 					},
-					wantErr: fmt.Errorf("Custom transformer failed: assumed COMP_LINE to be a file, but unable to read it: open not-a-file: The system cannot find the file specified."),
+					wantErr: fmt.Errorf("Custom transformer failed: assumed COMP_LINE to be a file, but unable to read it: read oops"),
 				},
 			},
 			{
@@ -2274,6 +2280,11 @@ func TestSourcerer(t *testing.T) {
 			/* Useful for commenting out tests */
 		} {
 			t.Run(fmt.Sprintf("[%s] %s", curOS.Name(), test.name), func(t *testing.T) {
+				if test.osReadFileStub {
+					command.StubValue(t, &osReadFile, func(b string) ([]byte, error) {
+						return []byte(test.osReadFileResp), test.osReadFileErr
+					})
+				}
 				command.StubValue(t, &CurrentOS, curOS)
 				oschk, ok := test.osChecks[curOS.Name()]
 				if !ok {

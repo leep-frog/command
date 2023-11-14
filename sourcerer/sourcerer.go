@@ -30,7 +30,7 @@ var (
 	compPointArg = command.Arg[int]("COMP_POINT", "COMP_POINT variable from bash complete function")
 	compLineArg  = command.Arg[string]("COMP_LINE", "COMP_LINE variable from bash complete function", &command.Transformer[string]{F: func(s string, d *command.Data) (string, error) {
 		if compLineFileFlag.Get(d) {
-			b, err := os.ReadFile(s)
+			b, err := osReadFile(s)
 			if err != nil {
 				return "", fmt.Errorf("assumed COMP_LINE to be a file, but unable to read it: %v", err)
 			}
@@ -46,10 +46,11 @@ var (
 	compLineFileFlag            = command.BoolFlag("comp-line-file", command.FlagNoShortName, "If set, the COMP_LINE arg is taken to be a file that contains the COMP_LINE contents")
 	autocompletePassthroughArgs = command.ListArg[string]("PASSTHROUGH_ARG", "Arguments that get passed through to autocomplete command", 0, command.UnboundedList)
 
-	// Made this a method so it can be stubbed out in tests
+	// Made these methods so they can be stubbed out in tests
 	getUuid = func() string {
 		return uuid.NewString()
 	}
+	osReadFile = os.ReadFile
 )
 
 // CLI provides a way to construct CLIs in go, with tab-completion.

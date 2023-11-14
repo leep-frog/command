@@ -3,7 +3,6 @@ package command
 import (
 	"fmt"
 	"io/fs"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -321,8 +320,8 @@ func (ff *FileCompleter[T]) modifyArgumentOption(ao *argumentOption[T]) {
 }
 
 var (
-	// ioutilReadDir is a var so it can be stubbed out for tests.
-	ioutilReadDir = ioutil.ReadDir
+	// osReadDir is a var so it can be stubbed out for tests.
+	osReadDir = os.ReadDir
 	// filepathRel is a var so it can be stubbed out for tests.
 	filepathRel = filepath.Rel
 )
@@ -366,7 +365,7 @@ func (ff *FileCompleter[T]) Complete(value T, data *Data) (*Completion, error) {
 		}, nil
 	}
 
-	files, err := ioutilReadDir(dir)
+	files, err := osReadDir(dir)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read dir: %v", err)
 	}
@@ -395,7 +394,7 @@ func (ff *FileCompleter[T]) Complete(value T, data *Data) (*Completion, error) {
 		allowedFileTypes[ft] = true
 	}
 	for _, f := range files {
-		isDir := f.IsDir() || (f.Mode()&fs.ModeSymlink != 0)
+		isDir := f.IsDir() || (f.Type()&fs.ModeSymlink != 0)
 		if (isDir && ff.IgnoreDirectories) || (!isDir && ff.IgnoreFiles) {
 			continue
 		}

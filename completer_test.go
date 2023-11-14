@@ -8,7 +8,6 @@ import (
 	"regexp"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -662,6 +661,7 @@ type completerTest[T any] struct {
 	wantErr        error
 	getwd          func() (string, error)
 	filepathRelErr error
+	osReadDirErr   error
 }
 
 func (test *completerTest[T]) Name() string {
@@ -670,6 +670,11 @@ func (test *completerTest[T]) Name() string {
 
 func (test *completerTest[T]) run(t *testing.T) {
 	t.Run(test.name, func(t *testing.T) {
+		if test.osReadDirErr != nil {
+			StubValue(t, &osReadDir, func(s string) ([]fs.DirEntry, error) {
+				return nil, test.osReadDirErr
+			})
+		}
 		fos := &FakeOS{}
 		if test.getwd != nil {
 			StubValue(t, &osGetwd, test.getwd)
@@ -886,7 +891,8 @@ func TestTypedCompleters(t *testing.T) {
 			c: &FileCompleter[[]string]{
 				Directory: "does/not/exist",
 			},
-			wantErr: fmt.Errorf("failed to read dir: open %s: The system cannot find the path specified.", FilepathAbs(t, "does/not/exist")),
+			osReadDirErr: fmt.Errorf("read dir oops"),
+			wantErr:      fmt.Errorf("failed to read dir: read dir oops"),
 		},
 		&completerTest[string]{
 			name: "file completer returns files in the specified directory",
@@ -1929,17 +1935,17 @@ func TestTypedCompleters(t *testing.T) {
 	}
 }
 
-func fakeDir(name string) os.FileInfo {
+func fakeDir(name string) fs.DirEntry {
 	return &fakeFileInfo{name, true}
 }
 
-func fakeFile(name string) os.FileInfo {
+func fakeFile(name string) fs.DirEntry {
 	return &fakeFileInfo{name, false}
 }
 
-func fakeReadDir(wantDir string, files ...fs.FileInfo) func(t *testing.T) {
+func fakeReadDir(wantDir string, files ...fs.DirEntry) func(t *testing.T) {
 	return func(t *testing.T) {
-		StubValue(t, &ioutilReadDir, func(dir string) ([]fs.FileInfo, error) {
+		StubValue(t, &osReadDir, func(dir string) ([]fs.DirEntry, error) {
 			if diff := cmp.Diff(wantDir, dir); diff != "" {
 				t.Fatalf("ioutil.ReadDir received incorrect argument (-want, +got):\n%s", diff)
 			}
@@ -1953,9 +1959,7 @@ type fakeFileInfo struct {
 	isDir bool
 }
 
-func (fi fakeFileInfo) Name() string       { return fi.name }
-func (fi fakeFileInfo) Size() int64        { return 0 }
-func (fi fakeFileInfo) Mode() os.FileMode  { return 0 }
-func (fi fakeFileInfo) ModTime() time.Time { return time.Now() }
-func (fi fakeFileInfo) IsDir() bool        { return fi.isDir }
-func (fi fakeFileInfo) Sys() interface{}   { return nil }
+func (fi fakeFileInfo) Name() string               { return fi.name }
+func (fi fakeFileInfo) IsDir() bool                { return fi.isDir }
+func (fi fakeFileInfo) Type() fs.FileMode          { return 0 }
+func (fi fakeFileInfo) Info() (fs.FileInfo, error) { return nil, fmt.Errorf("unimplemented stub") }
