@@ -265,8 +265,8 @@ type CompleteTestCase struct {
 	// OS is the OS to use for the test.
 	OS OS
 
-	// Want is the expected set of completion suggestions.
-	Want []string
+	// Want is the expected `Autocompletion` object produced by the test.
+	Want *Autocompletion
 	// WantErr is the error that should be returned.
 	WantErr error
 	// WantData is the `Data` object that should be constructed.
@@ -317,7 +317,7 @@ func CompleteTest(t *testing.T, ctc *CompleteTestCase) {
 		tester.setup(t, tc)
 	}
 
-	tc.autocompleteSuggestions, tc.err = autocomplete(ctc.Node, ctc.Args, ctc.PassthroughArgs, tc.data)
+	tc.autocompletion, tc.err = autocomplete(ctc.Node, ctc.Args, ctc.PassthroughArgs, tc.data)
 
 	for _, tester := range testers {
 		tester.check(t, tc)
@@ -334,8 +334,8 @@ type testContext struct {
 
 	err error
 
-	eData                   *ExecuteData
-	autocompleteSuggestions []string
+	eData          *ExecuteData
+	autocompletion *Autocompletion
 }
 
 type commandTester interface {
@@ -524,14 +524,21 @@ func (et *executeDataTester) check(t *testing.T, tc *testContext) {
 }
 
 type autocompleteTester struct {
-	want []string
+	want *Autocompletion
 }
 
 func (*autocompleteTester) setup(*testing.T, *testContext) {}
 func (at *autocompleteTester) check(t *testing.T, tc *testContext) {
 	t.Helper()
 
-	if diff := cmp.Diff(at.want, tc.autocompleteSuggestions); diff != "" {
+	if at.want == nil {
+		at.want = &Autocompletion{}
+	}
+	if tc.autocompletion == nil {
+		tc.autocompletion = &Autocompletion{}
+	}
+
+	if diff := cmp.Diff(at.want, tc.autocompletion); diff != "" {
 		t.Errorf("%s produced incorrect completions (-want, +got):\n%s", tc.prefix, diff)
 	}
 }
@@ -546,11 +553,7 @@ func FilepathAbs(t *testing.T, s ...string) string {
 }
 
 // FakeOS is a fake OS that can be used for testing purposes.
-type FakeOS struct {
-	// NoSpace is the flipped bit for the `AddsSpaceToSingleAutocompletion` function.
-	// The field is `NoSpace` so the default value is true.
-	NoSpace bool
-}
+type FakeOS struct{}
 
 func (*FakeOS) SetEnvVar(variable, value string) string {
 	return fmt.Sprintf("FAKE_SET[(variable=%s), (value=%s)]", variable, value)
@@ -558,8 +561,4 @@ func (*FakeOS) SetEnvVar(variable, value string) string {
 
 func (*FakeOS) UnsetEnvVar(variable string) string {
 	return fmt.Sprintf("FAKE_UNSET[(variable=%s)]", variable)
-}
-
-func (fos *FakeOS) AddsSpaceToSingleAutocompletion() bool {
-	return !fos.NoSpace
 }

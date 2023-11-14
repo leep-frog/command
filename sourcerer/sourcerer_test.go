@@ -16,6 +16,7 @@ import (
 
 const (
 	fakeFile          = "FAKE_FILE"
+	fakeInputFile     = "FAKE_INPUT_FILE"
 	usagePrefixString = "\n======= Command Usage ======="
 
 	osLinux   = "linux"
@@ -96,7 +97,9 @@ func TestGenerateBinaryNode(t *testing.T) {
 							`function _leepFrogSource_wrap_function {`,
 							`$_custom_autocomplete_leepFrogSource = {`,
 							`  param($wordToComplete, $commandAst, $compPoint)`,
-							fmt.Sprintf(`  (& %s autocomplete ($commandAst.CommandElements | Select-Object -first 1) "0" $compPoint "$commandAst") | ForEach-Object {`, fakeGoExecutableFilePath.Name()),
+							`  $Local:tmpPassthroughArgFile = New-TemporaryFile`,
+							`  [IO.File]::WriteAllLines($Local:tmpPassthroughArgFile, $commandAst.ToString())`,
+							fmt.Sprintf(`  (& %s autocomplete ($commandAst.CommandElements | Select-Object -first 1) --comp-line-file "0" $compPoint $Local:tmpPassthroughArgFile) | ForEach-Object {`, fakeGoExecutableFilePath.Name()),
 							`    $_`,
 							`  }`,
 							`}`,
@@ -194,7 +197,9 @@ func TestGenerateBinaryNode(t *testing.T) {
 							`function _leepFrogSource_wrap_function {`,
 							`$_custom_autocomplete_leepFrogSource = {`,
 							`  param($wordToComplete, $commandAst, $compPoint)`,
-							fmt.Sprintf(`  (& %s autocomplete ($commandAst.CommandElements | Select-Object -first 1) "0" $compPoint "$commandAst") | ForEach-Object {`, fakeGoExecutableFilePath.Name()),
+							`  $Local:tmpPassthroughArgFile = New-TemporaryFile`,
+							`  [IO.File]::WriteAllLines($Local:tmpPassthroughArgFile, $commandAst.ToString())`,
+							fmt.Sprintf(`  (& %s autocomplete ($commandAst.CommandElements | Select-Object -first 1) --comp-line-file "0" $compPoint $Local:tmpPassthroughArgFile) | ForEach-Object {`, fakeGoExecutableFilePath.Name()),
 							`    $_`,
 							`  }`,
 							`}`,
@@ -317,7 +322,9 @@ func TestGenerateBinaryNode(t *testing.T) {
 							`function _leepFrogSource_wrap_function {`,
 							`$_custom_autocomplete_leepFrogSource = {`,
 							`  param($wordToComplete, $commandAst, $compPoint)`,
-							fmt.Sprintf(`  (& %s autocomplete ($commandAst.CommandElements | Select-Object -first 1) "0" $compPoint "$commandAst") | ForEach-Object {`, fakeGoExecutableFilePath.Name()),
+							`  $Local:tmpPassthroughArgFile = New-TemporaryFile`,
+							`  [IO.File]::WriteAllLines($Local:tmpPassthroughArgFile, $commandAst.ToString())`,
+							fmt.Sprintf(`  (& %s autocomplete ($commandAst.CommandElements | Select-Object -first 1) --comp-line-file "0" $compPoint $Local:tmpPassthroughArgFile) | ForEach-Object {`, fakeGoExecutableFilePath.Name()),
 							`    $_`,
 							`  }`,
 							`}`,
@@ -447,7 +454,9 @@ func TestGenerateBinaryNode(t *testing.T) {
 							`function _leepFrogSource_wrap_function {`,
 							`$_custom_autocomplete_leepFrogSource = {`,
 							`  param($wordToComplete, $commandAst, $compPoint)`,
-							fmt.Sprintf(`  (& %s autocomplete ($commandAst.CommandElements | Select-Object -first 1) "0" $compPoint "$commandAst") | ForEach-Object {`, fakeGoExecutableFilePath.Name()),
+							`  $Local:tmpPassthroughArgFile = New-TemporaryFile`,
+							`  [IO.File]::WriteAllLines($Local:tmpPassthroughArgFile, $commandAst.ToString())`,
+							fmt.Sprintf(`  (& %s autocomplete ($commandAst.CommandElements | Select-Object -first 1) --comp-line-file "0" $compPoint $Local:tmpPassthroughArgFile) | ForEach-Object {`, fakeGoExecutableFilePath.Name()),
 							`    $_`,
 							`  }`,
 							`}`,
@@ -538,7 +547,9 @@ func TestGenerateBinaryNode(t *testing.T) {
 							`function _customOutputFile_wrap_function {`,
 							`$_custom_autocomplete_customOutputFile = {`,
 							`  param($wordToComplete, $commandAst, $compPoint)`,
-							fmt.Sprintf(`  (& %s autocomplete ($commandAst.CommandElements | Select-Object -first 1) "0" $compPoint "$commandAst") | ForEach-Object {`, fakeGoExecutableFilePath.Name()),
+							`  $Local:tmpPassthroughArgFile = New-TemporaryFile`,
+							`  [IO.File]::WriteAllLines($Local:tmpPassthroughArgFile, $commandAst.ToString())`,
+							fmt.Sprintf(`  (& %s autocomplete ($commandAst.CommandElements | Select-Object -first 1) --comp-line-file "0" $compPoint $Local:tmpPassthroughArgFile) | ForEach-Object {`, fakeGoExecutableFilePath.Name()),
 							`    $_`,
 							`  }`,
 							`}`,
@@ -613,7 +624,9 @@ func TestGenerateBinaryNode(t *testing.T) {
 							`function _leepFrogSource_wrap_function {`,
 							`$_custom_autocomplete_leepFrogSource = {`,
 							`  param($wordToComplete, $commandAst, $compPoint)`,
-							fmt.Sprintf(`  (& %s autocomplete ($commandAst.CommandElements | Select-Object -first 1) "0" $compPoint "$commandAst") | ForEach-Object {`, fakeGoExecutableFilePath.Name()),
+							`  $Local:tmpPassthroughArgFile = New-TemporaryFile`,
+							`  [IO.File]::WriteAllLines($Local:tmpPassthroughArgFile, $commandAst.ToString())`,
+							fmt.Sprintf(`  (& %s autocomplete ($commandAst.CommandElements | Select-Object -first 1) --comp-line-file "0" $compPoint $Local:tmpPassthroughArgFile) | ForEach-Object {`, fakeGoExecutableFilePath.Name()),
 							`    $_`,
 							`  }`,
 							`}`,
@@ -768,7 +781,9 @@ func TestGenerateBinaryNode(t *testing.T) {
 							`function _leepFrogSource_wrap_function {`,
 							`$_custom_autocomplete_leepFrogSource = {`,
 							`  param($wordToComplete, $commandAst, $compPoint)`,
-							fmt.Sprintf(`  (& %s autocomplete ($commandAst.CommandElements | Select-Object -first 1) "0" $compPoint "$commandAst") | ForEach-Object {`, fakeGoExecutableFilePath.Name()),
+							`  $Local:tmpPassthroughArgFile = New-TemporaryFile`,
+							`  [IO.File]::WriteAllLines($Local:tmpPassthroughArgFile, $commandAst.ToString())`,
+							fmt.Sprintf(`  (& %s autocomplete ($commandAst.CommandElements | Select-Object -first 1) --comp-line-file "0" $compPoint $Local:tmpPassthroughArgFile) | ForEach-Object {`, fakeGoExecutableFilePath.Name()),
 							`    $_`,
 							`  }`,
 							`}`,
@@ -923,7 +938,9 @@ func TestGenerateBinaryNode(t *testing.T) {
 							`function _leepFrogBuiltIns_wrap_function {`,
 							`$_custom_autocomplete_leepFrogBuiltIns = {`,
 							`  param($wordToComplete, $commandAst, $compPoint)`,
-							fmt.Sprintf(`  (& %s builtin autocomplete ($commandAst.CommandElements | Select-Object -first 1) "0" $compPoint "$commandAst") | ForEach-Object {`, fakeGoExecutableFilePath.Name()),
+							`  $Local:tmpPassthroughArgFile = New-TemporaryFile`,
+							`  [IO.File]::WriteAllLines($Local:tmpPassthroughArgFile, $commandAst.ToString())`,
+							fmt.Sprintf(`  (& %s builtin autocomplete ($commandAst.CommandElements | Select-Object -first 1) --comp-line-file "0" $compPoint $Local:tmpPassthroughArgFile) | ForEach-Object {`, fakeGoExecutableFilePath.Name()),
 							`    $_`,
 							`  }`,
 							`}`,
@@ -1143,13 +1160,14 @@ func TestSourcerer(t *testing.T) {
 	// across tests which can be error prone and difficult to debug).
 	for _, curOS := range []OS{Linux(), Windows()} {
 		for _, test := range []struct {
-			name     string
-			clis     []CLI
-			args     []string
-			uuids    []string
-			cacheErr error
-			osCheck  *osCheck
-			osChecks map[string]*osCheck
+			name                  string
+			clis                  []CLI
+			args                  []string
+			uuids                 []string
+			cacheErr              error
+			osCheck               *osCheck
+			osChecks              map[string]*osCheck
+			fakeInputFileContents []string
 		}{
 			{
 				name: "fails if invalid command branch",
@@ -1932,6 +1950,49 @@ func TestSourcerer(t *testing.T) {
 				},
 			},
 			{
+				name: "autocomplete does partial completion when --comp-line-file is set",
+				args: []string{"autocomplete", "--comp-line-file", "basic", "63", "5", fakeInputFile},
+				fakeInputFileContents: []string{
+					"cmd b",
+				},
+				clis: []CLI{
+					&testCLI{
+						name: "basic",
+						processors: []command.Processor{
+							command.Arg[string]("s", "desc", command.SimpleCompleter[string]("alpha", "bravo", "charlie", "brown", "baker")),
+						},
+					},
+				},
+				osCheck: &osCheck{
+					wantStdout: autocompleteSuggestions(
+						"baker",
+						"bravo",
+						"brown",
+					),
+				},
+			},
+			{
+				name: "autocomplete fails if --comp-line-file is not a file",
+				args: []string{"autocomplete", "--comp-line-file", "basic", "63", "5", "not-a-file"},
+				fakeInputFileContents: []string{
+					"cmd b",
+				},
+				clis: []CLI{
+					&testCLI{
+						name: "basic",
+						processors: []command.Processor{
+							command.Arg[string]("s", "desc", command.SimpleCompleter[string]("alpha", "bravo", "charlie", "brown", "baker")),
+						},
+					},
+				},
+				osCheck: &osCheck{
+					wantStderr: []string{
+						"Custom transformer failed: assumed COMP_LINE to be a file, but unable to read it: open not-a-file: The system cannot find the file specified.",
+					},
+					wantErr: fmt.Errorf("Custom transformer failed: assumed COMP_LINE to be a file, but unable to read it: open not-a-file: The system cannot find the file specified."),
+				},
+			},
+			{
 				name: "autocomplete goes along processors",
 				args: []string{"autocomplete", "basic", "63", "6", "cmd a "},
 				clis: []CLI{
@@ -2238,6 +2299,18 @@ func TestSourcerer(t *testing.T) {
 				for i, s := range test.args {
 					if s == fakeFile {
 						test.args[i] = fake.Name()
+					}
+				}
+
+				if len(test.fakeInputFileContents) > 0 {
+					fakeInput := command.TempFile(t, "leepFrogSourcerer-test")
+					for i, s := range test.args {
+						if s == fakeInputFile {
+							test.args[i] = fakeInput.Name()
+						}
+					}
+					if err := os.WriteFile(fakeInput.Name(), []byte(strings.Join(test.fakeInputFileContents, "\n")), 0644); err != nil {
+						t.Fatalf("failed to write fake input file: %v", err)
 					}
 				}
 

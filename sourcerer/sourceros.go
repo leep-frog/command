@@ -39,7 +39,7 @@ type OS interface {
 	FunctionWrap(name, fn string) string
 
 	// HandleAutocompleteSuccess should output the suggestions for autocomplete consumption
-	HandleAutocompleteSuccess(command.Output, []string)
+	HandleAutocompleteSuccess(command.Output, *command.Autocompletion)
 	// HandleAutocompleteError should output error info on `Autocomplete` failure
 	HandleAutocompleteError(output command.Output, compType int, err error)
 

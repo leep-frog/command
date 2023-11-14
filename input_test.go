@@ -675,6 +675,17 @@ func TestParseCompLine(t *testing.T) {
 				remaining: []int{0},
 			},
 		},
+		{
+			name:  "ending backslash in word",
+			input: "cmd ab cd\\",
+			want: &Input{
+				args: []*inputArg{
+					{value: `ab`},
+					{value: `cd\`},
+				},
+				remaining: []int{0, 1},
+			},
+		},
 		/* Useful for commenting out tests. */
 	} {
 		t.Run(test.name, func(t *testing.T) {

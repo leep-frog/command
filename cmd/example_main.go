@@ -39,6 +39,7 @@ func (mfc *myFirstCommand) Setup() []string {
 // Node returns the logic of your new command!
 func (mfc *myFirstCommand) Node() command.Node {
 
+	ff := command.FileArgument("FILE", "desc")
 	// A boolean flag (set by passing `--formal` or `-f` to your command in bash).
 	formalFlag := command.BoolFlag("formal", 'f', "Whether or not the response should be formal")
 	// A required string argument that can be autocompleted!
@@ -54,6 +55,7 @@ func (mfc *myFirstCommand) Node() command.Node {
 	return command.SerialNodes(
 		// Description adds a description field to your commands usage doc.
 		command.Description("My very first command!"),
+		ff,
 		// This node defines all of the flags for your command.
 		command.FlagProcessor(
 			formalFlag,

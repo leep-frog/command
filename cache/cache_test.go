@@ -724,7 +724,9 @@ func TestCompletion(t *testing.T) {
 			name: "completes branches",
 			ctc: &command.CompleteTestCase{
 				Args: "cmd ",
-				Want: []string{"delete", "get", "list", "put", "setdir"},
+				Want: &command.Autocompletion{
+					Suggestions: []string{"delete", "get", "list", "put", "setdir"},
+				},
 			},
 		},
 		{
@@ -732,7 +734,9 @@ func TestCompletion(t *testing.T) {
 			puts: puts,
 			ctc: &command.CompleteTestCase{
 				Args: "cmd get ",
-				Want: []string{"hello", "things", "this"},
+				Want: &command.Autocompletion{
+					Suggestions: []string{"hello", "things", "this"},
+				},
 			},
 		},
 		{
@@ -740,7 +744,9 @@ func TestCompletion(t *testing.T) {
 			puts: puts,
 			ctc: &command.CompleteTestCase{
 				Args: "cmd put t",
-				Want: []string{"things", "this"},
+				Want: &command.Autocompletion{
+					Suggestions: []string{"things", "this"},
+				},
 			},
 		},
 		{
@@ -748,7 +754,9 @@ func TestCompletion(t *testing.T) {
 			puts: puts,
 			ctc: &command.CompleteTestCase{
 				Args: "cmd put thin",
-				Want: []string{"things"},
+				Want: &command.Autocompletion{
+					Suggestions: []string{"things"},
+				},
 			},
 		},
 	} {

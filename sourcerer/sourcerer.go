@@ -29,12 +29,21 @@ var (
 	compTypeArg  = command.Arg[int]("COMP_TYPE", "COMP_TYPE variable from bash complete function")
 	compPointArg = command.Arg[int]("COMP_POINT", "COMP_POINT variable from bash complete function")
 	compLineArg  = command.Arg[string]("COMP_LINE", "COMP_LINE variable from bash complete function", &command.Transformer[string]{F: func(s string, d *command.Data) (string, error) {
+		if compLineFileFlag.Get(d) {
+			b, err := os.ReadFile(s)
+			if err != nil {
+				return "", fmt.Errorf("assumed COMP_LINE to be a file, but unable to read it: %v", err)
+			}
+			s = string(b)
+		}
+
 		// We should only consider the string up to where the cursor is (i.e. COMP_POINT)
 		if cPoint := compPointArg.Get(d); cPoint <= len(s) {
 			return s[:cPoint], nil
 		}
 		return s, nil
 	}})
+	compLineFileFlag            = command.BoolFlag("comp-line-file", command.FlagNoShortName, "If set, the COMP_LINE arg is taken to be a file that contains the COMP_LINE contents")
 	autocompletePassthroughArgs = command.ListArg[string]("PASSTHROUGH_ARG", "Arguments that get passed through to autocomplete command", 0, command.UnboundedList)
 
 	// Made this a method so it can be stubbed out in tests
@@ -128,13 +137,13 @@ func (s *sourcerer) autocompleteExecutor(o command.Output, d *command.Data) erro
 	s.forAutocomplete = true
 	cli := s.cliArg.GetProcessor().Get(d)
 
-	g, err := command.Autocomplete(cli.Node(), compLineArg.Get(d), autocompletePassthroughArgs.Get(d), CurrentOS)
+	autocompletion, err := command.Autocomplete(cli.Node(), compLineArg.Get(d), autocompletePassthroughArgs.Get(d), CurrentOS)
 	if err != nil {
 		CurrentOS.HandleAutocompleteError(o, compTypeArg.Get(d), err)
 		return err
 	}
 
-	CurrentOS.HandleAutocompleteSuccess(o, g)
+	CurrentOS.HandleAutocompleteSuccess(o, autocompletion)
 	return nil
 }
 
@@ -237,6 +246,9 @@ func (s *sourcerer) Node() command.Node {
 		&command.BranchNode{
 			Branches: map[string]command.Node{
 				AutocompleteBranchName: command.SerialNodes(
+					command.FlagProcessor(
+						compLineFileFlag,
+					),
 					s.cliArg,
 					loadCLIArg,
 					compTypeArg,

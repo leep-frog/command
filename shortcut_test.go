@@ -1270,7 +1270,9 @@ func TestAliasComplete(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"sl": []string{""},
 				}},
-				Want: []string{"deux", "trois", "un"},
+				Want: &Autocompletion{
+					Suggestions: []string{"deux", "trois", "un"},
+				},
 			},
 		},
 		// Add shortcut test
@@ -1312,7 +1314,9 @@ func TestAliasComplete(t *testing.T) {
 					ShortcutArg.Name(): "b",
 					"sl":               []string{""},
 				}},
-				Want: []string{"deux", "trois", "un"},
+				Want: &Autocompletion{
+					Suggestions: []string{"deux", "trois", "un"},
+				},
 			},
 		},
 		{
@@ -1326,7 +1330,9 @@ func TestAliasComplete(t *testing.T) {
 					ShortcutArg.Name(): "b",
 					"sl":               []string{""},
 				}},
-				Want: []string{"deux", "trois", "un"},
+				Want: &Autocompletion{
+					Suggestions: []string{"deux", "trois", "un"},
+				},
 			},
 		},
 		// Get shortcut test
@@ -1347,7 +1353,9 @@ func TestAliasComplete(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					ShortcutArg.Name(): []string{""},
 				}},
-				Want: []string{"alpha", "alright", "any", "balloon", "bear"},
+				Want: &Autocompletion{
+					Suggestions: []string{"alpha", "alright", "any", "balloon", "bear"},
+				},
 			},
 		},
 		{
@@ -1367,7 +1375,9 @@ func TestAliasComplete(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					ShortcutArg.Name(): []string{"b"},
 				}},
-				Want: []string{"balloon", "bear"},
+				Want: &Autocompletion{
+					Suggestions: []string{"balloon", "bear"},
+				},
 			},
 		},
 		{
@@ -1387,7 +1397,9 @@ func TestAliasComplete(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					ShortcutArg.Name(): []string{"alright", "balloon", ""},
 				}},
-				Want: []string{"alpha", "any", "bear"},
+				Want: &Autocompletion{
+					Suggestions: []string{"alpha", "any", "bear"},
+				},
 			},
 		},
 		// Delete shortcut test
@@ -1408,7 +1420,9 @@ func TestAliasComplete(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					ShortcutArg.Name(): []string{""},
 				}},
-				Want: []string{"alpha", "alright", "any", "balloon", "bear"},
+				Want: &Autocompletion{
+					Suggestions: []string{"alpha", "alright", "any", "balloon", "bear"},
+				},
 			},
 		},
 		{
@@ -1428,7 +1442,9 @@ func TestAliasComplete(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					ShortcutArg.Name(): []string{"b"},
 				}},
-				Want: []string{"balloon", "bear"},
+				Want: &Autocompletion{
+					Suggestions: []string{"balloon", "bear"},
+				},
 			},
 		},
 		{
@@ -1448,7 +1464,9 @@ func TestAliasComplete(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					ShortcutArg.Name(): []string{"alright", "balloon", ""},
 				}},
-				Want: []string{"alpha", "any", "bear"},
+				Want: &Autocompletion{
+					Suggestions: []string{"alpha", "any", "bear"},
+				},
 			},
 		},
 		// Execute shortcut tests
@@ -1462,7 +1480,9 @@ func TestAliasComplete(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"sl": []string{"zero", ""},
 				}},
-				Want: []string{"deux", "trois", "un"},
+				Want: &Autocompletion{
+					Suggestions: []string{"deux", "trois", "un"},
+				},
 			},
 		},
 		{
@@ -1492,7 +1512,9 @@ func TestAliasComplete(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"sl": []string{"d", "t"},
 				}},
-				Want: []string{"trois"},
+				Want: &Autocompletion{
+					Suggestions: []string{"trois"},
+				},
 			},
 		},
 		{
@@ -1510,7 +1532,9 @@ func TestAliasComplete(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"sl": []string{"deux", ""},
 				}},
-				Want: []string{"trois", "un"},
+				Want: &Autocompletion{
+					Suggestions: []string{"trois", "un"},
+				},
 			},
 		},
 		// Arg with shortcut opt tests
@@ -1523,7 +1547,9 @@ func TestAliasComplete(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"sl": []string{"zero", ""},
 				}},
-				Want: []string{"deux", "trois", "un"},
+				Want: &Autocompletion{
+					Suggestions: []string{"deux", "trois", "un"},
+				},
 			},
 		},
 		{
@@ -1558,7 +1584,9 @@ func TestAliasComplete(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"sl": []string{"hello", "d", "t"},
 				}},
-				Want: []string{"trois"},
+				Want: &Autocompletion{
+					Suggestions: []string{"trois"},
+				},
 			},
 		},
 		{
@@ -1576,7 +1604,9 @@ func TestAliasComplete(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"sl": []string{"deux", ""},
 				}},
-				Want: []string{"trois", "un"},
+				Want: &Autocompletion{
+					Suggestions: []string{"trois", "un"},
+				},
 			},
 		},
 		{
@@ -1595,7 +1625,9 @@ func TestAliasComplete(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"sl": []string{"deux", "trois", ""},
 				}},
-				Want: []string{"un"},
+				Want: &Autocompletion{
+					Suggestions: []string{"un"},
+				},
 			},
 		},
 		{
@@ -1615,7 +1647,9 @@ func TestAliasComplete(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"sl": []string{"four", "two", "deux", ""},
 				}},
-				Want: []string{"trois", "un"},
+				Want: &Autocompletion{
+					Suggestions: []string{"trois", "un"},
+				},
 			},
 		},
 		{
@@ -1637,7 +1671,9 @@ func TestAliasComplete(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"sl": []string{"four", "0", "0", "n1", "two", "deux", "n2", "n3", "three", "trois", "tres", "un", "n4", "n5", ""},
 				}},
-				Want: []string{"five", "six"},
+				Want: &Autocompletion{
+					Suggestions: []string{"five", "six"},
+				},
 			},
 		},
 		{
@@ -1659,7 +1695,9 @@ func TestAliasComplete(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"sl": []string{"four", "0", "n1", "t"},
 				}},
-				Want: []string{"trois"},
+				Want: &Autocompletion{
+					Suggestions: []string{"trois"},
+				},
 			},
 		},
 		{
@@ -1677,7 +1715,9 @@ func TestAliasComplete(t *testing.T) {
 					"s":  "III",
 					"i":  "",
 				}},
-				Want: []string{"alpha", "beta"},
+				Want: &Autocompletion{
+					Suggestions: []string{"alpha", "beta"},
+				},
 			},
 		},
 		{
@@ -1695,7 +1735,9 @@ func TestAliasComplete(t *testing.T) {
 					"s":  "t",
 					"i":  "",
 				}},
-				Want: []string{"alpha", "beta"},
+				Want: &Autocompletion{
+					Suggestions: []string{"alpha", "beta"},
+				},
 			},
 		},
 	} {

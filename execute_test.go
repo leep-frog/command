@@ -792,24 +792,9 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "FileCompleter with Complexecute fails if multiple options (autofilling letters) with suffix char",
+			name: "FileCompleter with Complexecute fails if multiple options (autofilling letters)",
 			etc: &ExecuteTestCase{
-				OS:   &FakeOS{NoSpace: false},
-				Node: SerialNodes(FileArgument("s", testDesc, Complexecute[string]())),
-				Args: []string{"ca"},
-				wantInput: &Input{
-					args: []*inputArg{
-						{value: "ca"},
-					},
-				},
-				WantStderr: "[Complexecute] requires exactly one suggestion to be returned for \"s\", got 2: [cache cache_]\n",
-				WantErr:    fmt.Errorf("[Complexecute] requires exactly one suggestion to be returned for \"s\", got 2: [cache cache_]"),
-			},
-		},
-		{
-			name: "FileCompleter with Complexecute fails if multiple options (autofilling letters) with no suffix char",
-			etc: &ExecuteTestCase{
-				OS:   &FakeOS{NoSpace: true},
+				OS:   &FakeOS{},
 				Node: SerialNodes(FileArgument("s", testDesc, Complexecute[string]())),
 				Args: []string{"ca"},
 				wantInput: &Input{
@@ -6727,7 +6712,9 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: abc(),
 				Args: "cmd t clh:abc",
-				Want: []string{"abcd222"},
+				Want: &Autocompletion{
+					Suggestions: []string{"abcd222"},
+				},
 				WantData: &Data{Values: map[string]interface{}{
 					"PATH":   "clh",
 					"TARGET": "abc",
@@ -6750,7 +6737,9 @@ func TestComplete(t *testing.T) {
 					OptionalArg[int]("i", testDesc, SimpleCompleter[int]("2", "1")),
 					ListArg[string]("sl", testDesc, 0, 2, SimpleCompleter[[]string]("uno", "dos")),
 				),
-				Want: []string{"deux", "trois", "un"},
+				Want: &Autocompletion{
+					Suggestions: []string{"deux", "trois", "un"},
+				},
 				WantData: &Data{Values: map[string]interface{}{
 					"s": "",
 				}},
@@ -6765,7 +6754,9 @@ func TestComplete(t *testing.T) {
 					ListArg[string]("sl", testDesc, 0, 2, SimpleCompleter[[]string]("uno", "dos")),
 				),
 				Args: "cmd t",
-				Want: []string{"three", "two"},
+				Want: &Autocompletion{
+					Suggestions: []string{"three", "two"},
+				},
 				WantData: &Data{Values: map[string]interface{}{
 					"s": "t",
 				}},
@@ -6780,7 +6771,9 @@ func TestComplete(t *testing.T) {
 					OptionalArg[int]("i", testDesc, SimpleCompleter[int]("2", "1")),
 				),
 				Args: "cmd three ",
-				Want: []string{"dos", "uno"},
+				Want: &Autocompletion{
+					Suggestions: []string{"dos", "uno"},
+				},
 				WantData: &Data{Values: map[string]interface{}{
 					"s":  "three",
 					"sl": []string{""},
@@ -6796,7 +6789,9 @@ func TestComplete(t *testing.T) {
 					OptionalArg[int]("i", testDesc, SimpleCompleter[int]("2", "1")),
 				),
 				Args: "cmd three d",
-				Want: []string{"dos"},
+				Want: &Autocompletion{
+					Suggestions: []string{"dos"},
+				},
 				WantData: &Data{Values: map[string]interface{}{
 					"s":  "three",
 					"sl": []string{"d"},
@@ -6812,7 +6807,9 @@ func TestComplete(t *testing.T) {
 					OptionalArg[int]("i", testDesc, SimpleCompleter[int]("2", "1")),
 				),
 				Args: "cmd three dos ",
-				Want: []string{"dos", "uno"},
+				Want: &Autocompletion{
+					Suggestions: []string{"dos", "uno"},
+				},
 				WantData: &Data{Values: map[string]interface{}{
 					"s":  "three",
 					"sl": []string{"dos", ""},
@@ -6828,7 +6825,9 @@ func TestComplete(t *testing.T) {
 					OptionalArg[int]("i", testDesc, SimpleCompleter[int]("2", "1")),
 				),
 				Args: "cmd three uno dos ",
-				Want: []string{"1", "2"},
+				Want: &Autocompletion{
+					Suggestions: []string{"1", "2"},
+				},
 				WantData: &Data{Values: map[string]interface{}{
 					"s":  "three",
 					"sl": []string{"uno", "dos"},
@@ -6858,7 +6857,9 @@ func TestComplete(t *testing.T) {
 				Node: SerialNodes(
 					ListArg[string]("sl", testDesc, 1, 2, SimpleCompleter[[]string]("uno", "dos")),
 				),
-				Want: []string{"dos", "uno"},
+				Want: &Autocompletion{
+					Suggestions: []string{"dos", "uno"},
+				},
 				WantData: &Data{Values: map[string]interface{}{
 					"sl": []string{""},
 				}},
@@ -6871,7 +6872,9 @@ func TestComplete(t *testing.T) {
 					ListArg[string]("sl", testDesc, 1, 2, SimpleCompleter[[]string]("zzz-1", "zzz-2", "yyy-3", "zzz-4")),
 				),
 				Args: "cmd zz",
-				Want: []string{"zzz-1", "zzz-2", "zzz-4"},
+				Want: &Autocompletion{
+					Suggestions: []string{"zzz-1", "zzz-2", "zzz-4"},
+				},
 				WantData: &Data{Values: map[string]interface{}{
 					"sl": []string{"zz"},
 				}},
@@ -6945,7 +6948,9 @@ func TestComplete(t *testing.T) {
 					Arg[int]("i", testDesc, SimpleCompleter[int]("1", "2")),
 				),
 				Args: "cmd -g ",
-				Want: []string{"1", "2"},
+				Want: &Autocompletion{
+					Suggestions: []string{"1", "2"},
+				},
 				WantData: &Data{
 					Values: map[string]interface{}{
 						"good": true,
@@ -6965,7 +6970,9 @@ func TestComplete(t *testing.T) {
 					Arg[int]("i", testDesc, SimpleCompleter[int]("1", "2")),
 				),
 				Args: "cmd --greeting howdy ",
-				Want: []string{"1", "2"},
+				Want: &Autocompletion{
+					Suggestions: []string{"1", "2"},
+				},
 				WantData: &Data{
 					Values: map[string]interface{}{
 						"greeting": "howdy",
@@ -6985,7 +6992,9 @@ func TestComplete(t *testing.T) {
 					Arg[int]("i", testDesc, SimpleCompleter[int]("1", "2")),
 				),
 				Args: "cmd --names alice bob charlie ",
-				Want: []string{"1", "2"},
+				Want: &Autocompletion{
+					Suggestions: []string{"1", "2"},
+				},
 				WantData: &Data{
 					Values: map[string]interface{}{
 						"names": []string{"alice", "bob", "charlie"},
@@ -7005,7 +7014,9 @@ func TestComplete(t *testing.T) {
 					Arg[int]("i", testDesc, SimpleCompleter[int]("1", "2")),
 				),
 				Args: "cmd -n alice bob charlie --good -h howdy ",
-				Want: []string{"1", "2"},
+				Want: &Autocompletion{
+					Suggestions: []string{"1", "2"},
+				},
 				WantData: &Data{
 					Values: map[string]interface{}{
 						"names":    []string{"alice", "bob", "charlie"},
@@ -7027,7 +7038,9 @@ func TestComplete(t *testing.T) {
 					Arg[int]("i", testDesc, SimpleCompleter[int]("1", "2")),
 				),
 				Args: "cmd -",
-				Want: []string{"--good", "--greeting", "--names"},
+				Want: &Autocompletion{
+					Suggestions: []string{"--good", "--greeting", "--names"},
+				},
 			},
 		},
 		{
@@ -7042,7 +7055,9 @@ func TestComplete(t *testing.T) {
 					Arg[int]("i", testDesc, SimpleCompleter[int]("1", "2")),
 				),
 				Args: "cmd --",
-				Want: []string{"--good", "--greeting", "--names"},
+				Want: &Autocompletion{
+					Suggestions: []string{"--good", "--greeting", "--names"},
+				},
 			},
 		},
 		{
@@ -7057,7 +7072,9 @@ func TestComplete(t *testing.T) {
 					Arg[int]("i", testDesc, SimpleCompleter[int]("1", "2")),
 				),
 				Args: "cmd 1 -",
-				Want: []string{"--good", "--greeting", "--names"},
+				Want: &Autocompletion{
+					Suggestions: []string{"--good", "--greeting", "--names"},
+				},
 			},
 		},
 		{
@@ -7072,7 +7089,9 @@ func TestComplete(t *testing.T) {
 					Arg[int]("i", testDesc, SimpleCompleter[int]("1", "2")),
 				),
 				Args: "cmd --gr",
-				Want: []string{"--greeting"},
+				Want: &Autocompletion{
+					Suggestions: []string{"--greeting"},
+				},
 			},
 		},
 		{
@@ -7087,7 +7106,9 @@ func TestComplete(t *testing.T) {
 					Arg[int]("i", testDesc, SimpleCompleter[int]("1", "2")),
 				),
 				Args: "cmd --names",
-				Want: []string{"--names"},
+				Want: &Autocompletion{
+					Suggestions: []string{"--names"},
+				},
 			},
 		},
 		// Flag value completions
@@ -7103,7 +7124,9 @@ func TestComplete(t *testing.T) {
 					Arg[int]("i", testDesc, SimpleCompleter[int]("1", "2")),
 				),
 				Args: "cmd 1 --greeting h",
-				Want: []string{"hey", "hi"},
+				Want: &Autocompletion{
+					Suggestions: []string{"hey", "hi"},
+				},
 				WantData: &Data{Values: map[string]interface{}{
 					"greeting": "h",
 				}},
@@ -7121,7 +7144,9 @@ func TestComplete(t *testing.T) {
 					Arg[int]("i", testDesc, SimpleCompleter[int]("1", "2")),
 				),
 				Args: "cmd 1 -h he",
-				Want: []string{"hey"},
+				Want: &Autocompletion{
+					Suggestions: []string{"hey"},
+				},
 				WantData: &Data{Values: map[string]interface{}{
 					"greeting": "he",
 				}},
@@ -7139,7 +7164,9 @@ func TestComplete(t *testing.T) {
 					Arg[int]("i", testDesc, SimpleCompleter[int]("1", "2")),
 				),
 				Args: "cmd 1 -h hey other --names ",
-				Want: []string{"johnny", "ralph", "renee"},
+				Want: &Autocompletion{
+					Suggestions: []string{"johnny", "ralph", "renee"},
+				},
 				WantData: &Data{Values: map[string]interface{}{
 					"greeting": "hey",
 					"names":    []string{""},
@@ -7158,7 +7185,9 @@ func TestComplete(t *testing.T) {
 					Arg[int]("i", testDesc, SimpleCompleter[int]("1", "2")),
 				),
 				Args: "cmd 1 -h hey other --names ralph ",
-				Want: []string{"johnny", "renee"},
+				Want: &Autocompletion{
+					Suggestions: []string{"johnny", "renee"},
+				},
 				WantData: &Data{Values: map[string]interface{}{
 					"greeting": "hey",
 					"names":    []string{"ralph", ""},
@@ -7178,7 +7207,9 @@ func TestComplete(t *testing.T) {
 					Arg[int]("i", testDesc, SimpleCompleter[int]("1", "2")),
 				),
 				Args: "cmd 1 -h hey other --names ralph renee johnny -f ",
-				Want: []string{"1.23", "12.3", "123.4"},
+				Want: &Autocompletion{
+					Suggestions: []string{"1.23", "12.3", "123.4"},
+				},
 				WantData: &Data{Values: map[string]interface{}{
 					"greeting": "hey",
 					"names":    []string{"ralph", "renee", "johnny"},
@@ -7197,7 +7228,9 @@ func TestComplete(t *testing.T) {
 					ListArg[string]("i", testDesc, 1, 2, SimpleCompleter[[]string]("hey", "ooo")),
 				),
 				Args: "cmd 1 -h hello bravo --names ralph renee johnny ",
-				Want: []string{"hey", "ooo"},
+				Want: &Autocompletion{
+					Suggestions: []string{"hey", "ooo"},
+				},
 				WantData: &Data{Values: map[string]interface{}{
 					"i":        []string{"1", "bravo", ""},
 					"greeting": "hello",
@@ -7235,7 +7268,9 @@ func TestComplete(t *testing.T) {
 					),
 					Arg[string]("s", testDesc, SimpleCompleter[string]("abc", "def", "ghi")),
 				),
-				Want: []string{"abc", "def", "ghi"},
+				Want: &Autocompletion{
+					Suggestions: []string{"abc", "def", "ghi"},
+				},
 				WantData: &Data{Values: map[string]interface{}{
 					"quick":    true,
 					"where":    true,
@@ -7259,7 +7294,9 @@ func TestComplete(t *testing.T) {
 					),
 					Arg[string]("s", testDesc, SimpleCompleter[string]("abc", "def", "ghi")),
 				),
-				Want: []string{"abc", "def", "ghi"},
+				Want: &Autocompletion{
+					Suggestions: []string{"abc", "def", "ghi"},
+				},
 				WantData: &Data{Values: map[string]interface{}{
 					"quick":    true,
 					"where":    true,
@@ -7285,7 +7322,9 @@ func TestComplete(t *testing.T) {
 					),
 					Arg[string]("s", testDesc, SimpleCompleter[string]("abc", "def", "ghi")),
 				),
-				Want: []string{"abc", "def", "ghi"},
+				Want: &Autocompletion{
+					Suggestions: []string{"abc", "def", "ghi"},
+				},
 				WantData: &Data{Values: map[string]interface{}{
 					"quick": true,
 					"where": true,
@@ -7308,7 +7347,9 @@ func TestComplete(t *testing.T) {
 						BoolFlag("where", 'w', testDesc),
 					),
 				),
-				Want: []string{"tsr", "wvu", "zyx"},
+				Want: &Autocompletion{
+					Suggestions: []string{"tsr", "wvu", "zyx"},
+				},
 				WantData: &Data{Values: map[string]interface{}{
 					"zf": "",
 				}},
@@ -7328,7 +7369,9 @@ func TestComplete(t *testing.T) {
 						BoolFlag("where", 'w', testDesc),
 					),
 				),
-				Want: []string{"tsr", "wvu", "zyx"},
+				Want: &Autocompletion{
+					Suggestions: []string{"tsr", "wvu", "zyx"},
+				},
 				WantData: &Data{Values: map[string]interface{}{
 					"quick": true,
 					"where": true,
@@ -7352,12 +7395,14 @@ func TestComplete(t *testing.T) {
 						BoolFlag("where", 'w', testDesc),
 					),
 				),
-				Want: []string{
-					// ilf still gets completed because it allows multiple.
-					"--ilf",
-					"--quick",
-					"--to",
-					"--where",
+				Want: &Autocompletion{
+					Suggestions: []string{
+						// ilf still gets completed because it allows multiple.
+						"--ilf",
+						"--quick",
+						"--to",
+						"--where",
+					},
 				},
 				WantData: &Data{Values: map[string]interface{}{
 					"everyone": true,
@@ -7376,7 +7421,9 @@ func TestComplete(t *testing.T) {
 					),
 				),
 				Args: "cmd --of",
-				Want: []string{"--of"},
+				Want: &Autocompletion{
+					Suggestions: []string{"--of"},
+				},
 			},
 		},
 		{
@@ -7388,7 +7435,9 @@ func TestComplete(t *testing.T) {
 					),
 				),
 				Args: "cmd --of ",
-				Want: []string{"abc", "def", "ghi"},
+				Want: &Autocompletion{
+					Suggestions: []string{"abc", "def", "ghi"},
+				},
 				WantData: &Data{Values: map[string]interface{}{
 					"of": "",
 				}},
@@ -7406,8 +7455,10 @@ func TestComplete(t *testing.T) {
 					),
 				),
 				Args: "cmd --of -",
-				Want: []string{
-					"--bf",
+				Want: &Autocompletion{
+					Suggestions: []string{
+						"--bf",
+					},
 				},
 			},
 		},
@@ -7426,8 +7477,10 @@ func TestComplete(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"of": "provided",
 				}},
-				Want: []string{
-					"--bf",
+				Want: &Autocompletion{
+					Suggestions: []string{
+						"--bf",
+					},
 				},
 			},
 		},
@@ -7441,7 +7494,9 @@ func TestComplete(t *testing.T) {
 					),
 				),
 				Args: "cmd --ilf",
-				Want: []string{"--ilf"},
+				Want: &Autocompletion{
+					Suggestions: []string{"--ilf"},
+				},
 			},
 		},
 		{
@@ -7453,7 +7508,9 @@ func TestComplete(t *testing.T) {
 					),
 				),
 				Args: "cmd --ilf ",
-				Want: []string{"abc", "def", "ghi"},
+				Want: &Autocompletion{
+					Suggestions: []string{"abc", "def", "ghi"},
+				},
 				WantData: &Data{Values: map[string]interface{}{
 					"ilf": []string{""},
 				}},
@@ -7471,7 +7528,9 @@ func TestComplete(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"ilf": []string{"un", "d"},
 				}},
-				Want: []string{"def"},
+				Want: &Autocompletion{
+					Suggestions: []string{"def"},
+				},
 			},
 		},
 		{
@@ -7486,7 +7545,9 @@ func TestComplete(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"ilf": []string{"def", ""},
 				}},
-				Want: []string{"abc", "ghi"},
+				Want: &Autocompletion{
+					Suggestions: []string{"abc", "ghi"},
+				},
 			},
 		},
 		// Flag completion with list breaker
@@ -7498,7 +7559,9 @@ func TestComplete(t *testing.T) {
 					breakerFlagProcessor,
 				),
 				Args: "cmd v1 v2 other --names ",
-				Want: []string{"johnny", "ralph", "renee"},
+				Want: &Autocompletion{
+					Suggestions: []string{"johnny", "ralph", "renee"},
+				},
 				WantData: &Data{Values: map[string]interface{}{
 					"lst":   []string{"v1", "v2", "other"},
 					"names": []string{""},
@@ -7513,7 +7576,9 @@ func TestComplete(t *testing.T) {
 					breakerFlagProcessor,
 				),
 				Args: "cmd v1 v2 other --names un --greeting ",
-				Want: []string{"hey", "hi"},
+				Want: &Autocompletion{
+					Suggestions: []string{"hey", "hi"},
+				},
 				WantData: &Data{Values: map[string]interface{}{
 					"lst":      []string{"v1", "v2", "other"},
 					"names":    []string{"un"},
@@ -7531,7 +7596,9 @@ func TestComplete(t *testing.T) {
 					),
 				),
 				Args: "cmd --lf ab ",
-				Want: []string{"abc", "def"},
+				Want: &Autocompletion{
+					Suggestions: []string{"abc", "def"},
+				},
 				WantData: &Data{Values: map[string]interface{}{
 					"lf": []string{"ab", ""},
 				}},
@@ -7793,78 +7860,80 @@ func TestComplete(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"fn": "",
 				}},
-				Want: []string{
-					filepath.FromSlash(".git/"),
-					filepath.FromSlash("_testdata_symlink/"),
-					"arg.go",
-					"autocomplete.go",
-					"bool_operator.go",
-					"branch_node.go",
-					"cache.go",
-					filepath.FromSlash("cache/"),
-					"cache_test.go",
-					filepath.FromSlash("cmd/"),
-					filepath.FromSlash("color/"),
-					"command.go",
-					"commandtest.go",
-					"completer.go",
-					"completer_test.go",
-					"conditional.go",
-					"data.go",
-					"data_test.go",
-					"data_transformer.go",
-					"debug.go",
-					"description.go",
-					filepath.FromSlash("docs/"),
-					"echo.go",
-					"error.go",
-					"execute.go",
-					"execute_test.go",
-					"executor.go",
-					"file_functions.go",
-					"file_functions.txt",
-					"flag.go",
-					"float_operator.go",
-					"get_processor.go",
-					filepath.FromSlash("glog/"),
-					"go.mod",
-					"go.sum",
-					"input.go",
-					"input_test.go",
-					"int_operator.go",
-					"int_operator_test.go",
-					"LICENSE",
-					"list_breaker.go",
-					"map_arg.go",
-					"menu.go",
-					"node_repeater.go",
-					"option.go",
-					"osenv.go",
-					"output.go",
-					"output_test.go",
-					"prompt.go",
-					"README.md",
-					"runtime_caller.go",
-					"runtime_caller_test.go",
-					"serial_nodes.go",
-					"setup.go",
-					"shell_command_node.go",
-					"shell_command_node_test.go",
-					"shortcut.go",
-					"shortcut_test.go",
-					"simple_node.go",
-					"simple_processor.go",
-					filepath.FromSlash("sourcerer/"),
-					"static_cli.go",
-					"static_cli_test.go",
-					"stdin.go",
-					"string_operator.go",
-					filepath.FromSlash("testdata/"),
-					"usage.go",
-					"usage_test.go",
-					"validator.go",
-					"working_directory.go",
-					" ",
+				Want: &Autocompletion{
+					Suggestions: []string{
+						filepath.FromSlash(".git/"),
+						filepath.FromSlash("_testdata_symlink/"),
+						"arg.go",
+						"autocomplete.go",
+						"bool_operator.go",
+						"branch_node.go",
+						"cache.go",
+						filepath.FromSlash("cache/"),
+						"cache_test.go",
+						filepath.FromSlash("cmd/"),
+						filepath.FromSlash("color/"),
+						"command.go",
+						"commandtest.go",
+						"completer.go",
+						"completer_test.go",
+						"conditional.go",
+						"data.go",
+						"data_test.go",
+						"data_transformer.go",
+						"debug.go",
+						"description.go",
+						filepath.FromSlash("docs/"),
+						"echo.go",
+						"error.go",
+						"execute.go",
+						"execute_test.go",
+						"executor.go",
+						"file_functions.go",
+						"file_functions.txt",
+						"flag.go",
+						"float_operator.go",
+						"get_processor.go",
+						filepath.FromSlash("glog/"),
+						"go.mod",
+						"go.sum",
+						"input.go",
+						"input_test.go",
+						"int_operator.go",
+						"int_operator_test.go",
+						"LICENSE",
+						"list_breaker.go",
+						"map_arg.go",
+						"menu.go",
+						"node_repeater.go",
+						"option.go",
+						"osenv.go",
+						"output.go",
+						"output_test.go",
+						"prompt.go",
+						"README.md",
+						"runtime_caller.go",
+						"runtime_caller_test.go",
+						"serial_nodes.go",
+						"setup.go",
+						"shell_command_node.go",
+						"shell_command_node_test.go",
+						"shortcut.go",
+						"shortcut_test.go",
+						"simple_node.go",
+						"simple_processor.go",
+						filepath.FromSlash("sourcerer/"),
+						"static_cli.go",
+						"static_cli_test.go",
+						"stdin.go",
+						"string_operator.go",
+						filepath.FromSlash("testdata/"),
+						"usage.go",
+						"usage_test.go",
+						"validator.go",
+						"working_directory.go",
+						" ",
+					},
 				},
 			},
 		},
@@ -7881,19 +7950,21 @@ func TestComplete(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"fn": "",
 				}},
-				Want: []string{
-					filepath.FromSlash(".git/"),
-					filepath.FromSlash("_testdata_symlink/"),
-					filepath.FromSlash("cache/"),
-					filepath.FromSlash("cmd/"),
-					filepath.FromSlash("color/"),
-					filepath.FromSlash("docs/"),
-					filepath.FromSlash("glog/"),
-					"go.mod",
-					"go.sum",
-					filepath.FromSlash("sourcerer/"),
-					filepath.FromSlash("testdata/"),
-					" ",
+				Want: &Autocompletion{
+					Suggestions: []string{
+						filepath.FromSlash(".git/"),
+						filepath.FromSlash("_testdata_symlink/"),
+						filepath.FromSlash("cache/"),
+						filepath.FromSlash("cmd/"),
+						filepath.FromSlash("color/"),
+						filepath.FromSlash("docs/"),
+						filepath.FromSlash("glog/"),
+						"go.mod",
+						"go.sum",
+						filepath.FromSlash("sourcerer/"),
+						filepath.FromSlash("testdata/"),
+						" ",
+					},
 				},
 			},
 		},
@@ -7917,21 +7988,23 @@ func TestComplete(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"fn": "",
 				}},
-				Want: []string{
-					".surprise",
-					filepath.FromSlash("cases/"),
-					filepath.FromSlash("dir1/"),
-					filepath.FromSlash("dir2/"),
-					filepath.FromSlash("dir3/"),
-					filepath.FromSlash("dir4/"),
-					"four.txt",
-					"METADATA",
-					filepath.FromSlash("metadata_/"),
-					filepath.FromSlash("moreCases/"),
-					"one.txt",
-					"three.txt",
-					"two.txt",
-					" ",
+				Want: &Autocompletion{
+					Suggestions: []string{
+						".surprise",
+						filepath.FromSlash("cases/"),
+						filepath.FromSlash("dir1/"),
+						filepath.FromSlash("dir2/"),
+						filepath.FromSlash("dir3/"),
+						filepath.FromSlash("dir4/"),
+						"four.txt",
+						"METADATA",
+						filepath.FromSlash("metadata_/"),
+						filepath.FromSlash("moreCases/"),
+						"one.txt",
+						"three.txt",
+						"two.txt",
+						" ",
+					},
 				},
 			},
 		},
@@ -7947,7 +8020,9 @@ func TestComplete(t *testing.T) {
 					},
 					Default: SerialNodes(ListArg[string]("default", testDesc, 1, 3, SimpleCompleter[[]string]("default", "command", "opts"))),
 				},
-				Want: []string{"a", "alpha", "bravo"},
+				Want: &Autocompletion{
+					Suggestions: []string{"a", "alpha", "bravo"},
+				},
 			},
 		},
 		{
@@ -7962,7 +8037,9 @@ func TestComplete(t *testing.T) {
 					Default:           SerialNodes(ListArg[string]("default", testDesc, 1, 3, SimpleCompleter[[]string]("default", "command", "opts"))),
 					DefaultCompletion: true,
 				},
-				Want: []string{"command", "default", "opts"},
+				Want: &Autocompletion{
+					Suggestions: []string{"command", "default", "opts"},
+				},
 				WantData: &Data{Values: map[string]interface{}{
 					"default": []string{""},
 				}},
@@ -7994,7 +8071,9 @@ func TestComplete(t *testing.T) {
 					Default:           SerialNodes(ListArg[string]("default", testDesc, 1, 3, SimpleCompleter[[]string]("default", "command", "opts"))),
 					DefaultCompletion: true,
 				},
-				Want: []string{"command", "default", "opts"},
+				Want: &Autocompletion{
+					Suggestions: []string{"command", "default", "opts"},
+				},
 				WantData: &Data{Values: map[string]interface{}{
 					"default": []string{""},
 				}},
@@ -8013,7 +8092,9 @@ func TestComplete(t *testing.T) {
 					DefaultCompletion: true,
 				},
 				Args: "cmd alpha ",
-				Want: []string{"other", "stuff"},
+				Want: &Autocompletion{
+					Suggestions: []string{"other", "stuff"},
+				},
 				WantData: &Data{Values: map[string]interface{}{
 					"hello": "",
 				}},
@@ -8065,7 +8146,9 @@ func TestComplete(t *testing.T) {
 					})),
 				},
 				Args: "cmd ",
-				Want: []string{"a", "alpha", "bravo"},
+				Want: &Autocompletion{
+					Suggestions: []string{"a", "alpha", "bravo"},
+				},
 			},
 		},
 		{
@@ -8081,7 +8164,9 @@ func TestComplete(t *testing.T) {
 					DefaultCompletion: true,
 				},
 				Args: "cmd a",
-				Want: []string{"ahhhh", "alright"},
+				Want: &Autocompletion{
+					Suggestions: []string{"ahhhh", "alright"},
+				},
 				WantData: &Data{Values: map[string]interface{}{
 					"default": []string{"a"},
 				}},
@@ -8102,7 +8187,9 @@ func TestComplete(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"default": []string{"something", ""},
 				}},
-				Want: []string{"command", "default", "opts"},
+				Want: &Autocompletion{
+					Suggestions: []string{"command", "default", "opts"},
+				},
 			},
 		},
 		{
@@ -8110,7 +8197,9 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: branchSynNode(),
 				Args: "cmd ",
-				Want: []string{"hello"},
+				Want: &Autocompletion{
+					Suggestions: []string{"hello"},
+				},
 			},
 		},
 		// SuperSimpleProcessor tests
@@ -8124,7 +8213,9 @@ func TestComplete(t *testing.T) {
 				}),
 					Arg[string]("s", testDesc, SimpleCompleter[string]("abc", "def")),
 				),
-				Want: []string{"abc", "def"},
+				Want: &Autocompletion{
+					Suggestions: []string{"abc", "def"},
+				},
 				WantData: &Data{
 					Values: map[string]interface{}{
 						"key": "value",
@@ -8159,9 +8250,11 @@ func TestComplete(t *testing.T) {
 					PrintlnProcessor("hello there"),
 					Arg[string]("s", testDesc, SimpleCompleter[string]("okay", "then")),
 				),
-				Want: []string{
-					"okay",
-					"then",
+				Want: &Autocompletion{
+					Suggestions: []string{
+						"okay",
+						"then",
+					},
 				},
 				WantData: &Data{
 					Values: map[string]interface{}{
@@ -8180,7 +8273,9 @@ func TestComplete(t *testing.T) {
 					Getwd,
 					Arg[string]("s", testDesc, SimpleCompleter[string]("abc", "def")),
 				),
-				Want: []string{"abc", "def"},
+				Want: &Autocompletion{
+					Suggestions: []string{"abc", "def"},
+				},
 				WantData: &Data{
 					Values: map[string]interface{}{
 						GetwdKey: "some/dir",
@@ -8207,7 +8302,9 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(MenuArg("sm", "desc", "abc", "def", "ghi")),
 				Args: "cmd ",
-				Want: []string{"abc", "def", "ghi"},
+				Want: &Autocompletion{
+					Suggestions: []string{"abc", "def", "ghi"},
+				},
 				WantData: &Data{Values: map[string]interface{}{
 					"sm": "",
 				}},
@@ -8218,7 +8315,9 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(MenuArg("sm", "desc", "abc", "def", "ghi")),
 				Args: "cmd g",
-				Want: []string{"ghi"},
+				Want: &Autocompletion{
+					Suggestions: []string{"ghi"},
+				},
 				WantData: &Data{Values: map[string]interface{}{
 					"sm": "g",
 				}},
@@ -8243,7 +8342,9 @@ func TestComplete(t *testing.T) {
 					),
 				),
 				Args: "cmd --sf ",
-				Want: []string{"abc", "def", "ghi"},
+				Want: &Autocompletion{
+					Suggestions: []string{"abc", "def", "ghi"},
+				},
 				WantData: &Data{Values: map[string]interface{}{
 					"sf": "",
 				}},
@@ -8258,7 +8359,9 @@ func TestComplete(t *testing.T) {
 					),
 				),
 				Args: "cmd -s g",
-				Want: []string{"ghi"},
+				Want: &Autocompletion{
+					Suggestions: []string{"ghi"},
+				},
 				WantData: &Data{Values: map[string]interface{}{
 					"sf": "g",
 				}},
@@ -8284,7 +8387,9 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(Arg[int]("iArg", testDesc, SimpleCompleter[int]("12", "45", "456", "468", "7"))),
 				Args: "cmd 4",
-				Want: []string{"45", "456", "468"},
+				Want: &Autocompletion{
+					Suggestions: []string{"45", "456", "468"},
+				},
 				WantData: &Data{Values: map[string]interface{}{
 					"iArg": 4,
 				}},
@@ -8295,7 +8400,9 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(OptionalArg[int]("iArg", testDesc, SimpleCompleter[int]("12", "45", "456", "468", "7"))),
 				Args: "cmd 4",
-				Want: []string{"45", "456", "468"},
+				Want: &Autocompletion{
+					Suggestions: []string{"45", "456", "468"},
+				},
 				WantData: &Data{Values: map[string]interface{}{
 					"iArg": 4,
 				}},
@@ -8306,7 +8413,9 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(ListArg[int]("iArg", testDesc, 2, 3, SimpleCompleter[[]int]("12", "45", "456", "468", "7"))),
 				Args: "cmd 1 4",
-				Want: []string{"45", "456", "468"},
+				Want: &Autocompletion{
+					Suggestions: []string{"45", "456", "468"},
+				},
 				WantData: &Data{Values: map[string]interface{}{
 					"iArg": []int{1, 4},
 				}},
@@ -8317,7 +8426,9 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(ListArg[int]("iArg", testDesc, 2, 3, SimpleCompleter[[]int]("12", "45", "456", "468", "7"))),
 				Args: "cmd one 4",
-				Want: []string{"45", "456", "468"},
+				Want: &Autocompletion{
+					Suggestions: []string{"45", "456", "468"},
+				},
 			},
 		},
 		{
@@ -8325,7 +8436,9 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(ListArg[int]("iArg", testDesc, 2, 3, SimpleCompleter[[]int]("12", "45", "456", "468", "7"))),
 				Args: "cmd 1 2 3 4",
-				Want: []string{"45", "456", "468"},
+				Want: &Autocompletion{
+					Suggestions: []string{"45", "456", "468"},
+				},
 				WantData: &Data{Values: map[string]interface{}{
 					"iArg": []int{1, 2, 3, 4},
 				}},
@@ -8336,7 +8449,9 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(Arg[float64]("fArg", testDesc, SimpleCompleter[float64]("12", "4.5", "45.6", "468", "7"))),
 				Args: "cmd 4",
-				Want: []string{"4.5", "45.6", "468"},
+				Want: &Autocompletion{
+					Suggestions: []string{"4.5", "45.6", "468"},
+				},
 				WantData: &Data{Values: map[string]interface{}{
 					"fArg": 4.0,
 				}},
@@ -8345,16 +8460,20 @@ func TestComplete(t *testing.T) {
 		{
 			name: "float list arg gets completed",
 			ctc: &CompleteTestCase{
-				Node:     SerialNodes(ListArg[float64]("fArg", testDesc, 1, 2, SimpleCompleter[[]float64]("12", "4.5", "45.6", "468", "7"))),
-				Want:     []string{"12", "4.5", "45.6", "468", "7"},
+				Node: SerialNodes(ListArg[float64]("fArg", testDesc, 1, 2, SimpleCompleter[[]float64]("12", "4.5", "45.6", "468", "7"))),
+				Want: &Autocompletion{
+					Suggestions: []string{"12", "4.5", "45.6", "468", "7"},
+				},
 				WantData: &Data{Values: map[string]interface{}{}},
 			},
 		},
 		{
 			name: "bool arg gets completed",
 			ctc: &CompleteTestCase{
-				Node:     SerialNodes(BoolArg("bArg", testDesc)),
-				Want:     []string{"0", "1", "F", "FALSE", "False", "T", "TRUE", "True", "f", "false", "t", "true"},
+				Node: SerialNodes(BoolArg("bArg", testDesc)),
+				Want: &Autocompletion{
+					Suggestions: []string{"0", "1", "F", "FALSE", "False", "T", "TRUE", "True", "f", "false", "t", "true"},
+				},
 				WantData: &Data{Values: map[string]interface{}{}},
 			},
 		},
@@ -8363,7 +8482,9 @@ func TestComplete(t *testing.T) {
 			name: "NodeRepeater completes first node",
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(sampleRepeaterProcessor(1, 2)),
-				Want: []string{"alpha", "bravo", "brown", "charlie"},
+				Want: &Autocompletion{
+					Suggestions: []string{"alpha", "bravo", "brown", "charlie"},
+				},
 				WantData: &Data{Values: map[string]interface{}{
 					"keys": []string{""},
 				}},
@@ -8374,7 +8495,9 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(sampleRepeaterProcessor(1, 2)),
 				Args: "cmd b",
-				Want: []string{"bravo", "brown"},
+				Want: &Autocompletion{
+					Suggestions: []string{"bravo", "brown"},
+				},
 				WantData: &Data{Values: map[string]interface{}{
 					"keys": []string{"b"},
 				}},
@@ -8385,7 +8508,9 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(sampleRepeaterProcessor(1, 2)),
 				Args: "cmd brown ",
-				Want: []string{"1", "121", "1213121"},
+				Want: &Autocompletion{
+					Suggestions: []string{"1", "121", "1213121"},
+				},
 				WantData: &Data{Values: map[string]interface{}{
 					"keys": []string{"brown"},
 				}},
@@ -8396,7 +8521,9 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(sampleRepeaterProcessor(1, 2)),
 				Args: "cmd brown 12",
-				Want: []string{"121", "1213121"},
+				Want: &Autocompletion{
+					Suggestions: []string{"121", "1213121"},
+				},
 				WantData: &Data{Values: map[string]interface{}{
 					"keys":   []string{"brown"},
 					"values": []int{12},
@@ -8408,7 +8535,9 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(sampleRepeaterProcessor(2, 0)),
 				Args: "cmd brown 12 c",
-				Want: []string{"charlie"},
+				Want: &Autocompletion{
+					Suggestions: []string{"charlie"},
+				},
 				WantData: &Data{Values: map[string]interface{}{
 					"keys":   []string{"brown", "c"},
 					"values": []int{12},
@@ -8420,7 +8549,9 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(sampleRepeaterProcessor(2, 1)),
 				Args: "cmd brown 12 charlie 21 alpha 1",
-				Want: []string{"1", "121", "1213121"},
+				Want: &Autocompletion{
+					Suggestions: []string{"1", "121", "1213121"},
+				},
 				WantData: &Data{Values: map[string]interface{}{
 					"keys":   []string{"brown", "charlie", "alpha"},
 					"values": []int{12, 21, 1},
@@ -8432,7 +8563,9 @@ func TestComplete(t *testing.T) {
 			ctc: &CompleteTestCase{
 				Node: SerialNodes(sampleRepeaterProcessor(2, UnboundedList)),
 				Args: "cmd brown 12 charlie 21 alpha 100 delta 98 b",
-				Want: []string{"bravo", "brown"},
+				Want: &Autocompletion{
+					Suggestions: []string{"bravo", "brown"},
+				},
 				WantData: &Data{Values: map[string]interface{}{
 					"keys":   []string{"brown", "charlie", "alpha", "delta", "b"},
 					"values": []int{12, 21, 100, 98},
@@ -8471,7 +8604,9 @@ func TestComplete(t *testing.T) {
 					ListArg[string]("SL2", testDesc, 0, UnboundedList, SimpleCompleter[[]string]("one", "two", "three")),
 				),
 				Args: "cmd abc def ghi ",
-				Want: []string{"one", "three", "two"},
+				Want: &Autocompletion{
+					Suggestions: []string{"one", "three", "two"},
+				},
 				WantData: &Data{Values: map[string]interface{}{
 					"SL":  []string{"abc", "def"},
 					"SL2": []string{"ghi", ""},
@@ -8486,7 +8621,9 @@ func TestComplete(t *testing.T) {
 					ListArg[string]("SL2", testDesc, 0, UnboundedList, SimpleCompleter[[]string]("one", "two", "three")),
 				),
 				Args: "cmd abc def ghi ",
-				Want: []string{"one", "three", "two"},
+				Want: &Autocompletion{
+					Suggestions: []string{"one", "three", "two"},
+				},
 				WantData: &Data{Values: map[string]interface{}{
 					"SL":  []string{"abc", "def"},
 					"SL2": []string{""},
@@ -8501,7 +8638,9 @@ func TestComplete(t *testing.T) {
 					ListArg[string]("SL2", testDesc, 0, UnboundedList, SimpleCompleter[[]string]("one", "two", "three")),
 				),
 				Args: "cmd abc def un",
-				Want: []string{"un", "uno"},
+				Want: &Autocompletion{
+					Suggestions: []string{"un", "uno"},
+				},
 				WantData: &Data{Values: map[string]interface{}{
 					"SL": []string{"abc", "def", "un"},
 				}},
@@ -8515,7 +8654,9 @@ func TestComplete(t *testing.T) {
 					StringListListProcessor("SLL", testDesc, "|", 1, UnboundedList, SimpleCompleter[[]string]("one", "two", "three")),
 				),
 				Args: "cmd abc def ghi ",
-				Want: []string{"one", "three", "two"},
+				Want: &Autocompletion{
+					Suggestions: []string{"one", "three", "two"},
+				},
 				WantData: &Data{Values: map[string]interface{}{
 					"SLL": [][]string{{"abc", "def", "ghi", ""}},
 				}},
@@ -8528,7 +8669,9 @@ func TestComplete(t *testing.T) {
 					StringListListProcessor("SLL", testDesc, "|", 1, UnboundedList, SimpleCompleter[[]string]("one", "two", "three")),
 				),
 				Args: "cmd abc def | ghi t",
-				Want: []string{"three", "two"},
+				Want: &Autocompletion{
+					Suggestions: []string{"three", "two"},
+				},
 				WantData: &Data{Values: map[string]interface{}{
 					"SLL": [][]string{{"abc", "def"}, {"ghi", "t"}},
 				}},
@@ -8542,7 +8685,9 @@ func TestComplete(t *testing.T) {
 					Arg[string]("S", testDesc, SimpleCompleter[string]("un", "deux", "trois")),
 				),
 				Args: "cmd abc def | ghi | ",
-				Want: []string{"deux", "trois", "un"},
+				Want: &Autocompletion{
+					Suggestions: []string{"deux", "trois", "un"},
+				},
 				WantData: &Data{
 					Values: map[string]interface{}{
 						"SLL": [][]string{{"abc", "def"}, {"ghi"}},
@@ -8632,10 +8777,12 @@ func TestComplete(t *testing.T) {
 						"ghi",
 					},
 				}},
-				Want: []string{
-					"abc",
-					"def",
-					"ghi",
+				Want: &Autocompletion{
+					Suggestions: []string{
+						"abc",
+						"def",
+						"ghi",
+					},
 				},
 				WantRunContents: []*RunContents{{
 					Name: "echo",
@@ -8657,10 +8804,12 @@ func TestComplete(t *testing.T) {
 						"ghi",
 					},
 				}},
-				Want: []string{
-					"abc",
-					"def",
-					"ghi",
+				Want: &Autocompletion{
+					Suggestions: []string{
+						"abc",
+						"def",
+						"ghi",
+					},
 				},
 				WantRunContents: []*RunContents{{
 					Name: "echo",
@@ -8684,8 +8833,10 @@ func TestComplete(t *testing.T) {
 						"ghi",
 					},
 				}},
-				Want: []string{
-					"def",
+				Want: &Autocompletion{
+					Suggestions: []string{
+						"def",
+					},
 				},
 				WantRunContents: []*RunContents{{
 					Name: "echo",
@@ -8708,8 +8859,10 @@ func TestComplete(t *testing.T) {
 						"ghi",
 					},
 				}},
-				Want: []string{
-					"def",
+				Want: &Autocompletion{
+					Suggestions: []string{
+						"def",
+					},
 				},
 				WantRunContents: []*RunContents{{
 					Name: "echo",
@@ -8737,7 +8890,9 @@ func TestComplete(t *testing.T) {
 					"s":  "alpha",
 					"s2": "",
 				}},
-				Want: []string{"bravo", "charlie"},
+				Want: &Autocompletion{
+					Suggestions: []string{"bravo", "charlie"},
+				},
 			},
 		},
 		{
@@ -8758,7 +8913,9 @@ func TestComplete(t *testing.T) {
 					"s":  "alpha",
 					"s3": "",
 				}},
-				Want: []string{"delta", "epsilon"},
+				Want: &Autocompletion{
+					Suggestions: []string{"delta", "epsilon"},
+				},
 			},
 		},
 		// IfElse
@@ -8781,7 +8938,9 @@ func TestComplete(t *testing.T) {
 					"s":  "alpha",
 					"s2": "",
 				}},
-				Want: []string{"bravo", "charlie"},
+				Want: &Autocompletion{
+					Suggestions: []string{"bravo", "charlie"},
+				},
 			},
 		},
 		{
@@ -8803,7 +8962,9 @@ func TestComplete(t *testing.T) {
 					"s":  "alpha",
 					"s2": "",
 				}},
-				Want: []string{"alpha", "omega"},
+				Want: &Autocompletion{
+					Suggestions: []string{"alpha", "omega"},
+				},
 			},
 		},
 		// MapArg test
@@ -8821,7 +8982,9 @@ func TestComplete(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"m": 0,
 				}},
-				Want: []string{"one", "three", "two"},
+				Want: &Autocompletion{
+					Suggestions: []string{"one", "three", "two"},
+				},
 			},
 		},
 		{
@@ -8838,7 +9001,9 @@ func TestComplete(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"m": 0,
 				}},
-				Want: []string{"three", "two"},
+				Want: &Autocompletion{
+					Suggestions: []string{"three", "two"},
+				},
 			},
 		},
 		{
@@ -8855,7 +9020,9 @@ func TestComplete(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"m": 0,
 				}},
-				Want: []string{"three"},
+				Want: &Autocompletion{
+					Suggestions: []string{"three"},
+				},
 			},
 		},
 		{
@@ -8869,7 +9036,9 @@ func TestComplete(t *testing.T) {
 						789: "three",
 					}, true),
 				),
-				Want: []string{"123", "456", "789"},
+				Want: &Autocompletion{
+					Suggestions: []string{"123", "456", "789"},
+				},
 			},
 		},
 		{
@@ -8887,7 +9056,9 @@ func TestComplete(t *testing.T) {
 				WantData: &Data{Values: map[string]interface{}{
 					"m": "other",
 				}},
-				Want: []string{"4", "456"},
+				Want: &Autocompletion{
+					Suggestions: []string{"4", "456"},
+				},
 			},
 		},
 		/* Useful for commenting out tests. */

@@ -18,12 +18,6 @@ type OS interface {
 	// os.Unsetenv because the go CLI executable is run in a sub-shell.
 	UnsetEnvVar(envVar string) string
 
-	// AddsSpaceToSingleAutocompletion() is whether or not the OS
-	// adds a space when there is only one autocomplete suggestion.
-	// NOTE: This is *NOT* a feature that this package implements, but rather
-	// information needed by this package for it to work properly.
-	AddsSpaceToSingleAutocompletion() bool
-
 	// ShellCommandFileRunner returns the command and command arguments
 	// to run a file in the shell
 	// ShellCommandFileRunner(file string) (string, []string)

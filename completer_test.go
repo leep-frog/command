@@ -96,11 +96,12 @@ func TestFilepathLen(t *testing.T) {
 
 func TestStringCompleters(t *testing.T) {
 	type testCase struct {
-		name    string
-		c       Completer[[]string]
-		args    string
-		want    []string
-		wantErr error
+		name          string
+		c             Completer[[]string]
+		args          string
+		want          []string
+		wantSpaceless bool
+		wantErr       error
 	}
 	for _, test := range []*testCase{
 		{
@@ -218,9 +219,12 @@ func TestStringCompleters(t *testing.T) {
 				opts = append(opts, test.c)
 			}
 			CompleteTest(t, &CompleteTestCase{
-				Node:          SerialNodes(ListArg("test", testDesc, 2, 5, opts...)),
-				Args:          test.args,
-				Want:          test.want,
+				Node: SerialNodes(ListArg("test", testDesc, 2, 5, opts...)),
+				Args: test.args,
+				Want: &Autocompletion{
+					test.want,
+					test.wantSpaceless,
+				},
 				WantErr:       test.wantErr,
 				SkipDataCheck: true,
 			})
@@ -232,19 +236,21 @@ func TestBoolCompleter(t *testing.T) {
 	CompleteTest(t, &CompleteTestCase{
 		Node: SerialNodes(Arg[bool]("test", testDesc, BoolCompleter())),
 		Args: "cmd ",
-		Want: []string{
-			"0",
-			"1",
-			"F",
-			"FALSE",
-			"False",
-			"T",
-			"TRUE",
-			"True",
-			"f",
-			"false",
-			"t",
-			"true",
+		Want: &Autocompletion{
+			Suggestions: []string{
+				"0",
+				"1",
+				"F",
+				"FALSE",
+				"False",
+				"T",
+				"TRUE",
+				"True",
+				"f",
+				"false",
+				"t",
+				"true",
+			},
 		},
 		SkipDataCheck: true,
 	})
@@ -626,7 +632,8 @@ func TestParseAndComplete(t *testing.T) {
 					t.Errorf("autocomplete(%v) returned unexpected error (-want, +got):\n%s", test.args, diff)
 				}
 			}
-			if diff := cmp.Diff(test.want, got, cmpopts.EquateEmpty()); diff != "" {
+			want := &Autocompletion{test.want, false}
+			if diff := cmp.Diff(want, got, cmpopts.EquateEmpty()); diff != "" {
 				t.Errorf("Autocomplete(%s) produced incorrect completions (-want, +got):\n%s", test.args, diff)
 			}
 
@@ -651,8 +658,7 @@ type completerTest[T any] struct {
 	cleanup        func(*testing.T)
 	absErr         error
 	commandBranch  bool
-	doesntAddSpace bool
-	want           []string
+	want           *Autocompletion
 	wantErr        error
 	getwd          func() (string, error)
 	filepathRelErr error
@@ -664,9 +670,7 @@ func (test *completerTest[T]) Name() string {
 
 func (test *completerTest[T]) run(t *testing.T) {
 	t.Run(test.name, func(t *testing.T) {
-		fos := &FakeOS{
-			NoSpace: test.doesntAddSpace,
-		}
+		fos := &FakeOS{}
 		if test.getwd != nil {
 			StubValue(t, &osGetwd, test.getwd)
 		}
@@ -688,12 +692,19 @@ func (test *completerTest[T]) run(t *testing.T) {
 			return filepath.Abs(rel)
 		})
 
-		var got []string
+		var got *Autocompletion
 		var err error
 		if test.singleC != nil {
 			got, err = Autocomplete(SerialNodes(Arg[T]("test", testDesc, test.singleC)), test.args, test.ptArgs, fos)
 		} else {
 			got, err = Autocomplete(SerialNodes(ListArg[T]("test", testDesc, 2, 5, test.c)), test.args, test.ptArgs, fos)
+		}
+
+		if test.want == nil {
+			test.want = &Autocompletion{}
+		}
+		if got == nil {
+			got = &Autocompletion{}
 		}
 
 		if diff := cmp.Diff(test.want, got); diff != "" {
@@ -709,29 +720,31 @@ type completerTestInterface interface {
 }
 
 func TestTypedCompleters(t *testing.T) {
-	testdataContents := func() []string {
-		return []string{
-			".surprise",
-			filepath.FromSlash("cases/"),
-			filepath.FromSlash("dir1/"),
-			filepath.FromSlash("dir2/"),
-			filepath.FromSlash("dir3/"),
-			filepath.FromSlash("dir4/"),
-			"four.txt",
-			"METADATA",
-			filepath.FromSlash("metadata_/"),
-			filepath.FromSlash("moreCases/"),
-			"one.txt",
-			"three.txt",
-			"two.txt",
-			" ",
+	testdataContents := func() *Autocompletion {
+		return &Autocompletion{
+			Suggestions: []string{
+				".surprise",
+				filepath.FromSlash("cases/"),
+				filepath.FromSlash("dir1/"),
+				filepath.FromSlash("dir2/"),
+				filepath.FromSlash("dir3/"),
+				filepath.FromSlash("dir4/"),
+				"four.txt",
+				"METADATA",
+				filepath.FromSlash("metadata_/"),
+				filepath.FromSlash("moreCases/"),
+				"one.txt",
+				"three.txt",
+				"two.txt",
+				" ",
+			},
 		}
 	}
-	testdataContentsExcept := func(t *testing.T, except string) []string {
+	testdataContentsExcept := func(t *testing.T, except string) *Autocompletion {
 		var r []string
 		var excluded bool
 		except = filepath.FromSlash(except)
-		for _, s := range testdataContents() {
+		for _, s := range testdataContents().Suggestions {
 			if s != except {
 				excluded = true
 				r = append(r, s)
@@ -740,26 +753,30 @@ func TestTypedCompleters(t *testing.T) {
 		if !excluded {
 			t.Errorf("%q was not excluded", except)
 		}
-		return r
+		return &Autocompletion{
+			Suggestions: r,
+		}
 	}
 	for _, test := range []completerTestInterface{
 		// Bool completer tests
 		&completerTest[bool]{
 			name:    "bool completer returns value",
 			singleC: BoolCompleter(),
-			want: []string{
-				"0",
-				"1",
-				"F",
-				"FALSE",
-				"False",
-				"T",
-				"TRUE",
-				"True",
-				"f",
-				"false",
-				"t",
-				"true",
+			want: &Autocompletion{
+				Suggestions: []string{
+					"0",
+					"1",
+					"F",
+					"FALSE",
+					"False",
+					"T",
+					"TRUE",
+					"True",
+					"f",
+					"false",
+					"t",
+					"true",
+				},
 			},
 		},
 		// String completer tests
@@ -770,7 +787,9 @@ func TestTypedCompleters(t *testing.T) {
 		&completerTest[string]{
 			name: "list completer returns list",
 			c:    SimpleCompleter[[]string]("first", "second", "third"),
-			want: []string{"first", "second", "third"},
+			want: &Autocompletion{
+				Suggestions: []string{"first", "second", "third"},
+			},
 		},
 		// FileCompleter tests
 		&completerTest[string]{
@@ -785,19 +804,21 @@ func TestTypedCompleters(t *testing.T) {
 				FileTypes: []string{".mod", ".sum"},
 			},
 			args: "cmd ",
-			want: []string{
-				filepath.FromSlash(".git/"),
-				filepath.FromSlash("_testdata_symlink/"),
-				filepath.FromSlash("cache/"),
-				filepath.FromSlash("cmd/"),
-				filepath.FromSlash("color/"),
-				filepath.FromSlash("docs/"),
-				filepath.FromSlash("glog/"),
-				"go.mod",
-				"go.sum",
-				filepath.FromSlash("sourcerer/"),
-				filepath.FromSlash("testdata/"),
-				" ",
+			want: &Autocompletion{
+				Suggestions: []string{
+					filepath.FromSlash(".git/"),
+					filepath.FromSlash("_testdata_symlink/"),
+					filepath.FromSlash("cache/"),
+					filepath.FromSlash("cmd/"),
+					filepath.FromSlash("color/"),
+					filepath.FromSlash("docs/"),
+					filepath.FromSlash("glog/"),
+					"go.mod",
+					"go.sum",
+					filepath.FromSlash("sourcerer/"),
+					filepath.FromSlash("testdata/"),
+					" ",
+				},
 			},
 		},
 		&completerTest[string]{
@@ -819,18 +840,22 @@ func TestTypedCompleters(t *testing.T) {
 			name: "file completer works with string list arg, and autofills letters with space",
 			c:    &FileCompleter[[]string]{},
 			args: "cmd execu",
-			want: []string{
-				"execut",
-				"execut_",
+			want: &Autocompletion{
+				Suggestions: []string{
+					"execut",
+				},
+				SpacelessCompletion: true,
 			},
 		},
 		&completerTest[string]{
-			name:           "file completer works with string list arg, and autofills letters with no space",
-			c:              &FileCompleter[[]string]{},
-			args:           "cmd execu",
-			doesntAddSpace: true,
-			want: []string{
-				"execut",
+			name: "file completer works with string list arg, and autofills letters with no spaceless",
+			c:    &FileCompleter[[]string]{},
+			args: "cmd execu",
+			want: &Autocompletion{
+				Suggestions: []string{
+					"execut",
+				},
+				SpacelessCompletion: true,
 			},
 		},
 		&completerTest[string]{
@@ -839,17 +864,21 @@ func TestTypedCompleters(t *testing.T) {
 				Distinct: true,
 			},
 			args: "cmd execute.go execute_test.go ex",
-			want: []string{
-				"executor.go",
+			want: &Autocompletion{
+				Suggestions: []string{
+					"executor.go",
+				},
 			},
 		},
 		&completerTest[string]{
 			name:    "file completer works with string arg",
 			singleC: &FileCompleter[string]{},
 			args:    "cmd execu",
-			want: []string{
-				"execut",
-				"execut_",
+			want: &Autocompletion{
+				Suggestions: []string{
+					"execut",
+				},
+				SpacelessCompletion: true,
 			},
 		},
 		&completerTest[string]{
@@ -874,22 +903,24 @@ func TestTypedCompleters(t *testing.T) {
 					t.Fatalf("failed to delete empty directory")
 				}
 			},
-			want: []string{
-				".surprise",
-				filepath.FromSlash("cases/"),
-				filepath.FromSlash("dir1/"),
-				filepath.FromSlash("dir2/"),
-				filepath.FromSlash("dir3/"),
-				filepath.FromSlash("dir4/"),
-				filepath.FromSlash("empty/"),
-				"four.txt",
-				"METADATA",
-				filepath.FromSlash("metadata_/"),
-				filepath.FromSlash("moreCases/"),
-				"one.txt",
-				"three.txt",
-				"two.txt",
-				" ",
+			want: &Autocompletion{
+				Suggestions: []string{
+					".surprise",
+					filepath.FromSlash("cases/"),
+					filepath.FromSlash("dir1/"),
+					filepath.FromSlash("dir2/"),
+					filepath.FromSlash("dir3/"),
+					filepath.FromSlash("dir4/"),
+					filepath.FromSlash("empty/"),
+					"four.txt",
+					"METADATA",
+					filepath.FromSlash("metadata_/"),
+					filepath.FromSlash("moreCases/"),
+					"one.txt",
+					"three.txt",
+					"two.txt",
+					" ",
+				},
 			},
 		},
 		&completerTest[string]{
@@ -897,12 +928,14 @@ func TestTypedCompleters(t *testing.T) {
 			c: &FileCompleter[[]string]{
 				Directory: "testdata/dir1",
 			},
-			want: []string{
-				"first.txt",
-				"fourth.py",
-				"second.py",
-				"third.go",
-				" ",
+			want: &Autocompletion{
+				Suggestions: []string{
+					"first.txt",
+					"fourth.py",
+					"second.py",
+					"third.go",
+					" ",
+				},
 			},
 		},
 		&completerTest[string]{
@@ -913,10 +946,12 @@ func TestTypedCompleters(t *testing.T) {
 					return s == "third.go" || s == "other" || s == "fourth.py"
 				},
 			},
-			want: []string{
-				"first.txt",
-				"second.py",
-				" ",
+			want: &Autocompletion{
+				Suggestions: []string{
+					"first.txt",
+					"second.py",
+					" ",
+				},
 			},
 		},
 		&completerTest[string]{
@@ -925,10 +960,12 @@ func TestTypedCompleters(t *testing.T) {
 				Directory: "testdata/dir1",
 				Regexp:    regexp.MustCompile(".*.py$"),
 			},
-			want: []string{
-				"fourth.py",
-				"second.py",
-				" ",
+			want: &Autocompletion{
+				Suggestions: []string{
+					"fourth.py",
+					"second.py",
+					" ",
+				},
 			},
 		},
 		&completerTest[string]{
@@ -937,10 +974,12 @@ func TestTypedCompleters(t *testing.T) {
 				Directory: "testdata/dir3",
 			},
 			args: "cmd th",
-			want: []string{
-				filepath.FromSlash("that/"),
-				"this.txt",
-				" ",
+			want: &Autocompletion{
+				Suggestions: []string{
+					filepath.FromSlash("that/"),
+					"this.txt",
+					" ",
+				},
 			},
 		},
 		&completerTest[string]{
@@ -949,9 +988,11 @@ func TestTypedCompleters(t *testing.T) {
 				Directory:         "testdata/dir2",
 				IgnoreDirectories: true,
 			},
-			want: []string{
-				"file",
-				"file_",
+			want: &Autocompletion{
+				Suggestions: []string{
+					"file",
+				},
+				SpacelessCompletion: true,
 			},
 		},
 		&completerTest[string]{
@@ -960,30 +1001,25 @@ func TestTypedCompleters(t *testing.T) {
 				Directory:   "testdata/dir2",
 				IgnoreFiles: true,
 			},
-			want: []string{
-				filepath.FromSlash("childC/"),
-				filepath.FromSlash("childD/"),
-				filepath.FromSlash("subA/"),
-				filepath.FromSlash("subB/"),
-				" ",
+			want: &Autocompletion{
+				Suggestions: []string{
+					filepath.FromSlash("childC/"),
+					filepath.FromSlash("childD/"),
+					filepath.FromSlash("subA/"),
+					filepath.FromSlash("subB/"),
+					" ",
+				},
 			},
 		},
 		&completerTest[string]{
 			name: "file completer completes to directory",
 			c:    &FileCompleter[[]string]{},
 			args: "cmd testdata/dir1",
-			want: []string{
-				fmt.Sprintf("testdata/dir1%c", filepath.Separator),
-				fmt.Sprintf("testdata/dir1%c_", filepath.Separator),
-			},
-		},
-		&completerTest[string]{
-			name:           "file completer completes to directory when no space",
-			c:              &FileCompleter[[]string]{},
-			args:           "cmd testdata/dir1",
-			doesntAddSpace: true,
-			want: []string{
-				fmt.Sprintf("testdata/dir1%c", filepath.Separator),
+			want: &Autocompletion{
+				Suggestions: []string{
+					fmt.Sprintf("testdata/dir1%c", filepath.Separator),
+				},
+				SpacelessCompletion: true,
 			},
 		},
 		&completerTest[string]{
@@ -992,21 +1028,25 @@ func TestTypedCompleters(t *testing.T) {
 				Directory: "testdata",
 			},
 			args: "cmd dir1",
-			want: []string{
-				filepath.FromSlash("dir1/"),
-				filepath.FromSlash("dir1/_"),
+			want: &Autocompletion{
+				Suggestions: []string{
+					filepath.FromSlash("dir1/"),
+				},
+				SpacelessCompletion: true,
 			},
 		},
 		&completerTest[string]{
 			name: "file completer shows contents of directory when ending with a separator",
 			c:    &FileCompleter[[]string]{},
 			args: "cmd testdata/dir1/",
-			want: []string{
-				"first.txt",
-				"fourth.py",
-				"second.py",
-				"third.go",
-				" ",
+			want: &Autocompletion{
+				Suggestions: []string{
+					"first.txt",
+					"fourth.py",
+					"second.py",
+					"third.go",
+					" ",
+				},
 			},
 		},
 		&completerTest[string]{
@@ -1015,33 +1055,39 @@ func TestTypedCompleters(t *testing.T) {
 				Directory: "testdata",
 			},
 			args: "cmd dir1/",
-			want: []string{
-				"first.txt",
-				"fourth.py",
-				"second.py",
-				"third.go",
-				" ",
+			want: &Autocompletion{
+				Suggestions: []string{
+					"first.txt",
+					"fourth.py",
+					"second.py",
+					"third.go",
+					" ",
+				},
 			},
 		},
 		&completerTest[string]{
 			name: "file completer only shows basenames when multiple options with different next letter",
 			c:    &FileCompleter[[]string]{},
 			args: "cmd testdata/dir",
-			want: []string{
-				filepath.FromSlash("dir1/"),
-				filepath.FromSlash("dir2/"),
-				filepath.FromSlash("dir3/"),
-				filepath.FromSlash("dir4/"),
-				" ",
+			want: &Autocompletion{
+				Suggestions: []string{
+					filepath.FromSlash("dir1/"),
+					filepath.FromSlash("dir2/"),
+					filepath.FromSlash("dir3/"),
+					filepath.FromSlash("dir4/"),
+					" ",
+				},
 			},
 		},
 		&completerTest[string]{
 			name: "file completer shows full names when multiple options with same next letter",
 			c:    &FileCompleter[[]string]{},
 			args: "cmd testdata/d",
-			want: []string{
-				"testdata/dir",
-				"testdata/dir_",
+			want: &Autocompletion{
+				Suggestions: []string{
+					"testdata/dir",
+				},
+				SpacelessCompletion: true,
 			},
 		},
 		&completerTest[string]{
@@ -1050,57 +1096,69 @@ func TestTypedCompleters(t *testing.T) {
 				Directory: "testdata/dir1",
 			},
 			args: "cmd f",
-			want: []string{
-				"first.txt",
-				"fourth.py",
-				" ",
+			want: &Autocompletion{
+				Suggestions: []string{
+					"first.txt",
+					"fourth.py",
+					" ",
+				},
 			},
 		},
 		&completerTest[string]{
 			name: "file completer handles directories with spaces",
 			c:    &FileCompleter[[]string]{},
 			args: `cmd testdata/dir4/folder\ wit`,
-			want: []string{
-				fmt.Sprintf(`testdata/dir4/folder\ with\ spaces%c`, filepath.Separator),
-				fmt.Sprintf(`testdata/dir4/folder\ with\ spaces%c_`, filepath.Separator),
+			want: &Autocompletion{
+				Suggestions: []string{
+					fmt.Sprintf(`testdata/dir4/folder\ with\ spaces%c`, filepath.Separator),
+				},
+				SpacelessCompletion: true,
 			},
 		},
 		&completerTest[string]{
 			name: "file completer handles directories with spaces when same argument",
 			c:    &FileCompleter[[]string]{},
 			args: `cmd testdata/dir4/folder\ wit`,
-			want: []string{
-				fmt.Sprintf(`testdata/dir4/folder\ with\ spaces%c`, filepath.Separator),
-				fmt.Sprintf(`testdata/dir4/folder\ with\ spaces%c_`, filepath.Separator),
+			want: &Autocompletion{
+				Suggestions: []string{
+					fmt.Sprintf(`testdata/dir4/folder\ with\ spaces%c`, filepath.Separator),
+				},
+				SpacelessCompletion: true,
 			},
 		},
 		&completerTest[string]{
 			name: "file completer can dive into folder with spaces",
 			c:    &FileCompleter[[]string]{},
 			args: `cmd testdata/dir4/folder\ with\ spaces/`,
-			want: []string{
-				"goodbye.go",
-				"hello.txt",
-				" ",
+			want: &Autocompletion{
+				Suggestions: []string{
+					"goodbye.go",
+					"hello.txt",
+					" ",
+				},
 			},
 		},
 		&completerTest[string]{
 			name: "file completer can dive into folder with spaces when combined args",
 			c:    &FileCompleter[[]string]{},
 			args: `cmd testdata/dir4/folder\ with\ spaces/`,
-			want: []string{
-				"goodbye.go",
-				"hello.txt",
-				" ",
+			want: &Autocompletion{
+				Suggestions: []string{
+					"goodbye.go",
+					"hello.txt",
+					" ",
+				},
 			},
 		},
 		&completerTest[string]{
 			name: "file completer fills in letters that are the same for all options",
 			c:    &FileCompleter[[]string]{},
 			args: `cmd testdata/dir4/fo`,
-			want: []string{
-				"testdata/dir4/folder",
-				"testdata/dir4/folder_",
+			want: &Autocompletion{
+				Suggestions: []string{
+					"testdata/dir4/folder",
+				},
+				SpacelessCompletion: true,
 			},
 		},
 		&completerTest[string]{
@@ -1108,12 +1166,14 @@ func TestTypedCompleters(t *testing.T) {
 			c:             &FileCompleter[[]string]{},
 			commandBranch: true,
 			args:          "cmd testdata/dir",
-			want: []string{
-				filepath.FromSlash("dir1/"),
-				filepath.FromSlash("dir2/"),
-				filepath.FromSlash("dir3/"),
-				filepath.FromSlash("dir4/"),
-				" ",
+			want: &Autocompletion{
+				Suggestions: []string{
+					filepath.FromSlash("dir1/"),
+					filepath.FromSlash("dir2/"),
+					filepath.FromSlash("dir3/"),
+					filepath.FromSlash("dir4/"),
+					" ",
+				},
 			},
 		},
 		&completerTest[string]{
@@ -1121,10 +1181,12 @@ func TestTypedCompleters(t *testing.T) {
 			c:             &FileCompleter[[]string]{},
 			commandBranch: true,
 			args:          "cmd testdata/dir1/f",
-			want: []string{
-				"first.txt",
-				"fourth.py",
-				" ",
+			want: &Autocompletion{
+				Suggestions: []string{
+					"first.txt",
+					"fourth.py",
+					" ",
+				},
 			},
 		},
 		&completerTest[string]{
@@ -1132,9 +1194,11 @@ func TestTypedCompleters(t *testing.T) {
 			c:             &FileCompleter[[]string]{},
 			commandBranch: true,
 			args:          "cmd testdata/dI",
-			want: []string{
-				"testdata/dir",
-				"testdata/dir_",
+			want: &Autocompletion{
+				Suggestions: []string{
+					"testdata/dir",
+				},
+				SpacelessCompletion: true,
 			},
 		},
 		&completerTest[string]{
@@ -1142,12 +1206,14 @@ func TestTypedCompleters(t *testing.T) {
 			c:             &FileCompleter[[]string]{},
 			commandBranch: true,
 			args:          "cmd testdata/DiR",
-			want: []string{
-				filepath.FromSlash("dir1/"),
-				filepath.FromSlash("dir2/"),
-				filepath.FromSlash("dir3/"),
-				filepath.FromSlash("dir4/"),
-				" ",
+			want: &Autocompletion{
+				Suggestions: []string{
+					filepath.FromSlash("dir1/"),
+					filepath.FromSlash("dir2/"),
+					filepath.FromSlash("dir3/"),
+					filepath.FromSlash("dir4/"),
+					" ",
+				},
 			},
 		},
 		&completerTest[string]{
@@ -1155,9 +1221,11 @@ func TestTypedCompleters(t *testing.T) {
 			c:             &FileCompleter[[]string]{},
 			commandBranch: true,
 			args:          "cmd testdata/cases/abc",
-			want: []string{
-				"testdata/cases/abcde",
-				"testdata/cases/abcde_",
+			want: &Autocompletion{
+				Suggestions: []string{
+					"testdata/cases/abcde",
+				},
+				SpacelessCompletion: true,
 			},
 		},
 		&completerTest[string]{
@@ -1165,9 +1233,11 @@ func TestTypedCompleters(t *testing.T) {
 			c:             &FileCompleter[[]string]{},
 			commandBranch: true,
 			args:          "cmd testdata/moreCases/",
-			want: []string{
-				"testdata/moreCases/QW_",
-				"testdata/moreCases/QW__",
+			want: &Autocompletion{
+				Suggestions: []string{
+					"testdata/moreCases/QW_",
+				},
+				SpacelessCompletion: true,
 			},
 		},
 		&completerTest[string]{
@@ -1175,9 +1245,11 @@ func TestTypedCompleters(t *testing.T) {
 			c:             &FileCompleter[[]string]{},
 			commandBranch: true,
 			args:          "cmd testdata/moreCases/q",
-			want: []string{
-				"testdata/moreCases/qW_",
-				"testdata/moreCases/qW__",
+			want: &Autocompletion{
+				Suggestions: []string{
+					"testdata/moreCases/qW_",
+				},
+				SpacelessCompletion: true,
 			},
 		},
 		&completerTest[string]{
@@ -1185,38 +1257,46 @@ func TestTypedCompleters(t *testing.T) {
 			c:             &FileCompleter[[]string]{},
 			commandBranch: true,
 			args:          "cmd testdata/moreCases/qW_t",
-			want: []string{
-				"qW_three.txt",
-				"qw_TRES.txt",
-				"Qw_two.txt",
-				" ",
+			want: &Autocompletion{
+				Suggestions: []string{
+					"qW_three.txt",
+					"qw_TRES.txt",
+					"Qw_two.txt",
+					" ",
+				},
 			},
 		},
 		&completerTest[string]{
 			name: "file completer completes to case matched completion",
 			c:    &FileCompleter[[]string]{},
 			args: "cmd testdata/meta",
-			want: []string{
-				"testdata/metadata",
-				"testdata/metadata_",
+			want: &Autocompletion{
+				Suggestions: []string{
+					"testdata/metadata",
+				},
+				SpacelessCompletion: true,
 			},
 		},
 		&completerTest[string]{
 			name: "file completer completes to case matched completion",
 			c:    &FileCompleter[[]string]{},
 			args: "cmd testdata/ME",
-			want: []string{
-				"testdata/METADATA",
-				"testdata/METADATA_",
+			want: &Autocompletion{
+				Suggestions: []string{
+					"testdata/METADATA",
+				},
+				SpacelessCompletion: true,
 			},
 		},
 		&completerTest[string]{
 			name: "file completer completes to something when no cases match",
 			c:    &FileCompleter[[]string]{},
 			args: "cmd testdata/MeTa",
-			want: []string{
-				"testdata/METADATA",
-				"testdata/METADATA_",
+			want: &Autocompletion{
+				Suggestions: []string{
+					"testdata/METADATA",
+				},
+				SpacelessCompletion: true,
 			},
 		},
 		&completerTest[string]{
@@ -1225,9 +1305,11 @@ func TestTypedCompleters(t *testing.T) {
 				Directory: "testdata",
 			},
 			args: "cmd meta",
-			want: []string{
-				"metadata",
-				"metadata_",
+			want: &Autocompletion{
+				Suggestions: []string{
+					"metadata",
+				},
+				SpacelessCompletion: true,
 			},
 		},
 		&completerTest[string]{
@@ -1236,9 +1318,11 @@ func TestTypedCompleters(t *testing.T) {
 				Directory: "testdata",
 			},
 			args: "cmd MET",
-			want: []string{
-				"METADATA",
-				"METADATA_",
+			want: &Autocompletion{
+				Suggestions: []string{
+					"METADATA",
+				},
+				SpacelessCompletion: true,
 			},
 		},
 		&completerTest[string]{
@@ -1247,29 +1331,35 @@ func TestTypedCompleters(t *testing.T) {
 				Directory: "testdata",
 			},
 			args: "cmd meTA",
-			want: []string{
-				"METADATA",
-				"METADATA_",
+			want: &Autocompletion{
+				Suggestions: []string{
+					"METADATA",
+				},
+				SpacelessCompletion: true,
 			},
 		},
 		&completerTest[string]{
 			name: "file completer doesn't complete when matches a prefix",
 			c:    &FileCompleter[[]string]{},
 			args: "cmd testdata/METADATA",
-			want: []string{
-				"METADATA",
-				filepath.FromSlash("metadata_/"),
-				" ",
+			want: &Autocompletion{
+				Suggestions: []string{
+					"METADATA",
+					filepath.FromSlash("metadata_/"),
+					" ",
+				},
 			},
 		},
 		&completerTest[string]{
 			name: "file completer doesn't complete when matches a prefix file",
 			c:    &FileCompleter[[]string]{},
 			args: "cmd testdata/metadata_/m",
-			want: []string{
-				"m1",
-				"m2",
-				" ",
+			want: &Autocompletion{
+				Suggestions: []string{
+					"m1",
+					"m2",
+					" ",
+				},
 			},
 		},
 		&completerTest[string]{
@@ -1278,8 +1368,10 @@ func TestTypedCompleters(t *testing.T) {
 				Distinct: true,
 			},
 			args: "cmd testdata/metadata_/m1",
-			want: []string{
-				"testdata/metadata_/m1",
+			want: &Autocompletion{
+				Suggestions: []string{
+					"testdata/metadata_/m1",
+				},
 			},
 		},
 		// Distinct file completers.
@@ -1287,7 +1379,9 @@ func TestTypedCompleters(t *testing.T) {
 			name: "file completer returns repeats if not distinct",
 			c:    &FileCompleter[[]string]{},
 			args: "cmd testdata/three.txt testdata/t",
-			want: []string{"three.txt", "two.txt", " "},
+			want: &Autocompletion{
+				Suggestions: []string{"three.txt", "two.txt", " "},
+			},
 		},
 		&completerTest[string]{
 			name: "file completer returns distinct",
@@ -1295,7 +1389,9 @@ func TestTypedCompleters(t *testing.T) {
 				Distinct: true,
 			},
 			args: "cmd testdata/three.txt testdata/t",
-			want: []string{"testdata/two.txt"},
+			want: &Autocompletion{
+				Suggestions: []string{"testdata/two.txt"},
+			},
 		},
 		&completerTest[string]{
 			name: "file completer handles non with distinct",
@@ -1310,7 +1406,10 @@ func TestTypedCompleters(t *testing.T) {
 				Distinct: true,
 			},
 			args: "cmd comp",
-			want: []string{"completer", "completer_"},
+			want: &Autocompletion{
+				Suggestions:         []string{"completer"},
+				SpacelessCompletion: true,
+			},
 		},
 		&completerTest[string]{
 			name: "file completer first level distinct returns all options",
@@ -1318,18 +1417,20 @@ func TestTypedCompleters(t *testing.T) {
 				Distinct: true,
 			},
 			args: "cmd c",
-			want: []string{
-				"cache.go",
-				filepath.FromSlash("cache/"),
-				"cache_test.go",
-				filepath.FromSlash("cmd/"),
-				filepath.FromSlash("color/"),
-				"command.go",
-				"commandtest.go",
-				"completer.go",
-				"completer_test.go",
-				"conditional.go",
-				" ",
+			want: &Autocompletion{
+				Suggestions: []string{
+					"cache.go",
+					filepath.FromSlash("cache/"),
+					"cache_test.go",
+					filepath.FromSlash("cmd/"),
+					filepath.FromSlash("color/"),
+					"command.go",
+					"commandtest.go",
+					"completer.go",
+					"completer_test.go",
+					"conditional.go",
+					" ",
+				},
 			},
 		},
 		&completerTest[string]{
@@ -1338,9 +1439,11 @@ func TestTypedCompleters(t *testing.T) {
 				Distinct: true,
 			},
 			args: "cmd command.go comp",
-			want: []string{
-				"completer",
-				"completer_",
+			want: &Autocompletion{
+				Suggestions: []string{
+					"completer",
+				},
+				SpacelessCompletion: true,
 			},
 		},
 		&completerTest[string]{
@@ -1349,17 +1452,19 @@ func TestTypedCompleters(t *testing.T) {
 				Distinct: true,
 			},
 			args: "cmd completer.go c",
-			want: []string{
-				"cache.go",
-				filepath.FromSlash("cache/"),
-				"cache_test.go",
-				filepath.FromSlash("cmd/"),
-				filepath.FromSlash("color/"),
-				"command.go",
-				"commandtest.go",
-				"completer_test.go",
-				"conditional.go",
-				" ",
+			want: &Autocompletion{
+				Suggestions: []string{
+					"cache.go",
+					filepath.FromSlash("cache/"),
+					"cache_test.go",
+					filepath.FromSlash("cmd/"),
+					filepath.FromSlash("color/"),
+					"command.go",
+					"commandtest.go",
+					"completer_test.go",
+					"conditional.go",
+					" ",
+				},
 			},
 		},
 		&completerTest[string]{
@@ -1368,16 +1473,18 @@ func TestTypedCompleters(t *testing.T) {
 				Distinct: true,
 			},
 			args: "cmd completer.go completer_test.go c",
-			want: []string{
-				"cache.go",
-				filepath.FromSlash("cache/"),
-				"cache_test.go",
-				filepath.FromSlash("cmd/"),
-				filepath.FromSlash("color/"),
-				"command.go",
-				"commandtest.go",
-				"conditional.go",
-				" ",
+			want: &Autocompletion{
+				Suggestions: []string{
+					"cache.go",
+					filepath.FromSlash("cache/"),
+					"cache_test.go",
+					filepath.FromSlash("cmd/"),
+					filepath.FromSlash("color/"),
+					"command.go",
+					"commandtest.go",
+					"conditional.go",
+					" ",
+				},
 			},
 		},
 		// Absolute file completion tests
@@ -1391,12 +1498,14 @@ func TestTypedCompleters(t *testing.T) {
 				fakeDir("dirB"),
 			),
 			args: fmt.Sprintf("cmd %s", "/"),
-			want: []string{
-				filepath.FromSlash("dirA/"),
-				filepath.FromSlash("dirB/"),
-				"file1",
-				"file2",
-				" ",
+			want: &Autocompletion{
+				Suggestions: []string{
+					filepath.FromSlash("dirA/"),
+					filepath.FromSlash("dirB/"),
+					"file1",
+					"file2",
+					" ",
+				},
 			},
 		},
 		&completerTest[string]{
@@ -1409,9 +1518,11 @@ func TestTypedCompleters(t *testing.T) {
 				fakeDir("dirA"),
 				fakeDir("dirB"),
 			),
-			want: []string{
-				"/dir",
-				"/dir_",
+			want: &Autocompletion{
+				Suggestions: []string{
+					"/dir",
+				},
+				SpacelessCompletion: true,
 			},
 		},
 		&completerTest[string]{
@@ -1424,9 +1535,11 @@ func TestTypedCompleters(t *testing.T) {
 				fakeDir("dirA"),
 				fakeDir("dirB"),
 			),
-			want: []string{
-				"/file",
-				"/file_",
+			want: &Autocompletion{
+				Suggestions: []string{
+					"/file",
+				},
+				SpacelessCompletion: true,
 			},
 		},
 		// Absolute file with specified directory completion tests
@@ -1442,12 +1555,14 @@ func TestTypedCompleters(t *testing.T) {
 				fakeDir("dirB"),
 			),
 			args: "cmd /",
-			want: []string{
-				filepath.FromSlash("dirA/"),
-				filepath.FromSlash("dirB/"),
-				"file1",
-				"file2",
-				" ",
+			want: &Autocompletion{
+				Suggestions: []string{
+					filepath.FromSlash("dirA/"),
+					filepath.FromSlash("dirB/"),
+					"file1",
+					"file2",
+					" ",
+				},
 			},
 		},
 		&completerTest[string]{
@@ -1462,9 +1577,11 @@ func TestTypedCompleters(t *testing.T) {
 				fakeDir("dirA"),
 				fakeDir("dirB"),
 			),
-			want: []string{
-				"/dir",
-				"/dir_",
+			want: &Autocompletion{
+				Suggestions: []string{
+					"/dir",
+				},
+				SpacelessCompletion: true,
 			},
 		},
 		&completerTest[string]{
@@ -1479,9 +1596,11 @@ func TestTypedCompleters(t *testing.T) {
 				fakeDir("dirA"),
 				fakeDir("dirB"),
 			),
-			want: []string{
-				"/file",
-				"/file_",
+			want: &Autocompletion{
+				Suggestions: []string{
+					"/file",
+				},
+				SpacelessCompletion: true,
 			},
 		},
 		// ExcludePwd FileCompleter tests
@@ -1584,19 +1703,21 @@ func TestTypedCompleters(t *testing.T) {
 				MaxDepth:  -1,
 			},
 			args: "cmd ",
-			want: []string{
-				filepath.FromSlash(".git/"),
-				filepath.FromSlash("_testdata_symlink/"),
-				filepath.FromSlash("cache/"),
-				filepath.FromSlash("cmd/"),
-				filepath.FromSlash("color/"),
-				filepath.FromSlash("docs/"),
-				filepath.FromSlash("glog/"),
-				"go.mod",
-				"go.sum",
-				filepath.FromSlash("sourcerer/"),
-				filepath.FromSlash("testdata/"),
-				" ",
+			want: &Autocompletion{
+				Suggestions: []string{
+					filepath.FromSlash(".git/"),
+					filepath.FromSlash("_testdata_symlink/"),
+					filepath.FromSlash("cache/"),
+					filepath.FromSlash("cmd/"),
+					filepath.FromSlash("color/"),
+					filepath.FromSlash("docs/"),
+					filepath.FromSlash("glog/"),
+					"go.mod",
+					"go.sum",
+					filepath.FromSlash("sourcerer/"),
+					filepath.FromSlash("testdata/"),
+					" ",
+				},
 			},
 		},
 		&completerTest[string]{
@@ -1606,19 +1727,21 @@ func TestTypedCompleters(t *testing.T) {
 				MaxDepth:  2,
 			},
 			args: "cmd ",
-			want: []string{
-				filepath.FromSlash(".git/"),
-				filepath.FromSlash("_testdata_symlink/"),
-				filepath.FromSlash("cache/"),
-				filepath.FromSlash("cmd/"),
-				filepath.FromSlash("color/"),
-				filepath.FromSlash("docs/"),
-				filepath.FromSlash("glog/"),
-				"go.mod",
-				"go.sum",
-				filepath.FromSlash("sourcerer/"),
-				filepath.FromSlash("testdata/"),
-				" ",
+			want: &Autocompletion{
+				Suggestions: []string{
+					filepath.FromSlash(".git/"),
+					filepath.FromSlash("_testdata_symlink/"),
+					filepath.FromSlash("cache/"),
+					filepath.FromSlash("cmd/"),
+					filepath.FromSlash("color/"),
+					filepath.FromSlash("docs/"),
+					filepath.FromSlash("glog/"),
+					"go.mod",
+					"go.sum",
+					filepath.FromSlash("sourcerer/"),
+					filepath.FromSlash("testdata/"),
+					" ",
+				},
 			},
 		},
 		&completerTest[string]{
@@ -1628,19 +1751,21 @@ func TestTypedCompleters(t *testing.T) {
 				MaxDepth:  1,
 			},
 			args: "cmd ",
-			want: []string{
-				".git",
-				"_testdata_symlink",
-				"cache",
-				"cmd",
-				"color",
-				"docs",
-				"glog",
-				"go.mod",
-				"go.sum",
-				"sourcerer",
-				"testdata",
-				" ",
+			want: &Autocompletion{
+				Suggestions: []string{
+					".git",
+					"_testdata_symlink",
+					"cache",
+					"cmd",
+					"color",
+					"docs",
+					"glog",
+					"go.mod",
+					"go.sum",
+					"sourcerer",
+					"testdata",
+					" ",
+				},
 			},
 		},
 		&completerTest[string]{
@@ -1650,9 +1775,11 @@ func TestTypedCompleters(t *testing.T) {
 				FileTypes: []string{".mod", ".sum"},
 			},
 			args: "cmd go",
-			want: []string{
-				"go.",
-				"go._",
+			want: &Autocompletion{
+				Suggestions: []string{
+					"go.",
+				},
+				SpacelessCompletion: true,
 			},
 		},
 		&completerTest[string]{
@@ -1662,9 +1789,11 @@ func TestTypedCompleters(t *testing.T) {
 				FileTypes: []string{".mod", ".sum"},
 			},
 			args: "cmd go",
-			want: []string{
-				"go.",
-				"go._",
+			want: &Autocompletion{
+				Suggestions: []string{
+					"go.",
+				},
+				SpacelessCompletion: true,
 			},
 		},
 		&completerTest[string]{
@@ -1674,8 +1803,10 @@ func TestTypedCompleters(t *testing.T) {
 				FileTypes: []string{".mod", ".sum"},
 			},
 			args: "cmd te",
-			want: []string{
-				"testdata",
+			want: &Autocompletion{
+				Suggestions: []string{
+					"testdata",
+				},
 			},
 		},
 		&completerTest[string]{
@@ -1685,9 +1816,11 @@ func TestTypedCompleters(t *testing.T) {
 				FileTypes: []string{".mod", ".sum"},
 			},
 			args: "cmd te",
-			want: []string{
-				filepath.FromSlash("testdata/"),
-				filepath.FromSlash("testdata/_"),
+			want: &Autocompletion{
+				Suggestions: []string{
+					filepath.FromSlash("testdata/"),
+				},
+				SpacelessCompletion: true,
 			},
 		},
 		&completerTest[string]{
@@ -1696,21 +1829,23 @@ func TestTypedCompleters(t *testing.T) {
 				MaxDepth: 1,
 			},
 			args: "cmd testdata/",
-			want: []string{
-				".surprise",
-				"cases",
-				"dir1",
-				"dir2",
-				"dir3",
-				"dir4",
-				"four.txt",
-				"METADATA",
-				"metadata_",
-				"moreCases",
-				"one.txt",
-				"three.txt",
-				"two.txt",
-				" ",
+			want: &Autocompletion{
+				Suggestions: []string{
+					".surprise",
+					"cases",
+					"dir1",
+					"dir2",
+					"dir3",
+					"dir4",
+					"four.txt",
+					"METADATA",
+					"metadata_",
+					"moreCases",
+					"one.txt",
+					"three.txt",
+					"two.txt",
+					" ",
+				},
 			},
 		},
 		&completerTest[string]{
@@ -1719,21 +1854,23 @@ func TestTypedCompleters(t *testing.T) {
 				MaxDepth: 2,
 			},
 			args: "cmd testdata/",
-			want: []string{
-				".surprise",
-				"cases",
-				"dir1",
-				"dir2",
-				"dir3",
-				"dir4",
-				"four.txt",
-				"METADATA",
-				"metadata_",
-				"moreCases",
-				"one.txt",
-				"three.txt",
-				"two.txt",
-				" ",
+			want: &Autocompletion{
+				Suggestions: []string{
+					".surprise",
+					"cases",
+					"dir1",
+					"dir2",
+					"dir3",
+					"dir4",
+					"four.txt",
+					"METADATA",
+					"metadata_",
+					"moreCases",
+					"one.txt",
+					"three.txt",
+					"two.txt",
+					" ",
+				},
 			},
 		},
 		&completerTest[string]{
@@ -1742,9 +1879,11 @@ func TestTypedCompleters(t *testing.T) {
 				MaxDepth: 1,
 			},
 			args: "cmd testdata/d",
-			want: []string{
-				"testdata/dir",
-				"testdata/dir_",
+			want: &Autocompletion{
+				Suggestions: []string{
+					"testdata/dir",
+				},
+				SpacelessCompletion: true,
 			},
 		},
 		&completerTest[string]{
@@ -1753,9 +1892,11 @@ func TestTypedCompleters(t *testing.T) {
 				MaxDepth: 2,
 			},
 			args: "cmd testdata/d",
-			want: []string{
-				"testdata/dir",
-				"testdata/dir_",
+			want: &Autocompletion{
+				Suggestions: []string{
+					"testdata/dir",
+				},
+				SpacelessCompletion: true,
 			},
 		},
 		&completerTest[string]{
@@ -1764,8 +1905,10 @@ func TestTypedCompleters(t *testing.T) {
 				MaxDepth: 1,
 			},
 			args: "cmd testdata/mo",
-			want: []string{
-				"testdata/moreCases",
+			want: &Autocompletion{
+				Suggestions: []string{
+					"testdata/moreCases",
+				},
 			},
 		},
 		&completerTest[string]{
@@ -1774,8 +1917,10 @@ func TestTypedCompleters(t *testing.T) {
 				MaxDepth: 2,
 			},
 			args: "cmd testdata/mo",
-			want: []string{
-				"testdata/moreCases",
+			want: &Autocompletion{
+				Suggestions: []string{
+					"testdata/moreCases",
+				},
 			},
 		},
 		/* Useful for commenting out tests. */

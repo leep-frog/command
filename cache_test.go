@@ -883,7 +883,9 @@ func TestCacheComplete(t *testing.T) {
 					ListArg[string]("sl", testDesc, 1, 2, SimpleCompleter[[]string]("buck", "dollar", "dollHairs", "dinero", "usd")),
 				)),
 				Args: "cmd $ d",
-				Want: []string{"dinero", "dollHairs", "dollar"},
+				Want: &Autocompletion{
+					Suggestions: []string{"dinero", "dollHairs", "dollar"},
+				},
 				WantData: &Data{Values: map[string]interface{}{
 					"sl": []string{"$", "d"},
 				}},

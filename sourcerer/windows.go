@@ -81,9 +81,18 @@ func (w *windows) autocompleteFunction(builtin bool, goExecutable, targetName st
 	return strings.Join([]string{
 		fmt.Sprintf("$_custom_autocomplete_%s = {", targetName),
 		`  param($wordToComplete, $commandAst, $compPoint)`,
+
+		// Passthrough args are in a file because powershell backwards slashes
+		// can cause awkward behavior when passed as an argument (e.g. `some\file\path\` -> `some\file\path"`)
+		// I believe an ending backslash causes the quote to be escaped (maybe?), and I'm
+		// sure there are other edge cases caused by it, hence the decision to use
+		// this workaround.
+		`  $Local:tmpPassthroughArgFile = New-TemporaryFile`,
+		`  [IO.File]::WriteAllLines($Local:tmpPassthroughArgFile, $commandAst.ToString())`,
+		// `  Write-Output $commandAst.ToString() > $Local:tmpPassthroughArgFile`,
 		// The last argument is for extra passthrough arguments to be passed for aliaser autocompletes.
 		// 0 for comp type
-		fmt.Sprintf(`  (& %s %s ($commandAst.CommandElements | Select-Object -first 1) "0" $compPoint "$commandAst") | ForEach-Object {`, goExecutable, w.getBranchString(builtin, AutocompleteBranchName)),
+		fmt.Sprintf(`  (& %s %s ($commandAst.CommandElements | Select-Object -first 1) --comp-line-file "0" $compPoint $Local:tmpPassthroughArgFile) | ForEach-Object {`, goExecutable, w.getBranchString(builtin, AutocompleteBranchName)),
 		`    $_`,
 		`  }`,
 		"}",
@@ -138,12 +147,12 @@ func (w *windows) executeFunction(builtin bool, goExecutable, targetName, cliNam
 	)...), "\n")
 }
 
-func (w *windows) HandleAutocompleteSuccess(output command.Output, suggestions []string) {
+func (w *windows) HandleAutocompleteSuccess(output command.Output, autocompletion *command.Autocompletion) {
 	// Add a trailing space because powershell doesn't do that for us for single-guaranteed completions
-	if len(suggestions) == 1 {
-		suggestions[0] = fmt.Sprintf("%s ", suggestions[0])
+	if len(autocompletion.Suggestions) == 1 && !autocompletion.SpacelessCompletion {
+		autocompletion.Suggestions[0] = fmt.Sprintf("%s ", autocompletion.Suggestions[0])
 	}
-	output.Stdoutf("%s\n", strings.Join(suggestions, "\n"))
+	output.Stdoutf("%s\n", strings.Join(autocompletion.Suggestions, "\n"))
 }
 
 func (w *windows) HandleAutocompleteError(output command.Output, compType int, err error) {
@@ -218,10 +227,6 @@ func (*windows) SetEnvVar(envVar, value string) string {
 
 func (*windows) UnsetEnvVar(envVar string) string {
 	return fmt.Sprintf("Remove-Item $env:%s", envVar)
-}
-
-func (*windows) AddsSpaceToSingleAutocompletion() bool {
-	return false
 }
 
 func (*windows) ShellCommandFileRunner(file string) (string, []string) {

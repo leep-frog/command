@@ -2,30 +2,43 @@ package command
 
 import "fmt"
 
+// Autocompletion is a subset of the `Completion` type and contains only
+// data relevant for the OS package to handle autocompletion logic.
+type Autocompletion struct {
+	// Suggestions is the set of autocomplete suggestions.
+	Suggestions []string
+	// SpacelessCompletion indicates that a space should *not* be added (which happens
+	// automatically if there is only one completion suggestion).
+	SpacelessCompletion bool
+}
+
 // Autocomplete returns the completion suggestions for the provided node, `COMP_LINE`,
 // and `passthroughArgs` (`passthroughArgs` are used for `Aliaser` statements).
 // The returned slice is a list of autocompletion suggestions, and the returned error
 // indicates if there was an issue. The error can be sent to stderr without
 // causing any autocompletion issues.
-func Autocomplete(n Node, compLine string, passthroughArgs []string, os OS) ([]string, error) {
+func Autocomplete(n Node, compLine string, passthroughArgs []string, os OS) (*Autocompletion, error) {
 	return autocomplete(n, compLine, passthroughArgs, &Data{OS: os})
 }
 
 // Separate method for testing purposes (and so Data doesn't need to be
 // constructed by callers).
-func autocomplete(n Node, compLine string, passthroughArgs []string, data *Data) ([]string, error) {
+func autocomplete(n Node, compLine string, passthroughArgs []string, data *Data) (*Autocompletion, error) {
 	input := ParseCompLine(compLine, passthroughArgs)
 	c, err := processGraphCompletion(n, input, data)
 
-	var r []string
+	var ac *Autocompletion
 	if c != nil {
-		r = c.ProcessInput(input)
+		ac = &Autocompletion{
+			c.ProcessInput(input),
+			c.SpacelessCompletion,
+		}
 	}
 
 	if c == nil && err == nil && !input.FullyProcessed() {
 		err = ExtraArgsErr(input)
 	}
-	return r, err
+	return ac, err
 }
 
 // Separate method for use by modifiers (shortcut.go, cache.go, etc.)

@@ -370,11 +370,13 @@ func TestGoLeepAutocomplete(t *testing.T) {
 			name: "completes directories",
 			ctc: &command.CompleteTestCase{
 				Args: fmt.Sprintf("cmd c -d %s", filepath.Join("..", "c")),
-				Want: []string{
-					filepath.FromSlash("cache/"),
-					filepath.FromSlash("cmd/"),
-					filepath.FromSlash("color/"),
-					" ",
+				Want: &command.Autocompletion{
+					Suggestions: []string{
+						filepath.FromSlash("cache/"),
+						filepath.FromSlash("cmd/"),
+						filepath.FromSlash("color/"),
+						" ",
+					},
 				},
 				WantData: &command.Data{Values: map[string]interface{}{
 					goDirectory.Name(): filepath.Join("..", "c"),
@@ -398,10 +400,12 @@ func TestGoLeepAutocomplete(t *testing.T) {
 						`listCLIs`,
 					},
 				}},
-				Want: []string{
-					"cliOne",
-					"cliThree",
-					"cliTwo",
+				Want: &command.Autocompletion{
+					Suggestions: []string{
+						"cliOne",
+						"cliThree",
+						"cliTwo",
+					},
 				},
 				WantData: &command.Data{Values: map[string]interface{}{
 					goleepCLIArg.Name(): "",
@@ -430,10 +434,12 @@ func TestGoLeepAutocomplete(t *testing.T) {
 						`dummyCommand `,
 					},
 				}},
-				Want: []string{
-					"deux",
-					"trois",
-					"un",
+				Want: &command.Autocompletion{
+					Suggestions: []string{
+						"deux",
+						"trois",
+						"un",
+					},
 				},
 				WantData: &command.Data{Values: map[string]interface{}{
 					goDirectory.Name():   "",
@@ -463,8 +469,10 @@ func TestGoLeepAutocomplete(t *testing.T) {
 						`dummyCommand abc de'f`,
 					},
 				}},
-				Want: []string{
-					"de'finitely",
+				Want: &command.Autocompletion{
+					Suggestions: []string{
+						"de'finitely",
+					},
 				},
 				WantData: &command.Data{Values: map[string]interface{}{
 					goDirectory.Name():   "",

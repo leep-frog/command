@@ -52,8 +52,11 @@ func (l *linux) FunctionWrap(name, fn string) string {
 	}, "\n")
 }
 
-func (l *linux) HandleAutocompleteSuccess(output command.Output, suggestions []string) {
-	output.Stdoutf("%s\n", strings.Join(suggestions, "\n"))
+func (l *linux) HandleAutocompleteSuccess(output command.Output, autocompletion *command.Autocompletion) {
+	if len(autocompletion.Suggestions) == 1 && autocompletion.SpacelessCompletion {
+		autocompletion.Suggestions = append(autocompletion.Suggestions, fmt.Sprintf("%s_", autocompletion.Suggestions[0]))
+	}
+	output.Stdoutf("%s\n", strings.Join(autocompletion.Suggestions, "\n"))
 }
 
 func (l *linux) HandleAutocompleteError(output command.Output, compType int, err error) {
@@ -220,10 +223,6 @@ func (*linux) SetEnvVar(envVar, value string) string {
 
 func (*linux) UnsetEnvVar(envVar string) string {
 	return fmt.Sprintf("unset %q", envVar)
-}
-
-func (*linux) AddsSpaceToSingleAutocompletion() bool {
-	return true
 }
 
 func (*linux) ShellCommandFileRunner(file string) (string, []string) {

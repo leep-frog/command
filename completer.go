@@ -17,10 +17,6 @@ var (
 	filepathAbs = filepath.Abs
 )
 
-const (
-	suffixChar = "_"
-)
-
 // SimpleCompleter returns a completer that suggests the provided strings for command autocompletion.
 func SimpleCompleter[T any](s ...string) Completer[T] {
 	return AsCompleter[T](
@@ -94,6 +90,9 @@ type Completion struct {
 	// distinctness for custom argument processors, you will need to implement
 	// logic in those custom objects yourself.
 	Distinct bool
+	// SpacelessCompletion indicates that a space should *not* be added (which happens
+	// automatically if there is only one completion suggestion).
+	SpacelessCompletion bool
 	// DeferredCompletion will *execute* another graph before generating the actual
 	// execution object.
 	DeferredCompletion *DeferredCompletion
@@ -134,6 +133,7 @@ func (c *Completion) Clone() *Completion {
 		c.CaseInsensitiveSort,
 		c.CaseInsensitive,
 		c.Distinct,
+		c.SpacelessCompletion,
 		c.DeferredCompletion,
 	}
 }
@@ -477,10 +477,10 @@ func (ff *FileCompleter[T]) Complete(value T, data *Data) (*Completion, error) {
 
 		// If complexecuting, then just complete to the directory
 		// Also, if the OS does not add a space, then no need to do this.
-		if onlyDir && !data.complexecute && !tooDeep && data.OS.AddsSpaceToSingleAutocompletion() {
+		if onlyDir && !data.complexecute && !tooDeep {
 			// This does "dir1/" and "dir1/_" so that the user's command is
 			// autocompleted to "dir1/" without a space after it.
-			c.Suggestions = append(c.Suggestions, fmt.Sprintf("%s%s", c.Suggestions[0], suffixChar))
+			c.SpacelessCompletion = true
 		}
 		return c, nil
 	}
@@ -501,8 +501,13 @@ func (ff *FileCompleter[T]) Complete(value T, data *Data) (*Completion, error) {
 	c.Suggestions = []string{
 		autoFill,
 	}
-	if data.OS.AddsSpaceToSingleAutocompletion() || data.complexecute {
-		c.Suggestions = append(c.Suggestions, autoFill+suffixChar)
+	c.SpacelessCompletion = true
+
+	// If complexecuting, we need to add another suggestion to make the
+	// execution fail.
+	// TODO: Move this to earlier (len(Suggestions) > 1)
+	if data.complexecute {
+		c.Suggestions = append(c.Suggestions, autoFill+"_")
 	}
 
 	return c, nil

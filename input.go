@@ -266,6 +266,8 @@ type parserState interface {
 	parseChar(curChar rune, w *words) parserState
 	// delimiter returns the delimiter for the quote set.
 	delimiter() *rune
+	// endState w *wordsr the string to append if the current state is the last state
+	endState(w *words)
 }
 
 type wordState struct{}
@@ -290,6 +292,8 @@ func (*wordState) delimiter() *rune {
 	return nil
 }
 
+func (*wordState) endState(w *words) {}
+
 type backslashState struct {
 	nextState parserState
 }
@@ -304,6 +308,13 @@ func (bss *backslashState) parseChar(curChar rune, w *words) parserState {
 
 func (*backslashState) delimiter() *rune {
 	return nil
+}
+
+func (*backslashState) endState(w *words) {
+	if !w.inWord {
+		w.startWord()
+	}
+	w.addChar('\\')
 }
 
 type whitespaceState struct{}
@@ -329,6 +340,8 @@ func (*whitespaceState) delimiter() *rune {
 	return nil
 }
 
+func (*whitespaceState) endState(w *words) {}
+
 type quoteState struct {
 	quoteChar rune
 }
@@ -345,6 +358,8 @@ func (qs *quoteState) delimiter() *rune {
 	return &qs.quoteChar
 }
 
+func (*quoteState) endState(w *words) {}
+
 // TODO: Should this belong to the os-type implementer
 func ParseCompLine(compLine string, passthroughArgs []string) *Input {
 	w := &words{}
@@ -352,6 +367,7 @@ func ParseCompLine(compLine string, passthroughArgs []string) *Input {
 	for _, c := range compLine {
 		state = state.parseChar(c, w)
 	}
+	state.endState(w)
 
 	var args []string
 	if w.inWord {
