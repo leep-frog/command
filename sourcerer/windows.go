@@ -209,8 +209,11 @@ func (w *windows) RegisterAliaser(goExecutable string, a *Aliaser) []string {
 		`}`,
 		// Create the autocomplete function
 		fmt.Sprintf(`$_sourcerer_alias_autocomplete_%s = {`, a.alias),
+		// TODO: Unify this logic with `autocompleteFuncction`?
 		`  param($wordToComplete, $commandAst, $compPoint)`,
-		fmt.Sprintf(`  (Invoke-Expression '& %s autocomplete %q "0" $compPoint "$commandAst" %s') | ForEach-Object {`, goExecutable, a.cli, quotedArgs),
+		`  $Local:tmpPassthroughArgFile = New-TemporaryFile`,
+		`  [IO.File]::WriteAllLines($Local:tmpPassthroughArgFile, $commandAst.ToString())`,
+		fmt.Sprintf(`  (Invoke-Expression '& %s %s %q --comp-line-file "0" $compPoint $Local:tmpPassthroughArgFile %s') | ForEach-Object {`, goExecutable, AutocompleteBranchName, a.cli, quotedArgs),
 		`    "$_"`,
 		`  }`,
 		`}`,
