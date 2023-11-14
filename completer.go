@@ -485,6 +485,12 @@ func (ff *FileCompleter[T]) Complete(value T, data *Data) (*Completion, error) {
 		return c, nil
 	}
 
+	// If here, then there are multiple suggestions, which means complexecute should fail.
+	// So, we don't need to try to autofill.
+	if data.complexecute {
+		return c, nil
+	}
+
 	autoFill, ok := getAutofillLetters(laFile, c.Suggestions)
 	if !ok {
 		// Nothing can be autofilled so we just return file names
@@ -502,13 +508,6 @@ func (ff *FileCompleter[T]) Complete(value T, data *Data) (*Completion, error) {
 		autoFill,
 	}
 	c.SpacelessCompletion = true
-
-	// If complexecuting, we need to add another suggestion to make the
-	// execution fail.
-	// TODO: Move this to earlier (len(Suggestions) > 1)
-	if data.complexecute {
-		c.Suggestions = append(c.Suggestions, autoFill+"_")
-	}
 
 	return c, nil
 }

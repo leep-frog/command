@@ -802,8 +802,8 @@ func TestExecute(t *testing.T) {
 						{value: "ca"},
 					},
 				},
-				WantStderr: "[Complexecute] requires exactly one suggestion to be returned for \"s\", got 2: [cache cache_]\n",
-				WantErr:    fmt.Errorf("[Complexecute] requires exactly one suggestion to be returned for \"s\", got 2: [cache cache_]"),
+				WantStderr: "[Complexecute] requires exactly one suggestion to be returned for \"s\", got 3: [cache.go cache\\ cache_test.go]\n",
+				WantErr:    fmt.Errorf("[Complexecute] requires exactly one suggestion to be returned for \"s\", got 3: [cache.go cache\\ cache_test.go]"),
 			},
 		},
 		{
