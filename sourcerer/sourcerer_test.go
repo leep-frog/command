@@ -2081,7 +2081,7 @@ func TestSourcerer(t *testing.T) {
 				},
 			},
 			{
-				name: "autocomplete when COMP_POINT is greater than length of COMP_LINE",
+				name: "autocomplete when COMP_POINT is greater than length of COMP_LINE (by 1)",
 				args: []string{"autocomplete", "basic", "63", "6", "cmd c"},
 				clis: []CLI{
 					&testCLI{
@@ -2095,14 +2095,93 @@ func TestSourcerer(t *testing.T) {
 				osChecks: map[string]*osCheck{
 					osLinux: {
 						wantStdout: autocompleteSuggestions(
-							"charlie",
+							"deux",
+							"trois",
+							"un",
 						),
 					},
 					osWindows: {
 						wantStdout: autocompleteSuggestions(
-							"charlie ",
+							"deux",
+							"trois",
+							"un",
 						),
 					},
+				},
+			},
+			{
+				name: "autocomplete when COMP_POINT is greater than length of COMP_LINE (by 2)",
+				args: []string{"autocomplete", "basic", "63", "7", "cmd c"},
+				clis: []CLI{
+					&testCLI{
+						name: "basic",
+						processors: []command.Processor{
+							command.Arg[string]("s", "desc", command.SimpleCompleter[string]("alpha", "bravo", "charlie", "brown", "baker")),
+							command.Arg[string]("z", "desz", command.SimpleCompleter[string]("un", "deux", "trois")),
+						},
+					},
+				},
+				osChecks: map[string]*osCheck{
+					osLinux: {
+						wantStdout: autocompleteSuggestions(
+							"deux",
+							"trois",
+							"un",
+						),
+					},
+					osWindows: {
+						wantStdout: autocompleteSuggestions(
+							"deux",
+							"trois",
+							"un",
+						),
+					},
+				},
+			},
+			{
+				name: "autocomplete when COMP_POINT is greater than length of COMP_LINE with quoted space (by 1)",
+				args: []string{"autocomplete", "basic", "63", "7", `cmd "c`},
+				clis: []CLI{
+					&testCLI{
+						name: "basic",
+						processors: []command.Processor{
+							command.Arg[string]("s", "desc", command.SimpleCompleter[string]("c alpha", "c bravo", "c charlie", "cheese", "baker")),
+							command.Arg[string]("z", "desz", command.SimpleCompleter[string]("un", "deux", "trois")),
+						},
+					},
+				},
+				osChecks: map[string]*osCheck{
+					osLinux: {
+						wantStdout: autocompleteSuggestions(
+							`"c alpha"`,
+							`"c bravo"`,
+							`"c charlie"`,
+						),
+					},
+					osWindows: {
+						wantStdout: autocompleteSuggestions(
+							`"c alpha"`,
+							`"c bravo"`,
+							`"c charlie"`,
+						),
+					},
+				},
+			},
+			{
+				name: "autocomplete when COMP_POINT is greater than length of COMP_LINE with quoted space (by 2)",
+				args: []string{"autocomplete", "basic", "63", "8", `cmd "c`},
+				clis: []CLI{
+					&testCLI{
+						name: "basic",
+						processors: []command.Processor{
+							command.Arg[string]("s", "desc", command.SimpleCompleter[string]("c alpha", "c bravo", "c charlie", "brown", "baker")),
+							command.Arg[string]("z", "desz", command.SimpleCompleter[string]("un", "deux", "trois")),
+						},
+					},
+				},
+				osCheck: &osCheck{
+					// No completions equivalent
+					wantStdout: []string{""},
 				},
 			},
 			// Usage tests
