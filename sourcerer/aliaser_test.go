@@ -77,7 +77,7 @@ func TestAliaser(t *testing.T) {
 								"$_sourcerer_alias_autocomplete_some-alias = {",
 								"  param($wordToComplete, $commandAst, $compPoint)",
 								`  $Local:tmpPassthroughArgFile = New-TemporaryFile`,
-								`  [IO.File]::WriteAllLines($Local:tmpPassthroughArgFile, $commandAst.ToString())`,
+								`  [IO.File]::WriteAllText($Local:tmpPassthroughArgFile, $commandAst.ToString())`,
 								fmt.Sprintf(`  (Invoke-Expression '& %s autocomplete "someCLI" --comp-line-file "0" $compPoint $Local:tmpPassthroughArgFile ') | ForEach-Object {`, fakeGoExecutableFilePath.Name()),
 								`    "$_"`,
 								"  }",

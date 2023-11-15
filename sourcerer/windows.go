@@ -88,7 +88,7 @@ func (w *windows) autocompleteFunction(builtin bool, goExecutable, targetName st
 		// sure there are other edge cases caused by it, hence the decision to use
 		// this workaround.
 		`  $Local:tmpPassthroughArgFile = New-TemporaryFile`,
-		`  [IO.File]::WriteAllLines($Local:tmpPassthroughArgFile, $commandAst.ToString())`,
+		`  [IO.File]::WriteAllText($Local:tmpPassthroughArgFile, $commandAst.ToString())`,
 		// `  Write-Output $commandAst.ToString() > $Local:tmpPassthroughArgFile`,
 		// The last argument is for extra passthrough arguments to be passed for aliaser autocompletes.
 		// 0 for comp type
@@ -212,7 +212,7 @@ func (w *windows) RegisterAliaser(goExecutable string, a *Aliaser) []string {
 		// TODO: Unify this logic with `autocompleteFuncction`?
 		`  param($wordToComplete, $commandAst, $compPoint)`,
 		`  $Local:tmpPassthroughArgFile = New-TemporaryFile`,
-		`  [IO.File]::WriteAllLines($Local:tmpPassthroughArgFile, $commandAst.ToString())`,
+		`  [IO.File]::WriteAllText($Local:tmpPassthroughArgFile, $commandAst.ToString())`,
 		fmt.Sprintf(`  (Invoke-Expression '& %s %s %q --comp-line-file "0" $compPoint $Local:tmpPassthroughArgFile %s') | ForEach-Object {`, goExecutable, AutocompleteBranchName, a.cli, quotedArgs),
 		`    "$_"`,
 		`  }`,
