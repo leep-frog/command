@@ -21,7 +21,8 @@ import (
 
 var (
 	fileArg         = command.FileArgument("FILE", "Temporary file for execution")
-	targetNameArg   = command.Arg[string]("TARGET_NAME", "The name of the created target in $GOPATH/bin", command.MatchesRegex("^[a-zA-Z]+$"))
+	targetNameRegex = command.MatchesRegex("^[a-zA-Z]+$")
+	targetNameArg   = command.Arg[string]("TARGET_NAME", "The name of the created target in $GOPATH/bin", targetNameRegex)
 	passthroughArgs = command.ListArg[string]("ARG", "Arguments that get passed through to relevant CLI command", 0, command.UnboundedList)
 	helpFlag        = command.BoolFlag("help", command.FlagNoShortName, "Display command's usage doc")
 	// See the below link for more details on COMP_* details:
@@ -202,11 +203,12 @@ func (*sourcerer) Name() string {
 }
 
 const (
-	AutocompleteBranchName = "autocomplete"
-	ExecuteBranchName      = "execute"
-	ListBranchName         = "listCLIs"
-	SourceBranchName       = "source"
-	UsageBranchName        = "usage"
+	AutocompleteBranchName              = "autocomplete"
+	GenerateAutocompleteSetupBranchName = "generate-autocomplete-setup"
+	ExecuteBranchName                   = "execute"
+	ListBranchName                      = "listCLIs"
+	SourceBranchName                    = "source"
+	UsageBranchName                     = "usage"
 
 	BuiltInCommandParameter = "builtin"
 )
@@ -242,7 +244,6 @@ func (rp *refProcessor[P]) SetProcessor(p P) {
 
 func (s *sourcerer) Node() command.Node {
 	loadCLIArg := command.SuperSimpleProcessor(func(i *command.Input, d *command.Data) error {
-		// TODO: Test this
 		return load(s.cliArg.GetProcessor().Get(d))
 	})
 
@@ -269,6 +270,7 @@ func (s *sourcerer) Node() command.Node {
 
 	// Change if runcli
 	if s.isRunCLI() {
+		aliasFlag := command.Flag[string]("alias", command.FlagNoShortName, "")
 		return command.SerialNodes(
 			// Set the CLI to runCLI
 			command.SuperSimpleProcessor(func(i *command.Input, d *command.Data) error {
@@ -277,8 +279,21 @@ func (s *sourcerer) Node() command.Node {
 			}),
 			&command.BranchNode{
 				Branches: map[string]command.Node{
-					// TODO: SourceAutocomplete
 					AutocompleteBranchName: autocompleteBranchNode(true),
+					GenerateAutocompleteSetupBranchName: command.SerialNodes(
+						&command.ExecutorProcessor{func(o command.Output, d *command.Data) error {
+							var binary string
+							alias := aliasFlag.GetOrDefault(d, filepath.Base(binary))
+							if err := targetNameRegex.Validate(alias, d); err != nil {
+								return o.Err(err)
+							}
+
+							functionName := fmt.Sprintf("_RunCLI_%s_autocomplete_wrap_function", alias)
+							functionContent := strings.Join(CurrentOS.RegisterRunCLIAutocomplete(binary, alias), "\n")
+							o.Stdoutln(CurrentOS.FunctionWrap(functionName, functionContent))
+							return nil
+						}},
+					),
 				},
 				// TODO: remove this and just check if BranchNode.UsageOrder is empty list
 				HideUsage: true,

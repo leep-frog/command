@@ -15,11 +15,6 @@ func Windows() OS {
 }
 
 var (
-	windowsRegisterCommandFormat = strings.Join([]string{
-		`function %s {`,
-		`  _custom_execute_%s %s $args`,
-		`}`,
-	}, "\n")
 	windowsSetupFunctionFormat = strings.Join([]string{
 		`function %s {`,
 		`  %s`,
@@ -28,15 +23,19 @@ var (
 	}, "\n")
 )
 
-func (w *windows) setAlias(alias, value, completer string) []string {
+func (w *windows) setAlias(forAlias bool, alias, value, targetName string) []string {
 	return []string{
 		// Delete the alias if it exists
 		fmt.Sprintf("(Get-Alias) | Where { $_.NAME -match '^%s$'} | ForEach-Object { del alias:${_} -Force }", alias),
 		// Set the alias
 		fmt.Sprintf("Set-Alias %s %s", alias, value),
 		// Register the autocompleter
-		fmt.Sprintf("Register-ArgumentCompleter -CommandName %s -ScriptBlock $%s", alias, completer),
+		w.registerArgumentCompleter(forAlias, alias, targetName),
 	}
+}
+
+func (w *windows) registerArgumentCompleter(forAlias bool, alias, targetName string) string {
+	return fmt.Sprintf("Register-ArgumentCompleter -CommandName %s -ScriptBlock $%s", alias, w.autocompleteFunctionName(forAlias, targetName))
 }
 
 func (*windows) Name() string {
@@ -52,6 +51,14 @@ func (w *windows) SourcererGoCLI(dir string, targetName string) []string {
 		`Copy-Item "$Local:tmpFile" "$Local:tmpFile.ps1"`,
 		`. "$Local:tmpFile.ps1"`,
 		`Pop-Location`,
+	}
+}
+
+func (w *windows) RegisterRunCLIAutocomplete(goExecutable, alias string) []string {
+	targetName := fmt.Sprintf("RunCLI%s", alias)
+	return []string{
+		w.autocompleteFunction(false, goExecutable, targetName),
+		w.registerArgumentCompleter(false, targetName, alias),
 	}
 }
 
@@ -79,7 +86,7 @@ func (*windows) getBranchString(builtin bool, branchName string) string {
 
 func (w *windows) autocompleteFunction(builtin bool, goExecutable, targetName string) string {
 	return strings.Join([]string{
-		fmt.Sprintf("$_custom_autocomplete_%s = {", targetName),
+		fmt.Sprintf("$%s = {", w.autocompleteFunctionName(false, targetName)),
 		`  param($wordToComplete, $commandAst, $compPoint)`,
 
 		// Passthrough args are in a file because powershell backwards slashes
@@ -118,7 +125,7 @@ func (w *windows) executeFunction(builtin bool, goExecutable, targetName, cliNam
 	}
 	return strings.Join(append([]string{
 		prefix,
-		fmt.Sprintf(`function _custom_execute_%s_%s {`, targetName, cliName),
+		fmt.Sprintf(`function %s {`, w.executeFunctionName(false, targetName, cliName)),
 		``,
 		`  # tmpFile is the file to which we write ExecuteData.Executable`,
 		`  $Local:tmpFile = New-TemporaryFile`,
@@ -141,10 +148,33 @@ func (w *windows) executeFunction(builtin bool, goExecutable, targetName, cliNam
 		`}`,
 		``,
 	}, w.setAlias(
+		false,
 		cliName,
-		fmt.Sprintf("_custom_execute_%s_%s", targetName, cliName),
-		fmt.Sprintf("_custom_autocomplete_%s", targetName),
+		w.executeFunctionName(false, targetName, cliName),
+		targetName,
 	)...), "\n")
+}
+
+const (
+	exFnPrefix      = "_custom_execute_"
+	exFnAliasPrefix = "_sourcerer_alias_execute_"
+	acFnPrefix      = "_custom_autocomplete_"
+	acFnAliasPrefix = "_sourcerer_alias_autocomplete_"
+)
+
+func (w *windows) executeFunctionName(forAlias bool, targetName, cliName string) string {
+	if forAlias {
+		return fmt.Sprintf("%s%s", exFnAliasPrefix, cliName)
+	}
+	return fmt.Sprintf("%s%s_%s", exFnPrefix, targetName, cliName)
+}
+
+func (w *windows) autocompleteFunctionName(forAlias bool, targetName string) string {
+	prefix := acFnPrefix
+	if forAlias {
+		prefix = acFnAliasPrefix
+	}
+	return fmt.Sprintf("%s%s", prefix, targetName)
 }
 
 func (w *windows) HandleAutocompleteSuccess(output command.Output, autocompletion *command.Autocompletion) {
@@ -181,7 +211,7 @@ func (w *windows) VerifyAliaser(a *Aliaser) []string {
 
 func (w *windows) verifyAliaserCommand(cli string) []string {
 	return []string{
-		fmt.Sprintf(`if (!(Test-Path alias:%s) -or !(Get-Alias %s | where {$_.DEFINITION -match "_custom_execute"}).NAME) {`, cli, cli),
+		fmt.Sprintf(`if (!(Test-Path alias:%s) -or !(Get-Alias %s | where {$_.DEFINITION -match "%s"}).NAME) {`, cli, cli, exFnPrefix),
 		fmt.Sprintf(`  throw "The CLI provided (%s) is not a sourcerer-generated command"`, cli),
 		`}`,
 	}
@@ -201,14 +231,16 @@ func (w *windows) RegisterAliaser(goExecutable string, a *Aliaser) []string {
 		expression = fmt.Sprintf(`($Local:functionName + " " + %s + " " + $args)`, strings.Join(qas, ` + " " + `))
 	}
 
+	aliaserTarget := "aliaser"
+
 	return append([]string{
 		// Create the execute function
-		fmt.Sprintf(`function _sourcerer_alias_execute_%s {`, a.alias),
+		fmt.Sprintf(`function %s {`, w.executeFunctionName(true, aliaserTarget, a.alias)),
 		fmt.Sprintf(`  $Local:functionName = "$((Get-Alias %q).DEFINITION)"`, a.cli),
 		fmt.Sprintf(`  Invoke-Expression %s`, expression),
 		`}`,
 		// Create the autocomplete function
-		fmt.Sprintf(`$_sourcerer_alias_autocomplete_%s = {`, a.alias),
+		fmt.Sprintf(`$%s = {`, w.autocompleteFunctionName(true, a.alias)),
 		// TODO: Unify this logic with `autocompleteFuncction`?
 		`  param($wordToComplete, $commandAst, $compPoint)`,
 		`  $Local:tmpPassthroughArgFile = New-TemporaryFile`,
@@ -218,9 +250,10 @@ func (w *windows) RegisterAliaser(goExecutable string, a *Aliaser) []string {
 		`  }`,
 		`}`,
 	}, w.setAlias(
+		true,
 		a.alias,
-		fmt.Sprintf("_sourcerer_alias_execute_%s", a.alias),
-		fmt.Sprintf("_sourcerer_alias_autocomplete_%s", a.alias),
+		w.executeFunctionName(true, aliaserTarget, a.alias),
+		a.alias,
 	)...)
 }
 

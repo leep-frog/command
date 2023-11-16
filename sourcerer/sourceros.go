@@ -49,6 +49,10 @@ type OS interface {
 	// RegisterCLIs generates the code for
 	RegisterCLIs(builtin bool, goExecutable, targetName string, cli []CLI) []string
 
+	// RegisterRunCLIAutocomplete generates the shell code to source to set up
+	// autocomplete for the provided alias.
+	RegisterRunCLIAutocomplete(goExecutable, alias string) []string
+
 	// RegisterAliasers
 	GlobalAliaserFunc(goExecutable string) []string
 	VerifyAliaser(*Aliaser) []string

@@ -79,6 +79,18 @@ func (l *linux) SourcererGoCLI(dir string, targetName string) []string {
 	}
 }
 
+func (l *linux) RegisterRunCLIAutocomplete(goExecutable, alias string) []string {
+	targetName := fmt.Sprintf("RunCLI%s", alias)
+	return append(
+		l.autocompleteFunction(false, goExecutable, targetName),
+		l.autocompleteRegistration(targetName, alias),
+	)
+}
+
+func (l *linux) autocompleteRegistration(targetName, alias string) string {
+	return fmt.Sprintf("(type complete > /dev/null 2>&1) && complete -F %s %s %s", l.autocompleteFunctionName(targetName, false), NosortString(), alias)
+}
+
 func (l *linux) RegisterCLIs(builtin bool, goExecutable, targetName string, clis []CLI) []string {
 	// Generate the execute functions
 	r := l.executeFileContents(builtin, goExecutable, targetName)
@@ -99,7 +111,7 @@ func (l *linux) RegisterCLIs(builtin bool, goExecutable, targetName string, clis
 		r = append(r, aliasCommand)
 
 		// We sort ourselves, hence the no sort.
-		r = append(r, fmt.Sprintf("(type complete > /dev/null 2>&1) && complete -F _custom_autocomplete_%s %s %s", targetName, NosortString(), alias))
+		r = append(r, l.autocompleteRegistration(targetName, alias))
 	}
 	return r
 }
@@ -111,10 +123,18 @@ func (*linux) getBranchString(builtin bool, branchName string) string {
 	return branchName
 }
 
-func (l *linux) autocompleteFunction(builtin bool, goExecutable, filename string) []string {
+func (l *linux) autocompleteFunctionName(targetName string, forAlias bool) string {
+	var aliasSuffix string
+	if forAlias {
+		aliasSuffix = "_for_alias"
+	}
+	return fmt.Sprintf("_custom_autocomplete%s_%s", aliasSuffix, targetName)
+}
+
+func (l *linux) autocompleteFunction(builtin bool, goExecutable, targetName string) []string {
 	branchStr := l.getBranchString(builtin, AutocompleteBranchName)
 	return []string{
-		fmt.Sprintf("function _custom_autocomplete_%s {", filename),
+		fmt.Sprintf("function %s {", l.autocompleteFunctionName(targetName, false)),
 		`  local tFile=$(mktemp)`,
 		// The last argument is for extra passthrough arguments to be passed for aliaser autocompletes.
 		fmt.Sprintf(`  %s %s ${COMP_WORDS[0]} "$COMP_TYPE" $COMP_POINT "$COMP_LINE" > $tFile`, goExecutable, branchStr),
@@ -188,7 +208,7 @@ func (l *linux) RegisterAliaser(goExecutable string, a *Aliaser) []string {
 
 	r = append(r, l.aliaserAutocompleteFunction(a.alias, a.cli, quotedArgs)...)
 	return append(r,
-		fmt.Sprintf("(type complete > /dev/null 2>&1) && complete -F _custom_autocomplete_for_alias_%s %s %s", a.alias, NosortString(), a.alias),
+		fmt.Sprintf("(type complete > /dev/null 2>&1) && complete -F %s %s %s", l.autocompleteFunctionName(a.alias, true), NosortString(), a.alias),
 		``,
 	)
 }
@@ -208,9 +228,9 @@ func (*linux) aliaserGlobalAutocompleteFunction(goExecutable string) []string {
 	}
 }
 
-func (*linux) aliaserAutocompleteFunction(alias string, cli string, quotedArg string) []string {
+func (l *linux) aliaserAutocompleteFunction(alias string, cli string, quotedArg string) []string {
 	return []string{
-		fmt.Sprintf("function _custom_autocomplete_for_alias_%s {", alias),
+		fmt.Sprintf("function %s {", l.autocompleteFunctionName(alias, true)),
 		fmt.Sprintf(`  _leep_frog_autocompleter %q %s`, cli, quotedArg),
 		"}",
 		"",
