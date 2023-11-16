@@ -47,7 +47,7 @@ type OS interface {
 	SourcererGoCLI(dir string, targetName string) []string
 
 	// RegisterCLIs generates the code for
-	RegisterCLIs(builtin bool, goExecutable, targetName string, cli []CLI) ([]string, error)
+	RegisterCLIs(builtin bool, goExecutable, targetName string, cli []CLI) []string
 
 	// RegisterAliasers
 	GlobalAliaserFunc(goExecutable string) []string

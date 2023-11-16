@@ -79,7 +79,7 @@ func (l *linux) SourcererGoCLI(dir string, targetName string) []string {
 	}
 }
 
-func (l *linux) RegisterCLIs(builtin bool, goExecutable, targetName string, clis []CLI) ([]string, error) {
+func (l *linux) RegisterCLIs(builtin bool, goExecutable, targetName string, clis []CLI) []string {
 	// Generate the execute functions
 	r := l.executeFileContents(builtin, goExecutable, targetName)
 	// Generate the autocomplete function
@@ -101,7 +101,7 @@ func (l *linux) RegisterCLIs(builtin bool, goExecutable, targetName string, clis
 		// We sort ourselves, hence the no sort.
 		r = append(r, fmt.Sprintf("(type complete > /dev/null 2>&1) && complete -F _custom_autocomplete_%s %s %s", targetName, NosortString(), alias))
 	}
-	return r, nil
+	return r
 }
 
 func (*linux) getBranchString(builtin bool, branchName string) string {

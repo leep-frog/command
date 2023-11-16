@@ -55,7 +55,7 @@ func (w *windows) SourcererGoCLI(dir string, targetName string) []string {
 	}
 }
 
-func (w *windows) RegisterCLIs(builtin bool, goExecutable, targetName string, clis []CLI) ([]string, error) {
+func (w *windows) RegisterCLIs(builtin bool, goExecutable, targetName string, clis []CLI) []string {
 	// Generate the autocomplete function
 	r := []string{w.autocompleteFunction(builtin, goExecutable, targetName)}
 
@@ -67,7 +67,7 @@ func (w *windows) RegisterCLIs(builtin bool, goExecutable, targetName string, cl
 
 		// We sort ourselves, hence the no sort.
 	}
-	return r, nil
+	return r
 }
 
 func (*windows) getBranchString(builtin bool, branchName string) string {

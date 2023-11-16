@@ -49,9 +49,7 @@ var (
 	autocompletePassthroughArgs = command.ListArg[string]("PASSTHROUGH_ARG", "Arguments that get passed through to autocomplete command", 0, command.UnboundedList)
 
 	// Made these methods so they can be stubbed out in tests
-	getUuid = func() string {
-		return uuid.NewString()
-	}
+	getUuid    = uuid.NewString
 	osReadFile = os.ReadFile
 )
 
@@ -92,6 +90,9 @@ func (s *sourcerer) executeExecutor(output command.Output, d *command.Data) erro
 	// setup in commandtest.go.
 	n := cli.Node()
 	if len(cli.Setup()) > 0 {
+		if s.isRunCLI() {
+			return output.Stderrln("Setup() must be empty when running via RunCLI() (supported only via Source())")
+		}
 		n = command.PreprendSetupArg(n)
 	}
 
@@ -116,6 +117,10 @@ func (s *sourcerer) executeExecutor(output command.Output, d *command.Data) erro
 	// Run the executable file if relevant.
 	if eData == nil || len(eData.Executable) == 0 {
 		return nil
+	}
+
+	if s.isRunCLI() {
+		return output.Stderrln("ExecuteData.Executable is not supported via RunCLI() (use Source() instead)")
 	}
 
 	f, err := os.OpenFile(sourcingFile, os.O_WRONLY|os.O_CREATE, 0644)
@@ -184,7 +189,10 @@ type sourcerer struct {
 	opts                 *compiledOpts
 	forAutocomplete      bool
 	builtin              bool
+	runCLI               CLI
 }
+
+func (s *sourcerer) isRunCLI() bool { return s.runCLI != nil }
 
 func (*sourcerer) UnmarshalJSON(jsn []byte) error { return nil }
 func (*sourcerer) Changed() bool                  { return false }
@@ -237,29 +245,69 @@ func (s *sourcerer) Node() command.Node {
 		// TODO: Test this
 		return load(s.cliArg.GetProcessor().Get(d))
 	})
+
+	autocompleteBranchNode := func(runCLI bool) command.Node {
+		nodes := []command.Processor{
+			command.FlagProcessor(
+				compLineFileFlag,
+			),
+		}
+
+		if !runCLI {
+			nodes = append(nodes, s.cliArg)
+		}
+
+		return command.SerialNodes(append(nodes,
+			loadCLIArg,
+			compTypeArg,
+			compPointArg,
+			compLineArg,
+			autocompletePassthroughArgs,
+			&command.ExecutorProcessor{F: s.autocompleteExecutor},
+		)...)
+	}
+
+	// Change if runcli
+	if s.isRunCLI() {
+		return command.SerialNodes(
+			// Set the CLI to runCLI
+			command.SuperSimpleProcessor(func(i *command.Input, d *command.Data) error {
+				s.cliArg.GetProcessor().Set(s.runCLI.Name(), d)
+				return nil
+			}),
+			&command.BranchNode{
+				Branches: map[string]command.Node{
+					// TODO: SourceAutocomplete
+					AutocompleteBranchName: autocompleteBranchNode(true),
+				},
+				// TODO: remove this and just check if BranchNode.UsageOrder is empty list
+				HideUsage: true,
+				Default: command.SerialNodes(
+					loadCLIArg,
+					command.FlagProcessor(
+						helpFlag,
+					),
+					passthroughArgs,
+					&command.ExecutorProcessor{F: s.executeExecutor},
+				),
+			},
+		)
+	}
+
 	return command.SerialNodes(
 		command.SuperSimpleProcessor(func(i *command.Input, d *command.Data) error {
 			// If the first argument is the built-in parameter, then only use the built-in commands
 			if p, _ := i.Peek(); p == BuiltInCommandParameter {
 				i.Pop(d)
-				s.initBuiltInSourcerer()
+				if err := s.initBuiltInSourcerer(); err != nil {
+					return err
+				}
 			}
 			return nil
 		}),
 		&command.BranchNode{
 			Branches: map[string]command.Node{
-				AutocompleteBranchName: command.SerialNodes(
-					command.FlagProcessor(
-						compLineFileFlag,
-					),
-					s.cliArg,
-					loadCLIArg,
-					compTypeArg,
-					compPointArg,
-					compLineArg,
-					autocompletePassthroughArgs,
-					&command.ExecutorProcessor{F: s.autocompleteExecutor},
-				),
+				AutocompleteBranchName: autocompleteBranchNode(false),
 				UsageBranchName: command.SerialNodes(
 					s.cliArg,
 					loadCLIArg,
@@ -315,6 +363,7 @@ func (s *sourcerer) usageExecutorHelper(cli CLI, args []string) func(o command.O
 		u, err := command.Use(n, command.ParseExecuteArgs(args))
 		if err != nil {
 			o.Err(err)
+			// TODO: I believe this is handled by ParseExecuteArgs; confirm and remove if so
 			if command.IsUsageError(err) {
 				command.ShowUsageAfterError(n, o)
 			}
@@ -348,18 +397,29 @@ type compiledOpts struct {
 	aliasers map[string]*Aliaser
 }
 
-// Source generates the bash source file for a list of CLIs.
-func Source(clis []CLI, opts ...Option) int {
+// RunCLI runs an individual CLI, thus making the go executable file the only
+// setup needed.
+func RunCLI(cli CLI) int {
 	o := command.NewOutput()
 	defer o.Close()
-	if source(clis, os.Args[0], os.Args[1:], o, opts...) != nil {
+	if source(true, []CLI{cli}, os.Args[0], os.Args[1:], o) != nil {
 		return 1
 	}
 	return 0
 }
 
-func (s *sourcerer) initBuiltInSourcerer() {
-	s.initSourcerer(true, []CLI{
+// Source generates the bash source file for a list of CLIs.
+func Source(clis []CLI, opts ...Option) int {
+	o := command.NewOutput()
+	defer o.Close()
+	if source(false, clis, os.Args[0], os.Args[1:], o, opts...) != nil {
+		return 1
+	}
+	return 0
+}
+
+func (s *sourcerer) initBuiltInSourcerer() error {
+	return s.initSourcerer(false, true, []CLI{
 		&SourcererCommand{},
 		&AliaserCommand{s.goExecutableFilePath},
 		&Debugger{},
@@ -370,7 +430,7 @@ func (s *sourcerer) initBuiltInSourcerer() {
 	})
 }
 
-func (s *sourcerer) initSourcerer(builtin bool, clis []CLI, sourceLocation string, opts []Option) {
+func (s *sourcerer) initSourcerer(runCLI, builtin bool, clis []CLI, sourceLocation string, opts []Option) error {
 	cos := &compiledOpts{
 		aliasers: map[string]*Aliaser{},
 	}
@@ -379,7 +439,10 @@ func (s *sourcerer) initSourcerer(builtin bool, clis []CLI, sourceLocation strin
 	}
 
 	cliMap := map[string]CLI{}
-	for _, c := range clis {
+	for i, c := range clis {
+		if c == nil {
+			return fmt.Errorf("nil CLI provided at index %d", i)
+		}
 		cliMap[c.Name()] = c
 	}
 
@@ -389,10 +452,17 @@ func (s *sourcerer) initSourcerer(builtin bool, clis []CLI, sourceLocation strin
 	s.sourceLocation = sourceLocation
 	s.opts = cos
 	s.builtin = builtin
+	if runCLI {
+		if len(clis) != 1 {
+			return fmt.Errorf("%d CLIs provided with RunCLI(); expected exactly one", len(clis))
+		}
+		s.runCLI = clis[0]
+	}
+	return nil
 }
 
 // Separate method used for testing.
-func source(clis []CLI, goExecutableFilePath string, osArgs []string, o command.Output, opts ...Option) error {
+func source(runCLI bool, clis []CLI, goExecutableFilePath string, osArgs []string, o command.Output, opts ...Option) error {
 	sl, err := getSourceLoc()
 	if err != nil {
 		return o.Annotate(err, "failed to get source location")
@@ -400,9 +470,11 @@ func source(clis []CLI, goExecutableFilePath string, osArgs []string, o command.
 
 	s := &sourcerer{
 		goExecutableFilePath: goExecutableFilePath,
-		cliArg:               &refProcessor[*command.MapArgument[string, CLI]]{},
+		cliArg:               newRefProcessor[*command.MapArgument[string, CLI]](nil),
 	}
-	s.initSourcerer(false, clis, sl, opts)
+	if err := s.initSourcerer(runCLI, false, clis, sl, opts); err != nil {
+		return o.Err(err)
+	}
 
 	// Sourcerer is always executed. Its execution branches into the relevant CLI's
 	// execution/autocomplete/usage path.
@@ -419,14 +491,16 @@ func source(clis []CLI, goExecutableFilePath string, osArgs []string, o command.
 
 var (
 	// Stubbed out for testing purposes
-	getSourceLoc = func() (string, error) {
-		_, sourceLocation, _, ok := runtime.Caller(3)
-		if !ok {
-			return "", fmt.Errorf("failed to fetch caller")
-		}
-		return sourceLocation, nil
-	}
+	runtimeCaller = runtime.Caller
 )
+
+func getSourceLoc() (string, error) {
+	_, sourceLocation, _, ok := runtimeCaller(3)
+	if !ok {
+		return "", fmt.Errorf("failed to fetch runtime.Caller")
+	}
+	return sourceLocation, nil
+}
 
 var (
 	commandStat = command.Stat
@@ -435,10 +509,7 @@ var (
 func (s *sourcerer) generateFile(o command.Output, d *command.Data) error {
 	targetName := targetNameArg.Get(d)
 
-	fileData, err := CurrentOS.RegisterCLIs(s.builtin, s.goExecutableFilePath, targetName, maps.Values(s.clis))
-	if err != nil {
-		return o.Err(err)
-	}
+	fileData := CurrentOS.RegisterCLIs(s.builtin, s.goExecutableFilePath, targetName, maps.Values(s.clis))
 
 	fileData = append(fileData, AliasSourcery(s.goExecutableFilePath, maps.Values(s.opts.aliasers)...)...)
 

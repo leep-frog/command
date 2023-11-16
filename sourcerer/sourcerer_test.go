@@ -24,8 +24,8 @@ const (
 )
 
 func TestGenerateBinaryNode(t *testing.T) {
-	command.StubValue(t, &getSourceLoc, func() (string, error) {
-		return "/fake/source/location", nil
+	command.StubValue(t, &runtimeCaller, func(int) (uintptr, string, int, bool) {
+		return 0, "/fake/source/location", 0, true
 	})
 	fakeGoExecutableFilePath := command.TempFile(t, "leepFrogSourcerer-test")
 
@@ -39,16 +39,17 @@ func TestGenerateBinaryNode(t *testing.T) {
 	// across tests which can be error prone and difficult to debug).
 	for _, curOS := range []OS{Linux(), Windows()} {
 		for _, test := range []struct {
-			name            string
-			clis            []CLI
-			args            []string
-			ignoreNosort    bool
-			opts            []Option
-			getSourceLocErr error
-			osChecks        map[string]*osCheck
-			commandStatFile os.FileInfo
-			commandStatErr  error
-			wantErr         error
+			name              string
+			clis              []CLI
+			args              []string
+			ignoreNosort      bool
+			opts              []Option
+			runtimeCallerMiss bool
+			runCLI            bool
+			osChecks          map[string]*osCheck
+			commandStatFile   os.FileInfo
+			commandStatErr    error
+			wantErr           error
 		}{
 			{
 				name: "generates source file when no CLIs",
@@ -1089,7 +1090,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 			t.Run(fmt.Sprintf("[%s] %s", curOS.Name(), test.name), func(t *testing.T) {
 				oschk, ok := test.osChecks[curOS.Name()]
 				if !ok {
-					t.Skipf("No osCheck set for this OS")
+					oschk = &osCheck{}
 				}
 
 				command.StubValue(t, &CurrentOS, curOS)
@@ -1101,7 +1102,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 					command.StubValue(t, &NosortString, func() string { return "" })
 				}
 				o := command.NewFakeOutput()
-				err := source(test.clis, fakeGoExecutableFilePath.Name(), test.args, o, test.opts...)
+				err := source(test.runCLI, test.clis, fakeGoExecutableFilePath.Name(), test.args, o, test.opts...)
 				command.CmpError(t, "source(...)", test.wantErr, err)
 				o.Close()
 
@@ -1140,6 +1141,8 @@ func cmpFile(t *testing.T, prefix, filename string, want []string) {
 }
 
 func TestSourcerer(t *testing.T) {
+	selfRef := map[string]interface{}{}
+	selfRef["self"] = selfRef
 	f, err := os.CreateTemp("", "test-leep-frog")
 	if err != nil {
 		t.Fatalf("failed to create tmp file: %v", err)
@@ -1156,15 +1159,15 @@ func TestSourcerer(t *testing.T) {
 	}
 
 	type osCheck struct {
-		getSourceErr     error
-		wantErr          error
-		wantStdout       []string
-		wantStderr       []string
-		noStdoutNewline  bool
-		noStderrNewline  bool
-		wantCLIs         map[string]CLI
-		wantOutput       []string
-		wantFileContents []string
+		runtimeCallerMiss bool
+		wantErr           error
+		wantStdout        []string
+		wantStderr        []string
+		noStdoutNewline   bool
+		noStderrNewline   bool
+		wantCLIs          map[string]CLI
+		wantOutput        []string
+		wantFileContents  []string
 	}
 
 	// We loop the OS here (and not in the test), so any underlying test data for
@@ -1172,13 +1175,14 @@ func TestSourcerer(t *testing.T) {
 	// across tests which can be error prone and difficult to debug).
 	for _, curOS := range []OS{Linux(), Windows()} {
 		for _, test := range []struct {
-			name     string
-			clis     []CLI
-			args     []string
-			uuids    []string
-			cacheErr error
-			osCheck  *osCheck
-			osChecks map[string]*osCheck
+			name      string
+			clis      []CLI
+			args      []string
+			uuids     []string
+			cacheErrs []error
+			runCLI    bool
+			osCheck   *osCheck
+			osChecks  map[string]*osCheck
 			// We need to tsub osReadFile errors to be consistent across systems
 			osReadFileStub        bool
 			osReadFileResp        string
@@ -1227,8 +1231,8 @@ func TestSourcerer(t *testing.T) {
 				},
 			},
 			{
-				name:     "fails if getCache error",
-				cacheErr: fmt.Errorf("rats"),
+				name:      "fails if getCache error",
+				cacheErrs: []error{fmt.Errorf("rats")},
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
@@ -1352,6 +1356,60 @@ func TestSourcerer(t *testing.T) {
 					wantCLIs: map[string]CLI{
 						"basic": &testCLI{
 							Stuff: "things",
+						},
+					},
+				},
+			},
+			{
+				name: "fails if save error",
+				clis: []CLI{
+					&testCLI{
+						name: "basic",
+						f: func(tc *testCLI, i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
+							tc.MapStuff = selfRef
+							tc.changed = true
+							return nil
+						},
+					},
+				},
+				args: []string{"execute", "basic", fakeFile},
+				osCheck: &osCheck{
+					wantErr: fmt.Errorf("failed to save cli data: failed to save cli \"basic\": failed to marshal struct to json: json: unsupported value: encountered a cycle via map[string]interface {}"),
+					wantStderr: []string{
+						"failed to save cli data: failed to save cli \"basic\": failed to marshal struct to json: json: unsupported value: encountered a cycle via map[string]interface {}",
+					},
+					wantCLIs: map[string]CLI{
+						"basic": &testCLI{
+							MapStuff: selfRef,
+						},
+					},
+				},
+			},
+			{
+				name: "save fails if getCache error",
+				clis: []CLI{
+					&testCLI{
+						name: "basic",
+						f: func(tc *testCLI, i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
+							tc.MapStuff = selfRef
+							tc.changed = true
+							return nil
+						},
+					},
+				},
+				cacheErrs: []error{
+					nil,                  // Successful load
+					fmt.Errorf("whoops"), // Failed save
+				},
+				args: []string{"execute", "basic", fakeFile},
+				osCheck: &osCheck{
+					wantErr: fmt.Errorf("failed to save cli data: whoops"),
+					wantStderr: []string{
+						"failed to save cli data: whoops",
+					},
+					wantCLIs: map[string]CLI{
+						"basic": &testCLI{
+							MapStuff: selfRef,
 						},
 					},
 				},
@@ -2308,6 +2366,24 @@ func TestSourcerer(t *testing.T) {
 					noStdoutNewline: true,
 				},
 			},
+			{
+				name: "usage handles non-usage error",
+				clis: []CLI{
+					&testCLI{
+						name: "basic",
+						processors: []command.Processor{
+							command.Arg[string]("S", "desc", command.Contains("ABC")),
+						},
+					},
+				},
+				args: []string{"usage", someCLI.name, "DEF"},
+				osCheck: &osCheck{
+					wantErr: fmt.Errorf(`validation for "S" failed: [Contains] value doesn't contain substring "ABC"`),
+					wantStderr: []string{
+						`validation for "S" failed: [Contains] value doesn't contain substring "ABC"`,
+					},
+				},
+			},
 			// Builtin command tests
 			{
 				name: "builtin usage doesn't work with provided CLIs",
@@ -2429,6 +2505,337 @@ func TestSourcerer(t *testing.T) {
 					},
 				},
 			},
+			{
+				name: "fails if runtimeCaller error",
+				osCheck: &osCheck{
+					runtimeCallerMiss: true,
+					wantErr:           fmt.Errorf("failed to get source location: failed to fetch runtime.Caller"),
+					wantStderr: []string{
+						"failed to get source location: failed to fetch runtime.Caller",
+					},
+				},
+			},
+			// runCLI tests (should all result in errors)
+			{
+				name:   "runCLI fails if no CLIs provided",
+				args:   []string{"builtin"},
+				runCLI: true,
+				clis:   []CLI{},
+				osCheck: &osCheck{
+					wantStderr: []string{
+						"0 CLIs provided with RunCLI(); expected exactly one",
+					},
+					wantErr: fmt.Errorf("0 CLIs provided with RunCLI(); expected exactly one"),
+				},
+			},
+			{
+				name:   "runCLI fails if nil CLI provided",
+				args:   []string{"builtin"},
+				runCLI: true,
+				clis:   []CLI{nil},
+				osCheck: &osCheck{
+					wantStderr: []string{
+						"nil CLI provided at index 0",
+					},
+					wantErr: fmt.Errorf("nil CLI provided at index 0"),
+				},
+			},
+			{
+				name:   "runCLI fails if nil CLI in non-runCLI",
+				args:   []string{"builtin"},
+				runCLI: false,
+				clis: []CLI{
+					ToCLI("zero", nil),
+					ToCLI("one", nil),
+					nil,
+					ToCLI("three", nil),
+				},
+				osCheck: &osCheck{
+					wantStderr: []string{
+						"nil CLI provided at index 2",
+					},
+					wantErr: fmt.Errorf("nil CLI provided at index 2"),
+				},
+			},
+			{
+				name:   "runCLI fails if multiple CLIs provided",
+				args:   []string{"builtin"},
+				runCLI: true,
+				clis: []CLI{
+					&testCLI{name: "basic"},
+					&testCLI{name: "other"},
+				},
+				osCheck: &osCheck{
+					wantStderr: []string{
+						"2 CLIs provided with RunCLI(); expected exactly one",
+					},
+					wantErr: fmt.Errorf("2 CLIs provided with RunCLI(); expected exactly one"),
+				},
+			},
+			{
+				name:   "runCLI fails if provided with builtin",
+				args:   []string{"builtin"},
+				runCLI: true,
+				clis: []CLI{
+					&testCLI{name: "basic"},
+				},
+				osCheck: &osCheck{
+					wantStderr: []string{
+						"Unprocessed extra args: [builtin]",
+					},
+					wantErr: fmt.Errorf("Unprocessed extra args: [builtin]"),
+				},
+			},
+			{
+				name:   "runCLI fails if provided with source",
+				args:   []string{"source"},
+				runCLI: true,
+				clis: []CLI{
+					&testCLI{name: "basic"},
+				},
+				osCheck: &osCheck{
+					wantStderr: []string{
+						"Unprocessed extra args: [source]",
+					},
+					wantErr: fmt.Errorf("Unprocessed extra args: [source]"),
+				},
+			},
+			{
+				name:   "runCLI fails if provided with execute",
+				args:   []string{"execute"},
+				runCLI: true,
+				clis: []CLI{
+					&testCLI{name: "basic"},
+				},
+				osCheck: &osCheck{
+					wantStderr: []string{
+						"Unprocessed extra args: [execute]",
+					},
+					wantErr: fmt.Errorf("Unprocessed extra args: [execute]"),
+				},
+			},
+			{
+				name:   "runCLI fails if provided with usage",
+				args:   []string{"usage"},
+				runCLI: true,
+				clis: []CLI{
+					&testCLI{name: "basic"},
+				},
+				osCheck: &osCheck{
+					wantStderr: []string{
+						"Unprocessed extra args: [usage]",
+					},
+					wantErr: fmt.Errorf("Unprocessed extra args: [usage]"),
+				},
+			},
+			{
+				name:   "runCLI works with autocomplete",
+				args:   []string{"autocomplete", "63", "4", "cmd "},
+				runCLI: true,
+				clis: []CLI{
+					&testCLI{
+						name: "basic",
+						processors: []command.Processor{
+							command.ListArg[string]("SS", "desc", 0, command.UnboundedList, command.SimpleCompleter[[]string]("abc", "def", "ghi")),
+						},
+					},
+				},
+				osCheck: &osCheck{
+					wantStdout: []string{
+						"abc",
+						"def",
+						"ghi",
+					},
+				},
+			},
+			{
+				name:   "runCLI works with autocomplete and passthrough args",
+				args:   []string{"autocomplete", "63", "4", "cmd ", "abc", "ghi"},
+				runCLI: true,
+				clis: []CLI{
+					&testCLI{
+						name: "basic",
+						processors: []command.Processor{
+							command.ListArg[string]("SS", "desc", 0, command.UnboundedList, command.SimpleDistinctCompleter[[]string]("abc", "def", "ghi")),
+						},
+					},
+				},
+				osChecks: map[string]*osCheck{
+					osLinux: {
+						wantStdout: []string{
+							"def",
+						},
+					},
+					osWindows: {
+						wantStdout: []string{
+							"def ",
+						},
+					},
+				},
+			},
+			{
+				name:   "runCLI execution works (no `execute` branching keyword required)",
+				args:   []string{"un", "--count", "6", "deux", "-b", "trois"},
+				runCLI: true,
+				clis: []CLI{
+					&testCLI{
+						name: "basic",
+						processors: []command.Processor{
+							command.FlagProcessor(
+								command.BoolFlag("b", 'b', "B desc"),
+								command.Flag[int]("count", command.FlagNoShortName, "Cnt desc"),
+							),
+							command.ListArg[string]("SS", "desc", 0, command.UnboundedList),
+							&command.ExecutorProcessor{func(o command.Output, d *command.Data) error {
+								o.Stdoutln(d.Values)
+								return nil
+							}},
+						},
+					},
+				},
+				osCheck: &osCheck{
+					wantStdout: []string{
+						"map[SS:[un deux trois] b:true count:6]",
+					},
+				},
+			},
+			{
+				name:   "runCLI execution fails if extra args",
+				args:   []string{"un", "--count", "6", "deux", "-b", "trois", "bleh"},
+				runCLI: true,
+				clis: []CLI{
+					&testCLI{
+						name: "basic",
+						processors: []command.Processor{
+							command.FlagProcessor(
+								command.BoolFlag("b", 'b', "B desc"),
+								command.Flag[int]("count", command.FlagNoShortName, "Cnt desc"),
+							),
+							command.ListArg[string]("SS", "desc", 0, 3),
+							&command.ExecutorProcessor{func(o command.Output, d *command.Data) error {
+								o.Stdoutln(d.Values)
+								return nil
+							}},
+						},
+					},
+				},
+				osCheck: &osCheck{
+					wantStderr: []string{
+						`Unprocessed extra args: [bleh]`,
+						``,
+						`======= Command Usage =======`,
+						`[ SS SS SS ] --b|-b --count`,
+						``,
+						`Arguments:`,
+						`  SS: desc`,
+						``,
+						`Flags:`,
+						`  [b] b: B desc`,
+						`      count: Cnt desc`,
+					},
+					wantErr: fmt.Errorf(`Unprocessed extra args: [bleh]`),
+				},
+			},
+			{
+				name:   "runCLI execution with help flag works",
+				args:   []string{"--help"},
+				runCLI: true,
+				clis: []CLI{
+					&testCLI{
+						name: "basic",
+						processors: []command.Processor{
+							command.FlagProcessor(
+								command.BoolFlag("b", 'b', "B desc"),
+								command.Flag[int]("count", command.FlagNoShortName, "Cnt desc"),
+							),
+							command.ListArg[string]("SS", "desc", 0, 3),
+							&command.ExecutorProcessor{func(o command.Output, d *command.Data) error {
+								o.Stdoutln(d.Values)
+								return nil
+							}},
+						},
+					},
+				},
+				osCheck: &osCheck{
+					wantStdout: []string{
+						`[ SS SS SS ] --b|-b --count`,
+						``,
+						`Arguments:`,
+						`  SS: desc`,
+						``,
+						`Flags:`,
+						`  [b] b: B desc`,
+						`      count: Cnt desc`,
+					},
+				},
+			},
+			{
+				name:   "runCLI execution with help flag and some args works",
+				args:   []string{"--help", "un", "--b"},
+				runCLI: true,
+				clis: []CLI{
+					&testCLI{
+						name: "basic",
+						processors: []command.Processor{
+							command.FlagProcessor(
+								command.BoolFlag("b", 'b', "B desc"),
+								command.Flag[int]("count", command.FlagNoShortName, "Cnt desc"),
+							),
+							command.ListArg[string]("SS", "desc", 0, 3),
+							&command.ExecutorProcessor{func(o command.Output, d *command.Data) error {
+								o.Stdoutln(d.Values)
+								return nil
+							}},
+						},
+					},
+				},
+				osCheck: &osCheck{
+					wantStdout: []string{
+						`--b|-b --count`,
+						``,
+						`Flags:`,
+						`  [b] b: B desc`,
+						`      count: Cnt desc`,
+					},
+				},
+			},
+			{
+				name:   "runCLI fails if Setup isn't nil",
+				runCLI: true,
+				clis: []CLI{
+					&testCLI{
+						name:  "basic",
+						setup: []string{"s"},
+					},
+				},
+				osCheck: &osCheck{
+					wantErr: fmt.Errorf("Setup() must be empty when running via RunCLI() (supported only via Source())"),
+					wantStderr: []string{
+						"Setup() must be empty when running via RunCLI() (supported only via Source())",
+					},
+				},
+			},
+			{
+				name:   "runCLI fails if ExecuteData is returned",
+				runCLI: true,
+				clis: []CLI{
+					&testCLI{
+						name: "basic",
+						processors: []command.Processor{
+							command.SimpleProcessor(func(i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
+								ed.Executable = append(ed.Executable, "echo hi")
+								return nil
+							}, nil),
+						},
+					},
+				},
+				osCheck: &osCheck{
+					wantErr: fmt.Errorf("ExecuteData.Executable is not supported via RunCLI() (use Source() instead)"),
+					wantStderr: []string{
+						"ExecuteData.Executable is not supported via RunCLI() (use Source() instead)",
+					},
+				},
+			},
 			/* Useful for commenting out tests */
 		} {
 			t.Run(fmt.Sprintf("[%s] %s", curOS.Name(), test.name), func(t *testing.T) {
@@ -2450,8 +2857,8 @@ func TestSourcerer(t *testing.T) {
 					return r
 				})
 
-				command.StubValue(t, &getSourceLoc, func() (string, error) {
-					return "/fake/source/location/main.go", oschk.getSourceErr
+				command.StubValue(t, &runtimeCaller, func(n int) (uintptr, string, int, bool) {
+					return 0, "/fake/source/location/main.go", 0, !oschk.runtimeCallerMiss
 				})
 
 				if err := os.WriteFile(f.Name(), nil, 0644); err != nil {
@@ -2480,15 +2887,17 @@ func TestSourcerer(t *testing.T) {
 				// Stub out real cache
 				cash := cache.NewTestCache(t)
 				command.StubValue(t, &getCache, func() (*cache.Cache, error) {
-					if test.cacheErr != nil {
-						return nil, test.cacheErr
+					if len(test.cacheErrs) == 0 {
+						return cash, nil
 					}
-					return cash, nil
+					e := test.cacheErrs[0]
+					test.cacheErrs = test.cacheErrs[1:]
+					return cash, e
 				})
 
 				// Run source command
 				o := command.NewFakeOutput()
-				err = source(test.clis, fakeGoExecutableFilePath.Name(), test.args, o)
+				err = source(test.runCLI, test.clis, fakeGoExecutableFilePath.Name(), test.args, o)
 				command.CmpError(t, fmt.Sprintf("source(%v)", test.args), oschk.wantErr, err)
 				o.Close()
 
@@ -2519,6 +2928,9 @@ func TestSourcerer(t *testing.T) {
 
 				// Check cli changes
 				for _, c := range test.clis {
+					if c == nil {
+						continue
+					}
 					wantNew, wantChanged := oschk.wantCLIs[c.Name()]
 					if wantChanged != c.Changed() {
 						t.Errorf("CLI %q was incorrectly changed: want %v; got %v", c.Name(), wantChanged, c.Changed())
@@ -2548,7 +2960,8 @@ type testCLI struct {
 	changed    bool
 	setup      []string
 	// Used for json checking
-	Stuff string
+	Stuff    string
+	MapStuff map[string]interface{}
 }
 
 func (tc *testCLI) Name() string {
@@ -2624,3 +3037,12 @@ func (*fakeFileInfo) Sys() interface{}   { return nil }
 var (
 	fakeFI = &fakeFileInfo{}
 )
+
+type badUsage struct {
+	command.Processor
+	err error
+}
+
+func (b *badUsage) Usage(*command.Input, *command.Data, *command.Usage) error {
+	return b.err
+}
