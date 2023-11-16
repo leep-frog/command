@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"testing"
 
 	"github.com/google/uuid"
 	"github.com/leep-frog/command"
@@ -485,6 +486,11 @@ var (
 const (
 	ExecutableFileGetProcessorName = "GO_EXECUTABLE_FILE"
 )
+
+// StubExecutableFile stubs the executable file returned by ExecutableFileGetProcessor()
+func StubExecutableFile(t *testing.T, filepath string) {
+	command.StubValue(t, &externalGoExecutableFilePath, filepath)
+}
 
 // ExecutableFileGetProcessor returns a `command.GetProcessor` that sets and gets
 // the full go executable file path.

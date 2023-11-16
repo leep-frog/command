@@ -2978,7 +2978,7 @@ func TestSourcerer(t *testing.T) {
 			/* Useful for commenting out tests */
 		} {
 			t.Run(fmt.Sprintf("[%s] %s", curOS.Name(), test.name), func(t *testing.T) {
-				command.StubValue(t, &externalGoExecutableFilePath, "osArgs-at-zero")
+				StubExecutableFile(t, "osArgs-at-zero")
 				if test.osReadFileStub {
 					command.StubValue(t, &osReadFile, func(b string) ([]byte, error) {
 						return []byte(test.osReadFileResp), test.osReadFileErr
