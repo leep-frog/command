@@ -478,6 +478,26 @@ func (s *sourcerer) initSourcerer(runCLI, builtin bool, clis []CLI, sourceLocati
 	return nil
 }
 
+var (
+	externalGoExecutableFilePath = os.Args[0]
+)
+
+const (
+	ExecutableFileGetProcessorName = "GO_EXECUTABLE_FILE"
+)
+
+// ExecutableFileGetProcessor returns a `command.GetProcessor` that sets and gets
+// the full go executable file path.
+func ExecutableFileGetProcessor() *command.GetProcessor[string] {
+	return &command.GetProcessor[string]{
+		command.SuperSimpleProcessor(func(i *command.Input, d *command.Data) error {
+			d.Set(ExecutableFileGetProcessorName, externalGoExecutableFilePath)
+			return nil
+		}),
+		ExecutableFileGetProcessorName,
+	}
+}
+
 // Separate method used for testing.
 func source(runCLI bool, clis []CLI, goExecutableFilePath string, osArgs []string, o command.Output, opts ...Option) error {
 	sl, err := getSourceLoc()

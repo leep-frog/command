@@ -61,6 +61,7 @@ func (mfc *myFirstCommand) Node() command.Node {
 
 	// SerialNodes runs a list of processors in sequence.
 	return command.SerialNodes(
+		sourcerer.ExecutableFileGetProcessor(),
 		// Description adds a description field to your commands usage doc.
 		command.Description("My very first command!"),
 		ff,
@@ -84,6 +85,7 @@ func (mfc *myFirstCommand) Node() command.Node {
 					o.Stdoutf("Hello, %s.\n", name)
 				}
 			}
+			o.Stdoutln("GET", sourcerer.ExecutableFileGetProcessor().Get(d))
 			return nil
 		}},
 	)

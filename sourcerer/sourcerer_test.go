@@ -2953,9 +2953,32 @@ func TestSourcerer(t *testing.T) {
 					},
 				},
 			},
+			// GoExecutableFilePath tests
+			{
+				name:   "RunCLI() gets goExecutableFilePath",
+				runCLI: true,
+				clis: []CLI{
+					&testCLI{
+						name: "basic",
+						processors: []command.Processor{
+							ExecutableFileGetProcessor(),
+						},
+						f: func(tc *testCLI, i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
+							o.Stdoutln(d.Values)
+							return nil
+						},
+					},
+				},
+				osCheck: &osCheck{
+					wantStdout: []string{
+						`map[GO_EXECUTABLE_FILE:osArgs-at-zero]`,
+					},
+				},
+			},
 			/* Useful for commenting out tests */
 		} {
 			t.Run(fmt.Sprintf("[%s] %s", curOS.Name(), test.name), func(t *testing.T) {
+				command.StubValue(t, &externalGoExecutableFilePath, "osArgs-at-zero")
 				if test.osReadFileStub {
 					command.StubValue(t, &osReadFile, func(b string) ([]byte, error) {
 						return []byte(test.osReadFileResp), test.osReadFileErr
