@@ -3,6 +3,7 @@ package sourcerer
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 	"testing"
@@ -23,11 +24,13 @@ const (
 	osWindows = "windows"
 )
 
+// TODO: Merge test methods
 func TestGenerateBinaryNode(t *testing.T) {
 	command.StubValue(t, &runtimeCaller, func(int) (uintptr, string, int, bool) {
 		return 0, "/fake/source/location", 0, true
 	})
-	fakeGoExecutableFilePath := command.TempFile(t, "leepFrogSourcerer-test")
+	fakeGoExecutableFilePath := command.TempFile(t, "leepFrogSourcererTest")
+	exeBaseName := filepath.Base(fakeGoExecutableFilePath.Name())
 
 	type osCheck struct {
 		wantStdout []string
@@ -1085,6 +1088,124 @@ func TestGenerateBinaryNode(t *testing.T) {
 					},
 				},
 			},
+			{
+				name:   "generates runCLI autocomplete source files using exeBaseName",
+				args:   []string{"generate-autocomplete-setup"},
+				runCLI: true,
+				clis: []CLI{
+					// TODO: Multiple CLIs/setup cause failure
+					&testCLI{name: "basic"},
+				},
+				osChecks: map[string]*osCheck{
+					osLinux: {
+						wantStdout: []string{
+							`#!/bin/bash`,
+							fmt.Sprintf(`function _RunCLI_%s_autocomplete_wrap_function {`, exeBaseName),
+							fmt.Sprintf(`function _custom_autocomplete_RunCLI%s {`, exeBaseName),
+							`  local tFile=$(mktemp)`,
+							fmt.Sprintf(`  %s autocomplete  "$COMP_TYPE" $COMP_POINT "$COMP_LINE" > $tFile`, fakeGoExecutableFilePath.Name()),
+							`  local IFS=$'\n'`,
+							`  COMPREPLY=( $(cat $tFile) )`,
+							`  rm $tFile`,
+							`}`,
+							``,
+							fmt.Sprintf(`(type complete > /dev/null 2>&1) && complete -F _custom_autocomplete_RunCLI%s -o nosort %s`, exeBaseName, exeBaseName),
+							`}`,
+							fmt.Sprintf(`_RunCLI_%s_autocomplete_wrap_function`, exeBaseName),
+							``,
+						},
+					},
+					osWindows: {
+						wantStdout: []string{
+							fmt.Sprintf(`function _RunCLI_%s_autocomplete_wrap_function {`, exeBaseName),
+							fmt.Sprintf(`$_custom_autocomplete_RunCLI%s = {`, exeBaseName),
+							`  param($wordToComplete, $commandAst, $compPoint)`,
+							`  $Local:tmpPassthroughArgFile = New-TemporaryFile`,
+							`  [IO.File]::WriteAllText($Local:tmpPassthroughArgFile, $commandAst.ToString())`,
+							fmt.Sprintf(`  (& %s autocomplete  --comp-line-file "0" $compPoint $Local:tmpPassthroughArgFile) | ForEach-Object {`, fakeGoExecutableFilePath.Name()),
+							`    "$_"`,
+							`  }`,
+							`}`,
+							``,
+							fmt.Sprintf(`Register-ArgumentCompleter -CommandName RunCLI%s -ScriptBlock $_custom_autocomplete_%s`, exeBaseName, exeBaseName),
+							`}`,
+							fmt.Sprintf(`. _RunCLI_%s_autocomplete_wrap_function`, exeBaseName),
+							``,
+						},
+					},
+				},
+			},
+			{
+				name:   "generates runCLI autocomplete source files using custom alias",
+				args:   []string{"generate-autocomplete-setup", "--alias", "abc"},
+				runCLI: true,
+				clis: []CLI{
+					// TODO: Multiple CLIs/setup cause failure
+					&testCLI{name: "basic"},
+				},
+				osChecks: map[string]*osCheck{
+					osLinux: {
+						wantStdout: []string{
+							`#!/bin/bash`,
+							`function _RunCLI_abc_autocomplete_wrap_function {`,
+							`function _custom_autocomplete_RunCLIabc {`,
+							`  local tFile=$(mktemp)`,
+							fmt.Sprintf(`  %s autocomplete  "$COMP_TYPE" $COMP_POINT "$COMP_LINE" > $tFile`, fakeGoExecutableFilePath.Name()),
+							`  local IFS=$'\n'`,
+							`  COMPREPLY=( $(cat $tFile) )`,
+							`  rm $tFile`,
+							`}`,
+							``,
+							`(type complete > /dev/null 2>&1) && complete -F _custom_autocomplete_RunCLIabc -o nosort abc`,
+							`}`,
+							`_RunCLI_abc_autocomplete_wrap_function`,
+							``,
+						},
+					},
+					osWindows: {
+						wantStdout: []string{
+							`function _RunCLI_abc_autocomplete_wrap_function {`,
+							`$_custom_autocomplete_RunCLIabc = {`,
+							`  param($wordToComplete, $commandAst, $compPoint)`,
+							`  $Local:tmpPassthroughArgFile = New-TemporaryFile`,
+							`  [IO.File]::WriteAllText($Local:tmpPassthroughArgFile, $commandAst.ToString())`,
+							fmt.Sprintf(`  (& %s autocomplete  --comp-line-file "0" $compPoint $Local:tmpPassthroughArgFile) | ForEach-Object {`, fakeGoExecutableFilePath.Name()),
+							`    "$_"`,
+							`  }`,
+							`}`,
+							``,
+							`Register-ArgumentCompleter -CommandName RunCLIabc -ScriptBlock $_custom_autocomplete_abc`,
+							`}`,
+							`. _RunCLI_abc_autocomplete_wrap_function`,
+							``,
+						},
+					},
+				},
+			},
+			{
+				name:   "generates runCLI autocomplete fails if alias doesn't match regex",
+				args:   []string{"generate-autocomplete-setup", "--alias", "ab c"},
+				runCLI: true,
+				clis: []CLI{
+					// TODO: Multiple CLIs/setup cause failure
+					&testCLI{name: "basic"},
+				},
+				wantErr: fmt.Errorf(`[MatchesRegex] value "ab c" doesn't match regex "^[a-zA-Z0-9]+$"`),
+				osChecks: map[string]*osCheck{
+					osLinux: {
+						wantStderr: []string{
+							`[MatchesRegex] value "ab c" doesn't match regex "^[a-zA-Z0-9]+$"`,
+							``,
+						},
+					},
+					osWindows: {
+						wantStderr: []string{
+							`[MatchesRegex] value "ab c" doesn't match regex "^[a-zA-Z0-9]+$"`,
+							``,
+						},
+					},
+				},
+			},
 			/* Useful for commenting out tests */
 		} {
 			t.Run(fmt.Sprintf("[%s] %s", curOS.Name(), test.name), func(t *testing.T) {
@@ -1105,10 +1226,6 @@ func TestGenerateBinaryNode(t *testing.T) {
 				err := source(test.runCLI, test.clis, fakeGoExecutableFilePath.Name(), test.args, o, test.opts...)
 				command.CmpError(t, "source(...)", test.wantErr, err)
 				o.Close()
-
-				if o.GetStderrByCalls() != nil {
-					t.Errorf("source(%v) produced stderr when none was expected:\n%v", test.args, o.GetStderrByCalls())
-				}
 
 				// append to add a final newline (which should *always* be present).
 				if diff := cmp.Diff(strings.Join(append(oschk.wantStdout, ""), "\n"), o.GetStdout()); diff != "" {

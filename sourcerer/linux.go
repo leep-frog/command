@@ -82,7 +82,7 @@ func (l *linux) SourcererGoCLI(dir string, targetName string) []string {
 func (l *linux) RegisterRunCLIAutocomplete(goExecutable, alias string) []string {
 	targetName := fmt.Sprintf("RunCLI%s", alias)
 	return append(
-		l.autocompleteFunction(false, goExecutable, targetName),
+		l.autocompleteFunction(true, false, goExecutable, targetName),
 		l.autocompleteRegistration(targetName, alias),
 	)
 }
@@ -95,7 +95,7 @@ func (l *linux) RegisterCLIs(builtin bool, goExecutable, targetName string, clis
 	// Generate the execute functions
 	r := l.executeFileContents(builtin, goExecutable, targetName)
 	// Generate the autocomplete function
-	r = append(r, l.autocompleteFunction(builtin, goExecutable, targetName)...)
+	r = append(r, l.autocompleteFunction(false, builtin, goExecutable, targetName)...)
 
 	sort.SliceStable(clis, func(i, j int) bool { return clis[i].Name() < clis[j].Name() })
 	for _, cli := range clis {
@@ -131,13 +131,17 @@ func (l *linux) autocompleteFunctionName(targetName string, forAlias bool) strin
 	return fmt.Sprintf("_custom_autocomplete%s_%s", aliasSuffix, targetName)
 }
 
-func (l *linux) autocompleteFunction(builtin bool, goExecutable, targetName string) []string {
+func (l *linux) autocompleteFunction(runCLI bool, builtin bool, goExecutable, targetName string) []string {
+	var cliRef string
+	if !runCLI {
+		cliRef = "${COMP_WORDS[0]}"
+	}
 	branchStr := l.getBranchString(builtin, AutocompleteBranchName)
 	return []string{
 		fmt.Sprintf("function %s {", l.autocompleteFunctionName(targetName, false)),
 		`  local tFile=$(mktemp)`,
 		// The last argument is for extra passthrough arguments to be passed for aliaser autocompletes.
-		fmt.Sprintf(`  %s %s ${COMP_WORDS[0]} "$COMP_TYPE" $COMP_POINT "$COMP_LINE" > $tFile`, goExecutable, branchStr),
+		fmt.Sprintf(`  %s %s %s "$COMP_TYPE" $COMP_POINT "$COMP_LINE" > $tFile`, goExecutable, branchStr, cliRef),
 		`  local IFS=$'\n'`,
 		`  COMPREPLY=( $(cat $tFile) )`,
 		`  rm $tFile`,

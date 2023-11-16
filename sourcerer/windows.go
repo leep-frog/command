@@ -57,14 +57,14 @@ func (w *windows) SourcererGoCLI(dir string, targetName string) []string {
 func (w *windows) RegisterRunCLIAutocomplete(goExecutable, alias string) []string {
 	targetName := fmt.Sprintf("RunCLI%s", alias)
 	return []string{
-		w.autocompleteFunction(false, goExecutable, targetName),
+		w.autocompleteFunction(true, false, goExecutable, targetName),
 		w.registerArgumentCompleter(false, targetName, alias),
 	}
 }
 
 func (w *windows) RegisterCLIs(builtin bool, goExecutable, targetName string, clis []CLI) []string {
 	// Generate the autocomplete function
-	r := []string{w.autocompleteFunction(builtin, goExecutable, targetName)}
+	r := []string{w.autocompleteFunction(false, builtin, goExecutable, targetName)}
 
 	sort.SliceStable(clis, func(i, j int) bool { return clis[i].Name() < clis[j].Name() })
 	for _, cli := range clis {
@@ -84,7 +84,11 @@ func (*windows) getBranchString(builtin bool, branchName string) string {
 	return branchName
 }
 
-func (w *windows) autocompleteFunction(builtin bool, goExecutable, targetName string) string {
+func (w *windows) autocompleteFunction(runCLI bool, builtin bool, goExecutable, targetName string) string {
+	var cliRef string
+	if !runCLI {
+		cliRef = "($commandAst.CommandElements | Select-Object -first 1)"
+	}
 	return strings.Join([]string{
 		fmt.Sprintf("$%s = {", w.autocompleteFunctionName(false, targetName)),
 		`  param($wordToComplete, $commandAst, $compPoint)`,
@@ -99,7 +103,7 @@ func (w *windows) autocompleteFunction(builtin bool, goExecutable, targetName st
 		// `  Write-Output $commandAst.ToString() > $Local:tmpPassthroughArgFile`,
 		// The last argument is for extra passthrough arguments to be passed for aliaser autocompletes.
 		// 0 for comp type
-		fmt.Sprintf(`  (& %s %s ($commandAst.CommandElements | Select-Object -first 1) --comp-line-file "0" $compPoint $Local:tmpPassthroughArgFile) | ForEach-Object {`, goExecutable, w.getBranchString(builtin, AutocompleteBranchName)),
+		fmt.Sprintf(`  (& %s %s %s --comp-line-file "0" $compPoint $Local:tmpPassthroughArgFile) | ForEach-Object {`, goExecutable, w.getBranchString(builtin, AutocompleteBranchName), cliRef),
 		`    "$_"`,
 		`  }`,
 		"}",

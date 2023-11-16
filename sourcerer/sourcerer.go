@@ -21,7 +21,7 @@ import (
 
 var (
 	fileArg         = command.FileArgument("FILE", "Temporary file for execution")
-	targetNameRegex = command.MatchesRegex("^[a-zA-Z]+$")
+	targetNameRegex = command.MatchesRegex("^[a-zA-Z0-9]+$")
 	targetNameArg   = command.Arg[string]("TARGET_NAME", "The name of the created target in $GOPATH/bin", targetNameRegex)
 	passthroughArgs = command.ListArg[string]("ARG", "Arguments that get passed through to relevant CLI command", 0, command.UnboundedList)
 	helpFlag        = command.BoolFlag("help", command.FlagNoShortName, "Display command's usage doc")
@@ -281,15 +281,17 @@ func (s *sourcerer) Node() command.Node {
 				Branches: map[string]command.Node{
 					AutocompleteBranchName: autocompleteBranchNode(true),
 					GenerateAutocompleteSetupBranchName: command.SerialNodes(
+						command.FlagProcessor(
+							aliasFlag,
+						),
 						&command.ExecutorProcessor{func(o command.Output, d *command.Data) error {
-							var binary string
-							alias := aliasFlag.GetOrDefault(d, filepath.Base(binary))
+							alias := aliasFlag.GetOrDefault(d, filepath.Base(s.goExecutableFilePath))
 							if err := targetNameRegex.Validate(alias, d); err != nil {
 								return o.Err(err)
 							}
 
 							functionName := fmt.Sprintf("_RunCLI_%s_autocomplete_wrap_function", alias)
-							functionContent := strings.Join(CurrentOS.RegisterRunCLIAutocomplete(binary, alias), "\n")
+							functionContent := strings.Join(CurrentOS.RegisterRunCLIAutocomplete(s.goExecutableFilePath, alias), "\n")
 							o.Stdoutln(CurrentOS.FunctionWrap(functionName, functionContent))
 							return nil
 						}},
