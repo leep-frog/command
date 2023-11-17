@@ -1457,7 +1457,7 @@ func TestSourcerer(t *testing.T) {
 				},
 			},
 			{
-				name: "properly marks CLI as changed",
+				name: "properly marks CLI as changed and saves",
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
@@ -1475,6 +1475,31 @@ func TestSourcerer(t *testing.T) {
 							Stuff: "things",
 						},
 					},
+				},
+			},
+			{
+				name: "saves even if execution error",
+				clis: []CLI{
+					&testCLI{
+						name: "basic",
+						f: func(tc *testCLI, i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
+							tc.Stuff = "things"
+							tc.changed = true
+							return o.Stderrln("whoops")
+						},
+					},
+				},
+				args: []string{"execute", "basic", fakeFile},
+				osCheck: &osCheck{
+					wantCLIs: map[string]CLI{
+						"basic": &testCLI{
+							Stuff: "things",
+						},
+					},
+					wantStderr: []string{
+						"whoops",
+					},
+					wantErr: fmt.Errorf("whoops"),
 				},
 			},
 			{
@@ -3185,4 +3210,64 @@ type badUsage struct {
 
 func (b *badUsage) Usage(*command.Input, *command.Data, *command.Usage) error {
 	return b.err
+}
+
+// This set of tests ensures that command.ChangeTest behaves the same as logic
+// in sourcerer.go (specifically around saving a CLI regardless of error).
+func TestCommandSave(t *testing.T) {
+	for _, test := range []struct {
+		name string
+		etc  *command.ExecuteTestCase
+		cli  *testCLI
+		want *testCLI
+	}{
+		{
+			name: "saves a CLI",
+			cli: &testCLI{
+				f: func(tc *testCLI, i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
+					tc.Stuff = "new stuff"
+					tc.changed = true
+					return nil
+				},
+			},
+			etc: &command.ExecuteTestCase{},
+			want: &testCLI{
+				Stuff: "new stuff",
+			},
+		},
+		{
+			name: "saves a CLI even when error",
+			cli: &testCLI{
+				f: func(tc *testCLI, i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
+					tc.Stuff = "new stuff"
+					tc.changed = true
+					return o.Stderrln("whoops")
+				},
+			},
+			etc: &command.ExecuteTestCase{
+				WantStderr: "whoops\n",
+				WantErr:    fmt.Errorf("whoops"),
+			},
+			want: &testCLI{
+				Stuff: "new stuff",
+			},
+		},
+		{
+			name: "doesn't save a non-changed CLI",
+			cli: &testCLI{
+				f: func(tc *testCLI, i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
+					tc.Stuff = "new stuff"
+					tc.changed = false
+					return nil
+				},
+			},
+			etc: &command.ExecuteTestCase{},
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			test.etc.Node = test.cli.Node()
+			command.ExecuteTest(t, test.etc)
+			command.ChangeTest(t, test.want, test.cli, cmpopts.IgnoreUnexported(testCLI{}))
+		})
+	}
 }

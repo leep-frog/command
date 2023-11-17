@@ -98,7 +98,17 @@ func (s *sourcerer) executeExecutor(output command.Output, d *command.Data) erro
 		n = command.PreprendSetupArg(n)
 	}
 
+	// We check this error afer saving. It is up to the user to only mark something as
+	// changed when it should actually be changed (i.e. check for errors in their logic).
 	eData, err := command.Execute(n, command.ParseExecuteArgs(args), output, CurrentOS)
+
+	// Save the CLI if it has changed.
+	if cli.Changed() {
+		if err := save(cli); err != nil {
+			return output.Stderrf("failed to save cli data: %v\n", err)
+		}
+	}
+
 	if err != nil {
 		if command.IsUsageError(err) && !s.printedUsageError && !s.forAutocomplete && !command.IsExtraArgsError(err) {
 			s.printedUsageError = true
@@ -107,13 +117,6 @@ func (s *sourcerer) executeExecutor(output command.Output, d *command.Data) erro
 		// Commands are responsible for printing out error messages so
 		// we just return if there are any issues here
 		return err
-	}
-
-	// Save the CLI if it has changed.
-	if cli.Changed() {
-		if err := save(cli); err != nil {
-			return output.Stderrf("failed to save cli data: %v\n", err)
-		}
 	}
 
 	// Run the executable file if relevant.
