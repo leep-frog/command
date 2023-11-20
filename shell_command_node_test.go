@@ -140,6 +140,30 @@ func TestShellCommand(t *testing.T) {
 			},
 		},
 		{
+			name: "shell node for string with EchoCommand true",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(&ShellCommand[string]{
+					ArgName:     "s",
+					CommandName: "echo",
+					Args:        []string{"hello", "there"},
+					EchoCommand: true,
+				}),
+				WantRunContents: []*RunContents{{
+					Name: "echo",
+					Args: []string{"hello", "there"},
+				}},
+				WantData: &Data{Values: map[string]interface{}{
+					"s": "aloha",
+				}},
+				WantStdout: "echo hello there\n",
+				RunResponses: []*FakeRun{
+					{
+						Stdout: []string{"aloha"},
+					},
+				},
+			},
+		},
+		{
 			name: "shell node for string works with empty output",
 			etc: &ExecuteTestCase{
 				Node: SerialNodes(&ShellCommand[string]{ArgName: "s", CommandName: "don't", Args: []string{"echo", "hello"}}),

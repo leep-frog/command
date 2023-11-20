@@ -77,26 +77,9 @@ type ShellCommand[T any] struct {
 	DontRunOnComplete bool
 	// OutputStreamProcessor is a function that will be run with every item written to stdout.
 	OutputStreamProcessor func(Output, *Data, []byte) error
+	// EchoCommand, if true, forwards the command being run (with args) to Stdout.
+	EchoCommand bool
 }
-
-// TODO: This from `ShellCommandFileRunner`
-/*func ShellCommandFromScript[T any](sc *ShellCommand[T], script []string) *ShellCommand[T] {
-	// Create temp file.
-	f, err := ioutil.TempFile("", "leepFrogCommandExecution")
-	if err != nil {
-		return nill, fmt.Errorf("failed to create file for execution: %v", err)
-	}
-
-	// Write contents to temp file.
-	if _, err := f.WriteString(contents); err != nil {
-		return nill, fmt.Errorf("failed to write contents to execution file: %v", err)
-	}
-	if err := f.Close(); err != nil {
-		return nill, fmt.Errorf("failed to cleanup temporary execution file: %v", err)
-	}
-
-	Debugf(output, "Shell execution file: %s\n", f.Name())
-}*/
 
 type ShellCommandDataStringer[T any] interface {
 	ToString(d *Data) (string, error)
@@ -201,6 +184,9 @@ func (bn *ShellCommand[T]) Run(output Output, data *Data) (T, error) {
 		cmd.Stderr = StderrWriter(output)
 	}
 
+	if bn.EchoCommand {
+		output.Stdoutf("%s %s\n", bn.CommandName, strings.Join(bn.Args, " "))
+	}
 	if err := run(cmd); err != nil {
 		return nill, fmt.Errorf("failed to execute shell command: %v", err)
 	}
