@@ -142,6 +142,7 @@ func setupForTest(t *testing.T, contents []string) string {
 
 // UsageTest runs a test on command usage.
 func UsageTest(t *testing.T, utc *UsageTestCase) {
+	// TODO: Remove UsageTest in favor of `ExecuteTest` with `--help` flag set.
 	t.Helper()
 
 	if utc == nil {
@@ -189,6 +190,14 @@ func ExecuteTest(t *testing.T, etc *ExecuteTestCase) {
 		etc.WantData.Set(SetupArg.Name(), setupFile)
 		t.Cleanup(func() { os.Remove(setupFile) })
 	}
+	var helpFlag bool
+	for i, a := range args {
+		if a == "--help" {
+			args = append(args[:i], args[i+1:]...)
+			helpFlag = true
+			break
+		}
+	}
 	tc.input = NewInput(args, nil)
 
 	testers := []commandTester{
@@ -210,7 +219,19 @@ func ExecuteTest(t *testing.T, etc *ExecuteTestCase) {
 		n = PreprendSetupArg(n)
 	}
 
-	tc.eData, tc.err = execute(n, tc.input, tc.fo, tc.data)
+	if helpFlag {
+		// This is synced with usageExecutorHelper in sourcerer (use interface to share logic?)
+		var u *Usage
+		u, tc.err = Use(n, tc.input)
+		if tc.err != nil {
+			tc.fo.Err(tc.err)
+		} else {
+			tc.fo.Stdoutln(u.String())
+		}
+
+	} else {
+		tc.eData, tc.err = execute(n, tc.input, tc.fo, tc.data)
+	}
 
 	for _, tester := range testers {
 		tester.check(t, tc)

@@ -6658,6 +6658,21 @@ func TestExecute(t *testing.T) {
 				}
 			}(),
 		},
+		// Usage tests
+		{
+			name: "works with single arg",
+			etc: &ExecuteTestCase{
+				Args: []string{"--help"},
+				Node: SerialNodes(Arg[string]("SARG", "desc")),
+				WantStdout: strings.Join([]string{
+					"SARG",
+					"",
+					"Arguments:",
+					"  SARG: desc",
+					"",
+				}, "\n"),
+			},
+		},
 		/* Useful for commenting out tests. */
 	} {
 		t.Run(test.name, func(t *testing.T) {
