@@ -9215,6 +9215,28 @@ func TestComplete(t *testing.T) {
 				},
 			},
 		},
+		// MapFlag test
+		{
+			name: "MapFlag completes some keys",
+			ctc: &CompleteTestCase{
+				Args: "cmd --m t",
+				Node: SerialNodes(
+					FlagProcessor(
+						MapFlag("m", 'm', testDesc, map[string]int{
+							"one":   1,
+							"two":   2,
+							"three": 3,
+						}, true),
+					),
+				),
+				WantData: &Data{Values: map[string]interface{}{
+					"m": 0,
+				}},
+				Want: &Autocompletion{
+					Suggestions: []string{"three", "two"},
+				},
+			},
+		},
 		/* Useful for commenting out tests. */
 	} {
 		t.Run(test.name, func(t *testing.T) {
