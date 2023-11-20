@@ -128,7 +128,9 @@ func (bn *ShellCommand[T]) Usage(i *Input, d *Data, u *Usage) error {
 }
 
 func (bn *ShellCommand[T]) set(v T, d *Data) {
-	d.Set(bn.Name(), v)
+	if bn.Name() != "" {
+		d.Set(bn.Name(), v)
+	}
 }
 
 // Execute fulfills the `Processor` interface for `ShellCommand`.
