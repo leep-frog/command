@@ -6559,7 +6559,7 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "MapA.Get, GetOrDefault, and GetKey works",
+			name: "MapArg.Get, GetOrDefault, and GetKey works",
 			etc: func() *ExecuteTestCase {
 				ma := MapArg("m", testDesc, map[string]int{
 					"one":   1,
@@ -6607,7 +6607,7 @@ func TestExecute(t *testing.T) {
 			}(),
 		},
 		{
-			name: "MapA.Get, GetOrDefault, and GetKey works with custom type",
+			name: "MapArg.Get, GetOrDefault, and GetKey works with custom type",
 			etc: func() *ExecuteTestCase {
 				type vType struct {
 					A int
@@ -6623,36 +6623,154 @@ func TestExecute(t *testing.T) {
 					"two":   {2, 2.2},
 					"three": {3, 3.3},
 				}, true)
+				missingMa := MapArg("m3", testDesc, map[string]*vType{
+					"one":   {1, 1.1},
+					"two":   {2, 2.2},
+					"three": {3, 3.3},
+				}, true)
 
 				return &ExecuteTestCase{
 					Node: SerialNodes(
 						ma,
+						missingMa,
 						SimpleProcessor(func(i *Input, o Output, d *Data, ed *ExecuteData) error {
-							o.Stdoutln(ma.GetKey())
-							o.Stdoutln(otherMa.GetKey())
-							o.Stdoutln(ma.Get(d))
-							o.Stdoutln(ma.GetOrDefault(d, &vType{7, 7.7}))
-							o.Stdoutln(otherMa.Get(d))
-							o.Stdoutln(ma.GetOrDefault(d, &vType{7, 7.7}))
+							o.Stdoutln("GetKey", ma.GetKey())
+							o.Stdoutln("Provided", ma.Provided(d))
+							o.Stdoutln("Get", ma.Get(d))
+							o.Stdoutln("GetOrDefault", ma.GetOrDefault(d, &vType{7, 7.7}))
+							o.Stdoutln("Hit", ma.Hit())
+							o.Stdoutln("===")
+							o.Stdoutln("GetKey", otherMa.GetKey())
+							o.Stdoutln("Provided", otherMa.Provided(d))
+							o.Stdoutln("Get", otherMa.Get(d))
+							o.Stdoutln("GetOrDefault", otherMa.GetOrDefault(d, &vType{7, 7.7}))
+							o.Stdoutln("Hit", otherMa.Hit())
+							o.Stdoutln("===")
+							o.Stdoutln("GetKey", missingMa.GetKey())
+							o.Stdoutln("Provided", missingMa.Provided(d))
+							o.Stdoutln("Get", missingMa.Get(d))
+							o.Stdoutln("GetOrDefault", missingMa.GetOrDefault(d, &vType{7, 7.7}))
+							o.Stdoutln("Hit", missingMa.Hit())
 							return nil
 						}, nil),
 					),
-					Args: []string{"three"},
+					Args: []string{"three", "eleven"},
 					wantInput: &Input{
 						args: []*inputArg{
 							{value: "three"},
+							{value: "eleven"},
 						},
 					},
 					WantData: &Data{Values: map[string]interface{}{
-						"m": &vType{3, 3.3},
+						"m":  &vType{3, 3.3},
+						"m3": (*vType)(nil),
 					}},
 					WantStdout: strings.Join([]string{
-						"three",    // ma.GetKey
-						"",         // otherMa.GetKey
-						"&{3 3.3}", // ma.Get
-						"&{3 3.3}", // ma.GetOrDefault
-						"<nil>",    // otherMa.Get
-						"&{3 3.3}", // otherMa.GetOrDefault
+						"GetKey three",
+						"Provided true",
+						"Get &{3 3.3}",
+						"GetOrDefault &{3 3.3}",
+						"Hit true",
+						"===",
+						"GetKey ",
+						"Provided false",
+						"Get <nil>",
+						"GetOrDefault &{7 7.7}",
+						"Hit false",
+						"===",
+						"GetKey eleven",
+						"Provided true",
+						"Get <nil>",
+						"GetOrDefault <nil>",
+						"Hit false",
+						"",
+					}, "\n"),
+				}
+			}(),
+		},
+		// MapFlag
+		{
+			name: "MapFlag.Get, Provided, GetOrDefault, and GetKey works with custom type for flag",
+			etc: func() *ExecuteTestCase {
+				type vType struct {
+					A int
+					B float64
+				}
+				ma := MapFlag("m1", 'm', testDesc, map[string]*vType{
+					"one":   {1, 1.1},
+					"two":   {2, 2.2},
+					"three": {3, 3.3},
+				}, true)
+				otherMa := MapFlag("m2", 'd', testDesc, map[string]*vType{
+					"one":   {1, 1.1},
+					"two":   {2, 2.2},
+					"three": {3, 3.3},
+				}, true)
+				missingMa := MapFlag("m3", FlagNoShortName, testDesc, map[string]*vType{
+					"one":   {1, 1.1},
+					"two":   {2, 2.2},
+					"three": {3, 3.3},
+				}, true)
+
+				return &ExecuteTestCase{
+					Node: SerialNodes(
+						FlagProcessor(
+							ma,
+							otherMa,
+							missingMa,
+						),
+						SimpleProcessor(func(i *Input, o Output, d *Data, ed *ExecuteData) error {
+							o.Stdoutln("GetKey", ma.GetKey())
+							o.Stdoutln("Provided", ma.Provided(d))
+							o.Stdoutln("Get", ma.Get(d))
+							o.Stdoutln("GetOrDefault", ma.GetOrDefault(d, &vType{7, 7.7}))
+							o.Stdoutln("Hit", ma.Hit())
+							o.Stdoutln("===")
+							o.Stdoutln("GetKey", otherMa.GetKey())
+							o.Stdoutln("Get", otherMa.Get(d))
+							o.Stdoutln("Provided", otherMa.Provided(d))
+							o.Stdoutln("GetOrDefault", otherMa.GetOrDefault(d, &vType{7, 7.7}))
+							o.Stdoutln("Hit", otherMa.Hit())
+							o.Stdoutln("===")
+							o.Stdoutln("GetKey", missingMa.GetKey())
+							o.Stdoutln("Get", missingMa.Get(d))
+							o.Stdoutln("Provided", missingMa.Provided(d))
+							o.Stdoutln("GetOrDefault", missingMa.GetOrDefault(d, &vType{7, 7.7}))
+							o.Stdoutln("Hit", missingMa.Hit())
+							return nil
+						}, nil),
+					),
+					Args: []string{"-m", "three", "--m3", "eleven"},
+					wantInput: &Input{
+						args: []*inputArg{
+							{value: "-m"},
+							{value: "three"},
+							{value: "--m3"},
+							{value: "eleven"},
+						},
+					},
+					WantData: &Data{Values: map[string]interface{}{
+						"m1": &vType{3, 3.3},
+						"m3": (*vType)(nil),
+					}},
+					WantStdout: strings.Join([]string{
+						"GetKey three",
+						"Provided true",
+						"Get &{3 3.3}",
+						"GetOrDefault &{3 3.3}",
+						"Hit true",
+						"===",
+						"GetKey ",
+						"Get <nil>",
+						"Provided false",
+						"GetOrDefault &{7 7.7}",
+						"Hit false",
+						"===",
+						"GetKey eleven",
+						"Get <nil>",
+						"Provided true",
+						"GetOrDefault <nil>",
+						"Hit false",
 						"",
 					}, "\n"),
 				}

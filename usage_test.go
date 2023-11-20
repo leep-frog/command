@@ -1010,6 +1010,51 @@ func TestUsage(t *testing.T) {
 				},
 			},
 		},
+		// MapArg tests
+		{
+			name: "MapArg usage as arg and as flag",
+			utc: func() *UsageTestCase {
+				type vType struct {
+					A int
+					B float64
+				}
+				flagMap := MapFlag("m1", 'm', "un", map[string]*vType{
+					"one":   {1, 1.1},
+					"two":   {2, 2.2},
+					"three": {3, 3.3},
+				}, true)
+				otherflagMap := MapFlag("m2", FlagNoShortName, "deux", map[string]*vType{
+					"one":   {1, 1.1},
+					"two":   {2, 2.2},
+					"three": {3, 3.3},
+				}, true)
+				argMap := MapArg("m3", "trois", map[string]*vType{
+					"one":   {1, 1.1},
+					"two":   {2, 2.2},
+					"three": {3, 3.3},
+				}, true)
+
+				return &UsageTestCase{
+					Node: SerialNodes(
+						FlagProcessor(
+							flagMap,
+							otherflagMap,
+						),
+						argMap,
+					),
+					WantString: []string{
+						"m3 --m1|-m --m2",
+						"",
+						"Arguments:",
+						"  m3: trois",
+						"",
+						"Flags:",
+						"  [m] m1: un",
+						"      m2: deux",
+					},
+				}
+			}(),
+		},
 		/* Useful comment for commenting out tests */
 	} {
 		t.Run(test.name, func(t *testing.T) {

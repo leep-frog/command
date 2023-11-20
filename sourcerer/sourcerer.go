@@ -188,7 +188,7 @@ func load(cli CLI) error {
 type sourcerer struct {
 	goExecutableFilePath string
 	clis                 map[string]CLI
-	cliArg               *refProcessor[*command.MapArgument[string, CLI]]
+	cliArg               *refProcessor[*command.MapFlargument[string, CLI]]
 	sourceLocation       string
 	printedUsageError    bool
 	opts                 *compiledOpts
@@ -516,7 +516,7 @@ func source(runCLI bool, clis []CLI, goExecutableFilePath string, osArgs []strin
 
 	s := &sourcerer{
 		goExecutableFilePath: goExecutableFilePath,
-		cliArg:               newRefProcessor[*command.MapArgument[string, CLI]](nil),
+		cliArg:               newRefProcessor[*command.MapFlargument[string, CLI]](nil),
 	}
 	if err := s.initSourcerer(runCLI, false, clis, sl, opts); err != nil {
 		return o.Err(err)
