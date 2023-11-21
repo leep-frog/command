@@ -373,7 +373,6 @@ func TestGoLeepAutocomplete(t *testing.T) {
 				Want: &command.Autocompletion{
 					Suggestions: []string{
 						filepath.FromSlash("cache/"),
-						filepath.FromSlash("cmd/"),
 						filepath.FromSlash("color/"),
 						" ",
 					},
