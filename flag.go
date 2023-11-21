@@ -12,6 +12,9 @@ import (
 const (
 	// FlagNoShortName is the rune value for flags that indicates no short flag should be included.
 	FlagNoShortName rune = -1 // Runes are actually int32. Negative values indicate unknown rune
+
+	// FlagStop is a string indicating that no further flag values should be processed.
+	FlagStop = "--"
 )
 
 var (
@@ -258,9 +261,15 @@ func (fn *flagProcessor) Execute(input *Input, output Output, data *Data, eData 
 	for i := 0; i < len(input.remaining); {
 		a, ok := input.PeekAt(i)
 		if !ok {
-			i++
-			continue
+			break
 		}
+
+		// Stop processing flags
+		if a == FlagStop {
+			input.PopAt(i, data)
+			break
+		}
+
 		// Check if combinable flag (e.g. `-qwer` -> `-q -w -e -r`).
 		if MultiFlagRegex.MatchString(a) {
 
@@ -302,9 +311,7 @@ func (fn *flagProcessor) Execute(input *Input, output Output, data *Data, eData 
 			// This is outside of the for-loop so we only remove
 			// the multi-flag arg (not one arg per flag).
 			// TODO: PopAt function?
-			input.offset = i
-			input.Pop(data)
-			input.offset = 0
+			input.PopAt(i, data)
 		} else if f, ok := fn.flagMap[a]; ok {
 			// If regular flag
 			delete(unprocessed, f.Name())
@@ -313,13 +320,15 @@ func (fn *flagProcessor) Execute(input *Input, output Output, data *Data, eData 
 			}
 			processed[f.Name()] = true
 
-			input.offset = i
 			// Remove flag argument (e.g. --flagName).
-			input.Pop(data)
-			input.pushValidators(fn.ListBreaker())
-			err := processOrExecute(f.Processor(), input, output, data, eData)
-			input.popValidators(1)
-			input.offset = 0
+			input.PopAt(i, data)
+
+			// Run processor with fixed offset
+			err := inputRunAt[error](input, i, func(tmpInput *Input) error {
+				input.pushValidators(fn.ListBreaker())
+				defer input.popValidators(1)
+				return processOrExecute(f.Processor(), tmpInput, output, data, eData)
+			})
 			if err != nil {
 				return err
 			}

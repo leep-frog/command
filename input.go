@@ -43,6 +43,14 @@ func (i *Input) popValidators(n int) {
 	i.validators = i.validators[:len(i.validators)-n]
 }
 
+func inputRunAt[T any](i *Input, atOffset int, f func(*Input) T) T {
+	oldOffset := i.offset
+	i.offset = i.offset + atOffset
+	defer func() { i.offset = oldOffset }()
+
+	return f(i)
+}
+
 type inputArg struct {
 	value     string
 	snapshots map[inputSnapshot]bool
@@ -125,47 +133,52 @@ func (i *Input) PushFront(sl ...string) {
 }
 
 // PushFrontAt pushes arguments starting at a specific spot in the remaining arguments.
-func (i *Input) PushFrontAt(idx int, sl ...string) {
-	tmpOffset := i.offset + idx
-	// Update remaining.
-	startIdx := len(i.args)
-	var snapshots map[inputSnapshot]bool
-	if len(i.remaining) > 0 && tmpOffset < len(i.remaining) {
-		startIdx = i.remaining[tmpOffset]
+func (i *Input) PushFrontAt(atOffset int, sl ...string) {
+	// Use bool in place of void
+	inputRunAt[bool](i, atOffset, func(i *Input) bool {
+		// Update remaining.
+		startIdx := len(i.args)
+		var snapshots map[inputSnapshot]bool
+		if len(i.remaining) > 0 && i.offset < len(i.remaining) {
+			startIdx = i.remaining[i.offset]
 
-		if len(i.args[startIdx].snapshots) > 0 {
-			snapshots = map[inputSnapshot]bool{}
-			for s := range i.args[startIdx].snapshots {
-				snapshots[s] = true
-			}
-		}
-	}
-
-	ial := make([]*inputArg, len(sl))
-	for j := 0; j < len(sl); j++ {
-		var sCopy map[inputSnapshot]bool
-		if snapshots != nil {
-			sCopy = map[inputSnapshot]bool{}
-			for s := range snapshots {
-				sCopy[s] = true
+			if len(i.args[startIdx].snapshots) > 0 {
+				snapshots = map[inputSnapshot]bool{}
+				for s := range i.args[startIdx].snapshots {
+					snapshots[s] = true
+				}
 			}
 		}
 
-		ial[j] = &inputArg{
-			value:     sl[j],
-			snapshots: sCopy,
+		ial := make([]*inputArg, len(sl))
+		for j := 0; j < len(sl); j++ {
+			var sCopy map[inputSnapshot]bool
+			if snapshots != nil {
+				sCopy = map[inputSnapshot]bool{}
+				for s := range snapshots {
+					sCopy[s] = true
+				}
+			}
+
+			ial[j] = &inputArg{
+				value:     sl[j],
+				snapshots: sCopy,
+			}
 		}
-	}
-	i.args = append(i.args[:startIdx], append(ial, i.args[startIdx:]...)...)
-	// increment all remaining after offset.
-	for j := tmpOffset; j < len(i.remaining); j++ {
-		i.remaining[j] += len(sl)
-	}
-	insert := make([]int, 0, len(sl))
-	for j := 0; j < len(sl); j++ {
-		insert = append(insert, j+startIdx)
-	}
-	i.remaining = append(i.remaining[:tmpOffset], append(insert, i.remaining[tmpOffset:]...)...)
+		i.args = append(i.args[:startIdx], append(ial, i.args[startIdx:]...)...)
+		// increment all remaining after offset.
+		for j := i.offset; j < len(i.remaining); j++ {
+			i.remaining[j] += len(sl)
+		}
+		insert := make([]int, 0, len(sl))
+		for j := 0; j < len(sl); j++ {
+			insert = append(insert, j+startIdx)
+		}
+		i.remaining = append(i.remaining[:i.offset], append(insert, i.remaining[i.offset:]...)...)
+
+		// Return arbitrary dummy value
+		return false
+	})
 }
 
 // PeekAt peeks at a specific argument and returns whether or not there are at least that many arguments.
@@ -178,7 +191,11 @@ func (i *Input) PeekAt(idx int) (string, bool) {
 
 // Pop removes the next argument from the input and returns if there is at least one more argument.
 func (i *Input) Pop(d *Data) (string, bool) {
-	sl, ok := i.PopN(1, 0, nil, d)
+	return i.PopAt(0, d)
+}
+
+func (i *Input) PopAt(offset int, d *Data) (string, bool) {
+	sl, ok := i.PopNAt(offset, 1, 0, nil, d)
 	if !ok {
 		return "", false
 	}
@@ -193,36 +210,48 @@ type InputValidator interface {
 
 // PopN pops the next `n` arguments from the input and returns whether or not there are enough arguments left.
 func (i *Input) PopN(n, optN int, validators []InputValidator, d *Data) ([]*string, bool) {
-	shift := n + optN
-	if optN == UnboundedList || shift+i.offset > len(i.remaining) {
-		shift = len(i.remaining) - i.offset
+	return i.PopNAt(0, n, optN, validators, d)
+}
+
+// PopNAt pops the `n` arguments starting at the provided offset.
+func (outerInput *Input) PopNAt(atOffset, n, optN int, validators []InputValidator, d *Data) ([]*string, bool) {
+	type retVal struct {
+		ss []*string
+		b  bool
 	}
 
-	if shift <= 0 {
-		return nil, n == 0
-	}
-
-	ret := make([]*string, 0, shift)
-	idx := 0
-	var broken, discardBreak bool
-	for ; idx < shift; idx++ {
-		for _, v := range append(validators, i.validators...) {
-			if err := v.Validate(i.get(idx+i.offset).value, d); err != nil {
-				//if err := validator.validate(StringValue(i.get(idx + i.offset).value)); err != nil {
-				broken = true
-				discardBreak = v.DiscardBreak()
-				goto LOOP_END
-			}
+	rv := inputRunAt[*retVal](outerInput, atOffset, func(i *Input) *retVal {
+		shift := n + optN
+		if optN == UnboundedList || shift+i.offset > len(i.remaining) {
+			shift = len(i.remaining) - i.offset
 		}
-		ret = append(ret, &i.get(idx+i.offset).value)
-	}
-LOOP_END:
-	i.remaining = append(i.remaining[:i.offset], i.remaining[i.offset+idx:]...)
 
-	if broken && discardBreak {
-		i.Pop(d)
-	}
-	return ret, len(ret) >= n
+		if shift <= 0 {
+			return &retVal{nil, n == 0}
+		}
+
+		ret := make([]*string, 0, shift)
+		idx := 0
+		var broken, discardBreak bool
+		for ; idx < shift; idx++ {
+			for _, v := range append(validators, i.validators...) {
+				if err := v.Validate(i.get(idx+i.offset).value, d); err != nil {
+					broken = true
+					discardBreak = v.DiscardBreak()
+					goto LOOP_END
+				}
+			}
+			ret = append(ret, &i.get(idx+i.offset).value)
+		}
+	LOOP_END:
+		i.remaining = append(i.remaining[:i.offset], i.remaining[i.offset+idx:]...)
+
+		if broken && discardBreak {
+			i.PopAt(atOffset, d)
+		}
+		return &retVal{ret, len(ret) >= n}
+	})
+	return rv.ss, rv.b
 }
 
 // ParseExecuteArgs converts a list of strings into an Input struct.
