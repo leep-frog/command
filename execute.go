@@ -1,54 +1,51 @@
 package command
 
-import (
-	"sync"
-)
-
 // Execute executes a node with the provided `Input` and `Output`.
 func Execute(n Node, input *Input, output Output, os OS) (*ExecuteData, error) {
 	return execute(n, input, output, &Data{OS: os})
 }
 
 // Separate method for testing purposes.
-func execute(n Node, input *Input, output Output, data *Data) (*ExecuteData, error) {
-	eData := &ExecuteData{}
+func execute(n Node, input *Input, output Output, data *Data) (eData *ExecuteData, retErr error) {
+	eData = &ExecuteData{}
 
-	// This threading logic is needed in case the underlying process calls an output.Terminate command.
-	var wg sync.WaitGroup
-	wg.Add(1)
+	defer func() {
+		r := recover()
 
-	var termErr error
-	go func() {
-		defer func() {
-			if termErr == nil {
-				termErr = output.terminateError()
-			}
-			wg.Done()
-		}()
-
-		if err := processGraphExecution(n, input, output, data, eData); err != nil {
-			termErr = err
+		// No panic
+		if r == nil {
 			return
 		}
 
-		if !input.FullyProcessed() {
-			err := ExtraArgsErr(input)
-			output.Stderrln(err)
-			// TODO: Make this the last node we reached?
-			ShowUsageAfterError(n, output)
-			termErr = err
+		// Panicked due to terminate error
+		if t, ok := r.(*terminator); ok && t.terminationError != nil {
+			retErr = t.terminationError
 			return
 		}
 
-		for _, ex := range eData.Executor {
-			if err := ex(output, data); err != nil {
-				termErr = err
-				return
-			}
-		}
+		// Panicked for other reason
+		panic(r)
 	}()
-	wg.Wait()
-	return eData, termErr
+
+	if retErr = processGraphExecution(n, input, output, data, eData); retErr != nil {
+		return
+	}
+
+	if !input.FullyProcessed() {
+		retErr = ExtraArgsErr(input)
+		output.Stderrln(retErr)
+		// TODO: Make this the last node we reached?
+		ShowUsageAfterError(n, output)
+		return
+	}
+
+	for _, ex := range eData.Executor {
+		if retErr = ex(output, data); retErr != nil {
+			return
+		}
+	}
+
+	return
 }
 
 // processOrExecute checks if the provided processor is a `Node` or just a `Processor`

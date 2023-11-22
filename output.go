@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"runtime"
 	"strings"
 	"sync"
 
@@ -40,8 +39,6 @@ type Output interface {
 	Tannotate(error, string)
 	// Tannotatef terminates the execution with an annotation of the provided error (if it's not nil).
 	Tannotatef(error, string, ...interface{})
-	// terminateError is the error produced from Terminate[f]
-	terminateError() error
 	// Close informs the os that no more data will be written.
 	Close()
 }
@@ -139,13 +136,14 @@ func (o *output) Tannotatef(err error, s string, a ...interface{}) {
 	}
 }
 
-func (o *output) terminate(err error) {
-	o.termErr = err
-	runtime.Goexit()
+// terminator is a custom type that is passed to panic
+// when running `o.Terminate`
+type terminator struct {
+	terminationError error
 }
 
-func (o *output) terminateError() error {
-	return o.termErr
+func (o *output) terminate(err error) {
+	panic(&terminator{err})
 }
 
 func (o *output) writeStderr(s string) error {

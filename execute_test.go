@@ -6833,6 +6833,18 @@ func TestExecute(t *testing.T) {
 				}, "\n"),
 			},
 		},
+		// Panic tests
+		{
+			name: "forwards panic",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					&ExecutorProcessor{func(o Output, d *Data) error {
+						panic("oh no!")
+					}},
+				),
+				WantPanic: "oh no!",
+			},
+		},
 		/* Useful for commenting out tests. */
 	} {
 		t.Run(test.name, func(t *testing.T) {

@@ -94,6 +94,8 @@ type ExecuteTestCase struct {
 	WantStderr string
 	// WantErr is the error that should be returned.
 	WantErr error
+	// WantPanic is the object that should be passed to panic (or nil if no panic expected).
+	WantPanic interface{}
 
 	// Whether or not to test actual input against wantInput.
 	testInput bool
@@ -129,9 +131,9 @@ type FakeRun struct {
 func setupForTest(t *testing.T, contents []string) string {
 	t.Helper()
 
-	f, err := ioutil.TempFile("", "command_test_setup")
+	f, err := os.CreateTemp("", "command_test_setup")
 	if err != nil {
-		t.Fatalf(`ioutil.TempFile("", "command_test_setup") returned error: %v`, err)
+		t.Fatalf(`os.CreateTemp("", "command_test_setup") returned error: %v`, err)
 	}
 	t.Cleanup(func() { f.Close() })
 	for _, s := range contents {
@@ -208,6 +210,7 @@ func ExecuteTest(t *testing.T, etc *ExecuteTestCase) {
 		checkIf(!etc.SkipDataCheck, &dataTester{etc.WantData, etc.DataCmpOpts}),
 		checkIf(etc.testInput, &inputTester{etc.wantInput}),
 		&envTester{},
+		&panicTester{etc.WantPanic},
 	}
 
 	for _, tester := range testers {
@@ -230,7 +233,12 @@ func ExecuteTest(t *testing.T, etc *ExecuteTestCase) {
 		}
 
 	} else {
-		tc.eData, tc.err = execute(n, tc.input, tc.fo, tc.data)
+		func() {
+			defer func() {
+				tc.panic = recover()
+			}()
+			tc.eData, tc.err = execute(n, tc.input, tc.fo, tc.data)
+		}()
 	}
 
 	for _, tester := range testers {
@@ -354,7 +362,8 @@ type testContext struct {
 	fo    *FakeOutput
 	input *Input
 
-	err error
+	err   error
+	panic interface{}
 
 	eData          *ExecuteData
 	autocompletion *Autocompletion
@@ -542,6 +551,19 @@ func (et *executeDataTester) check(t *testing.T, tc *testContext) {
 	}
 	if diff := cmp.Diff(et.want, tc.eData, cmpopts.IgnoreFields(ExecuteData{}, "Executor")); diff != "" {
 		t.Errorf("%s returned unexpected ExecuteData (-want, +got):\n%s", tc.prefix, diff)
+	}
+}
+
+type panicTester struct {
+	want interface{}
+}
+
+func (*panicTester) setup(*testing.T, *testContext) {}
+func (pt *panicTester) check(t *testing.T, tc *testContext) {
+	t.Helper()
+
+	if diff := cmp.Diff(pt.want, tc.panic); diff != "" {
+		t.Errorf("%s panicked with unexpected value (-want, +got):\n%s", tc.prefix, diff)
 	}
 }
 
