@@ -48,3 +48,7 @@ type ExecuteData struct {
 	// in a function. This allows Executable to use things like "return" and "local".
 	FunctionWrap bool
 }
+
+func (ed *ExecuteData) getExecutor() []func(Output, *Data) error {
+	return ed.Executor
+}

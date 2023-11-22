@@ -9,6 +9,7 @@ import (
 	"sync"
 
 	"github.com/leep-frog/command/glog"
+	"github.com/leep-frog/command/internal/commander"
 )
 
 // Output defines methods for writing output.
@@ -136,14 +137,8 @@ func (o *output) Tannotatef(err error, s string, a ...interface{}) {
 	}
 }
 
-// terminator is a custom type that is passed to panic
-// when running `o.Terminate`
-type terminator struct {
-	terminationError error
-}
-
 func (o *output) terminate(err error) {
-	panic(&terminator{err})
+	commander.Terminate(err)
 }
 
 func (o *output) writeStderr(s string) error {

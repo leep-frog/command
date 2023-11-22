@@ -1,6 +1,6 @@
 package command
 
-import "fmt"
+import "github.com/leep-frog/command/internal/commander"
 
 // Autocompletion is a subset of the `Completion` type and contains only
 // data relevant for the OS package to handle autocompletion logic.
@@ -24,50 +24,54 @@ func Autocomplete(n Node, compLine string, passthroughArgs []string, os OS) (*Au
 // Separate method for testing purposes (and so Data doesn't need to be
 // constructed by callers).
 func autocomplete(n Node, compLine string, passthroughArgs []string, data *Data) (*Autocompletion, error) {
-	input := ParseCompLine(compLine, passthroughArgs)
-	c, err := processGraphCompletion(n, input, data)
-
-	var ac *Autocompletion
-	if c != nil {
-		ac = &Autocompletion{
-			c.ProcessInput(input),
-			c.SpacelessCompletion,
-		}
-	}
-
-	if c == nil && err == nil && !input.FullyProcessed() {
-		err = ExtraArgsErr(input)
-	}
-	return ac, err
+	return commander.Autocomplete[*Input, Output, *Data, *ExecuteData, *Completion, *Usage, *Autocompletion, Node](n, compLine, passthroughArgs, data, afb)
 }
 
-// Separate method for use by modifiers (shortcut.go, cache.go, etc.)
+var (
+	afb = &autocompleteFunctionBag{}
+)
+
+type autocompleteFunctionBag struct{}
+
+func (afb *autocompleteFunctionBag) ParseCompLine(compLine string, passthroughArgs []string) *Input {
+	return ParseCompLine(compLine, passthroughArgs)
+}
+
+func (afb *autocompleteFunctionBag) ExtraArgsErr(i *Input) error {
+	return i.extraArgsErr()
+}
+
+func (afb *autocompleteFunctionBag) IgnoreAllOutput() Output {
+	return NewIgnoreAllOutput()
+}
+
+func (afb *autocompleteFunctionBag) MakeAutocompletion(c *Completion, input *Input) *Autocompletion {
+	return &Autocompletion{
+		c.ProcessInput(input),
+		c.SpacelessCompletion,
+	}
+}
+
+func (afb *autocompleteFunctionBag) DeferredCompletionIsNil(c *Completion) bool {
+	return c.DeferredCompletion == nil
+}
+
+func (afb *autocompleteFunctionBag) DeferredCompletionGraph(c *Completion) Node {
+	return c.DeferredCompletion.Graph
+}
+
+func (afb *autocompleteFunctionBag) DeferredCompletionFunc(c *Completion) func(*Data) (*Completion, error) {
+	return c.DeferredCompletion.F
+}
+
+func (afb *autocompleteFunctionBag) MakeE() *ExecuteData {
+	return &ExecuteData{}
+}
+
 func processGraphCompletion(n Node, input *Input, data *Data) (*Completion, error) {
-	for n != nil {
-		c, err := n.Complete(input, data)
-		if c != nil || err != nil {
-			if c != nil && c.DeferredCompletion != nil {
-				if err := processGraphExecution(c.DeferredCompletion.Graph, input, NewIgnoreAllOutput(), data, &ExecuteData{}); err != nil {
-					return nil, fmt.Errorf("failed to execute DeferredCompletion graph: %v", err)
-				}
-				return c.DeferredCompletion.F(data)
-			}
-			return c, err
-		}
-
-		if n, err = n.Next(input, data); err != nil {
-			return nil, err
-		}
-	}
-
-	return nil, nil
+	return commander.ProcessGraphCompletion[*Input, Output, *Data, *ExecuteData, *Completion, *Usage, *Autocompletion, Node](n, input, data, afb)
 }
 
-// processOrComplete checks if the provided processor is a `Node` or just a `Processor`
-// and traverses the subgraph or completes the processor accordingly.
 func processOrComplete(p Processor, input *Input, data *Data) (*Completion, error) {
-	if n, ok := p.(Node); ok {
-		return processGraphCompletion(n, input, data)
-	}
-	return p.Complete(input, data)
+	return commander.ProcessOrComplete[*Input, Output, *Data, *ExecuteData, *Completion, *Usage, *Autocompletion, Node](p, input, data, afb)
 }

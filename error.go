@@ -4,7 +4,11 @@ import "fmt"
 
 // ExtraArgsErr returns an error for when too many arguments are provided to a command.
 func ExtraArgsErr(input *Input) error {
-	return &extraArgsErr{input}
+	return input.extraArgsErr()
+}
+
+func (i *Input) extraArgsErr() error {
+	return &extraArgsErr{i}
 }
 
 type extraArgsErr struct {
