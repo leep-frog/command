@@ -193,6 +193,12 @@ func (fn *flagProcessor) Complete(input *Input, data *Data) (*Completion, error)
 			}, nil
 		}
 
+		// Stop processing flags
+		if a == FlagStop {
+			input.PopAt(i, data)
+			return nil, nil
+		}
+
 		// Check if combinable flag (e.g. `-qwer` -> `-q -w -e -r`).
 		if MultiFlagRegex.MatchString(a) {
 			for j := 1; j < len(a); j++ {

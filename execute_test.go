@@ -4718,11 +4718,11 @@ func TestExecute(t *testing.T) {
 				Node: SerialNodes(
 					FlagProcessor(
 						ListFlag[float64]("coordinates", 'c', testDesc, 2, 0),
-						BoolFlag("boo", 'o', testDesc),
+						BoolFlag("boo", 'b', testDesc),
 						ListFlag[string]("names", 'n', testDesc, 1, 2),
 						Flag[int]("rating", 'r', testDesc),
 					),
-					ListArg[string]("extra", testDesc, 0, 10),
+					ListArg[string]("extra", testDesc, 0, UnboundedList),
 				),
 				Args: []string{"its", "--boo", "a", "-r", "9", "secret", "-n", "greggar", "groog", "beggars", "--coordinates", "2.2", "4.4", "message."},
 				wantInput: &Input{
@@ -4749,6 +4749,48 @@ func TestExecute(t *testing.T) {
 					"names":       []string{"greggar", "groog", "beggars"},
 					"coordinates": []float64{2.2, 4.4},
 					"rating":      9,
+				}},
+			},
+		},
+		// FlagStop tests
+		{
+			name: "stops processing flags after FlagStop",
+			etc: &ExecuteTestCase{
+				Node: SerialNodes(
+					FlagProcessor(
+						ListFlag[float64]("coordinates", 'c', testDesc, 2, 0),
+						BoolFlag("boo", 'b', testDesc),
+						BoolFlag("yay", 'y', testDesc),
+						ListFlag[string]("names", 'n', testDesc, 1, 2),
+						Flag[int]("rating", 'r', testDesc),
+					),
+					ListArg[string]("extra", testDesc, 0, UnboundedList),
+				),
+				Args: []string{"its", "-b", "a", "-r", "9", "--", "secret", "--yay", "-n", "greggar", "groog", "beggars", "--coordinates", "2.2", "4.4", "message."},
+				wantInput: &Input{
+					args: []*inputArg{
+						{value: "its"},
+						{value: "-b"},
+						{value: "a"},
+						{value: "-r"},
+						{value: "9"},
+						{value: "--"},
+						{value: "secret"},
+						{value: "--yay"},
+						{value: "-n"},
+						{value: "greggar"},
+						{value: "groog"},
+						{value: "beggars"},
+						{value: "--coordinates"},
+						{value: "2.2"},
+						{value: "4.4"},
+						{value: "message."},
+					},
+				},
+				WantData: &Data{Values: map[string]interface{}{
+					"boo":    true,
+					"extra":  []string{"its", "a", "secret", "--yay", "-n", "greggar", "groog", "beggars", "--coordinates", "2.2", "4.4", "message."},
+					"rating": 9,
 				}},
 			},
 		},
@@ -9234,6 +9276,31 @@ func TestComplete(t *testing.T) {
 				}},
 				Want: &Autocompletion{
 					Suggestions: []string{"three", "two"},
+				},
+			},
+		},
+		// FlagStop test
+		{
+			name: "Stops processing flags after flag stop",
+			ctc: &CompleteTestCase{
+				Args: "its --boo a -r abc -- secret def --coordinates -y 1.1 2.2 ghi -n ",
+				Node: SerialNodes(
+					FlagProcessor(
+						ListFlag[float64]("coordinates", 'c', testDesc, 2, 0),
+						BoolFlag("boo", 'o', testDesc),
+						BoolFlag("yay", 'y', testDesc),
+						ListFlag[string]("names", 'n', testDesc, 2, 0),
+						Flag[string]("rating", 'r', testDesc),
+					),
+					ListArg[string]("extra", testDesc, 0, UnboundedList, SimpleDistinctCompleter[[]string]("abc", "def", "ghi", "jkl")),
+				),
+				WantData: &Data{Values: map[string]interface{}{
+					"boo":    true,
+					"rating": "abc",
+					"extra":  []string{"a", "secret", "def", "--coordinates", "-y", "1.1", "2.2", "ghi", "-n", ""},
+				}},
+				Want: &Autocompletion{
+					Suggestions: []string{"abc", "jkl"},
 				},
 			},
 		},
