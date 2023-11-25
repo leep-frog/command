@@ -1,6 +1,6 @@
 package command
 
-import "github.com/leep-frog/command/internal/commander"
+import "github.com/leep-frog/command/internal/spycommander"
 
 // Autocompletion is a subset of the `Completion` type and contains only
 // data relevant for the OS package to handle autocompletion logic.
@@ -24,7 +24,7 @@ func Autocomplete(n Node, compLine string, passthroughArgs []string, os OS) (*Au
 // Separate method for testing purposes (and so Data doesn't need to be
 // constructed by callers).
 func autocomplete(n Node, compLine string, passthroughArgs []string, data *Data) (*Autocompletion, error) {
-	return commander.Autocomplete[*Input, Output, *Data, *ExecuteData, *Completion, *Usage, *Autocompletion, Node](n, compLine, passthroughArgs, data, afb)
+	return spycommander.Autocomplete[*Input, Output, *Data, *ExecuteData, *Completion, *Usage, *Autocompletion, Node](n, compLine, passthroughArgs, data, afb)
 }
 
 var (
@@ -69,9 +69,9 @@ func (afb *autocompleteFunctionBag) MakeE() *ExecuteData {
 }
 
 func processGraphCompletion(n Node, input *Input, data *Data) (*Completion, error) {
-	return commander.ProcessGraphCompletion[*Input, Output, *Data, *ExecuteData, *Completion, *Usage, *Autocompletion, Node](n, input, data, afb)
+	return spycommander.ProcessGraphCompletion[*Input, Output, *Data, *ExecuteData, *Completion, *Usage, *Autocompletion, Node](n, input, data, afb)
 }
 
 func processOrComplete(p Processor, input *Input, data *Data) (*Completion, error) {
-	return commander.ProcessOrComplete[*Input, Output, *Data, *ExecuteData, *Completion, *Usage, *Autocompletion, Node](p, input, data, afb)
+	return spycommander.ProcessOrComplete[*Input, Output, *Data, *ExecuteData, *Completion, *Usage, *Autocompletion, Node](p, input, data, afb)
 }

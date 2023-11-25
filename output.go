@@ -9,7 +9,7 @@ import (
 	"sync"
 
 	"github.com/leep-frog/command/glog"
-	"github.com/leep-frog/command/internal/commander"
+	"github.com/leep-frog/command/internal/spycommander"
 )
 
 // Output defines methods for writing output.
@@ -138,7 +138,7 @@ func (o *output) Tannotatef(err error, s string, a ...interface{}) {
 }
 
 func (o *output) terminate(err error) {
-	commander.Terminate(err)
+	spycommander.Terminate(err)
 }
 
 func (o *output) writeStderr(s string) error {

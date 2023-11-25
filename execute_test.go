@@ -830,7 +830,7 @@ func TestExecute(t *testing.T) {
 						IgnoreFiles: true,
 					}),
 				),
-				Args: []string{"co"},
+				Args: []string{"col"},
 				wantInput: &Input{
 					args: []*inputArg{
 						{value: filepath.FromSlash("color/")},
@@ -8081,6 +8081,7 @@ func TestComplete(t *testing.T) {
 						"cache_test.go",
 						filepath.FromSlash("color/"),
 						"command.go",
+						filepath.FromSlash("commander/"),
 						"commandtest.go",
 						"completer.go",
 						"completer_test.go",
@@ -8165,6 +8166,7 @@ func TestComplete(t *testing.T) {
 						filepath.FromSlash("_testdata_symlink/"),
 						filepath.FromSlash("cache/"),
 						filepath.FromSlash("color/"),
+						filepath.FromSlash("commander/"),
 						filepath.FromSlash("docs/"),
 						filepath.FromSlash("example-cli/"),
 						filepath.FromSlash("glog/"),

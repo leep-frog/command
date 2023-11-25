@@ -1,11 +1,6 @@
-package commander
+package spycommander
 
 import "fmt"
-
-// type autocompleteFunctionBar[I, O, D, E, C, U, AC, N any] struct {
-// parseCompLine func(string, []string) I
-// extraAr
-// }
 
 type autocompleteFunctionBag[I input, O output, D any, E any, C completion[I], U, AC any, N node[I, O, D, E, C, U, N]] interface {
 	ParseCompLine(string, []string) I

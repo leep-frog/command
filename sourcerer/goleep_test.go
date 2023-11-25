@@ -374,6 +374,7 @@ func TestGoLeepAutocomplete(t *testing.T) {
 					Suggestions: []string{
 						filepath.FromSlash("cache/"),
 						filepath.FromSlash("color/"),
+						filepath.FromSlash("commander/"),
 						" ",
 					},
 				},
