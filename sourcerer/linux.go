@@ -9,6 +9,10 @@ import (
 	"github.com/leep-frog/command"
 )
 
+const (
+	zshEnvVar = "COMMAND_CLI_ZSH"
+)
+
 var (
 	// NosortString returns the complete option to ignore sorting.
 	// It returns nothing if the IGNORE_NOSORT environment variable is set.
@@ -137,11 +141,15 @@ func (l *linux) autocompleteFunction(runCLI bool, builtin bool, goExecutable, ta
 		cliRef = "${COMP_WORDS[0]}"
 	}
 	branchStr := l.getBranchString(builtin, AutocompleteBranchName)
+	compType := "$COMP_TYPE"
+	if _, ok := command.OSLookupEnv(zshEnvVar); ok {
+		compType = "0"
+	}
 	return []string{
 		fmt.Sprintf("function %s {", l.autocompleteFunctionName(targetName, false)),
 		`  local tFile=$(mktemp)`,
 		// The last argument is for extra passthrough arguments to be passed for aliaser autocompletes.
-		fmt.Sprintf(`  %s %s %s "$COMP_TYPE" $COMP_POINT "$COMP_LINE" > $tFile`, goExecutable, branchStr, cliRef),
+		fmt.Sprintf(`  %s %s %s "%s" $COMP_POINT "$COMP_LINE" > $tFile`, goExecutable, branchStr, cliRef, compType),
 		`  local IFS=$'\n'`,
 		`  COMPREPLY=( $(cat $tFile) )`,
 		`  rm $tFile`,
