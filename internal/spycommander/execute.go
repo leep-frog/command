@@ -1,6 +1,10 @@
 package spycommander
 
-import "reflect"
+import (
+	"reflect"
+
+	"github.com/google/go-cmp/cmp"
+)
 
 // terminator is a custom type that is passed to panic
 // when running `o.Terminate`
@@ -8,8 +12,33 @@ type terminator struct {
 	terminationError error
 }
 
+func TerminationErr(err error) *terminator {
+	return &terminator{err}
+}
+
+func TerminationCmpopts() cmp.Option {
+	return cmp.Options([]cmp.Option{
+		cmp.Comparer(func(this, that *terminator) bool {
+			if this == nil || that == nil {
+				return (this == nil) == (that == nil)
+			}
+			return this.terminationError.Error() == that.terminationError.Error()
+		}),
+	})
+}
+
+/*func TerminationCmpopts(err error) cmp.Option {
+	return cmp.Comparer(func(this, that *terminator) bool {
+		if this == nil || that == nil {
+			return (this == nil) == (that == nil)
+		}
+
+		return this.terminationError.Error() == that.terminationError.Error()
+	})
+}*/
+
 func Terminate(err error) {
-	panic(&terminator{err})
+	panic(TerminationErr(err))
 }
 
 type node[I input, O output, D any, E, C, U, N any] interface {
