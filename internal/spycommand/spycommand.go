@@ -12,3 +12,9 @@ type InputArg struct {
 	Value     string
 	Snapshots map[InputSnapshot]bool
 }
+
+// method to get coverage info (so I don't need to check whether there are no tests
+// or nothing to cover).
+func noop() {
+	_ = 0
+}

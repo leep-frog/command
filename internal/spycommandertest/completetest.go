@@ -10,7 +10,7 @@ import (
 )
 
 // CompleteTest runs a test on command autocompletion.
-func CompleteTest(t *testing.T, ctc *commandtest.CompleteTestCase, ictc *spycommandtest.CompleteTestCase) {
+func CompleteTest(t *testing.T, ctc *commandtest.CompleteTestCase, ictc *spycommandtest.CompleteTestCase, autocompleteFn func(commondels.Node, string, []string, *commondels.Data) (*commondels.Autocompletion, error)) {
 	t.Helper()
 
 	if ctc == nil {
@@ -38,7 +38,7 @@ func CompleteTest(t *testing.T, ctc *commandtest.CompleteTestCase, ictc *spycomm
 		tester.setup(t, tc)
 	}
 
-	tc.autocompletion, tc.err = autocomplete(ctc.Node, ctc.Args, ctc.PassthroughArgs, tc.data)
+	tc.autocompletion, tc.err = autocompleteFn(ctc.Node, ctc.Args, ctc.PassthroughArgs, tc.data)
 
 	for _, tester := range testers {
 		tester.check(t, tc)

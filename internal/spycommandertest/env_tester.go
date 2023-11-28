@@ -9,7 +9,7 @@ import (
 type envTester struct{}
 
 func (et *envTester) setup(t *testing.T, tc *testContext) {
-	stubs.StubEnv(t, tc.testCase.getEnv())
+	stubs.StubEnv(t, tc.testCase.GetEnv())
 }
 
 func (et *envTester) check(t *testing.T, tc *testContext) {}

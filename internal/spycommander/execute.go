@@ -33,8 +33,8 @@ func Execute(n commondels.Node, input *commondels.Input, output commondels.Outpu
 	if !input.FullyProcessed() {
 		retErr = commondels.ExtraArgsErr(input)
 		output.Stderrln(retErr)
-		// TODO: Make this the last node we reached?
-		panic("TODO") // fb.ShowUsageAfterError(n, output)
+		ShowUsageAfterError(n, output)
+		return retErr
 	}
 
 	for _, ex := range eData.Executor {

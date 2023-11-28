@@ -63,8 +63,12 @@ func checkIf(cond bool, ct commandTester) commandTester {
 	return &noOpTester{}
 }
 
+type executeFn func(commondels.Node, *commondels.Input, commondels.Output, *commondels.Data, *commondels.ExecuteData) error
+
+type usageFn func(commondels.Node, *commondels.Input) (*commondels.Usage, error)
+
 // ExecuteTest runs a command execution test.
-func ExecuteTest(t *testing.T, etc *commandtest.ExecuteTestCase, ietc *spycommandtest.ExecuteTestCase) {
+func ExecuteTest(t *testing.T, etc *commandtest.ExecuteTestCase, ietc *spycommandtest.ExecuteTestCase, exFn executeFn, uFn usageFn) {
 	t.Helper()
 
 	if etc == nil {
@@ -128,9 +132,9 @@ func ExecuteTest(t *testing.T, etc *commandtest.ExecuteTestCase, ietc *spycomman
 	}
 
 	if helpFlag {
-		// This is synced with usageExecutorHelper in sourcerer (use interface to share logic?)
+		// TODO: This is synced with usageExecutorHelper in sourcerer (use interface to share logic? ie move this check into execute function?)
 		var u *commondels.Usage
-		u, tc.err = Use(n, tc.input)
+		u, tc.err = uFn(n, tc.input)
 		if tc.err != nil {
 			tc.fo.Err(tc.err)
 		} else {
@@ -143,8 +147,7 @@ func ExecuteTest(t *testing.T, etc *commandtest.ExecuteTestCase, ietc *spycomman
 				tc.panic = recover()
 			}()
 			tc.eData = &commondels.ExecuteData{}
-			// tc.err = spycommander.Execute()
-			tc.eData, tc.err = execute(n, tc.input, tc.fo, tc.data)
+			tc.err = exFn(n, tc.input, tc.fo, tc.data, tc.eData)
 		}()
 	}
 
