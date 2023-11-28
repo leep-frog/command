@@ -3,76 +3,11 @@ package spycommander
 import (
 	"reflect"
 
-	"github.com/google/go-cmp/cmp"
+	"github.com/leep-frog/command/commondels"
 )
 
-// terminator is a custom type that is passed to panic
-// when running `o.Terminate`
-type terminator struct {
-	terminationError error
-}
-
-func TerminationErr(err error) *terminator {
-	return &terminator{err}
-}
-
-func TerminationCmpopts() cmp.Option {
-	return cmp.Options([]cmp.Option{
-		cmp.Comparer(func(this, that *terminator) bool {
-			if this == nil || that == nil {
-				return (this == nil) == (that == nil)
-			}
-			return this.terminationError.Error() == that.terminationError.Error()
-		}),
-	})
-}
-
-/*func TerminationCmpopts(err error) cmp.Option {
-	return cmp.Comparer(func(this, that *terminator) bool {
-		if this == nil || that == nil {
-			return (this == nil) == (that == nil)
-		}
-
-		return this.terminationError.Error() == that.terminationError.Error()
-	})
-}*/
-
-func Terminate(err error) {
-	panic(TerminationErr(err))
-}
-
-type node[I input, O output, D any, E, C, U, N any] interface {
-	processor[I, O, D, E, C, U]
-	edge[I, O, D, E, C, U, N]
-}
-
-type processor[I input, O output, D any, E, C, U any] interface {
-	Execute(I, O, D, E) error
-	Complete(I, D) (C, error)
-	Usage(I, D, U) error
-}
-
-type edge[I input, O output, D any, E, C, U, N any] interface {
-	Next(I, D) (N, error)
-	UsageNext(I, D) (N, error)
-}
-
-type input interface {
-	FullyProcessed() bool
-}
-
-type output interface {
-	Stderrln(...interface{}) error
-}
-
-type executeFunctionBag[I input, O output, D any, E, C, U, N any] interface {
-	ShowUsageAfterError(N, O)
-	ExtraArgsErr(I) error
-	GetExecutor(E) []func(O, D) error
-}
-
 // Separate method for testing purposes.
-func Execute[I input, O output, D any, E, C, U any, N node[I, O, D, E, C, U, N]](n N, input I, output O, data D, eData E, fb executeFunctionBag[I, O, D, E, C, U, N]) (retErr error) {
+func Execute(n commondels.Node, input *commondels.Input, output commondels.Output, data *commondels.Data, eData *commondels.ExecuteData) (retErr error) {
 	defer func() {
 		r := recover()
 
@@ -82,8 +17,8 @@ func Execute[I input, O output, D any, E, C, U any, N node[I, O, D, E, C, U, N]]
 		}
 
 		// Panicked due to terminate error
-		if t, ok := r.(*terminator); ok && t.terminationError != nil {
-			retErr = t.terminationError
+		if ok, err := commondels.IsTerminationPanic(r); ok {
+			retErr = err
 			return
 		}
 
@@ -91,19 +26,18 @@ func Execute[I input, O output, D any, E, C, U any, N node[I, O, D, E, C, U, N]]
 		panic(r)
 	}()
 
-	if retErr = ProcessGraphExecution[I, O, D, E, C, U, N](n, input, output, data, eData); retErr != nil {
+	if retErr = ProcessGraphExecution(n, input, output, data, eData); retErr != nil {
 		return
 	}
 
 	if !input.FullyProcessed() {
-		retErr = fb.ExtraArgsErr(input)
+		retErr = commondels.ExtraArgsErr(input)
 		output.Stderrln(retErr)
 		// TODO: Make this the last node we reached?
-		fb.ShowUsageAfterError(n, output)
-		return
+		panic("TODO") // fb.ShowUsageAfterError(n, output)
 	}
 
-	for _, ex := range fb.GetExecutor(eData) {
+	for _, ex := range eData.Executor {
 		if retErr = ex(output, data); retErr != nil {
 			return
 		}
@@ -114,9 +48,9 @@ func Execute[I input, O output, D any, E, C, U any, N node[I, O, D, E, C, U, N]]
 
 // ProcessOrExecute checks if the provided processor is a `Node` or just a `Processor`
 // and traverses the subgraph or executes the processor accordingly.
-func ProcessOrExecute[I input, O output, D any, E, C, U any, N node[I, O, D, E, C, U, N]](p processor[I, O, D, E, C, U], input I, output O, data D, eData E) error {
-	if n, ok := p.(N); ok {
-		return ProcessGraphExecution[I, O, D, E, C, U, N](n, input, output, data, eData)
+func ProcessOrExecute(p commondels.Processor, input *commondels.Input, output commondels.Output, data *commondels.Data, eData *commondels.ExecuteData) error {
+	if n, ok := p.(commondels.Node); ok {
+		return ProcessGraphExecution(n, input, output, data, eData)
 	}
 	return p.Execute(input, output, data, eData)
 }
@@ -127,7 +61,7 @@ func isNil(o interface{}) bool {
 }
 
 // ProcessGraphExecution processes the provided graph
-func ProcessGraphExecution[I input, O output, D any, E, C, U any, N node[I, O, D, E, C, U, N]](root N, input I, output O, data D, eData E) error {
+func ProcessGraphExecution(root commondels.Node, input *commondels.Input, output commondels.Output, data *commondels.Data, eData *commondels.ExecuteData) error {
 	for n := root; !isNil(n); {
 		if err := n.Execute(input, output, data, eData); err != nil {
 			return err

@@ -1,7 +1,9 @@
 package testutil
 
 import (
+	"bytes"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"testing"
@@ -70,4 +72,12 @@ func FilepathAbs(t *testing.T, s ...string) string {
 		t.Fatalf("Failed to get absolute path for file: %v", err)
 	}
 	return r
+}
+
+func Write(t *testing.T, iow io.Writer, contents []string) {
+	for _, c := range contents {
+		if _, err := bytes.NewBufferString(fmt.Sprintf("%s\n", c)).WriteTo(iow); err != nil {
+			t.Fatalf("failed to write buffer to io.Writer: %v", err)
+		}
+	}
 }

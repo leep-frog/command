@@ -1,15 +1,15 @@
-package commandtest
+package spycommandertest
 
 import (
-	"bytes"
 	"fmt"
-	"io"
 	"os"
 	"reflect"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/leep-frog/command/commandtest"
 	"github.com/leep-frog/command/commondels"
+	"github.com/leep-frog/command/internal/spycommandtest"
 )
 
 type testContext struct {
@@ -41,21 +41,13 @@ func setupForTest(t *testing.T, contents []string) string {
 	return f.Name()
 }
 
-func write(t *testing.T, iow io.Writer, contents []string) {
-	for _, c := range contents {
-		if _, err := bytes.NewBufferString(fmt.Sprintf("%s\n", c)).WriteTo(iow); err != nil {
-			t.Fatalf("failed to write buffer to io.Writer: %v", err)
-		}
-	}
-}
-
 type commandTester interface {
 	setup(*testing.T, *testContext)
 	check(*testing.T, *testContext)
 }
 
 type testCase interface {
-	getEnv() map[string]string
+	GetEnv() map[string]string
 }
 
 type noOpTester struct{}
@@ -72,15 +64,19 @@ func checkIf(cond bool, ct commandTester) commandTester {
 }
 
 // ExecuteTest runs a command execution test.
-func ExecuteTest(t *testing.T, etc *ExecuteTestCase) {
+func ExecuteTest(t *testing.T, etc *commandtest.ExecuteTestCase, ietc *spycommandtest.ExecuteTestCase) {
 	t.Helper()
 
 	if etc == nil {
-		etc = &ExecuteTestCase{}
+		etc = &commandtest.ExecuteTestCase{}
 	}
 
 	if etc.WantData == nil {
 		etc.WantData = &commondels.Data{}
+	}
+
+	if ietc == nil {
+		ietc = &spycommandtest.ExecuteTestCase{}
 	}
 
 	tc := &testContext{
@@ -115,7 +111,7 @@ func ExecuteTest(t *testing.T, etc *ExecuteTestCase) {
 		&executeDataTester{etc.WantExecuteData},
 		&runResponseTester{etc.RunResponses, etc.WantRunContents, nil},
 		checkIf(!etc.SkipDataCheck, &dataTester{etc.WantData, etc.DataCmpOpts}),
-		checkIf(etc.testInput, &inputTester{etc.wantInput}),
+		checkIf(ietc.TestInput, &inputTester{ietc.WantInput}),
 		&envTester{},
 		&panicTester{etc.WantPanic},
 	}
@@ -146,6 +142,8 @@ func ExecuteTest(t *testing.T, etc *ExecuteTestCase) {
 			defer func() {
 				tc.panic = recover()
 			}()
+			tc.eData = &commondels.ExecuteData{}
+			// tc.err = spycommander.Execute()
 			tc.eData, tc.err = execute(n, tc.input, tc.fo, tc.data)
 		}()
 	}
@@ -156,7 +154,7 @@ func ExecuteTest(t *testing.T, etc *ExecuteTestCase) {
 }
 
 // ChangeTest tests if a command object has changed properly.
-func ChangeTest[T Changeable](t *testing.T, want, original T, opts ...cmp.Option) {
+func ChangeTest[T commandtest.Changeable](t *testing.T, want, original T, opts ...cmp.Option) {
 	wantChanged := reflect.ValueOf(want).IsValid() && !reflect.ValueOf(want).IsNil()
 	if original.Changed() != wantChanged {
 		if wantChanged {

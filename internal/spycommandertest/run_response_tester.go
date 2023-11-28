@@ -1,4 +1,4 @@
-package commandtest
+package spycommandertest
 
 import (
 	"io"
@@ -6,14 +6,15 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/leep-frog/command/commandtest"
 	"github.com/leep-frog/command/internal/stubs"
 	"github.com/leep-frog/command/internal/testutil"
 )
 
 type runResponseTester struct {
-	runResponses   []*FakeRun
-	want           []*RunContents
-	gotRunContents []*RunContents
+	runResponses   []*commandtest.FakeRun
+	want           []*commandtest.RunContents
+	gotRunContents []*commandtest.RunContents
 }
 
 func (rrt *runResponseTester) stubRunResponses(t *testing.T) func(cmd *exec.Cmd) error {
@@ -33,12 +34,12 @@ func (rrt *runResponseTester) stubRunResponses(t *testing.T) func(cmd *exec.Cmd)
 
 		// `cmd.Args[0]` is used instead of `cmd.Path` because `cmd.Path` can be modified,
 		// like by msys for example.
-		rrt.gotRunContents = append(rrt.gotRunContents, &RunContents{cmd.Args[0], cmd.Args[1:], cmd.Dir, stdinContents})
+		rrt.gotRunContents = append(rrt.gotRunContents, &commandtest.RunContents{cmd.Args[0], cmd.Args[1:], cmd.Dir, stdinContents})
 
 		r := rrt.runResponses[0]
 		rrt.runResponses = rrt.runResponses[1:]
-		write(t, cmd.Stdout, r.Stdout)
-		write(t, cmd.Stderr, r.Stderr)
+		testutil.Write(t, cmd.Stdout, r.Stdout)
+		testutil.Write(t, cmd.Stderr, r.Stderr)
 		if r.F != nil {
 			r.F(t)
 		}

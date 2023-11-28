@@ -1,4 +1,4 @@
-package commandtest
+package spycommandertest
 
 import (
 	"testing"

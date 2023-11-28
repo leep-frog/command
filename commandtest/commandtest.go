@@ -44,10 +44,6 @@ type ExecuteTestCase struct {
 	// WantPanic is the object that should be passed to panic (or nil if no panic expected).
 	WantPanic interface{}
 
-	// Whether or not to test actual input against wantInput.
-	testInput bool
-	wantInput *commondels.Input
-
 	// WantRunContents are the set of shell commands that should have been run.
 	WantRunContents []*RunContents
 
@@ -60,7 +56,7 @@ type ExecuteTestCase struct {
 	RunResponses []*FakeRun
 }
 
-func (etc *ExecuteTestCase) getEnv() map[string]string {
+func (etc *ExecuteTestCase) GetEnv() map[string]string {
 	if etc.Env == nil {
 		etc.Env = map[string]string{}
 	}
@@ -109,7 +105,7 @@ type CompleteTestCase struct {
 	WantRunContents []*RunContents
 }
 
-func (ctc *CompleteTestCase) getEnv() map[string]string {
+func (ctc *CompleteTestCase) GetEnv() map[string]string {
 	if ctc.Env == nil {
 		ctc.Env = map[string]string{}
 	}
