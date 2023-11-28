@@ -1,5 +1,7 @@
 package commondels
 
+import "github.com/leep-frog/command/internal/spycommand"
+
 const (
 	// UnboundedList is used to indicate that an argument list should allow an unbounded amount of arguments.
 	UnboundedList = -1
@@ -16,17 +18,15 @@ var (
 	}
 )
 
-type inputSnapshot int
-
 // Input is a type that tracks the entire input and how much of the input
 // has been parsed. It also takes care of input snapshots (i.e. snapshots for
 // shortcuts and caching purposes).
 type Input struct {
-	args          []*inputArg
+	args          []*spycommand.InputArg
 	remaining     []int
 	delimiter     *rune
 	offset        int
-	snapshotCount inputSnapshot
+	snapshotCount spycommand.InputSnapshot
 	// breakers are a set of `InputBreakers` that are required to pass for all `Pop` functions.
 	breakers []InputBreaker
 }
@@ -47,35 +47,30 @@ func inputRunAt[T any](i *Input, atOffset int, f func(*Input) T) T {
 	return f(i)
 }
 
-type inputArg struct {
-	value     string
-	snapshots map[inputSnapshot]bool
-}
-
-func (ia *inputArg) addSnapshots(is ...inputSnapshot) {
-	if ia.snapshots == nil {
-		ia.snapshots = map[inputSnapshot]bool{}
+func addSnapshots(ia *spycommand.InputArg, is ...spycommand.InputSnapshot) {
+	if ia.Snapshots == nil {
+		ia.Snapshots = map[spycommand.InputSnapshot]bool{}
 	}
 	for _, i := range is {
-		ia.snapshots[i] = true
+		ia.Snapshots[i] = true
 	}
 }
 
 // Snapshot takes a snapshot of the remaining input arguments.
-func (i *Input) Snapshot() inputSnapshot {
+func (i *Input) Snapshot() spycommand.InputSnapshot {
 	i.snapshotCount++
 	for j := i.offset; j < len(i.remaining); j++ {
-		i.get(j).addSnapshots(i.snapshotCount)
+		addSnapshots(i.get(j), i.snapshotCount)
 	}
 	return i.snapshotCount
 }
 
 // GetSnapshot retrieves the snapshot.
-func (i *Input) GetSnapshot(is inputSnapshot) []string {
+func (i *Input) GetSnapshot(is spycommand.InputSnapshot) []string {
 	var r []string
 	for _, arg := range i.args {
-		if arg.snapshots[is] {
-			r = append(r, arg.value)
+		if arg.Snapshots[is] {
+			r = append(r, arg.Value)
 		}
 	}
 	return r
@@ -94,7 +89,7 @@ func (i *Input) NumRemaining() int {
 func (i *Input) Remaining() []string {
 	r := make([]string, 0, len(i.remaining)-i.offset)
 	for _, v := range i.remaining[i.offset:] {
-		r = append(r, i.args[v].value)
+		r = append(r, i.args[v].Value)
 	}
 	return r
 }
@@ -108,7 +103,7 @@ func (i *Input) Used() []string {
 	var v []string
 	for idx := 0; idx < len(i.args); idx++ {
 		if !r[idx] {
-			v = append(v, i.args[idx].value)
+			v = append(v, i.args[idx].Value)
 		}
 	}
 	return v
@@ -119,7 +114,7 @@ func (i *Input) Peek() (string, bool) {
 	return i.PeekAt(0)
 }
 
-func (i *Input) get(j int) *inputArg {
+func (i *Input) get(j int) *spycommand.InputArg {
 	return i.args[i.remaining[j]]
 }
 
@@ -134,31 +129,31 @@ func (i *Input) PushFrontAt(atOffset int, sl ...string) {
 	inputRunAt[bool](i, atOffset, func(i *Input) bool {
 		// Update remaining.
 		startIdx := len(i.args)
-		var snapshots map[inputSnapshot]bool
+		var snapshots map[spycommand.InputSnapshot]bool
 		if len(i.remaining) > 0 && i.offset < len(i.remaining) {
 			startIdx = i.remaining[i.offset]
 
-			if len(i.args[startIdx].snapshots) > 0 {
-				snapshots = map[inputSnapshot]bool{}
-				for s := range i.args[startIdx].snapshots {
+			if len(i.args[startIdx].Snapshots) > 0 {
+				snapshots = map[spycommand.InputSnapshot]bool{}
+				for s := range i.args[startIdx].Snapshots {
 					snapshots[s] = true
 				}
 			}
 		}
 
-		ial := make([]*inputArg, len(sl))
+		ial := make([]*spycommand.InputArg, len(sl))
 		for j := 0; j < len(sl); j++ {
-			var sCopy map[inputSnapshot]bool
+			var sCopy map[spycommand.InputSnapshot]bool
 			if snapshots != nil {
-				sCopy = map[inputSnapshot]bool{}
+				sCopy = map[spycommand.InputSnapshot]bool{}
 				for s := range snapshots {
 					sCopy[s] = true
 				}
 			}
 
-			ial[j] = &inputArg{
-				value:     sl[j],
-				snapshots: sCopy,
+			ial[j] = &spycommand.InputArg{
+				Value:     sl[j],
+				Snapshots: sCopy,
 			}
 		}
 		i.args = append(i.args[:startIdx], append(ial, i.args[startIdx:]...)...)
@@ -182,7 +177,7 @@ func (i *Input) PeekAt(idx int) (string, bool) {
 	if idx < 0 || idx >= len(i.remaining) {
 		return "", false
 	}
-	return i.get(idx).value, true
+	return i.get(idx).Value, true
 }
 
 // Pop removes the next argument from the input and returns if there is at least one more argument.
@@ -235,13 +230,13 @@ func (outerInput *Input) PopNAt(atOffset, n, optN int, breakers []InputBreaker, 
 		var broken, discardBreak bool
 		for ; idx < shift; idx++ {
 			for _, b := range append(breakers, i.breakers...) {
-				if b.Break(i.get(idx+i.offset).value, d) {
+				if b.Break(i.get(idx+i.offset).Value, d) {
 					broken = true
 					discardBreak = b.DiscardBreak()
 					goto LOOP_END
 				}
 			}
-			ret = append(ret, &i.get(idx+i.offset).value)
+			ret = append(ret, &i.get(idx+i.offset).Value)
 		}
 	LOOP_END:
 		i.remaining = append(i.remaining[:i.offset], i.remaining[i.offset+idx:]...)
@@ -257,11 +252,11 @@ func (outerInput *Input) PopNAt(atOffset, n, optN int, breakers []InputBreaker, 
 // ParseExecuteArgs converts a list of strings into an Input struct.
 func ParseExecuteArgs(strArgs []string) *Input {
 	r := make([]int, len(strArgs))
-	args := make([]*inputArg, len(strArgs))
+	args := make([]*spycommand.InputArg, len(strArgs))
 	for i := range strArgs {
 		r[i] = i
-		args[i] = &inputArg{
-			value: strArgs[i],
+		args[i] = &spycommand.InputArg{
+			Value: strArgs[i],
 		}
 	}
 	return &Input{

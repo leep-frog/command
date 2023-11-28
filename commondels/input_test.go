@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/leep-frog/command/internal/spycommand"
 	"github.com/leep-frog/command/internal/testutil"
 )
 
@@ -23,11 +24,11 @@ func TestPushFront(t *testing.T) {
 		{
 			name: "handles empty list",
 			i: &Input{
-				args:      []*inputArg{{value: "zero"}, {value: "one"}, {value: "two"}, {value: "three"}, {value: "four"}},
+				args:      []*spycommand.InputArg{{Value: "zero"}, {Value: "one"}, {Value: "two"}, {Value: "three"}, {Value: "four"}},
 				remaining: []int{1, 3, 4},
 			},
 			want: &Input{
-				args:      []*inputArg{{value: "zero"}, {value: "one"}, {value: "two"}, {value: "three"}, {value: "four"}},
+				args:      []*spycommand.InputArg{{Value: "zero"}, {Value: "one"}, {Value: "two"}, {Value: "three"}, {Value: "four"}},
 				remaining: []int{1, 3, 4},
 			},
 		},
@@ -35,11 +36,11 @@ func TestPushFront(t *testing.T) {
 			name: "adds list",
 			sl:   []string{"zero.one", "zero.two"},
 			i: &Input{
-				args:      []*inputArg{{value: "zero"}, {value: "one"}, {value: "two"}, {value: "three"}, {value: "four"}},
+				args:      []*spycommand.InputArg{{Value: "zero"}, {Value: "one"}, {Value: "two"}, {Value: "three"}, {Value: "four"}},
 				remaining: []int{1, 3, 4},
 			},
 			want: &Input{
-				args:      []*inputArg{{value: "zero"}, {value: "zero.one"}, {value: "zero.two"}, {value: "one"}, {value: "two"}, {value: "three"}, {value: "four"}},
+				args:      []*spycommand.InputArg{{Value: "zero"}, {Value: "zero.one"}, {Value: "zero.two"}, {Value: "one"}, {Value: "two"}, {Value: "three"}, {Value: "four"}},
 				remaining: []int{1, 2, 3, 5, 6},
 			},
 		},
@@ -47,11 +48,11 @@ func TestPushFront(t *testing.T) {
 			name: "adds list to the front",
 			sl:   []string{"zero.one", "zero.two"},
 			i: &Input{
-				args:      []*inputArg{{value: "zero"}, {value: "one"}, {value: "two"}, {value: "three"}, {value: "four"}},
+				args:      []*spycommand.InputArg{{Value: "zero"}, {Value: "one"}, {Value: "two"}, {Value: "three"}, {Value: "four"}},
 				remaining: []int{0, 1, 3, 4},
 			},
 			want: &Input{
-				args:      []*inputArg{{value: "zero.one"}, {value: "zero.two"}, {value: "zero"}, {value: "one"}, {value: "two"}, {value: "three"}, {value: "four"}},
+				args:      []*spycommand.InputArg{{Value: "zero.one"}, {Value: "zero.two"}, {Value: "zero"}, {Value: "one"}, {Value: "two"}, {Value: "three"}, {Value: "four"}},
 				remaining: []int{0, 1, 2, 3, 5, 6},
 			},
 		},
@@ -59,12 +60,12 @@ func TestPushFront(t *testing.T) {
 			name: "adds list with offset",
 			sl:   []string{"two.one", "two.two"},
 			i: &Input{
-				args:      []*inputArg{{value: "zero"}, {value: "one"}, {value: "two"}, {value: "three"}, {value: "four"}},
+				args:      []*spycommand.InputArg{{Value: "zero"}, {Value: "one"}, {Value: "two"}, {Value: "three"}, {Value: "four"}},
 				remaining: []int{0, 1, 3, 4},
 				offset:    2,
 			},
 			want: &Input{
-				args:      []*inputArg{{value: "zero"}, {value: "one"}, {value: "two"}, {value: "two.one"}, {value: "two.two"}, {value: "three"}, {value: "four"}},
+				args:      []*spycommand.InputArg{{Value: "zero"}, {Value: "one"}, {Value: "two"}, {Value: "two.one"}, {Value: "two.two"}, {Value: "three"}, {Value: "four"}},
 				remaining: []int{0, 1, 3, 4, 5, 6},
 				offset:    2,
 			},
@@ -72,7 +73,7 @@ func TestPushFront(t *testing.T) {
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			test.i.PushFront(test.sl...)
-			if diff := cmp.Diff(test.want, test.i, cmp.AllowUnexported(Input{}, inputArg{})); diff != "" {
+			if diff := cmp.Diff(test.want, test.i, cmp.AllowUnexported(Input{}, spycommand.InputArg{})); diff != "" {
 				t.Errorf("i.PushFront(%v) resulted in incorrect Input object:\n%s", test.sl, diff)
 			}
 		})
@@ -114,14 +115,14 @@ func TestPop(t *testing.T) {
 		}
 	}
 
-	if diff := cmp.Diff(input.args, []*inputArg{{value: "one"}, {value: "two"}, {value: "three"}}, cmp.AllowUnexported(inputArg{})); diff != "" {
+	if diff := cmp.Diff(input.args, []*spycommand.InputArg{{Value: "one"}, {Value: "two"}, {Value: "three"}}, cmp.AllowUnexported(spycommand.InputArg{})); diff != "" {
 		t.Errorf("Input.args changed improperly (-want, +got):\n%s", diff)
 	}
 }
 
 func TestSnapshots(t *testing.T) {
 	input := ParseExecuteArgs([]string{"one", "two", "three"})
-	var snapshots []inputSnapshot
+	var snapshots []spycommand.InputSnapshot
 	var wantValues [][]string
 	for _, test := range []struct {
 		f                  func()
@@ -241,18 +242,18 @@ func TestSnapshots(t *testing.T) {
 
 	wantInput := &Input{
 		snapshotCount: 7,
-		args: []*inputArg{
-			{value: "zero.one", snapshots: snapshotsMap(1, 2, 3, 4, 5)},
-			{value: "zero.two", snapshots: snapshotsMap(1, 2, 3, 4, 5)},
-			{value: "zero.three", snapshots: snapshotsMap(1, 2, 3, 4, 5)},
-			{value: "one", snapshots: snapshotsMap(1, 2, 3, 4)},
-			{value: "two", snapshots: snapshotsMap(1, 2)},
-			{value: "two.one", snapshots: snapshotsMap(1, 2)},
-			{value: "two.two", snapshots: snapshotsMap(1, 2)},
-			{value: "three", snapshots: snapshotsMap(1, 2, 3, 4, 5, 6)},
+		args: []*spycommand.InputArg{
+			{Value: "zero.one", Snapshots: snapshotsMap(1, 2, 3, 4, 5)},
+			{Value: "zero.two", Snapshots: snapshotsMap(1, 2, 3, 4, 5)},
+			{Value: "zero.three", Snapshots: snapshotsMap(1, 2, 3, 4, 5)},
+			{Value: "one", Snapshots: snapshotsMap(1, 2, 3, 4)},
+			{Value: "two", Snapshots: snapshotsMap(1, 2)},
+			{Value: "two.one", Snapshots: snapshotsMap(1, 2)},
+			{Value: "two.two", Snapshots: snapshotsMap(1, 2)},
+			{Value: "three", Snapshots: snapshotsMap(1, 2, 3, 4, 5, 6)},
 		},
 	}
-	if diff := cmp.Diff(wantInput, input, cmp.AllowUnexported(Input{}, inputArg{})); diff == "" {
+	if diff := cmp.Diff(wantInput, input, cmp.AllowUnexported(Input{}, spycommand.InputArg{})); diff == "" {
 		t.Errorf("Input.Snapshots failed with input diff (-want, +got):\n%s", diff)
 	}
 }
@@ -279,7 +280,7 @@ func TestPopN(t *testing.T) {
 			input:  []string{"hello"},
 			wantOK: true,
 			wantInput: &Input{
-				args:      []*inputArg{{value: "hello"}},
+				args:      []*spycommand.InputArg{{Value: "hello"}},
 				remaining: []int{0},
 			},
 		},
@@ -290,7 +291,7 @@ func TestPopN(t *testing.T) {
 			want:   []string{"hello", "there", "person"},
 			wantOK: true,
 			wantInput: &Input{
-				args: []*inputArg{{value: "hello"}, {value: "there"}, {value: "person"}},
+				args: []*spycommand.InputArg{{Value: "hello"}, {Value: "there"}, {Value: "person"}},
 			},
 		},
 		{
@@ -307,7 +308,7 @@ func TestPopN(t *testing.T) {
 			},
 			wantOK: true,
 			wantInput: &Input{
-				args:      []*inputArg{{value: "hello"}, {value: "there"}, {value: "person"}, {value: "how"}, {value: "are"}, {value: "you"}},
+				args:      []*spycommand.InputArg{{Value: "hello"}, {Value: "there"}, {Value: "person"}, {Value: "how"}, {Value: "are"}, {Value: "you"}},
 				remaining: []int{3, 4, 5},
 			},
 		},
@@ -326,7 +327,7 @@ func TestPopN(t *testing.T) {
 			},
 			wantOK: true,
 			wantInput: &Input{
-				args:      []*inputArg{{value: "hello"}, {value: "there"}, {value: "person"}, {value: "how"}, {value: "are"}, {value: "you"}},
+				args:      []*spycommand.InputArg{{Value: "hello"}, {Value: "there"}, {Value: "person"}, {Value: "how"}, {Value: "are"}, {Value: "you"}},
 				remaining: []int{4, 5},
 			},
 		},
@@ -345,7 +346,7 @@ func TestPopN(t *testing.T) {
 			},
 			wantOK: true,
 			wantInput: &Input{
-				args: []*inputArg{{value: "hello"}, {value: "there"}, {value: "person"}, {value: "how"}, {value: "are"}, {value: "you"}},
+				args: []*spycommand.InputArg{{Value: "hello"}, {Value: "there"}, {Value: "person"}, {Value: "how"}, {Value: "are"}, {Value: "you"}},
 			},
 		},
 		{
@@ -355,7 +356,7 @@ func TestPopN(t *testing.T) {
 			want:   []string{"hello", "there"},
 			wantOK: true,
 			wantInput: &Input{
-				args:      []*inputArg{{value: "hello"}, {value: "there"}, {value: "person"}},
+				args:      []*spycommand.InputArg{{Value: "hello"}, {Value: "there"}, {Value: "person"}},
 				remaining: []int{2},
 			},
 		},
@@ -365,7 +366,7 @@ func TestPopN(t *testing.T) {
 			n:     4,
 			want:  []string{"hello", "there", "person"},
 			wantInput: &Input{
-				args: []*inputArg{{value: "hello"}, {value: "there"}, {value: "person"}},
+				args: []*spycommand.InputArg{{Value: "hello"}, {Value: "there"}, {Value: "person"}},
 			},
 		},
 		{
@@ -378,7 +379,7 @@ func TestPopN(t *testing.T) {
 			},
 			wantOK: true,
 			wantInput: &Input{
-				args:      []*inputArg{{value: "goodbye"}, {value: "there"}, {value: "person"}},
+				args:      []*spycommand.InputArg{{Value: "goodbye"}, {Value: "there"}, {Value: "person"}},
 				remaining: []int{2},
 			},
 		},
@@ -391,7 +392,7 @@ func TestPopN(t *testing.T) {
 			},
 			want: []string{"hello", "there", "person"},
 			wantInput: &Input{
-				args: []*inputArg{{value: "hello"}, {value: "good"}, {value: "person"}},
+				args: []*spycommand.InputArg{{Value: "hello"}, {Value: "good"}, {Value: "person"}},
 			},
 		},
 	} {
@@ -414,7 +415,7 @@ func TestPopN(t *testing.T) {
 				test.modify(gotPtrs)
 			}
 
-			if diff := cmp.Diff(test.wantInput, input, cmp.AllowUnexported(Input{}, inputArg{}), cmpopts.EquateEmpty()); diff != "" {
+			if diff := cmp.Diff(test.wantInput, input, cmp.AllowUnexported(Input{}, spycommand.InputArg{}), cmpopts.EquateEmpty()); diff != "" {
 				t.Fatalf("PopN(%d, %d) resulted in incorrect input (-want, +got):\n%s", test.n, test.optN, diff)
 			}
 		})
@@ -459,7 +460,7 @@ func TestPopNOffset(t *testing.T) {
 			input:  []string{"hello"},
 			wantOK: true,
 			wantInput: &Input{
-				args:      []*inputArg{{value: "hello"}},
+				args:      []*spycommand.InputArg{{Value: "hello"}},
 				remaining: []int{0},
 			},
 		},
@@ -470,7 +471,7 @@ func TestPopNOffset(t *testing.T) {
 			optN:   2,
 			wantOK: true,
 			wantInput: &Input{
-				args:      []*inputArg{{value: "hello"}},
+				args:      []*spycommand.InputArg{{Value: "hello"}},
 				remaining: []int{0},
 				offset:    1,
 			},
@@ -482,7 +483,7 @@ func TestPopNOffset(t *testing.T) {
 			want:   []string{"hello", "there", "person"},
 			wantOK: true,
 			wantInput: &Input{
-				args: []*inputArg{{value: "hello"}, {value: "there"}, {value: "person"}},
+				args: []*spycommand.InputArg{{Value: "hello"}, {Value: "there"}, {Value: "person"}},
 			},
 		},
 		{
@@ -493,7 +494,7 @@ func TestPopNOffset(t *testing.T) {
 			want:   []string{"there", "person"},
 			wantOK: true,
 			wantInput: &Input{
-				args:      []*inputArg{{value: "hello"}, {value: "there"}, {value: "person"}},
+				args:      []*spycommand.InputArg{{Value: "hello"}, {Value: "there"}, {Value: "person"}},
 				remaining: []int{0},
 				offset:    1,
 			},
@@ -505,7 +506,7 @@ func TestPopNOffset(t *testing.T) {
 			want:   []string{"hello", "there"},
 			wantOK: true,
 			wantInput: &Input{
-				args:      []*inputArg{{value: "hello"}, {value: "there"}, {value: "person"}},
+				args:      []*spycommand.InputArg{{Value: "hello"}, {Value: "there"}, {Value: "person"}},
 				remaining: []int{2},
 			},
 		},
@@ -517,7 +518,7 @@ func TestPopNOffset(t *testing.T) {
 			want:   []string{"there", "general"},
 			wantOK: true,
 			wantInput: &Input{
-				args:      []*inputArg{{value: "hello"}, {value: "there"}, {value: "general"}, {value: "kenobi"}},
+				args:      []*spycommand.InputArg{{Value: "hello"}, {Value: "there"}, {Value: "general"}, {Value: "kenobi"}},
 				remaining: []int{0, 3},
 				offset:    1,
 			},
@@ -528,7 +529,7 @@ func TestPopNOffset(t *testing.T) {
 			n:     4,
 			want:  []string{"hello", "there", "person"},
 			wantInput: &Input{
-				args: []*inputArg{{value: "hello"}, {value: "there"}, {value: "person"}},
+				args: []*spycommand.InputArg{{Value: "hello"}, {Value: "there"}, {Value: "person"}},
 			},
 		},
 		{
@@ -538,7 +539,7 @@ func TestPopNOffset(t *testing.T) {
 			n:      4,
 			want:   []string{"person"},
 			wantInput: &Input{
-				args:      []*inputArg{{value: "hello"}, {value: "there"}, {value: "person"}},
+				args:      []*spycommand.InputArg{{Value: "hello"}, {Value: "there"}, {Value: "person"}},
 				remaining: []int{0, 1},
 				offset:    2,
 			},
@@ -553,7 +554,7 @@ func TestPopNOffset(t *testing.T) {
 			},
 			wantOK: true,
 			wantInput: &Input{
-				args:      []*inputArg{{value: "goodbye"}, {value: "there"}, {value: "person"}},
+				args:      []*spycommand.InputArg{{Value: "goodbye"}, {Value: "there"}, {Value: "person"}},
 				remaining: []int{2},
 			},
 		},
@@ -569,7 +570,7 @@ func TestPopNOffset(t *testing.T) {
 			},
 			wantOK: true,
 			wantInput: &Input{
-				args:      []*inputArg{{value: "hello"}, {value: "there"}, {value: "general"}, {value: "kenobi"}},
+				args:      []*spycommand.InputArg{{Value: "hello"}, {Value: "there"}, {Value: "general"}, {Value: "kenobi"}},
 				remaining: []int{0, 1},
 				offset:    2,
 			},
@@ -583,7 +584,7 @@ func TestPopNOffset(t *testing.T) {
 			},
 			want: []string{"hello", "there", "person"},
 			wantInput: &Input{
-				args: []*inputArg{{value: "hello"}, {value: "good"}, {value: "person"}},
+				args: []*spycommand.InputArg{{Value: "hello"}, {Value: "good"}, {Value: "person"}},
 			},
 		},
 		{
@@ -596,7 +597,7 @@ func TestPopNOffset(t *testing.T) {
 			},
 			want: []string{"kenobi"},
 			wantInput: &Input{
-				args:      []*inputArg{{value: "hello"}, {value: "there"}, {value: "general"}, {value: "motors"}},
+				args:      []*spycommand.InputArg{{Value: "hello"}, {Value: "there"}, {Value: "general"}, {Value: "motors"}},
 				remaining: []int{0, 1, 2},
 				offset:    3,
 			},
@@ -622,7 +623,7 @@ func TestPopNOffset(t *testing.T) {
 				test.modify(gotPtrs)
 			}
 
-			if diff := cmp.Diff(test.wantInput, input, cmp.AllowUnexported(Input{}, inputArg{}), cmpopts.EquateEmpty()); diff != "" {
+			if diff := cmp.Diff(test.wantInput, input, cmp.AllowUnexported(Input{}, spycommand.InputArg{}), cmpopts.EquateEmpty()); diff != "" {
 				t.Fatalf("PopN(%d, %d) resulted in incorrect input (-want, +got):\n%s", test.n, test.optN, diff)
 			}
 		})
@@ -639,7 +640,7 @@ func TestParseCompLine(t *testing.T) {
 		{
 			name: "handles empty input",
 			want: &Input{
-				args:      []*inputArg{{value: ""}},
+				args:      []*spycommand.InputArg{{Value: ""}},
 				remaining: []int{0},
 			},
 		},
@@ -647,7 +648,7 @@ func TestParseCompLine(t *testing.T) {
 			name:  "handles empty command",
 			input: "cmd",
 			want: &Input{
-				args:      []*inputArg{{value: ""}},
+				args:      []*spycommand.InputArg{{Value: ""}},
 				remaining: []int{0},
 			},
 		},
@@ -655,7 +656,7 @@ func TestParseCompLine(t *testing.T) {
 			name:  "converts single argument",
 			input: "cmd one",
 			want: &Input{
-				args:      []*inputArg{{value: "one"}},
+				args:      []*spycommand.InputArg{{Value: "one"}},
 				remaining: []int{0},
 			},
 		},
@@ -664,11 +665,11 @@ func TestParseCompLine(t *testing.T) {
 			input:  "cmd one two",
 			ptArgs: []string{"nOne", "zero"},
 			want: &Input{
-				args: []*inputArg{
-					{value: "nOne"},
-					{value: "zero"},
-					{value: "one"},
-					{value: "two"},
+				args: []*spycommand.InputArg{
+					{Value: "nOne"},
+					{Value: "zero"},
+					{Value: "one"},
+					{Value: "two"},
 				},
 				remaining: []int{0, 1, 2, 3},
 			},
@@ -677,7 +678,7 @@ func TestParseCompLine(t *testing.T) {
 			name:  "converts single argument with quote",
 			input: `cmd "one`,
 			want: &Input{
-				args:      []*inputArg{{value: "one"}},
+				args:      []*spycommand.InputArg{{Value: "one"}},
 				delimiter: runePtr('"'),
 				remaining: []int{0},
 			},
@@ -686,7 +687,7 @@ func TestParseCompLine(t *testing.T) {
 			name:  "converts quoted argument",
 			input: `cmd "one"`,
 			want: &Input{
-				args:      []*inputArg{{value: "one"}},
+				args:      []*spycommand.InputArg{{Value: "one"}},
 				remaining: []int{0},
 			},
 		},
@@ -694,7 +695,7 @@ func TestParseCompLine(t *testing.T) {
 			name:  "ignores last argument if quote",
 			input: `cmd one "`,
 			want: &Input{
-				args:      []*inputArg{{value: "one"}, {value: ""}},
+				args:      []*spycommand.InputArg{{Value: "one"}, {Value: ""}},
 				delimiter: runePtr('"'),
 				remaining: []int{0, 1},
 			},
@@ -703,9 +704,9 @@ func TestParseCompLine(t *testing.T) {
 			name:  "space character",
 			input: "cmd ab cd",
 			want: &Input{
-				args: []*inputArg{
-					{value: "ab"},
-					{value: "cd"},
+				args: []*spycommand.InputArg{
+					{Value: "ab"},
+					{Value: "cd"},
 				},
 				remaining: []int{0, 1},
 			},
@@ -714,11 +715,11 @@ func TestParseCompLine(t *testing.T) {
 			name:  "multiple space characters",
 			input: "cmd ab cd  ef       gh",
 			want: &Input{
-				args: []*inputArg{
-					{value: "ab"},
-					{value: "cd"},
-					{value: "ef"},
-					{value: "gh"},
+				args: []*spycommand.InputArg{
+					{Value: "ab"},
+					{Value: "cd"},
+					{Value: "ef"},
+					{Value: "gh"},
 				},
 				remaining: []int{0, 1, 2, 3},
 			},
@@ -727,7 +728,7 @@ func TestParseCompLine(t *testing.T) {
 			name:  "quotation between words",
 			input: "cmd a'b c'd",
 			want: &Input{
-				args:      []*inputArg{{value: "ab cd"}},
+				args:      []*spycommand.InputArg{{Value: "ab cd"}},
 				remaining: []int{0},
 			},
 		},
@@ -735,7 +736,7 @@ func TestParseCompLine(t *testing.T) {
 			name:  "escaped space character",
 			input: `cmd ab\ cd`,
 			want: &Input{
-				args:      []*inputArg{{value: "ab cd"}},
+				args:      []*spycommand.InputArg{{Value: "ab cd"}},
 				remaining: []int{0},
 			},
 		},
@@ -743,7 +744,7 @@ func TestParseCompLine(t *testing.T) {
 			name:  "escaped space character between words",
 			input: "cmd ab\\ cd",
 			want: &Input{
-				args:      []*inputArg{{value: "ab cd"}},
+				args:      []*spycommand.InputArg{{Value: "ab cd"}},
 				remaining: []int{0},
 			},
 		},
@@ -751,9 +752,9 @@ func TestParseCompLine(t *testing.T) {
 			name:  "ending backslash in word",
 			input: "cmd ab cd\\",
 			want: &Input{
-				args: []*inputArg{
-					{value: `ab`},
-					{value: `cd\`},
+				args: []*spycommand.InputArg{
+					{Value: `ab`},
+					{Value: `cd\`},
 				},
 				remaining: []int{0, 1},
 			},
@@ -762,9 +763,9 @@ func TestParseCompLine(t *testing.T) {
 			name:  "escaped character to start word",
 			input: `cmd ab \cd`,
 			want: &Input{
-				args: []*inputArg{
-					{value: "ab"},
-					{value: `\cd`},
+				args: []*spycommand.InputArg{
+					{Value: "ab"},
+					{Value: `\cd`},
 				},
 				remaining: []int{0, 1},
 			},
@@ -773,10 +774,10 @@ func TestParseCompLine(t *testing.T) {
 			name:  "end with backslash while in word",
 			input: `cmd ab cd ef\`,
 			want: &Input{
-				args: []*inputArg{
-					{value: "ab"},
-					{value: `cd`},
-					{value: `ef\`},
+				args: []*spycommand.InputArg{
+					{Value: "ab"},
+					{Value: `cd`},
+					{Value: `ef\`},
 				},
 				remaining: []int{0, 1, 2},
 			},
@@ -785,10 +786,10 @@ func TestParseCompLine(t *testing.T) {
 			name:  "end with backslash while not in word",
 			input: `cmd ab cd \`,
 			want: &Input{
-				args: []*inputArg{
-					{value: "ab"},
-					{value: `cd`},
-					{value: `\`},
+				args: []*spycommand.InputArg{
+					{Value: "ab"},
+					{Value: `cd`},
+					{Value: `\`},
 				},
 				remaining: []int{0, 1, 2},
 			},
@@ -797,7 +798,7 @@ func TestParseCompLine(t *testing.T) {
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			got := ParseCompLine(test.input, test.ptArgs...)
-			if diff := cmp.Diff(test.want, got, cmp.AllowUnexported(Input{}, inputArg{})); diff != "" {
+			if diff := cmp.Diff(test.want, got, cmp.AllowUnexported(Input{}, spycommand.InputArg{})); diff != "" {
 				t.Fatalf("ParseCompLine(%v) created incorrect args (-want, +got):\n%s", test.input, diff)
 			}
 		})
@@ -824,16 +825,16 @@ func TestPopAtAndPeekAt(t *testing.T) {
 			name: "non-empty input, but out of range",
 			idx:  2,
 			input: &Input{
-				args: []*inputArg{
-					{value: "abc"},
-					{value: "def"},
+				args: []*spycommand.InputArg{
+					{Value: "abc"},
+					{Value: "def"},
 				},
 				remaining: []int{0, 1},
 			},
 			wantInput: &Input{
-				args: []*inputArg{
-					{value: "abc"},
-					{value: "def"},
+				args: []*spycommand.InputArg{
+					{Value: "abc"},
+					{Value: "def"},
 				},
 				remaining: []int{0, 1},
 			},
@@ -844,16 +845,16 @@ func TestPopAtAndPeekAt(t *testing.T) {
 			name: "pops first element",
 			idx:  0,
 			input: &Input{
-				args: []*inputArg{
-					{value: "abc"},
-					{value: "def"},
+				args: []*spycommand.InputArg{
+					{Value: "abc"},
+					{Value: "def"},
 				},
 				remaining: []int{0, 1},
 			},
 			wantInput: &Input{
-				args: []*inputArg{
-					{value: "abc"},
-					{value: "def"},
+				args: []*spycommand.InputArg{
+					{Value: "abc"},
+					{Value: "def"},
 				},
 				remaining: []int{1},
 			},
@@ -866,16 +867,16 @@ func TestPopAtAndPeekAt(t *testing.T) {
 			name: "pops second element",
 			idx:  1,
 			input: &Input{
-				args: []*inputArg{
-					{value: "abc"},
-					{value: "def"},
+				args: []*spycommand.InputArg{
+					{Value: "abc"},
+					{Value: "def"},
 				},
 				remaining: []int{0, 1},
 			},
 			wantInput: &Input{
-				args: []*inputArg{
-					{value: "abc"},
-					{value: "def"},
+				args: []*spycommand.InputArg{
+					{Value: "abc"},
+					{Value: "def"},
 				},
 				remaining: []int{0},
 			},
@@ -898,16 +899,16 @@ func TestPopAtAndPeekAt(t *testing.T) {
 			testutil.Cmp(t, fmt.Sprintf("PopAt(%d) returned invalid string value", test.idx), test.want, popAtGot)
 			testutil.Cmp(t, fmt.Sprintf("PopAt(%d) returned invalid OK value", test.idx), test.wantOK, popAtGotOK)
 
-			testutil.Cmp(t, fmt.Sprintf("PopAt(%d) resulted in incorrect input", test.idx), test.wantInput, test.input, cmp.AllowUnexported(Input{}, inputArg{}))
+			testutil.Cmp(t, fmt.Sprintf("PopAt(%d) resulted in incorrect input", test.idx), test.wantInput, test.input, cmp.AllowUnexported(Input{}, spycommand.InputArg{}))
 		})
 	}
 }
 
-func snapshotsMap(iss ...inputSnapshot) map[inputSnapshot]bool {
+func snapshotsMap(iss ...spycommand.InputSnapshot) map[spycommand.InputSnapshot]bool {
 	if len(iss) == 0 {
 		return nil
 	}
-	m := map[inputSnapshot]bool{}
+	m := map[spycommand.InputSnapshot]bool{}
 	for _, is := range iss {
 		m[is] = true
 	}

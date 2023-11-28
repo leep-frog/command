@@ -3,6 +3,7 @@ package testutil
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -60,4 +61,13 @@ func StubValue[T any](t *testing.T, originalValue *T, newValue T) {
 	t.Cleanup(func() {
 		*originalValue = oldValue
 	})
+}
+
+func FilepathAbs(t *testing.T, s ...string) string {
+	t.Helper()
+	r, err := filepath.Abs(filepath.Join(s...))
+	if err != nil {
+		t.Fatalf("Failed to get absolute path for file: %v", err)
+	}
+	return r
 }
