@@ -2,6 +2,7 @@ package testutil
 
 import (
 	"fmt"
+	"os"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -42,4 +43,21 @@ func CmpPanic[T any](t *testing.T, funcString string, f func() T, want interface
 	}()
 
 	return f()
+}
+
+func TempFile(t *testing.T, pattern string) *os.File {
+	tmp, err := os.CreateTemp("", pattern)
+	if err != nil {
+		t.Fatalf("failed to create temp file: %v", err)
+	}
+	t.Cleanup(func() { tmp.Close() })
+	return tmp
+}
+
+func StubValue[T any](t *testing.T, originalValue *T, newValue T) {
+	oldValue := *originalValue
+	*originalValue = newValue
+	t.Cleanup(func() {
+		*originalValue = oldValue
+	})
 }
