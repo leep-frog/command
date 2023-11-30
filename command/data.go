@@ -22,8 +22,8 @@ type Data struct {
 	Values map[string]interface{}
 	// Complexecute indictes whether we are running complexecute logic.
 	Complexecute bool
-	// OS is the current operating system
-	// TODO: Remove OS from Data and just make it a package variable
+	// OS is the current operating system. It is primarily used to execute
+	// run logic in the parent shell (e.g. setting/unsetting environment variables)
 	OS OS
 }
 
