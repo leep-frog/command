@@ -6,8 +6,8 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/leep-frog/command/command"
 	"github.com/leep-frog/command/commandtest"
-	"github.com/leep-frog/command/commondels"
 	"github.com/leep-frog/command/internal/spycommand"
 	"github.com/leep-frog/command/internal/spycommandtest"
 )
@@ -55,7 +55,7 @@ func TestShortcutExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
 				Args: []string{"a", ""},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"SHORTCUT": "",
 				}},
 				WantErr:    fmt.Errorf("validation for \"SHORTCUT\" failed: [MinLength] length must be at least 1"),
@@ -75,7 +75,7 @@ func TestShortcutExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
 				Args: []string{"a", "a", "hello"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"SHORTCUT": "a",
 				}},
 				WantErr:    fmt.Errorf("cannot create shortcut for reserved value"),
@@ -97,7 +97,7 @@ func TestShortcutExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
 				Args: []string{"a", "d"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"SHORTCUT": "d",
 				}},
 				WantErr:    fmt.Errorf("cannot create shortcut for reserved value"),
@@ -118,20 +118,20 @@ func TestShortcutExecute(t *testing.T) {
 		{
 			name: "ignores execute data from children nodes",
 			etc: &commandtest.ExecuteTestCase{
-				Node: ShortcutNode("pioneer", sc, SerialNodes(Arg[string]("s", testDesc), SimpleProcessor(func(i *commondels.Input, o commondels.Output, d *commondels.Data, ed *commondels.ExecuteData) error {
+				Node: ShortcutNode("pioneer", sc, SerialNodes(Arg[string]("s", testDesc), SimpleProcessor(func(i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
 					ed.Executable = []string{
 						"ab cd",
 						"",
 						"e",
 					}
-					ed.Executor = append(ed.Executor, func(o commondels.Output, d *commondels.Data) error {
+					ed.Executor = append(ed.Executor, func(o command.Output, d *command.Data) error {
 						o.Stdout("here we are")
 						return o.Stderr("unfortunately")
 					})
 					return nil
 				}, nil), nil)),
 				Args: []string{"a", "b", "c"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"SHORTCUT": "b",
 					"s":        "c",
 				}},
@@ -160,7 +160,7 @@ func TestShortcutExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
 				Args: []string{"a", ""},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"SHORTCUT": "",
 				}},
 				WantErr:    fmt.Errorf("validation for \"SHORTCUT\" failed: [MinLength] length must be at least 1"),
@@ -180,7 +180,7 @@ func TestShortcutExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
 				Args: []string{"a", "overload", "five", "four", "three", "two", "one"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"SHORTCUT": "overload",
 					"sl":       []string{"five", "four", "three"},
 				}},
@@ -220,7 +220,7 @@ func TestShortcutExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
 				Args: []string{"a", "empty"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"SHORTCUT": "empty",
 				}},
 				WantErr:    fmt.Errorf(`Argument "SHORTCUT" requires at least 1 argument, got 0`),
@@ -241,7 +241,7 @@ func TestShortcutExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
 				Args: []string{"a", "bearMinimum", "grizzly"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"SHORTCUT": "bearMinimum",
 					"sl":       []string{"grizzly"},
 				}},
@@ -275,7 +275,7 @@ func TestShortcutExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
 				Args: []string{"a", "bearMinimum", "grizzly"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"SHORTCUT": "bearMinimum",
 				}},
 				WantStderr: "Shortcut \"bearMinimum\" already exists\n",
@@ -297,7 +297,7 @@ func TestShortcutExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
 				Args: []string{"a", "bearMinimum", "grizzly", "teddy", "brown"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"SHORTCUT": "bearMinimum",
 					"sl":       []string{"grizzly", "teddy", "brown"},
 				}},
@@ -328,7 +328,7 @@ func TestShortcutExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2), Arg[int]("i", testDesc), ListArg[float64]("fl", testDesc, 10, 0))),
 				Args: []string{"a", "bearMinimum", "grizzly", "teddy", "brown", "3", "2.2", "-1.1"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"SHORTCUT": "bearMinimum",
 					"sl":       []string{"grizzly", "teddy", "brown"},
 					"i":        3,
@@ -364,7 +364,7 @@ func TestShortcutExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2), Arg[int]("i", testDesc), ListArg[float64]("fl", testDesc, 10, 0))),
 				Args: []string{"a", "bearMinimum", "grizzly"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"SHORTCUT": "bearMinimum",
 					"sl":       []string{"grizzly"},
 				}},
@@ -391,9 +391,9 @@ func TestShortcutExecute(t *testing.T) {
 		{
 			name: "adds shortcut for unbounded list",
 			etc: &commandtest.ExecuteTestCase{
-				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, commondels.UnboundedList), Arg[int]("i", testDesc), ListArg[float64]("fl", testDesc, 10, 0))),
+				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, command.UnboundedList), Arg[int]("i", testDesc), ListArg[float64]("fl", testDesc, 10, 0))),
 				Args: []string{"a", "bearMinimum", "grizzly", "teddy", "brown", "3", "2.2", "-1.1"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"SHORTCUT": "bearMinimum",
 					"sl":       []string{"grizzly", "teddy", "brown", "3", "2.2", "-1.1"},
 				}},
@@ -427,11 +427,11 @@ func TestShortcutExecute(t *testing.T) {
 			name: "adds transformed arguments",
 			etc: &commandtest.ExecuteTestCase{
 				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2,
-					&Transformer[[]string]{F: func([]string, *commondels.Data) ([]string, error) {
+					&Transformer[[]string]{F: func([]string, *command.Data) ([]string, error) {
 						return []string{"papa", "mama", "baby"}, nil
 					}}))),
 				Args: []string{"a", "bearMinimum", "grizzly", "teddy", "brown"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"SHORTCUT": "bearMinimum",
 					"sl":       []string{"papa", "mama", "baby"},
 				}},
@@ -461,11 +461,11 @@ func TestShortcutExecute(t *testing.T) {
 			name: "fails if transform error",
 			etc: &commandtest.ExecuteTestCase{
 				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2,
-					&Transformer[[]string]{F: func([]string, *commondels.Data) ([]string, error) {
+					&Transformer[[]string]{F: func([]string, *command.Data) ([]string, error) {
 						return nil, fmt.Errorf("bad news bears")
 					}}))),
 				Args: []string{"a", "bearMinimum", "grizzly", "teddy", "brown"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"SHORTCUT": "bearMinimum",
 				}},
 				WantStderr: "Custom transformer failed: bad news bears\n",
@@ -519,7 +519,7 @@ func TestShortcutExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
 				Args: []string{"t"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"sl": []string{"teddy"},
 				}},
 			},
@@ -541,7 +541,7 @@ func TestShortcutExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
 				Args: []string{"tee"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"sl": []string{"tee"},
 				}},
 			},
@@ -563,7 +563,7 @@ func TestShortcutExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
 				Args: []string{"t", "grizzly"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"sl": []string{"teddy", "grizzly"},
 				}},
 			},
@@ -586,7 +586,7 @@ func TestShortcutExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
 				Args: []string{"t", "grizzly"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"sl": []string{"teddy", "brown", "grizzly"},
 				}},
 			},
@@ -610,7 +610,7 @@ func TestShortcutExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg("sl", testDesc, 1, 2, UpperCaseTransformer()))),
 				Args: []string{"t", "grizzly"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"sl": []string{"TEDDY", "BROWN", "GRIZZLY"},
 				}},
 			},
@@ -630,7 +630,7 @@ func TestShortcutExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Node: SerialNodes(ListArg("sl", testDesc, 1, 2, ShortcutOpt[[]string]("pioneer", sc))),
 				Args: []string{"zero"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"sl": []string{"zero"},
 				}},
 			},
@@ -652,7 +652,7 @@ func TestShortcutExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Node: SerialNodes(ListArg("sl", testDesc, 1, 2, ShortcutOpt[[]string]("pioneer", sc))),
 				Args: []string{"hello", "dee"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"sl": []string{"hello", "d"},
 				}},
 			},
@@ -679,7 +679,7 @@ func TestShortcutExecute(t *testing.T) {
 					SimpleCompleter[[]string]("un", "deux", "trois"),
 				)),
 				Args: []string{"hello", "dee", "trois"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"sl": []string{"hello", "d", "trois"},
 				}},
 			},
@@ -703,12 +703,12 @@ func TestShortcutExecute(t *testing.T) {
 				},
 			},
 			etc: &commandtest.ExecuteTestCase{
-				Node: SerialNodes(ListArg[string]("sl", testDesc, 1, commondels.UnboundedList,
+				Node: SerialNodes(ListArg[string]("sl", testDesc, 1, command.UnboundedList,
 					ShortcutOpt[[]string]("pioneer", sc),
 					SimpleDistinctCompleter[[]string]("un", "deux", "trois"),
 				)),
 				Args: []string{"f", "dee"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"sl": []string{"four", "two", "deux"},
 				}},
 			},
@@ -739,7 +739,7 @@ func TestShortcutExecute(t *testing.T) {
 					OptionalArg("o", testDesc, ShortcutOpt[string]("pioneer", sc)),
 				),
 				Args: []string{"un", "dee", "z", "f"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"sl": []string{"un", "two", "deux"},
 					"s":  "zero",
 					"o":  "four",
@@ -769,11 +769,11 @@ func TestShortcutExecute(t *testing.T) {
 				},
 			},
 			etc: &commandtest.ExecuteTestCase{
-				Node: SerialNodes(ListArg[string]("sl", testDesc, 1, commondels.UnboundedList, ShortcutOpt[[]string]("pioneer", sc),
+				Node: SerialNodes(ListArg[string]("sl", testDesc, 1, command.UnboundedList, ShortcutOpt[[]string]("pioneer", sc),
 					SimpleDistinctCompleter[[]string]("un", "deux", "trois"),
 				)),
 				Args: []string{"f", "zero", "zero", "n1", "dee", "n2", "n3", "t", "u", "n4", "n5", ""},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"sl": []string{"four", "0", "0", "n1", "two", "deux", "n2", "n3", "three", "trois", "tres", "un", "n4", "n5", ""},
 				}},
 			},
@@ -811,9 +811,9 @@ func TestShortcutExecute(t *testing.T) {
 				},
 			},
 			etc: &commandtest.ExecuteTestCase{
-				Node: SerialNodes(ListArg("sl", testDesc, 1, commondels.UnboundedList, ShortcutOpt[[]string]("pioneer", sc))),
+				Node: SerialNodes(ListArg("sl", testDesc, 1, command.UnboundedList, ShortcutOpt[[]string]("pioneer", sc))),
 				Args: []string{"f", "zero", "n1", "t"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"sl": []string{"four", "0", "n1", "three", "trois", "tres"},
 				}},
 			},
@@ -842,11 +842,11 @@ func TestShortcutExecute(t *testing.T) {
 				},
 			},
 			etc: &commandtest.ExecuteTestCase{
-				Node: SerialNodes(ListArg("sl", testDesc, 1, commondels.UnboundedList, ShortcutOpt[[]string]("pioneer", sc),
+				Node: SerialNodes(ListArg("sl", testDesc, 1, command.UnboundedList, ShortcutOpt[[]string]("pioneer", sc),
 					UpperCaseTransformer(),
 				)),
 				Args: []string{"f", "zero", "n1", "t"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"sl": []string{"FOUR", "0", "N1", "THREE", "TROIS", "TRES"},
 				}},
 			},
@@ -871,9 +871,9 @@ func TestShortcutExecute(t *testing.T) {
 				},
 			},
 			etc: &commandtest.ExecuteTestCase{
-				Node: SerialNodes(ListArg("sl", testDesc, 3, commondels.UnboundedList, ShortcutOpt[[]string]("pioneer", sc))),
+				Node: SerialNodes(ListArg("sl", testDesc, 3, command.UnboundedList, ShortcutOpt[[]string]("pioneer", sc))),
 				Args: []string{"dee"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"sl": []string{"two", "deux"},
 				}},
 				WantErr:    fmt.Errorf(`Argument "sl" requires at least 3 arguments, got 2`),
@@ -896,9 +896,9 @@ func TestShortcutExecute(t *testing.T) {
 				},
 			},
 			etc: &commandtest.ExecuteTestCase{
-				Node: SerialNodes(ListArg("sl", testDesc, 3, commondels.UnboundedList, ShortcutOpt[[]string]("pioneer", sc))),
+				Node: SerialNodes(ListArg("sl", testDesc, 3, command.UnboundedList, ShortcutOpt[[]string]("pioneer", sc))),
 				Args: []string{"t"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"sl": []string{"three", "trois", "tres"},
 				}},
 			},
@@ -922,7 +922,7 @@ func TestShortcutExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Node: SerialNodes(ListArg("sl", testDesc, 3, 0, ShortcutOpt[[]string]("pioneer", sc)), Arg[string]("s", testDesc), OptionalArg[int]("i", testDesc)),
 				Args: []string{"t"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"sl": []string{"three", "trois", "tres"},
 					"s":  "III",
 					"i":  3,
@@ -950,7 +950,7 @@ func TestShortcutExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Node: SerialNodes(ListArg("sl", testDesc, 3, 0, ShortcutOpt[[]string]("pioneer", sc)), Arg[string]("s", testDesc), OptionalArg[int]("i", testDesc)),
 				Args: []string{"I", "II", "III", "t"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"sl": []string{"I", "II", "III"},
 					"s":  "t",
 				}},
@@ -988,7 +988,7 @@ func TestShortcutExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
 				Args: []string{"g", "h"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"SHORTCUT": []string{"h"},
 				}},
 				WantErr:    fmt.Errorf(`No shortcuts exist for shortcut type "pioneer"`),
@@ -1017,7 +1017,7 @@ func TestShortcutExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
 				Args: []string{"g", "h", "i", "j", "k", "l", "m"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"SHORTCUT": []string{"h", "i", "j", "k", "l", "m"},
 				}},
 				WantStderr: strings.Join([]string{
@@ -1117,7 +1117,7 @@ func TestShortcutExecute(t *testing.T) {
 				Args:       []string{"s", ":)"},
 				WantStderr: "validation for \"regexp\" failed: [IsRegex] value \":)\" isn't a valid regex: error parsing regexp: unexpected ): `:)`\n",
 				WantErr:    fmt.Errorf("validation for \"regexp\" failed: [IsRegex] value \":)\" isn't a valid regex: error parsing regexp: unexpected ): `:)`"),
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"regexp": []string{":)"},
 				}},
 			},
@@ -1147,7 +1147,7 @@ func TestShortcutExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
 				Args: []string{"s", "ga$"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"regexp": []string{"ga$"},
 				}},
 				WantStdout: strings.Join([]string{
@@ -1182,7 +1182,7 @@ func TestShortcutExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
 				Args: []string{"s", "a$", "^.: [aeiou]"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"regexp": []string{"a$", "^.: [aeiou]"},
 				}},
 				WantStdout: strings.Join([]string{
@@ -1223,7 +1223,7 @@ func TestShortcutExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
 				Args: []string{"d", "e"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"SHORTCUT": []string{"e"},
 				}},
 				WantErr:    fmt.Errorf("Shortcut group has no shortcuts yet."),
@@ -1248,7 +1248,7 @@ func TestShortcutExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
 				Args: []string{"d", "tee"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"SHORTCUT": []string{"tee"},
 				}},
 				WantStderr: "Shortcut \"tee\" does not exist\n",
@@ -1272,7 +1272,7 @@ func TestShortcutExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
 				Args: []string{"d", "t"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"SHORTCUT": []string{"t"},
 				}},
 			},
@@ -1304,7 +1304,7 @@ func TestShortcutExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
 				Args: []string{"d", "t", "penguin", "colors", "bare"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"SHORTCUT": []string{"t", "penguin", "colors", "bare"},
 				}},
 				WantStderr: strings.Join([]string{
@@ -1367,10 +1367,10 @@ func TestAliasComplete(t *testing.T) {
 					SimpleCompleter[[]string]("un", "deux", "trois"),
 				))),
 				Args: "cmd ",
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"sl": []string{""},
 				}},
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"deux", "trois", "un"},
 				},
 			},
@@ -1383,7 +1383,7 @@ func TestAliasComplete(t *testing.T) {
 					SimpleCompleter[[]string]("un", "deux", "trois"),
 				))),
 				Args: "cmd a ",
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					ShortcutArg.Name(): "",
 				}},
 			},
@@ -1410,11 +1410,11 @@ func TestAliasComplete(t *testing.T) {
 					SimpleCompleter[[]string]("un", "deux", "trois"),
 				))),
 				Args: "cmd a b ",
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					ShortcutArg.Name(): "b",
 					"sl":               []string{""},
 				}},
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"deux", "trois", "un"},
 				},
 			},
@@ -1426,11 +1426,11 @@ func TestAliasComplete(t *testing.T) {
 					SimpleCompleter[[]string]("un", "deux", "trois"),
 				))),
 				Args: "cmd a b ",
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					ShortcutArg.Name(): "b",
 					"sl":               []string{""},
 				}},
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"deux", "trois", "un"},
 				},
 			},
@@ -1450,10 +1450,10 @@ func TestAliasComplete(t *testing.T) {
 			ctc: &commandtest.CompleteTestCase{
 				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
 				Args: "cmd g ",
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					ShortcutArg.Name(): []string{""},
 				}},
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"alpha", "alright", "any", "balloon", "bear"},
 				},
 			},
@@ -1472,10 +1472,10 @@ func TestAliasComplete(t *testing.T) {
 			ctc: &commandtest.CompleteTestCase{
 				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
 				Args: "cmd g b",
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					ShortcutArg.Name(): []string{"b"},
 				}},
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"balloon", "bear"},
 				},
 			},
@@ -1494,10 +1494,10 @@ func TestAliasComplete(t *testing.T) {
 			ctc: &commandtest.CompleteTestCase{
 				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
 				Args: "cmd g alright balloon ",
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					ShortcutArg.Name(): []string{"alright", "balloon", ""},
 				}},
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"alpha", "any", "bear"},
 				},
 			},
@@ -1517,10 +1517,10 @@ func TestAliasComplete(t *testing.T) {
 			ctc: &commandtest.CompleteTestCase{
 				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
 				Args: "cmd d ",
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					ShortcutArg.Name(): []string{""},
 				}},
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"alpha", "alright", "any", "balloon", "bear"},
 				},
 			},
@@ -1539,10 +1539,10 @@ func TestAliasComplete(t *testing.T) {
 			ctc: &commandtest.CompleteTestCase{
 				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
 				Args: "cmd d b",
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					ShortcutArg.Name(): []string{"b"},
 				}},
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"balloon", "bear"},
 				},
 			},
@@ -1561,10 +1561,10 @@ func TestAliasComplete(t *testing.T) {
 			ctc: &commandtest.CompleteTestCase{
 				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
 				Args: "cmd d alright balloon ",
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					ShortcutArg.Name(): []string{"alright", "balloon", ""},
 				}},
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"alpha", "any", "bear"},
 				},
 			},
@@ -1577,10 +1577,10 @@ func TestAliasComplete(t *testing.T) {
 					SimpleCompleter[[]string]("un", "deux", "trois"),
 				))),
 				Args: "cmd zero ",
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"sl": []string{"zero", ""},
 				}},
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"deux", "trois", "un"},
 				},
 			},
@@ -1592,7 +1592,7 @@ func TestAliasComplete(t *testing.T) {
 					SimpleCompleter[[]string]("un", "deux", "trois"),
 				))),
 				Args: "cmd dee",
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"sl": []string{"dee"},
 				}},
 			},
@@ -1609,10 +1609,10 @@ func TestAliasComplete(t *testing.T) {
 					SimpleCompleter[[]string]("un", "deux", "trois"),
 				))),
 				Args: "cmd dee t",
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"sl": []string{"d", "t"},
 				}},
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"trois"},
 				},
 			},
@@ -1629,10 +1629,10 @@ func TestAliasComplete(t *testing.T) {
 					SimpleDistinctCompleter[[]string]("un", "deux", "trois"),
 				))),
 				Args: "cmd dee ",
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"sl": []string{"deux", ""},
 				}},
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"trois", "un"},
 				},
 			},
@@ -1644,10 +1644,10 @@ func TestAliasComplete(t *testing.T) {
 				Node: SerialNodes(ListArg[string]("sl", testDesc, 1, 2, ShortcutOpt[[]string]("pioneer", sc),
 					SimpleCompleter[[]string]("un", "deux", "trois"))),
 				Args: "cmd zero ",
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"sl": []string{"zero", ""},
 				}},
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"deux", "trois", "un"},
 				},
 			},
@@ -1664,7 +1664,7 @@ func TestAliasComplete(t *testing.T) {
 					SimpleCompleter[[]string]("un", "deux", "trois"),
 				)),
 				Args: "cmd hello dee",
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"sl": []string{"hello", "dee"},
 				}},
 			},
@@ -1681,10 +1681,10 @@ func TestAliasComplete(t *testing.T) {
 					SimpleCompleter[[]string]("un", "deux", "trois"),
 				)),
 				Args: "cmd hello dee t",
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"sl": []string{"hello", "d", "t"},
 				}},
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"trois"},
 				},
 			},
@@ -1701,10 +1701,10 @@ func TestAliasComplete(t *testing.T) {
 					SimpleDistinctCompleter[[]string]("un", "deux", "trois"),
 				)),
 				Args: "cmd dee ",
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"sl": []string{"deux", ""},
 				}},
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"trois", "un"},
 				},
 			},
@@ -1722,10 +1722,10 @@ func TestAliasComplete(t *testing.T) {
 					SimpleDistinctCompleter[[]string]("un", "deux", "trois"),
 				)),
 				Args: "cmd dee t ",
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"sl": []string{"deux", "trois", ""},
 				}},
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"un"},
 				},
 			},
@@ -1740,14 +1740,14 @@ func TestAliasComplete(t *testing.T) {
 				},
 			},
 			ctc: &commandtest.CompleteTestCase{
-				Node: SerialNodes(ListArg[string]("sl", testDesc, 1, commondels.UnboundedList, ShortcutOpt[[]string]("pioneer", sc),
+				Node: SerialNodes(ListArg[string]("sl", testDesc, 1, command.UnboundedList, ShortcutOpt[[]string]("pioneer", sc),
 					SimpleDistinctCompleter[[]string]("un", "deux", "trois"),
 				)),
 				Args: "cmd f dee ",
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"sl": []string{"four", "two", "deux", ""},
 				}},
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"trois", "un"},
 				},
 			},
@@ -1764,14 +1764,14 @@ func TestAliasComplete(t *testing.T) {
 				},
 			},
 			ctc: &commandtest.CompleteTestCase{
-				Node: SerialNodes(ListArg[string]("sl", testDesc, 1, commondels.UnboundedList, ShortcutOpt[[]string]("pioneer", sc),
+				Node: SerialNodes(ListArg[string]("sl", testDesc, 1, command.UnboundedList, ShortcutOpt[[]string]("pioneer", sc),
 					SimpleDistinctCompleter[[]string]("un", "deux", "trois", "five", "six"),
 				)),
 				Args: "cmd f zero zero n1 dee n2 n3 t u n4 n5 ",
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"sl": []string{"four", "0", "0", "n1", "two", "deux", "n2", "n3", "three", "trois", "tres", "un", "n4", "n5", ""},
 				}},
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"five", "six"},
 				},
 			},
@@ -1788,14 +1788,14 @@ func TestAliasComplete(t *testing.T) {
 				},
 			},
 			ctc: &commandtest.CompleteTestCase{
-				Node: SerialNodes(ListArg[string]("sl", testDesc, 1, commondels.UnboundedList, ShortcutOpt[[]string]("pioneer", sc),
+				Node: SerialNodes(ListArg[string]("sl", testDesc, 1, command.UnboundedList, ShortcutOpt[[]string]("pioneer", sc),
 					SimpleDistinctCompleter[[]string]("un", "deux", "trois", "five", "six"),
 				)),
 				Args: "cmd f zero n1 t",
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"sl": []string{"four", "0", "n1", "t"},
 				}},
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"trois"},
 				},
 			},
@@ -1810,12 +1810,12 @@ func TestAliasComplete(t *testing.T) {
 			ctc: &commandtest.CompleteTestCase{
 				Node: SerialNodes(ListArg("sl", testDesc, 3, 0, ShortcutOpt[[]string]("pioneer", sc)), Arg[string]("s", testDesc), Arg[string]("i", testDesc, SimpleCompleter[string]("alpha", "beta"))),
 				Args: "cmd t ",
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"sl": []string{"three", "trois", "tres"},
 					"s":  "III",
 					"i":  "",
 				}},
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"alpha", "beta"},
 				},
 			},
@@ -1830,12 +1830,12 @@ func TestAliasComplete(t *testing.T) {
 			ctc: &commandtest.CompleteTestCase{
 				Node: SerialNodes(ListArg("sl", testDesc, 3, 0, ShortcutOpt[[]string]("pioneer", sc)), Arg[string]("s", testDesc), Arg[string]("i", testDesc, SimpleCompleter[string]("alpha", "beta"))),
 				Args: "cmd I II III t ",
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"sl": []string{"I", "II", "III"},
 					"s":  "t",
 					"i":  "",
 				}},
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"alpha", "beta"},
 				},
 			},
@@ -1875,7 +1875,7 @@ func newSimpleShortcut(existing map[string]map[string][]string) ShortcutCLI {
 }
 
 func UpperCaseTransformer() ArgumentOption[[]string] {
-	f := func(sl []string, d *commondels.Data) ([]string, error) {
+	f := func(sl []string, d *command.Data) ([]string, error) {
 		r := make([]string, 0, len(sl))
 		for _, v := range sl {
 			r = append(r, strings.ToUpper(v))

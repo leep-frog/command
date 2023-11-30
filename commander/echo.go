@@ -3,10 +3,10 @@ package commander
 import (
 	"strings"
 
-	"github.com/leep-frog/command/commondels"
+	"github.com/leep-frog/command/command"
 )
 
-// EchoExecuteDataProcessor is a `commondels.Processor` that outputs the current commondels.ExecuteData contents.
+// EchoExecuteDataProcessor is a `command.Processor` that outputs the current command.ExecuteData contents.
 type EchoExecuteDataProcessor struct {
 	// Stderr is whether or not the output should be written to Stderr instead.
 	Stderr bool
@@ -14,7 +14,7 @@ type EchoExecuteDataProcessor struct {
 	Format string
 }
 
-func (e *EchoExecuteDataProcessor) Execute(_ *commondels.Input, o commondels.Output, _ *commondels.Data, ed *commondels.ExecuteData) error {
+func (e *EchoExecuteDataProcessor) Execute(_ *command.Input, o command.Output, _ *command.Data, ed *command.ExecuteData) error {
 	if e.Format != "" && len(ed.Executable) > 0 {
 		if e.Stderr {
 			o.Stderrf(e.Format, strings.Join(ed.Executable, "\n"))
@@ -34,29 +34,29 @@ func (e *EchoExecuteDataProcessor) Execute(_ *commondels.Input, o commondels.Out
 	return nil
 }
 
-func (e *EchoExecuteDataProcessor) Complete(*commondels.Input, *commondels.Data) (*commondels.Completion, error) {
+func (e *EchoExecuteDataProcessor) Complete(*command.Input, *command.Data) (*command.Completion, error) {
 	return nil, nil
 }
 
-func (e *EchoExecuteDataProcessor) Usage(i *commondels.Input, d *commondels.Data, u *commondels.Usage) error {
+func (e *EchoExecuteDataProcessor) Usage(i *command.Input, d *command.Data, u *command.Usage) error {
 	return nil
 }
 
-// EchoExecuteData returns a `commondels.Processor` that sends the `commondels.ExecuteData` contents
+// EchoExecuteData returns a `command.Processor` that sends the `command.ExecuteData` contents
 // to stdout.
 func EchoExecuteData() *EchoExecuteDataProcessor {
 	return &EchoExecuteDataProcessor{}
 }
 
-// EchoExecuteDataf returns a `commondels.Processor` that sends the `commondels.ExecuteData` contents
+// EchoExecuteDataf returns a `command.Processor` that sends the `command.ExecuteData` contents
 // to stdout with the provided format
-func EchoExecuteDataf(format string) commondels.Processor {
+func EchoExecuteDataf(format string) command.Processor {
 	return &EchoExecuteDataProcessor{Format: format}
 }
 
-// PrintlnProcessor returns a `commondels.Processor` that runs `output.Stdoutln(v)`.
-func PrintlnProcessor(v string) commondels.Processor {
-	return SimpleProcessor(func(i *commondels.Input, o commondels.Output, d *commondels.Data, ed *commondels.ExecuteData) error {
+// PrintlnProcessor returns a `command.Processor` that runs `output.Stdoutln(v)`.
+func PrintlnProcessor(v string) command.Processor {
+	return SimpleProcessor(func(i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
 		o.Stdoutln(v)
 		return nil
 	}, nil)

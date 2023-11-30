@@ -7,7 +7,7 @@ import (
 	"unsafe"
 
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/leep-frog/command/commondels"
+	"github.com/leep-frog/command/command"
 	"github.com/leep-frog/command/internal/spycommandtest"
 	"github.com/leep-frog/command/internal/spyinput"
 	"github.com/leep-frog/command/internal/testutil"
@@ -24,7 +24,7 @@ func (it *inputTester) check(t *testing.T, tc *testContext) {
 		it.want = &spycommandtest.SpyInput{}
 	}
 
-	gotPtr := getUnexportedField(tc.input, "si").(*spyinput.SpyInput[commondels.InputBreaker])
+	gotPtr := getUnexportedField(tc.input, "si").(*spyinput.SpyInput[command.InputBreaker])
 	got := &spycommandtest.SpyInput{}
 	if gotPtr != nil {
 		got = (*spycommandtest.SpyInput)(gotPtr)

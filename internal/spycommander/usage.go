@@ -3,11 +3,11 @@ package spycommander
 import (
 	"strings"
 
-	"github.com/leep-frog/command/commondels"
+	"github.com/leep-frog/command/command"
 )
 
-// Use constructs a `commondels.Usage` object from the root `commondels.Node` of a command graph.
-func Use(root commondels.Node, input *commondels.Input) (*commondels.Usage, error) {
+// Use constructs a `command.Usage` object from the root `command.Node` of a command graph.
+func Use(root command.Node, input *command.Input) (*command.Usage, error) {
 	u, err := ProcessNewGraphUse(root, input)
 	if err != nil {
 		return nil, err
@@ -18,16 +18,16 @@ func Use(root commondels.Node, input *commondels.Input) (*commondels.Usage, erro
 }
 
 // ProcessNewGraphUse processes the usage for provided graph
-func ProcessNewGraphUse(root commondels.Node, input *commondels.Input) (*commondels.Usage, error) {
-	u := &commondels.Usage{
-		UsageSection: &commondels.UsageSection{},
+func ProcessNewGraphUse(root command.Node, input *command.Input) (*command.Usage, error) {
+	u := &command.Usage{
+		UsageSection: &command.UsageSection{},
 	}
 	// TODO: Add OS
-	return u, ProcessGraphUse(root, input, &commondels.Data{}, u)
+	return u, ProcessGraphUse(root, input, &command.Data{}, u)
 }
 
 // ProcessGraphUse processes the usage for provided graph
-func ProcessGraphUse(root commondels.Node, input *commondels.Input, data *commondels.Data, usage *commondels.Usage) error {
+func ProcessGraphUse(root command.Node, input *command.Input, data *command.Data, usage *command.Usage) error {
 	for n := root; n != nil; {
 		if err := n.Usage(input, data, usage); err != nil {
 			return err
@@ -42,10 +42,10 @@ func ProcessGraphUse(root commondels.Node, input *commondels.Input, data *common
 	return nil
 }
 
-// ProcessOrUsage checks if the provided `Processor` is a `commondels.Node` or just a `Processor`
+// ProcessOrUsage checks if the provided `Processor` is a `command.Node` or just a `Processor`
 // and traverses the subgraph or executes the processor accordingly.
-func ProcessOrUsage(p commondels.Processor, i *commondels.Input, d *commondels.Data, usage *commondels.Usage) error {
-	if n, ok := p.(commondels.Node); ok {
+func ProcessOrUsage(p command.Processor, i *command.Input, d *command.Data, usage *command.Usage) error {
+	if n, ok := p.(command.Node); ok {
 		return ProcessGraphUse(n, i, d, usage)
 	} else {
 		return p.Usage(i, d, usage)
@@ -59,8 +59,8 @@ const (
 // ShowUsageAfterError generates the usage doc for the provided `Node`. If there
 // is no error generating the usage doc, then the doc is sent to stderr; otherwise,
 // no output is sent.
-func ShowUsageAfterError(n commondels.Node, o commondels.Output) {
-	if u, err := ProcessNewGraphUse(n, commondels.ParseExecuteArgs(nil)); err != nil {
+func ShowUsageAfterError(n command.Node, o command.Output) {
+	if u, err := ProcessNewGraphUse(n, command.ParseExecuteArgs(nil)); err != nil {
 		o.Stderrf("\n%s\nfailed to get command usage: %v\n", UsageErrorSectionStart, err)
 	} else if usageDoc := u.String(); len(strings.TrimSpace(usageDoc)) != 0 {
 		o.Stderrf("\n%s\n%v\n", UsageErrorSectionStart, u)

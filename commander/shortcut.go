@@ -6,7 +6,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/leep-frog/command/commondels"
+	"github.com/leep-frog/command/command"
 )
 
 var (
@@ -60,9 +60,9 @@ func setShortcut(sc ShortcutCLI, name, shortcut string, value []string) {
 	m[shortcut] = value
 }
 
-func shortcutMap(name string, sc ShortcutCLI, n commondels.Node) map[string]commondels.Node {
+func shortcutMap(name string, sc ShortcutCLI, n command.Node) map[string]command.Node {
 	adder := SerialNodes(ShortcutArg, &addShortcut{node: n, sc: sc, name: name})
-	return map[string]commondels.Node{
+	return map[string]command.Node{
 		"a": adder,
 		"d": shortcutDeleter(name, sc, n),
 		"g": shortcutGetter(name, sc, n),
@@ -72,18 +72,18 @@ func shortcutMap(name string, sc ShortcutCLI, n commondels.Node) map[string]comm
 }
 
 // ShortcutNode wraps the provided node with a shortcut node.
-func ShortcutNode(name string, sc ShortcutCLI, n commondels.Node) commondels.Node {
+func ShortcutNode(name string, sc ShortcutCLI, n command.Node) command.Node {
 	executor := SerialNodes(&executeShortcut{node: n, sc: sc, name: name}, n)
 	return &BranchNode{Branches: shortcutMap(name, sc, n), Default: executor, HideUsage: true, DefaultCompletion: true}
 }
 
 func shortcutCompleter(name string, sc ShortcutCLI) Completer[string] {
-	return CompleterFromFunc(func(string, *commondels.Data) (*commondels.Completion, error) {
+	return CompleterFromFunc(func(string, *command.Data) (*command.Completion, error) {
 		s := []string{}
 		for k := range getShortcutMap(sc, name) {
 			s = append(s, k)
 		}
-		return &commondels.Completion{
+		return &command.Completion{
 			Suggestions: s,
 			Distinct:    true,
 		}, nil
@@ -95,13 +95,13 @@ const (
 	hiddenNodeDesc = "hidden_node"
 )
 
-func shortcutListArg(name string, sc ShortcutCLI) commondels.Processor {
-	return ListArg[string](ShortcutArg.Name(), hiddenNodeDesc, 1, commondels.UnboundedList, CompleterList(shortcutCompleter(name, sc)))
+func shortcutListArg(name string, sc ShortcutCLI) command.Processor {
+	return ListArg[string](ShortcutArg.Name(), hiddenNodeDesc, 1, command.UnboundedList, CompleterList(shortcutCompleter(name, sc)))
 }
 
-func shortcutSearcher(name string, sc ShortcutCLI, n commondels.Node) commondels.Node {
-	regexArg := ListArg[string]("regexp", hiddenNodeDesc, 1, commondels.UnboundedList, ListifyValidatorOption(IsRegex()))
-	return SerialNodes(regexArg, &ExecutorProcessor{func(output commondels.Output, data *commondels.Data) error {
+func shortcutSearcher(name string, sc ShortcutCLI, n command.Node) command.Node {
+	regexArg := ListArg[string]("regexp", hiddenNodeDesc, 1, command.UnboundedList, ListifyValidatorOption(IsRegex()))
+	return SerialNodes(regexArg, &ExecutorProcessor{func(output command.Output, data *command.Data) error {
 		var rs []*regexp.Regexp
 		for _, s := range data.StringList("regexp") {
 			r, err := regexp.Compile(s)
@@ -131,8 +131,8 @@ func shortcutSearcher(name string, sc ShortcutCLI, n commondels.Node) commondels
 	}})
 }
 
-func shortcutLister(name string, sc ShortcutCLI, n commondels.Node) commondels.Node {
-	return SerialNodes(&ExecutorProcessor{func(output commondels.Output, data *commondels.Data) error {
+func shortcutLister(name string, sc ShortcutCLI, n command.Node) command.Node {
+	return SerialNodes(&ExecutorProcessor{func(output command.Output, data *command.Data) error {
 		var r []string
 		for k, v := range getShortcutMap(sc, name) {
 			r = append(r, shortcutStr(k, v))
@@ -145,8 +145,8 @@ func shortcutLister(name string, sc ShortcutCLI, n commondels.Node) commondels.N
 	}})
 }
 
-func shortcutDeleter(name string, sc ShortcutCLI, n commondels.Node) commondels.Node {
-	return SerialNodes(shortcutListArg(name, sc), &ExecutorProcessor{func(output commondels.Output, data *commondels.Data) error {
+func shortcutDeleter(name string, sc ShortcutCLI, n command.Node) command.Node {
+	return SerialNodes(shortcutListArg(name, sc), &ExecutorProcessor{func(output command.Output, data *command.Data) error {
 		if len(getShortcutMap(sc, name)) == 0 {
 			return output.Stderrln("Shortcut group has no shortcuts yet.")
 		}
@@ -163,8 +163,8 @@ func shortcutStr(shortcut string, values []string) string {
 	return fmt.Sprintf("%s: %s", shortcut, strings.Join(values, " "))
 }
 
-func shortcutGetter(name string, sc ShortcutCLI, n commondels.Node) commondels.Node {
-	return SerialNodes(shortcutListArg(name, sc), &ExecutorProcessor{func(output commondels.Output, data *commondels.Data) error {
+func shortcutGetter(name string, sc ShortcutCLI, n command.Node) command.Node {
+	return SerialNodes(shortcutListArg(name, sc), &ExecutorProcessor{func(output command.Output, data *command.Data) error {
 		if getShortcutMap(sc, name) == nil {
 			return output.Stderrf("No shortcuts exist for shortcut type %q\n", name)
 		}
@@ -181,37 +181,37 @@ func shortcutGetter(name string, sc ShortcutCLI, n commondels.Node) commondels.N
 }
 
 type executeShortcut struct {
-	node commondels.Node
+	node command.Node
 	sc   ShortcutCLI
 	name string
 }
 
-func (ea *executeShortcut) Usage(i *commondels.Input, d *commondels.Data, u *commondels.Usage) error {
-	u.UsageSection.Add(commondels.SymbolSection, "*", "Start of new shortcut-able section")
+func (ea *executeShortcut) Usage(i *command.Input, d *command.Data, u *command.Usage) error {
+	u.UsageSection.Add(command.SymbolSection, "*", "Start of new shortcut-able section")
 	// TODO: show shortcut subcommands on --help
 	u.Usage = append(u.Usage, "*")
 	return nil
 }
 
-func (ea *executeShortcut) Execute(input *commondels.Input, output commondels.Output, data *commondels.Data, eData *commondels.ExecuteData) error {
+func (ea *executeShortcut) Execute(input *command.Input, output command.Output, data *command.Data, eData *command.ExecuteData) error {
 	return output.Err(processOrExecute(shortcutInputTransformer(ea.sc, ea.name, 0), input, output, data, eData))
 }
 
-func (ea *executeShortcut) Complete(input *commondels.Input, data *commondels.Data) (*commondels.Completion, error) {
+func (ea *executeShortcut) Complete(input *command.Input, data *command.Data) (*command.Completion, error) {
 	return processOrComplete(shortcutInputTransformer(ea.sc, ea.name, 0), input, data)
 }
 
 type addShortcut struct {
-	node commondels.Node
+	node command.Node
 	sc   ShortcutCLI
 	name string
 }
 
-func (as *addShortcut) Usage(*commondels.Input, *commondels.Data, *commondels.Usage) error {
+func (as *addShortcut) Usage(*command.Input, *command.Data, *command.Usage) error {
 	return nil
 }
 
-func (as *addShortcut) Execute(input *commondels.Input, output commondels.Output, data *commondels.Data, _ *commondels.ExecuteData) error {
+func (as *addShortcut) Execute(input *command.Input, output command.Output, data *command.Data, _ *command.ExecuteData) error {
 	shortcut := data.String(ShortcutArg.Name())
 	sm := shortcutMap(as.name, as.sc, as.node)
 	if _, ok := sm[shortcut]; ok {
@@ -224,10 +224,10 @@ func (as *addShortcut) Execute(input *commondels.Input, output commondels.Output
 	snapshot := input.Snapshot()
 
 	// We don't want the executor to run, so we pass fakeEData to children nodes.
-	fakeEData := &commondels.ExecuteData{}
+	fakeEData := &command.ExecuteData{}
 	// We don't want to output not enough args error, because we actually
 	// don't mind those when adding shortcuts.
-	ieo := commondels.NewIgnoreErrOutput(output, IsNotEnoughArgsError)
+	ieo := command.NewIgnoreErrOutput(output, IsNotEnoughArgsError)
 	if err := processGraphExecution(as.node, input, ieo, data, fakeEData); err != nil && !IsNotEnoughArgsError(err) {
 		return err
 	}
@@ -246,6 +246,6 @@ func (as *addShortcut) Execute(input *commondels.Input, output commondels.Output
 	return nil
 }
 
-func (as *addShortcut) Complete(input *commondels.Input, data *commondels.Data) (*commondels.Completion, error) {
+func (as *addShortcut) Complete(input *command.Input, data *command.Data) (*command.Completion, error) {
 	return processGraphCompletion(as.node, input, data)
 }

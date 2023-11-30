@@ -10,8 +10,8 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/leep-frog/command/command"
 	"github.com/leep-frog/command/commandtest"
-	"github.com/leep-frog/command/commondels"
 	"github.com/leep-frog/command/internal/spycommand"
 	"github.com/leep-frog/command/internal/spycommander"
 	"github.com/leep-frog/command/internal/spycommandertest"
@@ -47,11 +47,11 @@ type simpleType struct {
 	N int
 }
 
-func (ee *errorEdge) Next(*commondels.Input, *commondels.Data) (commondels.Node, error) {
+func (ee *errorEdge) Next(*command.Input, *command.Data) (command.Node, error) {
 	return nil, ee.e
 }
 
-func (ee *errorEdge) UsageNext(input *commondels.Input, data *commondels.Data) (commondels.Node, error) {
+func (ee *errorEdge) UsageNext(input *command.Input, data *command.Data) (command.Node, error) {
 	return nil, nil
 }
 
@@ -119,7 +119,7 @@ func TestExecute(t *testing.T) {
 					},
 				},
 				WantErr: fmt.Errorf("bad news bears"),
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"s": "hello",
 				}},
 			},
@@ -151,7 +151,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "Complexecute for Arg fails if no arg provided",
 			etc: &commandtest.ExecuteTestCase{
-				Node: SerialNodes(Arg[int]("is", testDesc, Complexecute[int](), CompleterFromFunc(func(i int, d *commondels.Data) (*commondels.Completion, error) {
+				Node: SerialNodes(Arg[int]("is", testDesc, Complexecute[int](), CompleterFromFunc(func(i int, d *command.Data) (*command.Completion, error) {
 					return nil, fmt.Errorf("oopsie")
 				}))),
 				WantErr:    fmt.Errorf(`Argument "is" requires at least 1 argument, got 0`),
@@ -162,7 +162,7 @@ func TestExecute(t *testing.T) {
 			name: "Complexecute for Arg fails completer returns error",
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{""},
-				Node: SerialNodes(Arg[int]("is", testDesc, Complexecute[int](), CompleterFromFunc(func(i int, d *commondels.Data) (*commondels.Completion, error) {
+				Node: SerialNodes(Arg[int]("is", testDesc, Complexecute[int](), CompleterFromFunc(func(i int, d *command.Data) (*command.Completion, error) {
 					return nil, fmt.Errorf("oopsie")
 				}))),
 				WantErr:    fmt.Errorf("[Complexecute] failed to fetch completion for \"is\": oopsie"),
@@ -180,7 +180,7 @@ func TestExecute(t *testing.T) {
 			name: "Complexecute for Arg fails if returned completion is nil",
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{""},
-				Node: SerialNodes(Arg[int]("is", testDesc, Complexecute[int](), CompleterFromFunc(func(i int, d *commondels.Data) (*commondels.Completion, error) {
+				Node: SerialNodes(Arg[int]("is", testDesc, Complexecute[int](), CompleterFromFunc(func(i int, d *command.Data) (*command.Completion, error) {
 					return nil, nil
 				}))),
 				WantErr:    fmt.Errorf("[Complexecute] nil completion returned for \"is\""),
@@ -198,8 +198,8 @@ func TestExecute(t *testing.T) {
 			name: "Complexecute for Arg fails if 0 suggestions",
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{""},
-				Node: SerialNodes(Arg[int]("is", testDesc, Complexecute[int](), CompleterFromFunc(func(i int, d *commondels.Data) (*commondels.Completion, error) {
-					return &commondels.Completion{}, nil
+				Node: SerialNodes(Arg[int]("is", testDesc, Complexecute[int](), CompleterFromFunc(func(i int, d *command.Data) (*command.Completion, error) {
+					return &command.Completion{}, nil
 				}))),
 				WantErr:    fmt.Errorf("[Complexecute] requires exactly one suggestion to be returned for \"is\", got 0: []"),
 				WantStderr: "[Complexecute] requires exactly one suggestion to be returned for \"is\", got 0: []\n",
@@ -216,8 +216,8 @@ func TestExecute(t *testing.T) {
 			name: "Complexecute for Arg fails if multiple suggestions",
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{""},
-				Node: SerialNodes(Arg[int]("is", testDesc, Complexecute[int](), CompleterFromFunc(func(i int, d *commondels.Data) (*commondels.Completion, error) {
-					return &commondels.Completion{
+				Node: SerialNodes(Arg[int]("is", testDesc, Complexecute[int](), CompleterFromFunc(func(i int, d *command.Data) (*command.Completion, error) {
+					return &command.Completion{
 						Suggestions: []string{"1", "4"},
 					}, nil
 				}))),
@@ -236,8 +236,8 @@ func TestExecute(t *testing.T) {
 			name: "Complexecute for Arg fails if suggestions is wrong type",
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{""},
-				Node: SerialNodes(Arg[int]("is", testDesc, Complexecute[int](), CompleterFromFunc(func(i int, d *commondels.Data) (*commondels.Completion, error) {
-					return &commondels.Completion{
+				Node: SerialNodes(Arg[int]("is", testDesc, Complexecute[int](), CompleterFromFunc(func(i int, d *command.Data) (*command.Completion, error) {
+					return &command.Completion{
 						Suggestions: []string{"someString"},
 					}, nil
 				}))),
@@ -256,12 +256,12 @@ func TestExecute(t *testing.T) {
 			name: "Complexecute for Arg works if one suggestion",
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{""},
-				Node: SerialNodes(Arg[int]("is", testDesc, Complexecute[int](), CompleterFromFunc(func(i int, d *commondels.Data) (*commondels.Completion, error) {
-					return &commondels.Completion{
+				Node: SerialNodes(Arg[int]("is", testDesc, Complexecute[int](), CompleterFromFunc(func(i int, d *command.Data) (*command.Completion, error) {
+					return &command.Completion{
 						Suggestions: []string{"123"},
 					}, nil
 				}))),
-				WantData: &commondels.Data{
+				WantData: &command.Data{
 					Values: map[string]interface{}{
 						"is": 123,
 					},
@@ -279,12 +279,12 @@ func TestExecute(t *testing.T) {
 			name: "Complexecute for Arg completes on best effort",
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{""},
-				Node: SerialNodes(Arg[int]("is", testDesc, Complexecute[int](ComplexecuteBestEffort()), CompleterFromFunc(func(i int, d *commondels.Data) (*commondels.Completion, error) {
-					return &commondels.Completion{
+				Node: SerialNodes(Arg[int]("is", testDesc, Complexecute[int](ComplexecuteBestEffort()), CompleterFromFunc(func(i int, d *command.Data) (*command.Completion, error) {
+					return &command.Completion{
 						Suggestions: []string{"123"},
 					}, nil
 				}))),
-				WantData: &commondels.Data{
+				WantData: &command.Data{
 					Values: map[string]interface{}{
 						"is": 123,
 					},
@@ -302,10 +302,10 @@ func TestExecute(t *testing.T) {
 			name: "Complexecute for Arg doesn't complete or error on best effort if no suggestions",
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"h"},
-				Node: SerialNodes(Arg[string]("s", testDesc, Complexecute[string](ComplexecuteBestEffort()), CompleterFromFunc(func(i string, d *commondels.Data) (*commondels.Completion, error) {
-					return &commondels.Completion{}, nil
+				Node: SerialNodes(Arg[string]("s", testDesc, Complexecute[string](ComplexecuteBestEffort()), CompleterFromFunc(func(i string, d *command.Data) (*command.Completion, error) {
+					return &command.Completion{}, nil
 				}))),
-				WantData: &commondels.Data{
+				WantData: &command.Data{
 					Values: map[string]interface{}{
 						"s": "h",
 					},
@@ -323,12 +323,12 @@ func TestExecute(t *testing.T) {
 			name: "Complexecute for Arg doesn't complete or error on best effort if multiple suggestions",
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"h"},
-				Node: SerialNodes(Arg[string]("s", testDesc, Complexecute[string](ComplexecuteBestEffort()), CompleterFromFunc(func(i string, d *commondels.Data) (*commondels.Completion, error) {
-					return &commondels.Completion{
+				Node: SerialNodes(Arg[string]("s", testDesc, Complexecute[string](ComplexecuteBestEffort()), CompleterFromFunc(func(i string, d *command.Data) (*command.Completion, error) {
+					return &command.Completion{
 						Suggestions: []string{"hey", "hi"},
 					}, nil
 				}))),
-				WantData: &commondels.Data{
+				WantData: &command.Data{
 					Values: map[string]interface{}{
 						"s": "h",
 					},
@@ -346,10 +346,10 @@ func TestExecute(t *testing.T) {
 			name: "Complexecute for Arg doesn't complete or error on best effort if error",
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"h"},
-				Node: SerialNodes(Arg[string]("s", testDesc, Complexecute[string](ComplexecuteBestEffort()), CompleterFromFunc(func(i string, d *commondels.Data) (*commondels.Completion, error) {
+				Node: SerialNodes(Arg[string]("s", testDesc, Complexecute[string](ComplexecuteBestEffort()), CompleterFromFunc(func(i string, d *command.Data) (*command.Completion, error) {
 					return nil, fmt.Errorf("oopsie")
 				}))),
-				WantData: &commondels.Data{
+				WantData: &command.Data{
 					Values: map[string]interface{}{
 						"s": "h",
 					},
@@ -364,13 +364,13 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "Complexecute for Arg doesn't complete or error on best effort if nil commondels.Completion",
+			name: "Complexecute for Arg doesn't complete or error on best effort if nil command.Completion",
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"h"},
-				Node: SerialNodes(Arg[string]("s", testDesc, Complexecute[string](ComplexecuteBestEffort()), CompleterFromFunc(func(i string, d *commondels.Data) (*commondels.Completion, error) {
+				Node: SerialNodes(Arg[string]("s", testDesc, Complexecute[string](ComplexecuteBestEffort()), CompleterFromFunc(func(i string, d *command.Data) (*command.Completion, error) {
 					return nil, nil
 				}))),
-				WantData: &commondels.Data{
+				WantData: &command.Data{
 					Values: map[string]interface{}{
 						"s": "h",
 					},
@@ -388,12 +388,12 @@ func TestExecute(t *testing.T) {
 			name: "Complexecute for Arg works when only one prefix matches",
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"4"},
-				Node: SerialNodes(Arg[int]("is", testDesc, Complexecute[int](), CompleterFromFunc(func(i int, d *commondels.Data) (*commondels.Completion, error) {
-					return &commondels.Completion{
+				Node: SerialNodes(Arg[int]("is", testDesc, Complexecute[int](), CompleterFromFunc(func(i int, d *command.Data) (*command.Completion, error) {
+					return &command.Completion{
 						Suggestions: []string{"123", "234", "345", "456", "567"},
 					}, nil
 				}))),
-				WantData: &commondels.Data{
+				WantData: &command.Data{
 					Values: map[string]interface{}{
 						"is": 456,
 					},
@@ -411,8 +411,8 @@ func TestExecute(t *testing.T) {
 			name: "Complexecute for Arg fails if multiple completions",
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"f"},
-				Node: SerialNodes(Arg[string]("s", testDesc, Complexecute[string](), CompleterFromFunc(func(i string, d *commondels.Data) (*commondels.Completion, error) {
-					return &commondels.Completion{
+				Node: SerialNodes(Arg[string]("s", testDesc, Complexecute[string](), CompleterFromFunc(func(i string, d *command.Data) (*command.Completion, error) {
+					return &command.Completion{
 						Suggestions: []string{"one", "two", "three", "four", "five", "six"},
 					}, nil
 				}))),
@@ -431,12 +431,12 @@ func TestExecute(t *testing.T) {
 			name: "Complexecute for Arg works for string",
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"fi"},
-				Node: SerialNodes(Arg[string]("s", testDesc, Complexecute[string](), CompleterFromFunc(func(i string, d *commondels.Data) (*commondels.Completion, error) {
-					return &commondels.Completion{
+				Node: SerialNodes(Arg[string]("s", testDesc, Complexecute[string](), CompleterFromFunc(func(i string, d *command.Data) (*command.Completion, error) {
+					return &command.Completion{
 						Suggestions: []string{"one", "two", "three", "four", "five", "six"},
 					}, nil
 				}))),
-				WantData: &commondels.Data{
+				WantData: &command.Data{
 					Values: map[string]interface{}{
 						"s": "five",
 					},
@@ -455,18 +455,18 @@ func TestExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"fi", "tr"},
 				Node: SerialNodes(
-					Arg[string]("s", testDesc, Complexecute[string](), CompleterFromFunc(func(i string, d *commondels.Data) (*commondels.Completion, error) {
-						return &commondels.Completion{
+					Arg[string]("s", testDesc, Complexecute[string](), CompleterFromFunc(func(i string, d *command.Data) (*command.Completion, error) {
+						return &command.Completion{
 							Suggestions: []string{"one", "two", "three", "four", "five", "six"},
 						}, nil
 					})),
-					Arg[string]("s2", testDesc, Complexecute[string](), CompleterFromFunc(func(i string, d *commondels.Data) (*commondels.Completion, error) {
-						return &commondels.Completion{
+					Arg[string]("s2", testDesc, Complexecute[string](), CompleterFromFunc(func(i string, d *command.Data) (*command.Completion, error) {
+						return &command.Completion{
 							Suggestions: []string{"un", "deux", "trois", "quatre"},
 						}, nil
 					})),
 				),
-				WantData: &commondels.Data{
+				WantData: &command.Data{
 					Values: map[string]interface{}{
 						"s":  "five",
 						"s2": "trois",
@@ -487,21 +487,21 @@ func TestExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"fi", "mouse", "tr"},
 				Node: SerialNodes(
-					Arg[string]("s", testDesc, Complexecute[string](), CompleterFromFunc(func(i string, d *commondels.Data) (*commondels.Completion, error) {
-						return &commondels.Completion{
+					Arg[string]("s", testDesc, Complexecute[string](), CompleterFromFunc(func(i string, d *command.Data) (*command.Completion, error) {
+						return &command.Completion{
 							Suggestions: []string{"one", "two", "three", "four", "five", "six"},
 						}, nil
 					})),
-					Arg[string]("s2", testDesc, Complexecute[string](), CompleterFromFunc(func(i string, d *commondels.Data) (*commondels.Completion, error) {
+					Arg[string]("s2", testDesc, Complexecute[string](), CompleterFromFunc(func(i string, d *command.Data) (*command.Completion, error) {
 						return nil, fmt.Errorf("rats")
 					})),
-					Arg[string]("s3", testDesc, Complexecute[string](), CompleterFromFunc(func(i string, d *commondels.Data) (*commondels.Completion, error) {
-						return &commondels.Completion{
+					Arg[string]("s3", testDesc, Complexecute[string](), CompleterFromFunc(func(i string, d *command.Data) (*command.Completion, error) {
+						return &command.Completion{
 							Suggestions: []string{"un", "deux", "trois", "quatre"},
 						}, nil
 					})),
 				),
-				WantData: &commondels.Data{
+				WantData: &command.Data{
 					Values: map[string]interface{}{
 						"s": "five",
 					},
@@ -525,21 +525,21 @@ func TestExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"fi", "mouse", "tr"},
 				Node: SerialNodes(
-					Arg[string]("s", testDesc, Complexecute[string](), CompleterFromFunc(func(i string, d *commondels.Data) (*commondels.Completion, error) {
-						return &commondels.Completion{
+					Arg[string]("s", testDesc, Complexecute[string](), CompleterFromFunc(func(i string, d *command.Data) (*command.Completion, error) {
+						return &command.Completion{
 							Suggestions: []string{"one", "two", "three", "four", "five", "six"},
 						}, nil
 					})),
-					Arg[string]("s2", testDesc, Complexecute[string](ComplexecuteBestEffort()), CompleterFromFunc(func(i string, d *commondels.Data) (*commondels.Completion, error) {
+					Arg[string]("s2", testDesc, Complexecute[string](ComplexecuteBestEffort()), CompleterFromFunc(func(i string, d *command.Data) (*command.Completion, error) {
 						return nil, fmt.Errorf("rats")
 					})),
-					Arg[string]("s3", testDesc, Complexecute[string](), CompleterFromFunc(func(i string, d *commondels.Data) (*commondels.Completion, error) {
-						return &commondels.Completion{
+					Arg[string]("s3", testDesc, Complexecute[string](), CompleterFromFunc(func(i string, d *command.Data) (*command.Completion, error) {
+						return &command.Completion{
 							Suggestions: []string{"un", "deux", "trois", "quatre"},
 						}, nil
 					})),
 				),
-				WantData: &commondels.Data{
+				WantData: &command.Data{
 					Values: map[string]interface{}{
 						"s":  "five",
 						"s2": "mouse",
@@ -563,16 +563,16 @@ func TestExecute(t *testing.T) {
 				Args: []string{""},
 				Node: SerialNodes(Arg[string]("s", testDesc,
 					Complexecute[string](),
-					CompleterFromFunc(func(s string, d *commondels.Data) (*commondels.Completion, error) {
-						return &commondels.Completion{
+					CompleterFromFunc(func(s string, d *command.Data) (*command.Completion, error) {
+						return &command.Completion{
 							Suggestions: []string{"abc"},
 						}, nil
 					}),
-					&Transformer[string]{F: func(s string, d *commondels.Data) (string, error) {
+					&Transformer[string]{F: func(s string, d *command.Data) (string, error) {
 						return s + "?", nil
 					}},
 				)),
-				WantData: &commondels.Data{
+				WantData: &command.Data{
 					Values: map[string]interface{}{
 						"s": "abc?",
 					},
@@ -592,16 +592,16 @@ func TestExecute(t *testing.T) {
 				Args: []string{"bra"},
 				Node: SerialNodes(Arg[string]("s", testDesc,
 					Complexecute[string](),
-					CompleterFromFunc(func(s string, d *commondels.Data) (*commondels.Completion, error) {
-						return &commondels.Completion{
+					CompleterFromFunc(func(s string, d *command.Data) (*command.Completion, error) {
+						return &command.Completion{
 							Suggestions: []string{"alpha", "bravo", "charlie", "brown"},
 						}, nil
 					}),
-					&Transformer[string]{F: func(s string, d *commondels.Data) (string, error) {
+					&Transformer[string]{F: func(s string, d *command.Data) (string, error) {
 						return s + "?", nil
 					}},
 				)),
-				WantData: &commondels.Data{
+				WantData: &command.Data{
 					Values: map[string]interface{}{
 						"s": "bravo?",
 					},
@@ -621,12 +621,12 @@ func TestExecute(t *testing.T) {
 				Args: []string{"br"},
 				Node: SerialNodes(Arg[string]("s", testDesc,
 					Complexecute[string](),
-					CompleterFromFunc(func(s string, d *commondels.Data) (*commondels.Completion, error) {
-						return &commondels.Completion{
+					CompleterFromFunc(func(s string, d *command.Data) (*command.Completion, error) {
+						return &command.Completion{
 							Suggestions: []string{"alpha", "bravo", "charlie", "brown"},
 						}, nil
 					}),
-					&Transformer[string]{F: func(s string, d *commondels.Data) (string, error) {
+					&Transformer[string]{F: func(s string, d *command.Data) (string, error) {
 						return s + "?", nil
 					}},
 				)),
@@ -647,16 +647,16 @@ func TestExecute(t *testing.T) {
 				Args: []string{"br"},
 				Node: SerialNodes(Arg[string]("s", testDesc,
 					Complexecute[string](ComplexecuteBestEffort()),
-					CompleterFromFunc(func(s string, d *commondels.Data) (*commondels.Completion, error) {
-						return &commondels.Completion{
+					CompleterFromFunc(func(s string, d *command.Data) (*command.Completion, error) {
+						return &command.Completion{
 							Suggestions: []string{"alpha", "bravo", "charlie", "brown"},
 						}, nil
 					}),
-					&Transformer[string]{F: func(s string, d *commondels.Data) (string, error) {
+					&Transformer[string]{F: func(s string, d *command.Data) (string, error) {
 						return s + "?", nil
 					}},
 				)),
-				WantData: &commondels.Data{
+				WantData: &command.Data{
 					Values: map[string]interface{}{
 						"s": "br?",
 					},
@@ -673,12 +673,12 @@ func TestExecute(t *testing.T) {
 		{
 			name: "Complexecute is properly set in data",
 			etc: &commandtest.ExecuteTestCase{
-				Node: SerialNodes(Arg[string]("s", testDesc, Complexecute[string](), CompleterFromFunc(func(s string, d *commondels.Data) (*commondels.Completion, error) {
+				Node: SerialNodes(Arg[string]("s", testDesc, Complexecute[string](), CompleterFromFunc(func(s string, d *command.Data) (*command.Completion, error) {
 					d.Set("CFE", d.Complexecute)
-					return &commondels.Completion{Suggestions: []string{"abcde"}}, nil
+					return &command.Completion{Suggestions: []string{"abcde"}}, nil
 				}))),
 				Args: []string{"ab"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"CFE": true,
 					"s":   "abcde",
 				}},
@@ -738,7 +738,7 @@ func TestExecute(t *testing.T) {
 					SimpleCompleter[string]("Hello", "HelloThere", "Hello!", "Goodbye"),
 				)),
 				Args: []string{"Hello"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"s": "Hello",
 				}},
 			},
@@ -758,7 +758,7 @@ func TestExecute(t *testing.T) {
 					SimpleCompleter[string]("Hello", "HelloThere", "Hello!", "Goodbye"),
 				)),
 				Args: []string{"HelloThere"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"s": "HelloThere",
 				}},
 			},
@@ -795,7 +795,7 @@ func TestExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Node: SerialNodes(FileArgument("s", testDesc, Complexecute[string]())),
 				Args: []string{"te"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"s": testutil.FilepathAbs(t, "testdata"),
 				}},
 			},
@@ -812,7 +812,7 @@ func TestExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Node: SerialNodes(FileArgument("s", testDesc, Complexecute[string]())),
 				Args: []string{"testdata"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"s": testutil.FilepathAbs(t, "testdata"),
 				}},
 			},
@@ -829,7 +829,7 @@ func TestExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Node: SerialNodes(FileArgument("s", testDesc, Complexecute[string]())),
 				Args: []string{fmt.Sprintf("testdata%c", filepath.Separator)},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"s": testutil.FilepathAbs(t, "testdata"),
 				}},
 			},
@@ -846,7 +846,7 @@ func TestExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Node: SerialNodes(FileArgument("s", testDesc, Complexecute[string]())),
 				Args: []string{filepath.Join("testdata", "c")},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"s": testutil.FilepathAbs(t, "testdata", "cases"),
 				}},
 			},
@@ -863,7 +863,7 @@ func TestExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Node: SerialNodes(FileArgument("s", testDesc, Complexecute[string]())),
 				Args: []string{filepath.Join("testdata", "cases", "o")},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"s": testutil.FilepathAbs(t, "testdata", "cases", "other.txt"),
 				}},
 			},
@@ -880,7 +880,7 @@ func TestExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Node: SerialNodes(FileArgument("s", testDesc, Complexecute[string]())),
 				Args: []string{"v"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"s": testutil.FilepathAbs(t, "validator.go"),
 				}},
 			},
@@ -936,7 +936,7 @@ func TestExecute(t *testing.T) {
 					}),
 				),
 				Args: []string{"c"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"s": filepath.FromSlash("co2test/"),
 				}},
 			},
@@ -952,7 +952,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "Complexecute for ListArg fails if no arg provided",
 			etc: &commandtest.ExecuteTestCase{
-				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, Complexecute[[]string](), CompleterFromFunc(func(sl []string, d *commondels.Data) (*commondels.Completion, error) {
+				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, Complexecute[[]string](), CompleterFromFunc(func(sl []string, d *command.Data) (*command.Completion, error) {
 					return nil, fmt.Errorf("oopsie")
 				}))),
 				WantErr:    fmt.Errorf(`Argument "sl" requires at least 2 arguments, got 0`),
@@ -963,7 +963,7 @@ func TestExecute(t *testing.T) {
 			name: "Complexecute for ListArg fails completer returns error",
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{""},
-				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, Complexecute[[]string](), CompleterFromFunc(func(sl []string, d *commondels.Data) (*commondels.Completion, error) {
+				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, Complexecute[[]string](), CompleterFromFunc(func(sl []string, d *command.Data) (*command.Completion, error) {
 					return nil, fmt.Errorf("oopsie")
 				}))),
 				WantErr:    fmt.Errorf("[Complexecute] failed to fetch completion for \"sl\": oopsie"),
@@ -981,7 +981,7 @@ func TestExecute(t *testing.T) {
 			name: "Complexecute for ListArg fails if returned completion is nil",
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{""},
-				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, Complexecute[[]string](), CompleterFromFunc(func(sl []string, d *commondels.Data) (*commondels.Completion, error) {
+				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, Complexecute[[]string](), CompleterFromFunc(func(sl []string, d *command.Data) (*command.Completion, error) {
 					return nil, nil
 				}))),
 				WantErr:    fmt.Errorf("[Complexecute] nil completion returned for \"sl\""),
@@ -999,8 +999,8 @@ func TestExecute(t *testing.T) {
 			name: "Complexecute for ListArg fails if 0 suggestions",
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{""},
-				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, Complexecute[[]string](), CompleterFromFunc(func(sl []string, d *commondels.Data) (*commondels.Completion, error) {
-					return &commondels.Completion{}, nil
+				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, Complexecute[[]string](), CompleterFromFunc(func(sl []string, d *command.Data) (*command.Completion, error) {
+					return &command.Completion{}, nil
 				}))),
 				WantErr:    fmt.Errorf("[Complexecute] requires exactly one suggestion to be returned for \"sl\", got 0: []"),
 				WantStderr: "[Complexecute] requires exactly one suggestion to be returned for \"sl\", got 0: []\n",
@@ -1017,8 +1017,8 @@ func TestExecute(t *testing.T) {
 			name: "Complexecute for ListArg fails if multiple suggestions",
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{""},
-				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, Complexecute[[]string](), CompleterFromFunc(func(sl []string, d *commondels.Data) (*commondels.Completion, error) {
-					return &commondels.Completion{
+				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, Complexecute[[]string](), CompleterFromFunc(func(sl []string, d *command.Data) (*command.Completion, error) {
+					return &command.Completion{
 						Suggestions: []string{"alpha", "bravo"},
 					}, nil
 				}))),
@@ -1037,8 +1037,8 @@ func TestExecute(t *testing.T) {
 			name: "Complexecute for ListArg fails if suggestions is wrong type",
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{""},
-				Node: SerialNodes(ListArg[int]("il", testDesc, 2, 3, Complexecute[[]int](), CompleterFromFunc(func(sl []int, d *commondels.Data) (*commondels.Completion, error) {
-					return &commondels.Completion{
+				Node: SerialNodes(ListArg[int]("il", testDesc, 2, 3, Complexecute[[]int](), CompleterFromFunc(func(sl []int, d *command.Data) (*command.Completion, error) {
+					return &command.Completion{
 						Suggestions: []string{"alpha"},
 					}, nil
 				}))),
@@ -1057,15 +1057,15 @@ func TestExecute(t *testing.T) {
 			name: "Complexecute for ListArg fails if still not enough args",
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"alpha", ""},
-				Node: SerialNodes(ListArg[string]("sl", testDesc, 3, 3, Complexecute[[]string](), CompleterFromFunc(func(sl []string, d *commondels.Data) (*commondels.Completion, error) {
-					return &commondels.Completion{
+				Node: SerialNodes(ListArg[string]("sl", testDesc, 3, 3, Complexecute[[]string](), CompleterFromFunc(func(sl []string, d *command.Data) (*command.Completion, error) {
+					return &command.Completion{
 						Distinct:    true,
 						Suggestions: []string{"alpha", "charlie"},
 					}, nil
 				}))),
 				WantErr:    fmt.Errorf(`Argument "sl" requires at least 3 arguments, got 2`),
 				WantStderr: "Argument \"sl\" requires at least 3 arguments, got 2\n",
-				WantData: &commondels.Data{
+				WantData: &command.Data{
 					Values: map[string]interface{}{
 						"sl": []string{"alpha", "charlie"},
 					},
@@ -1084,13 +1084,13 @@ func TestExecute(t *testing.T) {
 			name: "Complexecute for ListArg works if one suggestion",
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"alpha", "bravo", ""},
-				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, Complexecute[[]string](), CompleterFromFunc(func(sl []string, d *commondels.Data) (*commondels.Completion, error) {
-					return &commondels.Completion{
+				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, Complexecute[[]string](), CompleterFromFunc(func(sl []string, d *command.Data) (*command.Completion, error) {
+					return &command.Completion{
 						Distinct:    true,
 						Suggestions: []string{"alpha", "bravo", "charlie"},
 					}, nil
 				}))),
-				WantData: &commondels.Data{
+				WantData: &command.Data{
 					Values: map[string]interface{}{
 						"sl": []string{"alpha", "bravo", "charlie"},
 					},
@@ -1110,13 +1110,13 @@ func TestExecute(t *testing.T) {
 			name: "Complexecute for ListArg works when only one prefix matches",
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"alpha", "bravo", "c"},
-				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, Complexecute[[]string](), CompleterFromFunc(func(sl []string, d *commondels.Data) (*commondels.Completion, error) {
-					return &commondels.Completion{
+				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, Complexecute[[]string](), CompleterFromFunc(func(sl []string, d *command.Data) (*command.Completion, error) {
+					return &command.Completion{
 						Distinct:    true,
 						Suggestions: []string{"alpha", "bravo", "charlie", "delta", "epsilon"},
 					}, nil
 				}))),
-				WantData: &commondels.Data{
+				WantData: &command.Data{
 					Values: map[string]interface{}{
 						"sl": []string{"alpha", "bravo", "charlie"},
 					},
@@ -1136,8 +1136,8 @@ func TestExecute(t *testing.T) {
 			name: "Complexecute for ListArg fails if no distinct filter",
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"alpha", "bravo", ""},
-				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, Complexecute[[]string](), CompleterFromFunc(func(sl []string, d *commondels.Data) (*commondels.Completion, error) {
-					return &commondels.Completion{
+				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, Complexecute[[]string](), CompleterFromFunc(func(sl []string, d *command.Data) (*command.Completion, error) {
+					return &command.Completion{
 						Suggestions: []string{"alpha", "bravo", "charlie"},
 					}, nil
 				}))),
@@ -1158,13 +1158,13 @@ func TestExecute(t *testing.T) {
 			name: "Complexecute for ListArg works with distinct filter",
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"alpha", "bravo", ""},
-				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, Complexecute[[]string](), CompleterFromFunc(func(sl []string, d *commondels.Data) (*commondels.Completion, error) {
-					return &commondels.Completion{
+				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, Complexecute[[]string](), CompleterFromFunc(func(sl []string, d *command.Data) (*command.Completion, error) {
+					return &command.Completion{
 						Distinct:    true,
 						Suggestions: []string{"alpha", "bravo", "charlie"},
 					}, nil
 				}))),
-				WantData: &commondels.Data{
+				WantData: &command.Data{
 					Values: map[string]interface{}{
 						"sl": []string{"alpha", "bravo", "charlie"},
 					},
@@ -1184,12 +1184,12 @@ func TestExecute(t *testing.T) {
 			name: "Complexecute for ListArg completes multiple args",
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"a", "br", "c"},
-				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, Complexecute[[]string](), CompleterFromFunc(func(sl []string, d *commondels.Data) (*commondels.Completion, error) {
-					return &commondels.Completion{
+				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, Complexecute[[]string](), CompleterFromFunc(func(sl []string, d *command.Data) (*command.Completion, error) {
+					return &command.Completion{
 						Suggestions: []string{"alpha", "bravo", "charlie"},
 					}, nil
 				}))),
-				WantData: &commondels.Data{
+				WantData: &command.Data{
 					Values: map[string]interface{}{
 						"sl": []string{"alpha", "bravo", "charlie"},
 					},
@@ -1209,8 +1209,8 @@ func TestExecute(t *testing.T) {
 			name: "Complexecute for ListArg fails if multiple completions",
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"f"},
-				Node: SerialNodes(Arg[string]("s", testDesc, Complexecute[string](), CompleterFromFunc(func(i string, d *commondels.Data) (*commondels.Completion, error) {
-					return &commondels.Completion{
+				Node: SerialNodes(Arg[string]("s", testDesc, Complexecute[string](), CompleterFromFunc(func(i string, d *command.Data) (*command.Completion, error) {
+					return &command.Completion{
 						Suggestions: []string{"one", "two", "three", "four", "five", "six"},
 					}, nil
 				}))),
@@ -1232,13 +1232,13 @@ func TestExecute(t *testing.T) {
 				Args: []string{"some-string"},
 				Node: SerialNodes(
 					optionalString,
-					&ExecutorProcessor{func(o commondels.Output, d *commondels.Data) error {
+					&ExecutorProcessor{func(o command.Output, d *command.Data) error {
 						o.Stdoutln(optionalString.Provided(d), optionalString.Get(d), optionalString.GetOrDefault(d, "dflt"))
 						return nil
 					}},
 				),
 				WantStdout: "true some-string some-string\n",
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					optionalString.Name(): "some-string",
 				}},
 			},
@@ -1255,7 +1255,7 @@ func TestExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Node: SerialNodes(
 					optionalString,
-					&ExecutorProcessor{func(o commondels.Output, d *commondels.Data) error {
+					&ExecutorProcessor{func(o command.Output, d *command.Data) error {
 						o.Stdoutln(optionalString.Provided(d), optionalString.GetOrDefault(d, "dflt"))
 						return nil
 					}},
@@ -1271,7 +1271,7 @@ func TestExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Node: SerialNodes(
 					optionalString,
-					&ExecutorProcessor{func(o commondels.Output, d *commondels.Data) error {
+					&ExecutorProcessor{func(o command.Output, d *command.Data) error {
 						o.Stdoutln(optionalString.Desc())
 						return nil
 					}},
@@ -1288,13 +1288,13 @@ func TestExecute(t *testing.T) {
 					FlagProcessor(
 						stringFlag,
 					),
-					&ExecutorProcessor{func(o commondels.Output, d *commondels.Data) error {
+					&ExecutorProcessor{func(o command.Output, d *command.Data) error {
 						o.Stdoutln(stringFlag.Provided(d), stringFlag.Get(d), stringFlag.GetOrDefault(d, "dflt"))
 						return nil
 					}},
 				),
 				WantStdout: "true some-string some-string\n",
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					stringFlag.Name(): "some-string",
 				}},
 			},
@@ -1314,7 +1314,7 @@ func TestExecute(t *testing.T) {
 					FlagProcessor(
 						stringFlag,
 					),
-					&ExecutorProcessor{func(o commondels.Output, d *commondels.Data) error {
+					&ExecutorProcessor{func(o command.Output, d *command.Data) error {
 						o.Stdoutln(stringFlag.Provided(d), stringFlag.GetOrDefault(d, "dflt"))
 						return nil
 					}},
@@ -1332,7 +1332,7 @@ func TestExecute(t *testing.T) {
 					FlagProcessor(
 						stringFlag,
 					),
-					&ExecutorProcessor{func(o commondels.Output, d *commondels.Data) error {
+					&ExecutorProcessor{func(o command.Output, d *command.Data) error {
 						o.Stdoutln(stringFlag.Desc())
 						return nil
 					}},
@@ -1349,13 +1349,13 @@ func TestExecute(t *testing.T) {
 					FlagProcessor(
 						simpleBoolFlag,
 					),
-					&ExecutorProcessor{func(o commondels.Output, d *commondels.Data) error {
+					&ExecutorProcessor{func(o command.Output, d *command.Data) error {
 						o.Stdoutln(simpleBoolFlag.Provided(d), simpleBoolFlag.Get(d), simpleBoolFlag.GetOrDefault(d, false))
 						return nil
 					}},
 				),
 				WantStdout: "true true true\n",
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					simpleBoolFlag.Name(): true,
 				}},
 			},
@@ -1374,7 +1374,7 @@ func TestExecute(t *testing.T) {
 					FlagProcessor(
 						simpleBoolFlag,
 					),
-					&ExecutorProcessor{func(o commondels.Output, d *commondels.Data) error {
+					&ExecutorProcessor{func(o command.Output, d *command.Data) error {
 						o.Stdoutln(simpleBoolFlag.Provided(d), simpleBoolFlag.GetOrDefault(d, true))
 						return nil
 					}},
@@ -1392,7 +1392,7 @@ func TestExecute(t *testing.T) {
 					FlagProcessor(
 						simpleBoolFlag,
 					),
-					&ExecutorProcessor{func(o commondels.Output, d *commondels.Data) error {
+					&ExecutorProcessor{func(o command.Output, d *command.Data) error {
 						o.Stdoutln(simpleBoolFlag.Desc())
 						return nil
 					}},
@@ -1404,10 +1404,10 @@ func TestExecute(t *testing.T) {
 		{
 			name: "Uses DefaultFunc if no arg provided",
 			etc: &commandtest.ExecuteTestCase{
-				Node: SerialNodes(OptionalArg("s", testDesc, DefaultFunc(func(d *commondels.Data) (string, error) {
+				Node: SerialNodes(OptionalArg("s", testDesc, DefaultFunc(func(d *command.Data) (string, error) {
 					return "heyo", nil
 				}))),
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"s": "heyo",
 				}},
 			},
@@ -1418,7 +1418,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "Failure if DefaultFunc failure for arg",
 			etc: &commandtest.ExecuteTestCase{
-				Node: SerialNodes(OptionalArg("s", testDesc, DefaultFunc(func(d *commondels.Data) (string, error) {
+				Node: SerialNodes(OptionalArg("s", testDesc, DefaultFunc(func(d *command.Data) (string, error) {
 					return "oops", fmt.Errorf("bad news bears")
 				}))),
 				WantErr:    fmt.Errorf("failed to get default: bad news bears"),
@@ -1434,18 +1434,18 @@ func TestExecute(t *testing.T) {
 				Node: SerialNodes(
 					FlagProcessor(
 						Flag("s", 's', testDesc, Default("defStr")),
-						Flag("s2", 'S', testDesc, DefaultFunc(func(d *commondels.Data) (string, error) {
+						Flag("s2", 'S', testDesc, DefaultFunc(func(d *command.Data) (string, error) {
 							return "dos", nil
 						})),
 						Flag("it", 't', testDesc, Default(-456)),
-						Flag("i", 'i', testDesc, DefaultFunc(func(d *commondels.Data) (int, error) {
+						Flag("i", 'i', testDesc, DefaultFunc(func(d *command.Data) (int, error) {
 							return 123, nil
 						})),
 						Flag("fs", 'f', testDesc, Default([]float64{1.2, 3.4, -5.6})),
 					),
 				),
 				Args: []string{"--it", "7", "-S", "dos"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"s":  "defStr",
 					"s2": "dos",
 					"it": 7,
@@ -1470,20 +1470,20 @@ func TestExecute(t *testing.T) {
 				Node: SerialNodes(
 					FlagProcessor(
 						Flag("s", 's', testDesc, Default("defStr")),
-						Flag("s2", 'S', testDesc, DefaultFunc(func(d *commondels.Data) (string, error) {
+						Flag("s2", 'S', testDesc, DefaultFunc(func(d *command.Data) (string, error) {
 							// This flag is set, so this error func shouldn't be run at all,
 							// hence why we don't expect to see this error.
 							return "dos", fmt.Errorf("nooooooo")
 						})),
 						Flag("it", 't', testDesc, Default(-456)),
-						Flag("i", 'i', testDesc, DefaultFunc(func(d *commondels.Data) (int, error) {
+						Flag("i", 'i', testDesc, DefaultFunc(func(d *command.Data) (int, error) {
 							return 123, fmt.Errorf("uh oh")
 						})),
 						Flag("fs", 'f', testDesc, Default([]float64{1.2, 3.4, -5.6})),
 					),
 				),
 				Args: []string{"--it", "7", "-S", "dos"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"s2": "dos",
 					"it": 7,
 					"fs": []float64{1.2, 3.4, -5.6},
@@ -1519,7 +1519,7 @@ func TestExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Node: SerialNodes(Arg[string]("s", testDesc)),
 				Args: []string{"hello"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"s": "hello",
 				}},
 			},
@@ -1536,7 +1536,7 @@ func TestExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Node: SerialNodes(Arg[int]("i", testDesc)),
 				Args: []string{"123"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"i": 123,
 				}},
 			},
@@ -1569,7 +1569,7 @@ func TestExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Node: SerialNodes(Arg[float64]("f", testDesc)),
 				Args: []string{"-12.3"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"f": -12.3,
 				}},
 			},
@@ -1603,7 +1603,7 @@ func TestExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Node: SerialNodes(ListArg[string]("sl", testDesc, 1, 1)),
 				Args: []string{"hello", "there", "sir"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"sl": []string{"hello", "there"},
 				}},
 				WantErr: fmt.Errorf("Unprocessed extra args: [sir]"),
@@ -1634,7 +1634,7 @@ func TestExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Node: SerialNodes(ListArg[string]("sl", testDesc, 1, 2)),
 				Args: []string{"hello"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"sl": []string{"hello"},
 				}},
 			},
@@ -1651,7 +1651,7 @@ func TestExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Node: SerialNodes(ListArg[string]("sl", testDesc, 1, 2)),
 				Args: []string{"hello", "there"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"sl": []string{"hello", "there"},
 				}},
 			},
@@ -1669,7 +1669,7 @@ func TestExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Node: SerialNodes(ListArg[string]("sl", testDesc, 1, 2)),
 				Args: []string{"hello", "there", "maam"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"sl": []string{"hello", "there", "maam"},
 				}},
 			},
@@ -1686,9 +1686,9 @@ func TestExecute(t *testing.T) {
 		{
 			name: "Unbounded string list fails if less than min provided",
 			etc: &commandtest.ExecuteTestCase{
-				Node: SerialNodes(ListArg[string]("sl", testDesc, 4, commondels.UnboundedList)),
+				Node: SerialNodes(ListArg[string]("sl", testDesc, 4, command.UnboundedList)),
 				Args: []string{"hello", "there", "kenobi"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"sl": []string{"hello", "there", "kenobi"},
 				}},
 				WantErr:    fmt.Errorf(`Argument "sl" requires at least 4 arguments, got 3`),
@@ -1707,9 +1707,9 @@ func TestExecute(t *testing.T) {
 		{
 			name: "Processes unbounded string list if min provided",
 			etc: &commandtest.ExecuteTestCase{
-				Node: SerialNodes(ListArg[string]("sl", testDesc, 1, commondels.UnboundedList)),
+				Node: SerialNodes(ListArg[string]("sl", testDesc, 1, command.UnboundedList)),
 				Args: []string{"hello"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"sl": []string{"hello"},
 				}},
 			},
@@ -1724,9 +1724,9 @@ func TestExecute(t *testing.T) {
 		{
 			name: "Processes unbounded string list if more than min provided",
 			etc: &commandtest.ExecuteTestCase{
-				Node: SerialNodes(ListArg[string]("sl", testDesc, 1, commondels.UnboundedList)),
+				Node: SerialNodes(ListArg[string]("sl", testDesc, 1, command.UnboundedList)),
 				Args: []string{"hello", "there", "kenobi"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"sl": []string{"hello", "there", "kenobi"},
 				}},
 			},
@@ -1745,7 +1745,7 @@ func TestExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Node: SerialNodes(ListArg[int]("il", testDesc, 1, 2)),
 				Args: []string{"1", "-23"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"il": []int{1, -23},
 				}},
 			},
@@ -1781,7 +1781,7 @@ func TestExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Node: SerialNodes(ListArg[float64]("fl", testDesc, 1, 2)),
 				Args: []string{"0.1", "-2.3"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"fl": []float64{0.1, -2.3},
 				}},
 			},
@@ -1818,7 +1818,7 @@ func TestExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Node: SerialNodes(ListArg[int]("il", testDesc, 2, 0), Arg[string]("s", testDesc), ListArg[float64]("fl", testDesc, 1, 2)),
 				Args: []string{"0", "1", "two", "0.3", "-4"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"il": []int{0, 1},
 					"s":  "two",
 					"fl": []float64{0.3, -4},
@@ -1841,7 +1841,7 @@ func TestExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Node: SerialNodes(ListArg[int]("il", testDesc, 2, 0), Arg[string]("s", testDesc), ListArg[float64]("fl", testDesc, 1, 2)),
 				Args: []string{"0", "1", "two", "0.3", "-4", "0.5", "6"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"il": []int{0, 1},
 					"s":  "two",
 					"fl": []float64{0.3, -4, 0.5},
@@ -1879,19 +1879,19 @@ func TestExecute(t *testing.T) {
 			name: "Sets executable with SimpleExecutableProcessor",
 			etc: &commandtest.ExecuteTestCase{
 				Node: SerialNodes(SimpleExecutableProcessor("hello", "there")),
-				WantExecuteData: &commondels.ExecuteData{
+				WantExecuteData: &command.ExecuteData{
 					Executable: []string{"hello", "there"},
 				},
 			},
 		},
 		{
-			name: "FunctionWrap sets commondels.ExecuteData.FunctionWrap",
+			name: "FunctionWrap sets command.ExecuteData.FunctionWrap",
 			etc: &commandtest.ExecuteTestCase{
 				Node: SerialNodes(
 					SimpleExecutableProcessor("hello", "there"),
 					FunctionWrap(),
 				),
-				WantExecuteData: &commondels.ExecuteData{
+				WantExecuteData: &command.ExecuteData{
 					Executable:   []string{"hello", "there"},
 					FunctionWrap: true,
 				},
@@ -1901,8 +1901,8 @@ func TestExecute(t *testing.T) {
 			name: "Sets executable with ExecutableProcessor",
 			etc: &commandtest.ExecuteTestCase{
 				Node: SerialNodes(
-					ListArg[string]("SL", "", 0, commondels.UnboundedList),
-					ExecutableProcessor(func(o commondels.Output, d *commondels.Data) ([]string, error) {
+					ListArg[string]("SL", "", 0, command.UnboundedList),
+					ExecutableProcessor(func(o command.Output, d *command.Data) ([]string, error) {
 						o.Stdoutln("hello")
 						o.Stderr("there")
 						return d.StringList("SL"), nil
@@ -1911,10 +1911,10 @@ func TestExecute(t *testing.T) {
 				Args:       []string{"abc", "def"},
 				WantStdout: "hello\n",
 				WantStderr: "there",
-				WantExecuteData: &commondels.ExecuteData{
+				WantExecuteData: &command.ExecuteData{
 					Executable: []string{"abc", "def"},
 				},
-				WantData: &commondels.Data{
+				WantData: &command.Data{
 					Values: map[string]interface{}{
 						"SL": []string{"abc", "def"},
 					},
@@ -1933,14 +1933,14 @@ func TestExecute(t *testing.T) {
 			name: "ExecutableProcessor returning error",
 			etc: &commandtest.ExecuteTestCase{
 				Node: SerialNodes(
-					ListArg[string]("SL", "", 0, commondels.UnboundedList),
-					ExecutableProcessor(func(o commondels.Output, d *commondels.Data) ([]string, error) {
+					ListArg[string]("SL", "", 0, command.UnboundedList),
+					ExecutableProcessor(func(o command.Output, d *command.Data) ([]string, error) {
 						return d.StringList("SL"), fmt.Errorf("bad news bears")
 					}),
 				),
 				Args:    []string{"abc", "def"},
 				WantErr: fmt.Errorf("bad news bears"),
-				WantData: &commondels.Data{
+				WantData: &command.Data{
 					Values: map[string]interface{}{
 						"SL": []string{"abc", "def"},
 					},
@@ -1962,7 +1962,7 @@ func TestExecute(t *testing.T) {
 					SimpleExecutableProcessor("do some", "stuff"),
 					SimpleExecutableProcessor("and then", "even", "MORE"),
 				),
-				WantExecuteData: &commondels.ExecuteData{
+				WantExecuteData: &command.ExecuteData{
 					Executable: []string{
 						"do some",
 						"stuff",
@@ -1977,13 +1977,13 @@ func TestExecute(t *testing.T) {
 			name: "ExecutableProcessor appends executable",
 			etc: &commandtest.ExecuteTestCase{
 				Node: SerialNodes(
-					ExecutableProcessor(func(o commondels.Output, d *commondels.Data) ([]string, error) {
+					ExecutableProcessor(func(o command.Output, d *command.Data) ([]string, error) {
 						return []string{
 							"do some",
 							"stuff",
 						}, nil
 					}),
-					ExecutableProcessor(func(o commondels.Output, d *commondels.Data) ([]string, error) {
+					ExecutableProcessor(func(o command.Output, d *command.Data) ([]string, error) {
 						return []string{
 							"and then",
 							"even",
@@ -1991,7 +1991,7 @@ func TestExecute(t *testing.T) {
 						}, nil
 					}),
 				),
-				WantExecuteData: &commondels.ExecuteData{
+				WantExecuteData: &command.ExecuteData{
 					Executable: []string{
 						"do some",
 						"stuff",
@@ -2005,11 +2005,11 @@ func TestExecute(t *testing.T) {
 		{
 			name: "Sets executable with processor",
 			etc: &commandtest.ExecuteTestCase{
-				Node: SerialNodes(SimpleProcessor(func(i *commondels.Input, o commondels.Output, d *commondels.Data, ed *commondels.ExecuteData) error {
+				Node: SerialNodes(SimpleProcessor(func(i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
 					ed.Executable = []string{"hello", "there"}
 					return nil
 				}, nil)),
-				WantExecuteData: &commondels.ExecuteData{
+				WantExecuteData: &command.ExecuteData{
 					Executable: []string{"hello", "there"},
 				},
 			},
@@ -2018,11 +2018,11 @@ func TestExecute(t *testing.T) {
 		{
 			name: "sets data with SuperSimpleProcessor",
 			etc: &commandtest.ExecuteTestCase{
-				Node: SerialNodes(SuperSimpleProcessor(func(i *commondels.Input, d *commondels.Data) error {
+				Node: SerialNodes(SuperSimpleProcessor(func(i *command.Input, d *command.Data) error {
 					d.Set("key", "value")
 					return nil
 				})),
-				WantData: &commondels.Data{
+				WantData: &command.Data{
 					Values: map[string]interface{}{
 						"key": "value",
 					},
@@ -2032,13 +2032,13 @@ func TestExecute(t *testing.T) {
 		{
 			name: "returns error with SuperSimpleProcessor",
 			etc: &commandtest.ExecuteTestCase{
-				Node: SerialNodes(SuperSimpleProcessor(func(i *commondels.Input, d *commondels.Data) error {
+				Node: SerialNodes(SuperSimpleProcessor(func(i *command.Input, d *command.Data) error {
 					d.Set("key", "value")
 					return fmt.Errorf("argh")
 				})),
 				WantErr:    fmt.Errorf("argh"),
 				WantStderr: "argh\n",
-				WantData: &commondels.Data{
+				WantData: &command.Data{
 					Values: map[string]interface{}{
 						"key": "value",
 					},
@@ -2056,7 +2056,7 @@ func TestExecute(t *testing.T) {
 						return strconv.Atoi(s)
 					}),
 				),
-				WantData: &commondels.Data{
+				WantData: &command.Data{
 					Values: map[string]interface{}{
 						"S": 123,
 					},
@@ -2083,7 +2083,7 @@ func TestExecute(t *testing.T) {
 						return &simpleType{fmt.Sprintf("%s; General Kenobi", st.S), st.N * st.N}, nil
 					}),
 				),
-				WantData: &commondels.Data{
+				WantData: &command.Data{
 					Values: map[string]interface{}{
 						"S": &simpleType{
 							S: "hello there; General Kenobi",
@@ -2108,8 +2108,8 @@ func TestExecute(t *testing.T) {
 						return strconv.Atoi(s)
 					}),
 				),
-				WantStderr: "[DataTransformer] key is not set in commondels.Data\n",
-				WantErr:    fmt.Errorf("[DataTransformer] key is not set in commondels.Data"),
+				WantStderr: "[DataTransformer] key is not set in command.Data\n",
+				WantErr:    fmt.Errorf("[DataTransformer] key is not set in command.Data"),
 			},
 		},
 		{
@@ -2122,7 +2122,7 @@ func TestExecute(t *testing.T) {
 						return strconv.Atoi(s)
 					}),
 				),
-				WantData: &commondels.Data{
+				WantData: &command.Data{
 					Values: map[string]interface{}{
 						"S": "twelve",
 					},
@@ -2156,13 +2156,13 @@ func TestExecute(t *testing.T) {
 				},
 				Node: SerialNodes(
 					envArgProcessor,
-					&ExecutorProcessor{func(o commondels.Output, d *commondels.Data) error {
+					&ExecutorProcessor{func(o command.Output, d *command.Data) error {
 						o.Stdoutln(envArgProcessor.Provided(d), envArgProcessor.Get(d))
 						return nil
 					}},
 				),
 				WantStdout: "true heyo\n",
-				WantData: &commondels.Data{
+				WantData: &command.Data{
 					Values: map[string]interface{}{
 						envArgProcessor.Name: "heyo",
 					},
@@ -2174,7 +2174,7 @@ func TestExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Node: SerialNodes(
 					envArgProcessor,
-					&ExecutorProcessor{func(o commondels.Output, d *commondels.Data) error {
+					&ExecutorProcessor{func(o command.Output, d *command.Data) error {
 						o.Stdoutln(envArgProcessor.Provided(d))
 						return nil
 					}},
@@ -2185,11 +2185,11 @@ func TestExecute(t *testing.T) {
 		{
 			name: "SetEnvVar sets variable",
 			etc: &commandtest.ExecuteTestCase{
-				Node: SerialNodes(SimpleProcessor(func(i *commondels.Input, o commondels.Output, d *commondels.Data, ed *commondels.ExecuteData) error {
+				Node: SerialNodes(SimpleProcessor(func(i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
 					ed.Executable = append(ed.Executable, d.OS.SetEnvVar("abc", "def"))
 					return nil
 				}, nil)),
-				WantExecuteData: &commondels.ExecuteData{
+				WantExecuteData: &command.ExecuteData{
 					Executable: []string{
 						fos.SetEnvVar("abc", "def"),
 					},
@@ -2199,11 +2199,11 @@ func TestExecute(t *testing.T) {
 		{
 			name: "UnsetEnvVar unsets variable",
 			etc: &commandtest.ExecuteTestCase{
-				Node: SerialNodes(SimpleProcessor(func(i *commondels.Input, o commondels.Output, d *commondels.Data, ed *commondels.ExecuteData) error {
+				Node: SerialNodes(SimpleProcessor(func(i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
 					ed.Executable = append(ed.Executable, d.OS.UnsetEnvVar("abc"))
 					return nil
 				}, nil)),
-				WantExecuteData: &commondels.ExecuteData{
+				WantExecuteData: &command.ExecuteData{
 					Executable: []string{
 						fos.UnsetEnvVar("abc"),
 					},
@@ -2216,7 +2216,7 @@ func TestExecute(t *testing.T) {
 				Node: SerialNodes(
 					SetEnvVarProcessor("abc", "def"),
 				),
-				WantExecuteData: &commondels.ExecuteData{
+				WantExecuteData: &command.ExecuteData{
 					Executable: []string{
 						fos.SetEnvVar("abc", "def"),
 					},
@@ -2229,7 +2229,7 @@ func TestExecute(t *testing.T) {
 				Node: SerialNodes(
 					UnsetEnvVarProcessor("abc"),
 				),
-				WantExecuteData: &commondels.ExecuteData{
+				WantExecuteData: &command.ExecuteData{
 					Executable: []string{
 						fos.UnsetEnvVar("abc"),
 					},
@@ -2241,7 +2241,7 @@ func TestExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Node: SerialNodes(
 					SimpleExecutableProcessor("do some", "stuff"),
-					SimpleProcessor(func(i *commondels.Input, o commondels.Output, d *commondels.Data, ed *commondels.ExecuteData) error {
+					SimpleProcessor(func(i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
 						ed.Executable = append(ed.Executable,
 							d.OS.SetEnvVar("abc", "def"),
 							d.OS.UnsetEnvVar("ghi"),
@@ -2249,7 +2249,7 @@ func TestExecute(t *testing.T) {
 						return nil
 					}, nil),
 				),
-				WantExecuteData: &commondels.ExecuteData{
+				WantExecuteData: &command.ExecuteData{
 					Executable: []string{
 						"do some",
 						"stuff",
@@ -2267,7 +2267,7 @@ func TestExecute(t *testing.T) {
 					SetEnvVarProcessor("abc", "def"),
 					UnsetEnvVarProcessor("ghi"),
 				),
-				WantExecuteData: &commondels.ExecuteData{
+				WantExecuteData: &command.ExecuteData{
 					Executable: []string{
 						"do some",
 						"stuff",
@@ -2294,13 +2294,13 @@ func TestExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Node: SerialNodes(
 					Getwd,
-					&ExecutorProcessor{F: func(o commondels.Output, d *commondels.Data) error {
+					&ExecutorProcessor{F: func(o command.Output, d *command.Data) error {
 						o.Stdoutf("wd: %s", Getwd.Get(d))
 						return nil
 					}},
 				),
 				WantStdout: "wd: some/dir",
-				WantData: &commondels.Data{
+				WantData: &command.Data{
 					Values: map[string]interface{}{
 						GetwdKey: "some/dir",
 					},
@@ -2322,13 +2322,13 @@ func TestExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Node: SerialNodes(
 					rcNode,
-					&ExecutorProcessor{F: func(o commondels.Output, d *commondels.Data) error {
+					&ExecutorProcessor{F: func(o command.Output, d *command.Data) error {
 						o.Stdoutf("rc: %s", RuntimeCaller().Get(d))
 						return nil
 					}},
 				),
 				WantStdout: "rc: some/file/path",
-				WantData: &commondels.Data{
+				WantData: &command.Data{
 					Values: map[string]interface{}{
 						RuntimeCallerKey: "some/file/path",
 					},
@@ -2351,7 +2351,7 @@ func TestExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Node: SerialNodes(ListArg[int]("il", testDesc, 2, 0), Arg[string]("s", testDesc), ListArg[float64]("fl", testDesc, 1, 2), printArgsNode()),
 				Args: []string{"0", "1", "two", "0.3", "-4"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"il": []int{0, 1},
 					"s":  "two",
 					"fl": []float64{0.3, -4},
@@ -2378,11 +2378,11 @@ func TestExecute(t *testing.T) {
 		{
 			name: "executor error is returned",
 			etc: &commandtest.ExecuteTestCase{
-				Node: SerialNodes(ListArg[int]("il", testDesc, 2, 0), Arg[string]("s", testDesc), ListArg[float64]("fl", testDesc, 1, 2), &ExecutorProcessor{func(o commondels.Output, d *commondels.Data) error {
+				Node: SerialNodes(ListArg[int]("il", testDesc, 2, 0), Arg[string]("s", testDesc), ListArg[float64]("fl", testDesc, 1, 2), &ExecutorProcessor{func(o command.Output, d *command.Data) error {
 					return o.Stderrf("bad news bears")
 				}}),
 				Args: []string{"0", "1", "two", "0.3", "-4"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"il": []int{0, 1},
 					"s":  "two",
 					"fl": []float64{0.3, -4},
@@ -2411,7 +2411,7 @@ func TestExecute(t *testing.T) {
 					Processor: Arg[string]("strArg", testDesc, NEQ("bad")),
 				},
 				Args: []string{"good"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"strArg": "good",
 				}},
 			},
@@ -2430,7 +2430,7 @@ func TestExecute(t *testing.T) {
 					Processor: Arg[string]("strArg", testDesc, NEQ("bad")),
 				},
 				Args: []string{"bad"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"strArg": "bad",
 				}},
 				WantStderr: "validation for \"strArg\" failed: [NEQ] value cannot equal bad\n",
@@ -2452,7 +2452,7 @@ func TestExecute(t *testing.T) {
 					Processor: Arg[string]("strArg", testDesc, Contains("good")),
 				},
 				Args: []string{"goodbye"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"strArg": "goodbye",
 				}},
 			},
@@ -2471,7 +2471,7 @@ func TestExecute(t *testing.T) {
 					Processor: Arg[string]("strArg", testDesc, Contains("good")),
 				},
 				Args: []string{"hello"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"strArg": "hello",
 				}},
 				WantStderr: "validation for \"strArg\" failed: [Contains] value doesn't contain substring \"good\"\n",
@@ -2492,7 +2492,7 @@ func TestExecute(t *testing.T) {
 					Processor: Arg[string]("strArg", testDesc).AddOptions(Contains("good")),
 				},
 				Args: []string{"hello"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"strArg": "hello",
 				}},
 				WantStderr: "validation for \"strArg\" failed: [Contains] value doesn't contain substring \"good\"\n",
@@ -2514,7 +2514,7 @@ func TestExecute(t *testing.T) {
 					Processor: Arg[string]("strArg", testDesc, Not(Contains("good"))),
 				},
 				Args: []string{"goodbye"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"strArg": "goodbye",
 				}},
 				WantStderr: "validation for \"strArg\" failed: [Not(Contains(\"good\"))] failed\n",
@@ -2535,7 +2535,7 @@ func TestExecute(t *testing.T) {
 					Processor: Arg[string]("strArg", testDesc, Not(Contains("good"))),
 				},
 				Args: []string{"hello"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"strArg": "hello",
 				}},
 			},
@@ -2555,7 +2555,7 @@ func TestExecute(t *testing.T) {
 					Processor: Arg[string]("strArg", testDesc, MatchesRegex("a+b=?c")),
 				},
 				Args: []string{"equiation: aabcdef"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"strArg": "equiation: aabcdef",
 				}},
 			},
@@ -2574,7 +2574,7 @@ func TestExecute(t *testing.T) {
 					Processor: Arg[string]("strArg", testDesc, MatchesRegex(".*", "i+")),
 				},
 				Args: []string{"team"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"strArg": "team",
 				}},
 				WantStderr: "validation for \"strArg\" failed: [MatchesRegex] value \"team\" doesn't match regex \"i+\"\n",
@@ -2593,10 +2593,10 @@ func TestExecute(t *testing.T) {
 			name: "ListMatchesRegex works",
 			etc: &commandtest.ExecuteTestCase{
 				Node: &SimpleNode{
-					Processor: ListArg[string]("slArg", testDesc, 1, commondels.UnboundedList, ListifyValidatorOption(MatchesRegex("a+b=?c", "^eq"))),
+					Processor: ListArg[string]("slArg", testDesc, 1, command.UnboundedList, ListifyValidatorOption(MatchesRegex("a+b=?c", "^eq"))),
 				},
 				Args: []string{"equiation: aabcdef"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"slArg": []string{"equiation: aabcdef"},
 				}},
 			},
@@ -2612,10 +2612,10 @@ func TestExecute(t *testing.T) {
 			name: "ListMatchesRegex fails",
 			etc: &commandtest.ExecuteTestCase{
 				Node: &SimpleNode{
-					Processor: ListArg[string]("slArg", testDesc, 1, commondels.UnboundedList, ListifyValidatorOption(MatchesRegex(".*", "i+"))),
+					Processor: ListArg[string]("slArg", testDesc, 1, command.UnboundedList, ListifyValidatorOption(MatchesRegex(".*", "i+"))),
 				},
 				Args: []string{"equiation: aabcdef", "oops"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"slArg": []string{"equiation: aabcdef", "oops"},
 				}},
 				WantStderr: "validation for \"slArg\" failed: [MatchesRegex] value \"oops\" doesn't match regex \"i+\"\n",
@@ -2638,7 +2638,7 @@ func TestExecute(t *testing.T) {
 					Processor: Arg[string]("strArg", testDesc, IsRegex()),
 				},
 				Args: []string{".*"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"strArg": ".*",
 				}},
 			},
@@ -2657,7 +2657,7 @@ func TestExecute(t *testing.T) {
 					Processor: Arg[string]("strArg", testDesc, IsRegex()),
 				},
 				Args: []string{"*"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"strArg": "*",
 				}},
 				WantStderr: "validation for \"strArg\" failed: [IsRegex] value \"*\" isn't a valid regex: error parsing regexp: missing argument to repetition operator: `*`\n",
@@ -2676,10 +2676,10 @@ func TestExecute(t *testing.T) {
 			name: "ListIsRegex works",
 			etc: &commandtest.ExecuteTestCase{
 				Node: &SimpleNode{
-					Processor: ListArg[string]("slArg", testDesc, 1, commondels.UnboundedList, ListifyValidatorOption(IsRegex())),
+					Processor: ListArg[string]("slArg", testDesc, 1, command.UnboundedList, ListifyValidatorOption(IsRegex())),
 				},
 				Args: []string{".*", " +"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"slArg": []string{".*", " +"},
 				}},
 			},
@@ -2696,10 +2696,10 @@ func TestExecute(t *testing.T) {
 			name: "ListIsRegex fails",
 			etc: &commandtest.ExecuteTestCase{
 				Node: &SimpleNode{
-					Processor: ListArg[string]("slArg", testDesc, 1, commondels.UnboundedList, ListifyValidatorOption(IsRegex())),
+					Processor: ListArg[string]("slArg", testDesc, 1, command.UnboundedList, ListifyValidatorOption(IsRegex())),
 				},
 				Args: []string{".*", "+"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"slArg": []string{".*", "+"},
 				}},
 				WantStderr: "validation for \"slArg\" failed: [IsRegex] value \"+\" isn't a valid regex: error parsing regexp: missing argument to repetition operator: `+`\n",
@@ -2722,7 +2722,7 @@ func TestExecute(t *testing.T) {
 					Processor: Arg[string]("S", testDesc, FileExists()),
 				},
 				Args: []string{"execute_test.go"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"S": "execute_test.go",
 				}},
 			},
@@ -2741,7 +2741,7 @@ func TestExecute(t *testing.T) {
 					Processor: Arg[string]("S", testDesc, FileExists()),
 				},
 				Args: []string{"execute_test.gone"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"S": "execute_test.gone",
 				}},
 				WantErr:    fmt.Errorf(`validation for "S" failed: [FileExists] file "execute_test.gone" does not exist`),
@@ -2762,7 +2762,7 @@ func TestExecute(t *testing.T) {
 					Processor: ListArg[string]("SL", testDesc, 1, 3, ListifyValidatorOption(FileExists())),
 				},
 				Args: []string{"execute_test.go", "execute.go"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"SL": []string{"execute_test.go", "execute.go"},
 				}},
 			},
@@ -2782,7 +2782,7 @@ func TestExecute(t *testing.T) {
 					Processor: ListArg[string]("SL", testDesc, 1, 3, ListifyValidatorOption(FileExists())),
 				},
 				Args: []string{"execute_test.go", "execute.gone"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"SL": []string{"execute_test.go", "execute.gone"},
 				}},
 				WantErr:    fmt.Errorf(`validation for "SL" failed: [FileExists] file "execute.gone" does not exist`),
@@ -2805,7 +2805,7 @@ func TestExecute(t *testing.T) {
 					Processor: Arg[string]("S", testDesc, IsDir()),
 				},
 				Args: []string{"testdata"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"S": "testdata",
 				}},
 			},
@@ -2824,7 +2824,7 @@ func TestExecute(t *testing.T) {
 					Processor: Arg[string]("S", testDesc, IsDir()),
 				},
 				Args: []string{"tested"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"S": "tested",
 				}},
 				WantErr:    fmt.Errorf(`validation for "S" failed: [IsDir] file "tested" does not exist`),
@@ -2845,7 +2845,7 @@ func TestExecute(t *testing.T) {
 					Processor: Arg[string]("S", testDesc, IsDir()),
 				},
 				Args: []string{"execute_test.go"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"S": "execute_test.go",
 				}},
 				WantErr:    fmt.Errorf(`validation for "S" failed: [IsDir] argument "execute_test.go" is a file`),
@@ -2866,7 +2866,7 @@ func TestExecute(t *testing.T) {
 					Processor: ListArg[string]("SL", testDesc, 1, 3, ListifyValidatorOption(IsDir())),
 				},
 				Args: []string{"testdata", "co2test"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"SL": []string{"testdata", "co2test"},
 				}},
 			},
@@ -2886,7 +2886,7 @@ func TestExecute(t *testing.T) {
 					Processor: ListArg[string]("SL", testDesc, 1, 3, ListifyValidatorOption(IsDir())),
 				},
 				Args: []string{"testdata", "co3test"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"SL": []string{"testdata", "co3test"},
 				}},
 				WantErr:    fmt.Errorf(`validation for "SL" failed: [IsDir] file "co3test" does not exist`),
@@ -2908,7 +2908,7 @@ func TestExecute(t *testing.T) {
 					Processor: ListArg[string]("SL", testDesc, 1, 3, ListifyValidatorOption(IsDir())),
 				},
 				Args: []string{"testdata", "execute.go"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"SL": []string{"testdata", "execute.go"},
 				}},
 				WantErr:    fmt.Errorf(`validation for "SL" failed: [IsDir] argument "execute.go" is a file`),
@@ -2931,7 +2931,7 @@ func TestExecute(t *testing.T) {
 					Processor: Arg[string]("S", testDesc, IsFile()),
 				},
 				Args: []string{"execute.go"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"S": "execute.go",
 				}},
 			},
@@ -2950,7 +2950,7 @@ func TestExecute(t *testing.T) {
 					Processor: Arg[string]("S", testDesc, IsFile()),
 				},
 				Args: []string{"tested"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"S": "tested",
 				}},
 				WantErr:    fmt.Errorf(`validation for "S" failed: [IsFile] file "tested" does not exist`),
@@ -2971,7 +2971,7 @@ func TestExecute(t *testing.T) {
 					Processor: Arg[string]("S", testDesc, IsFile()),
 				},
 				Args: []string{"testdata"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"S": "testdata",
 				}},
 				WantErr:    fmt.Errorf(`validation for "S" failed: [IsFile] argument "testdata" is a directory`),
@@ -2992,7 +2992,7 @@ func TestExecute(t *testing.T) {
 					Processor: ListArg[string]("SL", testDesc, 1, 3, ListifyValidatorOption(IsFile())),
 				},
 				Args: []string{"execute.go", "cache.go"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"SL": []string{"execute.go", "cache.go"},
 				}},
 			},
@@ -3012,7 +3012,7 @@ func TestExecute(t *testing.T) {
 					Processor: ListArg[string]("SL", testDesc, 1, 3, ListifyValidatorOption(IsFile())),
 				},
 				Args: []string{"execute.go", "cash"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"SL": []string{"execute.go", "cash"},
 				}},
 				WantErr:    fmt.Errorf(`validation for "SL" failed: [IsFile] file "cash" does not exist`),
@@ -3034,7 +3034,7 @@ func TestExecute(t *testing.T) {
 					Processor: ListArg[string]("SL", testDesc, 1, 3, ListifyValidatorOption(IsFile())),
 				},
 				Args: []string{"execute.go", "testdata"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"SL": []string{"execute.go", "testdata"},
 				}},
 				WantErr:    fmt.Errorf(`validation for "SL" failed: [IsFile] argument "testdata" is a directory`),
@@ -3057,7 +3057,7 @@ func TestExecute(t *testing.T) {
 					Processor: Arg[string]("strArg", testDesc, InList("abc", "def", "ghi")),
 				},
 				Args: []string{"def"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"strArg": "def",
 				}},
 			},
@@ -3076,7 +3076,7 @@ func TestExecute(t *testing.T) {
 					Processor: Arg[string]("strArg", testDesc, InList("abc", "def", "ghi")),
 				},
 				Args: []string{"jkl"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"strArg": "jkl",
 				}},
 				WantStderr: "validation for \"strArg\" failed: [InList] argument must be one of [abc def ghi]\n",
@@ -3097,7 +3097,7 @@ func TestExecute(t *testing.T) {
 					Processor: MenuArg("strArg", testDesc, "abc", "def", "ghi"),
 				},
 				Args: []string{"def"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"strArg": "def",
 				}},
 			},
@@ -3116,7 +3116,7 @@ func TestExecute(t *testing.T) {
 					Processor: MenuArg("strArg", testDesc, "abc", "def", "ghi"),
 				},
 				Args: []string{"jkl"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"strArg": "jkl",
 				}},
 				WantStderr: "validation for \"strArg\" failed: [InList] argument must be one of [abc def ghi]\n",
@@ -3139,7 +3139,7 @@ func TestExecute(t *testing.T) {
 					),
 				),
 				Args: []string{"--sf", "def"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"sf": "def",
 				}},
 			},
@@ -3160,7 +3160,7 @@ func TestExecute(t *testing.T) {
 						MenuFlag("sf", 's', testDesc, "abc", "def", "ghi", "xyz").AddOptions(Default("xyz")),
 					),
 				),
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"sf": "xyz",
 				}},
 			},
@@ -3174,7 +3174,7 @@ func TestExecute(t *testing.T) {
 					),
 				),
 				Args: []string{"-s", "jkl"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"sf": "jkl",
 				}},
 				WantStderr: "validation for \"sf\" failed: [InList] argument must be one of [abc def ghi]\n",
@@ -3197,7 +3197,7 @@ func TestExecute(t *testing.T) {
 					Processor: Arg[string]("strArg", testDesc, MinLength[string, string](3)),
 				},
 				Args: []string{"hello"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"strArg": "hello",
 				}},
 			},
@@ -3216,7 +3216,7 @@ func TestExecute(t *testing.T) {
 					Processor: Arg[string]("strArg", testDesc, MinLength[string, string](3)),
 				},
 				Args: []string{"hey"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"strArg": "hey",
 				}},
 			},
@@ -3235,7 +3235,7 @@ func TestExecute(t *testing.T) {
 					Processor: Arg[string]("strArg", testDesc, MinLength[string, string](3)),
 				},
 				Args: []string{"hi"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"strArg": "hi",
 				}},
 				WantStderr: "validation for \"strArg\" failed: [MinLength] length must be at least 3\n",
@@ -3254,10 +3254,10 @@ func TestExecute(t *testing.T) {
 			name: "MaxLength works",
 			etc: &commandtest.ExecuteTestCase{
 				Node: &SimpleNode{
-					Processor: ListArg[int]("strArg", testDesc, 0, commondels.UnboundedList, MaxLength[int, []int](3)),
+					Processor: ListArg[int]("strArg", testDesc, 0, command.UnboundedList, MaxLength[int, []int](3)),
 				},
 				Args: []string{"1234", "56"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"strArg": []int{
 						1234,
 						56,
@@ -3277,10 +3277,10 @@ func TestExecute(t *testing.T) {
 			name: "MaxLength works for exact count match",
 			etc: &commandtest.ExecuteTestCase{
 				Node: &SimpleNode{
-					Processor: ListArg[int]("strArg", testDesc, 0, commondels.UnboundedList, MaxLength[int, []int](3)),
+					Processor: ListArg[int]("strArg", testDesc, 0, command.UnboundedList, MaxLength[int, []int](3)),
 				},
 				Args: []string{"1234", "56", "78901"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"strArg": []int{
 						1234,
 						56,
@@ -3302,10 +3302,10 @@ func TestExecute(t *testing.T) {
 			name: "MaxLength fails",
 			etc: &commandtest.ExecuteTestCase{
 				Node: &SimpleNode{
-					Processor: ListArg[int]("strArg", testDesc, 0, commondels.UnboundedList, MaxLength[int, []int](3)),
+					Processor: ListArg[int]("strArg", testDesc, 0, command.UnboundedList, MaxLength[int, []int](3)),
 				},
 				Args: []string{"1234", "56", "78901", "234"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"strArg": []int{
 						1234,
 						56,
@@ -3335,7 +3335,7 @@ func TestExecute(t *testing.T) {
 					Processor: Arg[string]("strArg", testDesc, Length[string, string](3)),
 				},
 				Args: []string{"hey"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"strArg": "hey",
 				}},
 			},
@@ -3354,7 +3354,7 @@ func TestExecute(t *testing.T) {
 					Processor: Arg[string]("strArg", testDesc, Length[string, string](3)),
 				},
 				Args: []string{"hi"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"strArg": "hi",
 				}},
 				WantStderr: "validation for \"strArg\" failed: [Length] length must be exactly 3\n",
@@ -3375,7 +3375,7 @@ func TestExecute(t *testing.T) {
 					Processor: Arg[string]("strArg", testDesc, Length[string, string](4)),
 				},
 				Args: []string{"howdy"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"strArg": "howdy",
 				}},
 				WantStderr: "validation for \"strArg\" failed: [Length] length must be exactly 4\n",
@@ -3397,7 +3397,7 @@ func TestExecute(t *testing.T) {
 					Processor: Arg[int]("i", testDesc, EQ(24)),
 				},
 				Args: []string{"24"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"i": 24,
 				}},
 			},
@@ -3416,7 +3416,7 @@ func TestExecute(t *testing.T) {
 					Processor: Arg[int]("i", testDesc, EQ(24)),
 				},
 				Args: []string{"25"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"i": 25,
 				}},
 				WantStderr: "validation for \"i\" failed: [EQ] value isn't equal to 24\n",
@@ -3438,7 +3438,7 @@ func TestExecute(t *testing.T) {
 					Processor: Arg[int]("i", testDesc, NEQ(24)),
 				},
 				Args: []string{"25"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"i": 25,
 				}},
 			},
@@ -3457,7 +3457,7 @@ func TestExecute(t *testing.T) {
 					Processor: Arg[int]("i", testDesc, NEQ(24)),
 				},
 				Args: []string{"24"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"i": 24,
 				}},
 				WantStderr: "validation for \"i\" failed: [NEQ] value cannot equal 24\n",
@@ -3479,7 +3479,7 @@ func TestExecute(t *testing.T) {
 					Processor: Arg[int]("i", testDesc, LT(25)),
 				},
 				Args: []string{"24"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"i": 24,
 				}},
 			},
@@ -3498,7 +3498,7 @@ func TestExecute(t *testing.T) {
 					Processor: Arg[int]("i", testDesc, LT(25)),
 				},
 				Args: []string{"25"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"i": 25,
 				}},
 				WantStderr: "validation for \"i\" failed: [LT] value isn't less than 25\n",
@@ -3519,7 +3519,7 @@ func TestExecute(t *testing.T) {
 					Processor: Arg[int]("i", testDesc, LT(25)),
 				},
 				Args: []string{"26"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"i": 26,
 				}},
 				WantStderr: "validation for \"i\" failed: [LT] value isn't less than 25\n",
@@ -3541,7 +3541,7 @@ func TestExecute(t *testing.T) {
 					Processor: Arg[int]("i", testDesc, LTE(25)),
 				},
 				Args: []string{"24"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"i": 24,
 				}},
 			},
@@ -3560,7 +3560,7 @@ func TestExecute(t *testing.T) {
 					Processor: Arg[int]("i", testDesc, LTE(25)),
 				},
 				Args: []string{"25"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"i": 25,
 				}},
 			},
@@ -3579,7 +3579,7 @@ func TestExecute(t *testing.T) {
 					Processor: Arg[int]("i", testDesc, LTE(25)),
 				},
 				Args: []string{"26"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"i": 26,
 				}},
 				WantStderr: "validation for \"i\" failed: [LTE] value isn't less than or equal to 25\n",
@@ -3601,7 +3601,7 @@ func TestExecute(t *testing.T) {
 					Processor: Arg[int]("i", testDesc, GT(25)),
 				},
 				Args: []string{"24"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"i": 24,
 				}},
 				WantStderr: "validation for \"i\" failed: [GT] value isn't greater than 25\n",
@@ -3622,7 +3622,7 @@ func TestExecute(t *testing.T) {
 					Processor: Arg[int]("i", testDesc, GT(25)),
 				},
 				Args: []string{"25"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"i": 25,
 				}},
 				WantStderr: "validation for \"i\" failed: [GT] value isn't greater than 25\n",
@@ -3643,7 +3643,7 @@ func TestExecute(t *testing.T) {
 					Processor: Arg[int]("i", testDesc, GT(25)),
 				},
 				Args: []string{"26"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"i": 26,
 				}},
 			},
@@ -3663,7 +3663,7 @@ func TestExecute(t *testing.T) {
 					Processor: Arg[int]("i", testDesc, GTE(25)),
 				},
 				Args: []string{"24"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"i": 24,
 				}},
 				WantStderr: "validation for \"i\" failed: [GTE] value isn't greater than or equal to 25\n",
@@ -3684,7 +3684,7 @@ func TestExecute(t *testing.T) {
 					Processor: Arg[int]("i", testDesc, GTE(25)),
 				},
 				Args: []string{"25"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"i": 25,
 				}},
 			},
@@ -3703,7 +3703,7 @@ func TestExecute(t *testing.T) {
 					Processor: Arg[int]("i", testDesc, GTE(25)),
 				},
 				Args: []string{"26"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"i": 26,
 				}},
 			},
@@ -3723,7 +3723,7 @@ func TestExecute(t *testing.T) {
 					Processor: Arg[int]("i", testDesc, Positive[int]()),
 				},
 				Args: []string{"-1"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"i": -1,
 				}},
 				WantStderr: "validation for \"i\" failed: [Positive] value isn't positive\n",
@@ -3744,7 +3744,7 @@ func TestExecute(t *testing.T) {
 					Processor: Arg[int]("i", testDesc, Positive[int]()),
 				},
 				Args: []string{"0"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"i": 0,
 				}},
 				WantStderr: "validation for \"i\" failed: [Positive] value isn't positive\n",
@@ -3765,7 +3765,7 @@ func TestExecute(t *testing.T) {
 					Processor: Arg[int]("i", testDesc, Positive[int]()),
 				},
 				Args: []string{"1"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"i": 1,
 				}},
 			},
@@ -3785,7 +3785,7 @@ func TestExecute(t *testing.T) {
 					Processor: Arg[int]("i", testDesc, Negative[int]()),
 				},
 				Args: []string{"-1"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"i": -1,
 				}},
 			},
@@ -3804,7 +3804,7 @@ func TestExecute(t *testing.T) {
 					Processor: Arg[int]("i", testDesc, Negative[int]()),
 				},
 				Args: []string{"0"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"i": 0,
 				}},
 				WantStderr: "validation for \"i\" failed: [Negative] value isn't negative\n",
@@ -3825,7 +3825,7 @@ func TestExecute(t *testing.T) {
 					Processor: Arg[int]("i", testDesc, Negative[int]()),
 				},
 				Args: []string{"1"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"i": 1,
 				}},
 				WantStderr: "validation for \"i\" failed: [Negative] value isn't negative\n",
@@ -3847,7 +3847,7 @@ func TestExecute(t *testing.T) {
 					Processor: Arg[int]("i", testDesc, NonNegative[int]()),
 				},
 				Args: []string{"-1"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"i": -1,
 				}},
 				WantStderr: "validation for \"i\" failed: [NonNegative] value isn't non-negative\n",
@@ -3868,7 +3868,7 @@ func TestExecute(t *testing.T) {
 					Processor: Arg[int]("i", testDesc, NonNegative[int]()),
 				},
 				Args: []string{"0"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"i": 0,
 				}},
 			},
@@ -3887,7 +3887,7 @@ func TestExecute(t *testing.T) {
 					Processor: Arg[int]("i", testDesc, NonNegative[int]()),
 				},
 				Args: []string{"1"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"i": 1,
 				}},
 			},
@@ -3907,7 +3907,7 @@ func TestExecute(t *testing.T) {
 					Processor: Arg[float64]("flArg", testDesc, EQ(2.4)),
 				},
 				Args: []string{"2.4"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"flArg": 2.4,
 				}},
 			},
@@ -3926,7 +3926,7 @@ func TestExecute(t *testing.T) {
 					Processor: Arg[float64]("flArg", testDesc, EQ(2.4)),
 				},
 				Args: []string{"2.5"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"flArg": 2.5,
 				}},
 				WantStderr: "validation for \"flArg\" failed: [EQ] value isn't equal to 2.4\n",
@@ -3948,7 +3948,7 @@ func TestExecute(t *testing.T) {
 					Processor: Arg[float64]("flArg", testDesc, NEQ(2.4)),
 				},
 				Args: []string{"2.5"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"flArg": 2.5,
 				}},
 			},
@@ -3967,7 +3967,7 @@ func TestExecute(t *testing.T) {
 					Processor: Arg[float64]("flArg", testDesc, NEQ(2.4)),
 				},
 				Args: []string{"2.4"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"flArg": 2.4,
 				}},
 				WantStderr: "validation for \"flArg\" failed: [NEQ] value cannot equal 2.4\n",
@@ -3989,7 +3989,7 @@ func TestExecute(t *testing.T) {
 					Processor: Arg[float64]("flArg", testDesc, LT(2.5)),
 				},
 				Args: []string{"2.4"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"flArg": 2.4,
 				}},
 			},
@@ -4008,7 +4008,7 @@ func TestExecute(t *testing.T) {
 					Processor: Arg[float64]("flArg", testDesc, LT(2.5)),
 				},
 				Args: []string{"2.5"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"flArg": 2.5,
 				}},
 				WantStderr: "validation for \"flArg\" failed: [LT] value isn't less than 2.5\n",
@@ -4029,7 +4029,7 @@ func TestExecute(t *testing.T) {
 					Processor: Arg[float64]("flArg", testDesc, LT(2.5)),
 				},
 				Args: []string{"2.6"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"flArg": 2.6,
 				}},
 				WantStderr: "validation for \"flArg\" failed: [LT] value isn't less than 2.5\n",
@@ -4051,7 +4051,7 @@ func TestExecute(t *testing.T) {
 					Processor: Arg[float64]("flArg", testDesc, LTE(2.5)),
 				},
 				Args: []string{"2.4"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"flArg": 2.4,
 				}},
 			},
@@ -4070,7 +4070,7 @@ func TestExecute(t *testing.T) {
 					Processor: Arg[float64]("flArg", testDesc, LTE(2.5)),
 				},
 				Args: []string{"2.5"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"flArg": 2.5,
 				}},
 			},
@@ -4089,7 +4089,7 @@ func TestExecute(t *testing.T) {
 					Processor: Arg[float64]("flArg", testDesc, LTE(2.5)),
 				},
 				Args: []string{"2.6"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"flArg": 2.6,
 				}},
 				WantStderr: "validation for \"flArg\" failed: [LTE] value isn't less than or equal to 2.5\n",
@@ -4111,7 +4111,7 @@ func TestExecute(t *testing.T) {
 					Processor: Arg[float64]("flArg", testDesc, GT(2.5)),
 				},
 				Args: []string{"2.4"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"flArg": 2.4,
 				}},
 				WantStderr: "validation for \"flArg\" failed: [GT] value isn't greater than 2.5\n",
@@ -4132,7 +4132,7 @@ func TestExecute(t *testing.T) {
 					Processor: Arg[float64]("flArg", testDesc, GT(2.5)),
 				},
 				Args: []string{"2.5"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"flArg": 2.5,
 				}},
 				WantStderr: "validation for \"flArg\" failed: [GT] value isn't greater than 2.5\n",
@@ -4153,7 +4153,7 @@ func TestExecute(t *testing.T) {
 					Processor: Arg[float64]("flArg", testDesc, GT(2.5)),
 				},
 				Args: []string{"2.6"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"flArg": 2.6,
 				}},
 			},
@@ -4173,7 +4173,7 @@ func TestExecute(t *testing.T) {
 					Processor: Arg[float64]("flArg", testDesc, GTE(2.5)),
 				},
 				Args: []string{"2.4"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"flArg": 2.4,
 				}},
 				WantStderr: "validation for \"flArg\" failed: [GTE] value isn't greater than or equal to 2.5\n",
@@ -4194,7 +4194,7 @@ func TestExecute(t *testing.T) {
 					Processor: Arg[float64]("flArg", testDesc, GTE(2.5)),
 				},
 				Args: []string{"2.5"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"flArg": 2.5,
 				}},
 			},
@@ -4213,7 +4213,7 @@ func TestExecute(t *testing.T) {
 					Processor: Arg[float64]("flArg", testDesc, GTE(2.5)),
 				},
 				Args: []string{"2.6"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"flArg": 2.6,
 				}},
 			},
@@ -4233,7 +4233,7 @@ func TestExecute(t *testing.T) {
 					Processor: Arg[float64]("flArg", testDesc, Positive[float64]()),
 				},
 				Args: []string{"-0.1"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"flArg": -0.1,
 				}},
 				WantStderr: "validation for \"flArg\" failed: [Positive] value isn't positive\n",
@@ -4254,7 +4254,7 @@ func TestExecute(t *testing.T) {
 					Processor: Arg[float64]("flArg", testDesc, Positive[float64]()),
 				},
 				Args: []string{"0"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"flArg": 0.0,
 				}},
 				WantStderr: "validation for \"flArg\" failed: [Positive] value isn't positive\n",
@@ -4275,7 +4275,7 @@ func TestExecute(t *testing.T) {
 					Processor: Arg[float64]("flArg", testDesc, Positive[float64]()),
 				},
 				Args: []string{"0.1"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"flArg": 0.1,
 				}},
 			},
@@ -4295,7 +4295,7 @@ func TestExecute(t *testing.T) {
 					Processor: Arg[float64]("flArg", testDesc, Negative[float64]()),
 				},
 				Args: []string{"-0.1"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"flArg": -0.1,
 				}},
 			},
@@ -4314,7 +4314,7 @@ func TestExecute(t *testing.T) {
 					Processor: Arg[float64]("flArg", testDesc, Negative[float64]()),
 				},
 				Args: []string{"0"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"flArg": 0.0,
 				}},
 				WantStderr: "validation for \"flArg\" failed: [Negative] value isn't negative\n",
@@ -4335,7 +4335,7 @@ func TestExecute(t *testing.T) {
 					Processor: Arg[float64]("flArg", testDesc, Negative[float64]()),
 				},
 				Args: []string{"0.1"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"flArg": 0.1,
 				}},
 				WantStderr: "validation for \"flArg\" failed: [Negative] value isn't negative\n",
@@ -4357,7 +4357,7 @@ func TestExecute(t *testing.T) {
 					Processor: Arg[float64]("flArg", testDesc, NonNegative[float64]()),
 				},
 				Args: []string{"-0.1"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"flArg": -0.1,
 				}},
 				WantStderr: "validation for \"flArg\" failed: [NonNegative] value isn't non-negative\n",
@@ -4378,7 +4378,7 @@ func TestExecute(t *testing.T) {
 					Processor: Arg[float64]("flArg", testDesc, NonNegative[float64]()),
 				},
 				Args: []string{"0"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"flArg": 0.0,
 				}},
 			},
@@ -4397,7 +4397,7 @@ func TestExecute(t *testing.T) {
 					Processor: Arg[float64]("flArg", testDesc, NonNegative[float64]()),
 				},
 				Args: []string{"0.1"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"flArg": 0.1,
 				}},
 			},
@@ -4417,7 +4417,7 @@ func TestExecute(t *testing.T) {
 					Processor: Arg[int]("iArg", testDesc, Between(-3, 4, true)),
 				},
 				Args: []string{"-4"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"iArg": -4,
 				}},
 				WantStderr: "validation for \"iArg\" failed: [Between] value is less than lower bound (-3)\n",
@@ -4438,7 +4438,7 @@ func TestExecute(t *testing.T) {
 					Processor: Arg[int]("iArg", testDesc, Between(-3, 4, true)),
 				},
 				Args: []string{"-3"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"iArg": -3,
 				}},
 			},
@@ -4457,7 +4457,7 @@ func TestExecute(t *testing.T) {
 					Processor: Arg[int]("iArg", testDesc, Between(-3, 4, true)),
 				},
 				Args: []string{"0"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"iArg": 0,
 				}},
 			},
@@ -4476,7 +4476,7 @@ func TestExecute(t *testing.T) {
 					Processor: Arg[int]("iArg", testDesc, Between(-3, 4, true)),
 				},
 				Args: []string{"4"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"iArg": 4,
 				}},
 			},
@@ -4495,7 +4495,7 @@ func TestExecute(t *testing.T) {
 					Processor: Arg[int]("iArg", testDesc, Between(-3, 4, true)),
 				},
 				Args: []string{"5"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"iArg": 5,
 				}},
 				WantStderr: "validation for \"iArg\" failed: [Between] value is greater than upper bound (4)\n",
@@ -4517,7 +4517,7 @@ func TestExecute(t *testing.T) {
 					Processor: Arg[int]("iArg", testDesc, Between(-3, 4, false)),
 				},
 				Args: []string{"-4"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"iArg": -4,
 				}},
 				WantStderr: "validation for \"iArg\" failed: [Between] value is less than lower bound (-3)\n",
@@ -4538,7 +4538,7 @@ func TestExecute(t *testing.T) {
 					Processor: Arg[int]("iArg", testDesc, Between(-3, 4, false)),
 				},
 				Args: []string{"-3"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"iArg": -3,
 				}},
 				WantStderr: "validation for \"iArg\" failed: [Between] value equals exclusive lower bound (-3)\n",
@@ -4559,7 +4559,7 @@ func TestExecute(t *testing.T) {
 					Processor: Arg[int]("iArg", testDesc, Between(-3, 4, false)),
 				},
 				Args: []string{"0"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"iArg": 0,
 				}},
 			},
@@ -4578,7 +4578,7 @@ func TestExecute(t *testing.T) {
 					Processor: Arg[int]("iArg", testDesc, Between(-3, 4, false)),
 				},
 				Args: []string{"4"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"iArg": 4,
 				}},
 				WantStderr: "validation for \"iArg\" failed: [Between] value equals exclusive upper bound (4)\n",
@@ -4599,7 +4599,7 @@ func TestExecute(t *testing.T) {
 					Processor: Arg[int]("iArg", testDesc, Between(-3, 4, false)),
 				},
 				Args: []string{"5"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"iArg": 5,
 				}},
 				WantStderr: "validation for \"iArg\" failed: [Between] value is greater than upper bound (4)\n",
@@ -4647,7 +4647,7 @@ func TestExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Node: &SimpleNode{Processor: FlagProcessor(Flag[string]("strFlag", 'f', testDesc))},
 				Args: []string{"--strFlag", "hello"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"strFlag": "hello",
 				}},
 			},
@@ -4665,7 +4665,7 @@ func TestExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Node: &SimpleNode{Processor: FlagProcessor(Flag[string]("strFlag", 'f', testDesc))},
 				Args: []string{"-f", "hello"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"strFlag": "hello",
 				}},
 			},
@@ -4683,7 +4683,7 @@ func TestExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Node: &SimpleNode{Processor: FlagProcessor(Flag[string]("strFlag", FlagNoShortName, testDesc))},
 				Args: []string{"--strFlag", "hello"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"strFlag": "hello",
 				}},
 			},
@@ -4704,7 +4704,7 @@ func TestExecute(t *testing.T) {
 					ListArg[string]("filler", testDesc, 1, 2),
 				),
 				Args: []string{"un", "--strFlag", "hello", "deux"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"strFlag": "hello",
 					"filler":  []string{"un", "deux"},
 				}},
@@ -4728,7 +4728,7 @@ func TestExecute(t *testing.T) {
 					ListArg[string]("filler", testDesc, 1, 2),
 				),
 				Args: []string{"uno", "dos", "-f", "hello"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"filler":  []string{"uno", "dos"},
 					"strFlag": "hello",
 				}},
@@ -4753,7 +4753,7 @@ func TestExecute(t *testing.T) {
 					ListArg[string]("filler", testDesc, 1, 2),
 				),
 				Args: []string{"un", "deux", "-f", "3", "quatre"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"filler":  []string{"un", "deux", "quatre"},
 					"intFlag": 3,
 				}},
@@ -4803,7 +4803,7 @@ func TestExecute(t *testing.T) {
 					ListArg[string]("filler", testDesc, 1, 2),
 				),
 				Args: []string{"--floatFlag", "-1.2", "three"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"filler":    []string{"three"},
 					"floatFlag": -1.2,
 				}},
@@ -4849,7 +4849,7 @@ func TestExecute(t *testing.T) {
 					ListArg[string]("filler", testDesc, 1, 2),
 				),
 				Args: []string{"okay", "--boolFlag", "then"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"filler":   []string{"okay", "then"},
 					"boolFlag": true,
 				}},
@@ -4872,7 +4872,7 @@ func TestExecute(t *testing.T) {
 					ListArg[string]("filler", testDesc, 1, 2),
 				),
 				Args: []string{"okay", "-b", "then"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"filler":   []string{"okay", "then"},
 					"boolFlag": true,
 				}},
@@ -4896,7 +4896,7 @@ func TestExecute(t *testing.T) {
 					ListArg[string]("filler", testDesc, 1, 2),
 				),
 				Args: []string{"un", "--slFlag", "hello", "there"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"filler": []string{"un"},
 					"slFlag": []string{"hello", "there"},
 				}},
@@ -4922,7 +4922,7 @@ func TestExecute(t *testing.T) {
 				Args:       []string{"un", "--slFlag", "hello"},
 				WantStderr: "Argument \"slFlag\" requires at least 2 arguments, got 1\n",
 				WantErr:    fmt.Errorf(`Argument "slFlag" requires at least 2 arguments, got 1`),
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"slFlag": []string{"hello"},
 				}},
 			},
@@ -4946,7 +4946,7 @@ func TestExecute(t *testing.T) {
 					ListArg[string]("filler", testDesc, 1, 2),
 				),
 				Args: []string{"un", "-i", "2", "4", "8", "16", "32", "64"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"filler": []string{"un", "64"},
 					"ilFlag": []int{2, 4, 8, 16, 32},
 				}},
@@ -5002,7 +5002,7 @@ func TestExecute(t *testing.T) {
 					ListArg[string]("filler", testDesc, 1, 3),
 				),
 				Args: []string{"un", "-f", "2", "-4.4", "0.8", "16.16", "-32", "64"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"filler": []string{"un", "16.16", "-32", "64"},
 					"flFlag": []float64{2, -4.4, 0.8},
 				}},
@@ -5055,13 +5055,13 @@ func TestExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Node: SerialNodes(
 					FlagProcessor(
-						ListFlag[string]("alpha", 'a', testDesc, 0, commondels.UnboundedList),
-						ListFlag[string]("bravo", 'b', testDesc, 0, commondels.UnboundedList),
-						ListFlag[string]("charlie", 'c', testDesc, 0, commondels.UnboundedList),
+						ListFlag[string]("alpha", 'a', testDesc, 0, command.UnboundedList),
+						ListFlag[string]("bravo", 'b', testDesc, 0, command.UnboundedList),
+						ListFlag[string]("charlie", 'c', testDesc, 0, command.UnboundedList),
 					),
 				),
 				Args: []string{"--alpha", "hey", "there", "--dude", "--bravo", "yay", "--charlie"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"alpha": []string{"hey", "there", "--dude"},
 					"bravo": []string{"yay"},
 				}},
@@ -5085,13 +5085,13 @@ func TestExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Node: SerialNodes(
 					FlagProcessor(
-						ListFlag[string]("alpha", 'a', testDesc, 0, commondels.UnboundedList),
-						ListFlag[string]("bravo", 'b', testDesc, 0, commondels.UnboundedList),
-						ListFlag[string]("charlie", 'c', testDesc, 0, commondels.UnboundedList),
+						ListFlag[string]("alpha", 'a', testDesc, 0, command.UnboundedList),
+						ListFlag[string]("bravo", 'b', testDesc, 0, command.UnboundedList),
+						ListFlag[string]("charlie", 'c', testDesc, 0, command.UnboundedList),
 					),
 				),
 				Args: []string{"-a", "hey", "there", "-d", "-b", "yay", "-c"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"alpha": []string{"hey", "there", "-d"},
 					"bravo": []string{"yay"},
 				}},
@@ -5115,7 +5115,7 @@ func TestExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Node: SerialNodes(
 					FlagProcessor(
-						ListFlag[string]("alpha", 'a', testDesc, 0, commondels.UnboundedList),
+						ListFlag[string]("alpha", 'a', testDesc, 0, command.UnboundedList),
 						BoolFlag("Q", 'q', testDesc),
 						BoolFlag("W", 'w', testDesc),
 						BoolFlag("E", 'e', testDesc),
@@ -5123,7 +5123,7 @@ func TestExecute(t *testing.T) {
 					),
 				),
 				Args: []string{"-a", "hey", "there", "-qwer"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"alpha": []string{"hey", "there"},
 					"Q":     true,
 					"W":     true,
@@ -5147,7 +5147,7 @@ func TestExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Node: SerialNodes(
 					FlagProcessor(
-						ListFlag[string]("alpha", 'a', testDesc, 0, commondels.UnboundedList),
+						ListFlag[string]("alpha", 'a', testDesc, 0, command.UnboundedList),
 						BoolFlag("Q", 'q', testDesc),
 						BoolFlag("W", 'w', testDesc),
 						BoolFlag("E", 'e', testDesc),
@@ -5155,7 +5155,7 @@ func TestExecute(t *testing.T) {
 					),
 				),
 				Args: []string{"-a", "hey", "there", "-qwert"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"alpha": []string{"hey", "there", "-qwert"},
 				}},
 			},
@@ -5181,10 +5181,10 @@ func TestExecute(t *testing.T) {
 						ListFlag[string]("names", 'n', testDesc, 1, 2),
 						Flag[int]("rating", 'r', testDesc),
 					),
-					ListArg[string]("extra", testDesc, 0, commondels.UnboundedList),
+					ListArg[string]("extra", testDesc, 0, command.UnboundedList),
 				),
 				Args: []string{"its", "--boo", "a", "-r", "9", "secret", "-n", "greggar", "groog", "beggars", "--coordinates", "2.2", "4.4", "message."},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"boo":         true,
 					"extra":       []string{"its", "a", "secret", "message."},
 					"names":       []string{"greggar", "groog", "beggars"},
@@ -5225,10 +5225,10 @@ func TestExecute(t *testing.T) {
 						ListFlag[string]("names", 'n', testDesc, 1, 2),
 						Flag[int]("rating", 'r', testDesc),
 					),
-					ListArg[string]("extra", testDesc, 0, commondels.UnboundedList),
+					ListArg[string]("extra", testDesc, 0, command.UnboundedList),
 				),
 				Args: []string{"its", "-b", "a", "-r", "9", "--", "secret", "--yay", "-n", "greggar", "groog", "beggars", "--coordinates", "2.2", "4.4", "message."},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"boo":    true,
 					"extra":  []string{"its", "a", "secret", "--yay", "-n", "greggar", "groog", "beggars", "--coordinates", "2.2", "4.4", "message."},
 					"rating": 9,
@@ -5267,7 +5267,7 @@ func TestExecute(t *testing.T) {
 					),
 				),
 				Args: []string{"--light"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"light": "hello there",
 				}},
 			},
@@ -5298,7 +5298,7 @@ func TestExecute(t *testing.T) {
 					),
 				),
 				Args: []string{"--light"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"light": "hello there",
 				}},
 			},
@@ -5318,7 +5318,7 @@ func TestExecute(t *testing.T) {
 						BoolValuesFlag("light", 'l', testDesc, "hello there", "general kenobi"),
 					),
 				),
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"light": "general kenobi",
 				}},
 			},
@@ -5337,7 +5337,7 @@ func TestExecute(t *testing.T) {
 					),
 				),
 				Args: []string{"-qwer"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"quick":    true,
 					"where":    4.56,
 					"everyone": true,
@@ -5391,7 +5391,7 @@ func TestExecute(t *testing.T) {
 					OptionalArg[string]("LEFTOVERS", testDesc),
 				),
 				Args: []string{"-nop"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"LEFTOVERS": "-nop",
 				}},
 			},
@@ -5412,12 +5412,12 @@ func TestExecute(t *testing.T) {
 						BoolFlag("everyone", 'e', testDesc),
 						BoolFlag("quick", 'q', testDesc),
 						BoolFlag("run", 'r', testDesc),
-						ListFlag[int]("two", 't', testDesc, 0, commondels.UnboundedList),
+						ListFlag[int]("two", 't', testDesc, 0, command.UnboundedList),
 						BoolFlag("where", 'w', testDesc),
 					),
 				),
 				Args: []string{"-ert"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"everyone": true,
 					"run":      true,
 				}},
@@ -5447,7 +5447,7 @@ func TestExecute(t *testing.T) {
 					),
 				),
 				Args: []string{"-qwerq"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"quick":    true,
 					"where":    4.56,
 					"everyone": true,
@@ -5478,7 +5478,7 @@ func TestExecute(t *testing.T) {
 					),
 				),
 				Args: []string{"-q", "--quick"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"quick": true,
 				}},
 				WantErr:    fmt.Errorf(`Flag "quick" has already been set`),
@@ -5507,7 +5507,7 @@ func TestExecute(t *testing.T) {
 					),
 				),
 				Args: []string{"-qwer", "--quick"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"quick":    true,
 					"where":    4.56,
 					"everyone": true,
@@ -5539,7 +5539,7 @@ func TestExecute(t *testing.T) {
 					),
 				),
 				Args: []string{"--quick", "-weqr"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"quick":    true,
 					"where":    4.56,
 					"everyone": true,
@@ -5567,7 +5567,7 @@ func TestExecute(t *testing.T) {
 					),
 				),
 				Args: []string{"--of"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"of": "dfltValue",
 				}},
 			},
@@ -5589,7 +5589,7 @@ func TestExecute(t *testing.T) {
 					),
 				),
 				Args: []string{"--of", "--sf", "hello"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"of": "dfltValue",
 					"sf": "hello",
 				}},
@@ -5613,7 +5613,7 @@ func TestExecute(t *testing.T) {
 					),
 				),
 				Args: []string{"--of", "other"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"of": "other",
 				}},
 			},
@@ -5675,10 +5675,10 @@ func TestExecute(t *testing.T) {
 					FlagProcessor(
 						ItemizedListFlag[string]("ilf", 'i', testDesc),
 					),
-					ListArg[string]("sl", testDesc, 0, commondels.UnboundedList),
+					ListArg[string]("sl", testDesc, 0, command.UnboundedList),
 				),
 				Args: []string{"--ilf", "i1", "other"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"ilf": []string{"i1"},
 					"sl":  []string{"other"},
 				}},
@@ -5700,10 +5700,10 @@ func TestExecute(t *testing.T) {
 					FlagProcessor(
 						ItemizedListFlag[string]("ilf", 'i', testDesc),
 					),
-					ListArg[string]("sl", testDesc, 0, commondels.UnboundedList),
+					ListArg[string]("sl", testDesc, 0, command.UnboundedList),
 				),
 				Args: []string{"--ilf", "i1", "other", "thing", "-i", "robot", "--ilf", "phone", "okay", "-i", "enough", "then"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"ilf": []string{"i1", "robot", "phone", "enough"},
 					"sl":  []string{"other", "thing", "okay", "then"},
 				}},
@@ -5732,15 +5732,15 @@ func TestExecute(t *testing.T) {
 			name: "args get transformed",
 			etc: &commandtest.ExecuteTestCase{
 				Node: SerialNodes(
-					Arg[string]("strArg", testDesc, &Transformer[string]{F: func(v string, d *commondels.Data) (string, error) {
+					Arg[string]("strArg", testDesc, &Transformer[string]{F: func(v string, d *command.Data) (string, error) {
 						return strings.ToUpper(v), nil
 					}}),
-					Arg[int]("intArg", testDesc, &Transformer[int]{F: func(v int, d *commondels.Data) (int, error) {
+					Arg[int]("intArg", testDesc, &Transformer[int]{F: func(v int, d *command.Data) (int, error) {
 						return 10 * v, nil
 					}}),
 				),
 				Args: []string{"hello", "12"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"strArg": "HELLO",
 					"intArg": 120,
 				}},
@@ -5755,12 +5755,12 @@ func TestExecute(t *testing.T) {
 			name: "list arg get transformed with TransformerList",
 			etc: &commandtest.ExecuteTestCase{
 				Node: SerialNodes(
-					ListArg[string]("sl", testDesc, 2, 3, TransformerList(&Transformer[string]{F: func(v string, d *commondels.Data) (string, error) {
+					ListArg[string]("sl", testDesc, 2, 3, TransformerList(&Transformer[string]{F: func(v string, d *command.Data) (string, error) {
 						return strings.ToUpper(v), nil
 					}})),
 				),
 				Args: []string{"hello", "there", "general", "kenobi"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"sl": []string{"HELLO", "THERE", "GENERAL", "KENOBI"},
 				}},
 			},
@@ -5779,7 +5779,7 @@ func TestExecute(t *testing.T) {
 			name: "list arg transformer fails if number of args increases",
 			etc: &commandtest.ExecuteTestCase{
 				Node: SerialNodes(
-					ListArg[string]("sl", testDesc, 2, 3, &Transformer[[]string]{F: func(v []string, d *commondels.Data) ([]string, error) {
+					ListArg[string]("sl", testDesc, 2, 3, &Transformer[[]string]{F: func(v []string, d *command.Data) ([]string, error) {
 						return append(v, "!"), nil
 					}}),
 				),
@@ -5802,7 +5802,7 @@ func TestExecute(t *testing.T) {
 			name: "list arg transformer fails if number of args decreases",
 			etc: &commandtest.ExecuteTestCase{
 				Node: SerialNodes(
-					ListArg[string]("sl", testDesc, 2, 3, &Transformer[[]string]{F: func(v []string, d *commondels.Data) ([]string, error) {
+					ListArg[string]("sl", testDesc, 2, 3, &Transformer[[]string]{F: func(v []string, d *command.Data) ([]string, error) {
 						return v[:len(v)-1], nil
 					}}),
 				),
@@ -5839,7 +5839,7 @@ func TestExecute(t *testing.T) {
 					Arg[int]("i", testDesc),
 				),
 				Args: []string{"hello.go", "248"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"s": "hello.go",
 					"i": 248,
 				}},
@@ -5862,7 +5862,7 @@ func TestExecute(t *testing.T) {
 					Arg[int]("i", testDesc),
 				),
 				Args: []string{"hello.go:248"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"s": "hello.go",
 					"i": 248,
 				}},
@@ -5906,7 +5906,7 @@ func TestExecute(t *testing.T) {
 					Arg[int]("i2", testDesc),
 				),
 				Args: []string{"hello.go:248", "there.txt:139"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"s":  "hello.go",
 					"i":  248,
 					"s2": "there.txt",
@@ -5945,7 +5945,7 @@ func TestExecute(t *testing.T) {
 			name: "branch node requires branch argument",
 			etc: &commandtest.ExecuteTestCase{
 				Node: &BranchNode{
-					Branches: map[string]commondels.Node{
+					Branches: map[string]command.Node{
 						"h": printNode("hello"),
 						"b": printNode("goodbye"),
 					},
@@ -5958,7 +5958,7 @@ func TestExecute(t *testing.T) {
 			name: "branch node requires matching branch argument",
 			etc: &commandtest.ExecuteTestCase{
 				Node: &BranchNode{
-					Branches: map[string]commondels.Node{
+					Branches: map[string]command.Node{
 						"h": printNode("hello"),
 						"b": printNode("goodbye"),
 					},
@@ -5980,7 +5980,7 @@ func TestExecute(t *testing.T) {
 			name: "branch node forwards to proper node",
 			etc: &commandtest.ExecuteTestCase{
 				Node: &BranchNode{
-					Branches: map[string]commondels.Node{
+					Branches: map[string]command.Node{
 						"h": printNode("hello"),
 						"b": printNode("goodbye"),
 					},
@@ -6000,7 +6000,7 @@ func TestExecute(t *testing.T) {
 			name: "branch node forwards to default if none provided",
 			etc: &commandtest.ExecuteTestCase{
 				Node: &BranchNode{
-					Branches: map[string]commondels.Node{
+					Branches: map[string]command.Node{
 						"h": printNode("hello"),
 						"b": printNode("goodbye"),
 					},
@@ -6013,15 +6013,15 @@ func TestExecute(t *testing.T) {
 			name: "branch node forwards to default if unknown provided",
 			etc: &commandtest.ExecuteTestCase{
 				Node: &BranchNode{
-					Branches: map[string]commondels.Node{
+					Branches: map[string]command.Node{
 						"h": printNode("hello"),
 						"b": printNode("goodbye"),
 					},
-					Default: SerialNodes(ListArg[string]("sl", testDesc, 0, commondels.UnboundedList), printArgsNode()),
+					Default: SerialNodes(ListArg[string]("sl", testDesc, 0, command.UnboundedList), printArgsNode()),
 				},
 				Args:       []string{"good", "morning"},
 				WantStdout: "sl: [good morning]\n",
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"sl": []string{"good", "morning"},
 				}},
 			},
@@ -6039,7 +6039,7 @@ func TestExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"B"},
 				Node: &BranchNode{
-					Branches: map[string]commondels.Node{
+					Branches: map[string]command.Node{
 						"h": printNode("hello"),
 						"b": printNode("goodbye"),
 					},
@@ -6063,7 +6063,7 @@ func TestExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"uh"},
 				Node: &BranchNode{
-					Branches: map[string]commondels.Node{
+					Branches: map[string]command.Node{
 						"h": printNode("hello"),
 						"b": printNode("goodbye"),
 					},
@@ -6088,16 +6088,16 @@ func TestExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"uh"},
 				Node: &BranchNode{
-					Branches: map[string]commondels.Node{
+					Branches: map[string]command.Node{
 						"h": printNode("hello"),
 						"b": printNode("goodbye"),
 					},
-					Default: SerialNodes(ListArg[string]("sl", testDesc, 0, commondels.UnboundedList), printArgsNode()),
+					Default: SerialNodes(ListArg[string]("sl", testDesc, 0, command.UnboundedList), printArgsNode()),
 					Synonyms: BranchSynonyms(map[string][]string{
 						"o": {"uh"},
 					}),
 				},
-				WantData: &commondels.Data{
+				WantData: &command.Data{
 					Values: map[string]interface{}{
 						"sl": []string{"uh"},
 					},
@@ -6117,7 +6117,7 @@ func TestExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"bee"},
 				Node: &BranchNode{
-					Branches: map[string]commondels.Node{
+					Branches: map[string]command.Node{
 						"h":          printNode("hello"),
 						"b bee B Be": printNode("goodbye"),
 					},
@@ -6215,7 +6215,7 @@ func TestExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Node: SerialNodes(sampleRepeaterProcessor(3, 0)),
 				Args: []string{"k1", "100", "k2", "200"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"keys":   []string{"k1", "k2"},
 					"values": []int{100, 200},
 				}},
@@ -6238,7 +6238,7 @@ func TestExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Node: SerialNodes(sampleRepeaterProcessor(1, 1)),
 				Args: []string{"k1", "100", "k2"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"keys":   []string{"k1", "k2"},
 					"values": []int{100},
 				}},
@@ -6260,7 +6260,7 @@ func TestExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Node: SerialNodes(sampleRepeaterProcessor(1, 0)),
 				Args: []string{"k1", "100", "k2", "200"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"keys":   []string{"k1"},
 					"values": []int{100},
 				}},
@@ -6294,7 +6294,7 @@ func TestExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Node: SerialNodes(sampleRepeaterProcessor(2, 0)),
 				Args: []string{"k1", "100", "k2", "200"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"keys":   []string{"k1", "k2"},
 					"values": []int{100, 200},
 				}},
@@ -6315,7 +6315,7 @@ func TestExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Node: SerialNodes(sampleRepeaterProcessor(2, 3)),
 				Args: []string{"k1", "100", "k2", "200"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"keys":   []string{"k1", "k2"},
 					"values": []int{100, 200},
 				}},
@@ -6336,7 +6336,7 @@ func TestExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Node: SerialNodes(sampleRepeaterProcessor(2, 3)),
 				Args: []string{"k1", "100", "k2", "200"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"keys":   []string{"k1", "k2"},
 					"values": []int{100, 200},
 				}},
@@ -6357,7 +6357,7 @@ func TestExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Node: SerialNodes(sampleRepeaterProcessor(2, 0)),
 				Args: []string{"k1", "100", "k2", "200"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"keys":   []string{"k1", "k2"},
 					"values": []int{100, 200},
 				}},
@@ -6378,7 +6378,7 @@ func TestExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Node: SerialNodes(sampleRepeaterProcessor(1, 1)),
 				Args: []string{"k1", "100", "k2", "200"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"keys":   []string{"k1", "k2"},
 					"values": []int{100, 200},
 				}},
@@ -6397,9 +6397,9 @@ func TestExecute(t *testing.T) {
 		{
 			name: "NodeRepeater with unlimited optional accepts a bunch",
 			etc: &commandtest.ExecuteTestCase{
-				Node: SerialNodes(sampleRepeaterProcessor(1, commondels.UnboundedList)),
+				Node: SerialNodes(sampleRepeaterProcessor(1, command.UnboundedList)),
 				Args: []string{"k1", "100", "k2", "200", "k3", "300", "k4", "400", "...", "0", "kn", "999"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"keys":   []string{"k1", "k2", "k3", "k4", "...", "kn"},
 					"values": []int{100, 200, 300, 400, 0, 999},
 				}},
@@ -6428,11 +6428,11 @@ func TestExecute(t *testing.T) {
 			name: "Handles broken list",
 			etc: &commandtest.ExecuteTestCase{
 				Node: SerialNodes(
-					ListArg[string]("SL", testDesc, 1, commondels.UnboundedList, ListUntilSymbol("ghi")),
-					ListArg[string]("SL2", testDesc, 0, commondels.UnboundedList),
+					ListArg[string]("SL", testDesc, 1, command.UnboundedList, ListUntilSymbol("ghi")),
+					ListArg[string]("SL2", testDesc, 0, command.UnboundedList),
 				),
 				Args: []string{"abc", "def", "ghi", "jkl"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"SL":  []string{"abc", "def"},
 					"SL2": []string{"ghi", "jkl"},
 				}},
@@ -6452,10 +6452,10 @@ func TestExecute(t *testing.T) {
 			name: "List breaker before min value",
 			etc: &commandtest.ExecuteTestCase{
 				Node: SerialNodes(
-					ListArg[string]("SL", testDesc, 3, commondels.UnboundedList, ListUntilSymbol("ghi")),
+					ListArg[string]("SL", testDesc, 3, command.UnboundedList, ListUntilSymbol("ghi")),
 				),
 				Args: []string{"abc", "def", "ghi", "jkl"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"SL": []string{"abc", "def"},
 				}},
 				WantErr:    fmt.Errorf(`Argument "SL" requires at least 3 arguments, got 2`),
@@ -6477,15 +6477,15 @@ func TestExecute(t *testing.T) {
 			name: "Handles broken list with discard",
 			etc: &commandtest.ExecuteTestCase{
 				Node: SerialNodes(
-					ListArg[string]("SL", testDesc, 1, commondels.UnboundedList, func() *ListBreaker[[]string] {
+					ListArg[string]("SL", testDesc, 1, command.UnboundedList, func() *ListBreaker[[]string] {
 						li := ListUntilSymbol("ghi")
 						li.Discard = true
 						return li
 					}()),
-					ListArg[string]("SL2", testDesc, 0, commondels.UnboundedList),
+					ListArg[string]("SL2", testDesc, 0, command.UnboundedList),
 				),
 				Args: []string{"abc", "def", "ghi", "jkl"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"SL":  []string{"abc", "def"},
 					"SL2": []string{"jkl"},
 				}},
@@ -6505,11 +6505,11 @@ func TestExecute(t *testing.T) {
 			name: "Handles unbroken list",
 			etc: &commandtest.ExecuteTestCase{
 				Node: SerialNodes(
-					ListArg[string]("SL", testDesc, 1, commondels.UnboundedList, ListUntilSymbol("ghi")),
-					ListArg[string]("SL2", testDesc, 0, commondels.UnboundedList),
+					ListArg[string]("SL", testDesc, 1, command.UnboundedList, ListUntilSymbol("ghi")),
+					ListArg[string]("SL2", testDesc, 0, command.UnboundedList),
 				),
 				Args: []string{"abc", "def", "ghif", "jkl"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"SL": []string{"abc", "def", "ghif", "jkl"},
 				}},
 			},
@@ -6528,11 +6528,11 @@ func TestExecute(t *testing.T) {
 			name: "Fails if arguments required after broken list",
 			etc: &commandtest.ExecuteTestCase{
 				Node: SerialNodes(
-					ListArg[string]("SL", testDesc, 1, commondels.UnboundedList, ListUntilSymbol("ghi")),
-					ListArg[string]("SL2", testDesc, 1, commondels.UnboundedList),
+					ListArg[string]("SL", testDesc, 1, command.UnboundedList, ListUntilSymbol("ghi")),
+					ListArg[string]("SL2", testDesc, 1, command.UnboundedList),
 				),
 				Args: []string{"abc", "def", "ghif", "jkl"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"SL": []string{"abc", "def", "ghif", "jkl"},
 				}},
 				WantErr:    fmt.Errorf(`Argument "SL2" requires at least 1 argument, got 0`),
@@ -6554,10 +6554,10 @@ func TestExecute(t *testing.T) {
 			name: "StringListListProcessor works if no breakers",
 			etc: &commandtest.ExecuteTestCase{
 				Node: SerialNodes(
-					StringListListProcessor("SLL", testDesc, "|", 1, commondels.UnboundedList),
+					StringListListProcessor("SLL", testDesc, "|", 1, command.UnboundedList),
 				),
 				Args: []string{"abc", "def", "ghi", "jkl"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"SLL": [][]string{
 						{"abc", "def", "ghi", "jkl"},
 					},
@@ -6578,10 +6578,10 @@ func TestExecute(t *testing.T) {
 			name: "StringListListProcessor works with unbounded list",
 			etc: &commandtest.ExecuteTestCase{
 				Node: SerialNodes(
-					StringListListProcessor("SLL", testDesc, "|", 1, commondels.UnboundedList),
+					StringListListProcessor("SLL", testDesc, "|", 1, command.UnboundedList),
 				),
 				Args: []string{"abc", "def", "|", "ghi", "||", "|", "jkl"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"SLL": [][]string{
 						{"abc", "def"},
 						{"ghi", "||"},
@@ -6610,7 +6610,7 @@ func TestExecute(t *testing.T) {
 					StringListListProcessor("SLL", testDesc, "|", 1, 2),
 				),
 				Args: []string{"abc", "def", "|", "ghi", "||", "|", "jkl"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"SLL": [][]string{
 						{"abc", "def"},
 						{"ghi", "||"},
@@ -6639,7 +6639,7 @@ func TestExecute(t *testing.T) {
 					StringListListProcessor("SLL", testDesc, "|", 1, 2),
 				),
 				Args: []string{"abc", "def", "|", "ghi", "||", "|", "jkl", "|"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"SLL": [][]string{
 						{"abc", "def"},
 						{"ghi", "||"},
@@ -6669,7 +6669,7 @@ func TestExecute(t *testing.T) {
 					StringListListProcessor("SLL", testDesc, "|", 1, 2),
 				),
 				Args: []string{"abc", "def", "|", "ghi", "||", "|", "jkl", "|", "other", "stuff"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"SLL": [][]string{
 						{"abc", "def"},
 						{"ghi", "||"},
@@ -6715,7 +6715,7 @@ func TestExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Node: SerialNodes(FileContents("FILE", testDesc)),
 				Args: []string{filepath.Join("testdata", "one.txt")},
-				WantData: &commondels.Data{
+				WantData: &command.Data{
 					Values: map[string]interface{}{
 						"FILE": []string{"hello", "there"},
 					},
@@ -6736,7 +6736,7 @@ func TestExecute(t *testing.T) {
 				Args:       []string{filepath.Join("uh")},
 				WantStderr: fmt.Sprintf("validation for \"FILE\" failed: [FileExists] file %q does not exist\n", testutil.FilepathAbs(t, "uh")),
 				WantErr:    fmt.Errorf(`validation for "FILE" failed: [FileExists] file %q does not exist`, testutil.FilepathAbs(t, "uh")),
-				WantData: &commondels.Data{
+				WantData: &command.Data{
 					Values: map[string]interface{}{
 						"FILE": testutil.FilepathAbs(t, "uh"),
 					},
@@ -6759,7 +6759,7 @@ func TestExecute(t *testing.T) {
 					Arg[string]("s", testDesc),
 					If(
 						printArgsNode(),
-						func(i *commondels.Input, d *commondels.Data) bool {
+						func(i *command.Input, d *command.Data) bool {
 							return true
 						},
 					),
@@ -6770,7 +6770,7 @@ func TestExecute(t *testing.T) {
 					"s2: def",
 					"",
 				}, "\n"),
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"s":  "abc",
 					"s2": "def",
 				}},
@@ -6792,13 +6792,13 @@ func TestExecute(t *testing.T) {
 					Arg[string]("s", testDesc),
 					If(
 						printArgsNode(),
-						func(i *commondels.Input, d *commondels.Data) bool {
+						func(i *command.Input, d *command.Data) bool {
 							return false
 						},
 					),
 					Arg[string]("s2", testDesc),
 				),
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"s":  "abc",
 					"s2": "def",
 				}},
@@ -6822,7 +6822,7 @@ func TestExecute(t *testing.T) {
 					IfData("s", printlnNode(true, "hello")),
 				),
 				WantStdout: "hello\n",
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"s": "abc",
 				}},
 			},
@@ -6843,7 +6843,7 @@ func TestExecute(t *testing.T) {
 					IfData("b", printlnNode(true, "hello")),
 				),
 				WantStdout: "hello\n",
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"b": true,
 				}},
 			},
@@ -6872,7 +6872,7 @@ func TestExecute(t *testing.T) {
 					OptionalArg[bool]("b", testDesc),
 					IfData("b", printlnNode(true, "hello")),
 				),
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"b": false,
 				}},
 			},
@@ -6898,7 +6898,7 @@ func TestExecute(t *testing.T) {
 					),
 				),
 				WantStdout: "hello\n",
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"s": "abc",
 				}},
 			},
@@ -6923,7 +6923,7 @@ func TestExecute(t *testing.T) {
 					),
 				),
 				WantStdout: "hello\n",
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"b": true,
 				}},
 			},
@@ -6962,7 +6962,7 @@ func TestExecute(t *testing.T) {
 					),
 				),
 				WantStdout: "goodbye\n",
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"b": false,
 				}},
 			},
@@ -6976,7 +6976,7 @@ func TestExecute(t *testing.T) {
 		},
 		// EchoExecuteData
 		{
-			name: "EchoExecuteData ignores empty commondels.ExecuteData.Executable",
+			name: "EchoExecuteData ignores empty command.ExecuteData.Executable",
 			etc: &commandtest.ExecuteTestCase{
 				Node: SerialNodes(
 					EchoExecuteData(),
@@ -6984,20 +6984,20 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "EchoExecuteData outputs commondels.ExecuteData.Executable",
+			name: "EchoExecuteData outputs command.ExecuteData.Executable",
 			etc: &commandtest.ExecuteTestCase{
 				Node: SerialNodes(
 					SimpleExecutableProcessor("un", "deux", "trois"),
 					EchoExecuteData(),
 				),
-				WantExecuteData: &commondels.ExecuteData{
+				WantExecuteData: &command.ExecuteData{
 					Executable: []string{"un", "deux", "trois"},
 				},
 				WantStdout: "un\ndeux\ntrois\n",
 			},
 		},
 		{
-			name: "EchoExecuteData outputs commondels.ExecuteData.Executable to stderr",
+			name: "EchoExecuteData outputs command.ExecuteData.Executable to stderr",
 			etc: &commandtest.ExecuteTestCase{
 				Node: SerialNodes(
 					SimpleExecutableProcessor("un", "deux", "trois"),
@@ -7005,14 +7005,14 @@ func TestExecute(t *testing.T) {
 						Stderr: true,
 					},
 				),
-				WantExecuteData: &commondels.ExecuteData{
+				WantExecuteData: &command.ExecuteData{
 					Executable: []string{"un", "deux", "trois"},
 				},
 				WantStderr: "un\ndeux\ntrois\n",
 			},
 		},
 		{
-			name: "EchoExecuteDataf ignores empty commondels.ExecuteData.Executable",
+			name: "EchoExecuteDataf ignores empty command.ExecuteData.Executable",
 			etc: &commandtest.ExecuteTestCase{
 				Node: SerialNodes(
 					EchoExecuteDataf("RUNNING CODE:\n%s\nDONE CODE\n"),
@@ -7020,13 +7020,13 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "EchoExecuteData outputs commondels.ExecuteData.Executable",
+			name: "EchoExecuteData outputs command.ExecuteData.Executable",
 			etc: &commandtest.ExecuteTestCase{
 				Node: SerialNodes(
 					SimpleExecutableProcessor("un", "deux", "trois"),
 					EchoExecuteDataf("RUNNING CODE:\n%s\nDONE CODE\n"),
 				),
-				WantExecuteData: &commondels.ExecuteData{
+				WantExecuteData: &command.ExecuteData{
 					Executable: []string{"un", "deux", "trois"},
 				},
 				WantStdout: strings.Join([]string{
@@ -7040,7 +7040,7 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "EchoExecuteData outputs commondels.ExecuteData.Executable to stderr",
+			name: "EchoExecuteData outputs command.ExecuteData.Executable to stderr",
 			etc: &commandtest.ExecuteTestCase{
 				Node: SerialNodes(
 					SimpleExecutableProcessor("un", "deux", "trois"),
@@ -7049,7 +7049,7 @@ func TestExecute(t *testing.T) {
 						Format: "RUNNING CODE:\n%s\nDONE CODE\n",
 					},
 				),
-				WantExecuteData: &commondels.ExecuteData{
+				WantExecuteData: &command.ExecuteData{
 					Executable: []string{"un", "deux", "trois"},
 				},
 				WantStderr: strings.Join([]string{
@@ -7074,7 +7074,7 @@ func TestExecute(t *testing.T) {
 					}, true),
 				),
 				Args: []string{"two"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"m": 2,
 				}},
 			},
@@ -7097,7 +7097,7 @@ func TestExecute(t *testing.T) {
 					}, false),
 				),
 				Args: []string{"two"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"m": 2,
 				}},
 			},
@@ -7120,7 +7120,7 @@ func TestExecute(t *testing.T) {
 					}, true),
 				),
 				Args: []string{"four"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"m": 0,
 				}},
 			},
@@ -7145,7 +7145,7 @@ func TestExecute(t *testing.T) {
 				Args:       []string{"four"},
 				WantStderr: "validation for \"m\" failed: [MapArg] key (four) is not in map; expected one of [one three two]\n",
 				WantErr:    fmt.Errorf("validation for \"m\" failed: [MapArg] key (four) is not in map; expected one of [one three two]"),
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"m": 0,
 				}},
 			},
@@ -7170,7 +7170,7 @@ func TestExecute(t *testing.T) {
 				Args:       []string{"four"},
 				WantStderr: "validation for \"m\" failed: [MapArg] key (four) is not in map; expected one of [one three two]\n",
 				WantErr:    fmt.Errorf("validation for \"m\" failed: [MapArg] key (four) is not in map; expected one of [one three two]"),
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"m": 0,
 				}},
 			},
@@ -7196,7 +7196,7 @@ func TestExecute(t *testing.T) {
 					}, true),
 				),
 				Args: []string{"three"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"m": struct {
 						A int
 						B float64
@@ -7228,7 +7228,7 @@ func TestExecute(t *testing.T) {
 				return &commandtest.ExecuteTestCase{
 					Node: SerialNodes(
 						ma,
-						SimpleProcessor(func(i *commondels.Input, o commondels.Output, d *commondels.Data, ed *commondels.ExecuteData) error {
+						SimpleProcessor(func(i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
 							o.Stdoutln(ma.GetKey())
 							o.Stdoutln(otherMa.GetKey())
 							o.Stdoutln(ma.Get(d))
@@ -7239,7 +7239,7 @@ func TestExecute(t *testing.T) {
 						}, nil),
 					),
 					Args: []string{"three"},
-					WantData: &commondels.Data{Values: map[string]interface{}{
+					WantData: &command.Data{Values: map[string]interface{}{
 						"m": 3,
 					}},
 					WantStdout: strings.Join([]string{
@@ -7288,7 +7288,7 @@ func TestExecute(t *testing.T) {
 					Node: SerialNodes(
 						ma,
 						missingMa,
-						SimpleProcessor(func(i *commondels.Input, o commondels.Output, d *commondels.Data, ed *commondels.ExecuteData) error {
+						SimpleProcessor(func(i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
 							o.Stdoutln("GetKey", ma.GetKey())
 							o.Stdoutln("Provided", ma.Provided(d))
 							o.Stdoutln("Get", ma.Get(d))
@@ -7310,7 +7310,7 @@ func TestExecute(t *testing.T) {
 						}, nil),
 					),
 					Args: []string{"three", "eleven"},
-					WantData: &commondels.Data{Values: map[string]interface{}{
+					WantData: &command.Data{Values: map[string]interface{}{
 						"m":  &vType{3, 3.3},
 						"m3": (*vType)(nil),
 					}},
@@ -7376,7 +7376,7 @@ func TestExecute(t *testing.T) {
 							otherMa,
 							missingMa,
 						),
-						SimpleProcessor(func(i *commondels.Input, o commondels.Output, d *commondels.Data, ed *commondels.ExecuteData) error {
+						SimpleProcessor(func(i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
 							o.Stdoutln("GetKey", ma.GetKey())
 							o.Stdoutln("Provided", ma.Provided(d))
 							o.Stdoutln("Get", ma.Get(d))
@@ -7398,7 +7398,7 @@ func TestExecute(t *testing.T) {
 						}, nil),
 					),
 					Args: []string{"-m", "three", "--m3", "eleven"},
-					WantData: &commondels.Data{Values: map[string]interface{}{
+					WantData: &command.Data{Values: map[string]interface{}{
 						"m1": &vType{3, 3.3},
 						"m3": (*vType)(nil),
 					}},
@@ -7435,7 +7435,7 @@ func TestExecute(t *testing.T) {
 				},
 			},
 		},
-		// commondels.Usage tests
+		// command.Usage tests
 		{
 			name: "works with single arg",
 			etc: &commandtest.ExecuteTestCase{
@@ -7455,7 +7455,7 @@ func TestExecute(t *testing.T) {
 			name: "forwards panic",
 			etc: &commandtest.ExecuteTestCase{
 				Node: SerialNodes(
-					&ExecutorProcessor{func(o commondels.Output, d *commondels.Data) error {
+					&ExecutorProcessor{func(o command.Output, d *command.Data) error {
 						panic("oh no!")
 					}},
 				),
@@ -7483,9 +7483,9 @@ func TestExecute(t *testing.T) {
 	}
 }
 
-func abc() commondels.Node {
+func abc() command.Node {
 	return &BranchNode{
-		Branches: map[string]commondels.Node{
+		Branches: map[string]command.Node{
 			"t": ShortcutNode("TEST_SHORTCUT", nil,
 				CacheNode("TEST_CACHE", nil, SerialNodes(
 					&tt{},
@@ -7500,13 +7500,13 @@ func abc() commondels.Node {
 
 type tt struct{}
 
-func (t *tt) Usage(*commondels.Input, *commondels.Data, *commondels.Usage) error { return nil }
-func (t *tt) Execute(input *commondels.Input, output commondels.Output, data *commondels.Data, e *commondels.ExecuteData) error {
+func (t *tt) Usage(*command.Input, *command.Data, *command.Usage) error { return nil }
+func (t *tt) Execute(input *command.Input, output command.Output, data *command.Data, e *command.ExecuteData) error {
 	t.do(input, data)
 	return nil
 }
 
-func (t *tt) do(input *commondels.Input, data *commondels.Data) {
+func (t *tt) do(input *command.Input, data *command.Data) {
 	if s, ok := input.Peek(); ok && strings.Contains(s, ":") {
 		if ss := strings.Split(s, ":"); len(ss) == 2 {
 			input.Pop(data)
@@ -7515,7 +7515,7 @@ func (t *tt) do(input *commondels.Input, data *commondels.Data) {
 	}
 }
 
-func (t *tt) Complete(input *commondels.Input, data *commondels.Data) (*commondels.Completion, error) {
+func (t *tt) Complete(input *command.Input, data *command.Data) (*command.Completion, error) {
 	t.do(input, data)
 	return nil, nil
 }
@@ -7539,10 +7539,10 @@ func TestComplete(t *testing.T) {
 			ctc: &commandtest.CompleteTestCase{
 				Node: abc(),
 				Args: "cmd t clh:abc",
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"abcd222"},
 				},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"PATH":   "clh",
 					"TARGET": "abc",
 				}},
@@ -7564,10 +7564,10 @@ func TestComplete(t *testing.T) {
 					OptionalArg[int]("i", testDesc, SimpleCompleter[int]("2", "1")),
 					ListArg[string]("sl", testDesc, 0, 2, SimpleCompleter[[]string]("uno", "dos")),
 				),
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"deux", "trois", "un"},
 				},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"s": "",
 				}},
 			},
@@ -7581,10 +7581,10 @@ func TestComplete(t *testing.T) {
 					ListArg[string]("sl", testDesc, 0, 2, SimpleCompleter[[]string]("uno", "dos")),
 				),
 				Args: "cmd t",
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"three", "two"},
 				},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"s": "t",
 				}},
 			},
@@ -7598,10 +7598,10 @@ func TestComplete(t *testing.T) {
 					OptionalArg[int]("i", testDesc, SimpleCompleter[int]("2", "1")),
 				),
 				Args: "cmd three ",
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"dos", "uno"},
 				},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"s":  "three",
 					"sl": []string{""},
 				}},
@@ -7616,10 +7616,10 @@ func TestComplete(t *testing.T) {
 					OptionalArg[int]("i", testDesc, SimpleCompleter[int]("2", "1")),
 				),
 				Args: "cmd three d",
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"dos"},
 				},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"s":  "three",
 					"sl": []string{"d"},
 				}},
@@ -7634,10 +7634,10 @@ func TestComplete(t *testing.T) {
 					OptionalArg[int]("i", testDesc, SimpleCompleter[int]("2", "1")),
 				),
 				Args: "cmd three dos ",
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"dos", "uno"},
 				},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"s":  "three",
 					"sl": []string{"dos", ""},
 				}},
@@ -7652,10 +7652,10 @@ func TestComplete(t *testing.T) {
 					OptionalArg[int]("i", testDesc, SimpleCompleter[int]("2", "1")),
 				),
 				Args: "cmd three uno dos ",
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"1", "2"},
 				},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"s":  "three",
 					"sl": []string{"uno", "dos"},
 				}},
@@ -7670,7 +7670,7 @@ func TestComplete(t *testing.T) {
 					OptionalArg[int]("i", testDesc, SimpleCompleter[int]("2", "1")),
 				),
 				Args: "cmd three uno dos 1 what now",
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"s":  "three",
 					"sl": []string{"uno", "dos"},
 					"i":  1,
@@ -7684,10 +7684,10 @@ func TestComplete(t *testing.T) {
 				Node: SerialNodes(
 					ListArg[string]("sl", testDesc, 1, 2, SimpleCompleter[[]string]("uno", "dos")),
 				),
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"dos", "uno"},
 				},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"sl": []string{""},
 				}},
 			},
@@ -7699,10 +7699,10 @@ func TestComplete(t *testing.T) {
 					ListArg[string]("sl", testDesc, 1, 2, SimpleCompleter[[]string]("zzz-1", "zzz-2", "yyy-3", "zzz-4")),
 				),
 				Args: "cmd zz",
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"zzz-1", "zzz-2", "zzz-4"},
 				},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"sl": []string{"zz"},
 				}},
 			},
@@ -7717,7 +7717,7 @@ func TestComplete(t *testing.T) {
 				),
 				Args:    "cmd three two a",
 				WantErr: fmt.Errorf(`strconv.Atoi: parsing "two": invalid syntax`),
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"s1": "three",
 				}},
 			},
@@ -7728,10 +7728,10 @@ func TestComplete(t *testing.T) {
 			ctc: &commandtest.CompleteTestCase{
 				Node: SerialNodes(
 					Arg[string]("PATH", "dd", SimpleCompleter[string]()),
-					ListArg[string]("SUB_PATH", "stc", 0, commondels.UnboundedList, SimpleCompleter[[]string]("un", "deux", "trois")),
+					ListArg[string]("SUB_PATH", "stc", 0, command.UnboundedList, SimpleCompleter[[]string]("un", "deux", "trois")),
 				),
 				Args: "cmd p",
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"PATH": "p",
 				}},
 			},
@@ -7740,14 +7740,14 @@ func TestComplete(t *testing.T) {
 			name: "stop iterating if a completion returns an error",
 			ctc: &commandtest.CompleteTestCase{
 				Node: SerialNodes(
-					Arg[string]("PATH", "dd", CompleterFromFunc(func(string, *commondels.Data) (*commondels.Completion, error) {
+					Arg[string]("PATH", "dd", CompleterFromFunc(func(string, *command.Data) (*command.Completion, error) {
 						return nil, fmt.Errorf("ruh-roh")
 					})),
-					ListArg[string]("SUB_PATH", "stc", 0, commondels.UnboundedList, SimpleCompleter[[]string]("un", "deux", "trois")),
+					ListArg[string]("SUB_PATH", "stc", 0, command.UnboundedList, SimpleCompleter[[]string]("un", "deux", "trois")),
 				),
 				Args:    "cmd p",
 				WantErr: fmt.Errorf("ruh-roh"),
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"PATH": "p",
 				}},
 			},
@@ -7775,10 +7775,10 @@ func TestComplete(t *testing.T) {
 					Arg[int]("i", testDesc, SimpleCompleter[int]("1", "2")),
 				),
 				Args: "cmd -g ",
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"1", "2"},
 				},
-				WantData: &commondels.Data{
+				WantData: &command.Data{
 					Values: map[string]interface{}{
 						"good": true,
 					},
@@ -7797,10 +7797,10 @@ func TestComplete(t *testing.T) {
 					Arg[int]("i", testDesc, SimpleCompleter[int]("1", "2")),
 				),
 				Args: "cmd --greeting howdy ",
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"1", "2"},
 				},
-				WantData: &commondels.Data{
+				WantData: &command.Data{
 					Values: map[string]interface{}{
 						"greeting": "howdy",
 					},
@@ -7819,10 +7819,10 @@ func TestComplete(t *testing.T) {
 					Arg[int]("i", testDesc, SimpleCompleter[int]("1", "2")),
 				),
 				Args: "cmd --names alice bob charlie ",
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"1", "2"},
 				},
-				WantData: &commondels.Data{
+				WantData: &command.Data{
 					Values: map[string]interface{}{
 						"names": []string{"alice", "bob", "charlie"},
 					},
@@ -7841,10 +7841,10 @@ func TestComplete(t *testing.T) {
 					Arg[int]("i", testDesc, SimpleCompleter[int]("1", "2")),
 				),
 				Args: "cmd -n alice bob charlie --good -h howdy ",
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"1", "2"},
 				},
-				WantData: &commondels.Data{
+				WantData: &command.Data{
 					Values: map[string]interface{}{
 						"names":    []string{"alice", "bob", "charlie"},
 						"good":     true,
@@ -7865,7 +7865,7 @@ func TestComplete(t *testing.T) {
 					Arg[int]("i", testDesc, SimpleCompleter[int]("1", "2")),
 				),
 				Args: "cmd -",
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"--good", "--greeting", "--names"},
 				},
 			},
@@ -7882,7 +7882,7 @@ func TestComplete(t *testing.T) {
 					Arg[int]("i", testDesc, SimpleCompleter[int]("1", "2")),
 				),
 				Args: "cmd --",
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"--good", "--greeting", "--names"},
 				},
 			},
@@ -7899,7 +7899,7 @@ func TestComplete(t *testing.T) {
 					Arg[int]("i", testDesc, SimpleCompleter[int]("1", "2")),
 				),
 				Args: "cmd 1 -",
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"--good", "--greeting", "--names"},
 				},
 			},
@@ -7916,7 +7916,7 @@ func TestComplete(t *testing.T) {
 					Arg[int]("i", testDesc, SimpleCompleter[int]("1", "2")),
 				),
 				Args: "cmd --gr",
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"--greeting"},
 				},
 			},
@@ -7933,7 +7933,7 @@ func TestComplete(t *testing.T) {
 					Arg[int]("i", testDesc, SimpleCompleter[int]("1", "2")),
 				),
 				Args: "cmd --names",
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"--names"},
 				},
 			},
@@ -7951,10 +7951,10 @@ func TestComplete(t *testing.T) {
 					Arg[int]("i", testDesc, SimpleCompleter[int]("1", "2")),
 				),
 				Args: "cmd 1 --greeting h",
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"hey", "hi"},
 				},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"greeting": "h",
 				}},
 			},
@@ -7971,10 +7971,10 @@ func TestComplete(t *testing.T) {
 					Arg[int]("i", testDesc, SimpleCompleter[int]("1", "2")),
 				),
 				Args: "cmd 1 -h he",
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"hey"},
 				},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"greeting": "he",
 				}},
 			},
@@ -7991,10 +7991,10 @@ func TestComplete(t *testing.T) {
 					Arg[int]("i", testDesc, SimpleCompleter[int]("1", "2")),
 				),
 				Args: "cmd 1 -h hey other --names ",
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"johnny", "ralph", "renee"},
 				},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"greeting": "hey",
 					"names":    []string{""},
 				}},
@@ -8012,10 +8012,10 @@ func TestComplete(t *testing.T) {
 					Arg[int]("i", testDesc, SimpleCompleter[int]("1", "2")),
 				),
 				Args: "cmd 1 -h hey other --names ralph ",
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"johnny", "renee"},
 				},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"greeting": "hey",
 					"names":    []string{"ralph", ""},
 				}},
@@ -8034,10 +8034,10 @@ func TestComplete(t *testing.T) {
 					Arg[int]("i", testDesc, SimpleCompleter[int]("1", "2")),
 				),
 				Args: "cmd 1 -h hey other --names ralph renee johnny -f ",
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"1.23", "12.3", "123.4"},
 				},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"greeting": "hey",
 					"names":    []string{"ralph", "renee", "johnny"},
 				}},
@@ -8055,10 +8055,10 @@ func TestComplete(t *testing.T) {
 					ListArg[string]("i", testDesc, 1, 2, SimpleCompleter[[]string]("hey", "ooo")),
 				),
 				Args: "cmd 1 -h hello bravo --names ralph renee johnny ",
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"hey", "ooo"},
 				},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"i":        []string{"1", "bravo", ""},
 					"greeting": "hello",
 					"names":    []string{"ralph", "renee", "johnny"},
@@ -8095,10 +8095,10 @@ func TestComplete(t *testing.T) {
 					),
 					Arg[string]("s", testDesc, SimpleCompleter[string]("abc", "def", "ghi")),
 				),
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"abc", "def", "ghi"},
 				},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"quick":    true,
 					"where":    true,
 					"everyone": true,
@@ -8121,10 +8121,10 @@ func TestComplete(t *testing.T) {
 					),
 					Arg[string]("s", testDesc, SimpleCompleter[string]("abc", "def", "ghi")),
 				),
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"abc", "def", "ghi"},
 				},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"quick":    true,
 					"where":    true,
 					"everyone": true,
@@ -8149,10 +8149,10 @@ func TestComplete(t *testing.T) {
 					),
 					Arg[string]("s", testDesc, SimpleCompleter[string]("abc", "def", "ghi")),
 				),
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"abc", "def", "ghi"},
 				},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"quick": true,
 					"where": true,
 					"s":     "",
@@ -8174,10 +8174,10 @@ func TestComplete(t *testing.T) {
 						BoolFlag("where", 'w', testDesc),
 					),
 				),
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"tsr", "wvu", "zyx"},
 				},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"zf": "",
 				}},
 			},
@@ -8196,10 +8196,10 @@ func TestComplete(t *testing.T) {
 						BoolFlag("where", 'w', testDesc),
 					),
 				),
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"tsr", "wvu", "zyx"},
 				},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"quick": true,
 					"where": true,
 					"run":   true,
@@ -8222,7 +8222,7 @@ func TestComplete(t *testing.T) {
 						BoolFlag("where", 'w', testDesc),
 					),
 				),
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{
 						// ilf still gets completed because it allows multiple.
 						"--ilf",
@@ -8231,7 +8231,7 @@ func TestComplete(t *testing.T) {
 						"--where",
 					},
 				},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"everyone": true,
 					"run":      true,
 					"zf":       "firstZ",
@@ -8248,7 +8248,7 @@ func TestComplete(t *testing.T) {
 					),
 				),
 				Args: "cmd --of",
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"--of"},
 				},
 			},
@@ -8262,10 +8262,10 @@ func TestComplete(t *testing.T) {
 					),
 				),
 				Args: "cmd --of ",
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"abc", "def", "ghi"},
 				},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"of": "",
 				}},
 			},
@@ -8282,7 +8282,7 @@ func TestComplete(t *testing.T) {
 					),
 				),
 				Args: "cmd --of -",
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{
 						"--bf",
 					},
@@ -8301,10 +8301,10 @@ func TestComplete(t *testing.T) {
 					),
 				),
 				Args: "cmd --of provided -",
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"of": "provided",
 				}},
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{
 						"--bf",
 					},
@@ -8321,7 +8321,7 @@ func TestComplete(t *testing.T) {
 					),
 				),
 				Args: "cmd --ilf",
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"--ilf"},
 				},
 			},
@@ -8335,10 +8335,10 @@ func TestComplete(t *testing.T) {
 					),
 				),
 				Args: "cmd --ilf ",
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"abc", "def", "ghi"},
 				},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"ilf": []string{""},
 				}},
 			},
@@ -8352,10 +8352,10 @@ func TestComplete(t *testing.T) {
 					),
 				),
 				Args: "cmd --ilf un -i d",
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"ilf": []string{"un", "d"},
 				}},
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"def"},
 				},
 			},
@@ -8369,10 +8369,10 @@ func TestComplete(t *testing.T) {
 					),
 				),
 				Args: "cmd --ilf def -i ",
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"ilf": []string{"def", ""},
 				}},
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"abc", "ghi"},
 				},
 			},
@@ -8382,14 +8382,14 @@ func TestComplete(t *testing.T) {
 			name: "completes flag argument when flag processor's list breaker is provided as arg option",
 			ctc: &commandtest.CompleteTestCase{
 				Node: SerialNodes(
-					ListArg[string]("lst", testDesc, 0, commondels.UnboundedList, breakerFlagProcessor.ListBreaker()),
+					ListArg[string]("lst", testDesc, 0, command.UnboundedList, breakerFlagProcessor.ListBreaker()),
 					breakerFlagProcessor,
 				),
 				Args: "cmd v1 v2 other --names ",
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"johnny", "ralph", "renee"},
 				},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"lst":   []string{"v1", "v2", "other"},
 					"names": []string{""},
 				}},
@@ -8399,14 +8399,14 @@ func TestComplete(t *testing.T) {
 			name: "second flag is recognized and completed",
 			ctc: &commandtest.CompleteTestCase{
 				Node: SerialNodes(
-					ListArg[string]("lst", testDesc, 0, commondels.UnboundedList, breakerFlagProcessor.ListBreaker()),
+					ListArg[string]("lst", testDesc, 0, command.UnboundedList, breakerFlagProcessor.ListBreaker()),
 					breakerFlagProcessor,
 				),
 				Args: "cmd v1 v2 other --names un --greeting ",
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"hey", "hi"},
 				},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"lst":      []string{"v1", "v2", "other"},
 					"names":    []string{"un"},
 					"greeting": "",
@@ -8419,14 +8419,14 @@ func TestComplete(t *testing.T) {
 			ctc: &commandtest.CompleteTestCase{
 				Node: SerialNodes(
 					FlagProcessor(
-						ListFlag[string]("lf", 'f', testDesc, 0, commondels.UnboundedList, DeferredCompleter(nil, SimpleCompleter[[]string]("abc", "def"))),
+						ListFlag[string]("lf", 'f', testDesc, 0, command.UnboundedList, DeferredCompleter(nil, SimpleCompleter[[]string]("abc", "def"))),
 					),
 				),
 				Args: "cmd --lf ab ",
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"abc", "def"},
 				},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"lf": []string{"ab", ""},
 				}},
 			},
@@ -8436,14 +8436,14 @@ func TestComplete(t *testing.T) {
 			ctc: &commandtest.CompleteTestCase{
 				Node: SerialNodes(
 					FlagProcessor(
-						ListFlag[string]("lf", 'f', testDesc, 0, commondels.UnboundedList, DeferredCompleter(nil, CompleterFromFunc(func([]string, *commondels.Data) (*commondels.Completion, error) {
-							return &commondels.Completion{Suggestions: []string{"abc", "def"}}, fmt.Errorf("oh well")
+						ListFlag[string]("lf", 'f', testDesc, 0, command.UnboundedList, DeferredCompleter(nil, CompleterFromFunc(func([]string, *command.Data) (*command.Completion, error) {
+							return &command.Completion{Suggestions: []string{"abc", "def"}}, fmt.Errorf("oh well")
 						}))),
 					),
 				),
 				Args:    "cmd --lf ab ",
 				WantErr: fmt.Errorf("oh well"),
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"lf": []string{"ab", ""},
 				}},
 			},
@@ -8453,18 +8453,18 @@ func TestComplete(t *testing.T) {
 			ctc: &commandtest.CompleteTestCase{
 				Node: SerialNodes(
 					FlagProcessor(
-						ListFlag[string]("lf", 'f', testDesc, 0, commondels.UnboundedList, DeferredCompleter(
+						ListFlag[string]("lf", 'f', testDesc, 0, command.UnboundedList, DeferredCompleter(
 							SerialNodes(
-								ListArg[string]("la", testDesc, 3, commondels.UnboundedList, SimpleCompleter[[]string]("un", "deux")),
+								ListArg[string]("la", testDesc, 3, command.UnboundedList, SimpleCompleter[[]string]("un", "deux")),
 							),
-							CompleterFromFunc(func([]string, *commondels.Data) (*commondels.Completion, error) {
-								return &commondels.Completion{Suggestions: []string{"abc", "def"}}, fmt.Errorf("oh well")
+							CompleterFromFunc(func([]string, *command.Data) (*command.Completion, error) {
+								return &command.Completion{Suggestions: []string{"abc", "def"}}, fmt.Errorf("oh well")
 							}))),
 					),
 				),
 				Args:    "cmd v1 v2 other --lf ab ",
 				WantErr: fmt.Errorf("oh well"),
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"lf": []string{"ab", ""},
 					"la": []string{"v1", "v2", "other"},
 				}},
@@ -8475,18 +8475,18 @@ func TestComplete(t *testing.T) {
 			ctc: &commandtest.CompleteTestCase{
 				Node: SerialNodes(
 					FlagProcessor(
-						ListFlag[string]("lf", 'f', testDesc, 0, commondels.UnboundedList, DeferredCompleter(
+						ListFlag[string]("lf", 'f', testDesc, 0, command.UnboundedList, DeferredCompleter(
 							SerialNodes(
-								ListArg[string]("la", testDesc, 4, commondels.UnboundedList, SimpleCompleter[[]string]("un", "deux")),
+								ListArg[string]("la", testDesc, 4, command.UnboundedList, SimpleCompleter[[]string]("un", "deux")),
 							),
-							CompleterFromFunc(func([]string, *commondels.Data) (*commondels.Completion, error) {
-								return &commondels.Completion{Suggestions: []string{"abc", "def"}}, fmt.Errorf("oh well")
+							CompleterFromFunc(func([]string, *command.Data) (*command.Completion, error) {
+								return &command.Completion{Suggestions: []string{"abc", "def"}}, fmt.Errorf("oh well")
 							}))),
 					),
 				),
 				Args:    "cmd v1 v2 other --lf ab ",
 				WantErr: fmt.Errorf(`failed to execute DeferredCompletion graph: Argument "la" requires at least 4 arguments, got 3`),
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"lf": []string{"ab", ""},
 					"la": []string{"v1", "v2", "other"},
 				}},
@@ -8500,7 +8500,7 @@ func TestComplete(t *testing.T) {
 					Processor: Arg[string]("strArg", testDesc),
 				},
 				Args: "cmd abc",
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"strArg": "abc",
 				}},
 			},
@@ -8512,7 +8512,7 @@ func TestComplete(t *testing.T) {
 					Processor: ListArg[string]("slArg", testDesc, 1, 2),
 				},
 				Args: "cmd abc",
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"slArg": []string{"abc"},
 				}},
 			},
@@ -8521,11 +8521,11 @@ func TestComplete(t *testing.T) {
 			name: "transformer doesn't transform value during completion",
 			ctc: &commandtest.CompleteTestCase{
 				Node: SerialNodes(Arg[string]("strArg", testDesc,
-					&Transformer[string]{F: func(string, *commondels.Data) (string, error) {
+					&Transformer[string]{F: func(string, *command.Data) (string, error) {
 						return "newStuff", nil
 					}})),
 				Args: "cmd abc",
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"strArg": "abc",
 				}},
 			},
@@ -8538,7 +8538,7 @@ func TestComplete(t *testing.T) {
 					Processor: Arg[string]("strArg", testDesc, FileTransformer()),
 				},
 				Args: fmt.Sprintf("cmd %s", filepath.Join("relative", "path.txt")),
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"strArg": filepath.Join("relative", "path.txt"),
 				}},
 			},
@@ -8551,7 +8551,7 @@ func TestComplete(t *testing.T) {
 					Processor: ListArg[string]("strArg", testDesc, 1, 2, TransformerList(FileTransformer())),
 				},
 				Args: fmt.Sprintf("cmd %s", filepath.Join("relative", "path.txt")),
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"strArg": []string{filepath.Join("relative", "path.txt")},
 				}},
 			},
@@ -8564,7 +8564,7 @@ func TestComplete(t *testing.T) {
 					Processor: Arg[string]("strArg", testDesc, FileTransformer()),
 				},
 				Args: fmt.Sprintf("cmd %s", filepath.Join("relative", "path.txt")),
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"strArg": filepath.Join("relative", "path.txt"),
 				}},
 			},
@@ -8574,7 +8574,7 @@ func TestComplete(t *testing.T) {
 			filepathAbs: filepath.Join("abso", "lutely"),
 			ctc: &commandtest.CompleteTestCase{
 				Node: &SimpleNode{
-					Processor: ListArg[string]("slArg", testDesc, 1, 2, &Transformer[[]string]{F: func(sl []string, d *commondels.Data) ([]string, error) {
+					Processor: ListArg[string]("slArg", testDesc, 1, 2, &Transformer[[]string]{F: func(sl []string, d *command.Data) ([]string, error) {
 						var r []string
 						for _, s := range sl {
 							r = append(r, fmt.Sprintf("_%s_", s))
@@ -8583,7 +8583,7 @@ func TestComplete(t *testing.T) {
 					}}),
 				},
 				Args: "cmd uno dos",
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"slArg": []string{
 						"uno",
 						"dos",
@@ -8596,19 +8596,19 @@ func TestComplete(t *testing.T) {
 			filepathAbs: filepath.Join("abso", "lutely"),
 			ctc: &commandtest.CompleteTestCase{
 				Node: SerialNodes(
-					ListArg[string]("slArg", testDesc, 1, 1, &Transformer[[]string]{F: func(sl []string, d *commondels.Data) ([]string, error) {
+					ListArg[string]("slArg", testDesc, 1, 1, &Transformer[[]string]{F: func(sl []string, d *command.Data) ([]string, error) {
 						var r []string
 						for _, s := range sl {
 							r = append(r, fmt.Sprintf("_%s_", s))
 						}
 						return r, nil
 					}}),
-					Arg[string]("sArg", testDesc, &Transformer[string]{F: func(s string, d *commondels.Data) (string, error) {
+					Arg[string]("sArg", testDesc, &Transformer[string]{F: func(s string, d *command.Data) (string, error) {
 						return s + "!", nil
 					}}),
 				),
 				Args: "cmd uno dos t",
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"slArg": []string{
 						"_uno_",
 						"_dos_",
@@ -8622,22 +8622,22 @@ func TestComplete(t *testing.T) {
 			filepathAbs: filepath.Join("abso", "lutely"),
 			ctc: &commandtest.CompleteTestCase{
 				Node: SerialNodes(
-					ListArg[string]("slArg", testDesc, 1, 1, &Transformer[[]string]{F: func(sl []string, d *commondels.Data) ([]string, error) {
+					ListArg[string]("slArg", testDesc, 1, 1, &Transformer[[]string]{F: func(sl []string, d *command.Data) ([]string, error) {
 						var r []string
 						for _, s := range sl {
 							r = append(r, fmt.Sprintf("_%s_", s))
 						}
 						return r, nil
 					}}),
-					Arg[string]("sArg", testDesc, &Transformer[string]{F: func(s string, d *commondels.Data) (string, error) {
+					Arg[string]("sArg", testDesc, &Transformer[string]{F: func(s string, d *command.Data) (string, error) {
 						return "oh", fmt.Errorf("Nooooooo")
 					}}),
-					Arg[string]("sArg2", testDesc, &Transformer[string]{F: func(s string, d *commondels.Data) (string, error) {
+					Arg[string]("sArg2", testDesc, &Transformer[string]{F: func(s string, d *command.Data) (string, error) {
 						return "oh yea", fmt.Errorf("nope")
 					}}),
 				),
 				Args: "cmd uno dos tres q",
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"slArg": []string{
 						"_uno_",
 						"_dos_",
@@ -8655,7 +8655,7 @@ func TestComplete(t *testing.T) {
 					Processor: ListArg[string]("slArg", testDesc, 1, 2, TransformerList(FileTransformer())),
 				},
 				Args: fmt.Sprintf("cmd %s %s", filepath.Join("relative", "path.txt"), filepath.Join("other.txt")),
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"slArg": []string{
 						filepath.Join("relative", "path.txt"),
 						filepath.Join("other.txt"),
@@ -8670,7 +8670,7 @@ func TestComplete(t *testing.T) {
 					Processor: ListArg[string]("slArg", testDesc, 1, 2, TransformerList(FileTransformer())),
 				},
 				Args: "cmd 123",
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"slArg": []string{"123"},
 				}},
 			},
@@ -8684,10 +8684,10 @@ func TestComplete(t *testing.T) {
 					FileArgument("fn", testDesc),
 				),
 				Args: "cmd ",
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"fn": "",
 				}},
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{
 						filepath.FromSlash(".dot-dir/"),
 						filepath.FromSlash("_testdata_symlink/"),
@@ -8756,10 +8756,10 @@ func TestComplete(t *testing.T) {
 					}),
 				),
 				Args: "cmd ",
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"fn": "",
 				}},
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{
 						filepath.FromSlash(".dot-dir/"),
 						filepath.FromSlash("_testdata_symlink/"),
@@ -8778,7 +8778,7 @@ func TestComplete(t *testing.T) {
 			filepathAbs: filepath.Join(),
 			ctc: &commandtest.CompleteTestCase{
 				Node: SerialNodes(
-					Arg[string]("fn", testDesc, CompleterFromFunc(func(s string, d *commondels.Data) (*commondels.Completion, error) {
+					Arg[string]("fn", testDesc, CompleterFromFunc(func(s string, d *command.Data) (*command.Completion, error) {
 						_, thisFile, _, ok := runtime.Caller(0)
 						if !ok {
 							return nil, fmt.Errorf("failed to get runtime caller")
@@ -8790,10 +8790,10 @@ func TestComplete(t *testing.T) {
 					})),
 				),
 				Args: "cmd ",
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"fn": "",
 				}},
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{
 						".surprise",
 						filepath.FromSlash("cases/"),
@@ -8818,14 +8818,14 @@ func TestComplete(t *testing.T) {
 			name: "completes branch name options",
 			ctc: &commandtest.CompleteTestCase{
 				Node: &BranchNode{
-					Branches: map[string]commondels.Node{
+					Branches: map[string]command.Node{
 						"a":     &SimpleNode{},
 						"alpha": SerialNodes(OptionalArg[string]("hello", testDesc, SimpleCompleter[string]("other", "stuff"))),
 						"bravo": &SimpleNode{},
 					},
 					Default: SerialNodes(ListArg[string]("default", testDesc, 1, 3, SimpleCompleter[[]string]("default", "command", "opts"))),
 				},
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"a", "alpha", "bravo"},
 				},
 			},
@@ -8834,7 +8834,7 @@ func TestComplete(t *testing.T) {
 			name: "completes default node options",
 			ctc: &commandtest.CompleteTestCase{
 				Node: &BranchNode{
-					Branches: map[string]commondels.Node{
+					Branches: map[string]command.Node{
 						"a":     &SimpleNode{},
 						"alpha": SerialNodes(OptionalArg[string]("hello", testDesc, SimpleCompleter[string]("other", "stuff"))),
 						"bravo": &SimpleNode{},
@@ -8842,10 +8842,10 @@ func TestComplete(t *testing.T) {
 					Default:           SerialNodes(ListArg[string]("default", testDesc, 1, 3, SimpleCompleter[[]string]("default", "command", "opts"))),
 					DefaultCompletion: true,
 				},
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"command", "default", "opts"},
 				},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"default": []string{""},
 				}},
 			},
@@ -8854,7 +8854,7 @@ func TestComplete(t *testing.T) {
 			name: "no completions if default node is nil",
 			ctc: &commandtest.CompleteTestCase{
 				Node: &BranchNode{
-					Branches: map[string]commondels.Node{
+					Branches: map[string]command.Node{
 						"a":     &SimpleNode{},
 						"alpha": SerialNodes(OptionalArg[string]("hello", testDesc, SimpleCompleter[string]("other", "stuff"))),
 						"bravo": &SimpleNode{},
@@ -8868,7 +8868,7 @@ func TestComplete(t *testing.T) {
 			name: "doesn't complete branch options if complete arg is false",
 			ctc: &commandtest.CompleteTestCase{
 				Node: &BranchNode{
-					Branches: map[string]commondels.Node{
+					Branches: map[string]command.Node{
 						"a":     &SimpleNode{},
 						"alpha": SerialNodes(OptionalArg[string]("hello", testDesc, SimpleCompleter[string]("other", "stuff"))),
 						"bravo": &SimpleNode{},
@@ -8876,10 +8876,10 @@ func TestComplete(t *testing.T) {
 					Default:           SerialNodes(ListArg[string]("default", testDesc, 1, 3, SimpleCompleter[[]string]("default", "command", "opts"))),
 					DefaultCompletion: true,
 				},
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"command", "default", "opts"},
 				},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"default": []string{""},
 				}},
 			},
@@ -8888,7 +8888,7 @@ func TestComplete(t *testing.T) {
 			name: "completes for specific branch",
 			ctc: &commandtest.CompleteTestCase{
 				Node: &BranchNode{
-					Branches: map[string]commondels.Node{
+					Branches: map[string]command.Node{
 						"a":     &SimpleNode{},
 						"alpha": SerialNodes(OptionalArg[string]("hello", testDesc, SimpleCompleter[string]("other", "stuff"))),
 						"bravo": &SimpleNode{},
@@ -8897,10 +8897,10 @@ func TestComplete(t *testing.T) {
 					DefaultCompletion: true,
 				},
 				Args: "cmd alpha ",
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"other", "stuff"},
 				},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"hello": "",
 				}},
 			},
@@ -8909,7 +8909,7 @@ func TestComplete(t *testing.T) {
 			name: "branch node doesn't complete if no default and no branch match",
 			ctc: &commandtest.CompleteTestCase{
 				Node: &BranchNode{
-					Branches: map[string]commondels.Node{
+					Branches: map[string]command.Node{
 						"a":     &SimpleNode{},
 						"alpha": SerialNodes(OptionalArg[string]("hello", testDesc, SimpleCompleter[string]("other", "stuff"))),
 						"bravo": &SimpleNode{},
@@ -8923,12 +8923,12 @@ func TestComplete(t *testing.T) {
 			name: "branch node returns default node error if branch completion is false",
 			ctc: &commandtest.CompleteTestCase{
 				Node: &BranchNode{
-					Branches: map[string]commondels.Node{
+					Branches: map[string]command.Node{
 						"a":     &SimpleNode{},
 						"alpha": SerialNodes(OptionalArg[string]("hello", testDesc, SimpleCompleter[string]("other", "stuff"))),
 						"bravo": &SimpleNode{},
 					},
-					Default: SerialNodes(SimpleProcessor(nil, func(i *commondels.Input, d *commondels.Data) (*commondels.Completion, error) {
+					Default: SerialNodes(SimpleProcessor(nil, func(i *command.Input, d *command.Data) (*command.Completion, error) {
 						return nil, fmt.Errorf("bad news bears")
 					})),
 					DefaultCompletion: true,
@@ -8941,17 +8941,17 @@ func TestComplete(t *testing.T) {
 			name: "branch node returns only branch completions",
 			ctc: &commandtest.CompleteTestCase{
 				Node: &BranchNode{
-					Branches: map[string]commondels.Node{
+					Branches: map[string]command.Node{
 						"a":     &SimpleNode{},
 						"alpha": SerialNodes(OptionalArg[string]("hello", testDesc, SimpleCompleter[string]("other", "stuff"))),
 						"bravo": &SimpleNode{},
 					},
-					Default: SerialNodes(SimpleProcessor(nil, func(i *commondels.Input, d *commondels.Data) (*commondels.Completion, error) {
+					Default: SerialNodes(SimpleProcessor(nil, func(i *command.Input, d *command.Data) (*command.Completion, error) {
 						return nil, fmt.Errorf("bad news bears")
 					})),
 				},
 				Args: "cmd ",
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"a", "alpha", "bravo"},
 				},
 			},
@@ -8960,7 +8960,7 @@ func TestComplete(t *testing.T) {
 			name: "completes branch options with partial completion",
 			ctc: &commandtest.CompleteTestCase{
 				Node: &BranchNode{
-					Branches: map[string]commondels.Node{
+					Branches: map[string]command.Node{
 						"a":     &SimpleNode{},
 						"alpha": SerialNodes(OptionalArg[string]("hello", testDesc, SimpleCompleter[string]("other", "stuff"))),
 						"bravo": &SimpleNode{},
@@ -8969,10 +8969,10 @@ func TestComplete(t *testing.T) {
 					DefaultCompletion: true,
 				},
 				Args: "cmd a",
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"ahhhh", "alright"},
 				},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"default": []string{"a"},
 				}},
 			},
@@ -8981,7 +8981,7 @@ func TestComplete(t *testing.T) {
 			name: "completes default options",
 			ctc: &commandtest.CompleteTestCase{
 				Node: &BranchNode{
-					Branches: map[string]commondels.Node{
+					Branches: map[string]command.Node{
 						"a":     &SimpleNode{},
 						"alpha": SerialNodes(OptionalArg[string]("hello", testDesc, SimpleCompleter[string]("other", "stuff"))),
 						"bravo": &SimpleNode{},
@@ -8989,10 +8989,10 @@ func TestComplete(t *testing.T) {
 					Default: SerialNodes(ListArg[string]("default", testDesc, 1, 3, SimpleCompleter[[]string]("default", "command", "opts"))),
 				},
 				Args: "cmd something ",
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"default": []string{"something", ""},
 				}},
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"command", "default", "opts"},
 				},
 			},
@@ -9002,7 +9002,7 @@ func TestComplete(t *testing.T) {
 			ctc: &commandtest.CompleteTestCase{
 				Node: branchSynNode(),
 				Args: "cmd ",
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"hello"},
 				},
 			},
@@ -9012,16 +9012,16 @@ func TestComplete(t *testing.T) {
 			name: "sets data with SuperSimpleProcessor",
 			ctc: &commandtest.CompleteTestCase{
 				Args: "cmd",
-				Node: SerialNodes(SuperSimpleProcessor(func(i *commondels.Input, d *commondels.Data) error {
+				Node: SerialNodes(SuperSimpleProcessor(func(i *command.Input, d *command.Data) error {
 					d.Set("key", "value")
 					return nil
 				}),
 					Arg[string]("s", testDesc, SimpleCompleter[string]("abc", "def")),
 				),
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"abc", "def"},
 				},
-				WantData: &commondels.Data{
+				WantData: &command.Data{
 					Values: map[string]interface{}{
 						"key": "value",
 						"s":   "",
@@ -9033,14 +9033,14 @@ func TestComplete(t *testing.T) {
 			name: "returns error from SuperSimpleProcessor",
 			ctc: &commandtest.CompleteTestCase{
 				Args: "cmd",
-				Node: SerialNodes(SuperSimpleProcessor(func(i *commondels.Input, d *commondels.Data) error {
+				Node: SerialNodes(SuperSimpleProcessor(func(i *command.Input, d *command.Data) error {
 					d.Set("key", "value")
 					return fmt.Errorf("ugh")
 				}),
 					Arg[string]("s", testDesc, SimpleCompleter[string]("abc", "def")),
 				),
 				WantErr: fmt.Errorf("ugh"),
-				WantData: &commondels.Data{
+				WantData: &command.Data{
 					Values: map[string]interface{}{
 						"key": "value",
 					},
@@ -9055,13 +9055,13 @@ func TestComplete(t *testing.T) {
 					PrintlnProcessor("hello there"),
 					Arg[string]("s", testDesc, SimpleCompleter[string]("okay", "then")),
 				),
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{
 						"okay",
 						"then",
 					},
 				},
-				WantData: &commondels.Data{
+				WantData: &command.Data{
 					Values: map[string]interface{}{
 						"s": "",
 					},
@@ -9078,10 +9078,10 @@ func TestComplete(t *testing.T) {
 					Getwd,
 					Arg[string]("s", testDesc, SimpleCompleter[string]("abc", "def")),
 				),
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"abc", "def"},
 				},
-				WantData: &commondels.Data{
+				WantData: &command.Data{
 					Values: map[string]interface{}{
 						GetwdKey: "some/dir",
 						"s":      "",
@@ -9107,10 +9107,10 @@ func TestComplete(t *testing.T) {
 			ctc: &commandtest.CompleteTestCase{
 				Node: SerialNodes(MenuArg("sm", "desc", "abc", "def", "ghi")),
 				Args: "cmd ",
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"abc", "def", "ghi"},
 				},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"sm": "",
 				}},
 			},
@@ -9120,10 +9120,10 @@ func TestComplete(t *testing.T) {
 			ctc: &commandtest.CompleteTestCase{
 				Node: SerialNodes(MenuArg("sm", "desc", "abc", "def", "ghi")),
 				Args: "cmd g",
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"ghi"},
 				},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"sm": "g",
 				}},
 			},
@@ -9133,7 +9133,7 @@ func TestComplete(t *testing.T) {
 			ctc: &commandtest.CompleteTestCase{
 				Node: SerialNodes(MenuArg("sm", "desc", "abc", "def", "ghi")),
 				Args: "cmd j",
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"sm": "j",
 				}},
 			},
@@ -9147,10 +9147,10 @@ func TestComplete(t *testing.T) {
 					),
 				),
 				Args: "cmd --sf ",
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"abc", "def", "ghi"},
 				},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"sf": "",
 				}},
 			},
@@ -9164,10 +9164,10 @@ func TestComplete(t *testing.T) {
 					),
 				),
 				Args: "cmd -s g",
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"ghi"},
 				},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"sf": "g",
 				}},
 			},
@@ -9181,7 +9181,7 @@ func TestComplete(t *testing.T) {
 					),
 				),
 				Args: "cmd -s j",
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"sf": "j",
 				}},
 			},
@@ -9192,10 +9192,10 @@ func TestComplete(t *testing.T) {
 			ctc: &commandtest.CompleteTestCase{
 				Node: SerialNodes(Arg[int]("iArg", testDesc, SimpleCompleter[int]("12", "45", "456", "468", "7"))),
 				Args: "cmd 4",
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"45", "456", "468"},
 				},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"iArg": 4,
 				}},
 			},
@@ -9205,10 +9205,10 @@ func TestComplete(t *testing.T) {
 			ctc: &commandtest.CompleteTestCase{
 				Node: SerialNodes(OptionalArg[int]("iArg", testDesc, SimpleCompleter[int]("12", "45", "456", "468", "7"))),
 				Args: "cmd 4",
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"45", "456", "468"},
 				},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"iArg": 4,
 				}},
 			},
@@ -9218,10 +9218,10 @@ func TestComplete(t *testing.T) {
 			ctc: &commandtest.CompleteTestCase{
 				Node: SerialNodes(ListArg[int]("iArg", testDesc, 2, 3, SimpleCompleter[[]int]("12", "45", "456", "468", "7"))),
 				Args: "cmd 1 4",
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"45", "456", "468"},
 				},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"iArg": []int{1, 4},
 				}},
 			},
@@ -9231,7 +9231,7 @@ func TestComplete(t *testing.T) {
 			ctc: &commandtest.CompleteTestCase{
 				Node: SerialNodes(ListArg[int]("iArg", testDesc, 2, 3, SimpleCompleter[[]int]("12", "45", "456", "468", "7"))),
 				Args: "cmd one 4",
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"45", "456", "468"},
 				},
 			},
@@ -9241,10 +9241,10 @@ func TestComplete(t *testing.T) {
 			ctc: &commandtest.CompleteTestCase{
 				Node: SerialNodes(ListArg[int]("iArg", testDesc, 2, 3, SimpleCompleter[[]int]("12", "45", "456", "468", "7"))),
 				Args: "cmd 1 2 3 4",
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"45", "456", "468"},
 				},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"iArg": []int{1, 2, 3, 4},
 				}},
 			},
@@ -9254,10 +9254,10 @@ func TestComplete(t *testing.T) {
 			ctc: &commandtest.CompleteTestCase{
 				Node: SerialNodes(Arg[float64]("fArg", testDesc, SimpleCompleter[float64]("12", "4.5", "45.6", "468", "7"))),
 				Args: "cmd 4",
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"4.5", "45.6", "468"},
 				},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"fArg": 4.0,
 				}},
 			},
@@ -9266,20 +9266,20 @@ func TestComplete(t *testing.T) {
 			name: "float list arg gets completed",
 			ctc: &commandtest.CompleteTestCase{
 				Node: SerialNodes(ListArg[float64]("fArg", testDesc, 1, 2, SimpleCompleter[[]float64]("12", "4.5", "45.6", "468", "7"))),
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"12", "4.5", "45.6", "468", "7"},
 				},
-				WantData: &commondels.Data{Values: map[string]interface{}{}},
+				WantData: &command.Data{Values: map[string]interface{}{}},
 			},
 		},
 		{
 			name: "bool arg gets completed",
 			ctc: &commandtest.CompleteTestCase{
 				Node: SerialNodes(BoolArg("bArg", testDesc)),
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"0", "1", "F", "FALSE", "False", "T", "TRUE", "True", "f", "false", "t", "true"},
 				},
-				WantData: &commondels.Data{Values: map[string]interface{}{}},
+				WantData: &command.Data{Values: map[string]interface{}{}},
 			},
 		},
 		// NodeRepeater
@@ -9287,10 +9287,10 @@ func TestComplete(t *testing.T) {
 			name: "NodeRepeater completes first node",
 			ctc: &commandtest.CompleteTestCase{
 				Node: SerialNodes(sampleRepeaterProcessor(1, 2)),
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"alpha", "bravo", "brown", "charlie"},
 				},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"keys": []string{""},
 				}},
 			},
@@ -9300,10 +9300,10 @@ func TestComplete(t *testing.T) {
 			ctc: &commandtest.CompleteTestCase{
 				Node: SerialNodes(sampleRepeaterProcessor(1, 2)),
 				Args: "cmd b",
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"bravo", "brown"},
 				},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"keys": []string{"b"},
 				}},
 			},
@@ -9313,10 +9313,10 @@ func TestComplete(t *testing.T) {
 			ctc: &commandtest.CompleteTestCase{
 				Node: SerialNodes(sampleRepeaterProcessor(1, 2)),
 				Args: "cmd brown ",
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"1", "121", "1213121"},
 				},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"keys": []string{"brown"},
 				}},
 			},
@@ -9326,10 +9326,10 @@ func TestComplete(t *testing.T) {
 			ctc: &commandtest.CompleteTestCase{
 				Node: SerialNodes(sampleRepeaterProcessor(1, 2)),
 				Args: "cmd brown 12",
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"121", "1213121"},
 				},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"keys":   []string{"brown"},
 					"values": []int{12},
 				}},
@@ -9340,10 +9340,10 @@ func TestComplete(t *testing.T) {
 			ctc: &commandtest.CompleteTestCase{
 				Node: SerialNodes(sampleRepeaterProcessor(2, 0)),
 				Args: "cmd brown 12 c",
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"charlie"},
 				},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"keys":   []string{"brown", "c"},
 					"values": []int{12},
 				}},
@@ -9354,10 +9354,10 @@ func TestComplete(t *testing.T) {
 			ctc: &commandtest.CompleteTestCase{
 				Node: SerialNodes(sampleRepeaterProcessor(2, 1)),
 				Args: "cmd brown 12 charlie 21 alpha 1",
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"1", "121", "1213121"},
 				},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"keys":   []string{"brown", "charlie", "alpha"},
 					"values": []int{12, 21, 1},
 				}},
@@ -9366,12 +9366,12 @@ func TestComplete(t *testing.T) {
 		{
 			name: "NodeRepeater completes unbounded optional iteration",
 			ctc: &commandtest.CompleteTestCase{
-				Node: SerialNodes(sampleRepeaterProcessor(2, commondels.UnboundedList)),
+				Node: SerialNodes(sampleRepeaterProcessor(2, command.UnboundedList)),
 				Args: "cmd brown 12 charlie 21 alpha 100 delta 98 b",
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"bravo", "brown"},
 				},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"keys":   []string{"brown", "charlie", "alpha", "delta", "b"},
 					"values": []int{12, 21, 100, 98},
 				}},
@@ -9382,7 +9382,7 @@ func TestComplete(t *testing.T) {
 			ctc: &commandtest.CompleteTestCase{
 				Node: SerialNodes(sampleRepeaterProcessor(2, 1)),
 				Args: "cmd brown 12 charlie 21 alpha 100 b",
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"keys":   []string{"brown", "charlie", "alpha"},
 					"values": []int{12, 21, 100},
 				}},
@@ -9394,7 +9394,7 @@ func TestComplete(t *testing.T) {
 			ctc: &commandtest.CompleteTestCase{
 				Node: SerialNodes(sampleRepeaterProcessor(2, 1), Arg[string]("S", testDesc, SimpleCompleter[string]("un", "deux", "trois"))),
 				Args: "cmd brown 12 charlie 21 alpha 100",
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"keys":   []string{"brown", "charlie", "alpha"},
 					"values": []int{12, 21, 100},
 				}},
@@ -9405,14 +9405,14 @@ func TestComplete(t *testing.T) {
 			name: "Suggests things after broken list",
 			ctc: &commandtest.CompleteTestCase{
 				Node: SerialNodes(
-					ListArg[string]("SL", testDesc, 1, commondels.UnboundedList, ListUntilSymbol("ghi"), SimpleCompleter[[]string]("un", "deux", "trois")),
-					ListArg[string]("SL2", testDesc, 0, commondels.UnboundedList, SimpleCompleter[[]string]("one", "two", "three")),
+					ListArg[string]("SL", testDesc, 1, command.UnboundedList, ListUntilSymbol("ghi"), SimpleCompleter[[]string]("un", "deux", "trois")),
+					ListArg[string]("SL2", testDesc, 0, command.UnboundedList, SimpleCompleter[[]string]("one", "two", "three")),
 				),
 				Args: "cmd abc def ghi ",
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"one", "three", "two"},
 				},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"SL":  []string{"abc", "def"},
 					"SL2": []string{"ghi", ""},
 				}},
@@ -9422,18 +9422,18 @@ func TestComplete(t *testing.T) {
 			name: "Suggests things after broken list with discard",
 			ctc: &commandtest.CompleteTestCase{
 				Node: SerialNodes(
-					ListArg[string]("SL", testDesc, 1, commondels.UnboundedList, func() *ListBreaker[[]string] {
+					ListArg[string]("SL", testDesc, 1, command.UnboundedList, func() *ListBreaker[[]string] {
 						li := ListUntilSymbol("ghi")
 						li.Discard = true
 						return li
 					}(), SimpleCompleter[[]string]("un", "deux", "trois")),
-					ListArg[string]("SL2", testDesc, 0, commondels.UnboundedList, SimpleCompleter[[]string]("one", "two", "three")),
+					ListArg[string]("SL2", testDesc, 0, command.UnboundedList, SimpleCompleter[[]string]("one", "two", "three")),
 				),
 				Args: "cmd abc def ghi ",
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"one", "three", "two"},
 				},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"SL":  []string{"abc", "def"},
 					"SL2": []string{""},
 				}},
@@ -9443,14 +9443,14 @@ func TestComplete(t *testing.T) {
 			name: "Suggests things before list is broken",
 			ctc: &commandtest.CompleteTestCase{
 				Node: SerialNodes(
-					ListArg[string]("SL", testDesc, 1, commondels.UnboundedList, ListUntilSymbol("ghi"), SimpleCompleter[[]string]("un", "deux", "trois", "uno")),
-					ListArg[string]("SL2", testDesc, 0, commondels.UnboundedList, SimpleCompleter[[]string]("one", "two", "three")),
+					ListArg[string]("SL", testDesc, 1, command.UnboundedList, ListUntilSymbol("ghi"), SimpleCompleter[[]string]("un", "deux", "trois", "uno")),
+					ListArg[string]("SL2", testDesc, 0, command.UnboundedList, SimpleCompleter[[]string]("one", "two", "three")),
 				),
 				Args: "cmd abc def un",
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"un", "uno"},
 				},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"SL": []string{"abc", "def", "un"},
 				}},
 			},
@@ -9460,13 +9460,13 @@ func TestComplete(t *testing.T) {
 			name: "StringListListProcessor works if no breakers",
 			ctc: &commandtest.CompleteTestCase{
 				Node: SerialNodes(
-					StringListListProcessor("SLL", testDesc, "|", 1, commondels.UnboundedList, SimpleCompleter[[]string]("one", "two", "three")),
+					StringListListProcessor("SLL", testDesc, "|", 1, command.UnboundedList, SimpleCompleter[[]string]("one", "two", "three")),
 				),
 				Args: "cmd abc def ghi ",
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"one", "three", "two"},
 				},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"SLL": [][]string{{"abc", "def", "ghi", ""}},
 				}},
 			},
@@ -9475,13 +9475,13 @@ func TestComplete(t *testing.T) {
 			name: "StringListListProcessor works with breakers",
 			ctc: &commandtest.CompleteTestCase{
 				Node: SerialNodes(
-					StringListListProcessor("SLL", testDesc, "|", 1, commondels.UnboundedList, SimpleCompleter[[]string]("one", "two", "three")),
+					StringListListProcessor("SLL", testDesc, "|", 1, command.UnboundedList, SimpleCompleter[[]string]("one", "two", "three")),
 				),
 				Args: "cmd abc def | ghi t",
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"three", "two"},
 				},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"SLL": [][]string{{"abc", "def"}, {"ghi", "t"}},
 				}},
 			},
@@ -9494,10 +9494,10 @@ func TestComplete(t *testing.T) {
 					Arg[string]("S", testDesc, SimpleCompleter[string]("un", "deux", "trois")),
 				),
 				Args: "cmd abc def | ghi | ",
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"deux", "trois", "un"},
 				},
-				WantData: &commondels.Data{
+				WantData: &command.Data{
 					Values: map[string]interface{}{
 						"SLL": [][]string{{"abc", "def"}, {"ghi"}},
 						"S":   "",
@@ -9507,7 +9507,7 @@ func TestComplete(t *testing.T) {
 		},
 		// ShellCommandNode
 		{
-			name: "ShellCommandNode runs in commondels.Completion context",
+			name: "ShellCommandNode runs in command.Completion context",
 			ctc: &commandtest.CompleteTestCase{
 				Node: SerialNodes(
 					&ShellCommand[string]{ArgName: "b", CommandName: "echo", Args: []string{"haha"}},
@@ -9520,14 +9520,14 @@ func TestComplete(t *testing.T) {
 					Name: "echo",
 					Args: []string{"haha"},
 				}},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"b": "hehe",
 					"s": "",
 				}},
 			},
 		},
 		{
-			name: "ShellCommandNode fails in commondels.Completion context",
+			name: "ShellCommandNode fails in command.Completion context",
 			ctc: &commandtest.CompleteTestCase{
 				Node: SerialNodes(
 					&ShellCommand[string]{ArgName: "b", CommandName: "echo", Args: []string{"haha"}},
@@ -9544,13 +9544,13 @@ func TestComplete(t *testing.T) {
 			},
 		},
 		{
-			name: "ShellCommandNode does not run in commondels.Completion context when option provided",
+			name: "ShellCommandNode does not run in command.Completion context when option provided",
 			ctc: &commandtest.CompleteTestCase{
 				Node: SerialNodes(
 					&ShellCommand[string]{ArgName: "b", CommandName: "echo", Args: []string{"haha"}, DontRunOnComplete: true},
 					Arg[string]("s", testDesc),
 				),
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"s": "",
 				}},
 			},
@@ -9570,7 +9570,7 @@ func TestComplete(t *testing.T) {
 					Args: []string{"abc", "def", "ghi"},
 				}},
 				WantErr:  fmt.Errorf("failed to fetch autocomplete suggestions with shell command: failed to execute shell command: oopsie"),
-				WantData: &commondels.Data{Values: map[string]interface{}{"s": ""}},
+				WantData: &command.Data{Values: map[string]interface{}{"s": ""}},
 			},
 		},
 		{
@@ -9586,7 +9586,7 @@ func TestComplete(t *testing.T) {
 						"ghi",
 					},
 				}},
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{
 						"abc",
 						"def",
@@ -9597,7 +9597,7 @@ func TestComplete(t *testing.T) {
 					Name: "echo",
 					Args: []string{"abc", "def", "ghi"},
 				}},
-				WantData: &commondels.Data{Values: map[string]interface{}{}},
+				WantData: &command.Data{Values: map[string]interface{}{}},
 			},
 		},
 		{
@@ -9613,7 +9613,7 @@ func TestComplete(t *testing.T) {
 						"ghi",
 					},
 				}},
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{
 						"abc",
 						"def",
@@ -9625,7 +9625,7 @@ func TestComplete(t *testing.T) {
 					Args: []string{"abc", "def", "ghi"},
 				}},
 				//WantErr: fmt.Errorf(`failed to fetch autocomplete suggestions with shell command: strconv.Atoi: parsing "abc def ghi": invalid syntax`),
-				WantData: &commondels.Data{Values: map[string]interface{}{"s": ""}},
+				WantData: &command.Data{Values: map[string]interface{}{"s": ""}},
 			},
 		},
 		{
@@ -9642,7 +9642,7 @@ func TestComplete(t *testing.T) {
 						"ghi",
 					},
 				}},
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{
 						"def",
 					},
@@ -9651,7 +9651,7 @@ func TestComplete(t *testing.T) {
 					Name: "echo",
 					Args: []string{"abc", "def", "ghi"},
 				}},
-				WantData: &commondels.Data{Values: map[string]interface{}{"s": "d"}},
+				WantData: &command.Data{Values: map[string]interface{}{"s": "d"}},
 			},
 		},
 		{
@@ -9659,7 +9659,7 @@ func TestComplete(t *testing.T) {
 			ctc: &commandtest.CompleteTestCase{
 				Args: "cmd abc ghi ",
 				Node: SerialNodes(
-					ListArg[string]("sl", testDesc, 1, 2, ShellCommandCompleterWithOpts[[]string](&commondels.Completion{Distinct: true}, "echo", "abc", "def", "ghi")),
+					ListArg[string]("sl", testDesc, 1, 2, ShellCommandCompleterWithOpts[[]string](&command.Completion{Distinct: true}, "echo", "abc", "def", "ghi")),
 				),
 				RunResponses: []*commandtest.FakeRun{{
 					Stdout: []string{
@@ -9668,7 +9668,7 @@ func TestComplete(t *testing.T) {
 						"ghi",
 					},
 				}},
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{
 						"def",
 					},
@@ -9677,7 +9677,7 @@ func TestComplete(t *testing.T) {
 					Name: "echo",
 					Args: []string{"abc", "def", "ghi"},
 				}},
-				WantData: &commondels.Data{Values: map[string]interface{}{"sl": []string{"abc", "ghi", ""}}},
+				WantData: &command.Data{Values: map[string]interface{}{"sl": []string{"abc", "ghi", ""}}},
 			},
 		},
 		// If tests
@@ -9689,17 +9689,17 @@ func TestComplete(t *testing.T) {
 					Arg[string]("s", testDesc),
 					If(
 						Arg[string]("s2", testDesc, SimpleCompleter[string]("bravo", "charlie")),
-						func(i *commondels.Input, d *commondels.Data) bool {
+						func(i *command.Input, d *command.Data) bool {
 							return true
 						},
 					),
 					Arg[string]("s3", testDesc, SimpleCompleter[string]("delta", "epsilon")),
 				),
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"s":  "alpha",
 					"s2": "",
 				}},
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"bravo", "charlie"},
 				},
 			},
@@ -9712,17 +9712,17 @@ func TestComplete(t *testing.T) {
 					Arg[string]("s", testDesc),
 					If(
 						Arg[string]("s2", testDesc, SimpleCompleter[string]("bravo", "charlie")),
-						func(i *commondels.Input, d *commondels.Data) bool {
+						func(i *command.Input, d *command.Data) bool {
 							return false
 						},
 					),
 					Arg[string]("s3", testDesc, SimpleCompleter[string]("delta", "epsilon")),
 				),
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"s":  "alpha",
 					"s3": "",
 				}},
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"delta", "epsilon"},
 				},
 			},
@@ -9737,17 +9737,17 @@ func TestComplete(t *testing.T) {
 					IfElse(
 						Arg[string]("s2", testDesc, SimpleCompleter[string]("bravo", "charlie")),
 						Arg[string]("s2", testDesc, SimpleCompleter[string]("alpha", "omega")),
-						func(i *commondels.Input, d *commondels.Data) bool {
+						func(i *command.Input, d *command.Data) bool {
 							return true
 						},
 					),
 					Arg[string]("s3", testDesc, SimpleCompleter[string]("delta", "epsilon")),
 				),
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"s":  "alpha",
 					"s2": "",
 				}},
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"bravo", "charlie"},
 				},
 			},
@@ -9761,17 +9761,17 @@ func TestComplete(t *testing.T) {
 					IfElse(
 						Arg[string]("s2", testDesc, SimpleCompleter[string]("bravo", "charlie")),
 						Arg[string]("s2", testDesc, SimpleCompleter[string]("alpha", "omega")),
-						func(i *commondels.Input, d *commondels.Data) bool {
+						func(i *command.Input, d *command.Data) bool {
 							return false
 						},
 					),
 					Arg[string]("s3", testDesc, SimpleCompleter[string]("delta", "epsilon")),
 				),
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"s":  "alpha",
 					"s2": "",
 				}},
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"alpha", "omega"},
 				},
 			},
@@ -9788,10 +9788,10 @@ func TestComplete(t *testing.T) {
 						"three": 3,
 					}, true),
 				),
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"m": 0,
 				}},
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"one", "three", "two"},
 				},
 			},
@@ -9807,10 +9807,10 @@ func TestComplete(t *testing.T) {
 						"three": 3,
 					}, true),
 				),
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"m": 0,
 				}},
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"three", "two"},
 				},
 			},
@@ -9826,10 +9826,10 @@ func TestComplete(t *testing.T) {
 						"three": 3,
 					}, true),
 				),
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"m": 0,
 				}},
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"three"},
 				},
 			},
@@ -9845,7 +9845,7 @@ func TestComplete(t *testing.T) {
 						789: "three",
 					}, true),
 				),
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"123", "456", "789"},
 				},
 			},
@@ -9862,10 +9862,10 @@ func TestComplete(t *testing.T) {
 						4:   "other",
 					}, true),
 				),
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"m": "other",
 				}},
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"4", "456"},
 				},
 			},
@@ -9884,10 +9884,10 @@ func TestComplete(t *testing.T) {
 						}, true),
 					),
 				),
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"m": 0,
 				}},
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"three", "two"},
 				},
 			},
@@ -9905,14 +9905,14 @@ func TestComplete(t *testing.T) {
 						ListFlag[string]("names", 'n', testDesc, 2, 0),
 						Flag[string]("rating", 'r', testDesc),
 					),
-					ListArg[string]("extra", testDesc, 0, commondels.UnboundedList, SimpleDistinctCompleter[[]string]("abc", "def", "ghi", "jkl")),
+					ListArg[string]("extra", testDesc, 0, command.UnboundedList, SimpleDistinctCompleter[[]string]("abc", "def", "ghi", "jkl")),
 				),
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"boo":    true,
 					"rating": "abc",
 					"extra":  []string{"a", "secret", "def", "--coordinates", "-y", "1.1", "2.2", "ghi", "-n", ""},
 				}},
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"abc", "jkl"},
 				},
 			},
@@ -9929,18 +9929,18 @@ func TestComplete(t *testing.T) {
 	}
 }
 
-func printNode(s string) commondels.Node {
+func printNode(s string) command.Node {
 	return &SimpleNode{
-		Processor: &ExecutorProcessor{func(output commondels.Output, _ *commondels.Data) error {
+		Processor: &ExecutorProcessor{func(output command.Output, _ *command.Data) error {
 			output.Stdout(s)
 			return nil
 		}},
 	}
 }
 
-func printlnNode(stdout bool, a ...interface{}) commondels.Node {
+func printlnNode(stdout bool, a ...interface{}) command.Node {
 	return &SimpleNode{
-		Processor: &ExecutorProcessor{func(output commondels.Output, _ *commondels.Data) error {
+		Processor: &ExecutorProcessor{func(output command.Output, _ *command.Data) error {
 			if !stdout {
 				return output.Stderrln(a...)
 			}
@@ -9950,9 +9950,9 @@ func printlnNode(stdout bool, a ...interface{}) commondels.Node {
 	}
 }
 
-func printArgsNode() commondels.Node {
+func printArgsNode() command.Node {
 	return &SimpleNode{
-		Processor: &ExecutorProcessor{func(output commondels.Output, data *commondels.Data) error {
+		Processor: &ExecutorProcessor{func(output command.Output, data *command.Data) error {
 			var keys []string
 			for k := range data.Values {
 				keys = append(keys, k)
@@ -9966,16 +9966,16 @@ func printArgsNode() commondels.Node {
 	}
 }
 
-func sampleRepeaterProcessor(minN, optionalN int) commondels.Processor {
+func sampleRepeaterProcessor(minN, optionalN int) command.Processor {
 	return NodeRepeater(SerialNodes(
-		Arg[string]("KEY", testDesc, &CustomSetter[string]{func(v string, d *commondels.Data) {
+		Arg[string]("KEY", testDesc, &CustomSetter[string]{func(v string, d *command.Data) {
 			if !d.Has("keys") {
 				d.Set("keys", []string{v})
 			} else {
 				d.Set("keys", append(d.StringList("keys"), v))
 			}
 		}}, SimpleCompleter[string]("alpha", "bravo", "charlie", "brown")),
-		Arg[int]("VALUE", testDesc, &CustomSetter[int]{func(v int, d *commondels.Data) {
+		Arg[int]("VALUE", testDesc, &CustomSetter[int]{func(v int, d *command.Data) {
 			if !d.Has("values") {
 				d.Set("values", []int{v})
 			} else {
@@ -9985,9 +9985,9 @@ func sampleRepeaterProcessor(minN, optionalN int) commondels.Processor {
 	), minN, optionalN)
 }
 
-func branchSynNode() commondels.Node {
+func branchSynNode() command.Node {
 	return &BranchNode{
-		Branches: map[string]commondels.Node{
+		Branches: map[string]command.Node{
 			"hello hi greetings": printNode("yo"),
 		},
 		Default: printNode("default"),
@@ -10086,7 +10086,7 @@ func TestPanics(t *testing.T) {
 		{
 			name: "Can't create arg for unsupported type",
 			f: func() {
-				Arg[*SimpleNode]("n", testDesc).Execute(commondels.NewInput([]string{"abc"}, nil), commondels.NewFakeOutput(), &commondels.Data{}, &commondels.ExecuteData{})
+				Arg[*SimpleNode]("n", testDesc).Execute(command.NewInput([]string{"abc"}, nil), command.NewFakeOutput(), &command.Data{}, &command.ExecuteData{})
 			},
 			want: "no operator defined for type *commander.SimpleNode",
 		},

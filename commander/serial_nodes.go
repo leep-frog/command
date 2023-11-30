@@ -1,9 +1,9 @@
 package commander
 
-import "github.com/leep-frog/command/commondels"
+import "github.com/leep-frog/command/command"
 
-// SerialNodes returns a graph that iterates serially over nodes with the provided `commondels.Processor` objects.
-func SerialNodes(ps ...commondels.Processor) commondels.Node {
+// SerialNodes returns a graph that iterates serially over nodes with the provided `command.Processor` objects.
+func SerialNodes(ps ...command.Processor) command.Node {
 	if len(ps) == 0 {
 		return &SimpleNode{}
 	}

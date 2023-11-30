@@ -1,13 +1,13 @@
 package commander
 
-import "github.com/leep-frog/command/commondels"
+import "github.com/leep-frog/command/command"
 
-// IfElse runs `commondels.Processor` t if the function argunment returns true
-// in the relevant complete and execute contexts. Otherwise, `commondels.Processor` f
+// IfElse runs `command.Processor` t if the function argunment returns true
+// in the relevant complete and execute contexts. Otherwise, `command.Processor` f
 // is run.
-func IfElse(t, f commondels.Processor, fn func(i *commondels.Input, d *commondels.Data) bool) commondels.Processor {
+func IfElse(t, f command.Processor, fn func(i *command.Input, d *command.Data) bool) command.Processor {
 	return SimpleProcessor(
-		func(i *commondels.Input, o commondels.Output, d *commondels.Data, ed *commondels.ExecuteData) error {
+		func(i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
 			if fn(i, d) {
 				return processOrExecute(t, i, o, d, ed)
 			}
@@ -16,7 +16,7 @@ func IfElse(t, f commondels.Processor, fn func(i *commondels.Input, d *commondel
 			}
 			return processOrExecute(f, i, o, d, ed)
 		},
-		func(i *commondels.Input, d *commondels.Data) (*commondels.Completion, error) {
+		func(i *command.Input, d *command.Data) (*command.Completion, error) {
 			if fn(i, d) {
 				return processOrComplete(t, i, d)
 			}
@@ -30,15 +30,15 @@ func IfElse(t, f commondels.Processor, fn func(i *commondels.Input, d *commondel
 
 // If runs the provided processor if the function argunment returns true
 // in the relevant complete and execute contexts.
-func If(p commondels.Processor, fn func(i *commondels.Input, d *commondels.Data) bool) commondels.Processor {
+func If(p command.Processor, fn func(i *command.Input, d *command.Data) bool) command.Processor {
 	return IfElse(p, nil, fn)
 }
 
-// IfElseData runs `commondels.Processor` t if the argument name is present in commondels.Data.
+// IfElseData runs `command.Processor` t if the argument name is present in command.Data.
 // If the argument's type is a boolean, then it also must not be false.
-// Otherwise, `commondels.Processor` f is run.
-func IfElseData(dataArg string, t, f commondels.Processor) commondels.Processor {
-	return IfElse(t, f, func(i *commondels.Input, d *commondels.Data) bool {
+// Otherwise, `command.Processor` f is run.
+func IfElseData(dataArg string, t, f command.Processor) command.Processor {
+	return IfElse(t, f, func(i *command.Input, d *command.Data) bool {
 		// If the arg is not in data, return false.
 		if !d.Has(dataArg) {
 			return false
@@ -50,8 +50,8 @@ func IfElseData(dataArg string, t, f commondels.Processor) commondels.Processor 
 	})
 }
 
-// IfData runs `commondels.Processor` p if the argument name is present in commondels.Data.
+// IfData runs `command.Processor` p if the argument name is present in command.Data.
 // If the argument's type is a boolean, then it also must not be false.
-func IfData(dataArg string, p commondels.Processor) commondels.Processor {
+func IfData(dataArg string, p command.Processor) command.Processor {
 	return IfElseData(dataArg, p, nil)
 }

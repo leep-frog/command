@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/leep-frog/command/command"
 	"github.com/leep-frog/command/commander"
-	"github.com/leep-frog/command/commondels"
 	"github.com/leep-frog/command/internal/stubs"
 	"github.com/leep-frog/command/internal/testutil"
 )
@@ -21,7 +21,7 @@ const (
 )
 
 var (
-	getShellCache = func(d *commondels.Data, ed *commondels.ExecuteData) error {
+	getShellCache = func(d *command.Data, ed *command.ExecuteData) error {
 		v, ok := stubs.OSLookupEnv(ShellOSEnvVar)
 		if !ok || v == "" {
 			var err error
@@ -43,23 +43,23 @@ var (
 // ShellProcessor returns a processor that creates a shell-level `Cache`.
 // This needs to be done at the processor level so we can update an environment
 // variable via `ExecuteData`.
-func ShellProcessor() commondels.Processor {
-	return commander.SimpleProcessor(func(i *commondels.Input, o commondels.Output, d *commondels.Data, ed *commondels.ExecuteData) error {
+func ShellProcessor() command.Processor {
+	return commander.SimpleProcessor(func(i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
 		return o.Err(getShellCache(d, ed))
-	}, func(i *commondels.Input, d *commondels.Data) (*commondels.Completion, error) {
-		return nil, getShellCache(d, &commondels.ExecuteData{})
+	}, func(i *command.Input, d *command.Data) (*command.Completion, error) {
+		return nil, getShellCache(d, &command.ExecuteData{})
 	})
 }
 
 // ShellFromData retrieves the shell-level `Cache` that was set by `ShellProcessor`.
-func ShellFromData(d *commondels.Data) *Cache {
+func ShellFromData(d *command.Data) *Cache {
 	i := d.Get(ShellDataKey)
 	return i.(*Cache)
 }
 
 // StubShellCache stubs the cache created and set by `ShellProcessor`.
 func StubShellCache(t *testing.T, c *Cache) {
-	testutil.StubValue(t, &getShellCache, func(d *commondels.Data, ed *commondels.ExecuteData) error {
+	testutil.StubValue(t, &getShellCache, func(d *command.Data, ed *command.ExecuteData) error {
 		d.Set(ShellDataKey, c)
 		return nil
 	})

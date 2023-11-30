@@ -10,7 +10,7 @@ An argument can be created from a handful of argument functions. See the [exampl
 
 ### Retrieving an Argument's value
 
-An argument's value is stored in the `commondels.Data` object. Retrieve an argument's value as follows:
+An argument's value is stored in the `command.Data` object. Retrieve an argument's value as follows:
 
 ```go
 var (
@@ -18,7 +18,7 @@ var (
   intArg = command.Arg[int]("INT_ARG", "An int")
 )
 
-// (data *commondels.Data)
+// (data *command.Data)
 myStr := strArg.Get(data) // returns a string
 myInt := intArg.Get(data) // returns an int
 ```

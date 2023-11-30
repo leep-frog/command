@@ -3,8 +3,8 @@ package commander
 import (
 	"testing"
 
+	"github.com/leep-frog/command/command"
 	"github.com/leep-frog/command/commandtest"
-	"github.com/leep-frog/command/commondels"
 )
 
 func TestStaticCLIs(t *testing.T) {
@@ -17,7 +17,7 @@ func TestStaticCLIs(t *testing.T) {
 			name: "static cli works",
 			scli: StaticCLI("x", "exit"),
 			etc: &commandtest.ExecuteTestCase{
-				WantExecuteData: &commondels.ExecuteData{
+				WantExecuteData: &command.ExecuteData{
 					Executable: []string{"exit"},
 				},
 			},
@@ -26,7 +26,7 @@ func TestStaticCLIs(t *testing.T) {
 			name: "static cli works with multiple commands",
 			scli: StaticCLI("xp", "exit", "please"),
 			etc: &commandtest.ExecuteTestCase{
-				WantExecuteData: &commondels.ExecuteData{
+				WantExecuteData: &command.ExecuteData{
 					Executable: []string{"exit", "please"},
 				},
 			},

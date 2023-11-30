@@ -1,4 +1,4 @@
-package commondels
+package command
 
 type OS interface {
 	// SetEnvVar returns a shell command that sets the environment variable

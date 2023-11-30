@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/leep-frog/command/command"
 	"github.com/leep-frog/command/commandtest"
-	"github.com/leep-frog/command/commondels"
 	"github.com/leep-frog/command/internal/constants"
 	"github.com/leep-frog/command/internal/spycommand"
 	"github.com/leep-frog/command/internal/spycommandtest"
@@ -17,31 +17,31 @@ type usageNode struct {
 	usageNextErr error
 }
 
-func (un *usageNode) Usage(*commondels.Input, *commondels.Data, *commondels.Usage) error {
+func (un *usageNode) Usage(*command.Input, *command.Data, *command.Usage) error {
 	return un.usageErr
 }
 
-func (un *usageNode) UsageNext(*commondels.Input, *commondels.Data) (commondels.Node, error) {
+func (un *usageNode) UsageNext(*command.Input, *command.Data) (command.Node, error) {
 	return nil, un.usageNextErr
 }
 
-func (un *usageNode) Execute(*commondels.Input, commondels.Output, *commondels.Data, *commondels.ExecuteData) error {
+func (un *usageNode) Execute(*command.Input, command.Output, *command.Data, *command.ExecuteData) error {
 	return nil
 }
-func (un *usageNode) Complete(*commondels.Input, *commondels.Data) (*commondels.Completion, error) {
+func (un *usageNode) Complete(*command.Input, *command.Data) (*command.Completion, error) {
 	return nil, nil
 }
-func (un *usageNode) Next(*commondels.Input, *commondels.Data) (commondels.Node, error) {
+func (un *usageNode) Next(*command.Input, *command.Data) (command.Node, error) {
 	return nil, nil
 }
 
 func TestUsage(t *testing.T) {
 
-	branchesForSorting := map[string]commondels.Node{
+	branchesForSorting := map[string]command.Node{
 		"alpha": nil,
 		"beta":  SerialNodes(ListArg[string]("ROPES", "lots of strings", 2, 3)),
 		"charlie": &BranchNode{
-			Branches: map[string]commondels.Node{
+			Branches: map[string]command.Node{
 				"brown":  SerialNodes(Description("learn about cartoons"), Arg[float64]("FLOATER", "something bouyant")),
 				"yellow": SerialNodes(&ExecutorProcessor{}),
 			},
@@ -269,7 +269,7 @@ func TestUsage(t *testing.T) {
 		{
 			name: "works with unbounded list arg",
 			etc: &commandtest.ExecuteTestCase{
-				Node: SerialNodes(ListArg[string]("SARG", testDesc, 0, commondels.UnboundedList)),
+				Node: SerialNodes(ListArg[string]("SARG", testDesc, 0, command.UnboundedList)),
 				WantStdout: strings.Join([]string{
 					"[ SARG ... ]",
 					"",
@@ -284,7 +284,7 @@ func TestUsage(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Node: ShortcutNode("shortcutName", nil, SerialNodes(
 					Description("command desc"),
-					ListArg[string]("SARG", testDesc, 0, commondels.UnboundedList),
+					ListArg[string]("SARG", testDesc, 0, command.UnboundedList),
 					SimpleProcessor(nil, nil),
 				)),
 				WantStdout: strings.Join([]string{
@@ -305,7 +305,7 @@ func TestUsage(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Node: CacheNode("cacheName", nil, SerialNodes(
 					Description("cmd desc"),
-					ListArg[string]("SARG", testDesc, 0, commondels.UnboundedList),
+					ListArg[string]("SARG", testDesc, 0, command.UnboundedList),
 					SimpleProcessor(nil, nil),
 				)),
 				WantStdout: strings.Join([]string{
@@ -325,10 +325,10 @@ func TestUsage(t *testing.T) {
 			name: "works with simple branch node",
 			etc: &commandtest.ExecuteTestCase{
 				Node: &BranchNode{
-					Branches: map[string]commondels.Node{
+					Branches: map[string]command.Node{
 						"alpha": nil,
 					},
-					Default: SerialNodes(Description("the default command"), Arg[int]("INT_ARG", "an integer"), ListArg[string]("STRINGS", "unltd strings", 1, commondels.UnboundedList)),
+					Default: SerialNodes(Description("the default command"), Arg[int]("INT_ARG", "an integer"), ListArg[string]("STRINGS", "unltd strings", 1, command.UnboundedList)),
 				},
 				WantStdout: strings.Join([]string{
 					"the default command",
@@ -350,7 +350,7 @@ func TestUsage(t *testing.T) {
 			name: "works with simple branch node with no default",
 			etc: &commandtest.ExecuteTestCase{
 				Node: &BranchNode{
-					Branches: map[string]commondels.Node{
+					Branches: map[string]command.Node{
 						"alpha": nil,
 					},
 				},
@@ -370,10 +370,10 @@ func TestUsage(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"123"},
 				Node: &BranchNode{
-					Branches: map[string]commondels.Node{
+					Branches: map[string]command.Node{
 						"alpha": nil,
 					},
-					Default: SerialNodes(Description("the default command"), Arg[int]("INT_ARG", "an integer"), ListArg[string]("STRINGS", "unltd strings", 1, commondels.UnboundedList)),
+					Default: SerialNodes(Description("the default command"), Arg[int]("INT_ARG", "an integer"), ListArg[string]("STRINGS", "unltd strings", 1, command.UnboundedList)),
 				},
 				WantStdout: strings.Join([]string{
 					"the default command",
@@ -397,11 +397,11 @@ func TestUsage(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"beta"},
 				Node: &BranchNode{
-					Branches: map[string]commondels.Node{
+					Branches: map[string]command.Node{
 						"alpha": nil,
 						"beta":  SerialNodes(ListArg[string]("ROPES", "lots of strings", 2, 3)),
 					},
-					Default: SerialNodes(Description("the default command"), Arg[int]("INT_ARG", "an integer"), ListArg[string]("STRINGS", "unltd strings", 1, commondels.UnboundedList)),
+					Default: SerialNodes(Description("the default command"), Arg[int]("INT_ARG", "an integer"), ListArg[string]("STRINGS", "unltd strings", 1, command.UnboundedList)),
 				},
 				WantStdout: strings.Join([]string{
 					"ROPES ROPES [ ROPES ROPES ROPES ]",
@@ -426,11 +426,11 @@ func TestUsage(t *testing.T) {
 					Description("command start"),
 					Arg[string]("STRING", "A string"),
 					&BranchNode{
-						Branches: map[string]commondels.Node{
+						Branches: map[string]command.Node{
 							"alpha": nil,
 						},
 						HideUsage: true,
-						Default:   SerialNodes(Description("the default command"), Arg[int]("INT_ARG", "an integer"), ListArg[string]("STRINGS", "unltd strings", 1, commondels.UnboundedList)),
+						Default:   SerialNodes(Description("the default command"), Arg[int]("INT_ARG", "an integer"), ListArg[string]("STRINGS", "unltd strings", 1, command.UnboundedList)),
 					},
 				),
 				WantStdout: strings.Join([]string{
@@ -452,7 +452,7 @@ func TestUsage(t *testing.T) {
 					Description("command start"),
 					Arg[string]("STRING", "A string"),
 					&BranchNode{
-						Branches: map[string]commondels.Node{
+						Branches: map[string]command.Node{
 							"alpha": nil,
 						},
 						HideUsage: true,
@@ -472,17 +472,17 @@ func TestUsage(t *testing.T) {
 			name: "works with branch node",
 			etc: &commandtest.ExecuteTestCase{
 				Node: &BranchNode{
-					Branches: map[string]commondels.Node{
+					Branches: map[string]command.Node{
 						"alpha": nil,
 						"beta":  SerialNodes(ListArg[string]("ROPES", "lots of strings", 2, 3)),
 						"charlie": &BranchNode{
-							Branches: map[string]commondels.Node{
+							Branches: map[string]command.Node{
 								"brown":  SerialNodes(Description("learn about cartoons"), Arg[float64]("FLOATER", "something bouyant")),
 								"yellow": SerialNodes(&ExecutorProcessor{}),
 							},
 						},
 					},
-					Default: SerialNodes(Description("the default command"), Arg[int]("INT_ARG", "an integer"), ListArg[string]("STRINGS", "unltd strings", 1, commondels.UnboundedList)),
+					Default: SerialNodes(Description("the default command"), Arg[int]("INT_ARG", "an integer"), ListArg[string]("STRINGS", "unltd strings", 1, command.UnboundedList)),
 				},
 				WantStdout: strings.Join([]string{
 					"the default command",
@@ -516,13 +516,13 @@ func TestUsage(t *testing.T) {
 			name: "works with branch node shortcut option",
 			etc: &commandtest.ExecuteTestCase{
 				Node: &BranchNode{
-					Branches: map[string]commondels.Node{
+					Branches: map[string]command.Node{
 						"alpha": SerialNodes(
 							Description("The first"),
 						),
 						"beta": SerialNodes(ListArg[string]("ROPES", "lots of strings", 2, 3)),
 						"charlie": &BranchNode{
-							Branches: map[string]commondels.Node{
+							Branches: map[string]command.Node{
 								"brown":  SerialNodes(Description("learn about cartoons"), Arg[float64]("FLOATER", "something bouyant")),
 								"yellow": SerialNodes(&ExecutorProcessor{}),
 							},
@@ -532,7 +532,7 @@ func TestUsage(t *testing.T) {
 						"charlie": {"charles", "chuck"},
 						"alpha":   {"omega"},
 					}),
-					Default: SerialNodes(Description("the default command"), Arg[int]("INT_ARG", "an integer"), ListArg[string]("STRINGS", "unltd strings", 1, commondels.UnboundedList)),
+					Default: SerialNodes(Description("the default command"), Arg[int]("INT_ARG", "an integer"), ListArg[string]("STRINGS", "unltd strings", 1, command.UnboundedList)),
 				},
 				WantStdout: strings.Join([]string{
 					"the default command",
@@ -567,13 +567,13 @@ func TestUsage(t *testing.T) {
 			name: "works with branch node shortcut option via spaces",
 			etc: &commandtest.ExecuteTestCase{
 				Node: &BranchNode{
-					Branches: map[string]commondels.Node{
+					Branches: map[string]command.Node{
 						"alpha omega1": SerialNodes(
 							Description("The first"),
 						),
 						"beta": SerialNodes(ListArg[string]("ROPES", "lots of strings", 2, 3)),
 						"charlie": &BranchNode{
-							Branches: map[string]commondels.Node{
+							Branches: map[string]command.Node{
 								"brown":  SerialNodes(Description("learn about cartoons"), Arg[float64]("FLOATER", "something bouyant")),
 								"yellow": SerialNodes(&ExecutorProcessor{}),
 							},
@@ -583,7 +583,7 @@ func TestUsage(t *testing.T) {
 						"charlie": {"charles", "chuck"},
 						"alpha":   {"omega2"},
 					}),
-					Default: SerialNodes(Description("the default command"), Arg[int]("INT_ARG", "an integer"), ListArg[string]("STRINGS", "unltd strings", 1, commondels.UnboundedList)),
+					Default: SerialNodes(Description("the default command"), Arg[int]("INT_ARG", "an integer"), ListArg[string]("STRINGS", "unltd strings", 1, command.UnboundedList)),
 				},
 				WantStdout: strings.Join([]string{
 					"the default command",
@@ -618,20 +618,20 @@ func TestUsage(t *testing.T) {
 			name: "works with multiple node",
 			etc: &commandtest.ExecuteTestCase{
 				Node: &BranchNode{
-					Branches: map[string]commondels.Node{
+					Branches: map[string]command.Node{
 						"alpha": nil,
 						"beta": &BranchNode{
-							Branches: map[string]commondels.Node{
+							Branches: map[string]command.Node{
 								"one":   SerialNodes(Description("First"), Arg[int]("ONE", "A number")),
 								"two":   SerialNodes(Arg[int]("TWO", "Another number")),
 								"three": SerialNodes(&ExecutorProcessor{}),
 							},
 						},
 						"charlie": &BranchNode{
-							Branches: map[string]commondels.Node{
+							Branches: map[string]command.Node{
 								"delta": SerialNodes(SerialNodes(Description("Something else"), Arg[string]("DELTA", "delta description"))),
 								"brown": &BranchNode{
-									Branches: map[string]commondels.Node{
+									Branches: map[string]command.Node{
 										"movie":      SerialNodes(Description("learn about cartoons"), Arg[float64]("FLOATER", "something bouyant")),
 										"comic":      SerialNodes(Description("Comic strip")),
 										"characters": SerialNodes(ListArg[string]("CHARACTERS", "Character names", 2, 1)),
@@ -641,7 +641,7 @@ func TestUsage(t *testing.T) {
 							},
 						},
 					},
-					Default: SerialNodes(Description("the default command"), Arg[int]("INT_ARG", "an integer"), ListArg[string]("STRINGS", "unltd strings", 1, commondels.UnboundedList)),
+					Default: SerialNodes(Description("the default command"), Arg[int]("INT_ARG", "an integer"), ListArg[string]("STRINGS", "unltd strings", 1, command.UnboundedList)),
 				},
 				WantStdout: strings.Join([]string{
 					"the default command",
@@ -698,7 +698,7 @@ func TestUsage(t *testing.T) {
 				Node: &BranchNode{
 					BranchUsageOrder: []string{"alpha", "beta", "charlie", "delta", "echo", "foxtrot"},
 					Branches:         branchesForSorting,
-					Default:          SerialNodes(Description("the default command"), Arg[int]("INT_ARG", "an integer"), ListArg[string]("STRINGS", "unltd strings", 1, commondels.UnboundedList)),
+					Default:          SerialNodes(Description("the default command"), Arg[int]("INT_ARG", "an integer"), ListArg[string]("STRINGS", "unltd strings", 1, command.UnboundedList)),
 				},
 				WantErr:    fmt.Errorf("BranchUsageOrder includes an incorrect set of branches: expected [alpha beta charlie delta echo]; got [alpha beta charlie delta echo foxtrot]"),
 				WantStderr: "BranchUsageOrder includes an incorrect set of branches: expected [alpha beta charlie delta echo]; got [alpha beta charlie delta echo foxtrot]\n",
@@ -710,7 +710,7 @@ func TestUsage(t *testing.T) {
 				Node: &BranchNode{
 					BranchUsageOrder: []string{"alpha", "beta", "delta", "echo"},
 					Branches:         branchesForSorting,
-					Default:          SerialNodes(Description("the default command"), Arg[int]("INT_ARG", "an integer"), ListArg[string]("STRINGS", "unltd strings", 1, commondels.UnboundedList)),
+					Default:          SerialNodes(Description("the default command"), Arg[int]("INT_ARG", "an integer"), ListArg[string]("STRINGS", "unltd strings", 1, command.UnboundedList)),
 				},
 				WantErr:    fmt.Errorf("BranchUsageOrder includes an incorrect set of branches: expected [alpha beta charlie delta echo]; got [alpha beta delta echo]"),
 				WantStderr: "BranchUsageOrder includes an incorrect set of branches: expected [alpha beta charlie delta echo]; got [alpha beta delta echo]\n",
@@ -722,7 +722,7 @@ func TestUsage(t *testing.T) {
 				Node: &BranchNode{
 					BranchUsageOrder: []string{"alpha", "beta", "beta", "charlie", "delta", "echo"},
 					Branches:         branchesForSorting,
-					Default:          SerialNodes(Description("the default command"), Arg[int]("INT_ARG", "an integer"), ListArg[string]("STRINGS", "unltd strings", 1, commondels.UnboundedList)),
+					Default:          SerialNodes(Description("the default command"), Arg[int]("INT_ARG", "an integer"), ListArg[string]("STRINGS", "unltd strings", 1, command.UnboundedList)),
 				},
 				WantErr:    fmt.Errorf("BranchUsageOrder includes an incorrect set of branches: expected [alpha beta charlie delta echo]; got [alpha beta beta charlie delta echo]"),
 				WantStderr: "BranchUsageOrder includes an incorrect set of branches: expected [alpha beta charlie delta echo]; got [alpha beta beta charlie delta echo]\n",
@@ -734,7 +734,7 @@ func TestUsage(t *testing.T) {
 				Node: &BranchNode{
 					BranchUsageOrder: []string{"alpha", "beta", "beta", "delta", "echo"},
 					Branches:         branchesForSorting,
-					Default:          SerialNodes(Description("the default command"), Arg[int]("INT_ARG", "an integer"), ListArg[string]("STRINGS", "unltd strings", 1, commondels.UnboundedList)),
+					Default:          SerialNodes(Description("the default command"), Arg[int]("INT_ARG", "an integer"), ListArg[string]("STRINGS", "unltd strings", 1, command.UnboundedList)),
 				},
 				WantErr:    fmt.Errorf("BranchUsageOrder includes an incorrect set of branches: expected [alpha beta charlie delta echo]; got [alpha beta beta delta echo]"),
 				WantStderr: "BranchUsageOrder includes an incorrect set of branches: expected [alpha beta charlie delta echo]; got [alpha beta beta delta echo]\n",
@@ -746,7 +746,7 @@ func TestUsage(t *testing.T) {
 				Node: &BranchNode{
 					BranchUsageOrder: []string{"alpha", "beta", "charlie", "delta", "echo"},
 					Branches:         branchesForSorting,
-					Default:          SerialNodes(Description("the default command"), Arg[int]("INT_ARG", "an integer"), ListArg[string]("STRINGS", "unltd strings", 1, commondels.UnboundedList)),
+					Default:          SerialNodes(Description("the default command"), Arg[int]("INT_ARG", "an integer"), ListArg[string]("STRINGS", "unltd strings", 1, command.UnboundedList)),
 				},
 				WantStdout: strings.Join([]string{
 					"the default command",
@@ -1085,7 +1085,7 @@ func TestUsage(t *testing.T) {
 		{
 			name: "NodeRepeater usage works for unbounded",
 			etc: &commandtest.ExecuteTestCase{
-				Node: SerialNodes(sampleRepeaterProcessor(3, commondels.UnboundedList)),
+				Node: SerialNodes(sampleRepeaterProcessor(3, command.UnboundedList)),
 				WantStdout: strings.Join([]string{
 					"KEY VALUE KEY VALUE KEY VALUE { KEY VALUE } ...",
 					"",
@@ -1101,8 +1101,8 @@ func TestUsage(t *testing.T) {
 			name: "NodeRepeater usage works for unbounded",
 			etc: &commandtest.ExecuteTestCase{
 				Node: SerialNodes(
-					ListArg[string]("SL", testDesc, 1, commondels.UnboundedList, ListUntilSymbol("ghi")),
-					ListArg[string]("SL2", testDesc, 0, commondels.UnboundedList),
+					ListArg[string]("SL", testDesc, 1, command.UnboundedList, ListUntilSymbol("ghi")),
+					ListArg[string]("SL2", testDesc, 0, command.UnboundedList),
 				),
 				WantStdout: strings.Join([]string{
 					"SL [ SL ... ] ghi [ SL2 ... ]",
@@ -1137,7 +1137,7 @@ func TestUsage(t *testing.T) {
 		{
 			name: "unbounded StringListListProcessor",
 			etc: &commandtest.ExecuteTestCase{
-				Node: SerialNodes(StringListListProcessor("SLL", "sl desc", ";", 1, commondels.UnboundedList)),
+				Node: SerialNodes(StringListListProcessor("SLL", "sl desc", ";", 1, command.UnboundedList)),
 				WantStdout: strings.Join([]string{
 					"[ SLL ... ] ; { [ SLL ... ] ; } ...",
 					"",

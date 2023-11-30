@@ -6,7 +6,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/leep-frog/command/commondels"
+	"github.com/leep-frog/command/command"
 	"golang.org/x/exp/constraints"
 )
 
@@ -38,11 +38,11 @@ func IsValidationError(err error) bool {
 
 // ValidatorOption is an `ArgumentOption` and `BashOption` for validating arguments.
 type ValidatorOption[T any] struct {
-	Validate func(T, *commondels.Data) error
+	Validate func(T, *command.Data) error
 	Usage    string
 }
 
-func (vo *ValidatorOption[T]) RunValidation(arg validatable, t T, d *commondels.Data) error {
+func (vo *ValidatorOption[T]) RunValidation(arg validatable, t T, d *command.Data) error {
 	if err := vo.Validate(t, d); err != nil {
 		return newValidationErr(arg, err)
 	}
@@ -60,7 +60,7 @@ func (vo *ValidatorOption[T]) modifyArgumentOption(ao *argumentOption[T]) {
 // etc.
 func ListifyValidatorOption[T any](vo *ValidatorOption[T]) *ValidatorOption[[]T] {
 	return &ValidatorOption[[]T]{
-		func(ts []T, d *commondels.Data) error {
+		func(ts []T, d *command.Data) error {
 			for _, t := range ts {
 				if err := vo.Validate(t, d); err != nil {
 					return err
@@ -75,7 +75,7 @@ func ListifyValidatorOption[T any](vo *ValidatorOption[T]) *ValidatorOption[[]T]
 // Not [`ValidatorOption`] inverts the provided validator.
 func Not[T any](vo *ValidatorOption[T]) *ValidatorOption[T] {
 	return &ValidatorOption[T]{
-		func(t T, d *commondels.Data) error {
+		func(t T, d *command.Data) error {
 			if err := vo.Validate(t, d); err == nil {
 				return fmt.Errorf("[Not(%s)] failed", vo.Usage)
 			}
@@ -88,7 +88,7 @@ func Not[T any](vo *ValidatorOption[T]) *ValidatorOption[T] {
 // Contains [`ValidatorOption`] validates an argument contains the provided string.
 func Contains(s string) *ValidatorOption[string] {
 	return &ValidatorOption[string]{
-		func(vs string, d *commondels.Data) error {
+		func(vs string, d *command.Data) error {
 			if !strings.Contains(vs, s) {
 				return fmt.Errorf("[Contains] value doesn't contain substring %q", s)
 			}
@@ -105,7 +105,7 @@ func MatchesRegex(pattern ...string) *ValidatorOption[string] {
 		rs = append(rs, regexp.MustCompile(p))
 	}
 	return &ValidatorOption[string]{
-		func(vs string, d *commondels.Data) error {
+		func(vs string, d *command.Data) error {
 			for _, r := range rs {
 				if !r.MatchString(vs) {
 					return fmt.Errorf("[MatchesRegex] value %q doesn't match regex %q", vs, r.String())
@@ -120,7 +120,7 @@ func MatchesRegex(pattern ...string) *ValidatorOption[string] {
 // IsRegex [`ValidatorOption`] validates an argument is a valid regex.
 func IsRegex() *ValidatorOption[string] {
 	return &ValidatorOption[string]{
-		func(s string, d *commondels.Data) error {
+		func(s string, d *command.Data) error {
 			if _, err := regexp.Compile(s); err != nil {
 				return fmt.Errorf("[IsRegex] value %q isn't a valid regex: %v", s, err)
 			}
@@ -133,7 +133,7 @@ func IsRegex() *ValidatorOption[string] {
 // InList [`ValidatorOption`] validates an argument is one of the provided choices.
 func InList[T comparable](choices ...T) *ValidatorOption[T] {
 	return &ValidatorOption[T]{
-		func(vs T, d *commondels.Data) error {
+		func(vs T, d *command.Data) error {
 			for _, c := range choices {
 				if vs == c {
 					return nil
@@ -152,7 +152,7 @@ type Lengthable[T any] interface {
 // MinLength [`ValidatorOption`] validates an argument is at least `length` long.
 func MinLength[K any, T Lengthable[K]](length int) *ValidatorOption[T] {
 	return &ValidatorOption[T]{
-		func(vs T, d *commondels.Data) error {
+		func(vs T, d *command.Data) error {
 			if len(vs) < length {
 				return fmt.Errorf("[MinLength] length must be at least %d", length)
 			}
@@ -165,7 +165,7 @@ func MinLength[K any, T Lengthable[K]](length int) *ValidatorOption[T] {
 // MaxLength [`ValidatorOption`] validates an argument is at most `length` long.
 func MaxLength[K any, T Lengthable[K]](length int) *ValidatorOption[T] {
 	return &ValidatorOption[T]{
-		func(vs T, d *commondels.Data) error {
+		func(vs T, d *command.Data) error {
 			if len(vs) > length {
 				return fmt.Errorf("[MaxLength] length must be at most %d", length)
 			}
@@ -178,7 +178,7 @@ func MaxLength[K any, T Lengthable[K]](length int) *ValidatorOption[T] {
 // Length [`ValidatorOption`] validates an argument is exactly length.
 func Length[K any, T Lengthable[K]](length int) *ValidatorOption[T] {
 	return &ValidatorOption[T]{
-		func(vs T, d *commondels.Data) error {
+		func(vs T, d *command.Data) error {
 			if len(vs) != length {
 				return fmt.Errorf("[Length] length must be exactly %d", length)
 			}
@@ -202,7 +202,7 @@ func fileExists(vName, s string) (os.FileInfo, error) {
 // FileExists [`ValidatorOption`] validates the file or directory exists.
 func FileExists() *ValidatorOption[string] {
 	return &ValidatorOption[string]{
-		func(s string, d *commondels.Data) error {
+		func(s string, d *command.Data) error {
 			_, err := fileExists("FileExists", s)
 			return err
 		},
@@ -224,7 +224,7 @@ func isDir(vName, s string) error {
 // IsDir [`ValidatorOption`] validates an argument is a directory.
 func IsDir() *ValidatorOption[string] {
 	return &ValidatorOption[string]{
-		func(s string, d *commondels.Data) error {
+		func(s string, d *command.Data) error {
 			return isDir("IsDir", s)
 		},
 		"IsDir()",
@@ -245,7 +245,7 @@ func isFile(vName, s string) error {
 // IsFile [`ValidatorOption`] validates an argument is a file.
 func IsFile() *ValidatorOption[string] {
 	return &ValidatorOption[string]{
-		func(s string, d *commondels.Data) error {
+		func(s string, d *command.Data) error {
 			return isFile("IsFile", s)
 		},
 		"IsFile()",
@@ -257,7 +257,7 @@ func IsFile() *ValidatorOption[string] {
 // EQ [`ValidatorOption`] validates an argument equals `n`.
 func EQ[T comparable](n T) *ValidatorOption[T] {
 	return &ValidatorOption[T]{
-		func(v T, d *commondels.Data) error {
+		func(v T, d *command.Data) error {
 			if v == n {
 				return nil
 			}
@@ -270,7 +270,7 @@ func EQ[T comparable](n T) *ValidatorOption[T] {
 // NEQ [`ValidatorOption`] validates an argument does not equal `n`.
 func NEQ[T comparable](n T) *ValidatorOption[T] {
 	return &ValidatorOption[T]{
-		func(v T, d *commondels.Data) error {
+		func(v T, d *command.Data) error {
 			if v != n {
 				return nil
 			}
@@ -283,7 +283,7 @@ func NEQ[T comparable](n T) *ValidatorOption[T] {
 // LT [`ValidatorOption`] validates an argument is less than `n`.
 func LT[T constraints.Ordered](n T) *ValidatorOption[T] {
 	return &ValidatorOption[T]{
-		func(v T, d *commondels.Data) error {
+		func(v T, d *command.Data) error {
 			if v < n {
 				return nil
 			}
@@ -296,7 +296,7 @@ func LT[T constraints.Ordered](n T) *ValidatorOption[T] {
 // LTE [`ValidatorOption`] validates an argument is less than or equal to `n`.
 func LTE[T constraints.Ordered](n T) *ValidatorOption[T] {
 	return &ValidatorOption[T]{
-		func(v T, d *commondels.Data) error {
+		func(v T, d *command.Data) error {
 			if v <= n {
 				return nil
 			}
@@ -309,7 +309,7 @@ func LTE[T constraints.Ordered](n T) *ValidatorOption[T] {
 // GT [`ValidatorOption`] validates an argument is greater than `n`.
 func GT[T constraints.Ordered](n T) *ValidatorOption[T] {
 	return &ValidatorOption[T]{
-		func(v T, d *commondels.Data) error {
+		func(v T, d *command.Data) error {
 			if v > n {
 				return nil
 			}
@@ -322,7 +322,7 @@ func GT[T constraints.Ordered](n T) *ValidatorOption[T] {
 // GTE [`ValidatorOption`] validates an argument is greater than or equal to `n`.
 func GTE[T constraints.Ordered](n T) *ValidatorOption[T] {
 	return &ValidatorOption[T]{
-		func(v T, d *commondels.Data) error {
+		func(v T, d *command.Data) error {
 			if v >= n {
 				return nil
 			}
@@ -335,7 +335,7 @@ func GTE[T constraints.Ordered](n T) *ValidatorOption[T] {
 // Positive [`ValidatorOption`] validates an argument is positive.
 func Positive[T constraints.Ordered]() *ValidatorOption[T] {
 	return &ValidatorOption[T]{
-		func(v T, d *commondels.Data) error {
+		func(v T, d *command.Data) error {
 			var t T
 			if v > t {
 				return nil
@@ -349,7 +349,7 @@ func Positive[T constraints.Ordered]() *ValidatorOption[T] {
 // NonNegative [`ValidatorOption`] validates an argument is non-negative.
 func NonNegative[T constraints.Ordered]() *ValidatorOption[T] {
 	return &ValidatorOption[T]{
-		func(v T, d *commondels.Data) error {
+		func(v T, d *command.Data) error {
 			var t T
 			if v >= t {
 				return nil
@@ -363,7 +363,7 @@ func NonNegative[T constraints.Ordered]() *ValidatorOption[T] {
 // Negative [`ValidatorOption`] validates an argument is negative.
 func Negative[T constraints.Ordered]() *ValidatorOption[T] {
 	return &ValidatorOption[T]{
-		func(v T, d *commondels.Data) error {
+		func(v T, d *command.Data) error {
 			var t T
 			if v < t {
 				return nil
@@ -377,7 +377,7 @@ func Negative[T constraints.Ordered]() *ValidatorOption[T] {
 // Between [`ValidatorOption`] validates an argument is between two numbers.
 func Between[T constraints.Ordered](start, end T, inclusive bool) *ValidatorOption[T] {
 	return &ValidatorOption[T]{
-		func(v T, d *commondels.Data) error {
+		func(v T, d *command.Data) error {
 			if v < start {
 				return fmt.Errorf("[Between] value is less than lower bound (%v)", start)
 			}

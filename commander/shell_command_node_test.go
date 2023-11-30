@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/leep-frog/command/command"
 	"github.com/leep-frog/command/commandtest"
-	"github.com/leep-frog/command/commondels"
 )
 
 func TestShellCommand(t *testing.T) {
@@ -89,7 +89,7 @@ func TestShellCommand(t *testing.T) {
 					Args: []string{"hello"},
 					Dir:  filepath.Join("some", "other", "dir"),
 				}},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"s": "aloha",
 				}},
 				RunResponses: []*commandtest.FakeRun{
@@ -113,7 +113,7 @@ func TestShellCommand(t *testing.T) {
 					Args:          []string{"hello"},
 					StdinContents: "hello there.\nGeneral Kenobi",
 				}},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"s": "aloha",
 				}},
 				RunResponses: []*commandtest.FakeRun{
@@ -132,7 +132,7 @@ func TestShellCommand(t *testing.T) {
 					Name: "echo",
 					Args: []string{"hello"},
 				}},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"s": "aloha",
 				}},
 				RunResponses: []*commandtest.FakeRun{
@@ -155,7 +155,7 @@ func TestShellCommand(t *testing.T) {
 					Name: "echo",
 					Args: []string{"hello", "there"},
 				}},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"s": "aloha",
 				}},
 				WantStdout: "echo hello there\n",
@@ -193,7 +193,7 @@ func TestShellCommand(t *testing.T) {
 					Name: "don't",
 					Args: []string{"echo", "hello"},
 				}},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"s": "",
 				}},
 				RunResponses: []*commandtest.FakeRun{{}},
@@ -207,7 +207,7 @@ func TestShellCommand(t *testing.T) {
 					Name: "echo",
 					Args: []string{"hello"},
 				}},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"s": "aloha",
 				}},
 				WantStderr: "ahola\n",
@@ -227,7 +227,7 @@ func TestShellCommand(t *testing.T) {
 					Name: "echo",
 					Args: []string{"hello"},
 				}},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"s": "aloha",
 				}},
 				RunResponses: []*commandtest.FakeRun{
@@ -247,7 +247,7 @@ func TestShellCommand(t *testing.T) {
 					Name: "echo",
 					Args: []string{"hello"},
 				}},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"s": []string{"aloha", "hello there", "howdy"},
 				}},
 				RunResponses: []*commandtest.FakeRun{
@@ -266,7 +266,7 @@ func TestShellCommand(t *testing.T) {
 					Args: []string{"hello"},
 				}},
 				WantStdout: "aloha\nhello there\nhowdy\n",
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"s": []string{"aloha", "hello there", "howdy"},
 				}},
 				RunResponses: []*commandtest.FakeRun{
@@ -285,7 +285,7 @@ func TestShellCommand(t *testing.T) {
 						CommandName:   "echo",
 						Args:          []string{"hello"},
 						ForwardStdout: true,
-						OutputStreamProcessor: func(o commondels.Output, d *commondels.Data, b []byte) error {
+						OutputStreamProcessor: func(o command.Output, d *command.Data, b []byte) error {
 							o.Stdoutf("Streamer received: %s", string(b))
 							return nil
 						},
@@ -305,7 +305,7 @@ func TestShellCommand(t *testing.T) {
 					"Streamer received: howdy",
 					"",
 				}, "\n"),
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"s": []string{"aloha", "hello there", "howdy"},
 				}},
 				RunResponses: []*commandtest.FakeRun{
@@ -323,7 +323,7 @@ func TestShellCommand(t *testing.T) {
 					Name: "echo",
 					Args: []string{"hello"},
 				}},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"s": []string{"aloha", "hello there", "howdy", "", ""},
 				}},
 				RunResponses: []*commandtest.FakeRun{
@@ -342,7 +342,7 @@ func TestShellCommand(t *testing.T) {
 					Name: "echo",
 					Args: []string{"1248"},
 				}},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"i": 1248,
 				}},
 				RunResponses: []*commandtest.FakeRun{
@@ -360,7 +360,7 @@ func TestShellCommand(t *testing.T) {
 					Name: "don't",
 					Args: []string{"echo", "1248"},
 				}},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"i": 0,
 				}},
 				RunResponses: []*commandtest.FakeRun{{}},
@@ -392,7 +392,7 @@ func TestShellCommand(t *testing.T) {
 					Name: "echo",
 					Args: []string{"primes"},
 				}},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"i": []int{2, 3, 5, 7},
 				}},
 				RunResponses: []*commandtest.FakeRun{
@@ -428,7 +428,7 @@ func TestShellCommand(t *testing.T) {
 					Name: "echo",
 					Args: []string{"1248"},
 				}},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"i": 1248,
 				}},
 				RunResponses: []*commandtest.FakeRun{
@@ -464,7 +464,7 @@ func TestShellCommand(t *testing.T) {
 					Name: "echo",
 					Args: []string{"primes"},
 				}},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"i": []int{2, 3, 5, 7},
 				}},
 				RunResponses: []*commandtest.FakeRun{
@@ -503,7 +503,7 @@ func TestShellCommand(t *testing.T) {
 					Name: "echo",
 					Args: []string{"1248"},
 				}},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"i": 1248,
 				}},
 				RunResponses: []*commandtest.FakeRun{
@@ -591,7 +591,7 @@ func TestShellCommand(t *testing.T) {
 					"echo list 2: 1:1:2:3:5:8",
 					"echo list 3: 13.21 34.55",
 				}},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"s":  "stringVal",
 					"i":  9,
 					"f":  -12.345678,
@@ -616,7 +616,7 @@ func TestShellCommand(t *testing.T) {
 						"echo 1: %s",
 					},
 						FormatArgs: []ShellCommandDataStringer[string]{
-							CustomShellCommandDataStringer[string](func(d *commondels.Data) (string, error) {
+							CustomShellCommandDataStringer[string](func(d *command.Data) (string, error) {
 								return "bleh", fmt.Errorf("ouch")
 							}),
 						},

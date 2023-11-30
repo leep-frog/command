@@ -3,11 +3,11 @@ package spycommander
 import (
 	"reflect"
 
-	"github.com/leep-frog/command/commondels"
+	"github.com/leep-frog/command/command"
 )
 
 // Separate method for testing purposes.
-func Execute(n commondels.Node, input *commondels.Input, output commondels.Output, data *commondels.Data, eData *commondels.ExecuteData) (retErr error) {
+func Execute(n command.Node, input *command.Input, output command.Output, data *command.Data, eData *command.ExecuteData) (retErr error) {
 	defer func() {
 		r := recover()
 
@@ -17,7 +17,7 @@ func Execute(n commondels.Node, input *commondels.Input, output commondels.Outpu
 		}
 
 		// Panicked due to terminate error
-		if ok, err := commondels.IsTerminationPanic(r); ok {
+		if ok, err := command.IsTerminationPanic(r); ok {
 			retErr = err
 			return
 		}
@@ -31,7 +31,7 @@ func Execute(n commondels.Node, input *commondels.Input, output commondels.Outpu
 	}
 
 	if !input.FullyProcessed() {
-		retErr = commondels.ExtraArgsErr(input)
+		retErr = command.ExtraArgsErr(input)
 		output.Stderrln(retErr)
 		ShowUsageAfterError(n, output)
 		return retErr
@@ -48,8 +48,8 @@ func Execute(n commondels.Node, input *commondels.Input, output commondels.Outpu
 
 // ProcessOrExecute checks if the provided processor is a `Node` or just a `Processor`
 // and traverses the subgraph or executes the processor accordingly.
-func ProcessOrExecute(p commondels.Processor, input *commondels.Input, output commondels.Output, data *commondels.Data, eData *commondels.ExecuteData) error {
-	if n, ok := p.(commondels.Node); ok {
+func ProcessOrExecute(p command.Processor, input *command.Input, output command.Output, data *command.Data, eData *command.ExecuteData) error {
+	if n, ok := p.(command.Node); ok {
 		return ProcessGraphExecution(n, input, output, data, eData)
 	}
 	return p.Execute(input, output, data, eData)
@@ -61,7 +61,7 @@ func isNil(o interface{}) bool {
 }
 
 // ProcessGraphExecution processes the provided graph
-func ProcessGraphExecution(root commondels.Node, input *commondels.Input, output commondels.Output, data *commondels.Data, eData *commondels.ExecuteData) error {
+func ProcessGraphExecution(root command.Node, input *command.Input, output command.Output, data *command.Data, eData *command.ExecuteData) error {
 	for n := root; !isNil(n); {
 		if err := n.Execute(input, output, data, eData); err != nil {
 			return err

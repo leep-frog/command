@@ -9,7 +9,7 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/leep-frog/command/commondels"
+	"github.com/leep-frog/command/command"
 	"github.com/leep-frog/command/internal/constants"
 	"github.com/leep-frog/command/internal/operator"
 	"github.com/leep-frog/command/internal/stubs"
@@ -23,7 +23,7 @@ var (
 // SimpleCompleter returns a completer that suggests the provided strings for command autocompletion.
 func SimpleCompleter[T any](s ...string) Completer[T] {
 	return AsCompleter[T](
-		&commondels.Completion{
+		&command.Completion{
 			Suggestions: s,
 		},
 	)
@@ -32,7 +32,7 @@ func SimpleCompleter[T any](s ...string) Completer[T] {
 // SimpleDistinctCompleter returns a completer that distinctly suggests the provided strings for command autocompletion.
 func SimpleDistinctCompleter[T any](s ...string) Completer[T] {
 	return AsCompleter[T](
-		&commondels.Completion{
+		&command.Completion{
 			Distinct:    true,
 			Suggestions: s,
 		},
@@ -42,7 +42,7 @@ func SimpleDistinctCompleter[T any](s ...string) Completer[T] {
 // CompleterList changes a single arg completer (`Completer[T]`) into a list arg completer (`Completer[[]T]`).
 func CompleterList[T any](c Completer[T]) Completer[[]T] {
 	return &simpleCompleter[[]T]{
-		f: func(ts []T, d *commondels.Data) (*commondels.Completion, error) {
+		f: func(ts []T, d *command.Data) (*command.Completion, error) {
 			var t T
 			if len(ts) > 0 {
 				t = ts[len(ts)-1]
@@ -53,15 +53,15 @@ func CompleterList[T any](c Completer[T]) Completer[[]T] {
 }
 
 // CompleterFromFunc returns a `Completer` object from the provided function.
-func CompleterFromFunc[T any](f func(T, *commondels.Data) (*commondels.Completion, error)) Completer[T] {
+func CompleterFromFunc[T any](f func(T, *command.Data) (*command.Completion, error)) Completer[T] {
 	return &simpleCompleter[T]{f}
 }
 
 type simpleCompleter[T any] struct {
-	f func(T, *commondels.Data) (*commondels.Completion, error)
+	f func(T, *command.Data) (*command.Completion, error)
 }
 
-func (sc *simpleCompleter[T]) Complete(t T, d *commondels.Data) (*commondels.Completion, error) {
+func (sc *simpleCompleter[T]) Complete(t T, d *command.Data) (*command.Completion, error) {
 	return sc.f(t, d)
 }
 
@@ -71,20 +71,20 @@ func (sc *simpleCompleter[T]) modifyArgumentOption(ao *argumentOption[T]) {
 
 // Completer is an autocompletion object that can be used as an `ArgumentOption`.
 type Completer[T any] interface {
-	Complete(T, *commondels.Data) (*commondels.Completion, error)
+	Complete(T, *command.Data) (*command.Completion, error)
 	modifyArgumentOption(*argumentOption[T])
 }
 
 // DeferredCompleter returns an argument/flag `Completer` that defers completion
 // until after the provided graph is run. See the `DeferredCompletion` object
 // for more info.
-func DeferredCompleter[T any](graph commondels.Node, completer Completer[T]) Completer[T] {
-	return CompleterFromFunc(func(t T, d *commondels.Data) (*commondels.Completion, error) {
-		return &commondels.Completion{
-			DeferredCompletion: &commondels.DeferredCompletion{
+func DeferredCompleter[T any](graph command.Node, completer Completer[T]) Completer[T] {
+	return CompleterFromFunc(func(t T, d *command.Data) (*command.Completion, error) {
+		return &command.Completion{
+			DeferredCompletion: &command.DeferredCompletion{
 				graph,
 				// TODO: Should DeferredCompletion only run if no completion is returned?
-				func(c *commondels.Completion, d *commondels.Data) (*commondels.Completion, error) {
+				func(c *command.Completion, d *command.Data) (*command.Completion, error) {
 					return RunArgumentCompleter(completer, t, d)
 				},
 			},
@@ -92,18 +92,18 @@ func DeferredCompleter[T any](graph commondels.Node, completer Completer[T]) Com
 	})
 }
 
-// CompleterWithOpts sets the relevant options in the `commondels.Completion` object
+// CompleterWithOpts sets the relevant options in the `command.Completion` object
 // returned by the `Completer`.
-func CompleterWithOpts[T any](cr Completer[T], cn *commondels.Completion) Completer[T] {
+func CompleterWithOpts[T any](cr Completer[T], cn *command.Completion) Completer[T] {
 	return &cmplWithOpts[T]{cr, cn}
 }
 
 type cmplWithOpts[T any] struct {
 	cr Completer[T]
-	cn *commondels.Completion
+	cn *command.Completion
 }
 
-func (cwo *cmplWithOpts[T]) Complete(t T, d *commondels.Data) (*commondels.Completion, error) {
+func (cwo *cmplWithOpts[T]) Complete(t T, d *command.Data) (*command.Completion, error) {
 	c, err := cwo.cr.Complete(t, d)
 	if c != nil {
 		s := c.Suggestions
@@ -117,21 +117,21 @@ func (cwo *cmplWithOpts[T]) modifyArgumentOption(ao *argumentOption[T]) {
 	ao.completer = cwo
 }
 
-// AsCompleter converts the `commondels.Completion` object into a `Completer` interface.
+// AsCompleter converts the `command.Completion` object into a `Completer` interface.
 // This function is useful for constructing simple completers. To create a simple list,
 // for example:
 // ```go
-// &commondels.Completion{Suggestions: []{"abc", "def", ...}}.AsCompleter
+// &command.Completion{Suggestions: []{"abc", "def", ...}}.AsCompleter
 // ```
-func AsCompleter[T any](c *commondels.Completion) Completer[T] {
+func AsCompleter[T any](c *command.Completion) Completer[T] {
 	return &completionCompleter[T]{c}
 }
 
 type completionCompleter[T any] struct {
-	c *commondels.Completion
+	c *command.Completion
 }
 
-func (sc *completionCompleter[T]) Complete(t T, d *commondels.Data) (*commondels.Completion, error) {
+func (sc *completionCompleter[T]) Complete(t T, d *command.Data) (*command.Completion, error) {
 	return sc.c, nil
 }
 
@@ -144,9 +144,9 @@ func BoolCompleter() Completer[bool] {
 	return SimpleCompleter[bool](constants.BoolStringValues...)
 }
 
-// RunArgumentCompleter generates a `commondels.Completion` object from the provided
+// RunArgumentCompleter generates a `command.Completion` object from the provided
 // `Completer` and inputs.
-func RunArgumentCompleter[T any](c Completer[T], value T, data *commondels.Data) (*commondels.Completion, error) {
+func RunArgumentCompleter[T any](c Completer[T], value T, data *command.Data) (*command.Completion, error) {
 	if c == nil {
 		return nil, nil
 	}
@@ -159,9 +159,9 @@ func RunArgumentCompleter[T any](c Completer[T], value T, data *commondels.Data)
 	return RunArgumentCompletion(completion, value, data)
 }
 
-// RunArgumentCompletion generates a `commondels.Completion` object from the provided
-// `commondels.Completion` and inputs.
-func RunArgumentCompletion[T any](completion *commondels.Completion, value T, data *commondels.Data) (*commondels.Completion, error) {
+// RunArgumentCompletion generates a `command.Completion` object from the provided
+// `command.Completion` and inputs.
+func RunArgumentCompletion[T any](completion *command.Completion, value T, data *command.Data) (*command.Completion, error) {
 
 	op := operator.GetOperator[T]()
 
@@ -194,7 +194,7 @@ type FileCompleter[T any] struct {
 	// Directory is the directory in which to search for files.
 	Directory string
 	// Distinct is whether or not each argument has to be unique.
-	// Separate from commondels.Completion.Distinct because file completion
+	// Separate from command.Completion.Distinct because file completion
 	// does more complicated custom logic (like only comparing
 	// base names even though other arguments may have folder paths too).
 	Distinct bool
@@ -205,7 +205,7 @@ type FileCompleter[T any] struct {
 	// IgnoreDirectories indicates whether we should only consider files.
 	IgnoreDirectories bool
 	// IgnoreFunc is a function that indicates whether a suggestion should be ignored.
-	IgnoreFunc func(fullPath string, basename string, data *commondels.Data) bool
+	IgnoreFunc func(fullPath string, basename string, data *command.Data) bool
 	// ExcludePwd is whether or not the current working directory path should be excluded
 	// from completions.
 	ExcludePwd bool
@@ -234,8 +234,8 @@ func isAbs(dir string) bool {
 	return filepath.IsAbs(dir) || (len(dir) > 0 && (dir[0] == '/' || dir[0] == '\\'))
 }
 
-// Complete creates a `commondels.Completion` object with the relevant set of files.
-func (ff *FileCompleter[T]) Complete(value T, data *commondels.Data) (*commondels.Completion, error) {
+// Complete creates a `command.Completion` object with the relevant set of files.
+func (ff *FileCompleter[T]) Complete(value T, data *command.Data) (*command.Completion, error) {
 	var lastArg string
 	op := operator.GetOperator[T]()
 	if args := op.ToArgs(value); len(args) > 0 {
@@ -259,7 +259,7 @@ func (ff *FileCompleter[T]) Complete(value T, data *commondels.Data) (*commondel
 	if data.Complexecute && len(laFile) == 0 {
 		// If complexecuting and we are at a full directory (no basename),
 		// then just return that.
-		return &commondels.Completion{
+		return &command.Completion{
 			Suggestions: []string{lastArg},
 		}, nil
 	}
@@ -361,7 +361,7 @@ func (ff *FileCompleter[T]) Complete(value T, data *commondels.Data) (*commondel
 	}
 	suggestions = relevantSuggestions
 
-	c := &commondels.Completion{
+	c := &command.Completion{
 		Suggestions:         suggestions,
 		IgnoreFilter:        true,
 		CaseInsensitiveSort: true,
@@ -374,7 +374,7 @@ func (ff *FileCompleter[T]) Complete(value T, data *commondels.Data) (*commondel
 		c.Suggestions[0] = fmt.Sprintf("%s%s", laDir, c.Suggestions[0])
 
 		// If complexecuting, then just complete to the directory
-		// Also, if the commondels.OS does not add a space, then no need to do this.
+		// Also, if the command.OS does not add a space, then no need to do this.
 		if onlyDir && !data.Complexecute && !tooDeep {
 			// This does "dir1/" and "dir1/_" so that the user's command is
 			// autocompleted to "dir1/" without a space after it.

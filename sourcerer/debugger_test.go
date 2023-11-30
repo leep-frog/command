@@ -4,10 +4,10 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/leep-frog/command/command"
 	"github.com/leep-frog/command/commander"
 	"github.com/leep-frog/command/commandertest"
 	"github.com/leep-frog/command/commandtest"
-	"github.com/leep-frog/command/commondels"
 )
 
 func TestDebugger(t *testing.T) {
@@ -20,7 +20,7 @@ func TestDebugger(t *testing.T) {
 			name: "Activates debug mode",
 			etc: &commandtest.ExecuteTestCase{
 				WantStdout: "Entering debug mode.\n",
-				WantExecuteData: &commondels.ExecuteData{
+				WantExecuteData: &command.ExecuteData{
 					Executable: []string{
 						fos.SetEnvVar(commander.DebugEnvVar, "1"),
 					},
@@ -34,12 +34,12 @@ func TestDebugger(t *testing.T) {
 				Env: map[string]string{
 					commander.DebugEnvVar: "1",
 				},
-				WantExecuteData: &commondels.ExecuteData{
+				WantExecuteData: &command.ExecuteData{
 					Executable: []string{
 						fos.UnsetEnvVar(commander.DebugEnvVar),
 					},
 				},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					commander.DebugEnvVar: "1",
 				}},
 			},

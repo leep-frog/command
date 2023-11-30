@@ -6,8 +6,8 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/leep-frog/command/command"
 	"github.com/leep-frog/command/commandtest"
-	"github.com/leep-frog/command/commondels"
 	"github.com/leep-frog/command/internal/spycommand"
 	"github.com/leep-frog/command/internal/spycommander"
 	"github.com/leep-frog/command/internal/spycommandtest"
@@ -78,7 +78,7 @@ func TestCacheExecution(t *testing.T) {
 					`  ^: Start of new cachable section`,
 					``,
 				}, "\n"),
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"s": "dollar",
 				}},
 			},
@@ -102,7 +102,7 @@ func TestCacheExecution(t *testing.T) {
 				Args:       []string{"dollar", "bills"},
 				WantErr:    fmt.Errorf(`Argument "sl" requires at least 3 arguments, got 2`),
 				WantStderr: "Argument \"sl\" requires at least 3 arguments, got 2\n",
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"sl": []string{"dollar", "bills"},
 				}},
 			},
@@ -125,7 +125,7 @@ func TestCacheExecution(t *testing.T) {
 				Args:       []string{"dollar"},
 				WantErr:    fmt.Errorf("validation for \"s\" failed: [MinLength] length must be at least 100"),
 				WantStderr: "validation for \"s\" failed: [MinLength] length must be at least 100\n",
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"s": "dollar",
 				}},
 			},
@@ -154,7 +154,7 @@ func TestCacheExecution(t *testing.T) {
 					Arg[string]("s", testDesc),
 				)),
 				Args: []string{"dollar"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"s": "dollar",
 				}},
 			},
@@ -175,12 +175,12 @@ func TestCacheExecution(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Node: CacheNode("money", cc, SerialNodes(
 					Arg[string]("s", testDesc,
-						&Transformer[string]{F: func(string, *commondels.Data) (string, error) {
+						&Transformer[string]{F: func(string, *command.Data) (string, error) {
 							return "usd", nil
 						}},
 					))),
 				Args: []string{"dollar"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"s": "usd",
 				}},
 			},
@@ -200,7 +200,7 @@ func TestCacheExecution(t *testing.T) {
 					Arg[string]("s", testDesc),
 				)),
 				Args: []string{"dollar"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"s": "dollar",
 				}},
 			},
@@ -230,7 +230,7 @@ func TestCacheExecution(t *testing.T) {
 					Arg[string]("s", testDesc),
 				), CacheHistory(1)),
 				Args: []string{"dollar"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"s": "dollar",
 				}},
 			},
@@ -261,7 +261,7 @@ func TestCacheExecution(t *testing.T) {
 					Arg[string]("s", testDesc),
 				)),
 				Args: []string{"dollar"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"s": "dollar",
 				}},
 			},
@@ -295,7 +295,7 @@ func TestCacheExecution(t *testing.T) {
 					Arg[string]("s", testDesc),
 				)),
 				Args: []string{"dollar"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"s": "dollar",
 				}},
 			},
@@ -329,7 +329,7 @@ func TestCacheExecution(t *testing.T) {
 					Arg[string]("s", testDesc),
 				), CacheHistory(3)),
 				Args: []string{"dollar"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"s": "dollar",
 				}},
 			},
@@ -367,7 +367,7 @@ func TestCacheExecution(t *testing.T) {
 					Arg[string]("s", testDesc),
 				), CacheHistory(3)),
 				Args: []string{"dollar"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"s": "dollar",
 				}},
 			},
@@ -406,7 +406,7 @@ func TestCacheExecution(t *testing.T) {
 					ListArg[string]("sl", testDesc, 0, 4),
 				), CacheHistory(3)),
 				Args: []string{"cash", "money"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"sl": []string{"cash", "money"},
 				}},
 			},
@@ -425,13 +425,13 @@ func TestCacheExecution(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Node: CacheNode("money", cc, SerialNodes(
 					Arg[string]("s", testDesc,
-						&Transformer[string]{F: func(string, *commondels.Data) (string, error) {
+						&Transformer[string]{F: func(string, *command.Data) (string, error) {
 							return "usd", nil
 						}},
 					),
 				)),
 				Args: []string{"dollar"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"s": "usd",
 				}},
 			},
@@ -456,13 +456,13 @@ func TestCacheExecution(t *testing.T) {
 				Node: CacheNode("money", cc, SerialNodes(
 					Arg[int]("i", testDesc),
 					Arg[string]("s", testDesc,
-						&Transformer[string]{F: func(string, *commondels.Data) (string, error) {
+						&Transformer[string]{F: func(string, *command.Data) (string, error) {
 							return "usd", nil
 						}},
 					),
 					ListArg[float64]("fl", testDesc, 2, 0),
 					ListArg[string]("sl", testDesc, 1, 2,
-						&Transformer[[]string]{F: func(v []string, d *commondels.Data) ([]string, error) {
+						&Transformer[[]string]{F: func(v []string, d *command.Data) ([]string, error) {
 							var newSL []string
 							for _, s := range v {
 								newSL = append(newSL, fmt.Sprintf("$%s", s))
@@ -472,7 +472,7 @@ func TestCacheExecution(t *testing.T) {
 					),
 				)),
 				Args: []string{"123", "dollar", "3.4", "4.5", "six", "7"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"s":  "usd",
 					"i":  123,
 					"fl": []float64{3.4, 4.5},
@@ -504,13 +504,13 @@ func TestCacheExecution(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Node: CacheNode("money", cc, SerialNodes(
 					Arg[string]("s", testDesc),
-					&ExecutorProcessor{func(output commondels.Output, _ *commondels.Data) error {
+					&ExecutorProcessor{func(output command.Output, _ *command.Data) error {
 						output.Stdout("We made it!")
 						return nil
 					}},
 				)),
 				Args: []string{"dollar"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"s": "dollar",
 				}},
 				WantStdout: "We made it!",
@@ -543,7 +543,7 @@ func TestCacheExecution(t *testing.T) {
 			},
 			etc: &commandtest.ExecuteTestCase{
 				Node: CacheNode("money", cc, SerialNodes(OptionalArg[string]("s", testDesc))),
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"s": "usd",
 				}},
 			},
@@ -564,7 +564,7 @@ func TestCacheExecution(t *testing.T) {
 					ListArg[int]("il", testDesc, 2, 0),
 					ListArg[float64]("fl", testDesc, 1, 3),
 				)),
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"s":  "usd",
 					"il": []int{1, 2},
 					"fl": []float64{4},
@@ -592,7 +592,7 @@ func TestCacheExecution(t *testing.T) {
 					ListArg[int]("il", testDesc, 2, 0),
 					ListArg[float64]("fl", testDesc, 1, 3),
 				)),
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"s":  "usd",
 					"il": []int{1, 2},
 					"fl": []float64{4},
@@ -619,7 +619,7 @@ func TestCacheExecution(t *testing.T) {
 					ListArg[float64]("fl", testDesc, 1, 3),
 				)),
 				Args: []string{"history"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					cacheHistoryFlag.Name(): 1,
 					cachePrefixData:         "",
 				}},
@@ -648,7 +648,7 @@ func TestCacheExecution(t *testing.T) {
 					ListArg[float64]("fl", testDesc, 1, 3),
 				)),
 				Args: []string{"history"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					cacheHistoryFlag.Name(): 1,
 					cachePrefixData:         "",
 				}},
@@ -678,7 +678,7 @@ func TestCacheExecution(t *testing.T) {
 					ListArg[float64]("fl", testDesc, 1, 3),
 				)),
 				Args: []string{"history", "-n", "2"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					cacheHistoryFlag.Name(): 2,
 					cachePrefixData:         "",
 				}},
@@ -713,7 +713,7 @@ func TestCacheExecution(t *testing.T) {
 					ListArg[float64]("fl", testDesc, 1, 3),
 				)),
 				Args: []string{"history", "-n", "3"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					cacheHistoryFlag.Name(): 3,
 					cachePrefixData:         "",
 				}},
@@ -749,7 +749,7 @@ func TestCacheExecution(t *testing.T) {
 					ListArg[float64]("fl", testDesc, 1, 3),
 				)),
 				Args: []string{"history", "-n", "33"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					cacheHistoryFlag.Name(): 33,
 					cachePrefixData:         "",
 				}},
@@ -786,7 +786,7 @@ func TestCacheExecution(t *testing.T) {
 					ListArg[float64]("fl", testDesc, 1, 3),
 				)),
 				Args: []string{"history", "-n", "33", "-p"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					cacheHistoryFlag.Name():     33,
 					cachePrefixData:             "",
 					cachePrintPrefixFlag.Name(): true,
@@ -829,7 +829,7 @@ func TestCacheExecution(t *testing.T) {
 					)),
 				),
 				Args: []string{"hello", "123", "history", "-n", "33", "-p"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					cacheHistoryFlag.Name():     33,
 					cachePrefixData:             "hello 123 ",
 					cachePrintPrefixFlag.Name(): true,
@@ -866,7 +866,7 @@ func TestCacheExecution(t *testing.T) {
 			},
 			etc: &commandtest.ExecuteTestCase{
 				Node: SerialNodes(
-					Arg[string]("beforeStr", testDesc, &Transformer[string]{F: func(s string, d *commondels.Data) (string, error) {
+					Arg[string]("beforeStr", testDesc, &Transformer[string]{F: func(s string, d *command.Data) (string, error) {
 						return fmt.Sprintf("TRANSFORM(%s)", s), nil
 					}}),
 					Arg[int]("beforeInt", testDesc),
@@ -877,7 +877,7 @@ func TestCacheExecution(t *testing.T) {
 					)),
 				),
 				Args: []string{"hello", "123", "history", "-n", "33", "-p"},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					cacheHistoryFlag.Name():     33,
 					cachePrefixData:             "TRANSFORM(hello) 123 ",
 					cachePrintPrefixFlag.Name(): true,
@@ -934,7 +934,7 @@ func TestCacheComplete(t *testing.T) {
 		{
 			name: "handles empty",
 			ctc: &commandtest.CompleteTestCase{
-				WantData: &commondels.Data{},
+				WantData: &command.Data{},
 				WantErr:  fmt.Errorf("Unprocessed extra args: []"),
 			},
 		},
@@ -945,10 +945,10 @@ func TestCacheComplete(t *testing.T) {
 					ListArg[string]("sl", testDesc, 1, 2, SimpleCompleter[[]string]("buck", "dollar", "dollHairs", "dinero", "usd")),
 				)),
 				Args: "cmd $ d",
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"dinero", "dollHairs", "dollar"},
 				},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"sl": []string{"$", "d"},
 				}},
 			},

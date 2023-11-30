@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/leep-frog/command/command"
 	"github.com/leep-frog/command/commandtest"
-	"github.com/leep-frog/command/commondels"
 	"github.com/leep-frog/command/internal/spycommand"
 	"github.com/leep-frog/command/internal/spycommandertest"
 	"github.com/leep-frog/command/internal/spycommandtest"
@@ -40,7 +40,7 @@ func TestExecute(t *testing.T) {
 			name: "returns execution error",
 			etc: &commandtest.ExecuteTestCase{
 				Node: &simpleNode{
-					ex: func(i *commondels.Input, o commondels.Output, d *commondels.Data, ed *commondels.ExecuteData) error {
+					ex: func(i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
 						return fmt.Errorf("whoops")
 					},
 				},
@@ -51,8 +51,8 @@ func TestExecute(t *testing.T) {
 			name: "returns executor error",
 			etc: &commandtest.ExecuteTestCase{
 				Node: &simpleNode{
-					ex: func(i *commondels.Input, o commondels.Output, d *commondels.Data, ed *commondels.ExecuteData) error {
-						ed.Executor = append(ed.Executor, func(o commondels.Output, d *commondels.Data) error {
+					ex: func(i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
+						ed.Executor = append(ed.Executor, func(o command.Output, d *command.Data) error {
 							return fmt.Errorf("executor whoops")
 						})
 						return nil
@@ -65,7 +65,7 @@ func TestExecute(t *testing.T) {
 			name: "returns next error",
 			etc: &commandtest.ExecuteTestCase{
 				Node: &simpleNode{
-					nx: func(i *commondels.Input, d *commondels.Data) (commondels.Node, error) {
+					nx: func(i *command.Input, d *command.Data) (command.Node, error) {
 						return nil, fmt.Errorf("next oops")
 					},
 				},
@@ -77,8 +77,8 @@ func TestExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Node: serialNodes(
 					&simpleNode{
-						ex: func(i *commondels.Input, o commondels.Output, d *commondels.Data, ed *commondels.ExecuteData) error {
-							ed.Executor = append(ed.Executor, func(o commondels.Output, d *commondels.Data) error {
+						ex: func(i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
+							ed.Executor = append(ed.Executor, func(o command.Output, d *command.Data) error {
 								o.Stdoutln("First executor")
 								return nil
 							})
@@ -87,8 +87,8 @@ func TestExecute(t *testing.T) {
 						},
 					},
 					&simpleNode{
-						ex: func(i *commondels.Input, o commondels.Output, d *commondels.Data, ed *commondels.ExecuteData) error {
-							ed.Executor = append(ed.Executor, func(o commondels.Output, d *commondels.Data) error {
+						ex: func(i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
+							ed.Executor = append(ed.Executor, func(o command.Output, d *command.Data) error {
 								o.Stdoutln("Second executor")
 								return nil
 							})
@@ -111,8 +111,8 @@ func TestExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Node: serialNodes(
 					&simpleNode{
-						ex: func(i *commondels.Input, o commondels.Output, d *commondels.Data, ed *commondels.ExecuteData) error {
-							ed.Executor = append(ed.Executor, func(o commondels.Output, d *commondels.Data) error {
+						ex: func(i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
+							ed.Executor = append(ed.Executor, func(o command.Output, d *command.Data) error {
 								o.Stdoutln("First executor")
 								return nil
 							})
@@ -121,8 +121,8 @@ func TestExecute(t *testing.T) {
 						},
 					},
 					&simpleNode{
-						ex: func(i *commondels.Input, o commondels.Output, d *commondels.Data, ed *commondels.ExecuteData) error {
-							ed.Executor = append(ed.Executor, func(o commondels.Output, d *commondels.Data) error {
+						ex: func(i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
+							ed.Executor = append(ed.Executor, func(o command.Output, d *command.Data) error {
 								o.Stdoutln("Second executor")
 								return nil
 							})
@@ -143,8 +143,8 @@ func TestExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Node: serialNodes(
 					&simpleNode{
-						ex: func(i *commondels.Input, o commondels.Output, d *commondels.Data, ed *commondels.ExecuteData) error {
-							ed.Executor = append(ed.Executor, func(o commondels.Output, d *commondels.Data) error {
+						ex: func(i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
+							ed.Executor = append(ed.Executor, func(o command.Output, d *command.Data) error {
 								o.Stdoutln("First executor")
 								return fmt.Errorf("ex whoops 1")
 							})
@@ -153,8 +153,8 @@ func TestExecute(t *testing.T) {
 						},
 					},
 					&simpleNode{
-						ex: func(i *commondels.Input, o commondels.Output, d *commondels.Data, ed *commondels.ExecuteData) error {
-							ed.Executor = append(ed.Executor, func(o commondels.Output, d *commondels.Data) error {
+						ex: func(i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
+							ed.Executor = append(ed.Executor, func(o command.Output, d *command.Data) error {
 								o.Stdoutln("Second executor")
 								return nil
 							})
@@ -178,8 +178,8 @@ func TestExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Node: serialNodes(
 					&simpleNode{
-						ex: func(i *commondels.Input, o commondels.Output, d *commondels.Data, ed *commondels.ExecuteData) error {
-							ed.Executor = append(ed.Executor, func(o commondels.Output, d *commondels.Data) error {
+						ex: func(i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
+							ed.Executor = append(ed.Executor, func(o command.Output, d *command.Data) error {
 								o.Stdoutln("First executor")
 								return fmt.Errorf("ex whoops 1")
 							})
@@ -200,8 +200,8 @@ func TestExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Node: serialNodes(
 					&simpleNode{
-						ex: func(i *commondels.Input, o commondels.Output, d *commondels.Data, ed *commondels.ExecuteData) error {
-							ed.Executor = append(ed.Executor, func(o commondels.Output, d *commondels.Data) error {
+						ex: func(i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
+							ed.Executor = append(ed.Executor, func(o command.Output, d *command.Data) error {
 								o.Stdoutln("First executor")
 								panic("argh")
 							})
@@ -223,7 +223,7 @@ func TestExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Node: serialNodes(
 					&simpleNode{
-						ex: func(i *commondels.Input, o commondels.Output, d *commondels.Data, ed *commondels.ExecuteData) error {
+						ex: func(i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
 							o.Stdoutln("First processor")
 							o.Terminatef("Termination\n")
 							o.Stdoutln("First processor part II")
@@ -245,9 +245,9 @@ func TestExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Node: serialNodes(
 					&simpleNode{
-						ex: func(i *commondels.Input, o commondels.Output, d *commondels.Data, ed *commondels.ExecuteData) error {
-							var subN commondels.Node
-							subN = &simpleNode{ex: func(i *commondels.Input, o commondels.Output, d *commondels.Data, ed *commondels.ExecuteData) error {
+						ex: func(i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
+							var subN command.Node
+							subN = &simpleNode{ex: func(i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
 								o.Stdoutln("hurray node!")
 								return nil
 							}}
@@ -263,14 +263,14 @@ func TestExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Node: serialNodes(
 					&simpleNode{
-						ex: func(i *commondels.Input, o commondels.Output, d *commondels.Data, ed *commondels.ExecuteData) error {
-							var subP commondels.Processor
-							subP = &simpleProcessor{ex: func(i *commondels.Input, o commondels.Output, d *commondels.Data, ed *commondels.ExecuteData) error {
+						ex: func(i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
+							var subP command.Processor
+							subP = &simpleProcessor{ex: func(i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
 								o.Stdoutln("hurray processor!")
 								return nil
 							}}
 
-							if _, ok := subP.(commondels.Node); ok {
+							if _, ok := subP.(command.Node); ok {
 								t.Fatalf("Object should only implement Processor, not Node: %v", subP)
 							}
 							return ProcessOrExecute(subP, i, o, d, ed)
@@ -296,7 +296,7 @@ func TestExecute(t *testing.T) {
 			name: "displays usage",
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"--help"},
-				Node: &simpleNode{u: func(i *commondels.Input, d *commondels.Data, u *commondels.Usage) error {
+				Node: &simpleNode{u: func(i *command.Input, d *command.Data, u *command.Usage) error {
 					u.Description = "Desc"
 					return nil
 				}},
@@ -307,7 +307,7 @@ func TestExecute(t *testing.T) {
 			name: "returns error",
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"--help"},
-				Node: &simpleNode{u: func(i *commondels.Input, d *commondels.Data, u *commondels.Usage) error {
+				Node: &simpleNode{u: func(i *command.Input, d *command.Data, u *command.Usage) error {
 					u.Description = "Desc"
 					return fmt.Errorf("whoops")
 				}},
@@ -320,12 +320,12 @@ func TestExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"--help"},
 				Node: serialNodes(
-					&simpleNode{u: func(i *commondels.Input, d *commondels.Data, u *commondels.Usage) error {
+					&simpleNode{u: func(i *command.Input, d *command.Data, u *command.Usage) error {
 						u.Description = "Desc"
 						u.Flags = append(u.Flags, "--un")
 						return nil
 					}},
-					&simpleNode{u: func(i *commondels.Input, d *commondels.Data, u *commondels.Usage) error {
+					&simpleNode{u: func(i *command.Input, d *command.Data, u *command.Usage) error {
 						u.Usage = append(u.Usage, "ARG")
 						u.Flags = append(u.Flags, "--deux")
 						return nil
@@ -339,12 +339,12 @@ func TestExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"--help"},
 				Node: &simpleNode{
-					u: func(i *commondels.Input, d *commondels.Data, u *commondels.Usage) error {
+					u: func(i *command.Input, d *command.Data, u *command.Usage) error {
 						u.Description = "Desc"
 						u.Flags = append(u.Flags, "--un")
 						return nil
 					},
-					unx: func(i *commondels.Input, d *commondels.Data) (commondels.Node, error) {
+					unx: func(i *command.Input, d *command.Data) (command.Node, error) {
 						return nil, fmt.Errorf("rats")
 					},
 				},
@@ -359,9 +359,9 @@ func TestExecute(t *testing.T) {
 				Args: []string{"--help"},
 				Node: serialNodes(
 					&simpleNode{
-						u: func(i *commondels.Input, d *commondels.Data, u *commondels.Usage) error {
-							var subN commondels.Node
-							subN = &simpleNode{u: func(i *commondels.Input, d *commondels.Data, u *commondels.Usage) error {
+						u: func(i *command.Input, d *command.Data, u *command.Usage) error {
+							var subN command.Node
+							subN = &simpleNode{u: func(i *command.Input, d *command.Data, u *command.Usage) error {
 								u.Usage = append(u.Usage, "HERE")
 								return nil
 							}}
@@ -378,14 +378,14 @@ func TestExecute(t *testing.T) {
 				Args: []string{"--help"},
 				Node: serialNodes(
 					&simpleNode{
-						u: func(i *commondels.Input, d *commondels.Data, u *commondels.Usage) error {
-							var subP commondels.Processor
-							subP = &simpleProcessor{u: func(i *commondels.Input, d *commondels.Data, u *commondels.Usage) error {
+						u: func(i *command.Input, d *command.Data, u *command.Usage) error {
+							var subP command.Processor
+							subP = &simpleProcessor{u: func(i *command.Input, d *command.Data, u *command.Usage) error {
 								u.Flags = append(u.Flags, "--sub")
 								return nil
 							}}
 
-							if _, ok := subP.(commondels.Node); ok {
+							if _, ok := subP.(command.Node); ok {
 								t.Fatalf("Object should only implement Processor, not Node: %v", subP)
 							}
 							return ProcessOrUsage(subP, i, d, u)
@@ -402,15 +402,15 @@ func TestExecute(t *testing.T) {
 				Args: []string{"extra-arg"},
 				Node: serialNodes(
 					&simpleNode{
-						u: func(i *commondels.Input, d *commondels.Data, u *commondels.Usage) error {
+						u: func(i *command.Input, d *command.Data, u *command.Usage) error {
 							u.Flags = append(u.Flags, "--sub")
 							return nil
 						},
-						ex: func(i *commondels.Input, o commondels.Output, d *commondels.Data, ed *commondels.ExecuteData) error {
+						ex: func(i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
 							o.Stdoutln("Executing logic")
 
 							// Executors should not be executed
-							ed.Executor = append(ed.Executor, func(o commondels.Output, d *commondels.Data) error {
+							ed.Executor = append(ed.Executor, func(o command.Output, d *command.Data) error {
 								t.Fatalf("this code should not be reached")
 								return fmt.Errorf("wrongo")
 							})
@@ -445,15 +445,15 @@ func TestExecute(t *testing.T) {
 				Args: []string{"extra-arg"},
 				Node: serialNodes(
 					&simpleNode{
-						u: func(i *commondels.Input, d *commondels.Data, u *commondels.Usage) error {
+						u: func(i *command.Input, d *command.Data, u *command.Usage) error {
 							u.Flags = append(u.Flags, "--sub")
 							return fmt.Errorf("usage oops")
 						},
-						ex: func(i *commondels.Input, o commondels.Output, d *commondels.Data, ed *commondels.ExecuteData) error {
+						ex: func(i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
 							o.Stdoutln("Executing logic")
 
 							// Executors should not be executed
-							ed.Executor = append(ed.Executor, func(o commondels.Output, d *commondels.Data) error {
+							ed.Executor = append(ed.Executor, func(o command.Output, d *command.Data) error {
 								t.Fatalf("this code should not be reached")
 								return fmt.Errorf("wrongo")
 							})
@@ -506,7 +506,7 @@ func TestAutocomplete(t *testing.T) {
 			name: "returns completion error",
 			ctc: &commandtest.CompleteTestCase{
 				Node: &simpleNode{
-					cmpl: func(i *commondels.Input, d *commondels.Data) (*commondels.Completion, error) {
+					cmpl: func(i *command.Input, d *command.Data) (*command.Completion, error) {
 						return nil, fmt.Errorf("complete fail")
 					},
 				},
@@ -517,7 +517,7 @@ func TestAutocomplete(t *testing.T) {
 			name: "returns next error",
 			ctc: &commandtest.CompleteTestCase{
 				Node: &simpleNode{
-					nx: func(i *commondels.Input, d *commondels.Data) (commondels.Node, error) {
+					nx: func(i *command.Input, d *command.Data) (command.Node, error) {
 						return nil, fmt.Errorf("next oops")
 					},
 				},
@@ -528,13 +528,13 @@ func TestAutocomplete(t *testing.T) {
 			name: "returns completion success",
 			ctc: &commandtest.CompleteTestCase{
 				Node: &simpleNode{
-					cmpl: func(i *commondels.Input, d *commondels.Data) (*commondels.Completion, error) {
-						return &commondels.Completion{
+					cmpl: func(i *command.Input, d *command.Data) (*command.Completion, error) {
+						return &command.Completion{
 							Suggestions: []string{"abc", "def", "ghi"},
 						}, nil
 					},
 				},
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"abc", "def", "ghi"},
 				},
 			},
@@ -544,13 +544,13 @@ func TestAutocomplete(t *testing.T) {
 			ctc: &commandtest.CompleteTestCase{
 				Args: "cmd d",
 				Node: &simpleNode{
-					cmpl: func(i *commondels.Input, d *commondels.Data) (*commondels.Completion, error) {
-						return &commondels.Completion{
+					cmpl: func(i *command.Input, d *command.Data) (*command.Completion, error) {
+						return &command.Completion{
 							Suggestions: []string{"abc", "def", "ghi"},
 						}, nil
 					},
 				},
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"def"},
 				},
 			},
@@ -560,22 +560,22 @@ func TestAutocomplete(t *testing.T) {
 			ctc: &commandtest.CompleteTestCase{
 				Node: serialNodes(
 					&simpleNode{
-						cmpl: func(i *commondels.Input, d *commondels.Data) (*commondels.Completion, error) {
-							return &commondels.Completion{
+						cmpl: func(i *command.Input, d *command.Data) (*command.Completion, error) {
+							return &command.Completion{
 								Suggestions: []string{"abc"},
 							}, fmt.Errorf("argh")
 						},
 					},
 					&simpleNode{
-						cmpl: func(i *commondels.Input, d *commondels.Data) (*commondels.Completion, error) {
-							return &commondels.Completion{
+						cmpl: func(i *command.Input, d *command.Data) (*command.Completion, error) {
+							return &command.Completion{
 								Suggestions: []string{"def"},
 							}, nil
 						},
 					},
 				),
 				WantErr: fmt.Errorf("argh"),
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"abc"},
 				},
 			},
@@ -585,21 +585,21 @@ func TestAutocomplete(t *testing.T) {
 			ctc: &commandtest.CompleteTestCase{
 				Node: serialNodes(
 					&simpleNode{
-						cmpl: func(i *commondels.Input, d *commondels.Data) (*commondels.Completion, error) {
-							return &commondels.Completion{
+						cmpl: func(i *command.Input, d *command.Data) (*command.Completion, error) {
+							return &command.Completion{
 								Suggestions: []string{"abc"},
 							}, nil
 						},
 					},
 					&simpleNode{
-						cmpl: func(i *commondels.Input, d *commondels.Data) (*commondels.Completion, error) {
-							return &commondels.Completion{
+						cmpl: func(i *command.Input, d *command.Data) (*command.Completion, error) {
+							return &command.Completion{
 								Suggestions: []string{"def"},
 							}, nil
 						},
 					},
 				),
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"abc"},
 				},
 			},
@@ -609,19 +609,19 @@ func TestAutocomplete(t *testing.T) {
 			ctc: &commandtest.CompleteTestCase{
 				Node: serialNodes(
 					&simpleNode{
-						cmpl: func(i *commondels.Input, d *commondels.Data) (*commondels.Completion, error) {
+						cmpl: func(i *command.Input, d *command.Data) (*command.Completion, error) {
 							return nil, nil
 						},
 					},
 					&simpleNode{
-						cmpl: func(i *commondels.Input, d *commondels.Data) (*commondels.Completion, error) {
-							return &commondels.Completion{
+						cmpl: func(i *command.Input, d *command.Data) (*command.Completion, error) {
+							return &command.Completion{
 								Suggestions: []string{"def"},
 							}, nil
 						},
 					},
 				),
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"def"},
 				},
 			},
@@ -632,16 +632,16 @@ func TestAutocomplete(t *testing.T) {
 			ctc: &commandtest.CompleteTestCase{
 				Node: serialNodes(
 					&simpleNode{
-						cmpl: func(i *commondels.Input, d *commondels.Data) (*commondels.Completion, error) {
-							var subN commondels.Node
-							subN = &simpleNode{cmpl: func(i *commondels.Input, d *commondels.Data) (*commondels.Completion, error) {
-								return &commondels.Completion{Suggestions: []string{"un"}}, nil
+						cmpl: func(i *command.Input, d *command.Data) (*command.Completion, error) {
+							var subN command.Node
+							subN = &simpleNode{cmpl: func(i *command.Input, d *command.Data) (*command.Completion, error) {
+								return &command.Completion{Suggestions: []string{"un"}}, nil
 							}}
 							return ProcessOrComplete(subN, i, d)
 						},
 					},
 				),
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"un"},
 				},
 			},
@@ -651,20 +651,20 @@ func TestAutocomplete(t *testing.T) {
 			ctc: &commandtest.CompleteTestCase{
 				Node: serialNodes(
 					&simpleNode{
-						cmpl: func(i *commondels.Input, d *commondels.Data) (*commondels.Completion, error) {
-							var subP commondels.Processor
-							subP = &simpleProcessor{cmpl: func(i *commondels.Input, d *commondels.Data) (*commondels.Completion, error) {
-								return &commondels.Completion{Suggestions: []string{"deux"}}, nil
+						cmpl: func(i *command.Input, d *command.Data) (*command.Completion, error) {
+							var subP command.Processor
+							subP = &simpleProcessor{cmpl: func(i *command.Input, d *command.Data) (*command.Completion, error) {
+								return &command.Completion{Suggestions: []string{"deux"}}, nil
 							}}
 
-							if _, ok := subP.(commondels.Node); ok {
+							if _, ok := subP.(command.Node); ok {
 								t.Fatalf("Object should only implement Processor, not Node: %v", subP)
 							}
 							return ProcessOrComplete(subP, i, d)
 						},
 					},
 				),
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"deux"},
 				},
 			},
@@ -674,14 +674,14 @@ func TestAutocomplete(t *testing.T) {
 			name: "empty DeferredCompletion works",
 			ctc: &commandtest.CompleteTestCase{
 				Node: &simpleNode{
-					cmpl: func(i *commondels.Input, d *commondels.Data) (*commondels.Completion, error) {
-						return &commondels.Completion{
+					cmpl: func(i *command.Input, d *command.Data) (*command.Completion, error) {
+						return &command.Completion{
 							Suggestions:        []string{"hi"},
-							DeferredCompletion: &commondels.DeferredCompletion{},
+							DeferredCompletion: &command.DeferredCompletion{},
 						}, nil
 					},
 				},
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"hi"},
 				},
 			},
@@ -690,11 +690,11 @@ func TestAutocomplete(t *testing.T) {
 			name: "DeferredCompletion.F runs",
 			ctc: &commandtest.CompleteTestCase{
 				Node: &simpleNode{
-					cmpl: func(i *commondels.Input, d *commondels.Data) (*commondels.Completion, error) {
-						return &commondels.Completion{
+					cmpl: func(i *command.Input, d *command.Data) (*command.Completion, error) {
+						return &command.Completion{
 							Suggestions: []string{"hi"},
-							DeferredCompletion: &commondels.DeferredCompletion{
-								F: func(c *commondels.Completion, d *commondels.Data) (*commondels.Completion, error) {
+							DeferredCompletion: &command.DeferredCompletion{
+								F: func(c *command.Completion, d *command.Data) (*command.Completion, error) {
 									c.Suggestions = append(c.Suggestions, "there")
 									return c, nil
 								},
@@ -702,7 +702,7 @@ func TestAutocomplete(t *testing.T) {
 						}, nil
 					},
 				},
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"hi", "there"},
 				},
 			},
@@ -711,11 +711,11 @@ func TestAutocomplete(t *testing.T) {
 			name: "DeferredCompletion.F returns error",
 			ctc: &commandtest.CompleteTestCase{
 				Node: &simpleNode{
-					cmpl: func(i *commondels.Input, d *commondels.Data) (*commondels.Completion, error) {
-						return &commondels.Completion{
+					cmpl: func(i *command.Input, d *command.Data) (*command.Completion, error) {
+						return &command.Completion{
 							Suggestions: []string{"hi"},
-							DeferredCompletion: &commondels.DeferredCompletion{
-								F: func(c *commondels.Completion, d *commondels.Data) (*commondels.Completion, error) {
+							DeferredCompletion: &command.DeferredCompletion{
+								F: func(c *command.Completion, d *command.Data) (*command.Completion, error) {
 									c.Suggestions = append(c.Suggestions, "there")
 									return c, fmt.Errorf("oof")
 								},
@@ -724,7 +724,7 @@ func TestAutocomplete(t *testing.T) {
 					},
 				},
 				WantErr: fmt.Errorf("oof"),
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"hi", "there"},
 				},
 			},
@@ -733,11 +733,11 @@ func TestAutocomplete(t *testing.T) {
 			name: "DeferredCompletion.Graph runs",
 			ctc: &commandtest.CompleteTestCase{
 				Node: &simpleNode{
-					cmpl: func(i *commondels.Input, d *commondels.Data) (*commondels.Completion, error) {
-						return &commondels.Completion{
+					cmpl: func(i *command.Input, d *command.Data) (*command.Completion, error) {
+						return &command.Completion{
 							Suggestions: []string{"hi"},
-							DeferredCompletion: &commondels.DeferredCompletion{
-								Graph: &simpleNode{ex: func(i *commondels.Input, o commondels.Output, d *commondels.Data, ed *commondels.ExecuteData) error {
+							DeferredCompletion: &command.DeferredCompletion{
+								Graph: &simpleNode{ex: func(i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
 									d.Set("graph", "value")
 									return nil
 								}},
@@ -745,10 +745,10 @@ func TestAutocomplete(t *testing.T) {
 						}, nil
 					},
 				},
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"hi"},
 				},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"graph": "value",
 				}},
 			},
@@ -757,11 +757,11 @@ func TestAutocomplete(t *testing.T) {
 			name: "DeferredCompletion.Graph returns error",
 			ctc: &commandtest.CompleteTestCase{
 				Node: &simpleNode{
-					cmpl: func(i *commondels.Input, d *commondels.Data) (*commondels.Completion, error) {
-						return &commondels.Completion{
+					cmpl: func(i *command.Input, d *command.Data) (*command.Completion, error) {
+						return &command.Completion{
 							Suggestions: []string{"hi"},
-							DeferredCompletion: &commondels.DeferredCompletion{
-								Graph: &simpleNode{ex: func(i *commondels.Input, o commondels.Output, d *commondels.Data, ed *commondels.ExecuteData) error {
+							DeferredCompletion: &command.DeferredCompletion{
+								Graph: &simpleNode{ex: func(i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
 									d.Set("graph", "value")
 									return fmt.Errorf("rats")
 								}},
@@ -770,7 +770,7 @@ func TestAutocomplete(t *testing.T) {
 					},
 				},
 				WantErr: fmt.Errorf("failed to execute DeferredCompletion graph: rats"),
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"graph": "value",
 				}},
 			},
@@ -779,18 +779,18 @@ func TestAutocomplete(t *testing.T) {
 			name: "DeferredCompletion runs Graph and then F",
 			ctc: &commandtest.CompleteTestCase{
 				Node: &simpleNode{
-					cmpl: func(i *commondels.Input, d *commondels.Data) (*commondels.Completion, error) {
+					cmpl: func(i *command.Input, d *command.Data) (*command.Completion, error) {
 						values := []string{"un", "deux"}
-						return &commondels.Completion{
+						return &command.Completion{
 							Suggestions: []string{"hi"},
-							DeferredCompletion: &commondels.DeferredCompletion{
-								F: func(c *commondels.Completion, d *commondels.Data) (*commondels.Completion, error) {
+							DeferredCompletion: &command.DeferredCompletion{
+								F: func(c *command.Completion, d *command.Data) (*command.Completion, error) {
 									c.Suggestions = append(c.Suggestions, "there")
 									d.Set("F-value", values[0])
 									values = values[1:]
 									return c, nil
 								},
-								Graph: &simpleNode{ex: func(i *commondels.Input, o commondels.Output, d *commondels.Data, ed *commondels.ExecuteData) error {
+								Graph: &simpleNode{ex: func(i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
 									d.Set("Graph-value", values[0])
 									values = values[1:]
 									return nil
@@ -799,10 +799,10 @@ func TestAutocomplete(t *testing.T) {
 						}, nil
 					},
 				},
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"hi", "there"},
 				},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					"Graph-value": "un",
 					"F-value":     "deux",
 				}},
@@ -816,7 +816,7 @@ func TestAutocomplete(t *testing.T) {
 	}
 }
 
-func serialNodes(ps ...commondels.Processor) commondels.Node {
+func serialNodes(ps ...command.Processor) command.Node {
 	if len(ps) == 0 {
 		return nil
 	}
@@ -831,56 +831,56 @@ func serialNodes(ps ...commondels.Processor) commondels.Node {
 }
 
 type serialNode struct {
-	commondels.Processor
-	next commondels.Node
+	command.Processor
+	next command.Node
 }
 
-func (sn *serialNode) Next(i *commondels.Input, d *commondels.Data) (commondels.Node, error) {
+func (sn *serialNode) Next(i *command.Input, d *command.Data) (command.Node, error) {
 	return sn.next, nil
 }
 
-func (sn *serialNode) UsageNext(i *commondels.Input, d *commondels.Data) (commondels.Node, error) {
+func (sn *serialNode) UsageNext(i *command.Input, d *command.Data) (command.Node, error) {
 	return sn.next, nil
 }
 
 type simpleNode struct {
-	ex   func(*commondels.Input, commondels.Output, *commondels.Data, *commondels.ExecuteData) error
-	cmpl func(*commondels.Input, *commondels.Data) (*commondels.Completion, error)
-	u    func(*commondels.Input, *commondels.Data, *commondels.Usage) error
+	ex   func(*command.Input, command.Output, *command.Data, *command.ExecuteData) error
+	cmpl func(*command.Input, *command.Data) (*command.Completion, error)
+	u    func(*command.Input, *command.Data, *command.Usage) error
 
-	nx  func(*commondels.Input, *commondels.Data) (commondels.Node, error)
-	unx func(*commondels.Input, *commondels.Data) (commondels.Node, error)
+	nx  func(*command.Input, *command.Data) (command.Node, error)
+	unx func(*command.Input, *command.Data) (command.Node, error)
 }
 
-func (sn *simpleNode) Execute(i *commondels.Input, o commondels.Output, d *commondels.Data, e *commondels.ExecuteData) error {
+func (sn *simpleNode) Execute(i *command.Input, o command.Output, d *command.Data, e *command.ExecuteData) error {
 	if sn.ex == nil {
 		return nil
 	}
 	return sn.ex(i, o, d, e)
 }
 
-func (sn *simpleNode) Complete(i *commondels.Input, d *commondels.Data) (*commondels.Completion, error) {
+func (sn *simpleNode) Complete(i *command.Input, d *command.Data) (*command.Completion, error) {
 	if sn.cmpl == nil {
 		return nil, nil
 	}
 	return sn.cmpl(i, d)
 }
 
-func (sn *simpleNode) Usage(i *commondels.Input, d *commondels.Data, u *commondels.Usage) error {
+func (sn *simpleNode) Usage(i *command.Input, d *command.Data, u *command.Usage) error {
 	if sn.u == nil {
 		return nil
 	}
 	return sn.u(i, d, u)
 }
 
-func (sn *simpleNode) Next(i *commondels.Input, d *commondels.Data) (commondels.Node, error) {
+func (sn *simpleNode) Next(i *command.Input, d *command.Data) (command.Node, error) {
 	if sn.nx == nil {
 		return nil, nil
 	}
 	return sn.nx(i, d)
 }
 
-func (sn *simpleNode) UsageNext(i *commondels.Input, d *commondels.Data) (commondels.Node, error) {
+func (sn *simpleNode) UsageNext(i *command.Input, d *command.Data) (command.Node, error) {
 	if sn.unx == nil {
 		return nil, nil
 	}
@@ -888,26 +888,26 @@ func (sn *simpleNode) UsageNext(i *commondels.Input, d *commondels.Data) (common
 }
 
 type simpleProcessor struct {
-	ex   func(*commondels.Input, commondels.Output, *commondels.Data, *commondels.ExecuteData) error
-	cmpl func(*commondels.Input, *commondels.Data) (*commondels.Completion, error)
-	u    func(*commondels.Input, *commondels.Data, *commondels.Usage) error
+	ex   func(*command.Input, command.Output, *command.Data, *command.ExecuteData) error
+	cmpl func(*command.Input, *command.Data) (*command.Completion, error)
+	u    func(*command.Input, *command.Data, *command.Usage) error
 }
 
-func (sp *simpleProcessor) Execute(i *commondels.Input, o commondels.Output, d *commondels.Data, e *commondels.ExecuteData) error {
+func (sp *simpleProcessor) Execute(i *command.Input, o command.Output, d *command.Data, e *command.ExecuteData) error {
 	if sp.ex == nil {
 		return nil
 	}
 	return sp.ex(i, o, d, e)
 }
 
-func (sp *simpleProcessor) Complete(i *commondels.Input, d *commondels.Data) (*commondels.Completion, error) {
+func (sp *simpleProcessor) Complete(i *command.Input, d *command.Data) (*command.Completion, error) {
 	if sp.cmpl == nil {
 		return nil, nil
 	}
 	return sp.cmpl(i, d)
 }
 
-func (sp *simpleProcessor) Usage(i *commondels.Input, d *commondels.Data, u *commondels.Usage) error {
+func (sp *simpleProcessor) Usage(i *command.Input, d *command.Data, u *command.Usage) error {
 	if sp.u == nil {
 		return nil
 	}

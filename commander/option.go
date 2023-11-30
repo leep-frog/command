@@ -1,6 +1,6 @@
 package commander
 
-import "github.com/leep-frog/command/commondels"
+import "github.com/leep-frog/command/command"
 
 // ArgumentOption is an interface for modifying `Argument` objects.
 type ArgumentOption[T any] interface {
@@ -19,8 +19,8 @@ type argumentOption[T any] struct {
 	hideUsage    bool
 }
 
-func (ao *argumentOption[T]) inputValidators() []commondels.InputBreaker {
-	var ibs []commondels.InputBreaker
+func (ao *argumentOption[T]) inputValidators() []command.InputBreaker {
+	var ibs []command.InputBreaker
 	for _, v := range ao.breakers {
 		ibs = append(ibs, v)
 	}
@@ -66,7 +66,7 @@ func (so *shortcutOpt[T]) modifyArgumentOption(argO *argumentOption[T]) {
 // CustomSetter is an `ArgumentOption` to specify a custom setting function when setting
 // argument data.
 type CustomSetter[T any] struct {
-	F func(T, *commondels.Data)
+	F func(T, *command.Data)
 }
 
 func (cs *CustomSetter[T]) modifyArgumentOption(ao *argumentOption[T]) {
@@ -114,7 +114,7 @@ func ComplexecuteAllowExactMatch() ComplexecuteOption {
 
 // Transformer is an `ArgumentOption` that transforms an argument.
 type Transformer[T any] struct {
-	F func(T, *commondels.Data) (T, error)
+	F func(T, *command.Data) (T, error)
 }
 
 func (t *Transformer[T]) modifyArgumentOption(ao *argumentOption[T]) {
@@ -123,7 +123,7 @@ func (t *Transformer[T]) modifyArgumentOption(ao *argumentOption[T]) {
 
 // TransformerList changes a single-arg transformer (`Transformer[T]`) to a list-arg transformer (`Transformer[[]T]`).
 func TransformerList[T any](t *Transformer[T]) *Transformer[[]T] {
-	return &Transformer[[]T]{F: func(vs []T, data *commondels.Data) ([]T, error) {
+	return &Transformer[[]T]{F: func(vs []T, data *command.Data) ([]T, error) {
 		l := make([]T, 0, len(vs))
 		for i, v := range vs {
 			nv, err := t.F(v, data)
@@ -138,7 +138,7 @@ func TransformerList[T any](t *Transformer[T]) *Transformer[[]T] {
 
 // Default is an `ArgumentOption` that sets a default value for an `Arg` node.
 func Default[T any](v T) ArgumentOption[T] {
-	return DefaultFunc(func(d *commondels.Data) (T, error) { return v, nil })
+	return DefaultFunc(func(d *command.Data) (T, error) { return v, nil })
 }
 
 // DefaultFunc is an `ArgumentOption` that sets a default value (obtained from the provided function) for an `Arg` node.
@@ -146,7 +146,7 @@ func DefaultFunc[T any](f defaultFunc[T]) ArgumentOption[T] {
 	return &defaultArgumentOption[T]{f}
 }
 
-type defaultFunc[T any] func(d *commondels.Data) (T, error)
+type defaultFunc[T any] func(d *command.Data) (T, error)
 
 type defaultArgumentOption[T any] struct {
 	f defaultFunc[T]

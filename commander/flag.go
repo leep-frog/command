@@ -5,7 +5,7 @@ import (
 	"regexp"
 	"sort"
 
-	"github.com/leep-frog/command/commondels"
+	"github.com/leep-frog/command/command"
 	"golang.org/x/exp/maps"
 	"golang.org/x/exp/slices"
 )
@@ -34,8 +34,8 @@ type FlagInterface interface {
 	Desc() string
 	// ShortName indicates the shorthand version of the flag. "-s" is the short hand flag indicator.
 	ShortName() rune
-	// commondels.Processor returns a node `commondels.Processor` that processes arguments after the flag indicator.
-	Processor() commondels.Processor
+	// command.Processor returns a node `command.Processor` that processes arguments after the flag indicator.
+	Processor() command.Processor
 
 	// Options returns the set of additional options for this flag.
 	// Returning a separate type (rather than enumerating functions here)
@@ -48,14 +48,14 @@ type FlagOptions struct {
 	// Combinable indicates whether or not the short flag can be combined
 	// with other flags (`-qwer` = `-q -w -e -r`, for example).
 	// When used as a combinable flag, the flag will be evaluated with
-	// an empty `commondels.Input` object.
+	// an empty `command.Input` object.
 	Combinable bool
 	// AllowsMultiple returns whether or not the flag can be provided multiple times.
 	AllowsMultiple bool
 	// ProcessMissing processes the flag when it is not provided
-	ProcessMissing func(*commondels.Data) error
+	ProcessMissing func(*command.Data) error
 	// PostProcess runs after the entire flag processor has been processed.
-	PostProcess func(*commondels.Input, commondels.Output, *commondels.Data, *commondels.ExecuteData) error
+	PostProcess func(*command.Input, command.Output, *command.Data, *command.ExecuteData) error
 }
 
 func (fo *FlagOptions) combinable() bool {
@@ -66,14 +66,14 @@ func (fo *FlagOptions) allowsMultiple() bool {
 	return fo != nil && fo.AllowsMultiple
 }
 
-func (fo *FlagOptions) processMissing(d *commondels.Data) error {
+func (fo *FlagOptions) processMissing(d *command.Data) error {
 	if fo == nil || fo.ProcessMissing == nil {
 		return nil
 	}
 	return fo.ProcessMissing(d)
 }
 
-func (fo *FlagOptions) postProcess(i *commondels.Input, o commondels.Output, d *commondels.Data, ed *commondels.ExecuteData) error {
+func (fo *FlagOptions) postProcess(i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
 	if fo == nil || fo.PostProcess == nil {
 		return nil
 	}
@@ -82,13 +82,13 @@ func (fo *FlagOptions) postProcess(i *commondels.Input, o commondels.Output, d *
 
 type FlagWithType[T any] interface {
 	FlagInterface
-	// Get returns the flags value from a `commondels.Data` object.
-	Get(*commondels.Data) T
-	// GetOrDefault returns the flags value from a `commondels.Data` object, if the flag was set.
+	// Get returns the flags value from a `command.Data` object.
+	Get(*command.Data) T
+	// GetOrDefault returns the flags value from a `command.Data` object, if the flag was set.
 	// Otherwise, it returns the provided input.
-	GetOrDefault(*commondels.Data, T) T
+	GetOrDefault(*command.Data, T) T
 	// Provided returns whether or not the flag was provided
-	Provided(*commondels.Data) bool
+	Provided(*command.Data) bool
 
 	// AddOptions adds options to a `FlagWithType`. Although chaining isn't
 	// conventional in go, it is done here because flags are usually declared as
@@ -104,7 +104,7 @@ func flagShortName(f FlagInterface) string {
 	return fmt.Sprintf("-%c", f.ShortName())
 }
 
-// FlagProcessor returns a `commondels.Processor` that iterates over the remaining command line
+// FlagProcessor returns a `command.Processor` that iterates over the remaining command line
 // arguments and processes any flags that are present.
 func FlagProcessor(fs ...FlagInterface) *flagProcessor {
 	m := map[string]FlagInterface{}
@@ -137,7 +137,7 @@ func (fn *flagProcessor) ListBreaker() *ListBreaker[[]string] {
 	return ListUntil[string](
 		// Don't eat any full flags (e.g. --my-flag)
 		&ValidatorOption[string]{
-			func(s string, d *commondels.Data) error {
+			func(s string, d *command.Data) error {
 				if _, ok := fn.flagMap[s]; ok {
 					return fmt.Errorf("value %q is a flag in the flag map", s)
 				}
@@ -147,7 +147,7 @@ func (fn *flagProcessor) ListBreaker() *ListBreaker[[]string] {
 		},
 		// Don't eat any multi-flags where all flags are in the FlagProcessor.
 		&ValidatorOption[string]{
-			func(s string, d *commondels.Data) error {
+			func(s string, d *command.Data) error {
 				if !MultiFlagRegex.MatchString(s) {
 					return nil
 				}
@@ -165,7 +165,7 @@ func (fn *flagProcessor) ListBreaker() *ListBreaker[[]string] {
 	)
 }
 
-func (fn *flagProcessor) Complete(input *commondels.Input, data *commondels.Data) (*commondels.Completion, error) {
+func (fn *flagProcessor) Complete(input *command.Input, data *command.Data) (*command.Completion, error) {
 	// unprocessed tracks the flags that have not been processed
 	unprocessed := map[string]FlagInterface{}
 	// available tracks the flags that can still be set (either because they
@@ -189,7 +189,7 @@ func (fn *flagProcessor) Complete(input *commondels.Input, data *commondels.Data
 				k = append(k, fmt.Sprintf("--%s", n))
 			}
 			sort.Strings(k)
-			return &commondels.Completion{
+			return &command.Completion{
 				Suggestions: k,
 			}, nil
 		}
@@ -217,14 +217,14 @@ func (fn *flagProcessor) Complete(input *commondels.Input, data *commondels.Data
 				// Pass an empty input so multiple flags don't compete
 				// for the remaining args. Only return if an error is returned,
 				// because all multi-flag objects should never be completed.
-				if _, err := processOrComplete(f.Processor(), commondels.NewInput(nil, nil), data); err != nil {
+				if _, err := processOrComplete(f.Processor(), command.NewInput(nil, nil), data); err != nil {
 					return nil, err
 				}
 			}
 
 			// This is outside of the for-loop so we only remove
 			// the multi-flag arg (not one arg per flag).
-			commondels.InputRunAtOffset[bool](input, i, func(subInput *commondels.Input) bool {
+			command.InputRunAtOffset[bool](input, i, func(subInput *command.Input) bool {
 				subInput.Pop(data)
 				return false
 			})
@@ -236,9 +236,9 @@ func (fn *flagProcessor) Complete(input *commondels.Input, data *commondels.Data
 				delete(available, f.Name())
 			}
 
-			var c *commondels.Completion
+			var c *command.Completion
 			var err error
-			commondels.InputRunAtOffset[bool](input, i, func(subInput *commondels.Input) bool {
+			command.InputRunAtOffset[bool](input, i, func(subInput *command.Input) bool {
 				// Remove flag argument (e.g. --flagName).
 				subInput.Pop(data)
 				subInput.PushBreakers(fn.ListBreaker())
@@ -263,7 +263,7 @@ func (fn *flagProcessor) Complete(input *commondels.Input, data *commondels.Data
 	return nil, nil
 }
 
-func (fn *flagProcessor) Execute(input *commondels.Input, output commondels.Output, data *commondels.Data, eData *commondels.ExecuteData) error {
+func (fn *flagProcessor) Execute(input *command.Input, output command.Output, data *command.Data, eData *command.ExecuteData) error {
 	unprocessed := map[string]FlagInterface{}
 	processed := map[string]bool{}
 	for _, f := range fn.flagMap {
@@ -314,7 +314,7 @@ func (fn *flagProcessor) Execute(input *commondels.Input, output commondels.Outp
 
 				// Pass an empty input so multiple flags don't compete
 				// for the remaining args
-				if err := processOrExecute(f.Processor(), commondels.NewInput(nil, nil), output, data, eData); err != nil {
+				if err := processOrExecute(f.Processor(), command.NewInput(nil, nil), output, data, eData); err != nil {
 					return err
 				}
 			}
@@ -335,7 +335,7 @@ func (fn *flagProcessor) Execute(input *commondels.Input, output commondels.Outp
 			input.PopAt(i, data)
 
 			// Run processor with fixed offset
-			err := commondels.InputRunAtOffset[error](input, i, func(tmpInput *commondels.Input) error {
+			err := command.InputRunAtOffset[error](input, i, func(tmpInput *command.Input) error {
 				tmpInput.PushBreakers(fn.ListBreaker())
 				defer input.PopBreakers(1)
 				return processOrExecute(f.Processor(), tmpInput, output, data, eData)
@@ -363,8 +363,8 @@ func (fn *flagProcessor) Execute(input *commondels.Input, output commondels.Outp
 	return nil
 }
 
-func (fn *flagProcessor) Usage(i *commondels.Input, d *commondels.Data, u *commondels.Usage) error {
-	if err := fn.Execute(i, commondels.NewIgnoreAllOutput(), d, nil); err != nil && !IsNotEnoughArgsError(err) {
+func (fn *flagProcessor) Usage(i *command.Input, d *command.Data, u *command.Usage) error {
+	if err := fn.Execute(i, command.NewIgnoreAllOutput(), d, nil); err != nil && !IsNotEnoughArgsError(err) {
 		return err
 	}
 
@@ -382,9 +382,9 @@ func (fn *flagProcessor) Usage(i *commondels.Input, d *commondels.Data, u *commo
 		sn := f.ShortName()
 		if f.Desc() != "" {
 			if sn == FlagNoShortName {
-				u.UsageSection.Add(commondels.FlagSection, fmt.Sprintf("    %s", f.Name()), f.Desc())
+				u.UsageSection.Add(command.FlagSection, fmt.Sprintf("    %s", f.Name()), f.Desc())
 			} else {
-				u.UsageSection.Add(commondels.FlagSection, fmt.Sprintf("[%c] %s", f.ShortName(), f.Name()), f.Desc())
+				u.UsageSection.Add(command.FlagSection, fmt.Sprintf("[%c] %s", f.ShortName(), f.Name()), f.Desc())
 			}
 		}
 
@@ -409,13 +409,13 @@ func (f *flag[T]) Desc() string {
 	return f.desc
 }
 
-func (f *flag[T]) Processor() commondels.Processor {
+func (f *flag[T]) Processor() command.Processor {
 	return f.argument
 }
 
 func (f *flag[T]) Options() *FlagOptions {
 	return &FlagOptions{
-		ProcessMissing: func(d *commondels.Data) error {
+		ProcessMissing: func(d *command.Data) error {
 			if f.argument.opt == nil || f.argument.opt._default == nil {
 				return nil
 			}
@@ -438,18 +438,18 @@ func (f *flag[T]) ShortName() rune {
 	return f.shortName
 }
 
-func (f *flag[T]) Get(d *commondels.Data) T {
-	return commondels.GetData[T](d, f.name)
+func (f *flag[T]) Get(d *command.Data) T {
+	return command.GetData[T](d, f.name)
 }
 
-func (f *flag[T]) GetOrDefault(d *commondels.Data, t T) T {
+func (f *flag[T]) GetOrDefault(d *command.Data, t T) T {
 	if f.Provided(d) {
-		return commondels.GetData[T](d, f.name)
+		return command.GetData[T](d, f.name)
 	}
 	return t
 }
 
-func (f *flag[T]) Provided(d *commondels.Data) bool {
+func (f *flag[T]) Provided(d *command.Data) bool {
 	return d.Has(f.name)
 }
 
@@ -521,14 +521,14 @@ func (bf *boolFlag[T]) ShortName() rune {
 	return bf.shortName
 }
 
-func (bf *boolFlag[T]) Processor() commondels.Processor {
+func (bf *boolFlag[T]) Processor() command.Processor {
 	return bf
 }
 
 func (bf *boolFlag[T]) Options() *FlagOptions {
 	return &FlagOptions{
 		Combinable: true,
-		ProcessMissing: func(d *commondels.Data) error {
+		ProcessMissing: func(d *command.Data) error {
 			if bf.falseValue != nil {
 				d.Set(bf.name, *bf.falseValue)
 			}
@@ -537,37 +537,37 @@ func (bf *boolFlag[T]) Options() *FlagOptions {
 	}
 }
 
-func (bf *boolFlag[T]) Complete(input *commondels.Input, data *commondels.Data) (*commondels.Completion, error) {
+func (bf *boolFlag[T]) Complete(input *command.Input, data *command.Data) (*command.Completion, error) {
 	data.Set(bf.name, bf.trueValue)
 	return nil, nil
 }
 
-func (bf *boolFlag[T]) Usage(i *commondels.Input, d *commondels.Data, u *commondels.Usage) error {
+func (bf *boolFlag[T]) Usage(i *command.Input, d *command.Data, u *command.Usage) error {
 	// I believe individual abcFlag.Usage functions aren't ever called (e.g. this, optionalFlag.Usage, etc.)
 
 	// Since flag processors are added at the beginning, the usage statements can be a bit awkward
 	// Instead add another row for supported flags
-	u.UsageSection.Add(commondels.FlagSection, bf.name, bf.desc)
+	u.UsageSection.Add(command.FlagSection, bf.name, bf.desc)
 	return nil
 }
 
-func (bf *boolFlag[T]) Execute(_ *commondels.Input, _ commondels.Output, data *commondels.Data, _ *commondels.ExecuteData) error {
+func (bf *boolFlag[T]) Execute(_ *command.Input, _ command.Output, data *command.Data, _ *command.ExecuteData) error {
 	data.Set(bf.name, bf.trueValue)
 	return nil
 }
 
-func (bf *boolFlag[T]) Get(d *commondels.Data) T {
-	return commondels.GetData[T](d, bf.name)
+func (bf *boolFlag[T]) Get(d *command.Data) T {
+	return command.GetData[T](d, bf.name)
 }
 
-func (bf *boolFlag[T]) GetOrDefault(d *commondels.Data, t T) T {
+func (bf *boolFlag[T]) GetOrDefault(d *command.Data, t T) T {
 	if bf.Provided(d) {
-		return commondels.GetData[T](d, bf.name)
+		return command.GetData[T](d, bf.name)
 	}
 	return t
 }
 
-func (bf *boolFlag[T]) Provided(d *commondels.Data) bool {
+func (bf *boolFlag[T]) Provided(d *command.Data) bool {
 	return d.Has(bf.name)
 }
 
@@ -593,11 +593,11 @@ func OptionalFlag[T any](name string, shortName rune, desc string, defaultValue 
 	}
 }
 
-func (of *optionalFlag[T]) Processor() commondels.Processor {
+func (of *optionalFlag[T]) Processor() command.Processor {
 	return of
 }
 
-func (of *optionalFlag[T]) Execute(input *commondels.Input, output commondels.Output, data *commondels.Data, eData *commondels.ExecuteData) error {
+func (of *optionalFlag[T]) Execute(input *command.Input, output command.Output, data *command.Data, eData *command.ExecuteData) error {
 	if err := processOrExecute(of.FlagWithType.Processor(), input, output, data, eData); err != nil {
 		return err
 	}
@@ -606,13 +606,13 @@ func (of *optionalFlag[T]) Execute(input *commondels.Input, output commondels.Ou
 	return nil
 }
 
-func (of *optionalFlag[T]) setDefault(data *commondels.Data) {
+func (of *optionalFlag[T]) setDefault(data *command.Data) {
 	if !data.Has(of.Name()) {
 		data.Set(of.Name(), of.defaultValue)
 	}
 }
 
-func (of *optionalFlag[T]) Complete(input *commondels.Input, data *commondels.Data) (*commondels.Completion, error) {
+func (of *optionalFlag[T]) Complete(input *command.Input, data *command.Data) (*command.Completion, error) {
 	// Complete flag argument if necessary
 	if input.NumRemaining() <= 1 {
 		if a, _ := input.Peek(); len(a) > 0 && a[0] == '-' {
@@ -630,11 +630,11 @@ func (of *optionalFlag[T]) Complete(input *commondels.Input, data *commondels.Da
 	return nil, nil
 }
 
-func (of *optionalFlag[T]) Usage(i *commondels.Input, d *commondels.Data, u *commondels.Usage) error {
+func (of *optionalFlag[T]) Usage(i *command.Input, d *command.Data, u *command.Usage) error {
 	return of.FlagWithType.Processor().Usage(i, d, u)
 }
 
-// TODO: commondels.Node that populates a struct from arguments.
+// TODO: command.Node that populates a struct from arguments.
 /*
 type structable struct {
 	field1 `json:"f1"
@@ -649,7 +649,7 @@ Make intermediate arg that transforms values into json and then json into struct
 // ItemizedListFlag creates a flag that can be set with separate flags (e.g. `cmd -i value-one -i value-two -b other-flag -i value-three`).
 func ItemizedListFlag[T any](name string, shortName rune, desc string, opts ...ArgumentOption[[]T]) FlagWithType[[]T] {
 	return &itemizedListFlag[T]{
-		FlagWithType: ListFlag(name, shortName, desc, 0, commondels.UnboundedList, opts...),
+		FlagWithType: ListFlag(name, shortName, desc, 0, command.UnboundedList, opts...),
 	}
 }
 
@@ -666,21 +666,21 @@ func (ilf *itemizedListFlag[T]) Options() *FlagOptions {
 		// AllowsMultiple
 		true,
 		// ProcessMissing
-		func(d *commondels.Data) error {
+		func(d *command.Data) error {
 			return ilf.FlagWithType.Options().processMissing(d)
 		},
 		// PostProcess
-		func(i *commondels.Input, o commondels.Output, d *commondels.Data, ed *commondels.ExecuteData) error {
-			return processOrExecute(ilf.FlagWithType.Processor(), commondels.NewInput(ilf.rawArgs, nil), o, d, ed)
+		func(i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
+			return processOrExecute(ilf.FlagWithType.Processor(), command.NewInput(ilf.rawArgs, nil), o, d, ed)
 		},
 	}
 }
 
-func (ilf *itemizedListFlag[T]) Processor() commondels.Processor {
+func (ilf *itemizedListFlag[T]) Processor() command.Processor {
 	return ilf
 }
 
-func (ilf *itemizedListFlag[T]) Execute(input *commondels.Input, output commondels.Output, data *commondels.Data, eData *commondels.ExecuteData) error {
+func (ilf *itemizedListFlag[T]) Execute(input *command.Input, output command.Output, data *command.Data, eData *command.ExecuteData) error {
 	s, ok := input.Pop(data)
 	if !ok {
 		return output.Err(NotEnoughArgs(ilf.Name(), 1, 0))
@@ -689,7 +689,7 @@ func (ilf *itemizedListFlag[T]) Execute(input *commondels.Input, output commonde
 	return nil
 }
 
-func (ilf *itemizedListFlag[T]) Complete(input *commondels.Input, data *commondels.Data) (*commondels.Completion, error) {
+func (ilf *itemizedListFlag[T]) Complete(input *command.Input, data *command.Data) (*command.Completion, error) {
 	if input.FullyProcessed() {
 		// Don't think it's possible to get here (because the flag Complete function
 		// would complete the flag value ("--ilf") if it was the last value). So,
@@ -699,13 +699,13 @@ func (ilf *itemizedListFlag[T]) Complete(input *commondels.Input, data *commonde
 	s, _ := input.Pop(data)
 	ilf.rawArgs = append(ilf.rawArgs, s)
 	if input.FullyProcessed() {
-		c, e := processOrComplete(ilf.FlagWithType.Processor(), commondels.NewInput(ilf.rawArgs, nil), data)
+		c, e := processOrComplete(ilf.FlagWithType.Processor(), command.NewInput(ilf.rawArgs, nil), data)
 		return c, e
 	}
 	return nil, nil
 }
 
-func (ilf *itemizedListFlag[T]) Usage(i *commondels.Input, d *commondels.Data, u *commondels.Usage) error {
+func (ilf *itemizedListFlag[T]) Usage(i *command.Input, d *command.Data, u *command.Usage) error {
 	return ilf.FlagWithType.Processor().Usage(i, d, u)
 }
 

@@ -6,8 +6,8 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/leep-frog/command/command"
 	"github.com/leep-frog/command/commander"
-	"github.com/leep-frog/command/commondels"
 	"github.com/leep-frog/command/internal/stubs"
 )
 
@@ -58,14 +58,14 @@ func (l *linux) FunctionWrap(name, fn string) string {
 	}, "\n")
 }
 
-func (l *linux) HandleAutocompleteSuccess(output commondels.Output, autocompletion *commondels.Autocompletion) {
+func (l *linux) HandleAutocompleteSuccess(output command.Output, autocompletion *command.Autocompletion) {
 	if len(autocompletion.Suggestions) == 1 && autocompletion.SpacelessCompletion {
 		autocompletion.Suggestions = append(autocompletion.Suggestions, fmt.Sprintf("%s_", autocompletion.Suggestions[0]))
 	}
 	output.Stdoutf("%s\n", strings.Join(autocompletion.Suggestions, "\n"))
 }
 
-func (l *linux) HandleAutocompleteError(output commondels.Output, compType int, err error) {
+func (l *linux) HandleAutocompleteError(output command.Output, compType int, err error) {
 	// Only display the error if the user is requesting completion via successive tabs (so distinct completions are guaranteed to be displayed)
 	if compType == 63 { /* code 63 = '?' character */
 		// Add newline so we're outputting stderr on a newline (and not line with cursor)

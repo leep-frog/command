@@ -5,15 +5,15 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/leep-frog/command/command"
 	"github.com/leep-frog/command/commandertest"
 	"github.com/leep-frog/command/commandtest"
-	"github.com/leep-frog/command/commondels"
 	"github.com/leep-frog/command/internal/testutil"
 )
 
 func TestAliaser(t *testing.T) {
 	type osCheck struct {
-		WantExecuteData *commondels.ExecuteData
+		WantExecuteData *command.ExecuteData
 	}
 	fakeGoExecutableFilePath := testutil.TempFile(t, "leepFrogSourcerer-test")
 	for _, curOS := range []OS{Linux(), Windows()} {
@@ -29,14 +29,14 @@ func TestAliaser(t *testing.T) {
 						"some-alias",
 						"someCLI",
 					},
-					WantData: &commondels.Data{Values: map[string]interface{}{
+					WantData: &command.Data{Values: map[string]interface{}{
 						aliasArg.Name():    "some-alias",
 						aliasCLIArg.Name(): "someCLI",
 					}},
 				},
 				osChecks: map[string]*osCheck{
 					"linux": {
-						WantExecuteData: &commondels.ExecuteData{
+						WantExecuteData: &command.ExecuteData{
 							Executable: []string{
 								`function _leep_frog_autocompleter {`,
 								`  local tFile=$(mktemp)`,
@@ -68,7 +68,7 @@ func TestAliaser(t *testing.T) {
 						},
 					},
 					"windows": {
-						WantExecuteData: &commondels.ExecuteData{
+						WantExecuteData: &command.ExecuteData{
 							Executable: []string{
 								`if (!(Test-Path alias:someCLI) -or !(Get-Alias someCLI | where {$_.DEFINITION -match "_custom_execute_"}).NAME) {`,
 								`  throw "The CLI provided (someCLI) is not a sourcerer-generated command"`,
@@ -103,7 +103,7 @@ func TestAliaser(t *testing.T) {
 						"2",
 						"trois",
 					},
-					WantData: &commondels.Data{Values: map[string]interface{}{
+					WantData: &command.Data{Values: map[string]interface{}{
 						aliasArg.Name():    "some-alias",
 						aliasCLIArg.Name(): "someCLI",
 						aliasPTArg.Name(): []string{
@@ -115,7 +115,7 @@ func TestAliaser(t *testing.T) {
 				},
 				osChecks: map[string]*osCheck{
 					"linux": {
-						WantExecuteData: &commondels.ExecuteData{
+						WantExecuteData: &command.ExecuteData{
 							Executable: []string{
 								`function _leep_frog_autocompleter {`,
 								`  local tFile=$(mktemp)`,

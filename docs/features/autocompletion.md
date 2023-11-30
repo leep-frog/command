@@ -38,7 +38,7 @@ This function is most useful for writing your own completion logic:
 
 ```go
 var (
-  myArg = command.Arg[string]("ARG", "Description", command.CompleterFromFunc(func(s string, d *commondels.Data) (*command.Completion, error) {
+  myArg = command.Arg[string]("ARG", "Description", command.CompleterFromFunc(func(s string, d *command.Data) (*command.Completion, error) {
     var sl []string
 
     // Run whatever logic you want

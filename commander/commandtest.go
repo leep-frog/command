@@ -4,8 +4,8 @@ package commander
 
 // UsageTestCase is a test case object for testing command usage.
 /*type UsageTestCase struct {
-	// commondels.Node is the root `commondels.Node` of the command to test.
-	commondels.Node commondels.Node
+	// command.Node is the root `command.Node` of the command to test.
+	command.Node command.Node
 	// Args is the list of arguments provided to the command.
 	Args []string
 	// WantString is the expected usage output.
@@ -34,7 +34,7 @@ package commander
 }*/
 
 // PrependSetupArg prepends the SetupArg node to the given node.
-/*func PreprendSetupArg(n commondels.Node) commondels.Node {
+/*func PreprendSetupArg(n command.Node) command.Node {
 	return SerialNodes(SetupArg, n)
 }
 */

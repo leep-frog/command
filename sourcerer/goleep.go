@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/leep-frog/command/command"
 	"github.com/leep-frog/command/commander"
-	"github.com/leep-frog/command/commondels"
 )
 
 // GoLeep is a CLI that runs command nodes that are defined in "main" packages.
@@ -23,7 +23,7 @@ var (
 		&commander.FileCompleter[string]{IgnoreFiles: true},
 		commander.Default(""),
 	)
-	passAlongArgs = commander.ListArg[string]("PASSTHROUGH_ARGS", "Args to pass through to the command", 0, commondels.UnboundedList)
+	passAlongArgs = commander.ListArg[string]("PASSTHROUGH_ARGS", "Args to pass through to the command", 0, command.UnboundedList)
 )
 
 func (gl *GoLeep) Aliasers() Option {
@@ -34,7 +34,7 @@ func (gl *GoLeep) Name() string {
 	return "goleep"
 }
 
-func runCommand[T any](d *commondels.Data, subCmd, cli string, extraArgs []string) *commander.ShellCommand[T] {
+func runCommand[T any](d *command.Data, subCmd, cli string, extraArgs []string) *commander.ShellCommand[T] {
 	return &commander.ShellCommand[T]{
 		CommandName: "go",
 		Dir:         goDirectory.Get(d),
@@ -52,7 +52,7 @@ var (
 	getTmpFile = func() (*os.File, error) {
 		return ioutil.TempFile("", "goleep-node-runner")
 	}
-	goleepCLIArg = commander.Arg[string]("CLI", "CLI to use", commander.CompleterFromFunc(func(s string, d *commondels.Data) (*commondels.Completion, error) {
+	goleepCLIArg = commander.Arg[string]("CLI", "CLI to use", commander.CompleterFromFunc(func(s string, d *command.Data) (*command.Completion, error) {
 		bc := &commander.ShellCommand[[]string]{
 			CommandName: "go",
 			Dir:         goDirectory.Get(d),
@@ -68,7 +68,7 @@ var (
 		if err != nil {
 			return nil, fmt.Errorf("failed to run shell script: %v\n", err)
 		}
-		return &commondels.Completion{
+		return &command.Completion{
 			Suggestions: resp,
 		}, nil
 	}))
@@ -76,10 +76,10 @@ var (
 
 func (gl *GoLeep) Changed() bool   { return false }
 func (gl *GoLeep) Setup() []string { return nil }
-func (gl *GoLeep) Node() commondels.Node {
+func (gl *GoLeep) Node() command.Node {
 	usageNode := commander.SerialNodes(
 		commander.Description("Get the usage of the provided go files"),
-		commander.SimpleProcessor(func(i *commondels.Input, o commondels.Output, d *commondels.Data, ed *commondels.ExecuteData) error {
+		commander.SimpleProcessor(func(i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
 			sc := runCommand[[]string](d, UsageBranchName, fmt.Sprintf("%q", goleepCLIArg.Get(d)), nil)
 			sc.ForwardStdout = true
 			_, err := sc.Run(o, d)
@@ -92,7 +92,7 @@ func (gl *GoLeep) Node() commondels.Node {
 	dfltNode := commander.SerialNodes(
 		commander.Description("Execute the provided go files"),
 		passAlongArgs,
-		commander.SimpleProcessor(func(i *commondels.Input, o commondels.Output, d *commondels.Data, ed *commondels.ExecuteData) error {
+		commander.SimpleProcessor(func(i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
 			f, err := getTmpFile()
 			if err != nil {
 				return o.Stderrf("failed to create tmp file: %v\n", err)
@@ -132,7 +132,7 @@ func (gl *GoLeep) Node() commondels.Node {
 		commander.FlagProcessor(goDirectory),
 		goleepCLIArg,
 		&commander.BranchNode{
-			Branches: map[string]commondels.Node{
+			Branches: map[string]command.Node{
 				"usage": usageNode,
 			},
 			Default:           dfltNode,
@@ -142,7 +142,7 @@ func (gl *GoLeep) Node() commondels.Node {
 }
 
 func (gl *GoLeep) completer() commander.Completer[[]string] {
-	return commander.CompleterFromFunc(func(s []string, data *commondels.Data) (*commondels.Completion, error) {
+	return commander.CompleterFromFunc(func(s []string, data *command.Data) (*command.Completion, error) {
 		// Add a "dummyCommand" prefix to be removed by the commander.Autocomplete function.
 		compLine := "dummyCommand " + strings.Join(passAlongArgs.Get(data), " ")
 		// TODO: This should also consider the quotes (before input processing). e.g. `abc "def"` should be 9 not 7
@@ -160,7 +160,7 @@ func (gl *GoLeep) completer() commander.Completer[[]string] {
 		}
 		bc := runCommand[[]string](data, AutocompleteBranchName, goleepCLIArg.Get(data), extraArgs)
 		bc.ArgName = "SHELL_OUTPUT"
-		fo := commondels.NewFakeOutput()
+		fo := command.NewFakeOutput()
 		v, err := bc.Run(fo, data)
 		fo.Close()
 		if err != nil {
@@ -170,7 +170,7 @@ func (gl *GoLeep) completer() commander.Completer[[]string] {
 			}
 			return nil, fmt.Errorf("failed to run goleep completion: %v%s", err, stderr)
 		}
-		return &commondels.Completion{
+		return &command.Completion{
 			Suggestions: v,
 		}, nil
 	})

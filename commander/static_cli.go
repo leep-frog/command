@@ -1,6 +1,6 @@
 package commander
 
-import "github.com/leep-frog/command/commondels"
+import "github.com/leep-frog/command/command"
 
 // StaticCLIs returns a set of static CLIs.
 func StaticCLIs(m map[string][]string) []*staticCLI {
@@ -29,6 +29,6 @@ func (sc *staticCLI) Name() string {
 }
 func (sc *staticCLI) Changed() bool   { return false }
 func (sc *staticCLI) Setup() []string { return nil }
-func (sc *staticCLI) Node() commondels.Node {
+func (sc *staticCLI) Node() command.Node {
 	return SerialNodes(SimpleExecutableProcessor(sc.commands...))
 }

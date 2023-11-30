@@ -1,5 +1,5 @@
 // Package command provides classes and functions for defining custom CLIs.
-package commondels
+package command
 
 // Node defines a cohesive node in the command graph. It is simply a combination
 // of a `Processor` and an `Edge`.

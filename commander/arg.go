@@ -3,12 +3,12 @@ package commander
 import (
 	"fmt"
 
-	"github.com/leep-frog/command/commondels"
+	"github.com/leep-frog/command/command"
 	"github.com/leep-frog/command/internal/operator"
 	"golang.org/x/exp/slices"
 )
 
-// Argument is a type that implements `commondels.Processor`. It can be
+// Argument is a type that implements `command.Processor`. It can be
 // created via `Arg[T]` and `ListArg[T]` functions.
 type Argument[T any] struct {
 	name      string
@@ -40,26 +40,26 @@ func (an *Argument[T]) Desc() string {
 	return an.desc
 }
 
-// Get fetches the arguments value from the `commondels.Data` object.
-func (an *Argument[T]) Get(data *commondels.Data) T {
-	return commondels.GetData[T](data, an.name)
+// Get fetches the arguments value from the `command.Data` object.
+func (an *Argument[T]) Get(data *command.Data) T {
+	return command.GetData[T](data, an.name)
 }
 
-// Provided returns whether or not the argument has been set in `commondels.Data`.
-func (an *Argument[T]) Provided(data *commondels.Data) bool {
+// Provided returns whether or not the argument has been set in `command.Data`.
+func (an *Argument[T]) Provided(data *command.Data) bool {
 	return data.Has(an.name)
 }
 
-// GetOrDefault fetches the arguments value from the `commondels.Data` object.
-func (an *Argument[T]) GetOrDefault(data *commondels.Data, dflt T) T {
+// GetOrDefault fetches the arguments value from the `command.Data` object.
+func (an *Argument[T]) GetOrDefault(data *command.Data, dflt T) T {
 	if data.Has(an.name) {
-		return commondels.GetData[T](data, an.name)
+		return command.GetData[T](data, an.name)
 	}
 	return dflt
 }
 
-// Set sets the argument key in the given `commondels.Data` object.
-func (an *Argument[T]) Set(v T, data *commondels.Data) {
+// Set sets the argument key in the given `command.Data` object.
+func (an *Argument[T]) Set(v T, data *command.Data) {
 	if an.opt != nil && an.opt.customSet != nil && an.opt.customSet.F != nil {
 		an.opt.customSet.F(v, data)
 	} else {
@@ -67,10 +67,10 @@ func (an *Argument[T]) Set(v T, data *commondels.Data) {
 	}
 }
 
-// commondels.Usage adds the command info to the provided `commondels.Usage` object.
-func (an *Argument[T]) Usage(i *commondels.Input, d *commondels.Data, u *commondels.Usage) error {
+// command.Usage adds the command info to the provided `command.Usage` object.
+func (an *Argument[T]) Usage(i *command.Input, d *command.Data, u *command.Usage) error {
 	noneRemaining := i.NumRemaining() == 0
-	err := an.Execute(i, commondels.NewIgnoreAllOutput(), d, nil)
+	err := an.Execute(i, command.NewIgnoreAllOutput(), d, nil)
 	// If enough arguments have been provided, then no need to print usage.
 	if err == nil && !noneRemaining {
 		return nil
@@ -87,10 +87,10 @@ func (an *Argument[T]) Usage(i *commondels.Input, d *commondels.Data, u *commond
 	}
 
 	if an.desc != "" {
-		u.UsageSection.Add(commondels.ArgSection, an.name, an.desc)
+		u.UsageSection.Add(command.ArgSection, an.name, an.desc)
 		if an.opt != nil {
 			for _, v := range an.opt.validators {
-				u.UsageSection.Add(commondels.ArgSection, an.name, v.Usage)
+				u.UsageSection.Add(command.ArgSection, an.name, v.Usage)
 			}
 		}
 	}
@@ -98,7 +98,7 @@ func (an *Argument[T]) Usage(i *commondels.Input, d *commondels.Data, u *commond
 	for i := 0; i < an.minN; i++ {
 		u.Usage = append(u.Usage, an.name)
 	}
-	if an.optionalN == commondels.UnboundedList {
+	if an.optionalN == command.UnboundedList {
 		u.Usage = append(u.Usage, fmt.Sprintf("[ %s ... ]", an.name))
 	} else {
 		if an.optionalN > 0 {
@@ -118,8 +118,8 @@ func (an *Argument[T]) Usage(i *commondels.Input, d *commondels.Data, u *commond
 	return nil
 }
 
-// Execute fulfills the `commondels.Processor` interface for `Argument`.
-func (an *Argument[T]) Execute(i *commondels.Input, o commondels.Output, data *commondels.Data, eData *commondels.ExecuteData) error {
+// Execute fulfills the `command.Processor` interface for `Argument`.
+func (an *Argument[T]) Execute(i *command.Input, o command.Output, data *command.Data, eData *command.ExecuteData) error {
 	an.shortcutCheck(i, o, data, false)
 
 	sl, enough := i.PopN(an.minN, an.optionalN, an.opt.inputValidators(), data)
@@ -179,7 +179,7 @@ func (an *Argument[T]) Execute(i *commondels.Input, o commondels.Output, data *c
 	// Copy values into returned list (required for shortcutting)
 	newSl := operator.GetOperator[T]().ToArgs(v)
 	if len(newSl) != len(sl) {
-		// We enforce this for Arg transformers. The change around `commondels.Input` are too complicated
+		// We enforce this for Arg transformers. The change around `command.Input` are too complicated
 		// to warrant enabling this functionality here, when users can easily just make a
 		// separate processor that transforms the input args later on.
 		return o.Stderrf("[%s] Transformers must return a value that is the same length as the original arguments\n", an.name)
@@ -204,7 +204,7 @@ func (an *Argument[T]) Execute(i *commondels.Input, o commondels.Output, data *c
 	return nil
 }
 
-func (an *Argument[T]) convertStringValue(sl []*string, data *commondels.Data, transform bool) (T, error) {
+func (an *Argument[T]) convertStringValue(sl []*string, data *command.Data, transform bool) (T, error) {
 	var nill T
 	// Transform from string to value.
 	op := operator.GetOperator[T]()
@@ -232,21 +232,21 @@ func (an *Argument[T]) notEnoughErr(got int) error {
 	return NotEnoughArgs(an.name, an.minN, got)
 }
 
-func (an *Argument[T]) shortcutCheck(input *commondels.Input, output commondels.Output, data *commondels.Data, complete bool) error {
+func (an *Argument[T]) shortcutCheck(input *command.Input, output command.Output, data *command.Data, complete bool) error {
 	if an.opt == nil || an.opt.shortcut == nil {
 		return nil
 	}
 
 	upTo := an.minN + an.optionalN
-	if an.optionalN == commondels.UnboundedList {
+	if an.optionalN == command.UnboundedList {
 		upTo = input.NumRemaining()
 	}
 
 	return shortcutInputTransformer(an.opt.shortcut.ShortcutCLI, an.opt.shortcut.ShortcutName, upTo-1).Transform(input, output, data, complete)
 }
 
-func shortcutInputTransformer(sc ShortcutCLI, name string, upToIndex int) *commondels.InputTransformer {
-	return &commondels.InputTransformer{F: func(o commondels.Output, d *commondels.Data, s string) ([]string, error) {
+func shortcutInputTransformer(sc ShortcutCLI, name string, upToIndex int) *command.InputTransformer {
+	return &command.InputTransformer{F: func(o command.Output, d *command.Data, s string) ([]string, error) {
 		sl, ok := getShortcut(sc, name, s)
 		if !ok {
 			return []string{s}, nil
@@ -255,9 +255,9 @@ func shortcutInputTransformer(sc ShortcutCLI, name string, upToIndex int) *commo
 	}, UpToIndex: upToIndex}
 }
 
-// Complete fulfills the `commondels.Processor` interface for `Argument`.
-func (an *Argument[T]) Complete(input *commondels.Input, data *commondels.Data) (*commondels.Completion, error) {
-	an.shortcutCheck(input, commondels.NewIgnoreAllOutput(), data, true)
+// Complete fulfills the `command.Processor` interface for `Argument`.
+func (an *Argument[T]) Complete(input *command.Input, data *command.Data) (*command.Completion, error) {
+	an.shortcutCheck(input, command.NewIgnoreAllOutput(), data, true)
 
 	sl, enough := input.PopN(an.minN, an.optionalN, an.opt.inputValidators(), data)
 
@@ -265,12 +265,12 @@ func (an *Argument[T]) Complete(input *commondels.Input, data *commondels.Data) 
 	// doesn't happen if c and err are nil).
 	c, err := an.complete(sl, enough, input, data)
 	if (!enough || input.FullyProcessed()) && c == nil {
-		c = &commondels.Completion{}
+		c = &command.Completion{}
 	}
 	return c, err
 }
 
-func (an *Argument[T]) complete(sl []*string, enough bool, input *commondels.Input, data *commondels.Data) (*commondels.Completion, error) {
+func (an *Argument[T]) complete(sl []*string, enough bool, input *command.Input, data *command.Data) (*command.Completion, error) {
 	// Try to transform from string to value.
 	op := operator.GetOperator[T]()
 	v, err := op.FromArgs(sl)
@@ -317,12 +317,12 @@ func (an *Argument[T]) complete(sl []*string, enough bool, input *commondels.Inp
 	return RunArgumentCompleter(an.opt.completer, v, data)
 }
 
-// Arg creates an argument `commondels.Processor` that requires exactly one input.
+// Arg creates an argument `command.Processor` that requires exactly one input.
 func Arg[T any](name, desc string, opts ...ArgumentOption[T]) *Argument[T] {
 	return listArgument(name, desc, 1, 0, opts...)
 }
 
-// OptionalArg creates an argument `commondels.Processor` that accepts zero or one input arguments.
+// OptionalArg creates an argument `command.Processor` that accepts zero or one input arguments.
 func OptionalArg[T any](name, desc string, opts ...ArgumentOption[T]) *Argument[T] {
 	return listArgument(name, desc, 0, 1, opts...)
 }

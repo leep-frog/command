@@ -5,7 +5,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/leep-frog/command/commondels"
+	"github.com/leep-frog/command/command"
 )
 
 var (
@@ -16,12 +16,12 @@ var (
 )
 
 // SetupOutputFile returns the name of the setup file for the command.
-func SetupOutputFile(d *commondels.Data) string {
+func SetupOutputFile(d *command.Data) string {
 	return d.String(SetupArg.Name())
 }
 
 // SetupOutputString returns the file contents, as a string, of the setup file for the command.
-func SetupOutputString(d *commondels.Data) (string, error) {
+func SetupOutputString(d *command.Data) (string, error) {
 	b, err := os.ReadFile(SetupOutputFile(d))
 	if err != nil {
 		return "", fmt.Errorf("failed to read setup file (%s): %v", SetupOutputFile(d), err)
@@ -30,7 +30,7 @@ func SetupOutputString(d *commondels.Data) (string, error) {
 }
 
 // SetupOutputString returns the file contents, as a string slice, of the setup file for the command.
-func SetupOutputContents(d *commondels.Data) ([]string, error) {
+func SetupOutputContents(d *command.Data) ([]string, error) {
 	s, err := SetupOutputString(d)
 	return strings.Split(s, "\n"), err
 }

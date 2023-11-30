@@ -11,10 +11,10 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/leep-frog/command/command"
 	"github.com/leep-frog/command/commander"
 	"github.com/leep-frog/command/commandertest"
 	"github.com/leep-frog/command/commandtest"
-	"github.com/leep-frog/command/commondels"
 	"github.com/leep-frog/command/internal/stubs"
 	"github.com/leep-frog/command/internal/testutil"
 )
@@ -729,7 +729,7 @@ func TestCompletion(t *testing.T) {
 			name: "completes branches",
 			ctc: &commandtest.CompleteTestCase{
 				Args: "cmd ",
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"delete", "get", "list", "put", "setdir"},
 				},
 			},
@@ -739,7 +739,7 @@ func TestCompletion(t *testing.T) {
 			puts: puts,
 			ctc: &commandtest.CompleteTestCase{
 				Args: "cmd get ",
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"hello", "things", "this"},
 				},
 			},
@@ -749,7 +749,7 @@ func TestCompletion(t *testing.T) {
 			puts: puts,
 			ctc: &commandtest.CompleteTestCase{
 				Args: "cmd put t",
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"things", "this"},
 				},
 			},
@@ -759,7 +759,7 @@ func TestCompletion(t *testing.T) {
 			puts: puts,
 			ctc: &commandtest.CompleteTestCase{
 				Args: "cmd put thin",
-				Want: &commondels.Autocompletion{
+				Want: &command.Autocompletion{
 					Suggestions: []string{"things"},
 				},
 			},
@@ -1200,7 +1200,7 @@ func TestNewShell(t *testing.T) {
 				Env: map[string]string{
 					ShellOSEnvVar: dir,
 				},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					ShellDataKey: &Cache{Dir: dir},
 				}},
 			},
@@ -1234,12 +1234,12 @@ func TestNewShell(t *testing.T) {
 				Dir: dir,
 			},
 			etc: &commandtest.ExecuteTestCase{
-				WantExecuteData: &commondels.ExecuteData{
+				WantExecuteData: &command.ExecuteData{
 					Executable: []string{
 						fos.SetEnvVar(ShellOSEnvVar, dir),
 					},
 				},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					ShellDataKey: &Cache{Dir: dir},
 				}},
 			},
@@ -1254,10 +1254,10 @@ func TestNewShell(t *testing.T) {
 			})
 
 			var c *Cache
-			d := &commondels.Data{}
+			d := &command.Data{}
 			test.etc.Node = commander.SerialNodes(
 				ShellProcessor(),
-				commander.SuperSimpleProcessor(func(i *commondels.Input, data *commondels.Data) error {
+				commander.SuperSimpleProcessor(func(i *command.Input, data *command.Data) error {
 					c = ShellFromData(data)
 					d = data
 					return nil
@@ -1267,7 +1267,7 @@ func TestNewShell(t *testing.T) {
 			test.etc.OS = fos
 			commandertest.ExecuteTest(t, test.etc)
 
-			if diff := cmp.Diff(test.etc.WantData, d, cmp.AllowUnexported(Cache{}, commondels.Data{}), cmpopts.IgnoreFields(commondels.Data{}, "OS")); diff != "" {
+			if diff := cmp.Diff(test.etc.WantData, d, cmp.AllowUnexported(Cache{}, command.Data{}), cmpopts.IgnoreFields(command.Data{}, "OS")); diff != "" {
 				t.Errorf("ShellProcessor() produced incorrect data (-want, +got):\n%s", diff)
 			}
 			if diff := cmp.Diff(test.wantCache, c, cmp.AllowUnexported(Cache{})); diff != "" {

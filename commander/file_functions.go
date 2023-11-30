@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/leep-frog/command/commondels"
+	"github.com/leep-frog/command/command"
 )
 
 var (
@@ -18,7 +18,7 @@ var (
 // FileTransformer returns a transformer that transforms a string into its full file-path.
 func FileTransformer() *Transformer[string] {
 	return &Transformer[string]{
-		F: func(s string, d *commondels.Data) (string, error) {
+		F: func(s string, d *command.Data) (string, error) {
 			if fileRoot == "" {
 				return filepathAbs(s)
 			}
@@ -54,9 +54,9 @@ func Stat(name string) (os.FileInfo, error) {
 }
 
 // FileContents converts a filename into the file's contents.
-func FileContents(name, desc string, opts ...ArgumentOption[string]) commondels.Processor {
+func FileContents(name, desc string, opts ...ArgumentOption[string]) command.Processor {
 	fc := FileArgument(name, desc, opts...)
-	return SimpleProcessor(func(i *commondels.Input, o commondels.Output, d *commondels.Data, ed *commondels.ExecuteData) error {
+	return SimpleProcessor(func(i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
 		if err := processOrExecute(fc, i, o, d, ed); err != nil {
 			return err
 		}
@@ -66,7 +66,7 @@ func FileContents(name, desc string, opts ...ArgumentOption[string]) commondels.
 		}
 		d.Set(name, strings.Split(strings.TrimSpace(string(b)), "\n"))
 		return nil
-	}, func(i *commondels.Input, d *commondels.Data) (*commondels.Completion, error) {
+	}, func(i *command.Input, d *command.Data) (*command.Completion, error) {
 		return processOrComplete(fc, i, d)
 	})
 }

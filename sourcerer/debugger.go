@@ -1,8 +1,8 @@
 package sourcerer
 
 import (
+	"github.com/leep-frog/command/command"
 	"github.com/leep-frog/command/commander"
-	"github.com/leep-frog/command/commondels"
 )
 
 type Debugger struct{}
@@ -11,7 +11,7 @@ func (*Debugger) Setup() []string { return nil }
 func (*Debugger) Changed() bool   { return false }
 func (*Debugger) Name() string    { return "leep_debug" }
 
-func (*Debugger) Node() commondels.Node {
+func (*Debugger) Node() command.Node {
 	return commander.SerialNodes(
 		// Get the environment variable
 		commander.EnvArg(commander.DebugEnvVar),

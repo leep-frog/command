@@ -1,6 +1,6 @@
 # Nodes, Processors, and Edges
 
-At a high level, the `command` package simply traverses a graph of `commondels.Node` objects. A `Node` contains two fields:
+At a high level, the `command` package simply traverses a graph of `command.Node` objects. A `Node` contains two fields:
 
 1. `Node.Processor` contains the logic that should be executed when a `Node` is reached.
 
@@ -19,7 +19,7 @@ While the graph logic may seem convoluted, this strucutre allows for features li
 This example constructs a graph that simply works its way through a set of linear nodes:
 
 ```go
-func SerialGraph() commondels.Node {
+func SerialGraph() command.Node {
   firstNameArg := command.Arg[string]("FIRST_NAME", "First name")
   lastNameArg := command.Arg[string]("LAST_NAME", "Last name")
   excArg := command.OptionalArg[int]("EXCITEMENT", "How excited you are", command.Default(1))
@@ -28,7 +28,7 @@ func SerialGraph() commondels.Node {
     firstNameArg,
     lastNameArg,
     excArg,
-    &command.ExecutorProcessor{func(o commondels.Output, d *commondels.Data) {
+    &command.ExecutorProcessor{func(o command.Output, d *command.Data) {
       o.Stdoutf("Hello, %s %s%s\n", firstNameArg.Get(d), lastNameArg.Get(d), strings.Repeat("!", excArg.Get(d)))
     }}
   )
@@ -40,25 +40,25 @@ func SerialGraph() commondels.Node {
 This graph does different things depending on the first argument.
 
 ```go
-func BranchingGraph() commondels.Node {
+func BranchingGraph() command.Node {
   defaultNode := command.SerialNodes(
-    command.ExecutorNode(func(o commondels.Output, d *commondels.Data) {
+    command.ExecutorNode(func(o command.Output, d *command.Data) {
       o.Stdoutln("Why didn't you pick a door?")
     })
   )
-  return command.BranchNode(map[string]commondels.Node{
+  return command.BranchNode(map[string]command.Node{
     "one": command.SerialNodes(
-      command.ExecutorNode(func(o commondels.Output, d *commondels.Data) {
+      command.ExecutorNode(func(o command.Output, d *command.Data) {
         o.Stdoutln("Not quite!")
       }),
     ),
     "two": command.SerialNodes(
-      command.ExecutorNode(func(o commondels.Output, d *commondels.Data) {
+      command.ExecutorNode(func(o command.Output, d *command.Data) {
         o.Stdoutln("You won a new car!")
       }),
     ),
     "three": command.SerialNodes(
-      command.ExecutorNode(func(o commondels.Output, d *commondels.Data) {
+      command.ExecutorNode(func(o command.Output, d *command.Data) {
         o.Stdoutln("Try again!")
       }),
     ),

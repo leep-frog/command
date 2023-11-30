@@ -4,8 +4,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/leep-frog/command/command"
 	"github.com/leep-frog/command/commander"
-	"github.com/leep-frog/command/commondels"
 	"github.com/leep-frog/command/sourcerer"
 )
 
@@ -40,7 +40,7 @@ func (mfc *myFirstCommand) Setup() []string {
 }
 
 // Node returns the logic of your new command!
-func (mfc *myFirstCommand) Node() commondels.Node {
+func (mfc *myFirstCommand) Node() command.Node {
 
 	fc := &commander.FileCompleter[string]{
 		Directory:   filepath.Join(".."),
@@ -76,7 +76,7 @@ func (mfc *myFirstCommand) Node() commondels.Node {
 		// The logic of your function!
 		// ExecutorNode doesn't deal with errors. If your command involves potential
 		// errors, use ExecuteErrNode instead.
-		&commander.ExecutorProcessor{F: func(o commondels.Output, d *commondels.Data) error {
+		&commander.ExecutorProcessor{F: func(o command.Output, d *command.Data) error {
 			name := nameArg.Get(d)
 			n := nArg.Get(d)
 			for i := 0; i < n; i++ {

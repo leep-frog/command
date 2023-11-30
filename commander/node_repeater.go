@@ -1,25 +1,25 @@
 package commander
 
 import (
-	"github.com/leep-frog/command/commondels"
+	"github.com/leep-frog/command/command"
 	"github.com/leep-frog/command/internal/spycommander"
 )
 
 // StringListListProcessor parses a two-dimensional slice of strings, with each slice being separated by `breakSymbol`
-func StringListListProcessor(name, desc, breakSymbol string, minN, optionalN int, opts ...ArgumentOption[[]string]) commondels.Processor {
+func StringListListProcessor(name, desc, breakSymbol string, minN, optionalN int, opts ...ArgumentOption[[]string]) command.Processor {
 	lb := ListUntilSymbol(breakSymbol)
 	lb.Discard = true
 
 	n := &SimpleNode{
-		Processor: ListArg(name, desc, 0, commondels.UnboundedList,
+		Processor: ListArg(name, desc, 0, command.UnboundedList,
 			append(opts,
 				lb,
-				&CustomSetter[[]string]{func(sl []string, d *commondels.Data) {
+				&CustomSetter[[]string]{func(sl []string, d *command.Data) {
 					if len(sl) > 0 {
 						if !d.Has(name) {
 							d.Set(name, [][]string{sl})
 						} else {
-							d.Set(name, append(commondels.GetData[[][]string](d, name), sl))
+							d.Set(name, append(command.GetData[[][]string](d, name), sl))
 						}
 					}
 				}},
@@ -29,20 +29,20 @@ func StringListListProcessor(name, desc, breakSymbol string, minN, optionalN int
 	return NodeRepeater(n, minN, optionalN)
 }
 
-// NodeRepeater is a `commondels.Processor` that runs the provided commondels.Node at least `minN` times and up to `minN + optionalN` times.
+// NodeRepeater is a `command.Processor` that runs the provided command.Node at least `minN` times and up to `minN + optionalN` times.
 // It should work with most node types, but hasn't been tested with branch nodes and flags really.
 // Additionally, any argument nodes under it should probably use `CustomSetter` arg options.
-func NodeRepeater(n commondels.Node, minN, optionalN int) commondels.Processor {
+func NodeRepeater(n command.Node, minN, optionalN int) command.Processor {
 	return &nodeRepeater{minN, optionalN, n}
 }
 
 type nodeRepeater struct {
 	minN      int
 	optionalN int
-	n         commondels.Node
+	n         command.Node
 }
 
-func (nr *nodeRepeater) Usage(i *commondels.Input, d *commondels.Data, u *commondels.Usage) error {
+func (nr *nodeRepeater) Usage(i *command.Input, d *command.Data, u *command.Usage) error {
 	nu, err := spycommander.ProcessNewGraphUse(nr.n, i)
 	if err != nil {
 		return err
@@ -65,7 +65,7 @@ func (nr *nodeRepeater) Usage(i *commondels.Input, d *commondels.Data, u *common
 		u.Usage = append(u.Usage, nu.Usage...)
 	}
 
-	if nr.optionalN == commondels.UnboundedList {
+	if nr.optionalN == command.UnboundedList {
 		u.Usage = append(u.Usage, "{")
 		u.Usage = append(u.Usage, nu.Usage...)
 		u.Usage = append(u.Usage, "}")
@@ -84,16 +84,16 @@ func (nr *nodeRepeater) Usage(i *commondels.Input, d *commondels.Data, u *common
 	return nil
 }
 
-func (nr *nodeRepeater) proceedCondition(exCount int, i *commondels.Input) bool {
+func (nr *nodeRepeater) proceedCondition(exCount int, i *command.Input) bool {
 	// Keep going if...
 	return (
 	// we haven't run the minimum number of times
 	exCount < nr.minN ||
 		// there is more input AND there are optional cycles left
-		(!i.FullyProcessed() && (nr.optionalN == commondels.UnboundedList || exCount < nr.minN+nr.optionalN)))
+		(!i.FullyProcessed() && (nr.optionalN == command.UnboundedList || exCount < nr.minN+nr.optionalN)))
 }
 
-func (nr *nodeRepeater) Execute(i *commondels.Input, o commondels.Output, d *commondels.Data, e *commondels.ExecuteData) error {
+func (nr *nodeRepeater) Execute(i *command.Input, o command.Output, d *command.Data, e *command.ExecuteData) error {
 	for exCount := 0; nr.proceedCondition(exCount, i); exCount++ {
 		if err := processGraphExecution(nr.n, i, o, d, e); err != nil {
 			return err
@@ -104,7 +104,7 @@ func (nr *nodeRepeater) Execute(i *commondels.Input, o commondels.Output, d *com
 	return nil
 }
 
-func (nr *nodeRepeater) Complete(i *commondels.Input, d *commondels.Data) (*commondels.Completion, error) {
+func (nr *nodeRepeater) Complete(i *command.Input, d *command.Data) (*command.Completion, error) {
 	for exCount := 0; nr.proceedCondition(exCount, i); exCount++ {
 		c, err := processGraphCompletion(nr.n, i, d)
 		if c != nil || (err != nil) {

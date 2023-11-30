@@ -4,11 +4,11 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/leep-frog/command/commondels"
+	"github.com/leep-frog/command/command"
 )
 
 type autocompleteTester struct {
-	want *commondels.Autocompletion
+	want *command.Autocompletion
 }
 
 func (*autocompleteTester) setup(*testing.T, *testContext) {}
@@ -16,10 +16,10 @@ func (at *autocompleteTester) check(t *testing.T, tc *testContext) {
 	t.Helper()
 
 	if at.want == nil {
-		at.want = &commondels.Autocompletion{}
+		at.want = &command.Autocompletion{}
 	}
 	if tc.autocompletion == nil {
-		tc.autocompletion = &commondels.Autocompletion{}
+		tc.autocompletion = &command.Autocompletion{}
 	}
 
 	if diff := cmp.Diff(at.want, tc.autocompletion); diff != "" {

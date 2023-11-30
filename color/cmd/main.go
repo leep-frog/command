@@ -4,11 +4,11 @@ import (
 	"fmt"
 
 	"github.com/leep-frog/command/color"
-	"github.com/leep-frog/command/commondels"
+	"github.com/leep-frog/command/command"
 )
 
 func main() {
-	o := commondels.NewOutput()
+	o := command.NewOutput()
 	o.Stdoutln("Output 1")
 	o.Stderrln("Errput 1")
 	fmt.Println("Fmt 1")

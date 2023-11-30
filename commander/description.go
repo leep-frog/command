@@ -3,16 +3,16 @@ package commander
 import (
 	"fmt"
 
-	"github.com/leep-frog/command/commondels"
+	"github.com/leep-frog/command/command"
 )
 
-// Description creates a `commondels.Processor` that adds a command description to the usage text.
-func Description(desc string) commondels.Processor {
+// Description creates a `command.Processor` that adds a command description to the usage text.
+func Description(desc string) command.Processor {
 	return &descNode{desc}
 }
 
 // Descriptionf is like `Description`, but with formatting options.
-func Descriptionf(s string, a ...interface{}) commondels.Processor {
+func Descriptionf(s string, a ...interface{}) command.Processor {
 	return &descNode{fmt.Sprintf(s, a...)}
 }
 
@@ -20,15 +20,15 @@ type descNode struct {
 	desc string
 }
 
-func (dn *descNode) Usage(i *commondels.Input, d *commondels.Data, u *commondels.Usage) error {
+func (dn *descNode) Usage(i *command.Input, d *command.Data, u *command.Usage) error {
 	u.Description = dn.desc
 	return nil
 }
 
-func (dn *descNode) Execute(*commondels.Input, commondels.Output, *commondels.Data, *commondels.ExecuteData) error {
+func (dn *descNode) Execute(*command.Input, command.Output, *command.Data, *command.ExecuteData) error {
 	return nil
 }
 
-func (dn *descNode) Complete(*commondels.Input, *commondels.Data) (*commondels.Completion, error) {
+func (dn *descNode) Complete(*command.Input, *command.Data) (*command.Completion, error) {
 	return nil, nil
 }

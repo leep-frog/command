@@ -7,8 +7,8 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/leep-frog/command/command"
 	"github.com/leep-frog/command/commandtest"
-	"github.com/leep-frog/command/commondels"
 	"github.com/leep-frog/command/internal/spycommandtest"
 )
 
@@ -16,15 +16,15 @@ type testContext struct {
 	prefix   string
 	testCase testCase
 
-	data  *commondels.Data
-	fo    *commondels.FakeOutput
-	input *commondels.Input
+	data  *command.Data
+	fo    *command.FakeOutput
+	input *command.Input
 
 	err   error
 	panic interface{}
 
-	eData          *commondels.ExecuteData
-	autocompletion *commondels.Autocompletion
+	eData          *command.ExecuteData
+	autocompletion *command.Autocompletion
 }
 
 func setupForTest(t *testing.T, contents []string) string {
@@ -63,17 +63,17 @@ func checkIf(cond bool, ct commandTester) commandTester {
 	return &noOpTester{}
 }
 
-type executeFn func(commondels.Node, *commondels.Input, commondels.Output, *commondels.Data, *commondels.ExecuteData) error
+type executeFn func(command.Node, *command.Input, command.Output, *command.Data, *command.ExecuteData) error
 
-type usageFn func(commondels.Node, *commondels.Input) (*commondels.Usage, error)
+type usageFn func(command.Node, *command.Input) (*command.Usage, error)
 
 type nameProcessor interface {
-	commondels.Processor
+	command.Processor
 	Name() string
 }
 
 // ExecuteTest runs a command execution test.
-func ExecuteTest(t *testing.T, etc *commandtest.ExecuteTestCase, ietc *spycommandtest.ExecuteTestCase, exFn executeFn, uFn usageFn, setupArg nameProcessor, serialNodes func(...commondels.Processor) commondels.Node) {
+func ExecuteTest(t *testing.T, etc *commandtest.ExecuteTestCase, ietc *spycommandtest.ExecuteTestCase, exFn executeFn, uFn usageFn, setupArg nameProcessor, serialNodes func(...command.Processor) command.Node) {
 	t.Helper()
 
 	if etc == nil {
@@ -81,7 +81,7 @@ func ExecuteTest(t *testing.T, etc *commandtest.ExecuteTestCase, ietc *spycomman
 	}
 
 	if etc.WantData == nil {
-		etc.WantData = &commondels.Data{}
+		etc.WantData = &command.Data{}
 	}
 
 	if ietc == nil {
@@ -95,8 +95,8 @@ func ExecuteTest(t *testing.T, etc *commandtest.ExecuteTestCase, ietc *spycomman
 	tc := &testContext{
 		prefix:   fmt.Sprintf("Execute(%v)", etc.Args),
 		testCase: etc,
-		data:     &commondels.Data{OS: etc.OS},
-		fo:       commondels.NewFakeOutput(),
+		data:     &command.Data{OS: etc.OS},
+		fo:       command.NewFakeOutput(),
 	}
 	t.Cleanup(tc.fo.Close)
 	args := etc.Args
@@ -114,7 +114,7 @@ func ExecuteTest(t *testing.T, etc *commandtest.ExecuteTestCase, ietc *spycomman
 			break
 		}
 	}
-	tc.input = commondels.NewInput(args, nil)
+	tc.input = command.NewInput(args, nil)
 
 	testers := []commandTester{
 		&outputTester{etc.WantStdout, etc.WantStderr},
@@ -138,7 +138,7 @@ func ExecuteTest(t *testing.T, etc *commandtest.ExecuteTestCase, ietc *spycomman
 
 	if helpFlag {
 		// TODO: This is synced with usageExecutorHelper in sourcerer (use interface to share logic? ie move this check into execute function?)
-		var u *commondels.Usage
+		var u *command.Usage
 		u, tc.err = uFn(n, tc.input)
 		if tc.err != nil {
 			tc.fo.Err(tc.err)
@@ -151,7 +151,7 @@ func ExecuteTest(t *testing.T, etc *commandtest.ExecuteTestCase, ietc *spycomman
 			defer func() {
 				tc.panic = recover()
 			}()
-			tc.eData = &commondels.ExecuteData{}
+			tc.eData = &command.ExecuteData{}
 			tc.err = exFn(n, tc.input, tc.fo, tc.data, tc.eData)
 		}()
 	}

@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/leep-frog/command/commondels"
+	"github.com/leep-frog/command/command"
 )
 
 // Changeable is an interface for commands that can be changed.
@@ -19,23 +19,23 @@ type Changeable interface {
 // ExecuteTestCase is a test case object for testing command execution.
 type ExecuteTestCase struct {
 	// Node is the root `Node` of the command to test.
-	Node commondels.Node
+	Node command.Node
 	// Args is the list of arguments provided to the command.
 	Args []string
 	// Env is the map of os environment variables to stub. If nil, this is not stubbed.
 	Env map[string]string
 	// OS is the OS to use for the test.
-	OS commondels.OS // TODO
+	OS command.OS // TODO
 
 	// WantData is the `Data` object that should be constructed.
-	WantData *commondels.Data
+	WantData *command.Data
 	// SkipDataCheck skips the check on `WantData`.
 	SkipDataCheck bool
 	// DataCmpOpts is the set of cmp.Options that should be used
 	// when comparing data.
 	DataCmpOpts cmp.Options
 	// WantExecuteData is the `ExecuteData` object that should be constructed.
-	WantExecuteData *commondels.ExecuteData
+	WantExecuteData *command.ExecuteData
 	// WantStdout is the data that should be sent to stdout.
 	WantStdout string
 	// WantStderr is the data that should be sent to stderr.
@@ -75,7 +75,7 @@ type FakeRun struct {
 // CompleteTestCase is a test case object for testing command autocompletion.
 type CompleteTestCase struct {
 	// Node is the root `Node` of the command to test.
-	Node commondels.Node
+	Node command.Node
 	// Args is the list of arguments provided to the command.
 	// Remember that args requires a dummy command argument (e.g. "cmd ")
 	// since `COMP_LINE` includes that.
@@ -85,14 +85,14 @@ type CompleteTestCase struct {
 	// Env is the map of os environment variables to stub. If nil, this is not stubbed.
 	Env map[string]string
 	// OS is the OS to use for the test.
-	OS commondels.OS
+	OS command.OS
 
 	// Want is the expected `Autocompletion` object produced by the test.
-	Want *commondels.Autocompletion
+	Want *command.Autocompletion
 	// WantErr is the error that should be returned.
 	WantErr error
 	// WantData is the `Data` object that should be constructed.
-	WantData *commondels.Data
+	WantData *command.Data
 	// SkipDataCheck skips the check on `WantData`.
 	SkipDataCheck bool
 	// DataCmpOpts is the set of cmp.Options that should be used
@@ -121,7 +121,7 @@ type RunContents struct {
 }
 
 // TODO: Is this needed? Just let users do this part or use OSSetEnv/OSLookupEnv?
-// FakeOS is a fake commondels.OS that can be used for testing purposes.
+// FakeOS is a fake command.OS that can be used for testing purposes.
 type FakeOS struct{}
 
 func (*FakeOS) SetEnvVar(variable, value string) string {

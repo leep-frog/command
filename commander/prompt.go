@@ -4,11 +4,11 @@ import (
 	"bufio"
 	"os"
 
-	"github.com/leep-frog/command/commondels"
+	"github.com/leep-frog/command/command"
 )
 
 // Prompt prompts the user for input.
-func Prompt(output commondels.Output, question string) chan string {
+func Prompt(output command.Output, question string) chan string {
 	reader := bufio.NewReader(os.Stdin)
 	output.Stdoutln(question)
 	c := make(chan string)

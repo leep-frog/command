@@ -3,8 +3,8 @@ package sourcerer
 import (
 	"sort"
 
+	"github.com/leep-frog/command/command"
 	"github.com/leep-frog/command/commander"
-	"github.com/leep-frog/command/commondels"
 )
 
 type Aliaser struct {
@@ -17,7 +17,7 @@ func (a *Aliaser) modifyCompiledOpts(co *compiledOpts) {
 	co.aliasers[a.alias] = a
 }
 
-// AliasSourcery outputs all alias source commands to the provided `commondels.Output`.
+// AliasSourcery outputs all alias source commands to the provided `command.Output`.
 func AliasSourcery(goExecutable string, as ...*Aliaser) []string {
 	if len(as) == 0 {
 		return nil
@@ -63,20 +63,20 @@ type AliaserCommand struct {
 var (
 	aliasArg    = commander.Arg[string]("ALIAS", "Alias of new command", commander.MinLength[string, string](1))
 	aliasCLIArg = commander.Arg[string]("CLI", "CLI of new command")
-	aliasPTArg  = commander.ListArg[string]("PASSTHROUGH_ARGS", "Args to passthrough with alias", 0, commondels.UnboundedList)
+	aliasPTArg  = commander.ListArg[string]("PASSTHROUGH_ARGS", "Args to passthrough with alias", 0, command.UnboundedList)
 )
 
 func (*AliaserCommand) Setup() []string { return nil }
 func (*AliaserCommand) Changed() bool   { return false }
 func (*AliaserCommand) Name() string    { return "aliaser" }
 
-func (ac *AliaserCommand) Node() commondels.Node {
+func (ac *AliaserCommand) Node() command.Node {
 	return commander.SerialNodes(
 		commander.Description("Alias a command to a cli with some args included"),
 		aliasArg,
 		aliasCLIArg,
 		aliasPTArg,
-		commander.ExecutableProcessor(func(_ commondels.Output, d *commondels.Data) ([]string, error) {
+		commander.ExecutableProcessor(func(_ command.Output, d *command.Data) ([]string, error) {
 			aliaser := NewAliaser(aliasArg.Get(d), aliasCLIArg.Get(d), aliasPTArg.Get(d)...)
 			return AliasSourcery(ac.goExecutableFilePath, aliaser), nil
 		}),

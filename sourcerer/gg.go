@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"regexp"
 
+	"github.com/leep-frog/command/command"
 	"github.com/leep-frog/command/commander"
-	"github.com/leep-frog/command/commondels"
 )
 
 var (
@@ -38,15 +38,15 @@ func (*UpdateLeepPackageCommand) Name() string {
 }
 
 var (
-	packageArg    = commander.ListArg[string]("PACKAGE", "Package name", 1, commondels.UnboundedList, commander.SimpleDistinctCompleter[[]string](RelevantPackages...))
+	packageArg    = commander.ListArg[string]("PACKAGE", "Package name", 1, command.UnboundedList, commander.SimpleDistinctCompleter[[]string](RelevantPackages...))
 	lsRemoteRegex = regexp.MustCompile(`^([0-9a-f]+)\s+([^\s]+)$`)
 )
 
-func (*UpdateLeepPackageCommand) Node() commondels.Node {
+func (*UpdateLeepPackageCommand) Node() command.Node {
 	return commander.SerialNodes(
 		commander.Description("gg updates go packages from the github.com/leep-frog repository"),
 		packageArg,
-		commander.ExecutableProcessor(func(o commondels.Output, d *commondels.Data) ([]string, error) {
+		commander.ExecutableProcessor(func(o command.Output, d *command.Data) ([]string, error) {
 			var r []string
 			for _, p := range packageArg.Get(d) {
 				sc := &commander.ShellCommand[[]string]{

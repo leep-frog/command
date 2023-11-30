@@ -1,4 +1,4 @@
-// Package spycommand is a package that contains types that are private in `commondels`, but
+// Package spycommand is a package that contains types that are private in `command`, but
 // needed for reference in other packages.
 //
 // All class methods should go in other packages to ensure they are tested properly
@@ -11,12 +11,6 @@ type InputSnapshot int
 type InputArg struct {
 	Value     string
 	Snapshots map[InputSnapshot]bool
-}
-
-// method to get coverage info (so I don't need to check whether there are no tests
-// or nothing to cover).
-func noop() {
-	_ = 0
 }
 
 func SnapshotsMap(iss ...InputSnapshot) map[InputSnapshot]bool {

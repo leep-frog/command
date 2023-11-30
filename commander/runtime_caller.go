@@ -5,12 +5,12 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/leep-frog/command/commondels"
+	"github.com/leep-frog/command/command"
 	"github.com/leep-frog/command/internal/testutil"
 )
 
 const (
-	// RuntimeCallerKey is the `commondels.Data` key used by `RuntimeCaller`.
+	// RuntimeCallerKey is the `command.Data` key used by `RuntimeCaller`.
 	RuntimeCallerKey = "RUNTIME_CALLER"
 )
 
@@ -23,7 +23,7 @@ func RuntimeCaller() *GetProcessor[string] {
 	_, filename, _, ok := runtimeCaller(1)
 
 	return &GetProcessor[string]{
-		SuperSimpleProcessor(func(i *commondels.Input, d *commondels.Data) error {
+		SuperSimpleProcessor(func(i *command.Input, d *command.Data) error {
 			if !ok {
 				return fmt.Errorf("runtime.Caller failed to retrieve filepath info")
 			}

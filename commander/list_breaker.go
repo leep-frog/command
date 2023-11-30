@@ -1,7 +1,7 @@
 package commander
 
 import (
-	"github.com/leep-frog/command/commondels"
+	"github.com/leep-frog/command/command"
 	"github.com/leep-frog/command/internal/operator"
 )
 
@@ -11,10 +11,10 @@ func ListUntilSymbol[T comparable](symbol T) *ListBreaker[[]T] {
 		Validators: []*ValidatorOption[[]T]{
 			ListifyValidatorOption(NEQ[T](symbol)),
 		},
-		UsageFunc: func(d *commondels.Data, u *commondels.Usage) error {
+		UsageFunc: func(d *command.Data, u *command.Usage) error {
 			arg := operator.GetOperator[T]().ToArgs(symbol)[0] // slices aren't comparable, so this will only ever be length 1
 			u.Usage = append(u.Usage, arg)
-			u.UsageSection.Add(commondels.SymbolSection, arg, "List breaker")
+			u.UsageSection.Add(command.SymbolSection, arg, "List breaker")
 			return nil
 		},
 	}
@@ -31,21 +31,21 @@ func ListUntil[T any](validators ...*ValidatorOption[T]) *ListBreaker[[]T] {
 	}
 }
 
-// ListBreaker is a type that implements `commondels.InputBreaker` as well as `ArgumentOtion[T]`.
+// ListBreaker is a type that implements `command.InputBreaker` as well as `ArgumentOtion[T]`.
 type ListBreaker[T any] struct {
 	// Validators is the list of validators
 	Validators []*ValidatorOption[T]
 	// Discard is whether the culprit character should be removed
 	Discard bool
 	// UsageFunc modifies the usage doc
-	UsageFunc func(*commondels.Data, *commondels.Usage) error
+	UsageFunc func(*command.Data, *command.Usage) error
 }
 
-func (lb *ListBreaker[T]) DiscardBreak(s string, d *commondels.Data) bool {
+func (lb *ListBreaker[T]) DiscardBreak(s string, d *command.Data) bool {
 	return lb.Discard
 }
 
-func (lb *ListBreaker[T]) Break(s string, d *commondels.Data) bool {
+func (lb *ListBreaker[T]) Break(s string, d *command.Data) bool {
 	for _, v := range lb.Validators {
 		op := operator.GetOperator[T]()
 		args, err := operator.FromArgs(op, s)
@@ -59,7 +59,7 @@ func (lb *ListBreaker[T]) Break(s string, d *commondels.Data) bool {
 	return false
 }
 
-func (lb *ListBreaker[T]) Validate(t T, d *commondels.Data) error {
+func (lb *ListBreaker[T]) Validate(t T, d *command.Data) error {
 	for _, v := range lb.Validators {
 		if err := v.Validate(t, d); err != nil {
 			return err
@@ -72,8 +72,8 @@ func (lb *ListBreaker[T]) modifyArgumentOption(ao *argumentOption[T]) {
 	ao.breakers = append(ao.breakers, lb)
 }
 
-// commondels.Usage updates the provided `commondels.Usage` object.
-func (lb *ListBreaker[T]) Usage(d *commondels.Data, u *commondels.Usage) error {
+// command.Usage updates the provided `command.Usage` object.
+func (lb *ListBreaker[T]) Usage(d *command.Data, u *command.Usage) error {
 	if lb.UsageFunc != nil {
 		return lb.UsageFunc(d, u)
 	}

@@ -5,7 +5,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/leep-frog/command/commondels"
+	"github.com/leep-frog/command/command"
 	"github.com/leep-frog/command/internal/constants"
 	"github.com/leep-frog/command/internal/spycommander"
 	"golang.org/x/exp/maps"
@@ -15,16 +15,16 @@ import (
 // BranchNode implements a node that branches on specific string arguments.
 // If the argument does not match any branch, then the `Default` node is traversed.
 type BranchNode struct {
-	// Branches is a map from branching argument to `commondels.Node` that should be
+	// Branches is a map from branching argument to `command.Node` that should be
 	// executed if that branching argument is provided.
-	Branches map[string]commondels.Node
+	Branches map[string]command.Node
 	// Synonyms are synonyms for branching arguments.
 	Synonyms map[string]string
-	// Default is the `commondels.Node` that should be executed if the branching argument
+	// Default is the `command.Node` that should be executed if the branching argument
 	// does not match of any of the branches.
-	Default commondels.Node
+	Default command.Node
 	// BranchCompletions is whether or not branch arguments should be completed
-	// or if the completions from the Default `commondels.Node` should be used.
+	// or if the completions from the Default `command.Node` should be used.
 	// This is only relevant when the branching argument is the argument
 	// being completed. Otherwise, this node is executed as normal.
 	DefaultCompletion bool
@@ -36,7 +36,7 @@ type BranchNode struct {
 	// If this isn't provided, then branches are sorted in alphabetical order.
 	BranchUsageOrder []string
 
-	next commondels.Node
+	next command.Node
 }
 
 func (bn *BranchNode) sortBranchSyns(bss []*branchSyn) error {
@@ -89,19 +89,19 @@ func BranchSynonyms(m map[string][]string) map[string]string {
 	return r
 }
 
-func (bn *BranchNode) Execute(input *commondels.Input, output commondels.Output, data *commondels.Data, eData *commondels.ExecuteData) error {
+func (bn *BranchNode) Execute(input *command.Input, output command.Output, data *command.Data, eData *command.ExecuteData) error {
 	// The edge will figure out what needs to be done next.
 	return output.Err(bn.getNext(input, data))
 }
 
-func (bn *BranchNode) Complete(input *commondels.Input, data *commondels.Data) (*commondels.Completion, error) {
+func (bn *BranchNode) Complete(input *command.Input, data *command.Data) (*command.Completion, error) {
 	if input.NumRemaining() > 1 {
 		return nil, bn.getNext(input, data)
 	}
 
 	// Note: we don't try to merge completions between branches
 	// and default node because the completion overlap can get
-	// convoluted given the number of `commondels.Completion` options.
+	// convoluted given the number of `command.Completion` options.
 	if bn.DefaultCompletion {
 		// Need to iterate over the remaining nodes in case the immediately next node
 		// doesn't process any args and the one after it does.
@@ -114,13 +114,13 @@ func (bn *BranchNode) Complete(input *commondels.Input, data *commondels.Data) (
 		names = append(names, name)
 	}
 
-	return &commondels.Completion{
+	return &command.Completion{
 		Suggestions:     names,
 		CaseInsensitive: true,
 	}, nil
 }
 
-func (bn *BranchNode) getNext(input *commondels.Input, data *commondels.Data) error {
+func (bn *BranchNode) getNext(input *command.Input, data *command.Data) error {
 	// Set next to nil in case used multiple times
 	bn.next = nil
 
@@ -187,13 +187,13 @@ func IsBranchingError(err error) bool {
 	return ok
 }
 
-func (bn *BranchNode) Next(input *commondels.Input, data *commondels.Data) (commondels.Node, error) {
+func (bn *BranchNode) Next(input *command.Input, data *command.Data) (command.Node, error) {
 	n := bn.next
 	bn.next = nil
 	return n, nil
 }
 
-func (bn *BranchNode) UsageNext(input *commondels.Input, data *commondels.Data) (commondels.Node, error) {
+func (bn *BranchNode) UsageNext(input *command.Input, data *command.Data) (command.Node, error) {
 	return bn.Next(input, data)
 }
 
@@ -205,7 +205,7 @@ func (bn *BranchNode) splitBranch(b string) (string, []string) {
 type branchSyn struct {
 	name   string
 	values []string
-	n      commondels.Node
+	n      command.Node
 }
 
 func (bn *BranchNode) getSyns() map[string]*branchSyn {
@@ -230,7 +230,7 @@ func (bn *BranchNode) getSyns() map[string]*branchSyn {
 	return nameToSyns
 }
 
-func (bn *BranchNode) Usage(input *commondels.Input, data *commondels.Data, u *commondels.Usage) error {
+func (bn *BranchNode) Usage(input *command.Input, data *command.Data, u *command.Usage) error {
 	// Don't display usage if a branching argument is provided
 	// if !input.FullyProcessed() {
 	if input.NumRemaining() > 0 {
@@ -246,10 +246,10 @@ func (bn *BranchNode) Usage(input *commondels.Input, data *commondels.Data, u *c
 	}
 
 	if bn.Default != nil {
-		u.UsageSection.Set(commondels.SymbolSection, constants.UsageBoxLeftRightDown, "Start of subcommand branches (with default node)")
+		u.UsageSection.Set(command.SymbolSection, constants.UsageBoxLeftRightDown, "Start of subcommand branches (with default node)")
 		u.Usage = append(u.Usage, constants.UsageBoxLeftRightDown)
 	} else {
-		u.UsageSection.Set(commondels.SymbolSection, constants.UsageBoxLeftDown, "Start of subcommand branches (without default node)")
+		u.UsageSection.Set(command.SymbolSection, constants.UsageBoxLeftDown, "Start of subcommand branches (without default node)")
 		u.Usage = append(u.Usage, constants.UsageBoxLeftDown)
 	}
 
@@ -265,7 +265,7 @@ func (bn *BranchNode) Usage(input *commondels.Input, data *commondels.Data, u *c
 	}
 
 	for _, bs := range bss {
-		// commondels.Input is empty at this point, so fine to pass the same input to all branches
+		// command.Input is empty at this point, so fine to pass the same input to all branches
 		su, err := spycommander.ProcessNewGraphUse(bs.n, input)
 		if err != nil {
 			return err

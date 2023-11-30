@@ -6,9 +6,9 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/leep-frog/command/command"
 	"github.com/leep-frog/command/commandertest"
 	"github.com/leep-frog/command/commandtest"
-	"github.com/leep-frog/command/commondels"
 )
 
 func rc(pkg string) *commandtest.RunContents {
@@ -32,7 +32,7 @@ func TestGG(t *testing.T) {
 				Args: []string{
 					"some-package",
 				},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					packageArg.Name(): []string{
 						"some-package",
 					},
@@ -52,7 +52,7 @@ func TestGG(t *testing.T) {
 					`go get -v "github.com/leep-frog/some-package@246810"`,
 					``,
 				}, "\n"),
-				WantExecuteData: &commondels.ExecuteData{
+				WantExecuteData: &command.ExecuteData{
 					Executable: []string{
 						`go get -v "github.com/leep-frog/some-package@246810"`,
 					},
@@ -65,7 +65,7 @@ func TestGG(t *testing.T) {
 				Args: []string{
 					"some-package",
 				},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					packageArg.Name(): []string{
 						"some-package",
 					},
@@ -93,7 +93,7 @@ func TestGG(t *testing.T) {
 				Args: []string{
 					"some-package",
 				},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					packageArg.Name(): []string{
 						"some-package",
 					},
@@ -125,7 +125,7 @@ func TestGG(t *testing.T) {
 					"fedex",
 					"usps",
 				},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					packageArg.Name(): []string{
 						"ups",
 						"fedex",
@@ -160,7 +160,7 @@ func TestGG(t *testing.T) {
 					`go get -v "github.com/leep-frog/usps@3c"`,
 					``,
 				}, "\n"),
-				WantExecuteData: &commondels.ExecuteData{
+				WantExecuteData: &command.ExecuteData{
 					Executable: []string{
 						`go get -v "github.com/leep-frog/ups@1a"`,
 						`go get -v "github.com/leep-frog/fedex@2b"`,
@@ -177,7 +177,7 @@ func TestGG(t *testing.T) {
 					"fedex",
 					"usps",
 				},
-				WantData: &commondels.Data{Values: map[string]interface{}{
+				WantData: &command.Data{Values: map[string]interface{}{
 					packageArg.Name(): []string{
 						"ups",
 						"fedex",
@@ -217,7 +217,7 @@ func TestGG(t *testing.T) {
 					"who",
 					`Failed to fetch commit info for package "fedex"`,
 				}, "\n"),
-				WantExecuteData: &commondels.ExecuteData{
+				WantExecuteData: &command.ExecuteData{
 					Executable: []string{
 						`go get -v "github.com/leep-frog/ups@1a"`,
 						`go get -v "github.com/leep-frog/usps@3c"`,

@@ -3,13 +3,13 @@ package commander
 import (
 	"fmt"
 
-	"github.com/leep-frog/command/commondels"
+	"github.com/leep-frog/command/command"
 	"golang.org/x/exp/constraints"
 	"golang.org/x/exp/maps"
 	"golang.org/x/exp/slices"
 )
 
-// MapArg returns a `commondels.Processor` that converts an input key into it's value.
+// MapArg returns a `command.Processor` that converts an input key into it's value.
 func MapArg[K constraints.Ordered, V any](name, desc string, m map[K]V, allowMissing bool) *MapFlargument[K, V] {
 	return MapFlag(name, FlagNoShortName, desc, m, allowMissing)
 }
@@ -25,7 +25,7 @@ func MapFlag[K constraints.Ordered, V any](name string, shortName rune, desc str
 	}
 	opts := []ArgumentOption[K]{
 		SimpleCompleter[K](keys...),
-		&CustomSetter[K]{F: func(key K, d *commondels.Data) {
+		&CustomSetter[K]{F: func(key K, d *command.Data) {
 			v, ok := m[key]
 			d.Set(name, v)
 			ma.key = key
@@ -35,7 +35,7 @@ func MapFlag[K constraints.Ordered, V any](name string, shortName rune, desc str
 
 	if !allowMissing {
 		opts = append(opts, &ValidatorOption[K]{
-			func(k K, d *commondels.Data) error {
+			func(k K, d *command.Data) error {
 				if _, ok := m[k]; !ok {
 					keys := maps.Keys(m)
 					slices.Sort(keys)
@@ -64,11 +64,11 @@ func (man *MapFlargument[K, V]) ShortName() rune {
 }
 
 // Get overrides the Arg.Get function to return V (rather than type K).
-func (man *MapFlargument[K, V]) Get(d *commondels.Data) V {
-	return commondels.GetData[V](d, man.name)
+func (man *MapFlargument[K, V]) Get(d *command.Data) V {
+	return command.GetData[V](d, man.name)
 }
 
-func (man *MapFlargument[K, V]) Provided(d *commondels.Data) bool {
+func (man *MapFlargument[K, V]) Provided(d *command.Data) bool {
 	return d.Has(man.name)
 }
 
@@ -78,9 +78,9 @@ func (man *MapFlargument[K, V]) GetKey() K {
 }
 
 // GetOrDefault overrides the Arg.GetOrDefault function to return V (rather than type K).
-func (man *MapFlargument[K, V]) GetOrDefault(d *commondels.Data, dflt V) V {
+func (man *MapFlargument[K, V]) GetOrDefault(d *command.Data, dflt V) V {
 	if d.Has(man.name) {
-		return commondels.GetData[V](d, man.name)
+		return command.GetData[V](d, man.name)
 	}
 	return dflt
 }
@@ -98,6 +98,6 @@ func (man *MapFlargument[K, V]) Hit() bool {
 	return man.hit
 }
 
-func (man *MapFlargument[K, V]) Processor() commondels.Processor {
+func (man *MapFlargument[K, V]) Processor() command.Processor {
 	return man
 }

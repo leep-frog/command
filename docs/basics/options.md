@@ -19,7 +19,7 @@ var (
 
 ## `command.CustomSetter`
 
-By default, the value provided is simply stored in the `commondels.Data.Values` map with the argument/flag name as the key. If you wish to override this behavior, you can provide a `CustomSetter` to do custom logic with the value.
+By default, the value provided is simply stored in the `command.Data.Values` map with the argument/flag name as the key. If you wish to override this behavior, you can provide a `CustomSetter` to do custom logic with the value.
 
 ## `command.Transformer`
 

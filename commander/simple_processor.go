@@ -1,9 +1,9 @@
 package commander
 
-import "github.com/leep-frog/command/commondels"
+import "github.com/leep-frog/command/command"
 
-// SimpleProcessor creates a `commondels.Processor` from execution and completion functions.
-func SimpleProcessor(e func(*commondels.Input, commondels.Output, *commondels.Data, *commondels.ExecuteData) error, c func(*commondels.Input, *commondels.Data) (*commondels.Completion, error)) commondels.Processor {
+// SimpleProcessor creates a `command.Processor` from execution and completion functions.
+func SimpleProcessor(e func(*command.Input, command.Output, *command.Data, *command.ExecuteData) error, c func(*command.Input, *command.Data) (*command.Completion, error)) command.Processor {
 	return &simpleProcessor{
 		e: e,
 		c: c,
@@ -12,38 +12,38 @@ func SimpleProcessor(e func(*commondels.Input, commondels.Output, *commondels.Da
 
 // SuperSimpleProcessor returns a processor from a single function that is run in both
 // the execution and completion contexts.
-func SuperSimpleProcessor(f func(*commondels.Input, *commondels.Data) error) commondels.Processor {
+func SuperSimpleProcessor(f func(*command.Input, *command.Data) error) command.Processor {
 	return &simpleProcessor{
-		e: func(i *commondels.Input, o commondels.Output, d *commondels.Data, ed *commondels.ExecuteData) error {
+		e: func(i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
 			return o.Err(f(i, d))
 		},
-		c: func(i *commondels.Input, d *commondels.Data) (*commondels.Completion, error) {
+		c: func(i *command.Input, d *command.Data) (*command.Completion, error) {
 			return nil, f(i, d)
 		},
 	}
 }
 
 type simpleProcessor struct {
-	e    func(*commondels.Input, commondels.Output, *commondels.Data, *commondels.ExecuteData) error
-	c    func(*commondels.Input, *commondels.Data) (*commondels.Completion, error)
+	e    func(*command.Input, command.Output, *command.Data, *command.ExecuteData) error
+	c    func(*command.Input, *command.Data) (*command.Completion, error)
 	desc string
 }
 
-func (sp *simpleProcessor) Usage(i *commondels.Input, d *commondels.Data, u *commondels.Usage) error {
+func (sp *simpleProcessor) Usage(i *command.Input, d *command.Data, u *command.Usage) error {
 	if sp.desc != "" {
 		u.Description = sp.desc
 	}
 	return nil
 }
 
-func (sp *simpleProcessor) Execute(i *commondels.Input, o commondels.Output, d *commondels.Data, e *commondels.ExecuteData) error {
+func (sp *simpleProcessor) Execute(i *command.Input, o command.Output, d *command.Data, e *command.ExecuteData) error {
 	if sp.e == nil {
 		return nil
 	}
 	return sp.e(i, o, d, e)
 }
 
-func (sp *simpleProcessor) Complete(i *commondels.Input, d *commondels.Data) (*commondels.Completion, error) {
+func (sp *simpleProcessor) Complete(i *command.Input, d *command.Data) (*command.Completion, error) {
 	if sp.c == nil {
 		return nil, nil
 	}

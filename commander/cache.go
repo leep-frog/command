@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/leep-frog/command/commondels"
+	"github.com/leep-frog/command/command"
 )
 
 var (
@@ -23,9 +23,9 @@ type CachableCLI interface {
 }
 
 // CacheNode returns a node that caches any execution of downstream commands.
-// A `CacheNode` introduces new branches, hence the requirement for it to be a `commondels.Node`
-// and not just a `commondels.Processor`.
-func CacheNode(name string, c CachableCLI, n commondels.Node, opts ...CacheOption) commondels.Node {
+// A `CacheNode` introduces new branches, hence the requirement for it to be a `command.Node`
+// and not just a `command.Processor`.
+func CacheNode(name string, c CachableCLI, n command.Node, opts ...CacheOption) command.Node {
 	cc := &commandCache{
 		name: name,
 		c:    c,
@@ -40,9 +40,9 @@ func CacheNode(name string, c CachableCLI, n commondels.Node, opts ...CacheOptio
 		Edge:      &cacheUsageNode{n},
 	}
 	return &BranchNode{
-		Branches: map[string]commondels.Node{
+		Branches: map[string]command.Node{
 			"history": SerialNodes(
-				SimpleProcessor(func(input *commondels.Input, _ commondels.Output, data *commondels.Data, _ *commondels.ExecuteData) error {
+				SimpleProcessor(func(input *command.Input, _ command.Output, data *command.Data, _ *command.ExecuteData) error {
 					used := input.Used()
 					if len(used) <= 1 {
 						// If only history arg is provided, then no prefix
@@ -87,25 +87,25 @@ func (ch *cacheHistory) modifyCache(cc *commandCache) {
 }
 
 type cacheUsageNode struct {
-	n commondels.Node
+	n command.Node
 }
 
-func (cun *cacheUsageNode) Next(i *commondels.Input, d *commondels.Data) (commondels.Node, error) {
+func (cun *cacheUsageNode) Next(i *command.Input, d *command.Data) (command.Node, error) {
 	return nil, nil
 }
 
-func (cun *cacheUsageNode) UsageNext(input *commondels.Input, data *commondels.Data) (commondels.Node, error) {
+func (cun *cacheUsageNode) UsageNext(input *command.Input, data *command.Data) (command.Node, error) {
 	return cun.n, nil
 }
 
 type commandCache struct {
 	name string
 	c    CachableCLI
-	n    commondels.Node
+	n    command.Node
 	ch   *cacheHistory
 }
 
-func (cc *commandCache) history(input *commondels.Input, output commondels.Output, data *commondels.Data, _ *commondels.ExecuteData) error {
+func (cc *commandCache) history(input *command.Input, output command.Output, data *command.Data, _ *command.ExecuteData) error {
 	sls := cc.c.Cache()[cc.name]
 	start := len(sls) - data.Int(cacheHistoryFlag.Name())
 	if start < 0 {
@@ -122,17 +122,17 @@ func (cc *commandCache) history(input *commondels.Input, output commondels.Outpu
 	return nil
 }
 
-func (cc *commandCache) Usage(input *commondels.Input, data *commondels.Data, u *commondels.Usage) error {
-	u.UsageSection.Add(commondels.SymbolSection, "^", "Start of new cachable section")
+func (cc *commandCache) Usage(input *command.Input, data *command.Data, u *command.Usage) error {
+	u.UsageSection.Add(command.SymbolSection, "^", "Start of new cachable section")
 	u.Usage = append(u.Usage, "^")
 	return nil
 }
 
-func (cc *commandCache) Complete(input *commondels.Input, data *commondels.Data) (*commondels.Completion, error) {
+func (cc *commandCache) Complete(input *command.Input, data *command.Data) (*command.Completion, error) {
 	return processGraphCompletion(cc.n, input, data)
 }
 
-func (cc *commandCache) Execute(input *commondels.Input, output commondels.Output, data *commondels.Data, eData *commondels.ExecuteData) error {
+func (cc *commandCache) Execute(input *command.Input, output command.Output, data *command.Data, eData *command.ExecuteData) error {
 	// If it's fully processed, then populate inputs.
 	if input.FullyProcessed() {
 		if sls, ok := cc.c.Cache()[cc.name]; ok {

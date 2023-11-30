@@ -6,15 +6,15 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/leep-frog/command/command"
 	"github.com/leep-frog/command/commandertest"
 	"github.com/leep-frog/command/commandtest"
-	"github.com/leep-frog/command/commondels"
 	"github.com/leep-frog/command/internal/testutil"
 )
 
 func TestExecute(t *testing.T) {
 	type osCheck struct {
-		WantExecuteData *commondels.ExecuteData
+		WantExecuteData *command.ExecuteData
 	}
 
 	// We loop the OS here (and not in the test), so any underlying test data for
@@ -33,14 +33,14 @@ func TestExecute(t *testing.T) {
 						filepath.Join("..", "commander", "testdata"),
 						"ING",
 					},
-					WantData: &commondels.Data{Values: map[string]interface{}{
+					WantData: &command.Data{Values: map[string]interface{}{
 						sourcererDirArg.Name():    testutil.FilepathAbs(t, "..", "commander", "testdata"),
 						sourcererSuffixArg.Name(): "ING",
 					}},
 				},
 				osChecks: map[string]*osCheck{
 					osLinux: {
-						WantExecuteData: &commondels.ExecuteData{
+						WantExecuteData: &command.ExecuteData{
 							Executable: []string{
 								"pushd . > /dev/null",
 								fmt.Sprintf(`cd %q`, testutil.FilepathAbs(t, "..", "commander", "testdata")),
@@ -51,7 +51,7 @@ func TestExecute(t *testing.T) {
 						},
 					},
 					osWindows: {
-						WantExecuteData: &commondels.ExecuteData{
+						WantExecuteData: &command.ExecuteData{
 							Executable: []string{
 								"Push-Location",
 								fmt.Sprintf(`cd %q`, testutil.FilepathAbs(t, "..", "commander", "testdata")),

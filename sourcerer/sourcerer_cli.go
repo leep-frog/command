@@ -1,8 +1,8 @@
 package sourcerer
 
 import (
+	"github.com/leep-frog/command/command"
 	"github.com/leep-frog/command/commander"
-	"github.com/leep-frog/command/commondels"
 )
 
 var (
@@ -24,11 +24,11 @@ func (*SourcererCommand) Name() string {
 	return "sourcerer"
 }
 
-func (*SourcererCommand) Node() commondels.Node {
+func (*SourcererCommand) Node() command.Node {
 	return commander.SerialNodes(
 		sourcererDirArg,
 		sourcererSuffixArg,
-		commander.ExecutableProcessor(func(_ commondels.Output, d *commondels.Data) ([]string, error) {
+		commander.ExecutableProcessor(func(_ command.Output, d *command.Data) ([]string, error) {
 			return CurrentOS.SourcererGoCLI(sourcererDirArg.Get(d), sourcererSuffixArg.Get(d)), nil
 		}),
 	)

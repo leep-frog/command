@@ -10,8 +10,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/leep-frog/command/command"
 	"github.com/leep-frog/command/commander"
-	"github.com/leep-frog/command/commondels"
 	"github.com/leep-frog/command/internal/stubs"
 )
 
@@ -53,14 +53,14 @@ func (c *Cache) Changed() bool {
 // Setup fulfills the `sourcerer.CLI` interface.
 func (c *Cache) Setup() []string { return nil }
 
-// Node returns the `commondels.Node` for the cache CLI.
-func (c *Cache) Node() commondels.Node {
+// Node returns the `command.Node` for the cache CLI.
+func (c *Cache) Node() command.Node {
 	arg := commander.Arg[string]("KEY", "Key of the data to get", commander.MatchesRegex(keyRegexString), completer(c))
 	return &commander.BranchNode{
-		Branches: map[string]commondels.Node{
+		Branches: map[string]command.Node{
 			"setdir": commander.SerialNodes(
 				commander.FileArgument("DIR", "Directory in which to store data", commander.IsDir()),
-				&commander.ExecutorProcessor{F: func(o commondels.Output, d *commondels.Data) error {
+				&commander.ExecutorProcessor{F: func(o command.Output, d *command.Data) error {
 					c.Dir = d.String("DIR")
 					c.changed = true
 					return nil
@@ -68,7 +68,7 @@ func (c *Cache) Node() commondels.Node {
 			),
 			"get": commander.SerialNodes(
 				arg,
-				&commander.ExecutorProcessor{F: func(o commondels.Output, d *commondels.Data) error {
+				&commander.ExecutorProcessor{F: func(o command.Output, d *command.Data) error {
 					s, ok, err := c.Get(d.String(arg.Name()))
 					if err != nil {
 						return o.Err(err)
@@ -83,19 +83,19 @@ func (c *Cache) Node() commondels.Node {
 			),
 			"put": commander.SerialNodes(
 				arg,
-				commander.ListArg[string]("DATA", "Data to store", 1, commondels.UnboundedList),
-				&commander.ExecutorProcessor{F: func(o commondels.Output, d *commondels.Data) error {
+				commander.ListArg[string]("DATA", "Data to store", 1, command.UnboundedList),
+				&commander.ExecutorProcessor{F: func(o command.Output, d *command.Data) error {
 					return o.Err(c.Put(d.String(arg.Name()), strings.Join(d.StringList("DATA"), " ")))
 				}},
 			),
 			"delete": commander.SerialNodes(
 				arg,
-				&commander.ExecutorProcessor{F: func(o commondels.Output, d *commondels.Data) error {
+				&commander.ExecutorProcessor{F: func(o command.Output, d *command.Data) error {
 					return o.Err(c.Delete(d.String(arg.Name())))
 				}},
 			),
 			"list": commander.SerialNodes(
-				&commander.ExecutorProcessor{F: func(o commondels.Output, d *commondels.Data) error {
+				&commander.ExecutorProcessor{F: func(o command.Output, d *command.Data) error {
 					r, err := c.List()
 					if err != nil {
 						return o.Err(err)
@@ -112,12 +112,12 @@ func (c *Cache) Node() commondels.Node {
 }
 
 func completer(c *Cache) commander.Completer[string] {
-	return commander.CompleterFromFunc(func(s string, d *commondels.Data) (*commondels.Completion, error) {
+	return commander.CompleterFromFunc(func(s string, d *command.Data) (*command.Completion, error) {
 		r, err := c.List()
 		if err != nil {
 			return nil, fmt.Errorf("failed to list files: %v", err)
 		}
-		return &commondels.Completion{
+		return &command.Completion{
 			Suggestions: r,
 		}, nil
 	})

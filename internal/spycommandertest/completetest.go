@@ -4,13 +4,13 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/leep-frog/command/command"
 	"github.com/leep-frog/command/commandtest"
-	"github.com/leep-frog/command/commondels"
 	"github.com/leep-frog/command/internal/spycommandtest"
 )
 
 // CompleteTest runs a test on command autocompletion.
-func CompleteTest(t *testing.T, ctc *commandtest.CompleteTestCase, ictc *spycommandtest.CompleteTestCase, autocompleteFn func(commondels.Node, string, []string, *commondels.Data) (*commondels.Autocompletion, error)) {
+func CompleteTest(t *testing.T, ctc *commandtest.CompleteTestCase, ictc *spycommandtest.CompleteTestCase, autocompleteFn func(command.Node, string, []string, *command.Data) (*command.Autocompletion, error)) {
 	t.Helper()
 
 	if ctc == nil {
@@ -23,7 +23,7 @@ func CompleteTest(t *testing.T, ctc *commandtest.CompleteTestCase, ictc *spycomm
 	tc := &testContext{
 		prefix:   fmt.Sprintf("Autocomplete(%v)", ctc.Args),
 		testCase: ctc,
-		data:     &commondels.Data{OS: ctc.OS},
+		data:     &command.Data{OS: ctc.OS},
 	}
 
 	testers := []commandTester{

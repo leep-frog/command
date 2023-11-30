@@ -7,7 +7,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/leep-frog/command/commondels"
+	"github.com/leep-frog/command/command"
 	"github.com/leep-frog/command/internal/operator"
 	"github.com/leep-frog/command/internal/stubs"
 )
@@ -20,8 +20,8 @@ func ShellCommandCompleter[T any](name string, args ...string) Completer[T] {
 
 // ShellCommandCompleterWithOpts creates a completer object that completes a command graph
 // with the output from the provided command info.
-func ShellCommandCompleterWithOpts[T any](opts *commondels.Completion, name string, args ...string) Completer[T] {
-	return &simpleCompleter[T]{func(t T, d *commondels.Data) (*commondels.Completion, error) {
+func ShellCommandCompleterWithOpts[T any](opts *command.Completion, name string, args ...string) Completer[T] {
+	return &simpleCompleter[T]{func(t T, d *command.Data) (*command.Completion, error) {
 		bc := &ShellCommand[[]string]{
 			CommandName: name,
 			Args:        args,
@@ -38,7 +38,7 @@ func ShellCommandCompleterWithOpts[T any](opts *commondels.Completion, name stri
 			}
 		}
 		if opts == nil {
-			return &commondels.Completion{
+			return &command.Completion{
 				Suggestions: filtered,
 			}, nil
 		}
@@ -51,7 +51,7 @@ func ShellCommandCompleterWithOpts[T any](opts *commondels.Completion, name stri
 // ShellCommand can run the provided command `Contents` in the shell and stores
 // the response as a value in data with the provided type and `ArgName`.
 type ShellCommand[T any] struct {
-	// ArgName is the argument name to use if stored in `commondels.Data`.
+	// ArgName is the argument name to use if stored in `command.Data`.
 	ArgName string
 	// Command is the command to forward to `exec.Command`.
 	CommandName string
@@ -73,30 +73,30 @@ type ShellCommand[T any] struct {
 	// DontRunOnComplete indicates whether or not the shell command should be run when we are completing a command arg.
 	DontRunOnComplete bool
 	// OutputStreamProcessor is a function that will be run with every item written to stdout.
-	OutputStreamProcessor func(commondels.Output, *commondels.Data, []byte) error
+	OutputStreamProcessor func(command.Output, *command.Data, []byte) error
 	// EchoCommand, if true, forwards the command being run (with args) to Stdout.
 	EchoCommand bool
 }
 
 type ShellCommandDataStringer[T any] interface {
-	ToString(d *commondels.Data) (string, error)
+	ToString(d *command.Data) (string, error)
 }
 
 func NewShellCommandDataStringer[T, A any](arg *Argument[A], delimiter string) ShellCommandDataStringer[T] {
-	return CustomShellCommandDataStringer[T](func(d *commondels.Data) (string, error) {
+	return CustomShellCommandDataStringer[T](func(d *command.Data) (string, error) {
 		return strings.Join(operator.GetOperator[A]().ToArgs(arg.Get(d)), delimiter), nil
 	})
 }
 
-func CustomShellCommandDataStringer[T any](f func(*commondels.Data) (string, error)) ShellCommandDataStringer[T] {
+func CustomShellCommandDataStringer[T any](f func(*command.Data) (string, error)) ShellCommandDataStringer[T] {
 	return &shellDataStringer[T]{f}
 }
 
 type shellDataStringer[T any] struct {
-	op func(*commondels.Data) (string, error)
+	op func(*command.Data) (string, error)
 }
 
-func (df *shellDataStringer[T]) ToString(d *commondels.Data) (string, error) {
+func (df *shellDataStringer[T]) ToString(d *command.Data) (string, error) {
 	return df.op(d)
 }
 
@@ -105,33 +105,33 @@ func (bn *ShellCommand[T]) Name() string {
 	return bn.ArgName
 }
 
-// Get fetches the relevant shell output from the provided `commondels.Data` object.
-func (bn *ShellCommand[T]) Get(d *commondels.Data) T {
-	return commondels.GetData[T](d, bn.Name())
+// Get fetches the relevant shell output from the provided `command.Data` object.
+func (bn *ShellCommand[T]) Get(d *command.Data) T {
+	return command.GetData[T](d, bn.Name())
 }
 
-// Complete fulfills the `commondels.Processor` interface for `ShellCommand`.
-func (bn *ShellCommand[T]) Complete(input *commondels.Input, data *commondels.Data) (*commondels.Completion, error) {
+// Complete fulfills the `command.Processor` interface for `ShellCommand`.
+func (bn *ShellCommand[T]) Complete(input *command.Input, data *command.Data) (*command.Completion, error) {
 	if bn.DontRunOnComplete {
 		return nil, nil
 	}
-	return nil, bn.execute(&commondels.FakeOutput{}, data)
+	return nil, bn.execute(&command.FakeOutput{}, data)
 }
 
-// commondels.Usage fulfills the `commondels.Processor` interface for `ShellCommand`.
-func (bn *ShellCommand[T]) Usage(i *commondels.Input, d *commondels.Data, u *commondels.Usage) error {
+// command.Usage fulfills the `command.Processor` interface for `ShellCommand`.
+func (bn *ShellCommand[T]) Usage(i *command.Input, d *command.Data, u *command.Usage) error {
 	u.Description = bn.Desc
 	return nil
 }
 
-func (bn *ShellCommand[T]) set(v T, d *commondels.Data) {
+func (bn *ShellCommand[T]) set(v T, d *command.Data) {
 	if bn.Name() != "" {
 		d.Set(bn.Name(), v)
 	}
 }
 
-// Execute fulfills the `commondels.Processor` interface for `ShellCommand`.
-func (bn *ShellCommand[T]) Execute(input *commondels.Input, output commondels.Output, data *commondels.Data, eData *commondels.ExecuteData) error {
+// Execute fulfills the `command.Processor` interface for `ShellCommand`.
+func (bn *ShellCommand[T]) Execute(input *command.Input, output command.Output, data *command.Data, eData *command.ExecuteData) error {
 	err := bn.execute(output, data)
 	if bn.HideStderr {
 		return err
@@ -139,7 +139,7 @@ func (bn *ShellCommand[T]) Execute(input *commondels.Input, output commondels.Ou
 	return output.Err(err)
 }
 
-func (bn *ShellCommand[T]) execute(output commondels.Output, data *commondels.Data) error {
+func (bn *ShellCommand[T]) execute(output command.Output, data *command.Data) error {
 	v, err := bn.Run(output, data)
 	if err != nil {
 		return err
@@ -150,17 +150,17 @@ func (bn *ShellCommand[T]) execute(output commondels.Output, data *commondels.Da
 }
 
 type outputStreamer struct {
-	f func(commondels.Output, *commondels.Data, []byte) error
-	d *commondels.Data
-	o commondels.Output
+	f func(command.Output, *command.Data, []byte) error
+	d *command.Data
+	o command.Output
 }
 
 func (os *outputStreamer) Write(b []byte) (int, error) {
 	return len(b), os.f(os.o, os.d, b)
 }
 
-// Run runs the `ShellCommand` with the provided `commondels.Output` object.
-func (bn *ShellCommand[T]) Run(output commondels.Output, data *commondels.Data) (T, error) {
+// Run runs the `ShellCommand` with the provided `command.Output` object.
+func (bn *ShellCommand[T]) Run(output command.Output, data *command.Data) (T, error) {
 	var nill T
 
 	// Execute the command
@@ -170,7 +170,7 @@ func (bn *ShellCommand[T]) Run(output commondels.Output, data *commondels.Data) 
 	cmd.Stdin = bn.Stdin
 	cmd.Dir = bn.Dir
 	if bn.ForwardStdout && output != nil {
-		stdoutWriters = append(stdoutWriters, commondels.StdoutWriter(output))
+		stdoutWriters = append(stdoutWriters, command.StdoutWriter(output))
 	}
 	if bn.OutputStreamProcessor != nil {
 		stdoutWriters = append(stdoutWriters, &outputStreamer{bn.OutputStreamProcessor, data, output})
@@ -178,9 +178,9 @@ func (bn *ShellCommand[T]) Run(output commondels.Output, data *commondels.Data) 
 	cmd.Stdout = io.MultiWriter(stdoutWriters...)
 
 	if bn.HideStderr || output == nil {
-		cmd.Stderr = commondels.DevNull()
+		cmd.Stderr = command.DevNull()
 	} else {
-		cmd.Stderr = commondels.StderrWriter(output)
+		cmd.Stderr = command.StderrWriter(output)
 	}
 
 	if bn.EchoCommand {

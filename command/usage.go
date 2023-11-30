@@ -1,4 +1,4 @@
-package commondels
+package command
 
 import (
 	"fmt"
