@@ -21,7 +21,7 @@ import (
 	"golang.org/x/exp/slices"
 )
 
-// TODO: FileArgument to allow new files
+// TODO: Update FileArgument to allow new files
 
 var (
 	fileArg         = commander.FileArgument("FILE", "Temporary file for execution")
@@ -376,7 +376,6 @@ func (s *sourcerer) usageExecutorHelper(cli CLI, args []string) func(o command.O
 		u, err := spycommander.Use(n, command.ParseExecuteArgs(args))
 		if err != nil {
 			o.Err(err)
-			// TODO: I believe this is handled by ParseExecuteArgs; confirm and remove if so
 			if commander.IsUsageError(err) {
 				spycommander.ShowUsageAfterError(n, o)
 			}

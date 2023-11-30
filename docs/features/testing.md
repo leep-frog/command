@@ -4,7 +4,7 @@ It is tremendously difficult to maintain complex code without testing. This pack
 
 - `ExecuteTest(*testing.T, *UsageTestCase)` tests command execution logic.
 
-- `CompleteTest(*testing.T, *UsageTestCase)` tests command autocompletion logic.
+- `AutocompleteTest(*testing.T, *UsageTestCase)` tests command autocompletion logic.
 
 - `UsageTest(*testing.T, *UsageTestCase)` tests CLI usage docs.
 

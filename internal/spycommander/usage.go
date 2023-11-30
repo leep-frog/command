@@ -22,7 +22,6 @@ func ProcessNewGraphUse(root command.Node, input *command.Input) (*command.Usage
 	u := &command.Usage{
 		UsageSection: &command.UsageSection{},
 	}
-	// TODO: Add OS
 	return u, ProcessGraphUse(root, input, &command.Data{}, u)
 }
 

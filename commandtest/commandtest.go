@@ -25,7 +25,7 @@ type ExecuteTestCase struct {
 	// Env is the map of os environment variables to stub. If nil, this is not stubbed.
 	Env map[string]string
 	// OS is the OS to use for the test.
-	OS command.OS // TODO
+	OS command.OS
 
 	// WantData is the `Data` object that should be constructed.
 	WantData *command.Data

@@ -35,9 +35,8 @@ func ChangeTest[T commandtest.Changeable](t *testing.T, want, got T, opts ...cmp
 	spycommandertest.ChangeTest[T](t, want, got, opts...)
 }
 
-// TODO: Rename to AutocompleteTest
-// CompleteTest runs a command completion test against the provided command configuration.
-func CompleteTest(t *testing.T, ctc *commandtest.CompleteTestCase) {
+// AutocompleteTest runs a command completion test against the provided command configuration.
+func AutocompleteTest(t *testing.T, ctc *commandtest.CompleteTestCase) {
 	t.Helper()
-	spycommandertest.CompleteTest(t, ctc, &spycommandtest.CompleteTestCase{}, spycommander.Autocomplete)
+	spycommandertest.AutocompleteTest(t, ctc, &spycommandtest.CompleteTestCase{}, spycommander.Autocomplete)
 }

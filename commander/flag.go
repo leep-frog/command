@@ -321,7 +321,6 @@ func (fn *flagProcessor) Execute(input *command.Input, output command.Output, da
 
 			// This is outside of the for-loop so we only remove
 			// the multi-flag arg (not one arg per flag).
-			// TODO: PopAt function?
 			input.PopAt(i, data)
 		} else if f, ok := fn.flagMap[a]; ok {
 			// If regular flag

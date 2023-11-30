@@ -811,7 +811,7 @@ func TestAutocomplete(t *testing.T) {
 		/* Useful for commenting out tests. */
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			spycommandertest.CompleteTest(t, test.ctc, test.ictc, Autocomplete)
+			spycommandertest.AutocompleteTest(t, test.ctc, test.ictc, Autocomplete)
 		})
 	}
 }

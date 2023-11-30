@@ -32,10 +32,10 @@ func changeTest[T commandtest.Changeable](t *testing.T, want, original T, opts .
 	spycommandertest.ChangeTest[T](t, want, original, opts...)
 }
 
-// autocompleteTest is a wrapper around spycommandertest.CompleteTest
+// autocompleteTest is a wrapper around spycommandertest.AutocompleteTest
 func autocompleteTest(t *testing.T, ctc *commandtest.CompleteTestCase, ictc *spycommandtest.CompleteTestCase) {
 	t.Helper()
-	spycommandertest.CompleteTest(t, ctc, ictc, spycommander.Autocomplete)
+	spycommandertest.AutocompleteTest(t, ctc, ictc, spycommander.Autocomplete)
 }
 
 type errorEdge struct {
@@ -7465,7 +7465,6 @@ func TestExecute(t *testing.T) {
 		/* Useful for commenting out tests. */
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			fmt.Println("===========", test.name)
 			stubs.StubGetwd(t, test.osGetwd, test.osGetwdErr)
 
 			if test.etc == nil {
@@ -8697,7 +8696,6 @@ func TestComplete(t *testing.T) {
 						"cache.go",
 						"cache_test.go",
 						filepath.FromSlash("co2test/"),
-						"commandtest.go",
 						"completer.go",
 						"completer_test.go",
 						"conditional.go",

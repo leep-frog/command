@@ -561,7 +561,7 @@ func TestGoLeepAutocomplete(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			cli := &GoLeep{}
 			test.ctc.Node = cli.Node()
-			commandertest.CompleteTest(t, test.ctc)
+			commandertest.AutocompleteTest(t, test.ctc)
 		})
 	}
 }

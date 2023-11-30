@@ -1657,6 +1657,75 @@ func TestSourcerer(t *testing.T) {
 				},
 			},
 			{
+				name: "Usage handles usage error",
+				clis: []CLI{
+					&testCLI{
+						name: "basic",
+						processors: []command.Processor{
+							&commander.BranchNode{
+								Branches: map[string]command.Node{
+									"first": commander.SerialNodes(
+										commander.ListArg[string]("F", "f", 1, 10),
+									),
+									"second": commander.SerialNodes(
+										commander.ListArg[string]("S", "s", 2, 0),
+									),
+								},
+							},
+						},
+					},
+				},
+				args: []string{"execute", "basic", fakeFile, "--help", "third"},
+				osCheck: &osCheck{
+					wantErr: fmt.Errorf("Branching argument must be one of [first second]"),
+					wantStderr: []string{
+						"Branching argument must be one of [first second]",
+						"",
+						"======= Command Usage =======",
+						"┓",
+						"┃",
+						"┣━━ first F [ F F F F F F F F F F ]",
+						"┃",
+						"┗━━ second S S",
+						"",
+						"Arguments:",
+						"  F: f",
+						"  S: s",
+						"",
+						"Symbols:",
+						"  ┓: Start of subcommand branches (without default node)",
+					},
+				},
+			},
+			{
+				name: "Usage handles non-usage error",
+				clis: []CLI{
+					&testCLI{
+						name: "basic",
+						processors: []command.Processor{
+							commander.SuperSimpleProcessor(func(i *command.Input, d *command.Data) error {
+								return fmt.Errorf("rats")
+							}),
+							&commander.BranchNode{
+								Branches: map[string]command.Node{
+									"first": commander.SerialNodes(
+										commander.ListArg[string]("F", "f", 1, 10),
+									),
+									"second": commander.SerialNodes(
+										commander.ListArg[string]("S", "s", 2, 0),
+									),
+								},
+							},
+						},
+					},
+				},
+				args: []string{"execute", "basic", fakeFile, "--help"},
+				osCheck: &osCheck{
+					wantErr:    fmt.Errorf("rats"),
+					wantStderr: []string{"rats"},
+				},
+			},
+			{
 				name: "Execute shows usage if help flag included with some arguments",
 				clis: []CLI{
 					&testCLI{

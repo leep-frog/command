@@ -9,8 +9,8 @@ import (
 	"github.com/leep-frog/command/internal/spycommandtest"
 )
 
-// CompleteTest runs a test on command autocompletion.
-func CompleteTest(t *testing.T, ctc *commandtest.CompleteTestCase, ictc *spycommandtest.CompleteTestCase, autocompleteFn func(command.Node, string, []string, *command.Data) (*command.Autocompletion, error)) {
+// AutocompleteTest runs a test on command autocompletion.
+func AutocompleteTest(t *testing.T, ctc *commandtest.CompleteTestCase, ictc *spycommandtest.CompleteTestCase, autocompleteFn func(command.Node, string, []string, *command.Data) (*command.Autocompletion, error)) {
 	t.Helper()
 
 	if ctc == nil {

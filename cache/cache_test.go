@@ -775,7 +775,7 @@ func TestCompletion(t *testing.T) {
 			}
 			test.ctc.Node = c.Node()
 			test.ctc.SkipDataCheck = true
-			commandertest.CompleteTest(t, test.ctc)
+			commandertest.AutocompleteTest(t, test.ctc)
 		})
 	}
 }

@@ -20,18 +20,21 @@ func SuperSimpleProcessor(f func(*command.Input, *command.Data) error) command.P
 		c: func(i *command.Input, d *command.Data) (*command.Completion, error) {
 			return nil, f(i, d)
 		},
+		u: func(i *command.Input, d *command.Data, u *command.Usage) error {
+			return f(i, d)
+		},
 	}
 }
 
 type simpleProcessor struct {
-	e    func(*command.Input, command.Output, *command.Data, *command.ExecuteData) error
-	c    func(*command.Input, *command.Data) (*command.Completion, error)
-	desc string
+	e func(*command.Input, command.Output, *command.Data, *command.ExecuteData) error
+	c func(*command.Input, *command.Data) (*command.Completion, error)
+	u func(*command.Input, *command.Data, *command.Usage) error
 }
 
 func (sp *simpleProcessor) Usage(i *command.Input, d *command.Data, u *command.Usage) error {
-	if sp.desc != "" {
-		u.Description = sp.desc
+	if sp.u != nil {
+		return sp.u(i, d, u)
 	}
 	return nil
 }
