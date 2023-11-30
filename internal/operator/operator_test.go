@@ -2,6 +2,7 @@ package operator
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/leep-frog/command/internal/testutil"
@@ -16,8 +17,8 @@ type toArgsTest[T any] struct {
 
 func (tat *toArgsTest[T]) Run(t *testing.T) {
 	t.Run(tat.name, func(t *testing.T) {
-		prefix := fmt.Sprintf("operator.toArgs(%v)", tat.value)
-		testutil.Cmp(t, prefix, tat.want, tat.operator.toArgs(tat.value))
+		prefix := fmt.Sprintf("operator.ToArgs(%v)", tat.value)
+		testutil.Cmp(t, prefix, tat.want, tat.operator.ToArgs(tat.value))
 	})
 }
 
@@ -32,13 +33,23 @@ type fromArgsTest[T any] struct {
 func (fat *fromArgsTest[T]) Run(t *testing.T) {
 	t.Run(fat.name, func(t *testing.T) {
 		var ptrArgs []*string
+		var cpyArgs []string
 		for i := range fat.args {
-			ptrArgs = append(ptrArgs, &fat.args[i])
+			c := strings.Clone(fat.args[i])
+			c2 := strings.Clone(fat.args[i])
+			ptrArgs = append(ptrArgs, &c)
+			cpyArgs = append(cpyArgs, c2)
 		}
-		prefix := fmt.Sprintf("operator.fromArgs(%v)", fat.args)
-		got, err := fat.operator.fromArgs(ptrArgs)
+
+		prefix := fmt.Sprintf("operator.FromArgs(%v)", fat.args)
+		got, err := fat.operator.FromArgs(ptrArgs)
 		testutil.Cmp(t, prefix, fat.want, got)
 		testutil.CmpError(t, prefix, fat.wantErr, err)
+
+		prefix = fmt.Sprintf("Top-level FromArgs(%v)", fat.args)
+		topLevelGot, topLevelErr := FromArgs(fat.operator, cpyArgs...)
+		testutil.Cmp(t, prefix, fat.want, topLevelGot)
+		testutil.CmpError(t, prefix, fat.wantErr, topLevelErr)
 	})
 }
 
@@ -261,6 +272,7 @@ func TestToArgs(t *testing.T) {
 			args:     []string{"un", "2", "iii"},
 			want:     []string{"un", "2", "iii"},
 		},
+		/* Useful for commenting out tests. */
 	} {
 		test.Run(t)
 	}
@@ -306,6 +318,7 @@ func TestParseInt(t *testing.T) {
 			arg:     "1__23",
 			wantErr: errFunc("1__23"),
 		},
+		/* Useful for commenting out tests. */
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			got, err := ParseInt(test.arg)

@@ -18,3 +18,14 @@ type InputArg struct {
 func noop() {
 	_ = 0
 }
+
+func SnapshotsMap(iss ...InputSnapshot) map[InputSnapshot]bool {
+	if len(iss) == 0 {
+		return nil
+	}
+	m := map[InputSnapshot]bool{}
+	for _, is := range iss {
+		m[is] = true
+	}
+	return m
+}

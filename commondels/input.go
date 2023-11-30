@@ -1,6 +1,11 @@
 package commondels
 
-import "github.com/leep-frog/command/internal/spycommand"
+import (
+	"fmt"
+
+	"github.com/leep-frog/command/internal/spycommand"
+	"github.com/leep-frog/command/internal/spyinput"
+)
 
 const (
 	// UnboundedList is used to indicate that an argument list should allow an unbounded amount of arguments.
@@ -22,27 +27,31 @@ var (
 // has been parsed. It also takes care of input snapshots (i.e. snapshots for
 // shortcuts and caching purposes).
 type Input struct {
-	args          []*spycommand.InputArg
-	remaining     []int
-	delimiter     *rune
-	offset        int
-	snapshotCount spycommand.InputSnapshot
-	// breakers are a set of `InputBreakers` that are required to pass for all `Pop` functions.
-	breakers []InputBreaker
+	// We use `spyinput.SpyInput` to hold all the arguments so we can test against
+	// an internally public, but externally hidden type.
+	si *spyinput.SpyInput[InputBreaker]
 }
 
-func (i *Input) pushBreakers(vs ...InputBreaker) {
-	i.breakers = append(i.breakers, vs...)
+func (i *Input) PushBreakers(vs ...InputBreaker) {
+	i.si.Breakers = append(i.si.Breakers, vs...)
 }
 
-func (i *Input) popBreakers(n int) {
-	i.breakers = i.breakers[:len(i.breakers)-n]
+func (i *Input) PopBreakers(n int) {
+	i.si.Breakers = i.si.Breakers[:len(i.si.Breakers)-n]
 }
 
-func inputRunAt[T any](i *Input, atOffset int, f func(*Input) T) T {
-	oldOffset := i.offset
-	i.offset = i.offset + atOffset
-	defer func() { i.offset = oldOffset }()
+func (i *Input) ConvertedArgs() []string {
+	var r []string
+	for _, a := range i.si.Args {
+		r = append(r, a.Value)
+	}
+	return r
+}
+
+func InputRunAtOffset[T any](i *Input, atOffset int, f func(*Input) T) T {
+	oldOffset := i.si.Offset
+	i.si.Offset = i.si.Offset + atOffset
+	defer func() { i.si.Offset = oldOffset }()
 
 	return f(i)
 }
@@ -58,17 +67,22 @@ func addSnapshots(ia *spycommand.InputArg, is ...spycommand.InputSnapshot) {
 
 // Snapshot takes a snapshot of the remaining input arguments.
 func (i *Input) Snapshot() spycommand.InputSnapshot {
-	i.snapshotCount++
-	for j := i.offset; j < len(i.remaining); j++ {
-		addSnapshots(i.get(j), i.snapshotCount)
+	i.si.SnapshotCount++
+	for j := i.si.Offset; j < len(i.si.Remaining); j++ {
+		addSnapshots(i.get(j), i.si.SnapshotCount)
 	}
-	return i.snapshotCount
+	return i.si.SnapshotCount
+}
+
+// NumSnapshots returns the number of snapshots
+func (i *Input) NumSnapshots() int {
+	return int(i.si.SnapshotCount)
 }
 
 // GetSnapshot retrieves the snapshot.
 func (i *Input) GetSnapshot(is spycommand.InputSnapshot) []string {
 	var r []string
-	for _, arg := range i.args {
+	for _, arg := range i.si.Args {
 		if arg.Snapshots[is] {
 			r = append(r, arg.Value)
 		}
@@ -78,18 +92,18 @@ func (i *Input) GetSnapshot(is spycommand.InputSnapshot) []string {
 
 // FullyProcessed returns whether or not the input has been fully processed.
 func (i *Input) FullyProcessed() bool {
-	return i.offset >= len(i.remaining)
+	return i.si.Offset >= len(i.si.Remaining)
 }
 
 func (i *Input) NumRemaining() int {
-	return len(i.remaining) - i.offset
+	return len(i.si.Remaining) - i.si.Offset
 }
 
 // Remaining returns the remaining arguments.
 func (i *Input) Remaining() []string {
-	r := make([]string, 0, len(i.remaining)-i.offset)
-	for _, v := range i.remaining[i.offset:] {
-		r = append(r, i.args[v].Value)
+	r := make([]string, 0, len(i.si.Remaining)-i.si.Offset)
+	for _, v := range i.si.Remaining[i.si.Offset:] {
+		r = append(r, i.si.Args[v].Value)
 	}
 	return r
 }
@@ -97,13 +111,13 @@ func (i *Input) Remaining() []string {
 // Used returns the input arguments that have already been processed.
 func (i *Input) Used() []string {
 	r := map[int]bool{}
-	for _, v := range i.remaining {
+	for _, v := range i.si.Remaining {
 		r[v] = true
 	}
 	var v []string
-	for idx := 0; idx < len(i.args); idx++ {
+	for idx := 0; idx < len(i.si.Args); idx++ {
 		if !r[idx] {
-			v = append(v, i.args[idx].Value)
+			v = append(v, i.si.Args[idx].Value)
 		}
 	}
 	return v
@@ -115,7 +129,7 @@ func (i *Input) Peek() (string, bool) {
 }
 
 func (i *Input) get(j int) *spycommand.InputArg {
-	return i.args[i.remaining[j]]
+	return i.si.Args[i.si.Remaining[j]]
 }
 
 // PushFront pushes arguments to the front of the remaining input.
@@ -126,16 +140,16 @@ func (i *Input) PushFront(sl ...string) {
 // PushFrontAt pushes arguments starting at a specific spot in the remaining arguments.
 func (i *Input) PushFrontAt(atOffset int, sl ...string) {
 	// Use bool in place of void
-	inputRunAt[bool](i, atOffset, func(i *Input) bool {
+	InputRunAtOffset[bool](i, atOffset, func(i *Input) bool {
 		// Update remaining.
-		startIdx := len(i.args)
+		startIdx := len(i.si.Args)
 		var snapshots map[spycommand.InputSnapshot]bool
-		if len(i.remaining) > 0 && i.offset < len(i.remaining) {
-			startIdx = i.remaining[i.offset]
+		if len(i.si.Remaining) > 0 && i.si.Offset < len(i.si.Remaining) {
+			startIdx = i.si.Remaining[i.si.Offset]
 
-			if len(i.args[startIdx].Snapshots) > 0 {
+			if len(i.si.Args[startIdx].Snapshots) > 0 {
 				snapshots = map[spycommand.InputSnapshot]bool{}
-				for s := range i.args[startIdx].Snapshots {
+				for s := range i.si.Args[startIdx].Snapshots {
 					snapshots[s] = true
 				}
 			}
@@ -156,16 +170,16 @@ func (i *Input) PushFrontAt(atOffset int, sl ...string) {
 				Snapshots: sCopy,
 			}
 		}
-		i.args = append(i.args[:startIdx], append(ial, i.args[startIdx:]...)...)
+		i.si.Args = append(i.si.Args[:startIdx], append(ial, i.si.Args[startIdx:]...)...)
 		// increment all remaining after offset.
-		for j := i.offset; j < len(i.remaining); j++ {
-			i.remaining[j] += len(sl)
+		for j := i.si.Offset; j < len(i.si.Remaining); j++ {
+			i.si.Remaining[j] += len(sl)
 		}
 		insert := make([]int, 0, len(sl))
 		for j := 0; j < len(sl); j++ {
 			insert = append(insert, j+startIdx)
 		}
-		i.remaining = append(i.remaining[:i.offset], append(insert, i.remaining[i.offset:]...)...)
+		i.si.Remaining = append(i.si.Remaining[:i.si.Offset], append(insert, i.si.Remaining[i.si.Offset:]...)...)
 
 		// Return arbitrary dummy value
 		return false
@@ -174,7 +188,7 @@ func (i *Input) PushFrontAt(atOffset int, sl ...string) {
 
 // PeekAt peeks at a specific argument and returns whether or not there are at least that many arguments.
 func (i *Input) PeekAt(idx int) (string, bool) {
-	if idx < 0 || idx >= len(i.remaining) {
+	if idx < 0 || idx >= len(i.si.Remaining) {
 		return "", false
 	}
 	return i.get(idx).Value, true
@@ -198,9 +212,7 @@ type InputBreaker interface {
 	// Break returns whether the input processing should stop.
 	Break(string, *Data) bool
 	// DiscardBreak returns whether the value responsible for breaking the input shoud be popped or not.
-	DiscardBreak() bool
-	// Usage updates the `Usage` object (if relevant)
-	Usage(*Usage)
+	DiscardBreak(string, *Data) bool
 }
 
 // PopN pops the next `n` arguments from the input and returns whether or not there are enough arguments left.
@@ -215,10 +227,10 @@ func (outerInput *Input) PopNAt(atOffset, n, optN int, breakers []InputBreaker, 
 		b  bool
 	}
 
-	rv := inputRunAt[*retVal](outerInput, atOffset, func(i *Input) *retVal {
+	rv := InputRunAtOffset[*retVal](outerInput, atOffset, func(i *Input) *retVal {
 		shift := n + optN
-		if optN == UnboundedList || shift+i.offset > len(i.remaining) {
-			shift = len(i.remaining) - i.offset
+		if optN == UnboundedList || shift+i.si.Offset > len(i.si.Remaining) {
+			shift = len(i.si.Remaining) - i.si.Offset
 		}
 
 		if shift <= 0 {
@@ -229,17 +241,18 @@ func (outerInput *Input) PopNAt(atOffset, n, optN int, breakers []InputBreaker, 
 		idx := 0
 		var broken, discardBreak bool
 		for ; idx < shift; idx++ {
-			for _, b := range append(breakers, i.breakers...) {
-				if b.Break(i.get(idx+i.offset).Value, d) {
+			for _, b := range append(breakers, i.si.Breakers...) {
+				s := i.get(idx + i.si.Offset).Value
+				if b.Break(s, d) {
 					broken = true
-					discardBreak = b.DiscardBreak()
+					discardBreak = b.DiscardBreak(s, d)
 					goto LOOP_END
 				}
 			}
-			ret = append(ret, &i.get(idx+i.offset).Value)
+			ret = append(ret, &i.get(idx+i.si.Offset).Value)
 		}
 	LOOP_END:
-		i.remaining = append(i.remaining[:i.offset], i.remaining[i.offset+idx:]...)
+		i.si.Remaining = append(i.si.Remaining[:i.si.Offset], i.si.Remaining[i.si.Offset+idx:]...)
 
 		if broken && discardBreak {
 			i.PopAt(atOffset, d)
@@ -260,8 +273,10 @@ func ParseExecuteArgs(strArgs []string) *Input {
 		}
 	}
 	return &Input{
-		args:      args,
-		remaining: r,
+		&spyinput.SpyInput[InputBreaker]{
+			Args:      args,
+			Remaining: r,
+		},
 	}
 }
 
@@ -410,7 +425,7 @@ func ParseCompLine(compLine string, passthroughArgs ...string) *Input {
 // NewInput creates a new `Input` object from a set of args and quote delimiter.
 func NewInput(args []string, delimiter *rune) *Input {
 	i := ParseExecuteArgs(args)
-	i.delimiter = delimiter
+	i.si.Delimiter = delimiter
 	return i
 }
 
@@ -432,25 +447,6 @@ type InputTransformer struct {
 	UpToIndex int // TODO: Test this
 }
 
-/*
-
-// FileNumberInputTransformer transforms input arguments of the format "input.go:123"
-// into ["input.go" "123"]. This allows CLIs to transform provided arguments and
-// use regular string and int `Argument`s for parsing arguments.
-func FileNumberInputTransformer(upToIndex int) *InputTransformer {
-	return &InputTransformer{F: func(o Output, d *Data, s string) ([]string, error) {
-		sl := strings.Split(s, ":")
-		if len(sl) <= 2 {
-			return sl, nil
-		}
-		return nil, o.Stderrf("Expected either 1 or 2 parts, got %d\n", len(sl))
-	}, UpToIndex: upToIndex}
-}
-
-func (it *InputTransformer) Execute(i *Input, o Output, data *Data, eData *ExecuteData) error {
-	return it.Transform(i, o, data, false)
-}
-
 func (it *InputTransformer) Transform(input *Input, output Output, data *Data, complete bool) error {
 	k := 0
 	if complete {
@@ -458,8 +454,8 @@ func (it *InputTransformer) Transform(input *Input, output Output, data *Data, c
 		k = -1
 	}
 
-	for j := input.offset; j < input.NumRemaining()+k && (it.UpToIndex < 0 || j <= input.offset+it.UpToIndex); {
-		sl, err := it.F(output, data, input.get(j).value)
+	for j := input.si.Offset; j < input.NumRemaining()+k && (it.UpToIndex < 0 || j <= input.si.Offset+it.UpToIndex); {
+		sl, err := it.F(output, data, input.get(j).Value)
 		if err != nil {
 			return err
 		}
@@ -469,11 +465,15 @@ func (it *InputTransformer) Transform(input *Input, output Output, data *Data, c
 		}
 		// TODO: Inserted args should be added to the input snapshot
 		end := len(sl) - 1
-		input.get(j).value = sl[end]
+		input.get(j).Value = sl[end]
 		input.PushFrontAt(j, sl[:end]...)
 		j += len(sl)
 	}
 	return nil
+}
+
+func (it *InputTransformer) Execute(i *Input, o Output, data *Data, eData *ExecuteData) error {
+	return it.Transform(i, o, data, false)
 }
 
 func (it *InputTransformer) Complete(input *Input, data *Data) (*Completion, error) {
@@ -481,4 +481,27 @@ func (it *InputTransformer) Complete(input *Input, data *Data) (*Completion, err
 }
 
 func (it *InputTransformer) Usage(*Input, *Data, *Usage) error { return nil }
-*/
+
+// ExtraArgsErr returns an error for when too many arguments are provided to a command.
+func ExtraArgsErr(input *Input) error {
+	return input.extraArgsErr()
+}
+
+func (i *Input) extraArgsErr() error {
+	return &extraArgsErr{i}
+}
+
+type extraArgsErr struct {
+	input *Input
+}
+
+func (eae *extraArgsErr) Error() string {
+	return fmt.Sprintf("Unprocessed extra args: %v", eae.input.Remaining())
+}
+
+// IsExtraArgs returns whether or not the provided error is an `ExtraArgsErr`.
+// TODO: error.go file.
+func IsExtraArgsError(err error) bool {
+	_, ok := err.(*extraArgsErr)
+	return ok
+}

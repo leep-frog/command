@@ -80,7 +80,11 @@ func ExecuteTest(t *testing.T, etc *commandtest.ExecuteTestCase, ietc *spycomman
 	}
 
 	if ietc == nil {
-		ietc = &spycommandtest.ExecuteTestCase{}
+		ietc = &spycommandtest.ExecuteTestCase{
+			// TODO: Change TestInput to SkipInputCheck (similar to SkipDataCheck)
+			// default to testing input
+			TestInput: true,
+		}
 	}
 
 	tc := &testContext{

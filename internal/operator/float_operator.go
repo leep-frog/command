@@ -11,11 +11,11 @@ func parseFloat(s string) (float64, error) {
 
 type floatOperator struct{}
 
-func (*floatOperator) toArgs(f float64) []string {
+func (*floatOperator) ToArgs(f float64) []string {
 	return []string{strconv.FormatFloat(f, 'f', -1, 64)}
 }
 
-func (*floatOperator) fromArgs(sl []*string) (float64, error) {
+func (*floatOperator) FromArgs(sl []*string) (float64, error) {
 	if len(sl) == 0 {
 		return 0, nil
 	}
@@ -24,7 +24,7 @@ func (*floatOperator) fromArgs(sl []*string) (float64, error) {
 
 type floatListOperator struct{}
 
-func (*floatListOperator) toArgs(fs []float64) []string {
+func (*floatListOperator) ToArgs(fs []float64) []string {
 	sl := make([]string, 0, len(fs))
 	for _, f := range fs {
 		sl = append(sl, strconv.FormatFloat(f, 'f', -1, 64))
@@ -32,7 +32,7 @@ func (*floatListOperator) toArgs(fs []float64) []string {
 	return sl
 }
 
-func (*floatListOperator) fromArgs(sl []*string) ([]float64, error) {
+func (*floatListOperator) FromArgs(sl []*string) ([]float64, error) {
 	var err error
 	var fs []float64
 	for _, s := range sl {

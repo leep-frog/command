@@ -1,6 +1,7 @@
 package commandtest
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -117,4 +118,16 @@ type RunContents struct {
 	Args          []string
 	Dir           string
 	StdinContents string
+}
+
+// TODO: Is this needed? Just let users do this part or use OSSetEnv/OSLookupEnv?
+// FakeOS is a fake commondels.OS that can be used for testing purposes.
+type FakeOS struct{}
+
+func (*FakeOS) SetEnvVar(variable, value string) string {
+	return fmt.Sprintf("FAKE_SET[(variable=%s), (value=%s)]", variable, value)
+}
+
+func (*FakeOS) UnsetEnvVar(variable string) string {
+	return fmt.Sprintf("FAKE_UNSET[(variable=%s)]", variable)
 }

@@ -6,6 +6,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/leep-frog/command/internal/constants"
 	"golang.org/x/exp/slices"
 )
 
@@ -16,32 +17,23 @@ const (
 	FlagSection = "Flags"
 	// SymbolSection is the title of the symbols usage section.
 	SymbolSection = "Symbols"
-
-	noDrawLinePrefix = "  "
-	// https://en.wikipedia.org/wiki/List_of_Unicode_characters#Box_Drawing
-	usageBoxUpDown        = "\u2503" // ┃
-	usageBoxLeftRightDown = "\u2533" // ┳
-	usageBoxLeftRight     = "\u2501" // ━
-	usageBoxRightDown     = "\u250f" // ┏
-	usageBoxLeftUp        = "\u251b" // ┛
-	usageBoxLeftDown      = "\u2513" // ┓
 )
 
 var (
-	trailingNestedUsageRegex = regexp.MustCompile(fmt.Sprintf(`%s(\s*)$`, usageBoxUpDown))
+	trailingNestedUsageRegex = regexp.MustCompile(fmt.Sprintf(`%s(\s*)$`, constants.UsageBoxUpDown))
 	trailingWhitspaceRegex   = regexp.MustCompile(`\s*$`)
-	branchStartRegex         = regexp.MustCompile(fmt.Sprintf(`[%s%s]`, usageBoxLeftRightDown, usageBoxLeftDown))
+	branchStartRegex         = regexp.MustCompile(fmt.Sprintf(`[%s%s]`, constants.UsageBoxLeftRightDown, constants.UsageBoxLeftDown))
 	MIDDLE_ITEM_PREFIX       = map[bool]string{
 		true:  "┣━━ ",
-		false: noDrawLinePrefix,
+		false: constants.NoDrawLinePrefix,
 	}
 	NO_ITEM_PREFIX = map[bool]string{
 		true:  "┃   ",
-		false: noDrawLinePrefix,
+		false: constants.NoDrawLinePrefix,
 	}
 	END_ITEM_PREFIX = map[bool]string{
 		true:  "┗━━ ",
-		false: noDrawLinePrefix,
+		false: constants.NoDrawLinePrefix,
 	}
 )
 
@@ -168,16 +160,16 @@ func (u *Usage) string(r, noItemPrefixParts, middleItemPrefixParts, finalItemPre
 	if len(u.SubSections) > 0 {
 
 		prefixStartParts := slices.Clone(noItemPrefixParts)
-		if finalSubSection && len(prefixStartParts) > 0 && prefixStartParts[len(prefixStartParts)-1] != noDrawLinePrefix {
+		if finalSubSection && len(prefixStartParts) > 0 && prefixStartParts[len(prefixStartParts)-1] != constants.NoDrawLinePrefix {
 			prefixStartParts[len(prefixStartParts)-1] = "    "
 		}
 
 		prefix := strings.Join(prefixStartParts, "")
 		index := branchStartRegex.FindStringIndex(usageString)
 		if index[0] == 0 {
-			r = append(r, prefix+usageBoxUpDown)
+			r = append(r, prefix+constants.UsageBoxUpDown)
 		} else {
-			r = append(r, prefix+usageBoxRightDown+strings.Repeat(usageBoxLeftRight, index[0]-1)+usageBoxLeftUp)
+			r = append(r, prefix+constants.UsageBoxRightDown+strings.Repeat(constants.UsageBoxLeftRight, index[0]-1)+constants.UsageBoxLeftUp)
 		}
 
 		for i, su := range u.SubSections {

@@ -4,6 +4,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/leep-frog/command/internal/constants"
 	"github.com/leep-frog/command/internal/testutil"
 )
 
@@ -165,7 +166,7 @@ func TestUsage(t *testing.T) {
 				return &Usage{
 					UsageSection:    &UsageSection{},
 					Description:     "Does stuff",
-					Usage:           []string{"ARG_1", usageBoxLeftRightDown, "ARG_2"},
+					Usage:           []string{"ARG_1", constants.UsageBoxLeftRightDown, "ARG_2"},
 					Flags:           []string{"--first-flag", "--second-flag"},
 					SubSectionLines: true,
 					SubSections: []*Usage{
@@ -217,7 +218,7 @@ func TestUsage(t *testing.T) {
 				return &Usage{
 					UsageSection:    &UsageSection{},
 					Description:     "Does stuff",
-					Usage:           []string{"ARG_1", usageBoxLeftRightDown, "ARG_2"},
+					Usage:           []string{"ARG_1", constants.UsageBoxLeftRightDown, "ARG_2"},
 					Flags:           []string{"--first-flag", "--second-flag"},
 					SubSectionLines: true,
 					SubSections: []*Usage{
@@ -230,7 +231,7 @@ func TestUsage(t *testing.T) {
 								},
 							},
 							Description:     "Branch 1",
-							Usage:           []string{usageBoxLeftDown},
+							Usage:           []string{constants.UsageBoxLeftDown},
 							Flags:           []string{"--branch-1"},
 							SubSectionLines: true,
 							SubSections: []*Usage{
@@ -269,7 +270,7 @@ func TestUsage(t *testing.T) {
 								},
 							},
 							Description:     "Branch 2",
-							Usage:           []string{usageBoxLeftRightDown, "ARG_B_2"},
+							Usage:           []string{constants.UsageBoxLeftRightDown, "ARG_B_2"},
 							SubSectionLines: true,
 							SubSections: []*Usage{
 								{

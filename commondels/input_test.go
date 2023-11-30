@@ -7,6 +7,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/leep-frog/command/internal/spycommand"
+	"github.com/leep-frog/command/internal/spyinput"
 	"github.com/leep-frog/command/internal/testutil"
 )
 
@@ -23,52 +24,52 @@ func TestPushFront(t *testing.T) {
 	}{
 		{
 			name: "handles empty list",
-			i: &Input{
-				args:      []*spycommand.InputArg{{Value: "zero"}, {Value: "one"}, {Value: "two"}, {Value: "three"}, {Value: "four"}},
-				remaining: []int{1, 3, 4},
-			},
-			want: &Input{
-				args:      []*spycommand.InputArg{{Value: "zero"}, {Value: "one"}, {Value: "two"}, {Value: "three"}, {Value: "four"}},
-				remaining: []int{1, 3, 4},
-			},
+			i: &Input{&spyinput.SpyInput[InputBreaker]{
+				Args:      []*spycommand.InputArg{{Value: "zero"}, {Value: "one"}, {Value: "two"}, {Value: "three"}, {Value: "four"}},
+				Remaining: []int{1, 3, 4},
+			}},
+			want: &Input{&spyinput.SpyInput[InputBreaker]{
+				Args:      []*spycommand.InputArg{{Value: "zero"}, {Value: "one"}, {Value: "two"}, {Value: "three"}, {Value: "four"}},
+				Remaining: []int{1, 3, 4},
+			}},
 		},
 		{
 			name: "adds list",
 			sl:   []string{"zero.one", "zero.two"},
-			i: &Input{
-				args:      []*spycommand.InputArg{{Value: "zero"}, {Value: "one"}, {Value: "two"}, {Value: "three"}, {Value: "four"}},
-				remaining: []int{1, 3, 4},
-			},
-			want: &Input{
-				args:      []*spycommand.InputArg{{Value: "zero"}, {Value: "zero.one"}, {Value: "zero.two"}, {Value: "one"}, {Value: "two"}, {Value: "three"}, {Value: "four"}},
-				remaining: []int{1, 2, 3, 5, 6},
-			},
+			i: &Input{&spyinput.SpyInput[InputBreaker]{
+				Args:      []*spycommand.InputArg{{Value: "zero"}, {Value: "one"}, {Value: "two"}, {Value: "three"}, {Value: "four"}},
+				Remaining: []int{1, 3, 4},
+			}},
+			want: &Input{&spyinput.SpyInput[InputBreaker]{
+				Args:      []*spycommand.InputArg{{Value: "zero"}, {Value: "zero.one"}, {Value: "zero.two"}, {Value: "one"}, {Value: "two"}, {Value: "three"}, {Value: "four"}},
+				Remaining: []int{1, 2, 3, 5, 6},
+			}},
 		},
 		{
 			name: "adds list to the front",
 			sl:   []string{"zero.one", "zero.two"},
-			i: &Input{
-				args:      []*spycommand.InputArg{{Value: "zero"}, {Value: "one"}, {Value: "two"}, {Value: "three"}, {Value: "four"}},
-				remaining: []int{0, 1, 3, 4},
-			},
-			want: &Input{
-				args:      []*spycommand.InputArg{{Value: "zero.one"}, {Value: "zero.two"}, {Value: "zero"}, {Value: "one"}, {Value: "two"}, {Value: "three"}, {Value: "four"}},
-				remaining: []int{0, 1, 2, 3, 5, 6},
-			},
+			i: &Input{&spyinput.SpyInput[InputBreaker]{
+				Args:      []*spycommand.InputArg{{Value: "zero"}, {Value: "one"}, {Value: "two"}, {Value: "three"}, {Value: "four"}},
+				Remaining: []int{0, 1, 3, 4},
+			}},
+			want: &Input{&spyinput.SpyInput[InputBreaker]{
+				Args:      []*spycommand.InputArg{{Value: "zero.one"}, {Value: "zero.two"}, {Value: "zero"}, {Value: "one"}, {Value: "two"}, {Value: "three"}, {Value: "four"}},
+				Remaining: []int{0, 1, 2, 3, 5, 6},
+			}},
 		},
 		{
 			name: "adds list with offset",
 			sl:   []string{"two.one", "two.two"},
-			i: &Input{
-				args:      []*spycommand.InputArg{{Value: "zero"}, {Value: "one"}, {Value: "two"}, {Value: "three"}, {Value: "four"}},
-				remaining: []int{0, 1, 3, 4},
-				offset:    2,
-			},
-			want: &Input{
-				args:      []*spycommand.InputArg{{Value: "zero"}, {Value: "one"}, {Value: "two"}, {Value: "two.one"}, {Value: "two.two"}, {Value: "three"}, {Value: "four"}},
-				remaining: []int{0, 1, 3, 4, 5, 6},
-				offset:    2,
-			},
+			i: &Input{&spyinput.SpyInput[InputBreaker]{
+				Args:      []*spycommand.InputArg{{Value: "zero"}, {Value: "one"}, {Value: "two"}, {Value: "three"}, {Value: "four"}},
+				Remaining: []int{0, 1, 3, 4},
+				Offset:    2,
+			}},
+			want: &Input{&spyinput.SpyInput[InputBreaker]{
+				Args:      []*spycommand.InputArg{{Value: "zero"}, {Value: "one"}, {Value: "two"}, {Value: "two.one"}, {Value: "two.two"}, {Value: "three"}, {Value: "four"}},
+				Remaining: []int{0, 1, 3, 4, 5, 6},
+				Offset:    2,
+			}},
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
@@ -115,7 +116,7 @@ func TestPop(t *testing.T) {
 		}
 	}
 
-	if diff := cmp.Diff(input.args, []*spycommand.InputArg{{Value: "one"}, {Value: "two"}, {Value: "three"}}, cmp.AllowUnexported(spycommand.InputArg{})); diff != "" {
+	if diff := cmp.Diff(input.si.Args, []*spycommand.InputArg{{Value: "one"}, {Value: "two"}, {Value: "three"}}, cmp.AllowUnexported(spycommand.InputArg{})); diff != "" {
 		t.Errorf("Input.args changed improperly (-want, +got):\n%s", diff)
 	}
 }
@@ -125,99 +126,136 @@ func TestSnapshots(t *testing.T) {
 	var snapshots []spycommand.InputSnapshot
 	var wantValues [][]string
 	for _, test := range []struct {
+		name               string // identifier for test output
 		f                  func()
 		wantSnapshot       []string
 		wantUsed           []string
 		wantNumRemaining   int
 		wantRemaining      []string
 		wantFullyProcessed bool
+		wantNumSnapshots   int
+		wantConvertedArgs  []string
 	}{
 		{
-			wantSnapshot:     []string{"negative.one", "zero.one", "zero.two", "zero.three", "one", "two", "two.one", "two.two", "three"},
-			wantNumRemaining: 3,
-			wantRemaining:    []string{"one", "two", "three"},
+			name:              "first",
+			wantSnapshot:      []string{"negative.one", "zero.one", "zero.two", "zero.three", "one", "two", "two.one", "two.two", "three"},
+			wantNumRemaining:  3,
+			wantRemaining:     []string{"one", "two", "three"},
+			wantConvertedArgs: []string{"one", "two", "three"},
+			wantNumSnapshots:  1,
 		},
 		{
-			f:                func() { input.PushFrontAt(2, "two.one", "two.two") },
-			wantSnapshot:     []string{"negative.one", "zero.one", "zero.two", "zero.three", "one", "two", "two.one", "two.two", "three"},
-			wantNumRemaining: 5,
-			wantRemaining:    []string{"one", "two", "two.one", "two.two", "three"},
+			name:              "second",
+			f:                 func() { input.PushFrontAt(2, "two.one", "two.two") },
+			wantSnapshot:      []string{"negative.one", "zero.one", "zero.two", "zero.three", "one", "two", "two.one", "two.two", "three"},
+			wantNumRemaining:  5,
+			wantRemaining:     []string{"one", "two", "two.one", "two.two", "three"},
+			wantNumSnapshots:  2,
+			wantConvertedArgs: []string{"one", "two", "two.one", "two.two", "three"},
 		},
 		{
-			f:                func() { input.offset = 1 },
-			wantSnapshot:     []string{"two", "two.one", "two.two", "three"},
-			wantNumRemaining: 4,
-			wantRemaining:    []string{"two", "two.one", "two.two", "three"},
+			name:              "third",
+			f:                 func() { input.si.Offset = 1 },
+			wantSnapshot:      []string{"two", "two.one", "two.two", "three"},
+			wantNumRemaining:  4,
+			wantRemaining:     []string{"two", "two.one", "two.two", "three"},
+			wantNumSnapshots:  3,
+			wantConvertedArgs: []string{"one", "two", "two.one", "two.two", "three"},
 		},
 		{
-			f:                func() { input.PopN(3, 0, nil, nil) },
-			wantSnapshot:     []string{"three"},
-			wantNumRemaining: 1,
-			wantRemaining:    []string{"three"},
-			wantUsed:         []string{"two", "two.one", "two.two"},
+			name:              "fourth",
+			f:                 func() { input.PopN(3, 0, nil, nil) },
+			wantSnapshot:      []string{"three"},
+			wantNumRemaining:  1,
+			wantRemaining:     []string{"three"},
+			wantUsed:          []string{"two", "two.one", "two.two"},
+			wantNumSnapshots:  4,
+			wantConvertedArgs: []string{"one", "two", "two.one", "two.two", "three"},
 		},
 		{
-			f:                func() { input.offset = 0 },
-			wantSnapshot:     []string{"negative.one", "zero.one", "zero.two", "zero.three", "one", "three"},
-			wantNumRemaining: 2,
-			wantRemaining:    []string{"one", "three"},
-			wantUsed:         []string{"two", "two.one", "two.two"},
+			name:              "fifth",
+			f:                 func() { input.si.Offset = 0 },
+			wantSnapshot:      []string{"negative.one", "zero.one", "zero.two", "zero.three", "one", "three"},
+			wantNumRemaining:  2,
+			wantRemaining:     []string{"one", "three"},
+			wantUsed:          []string{"two", "two.one", "two.two"},
+			wantNumSnapshots:  5,
+			wantConvertedArgs: []string{"one", "two", "two.one", "two.two", "three"},
 		},
 		{
-			f:                func() { input.PushFront("zero.one", "zero.two", "zero.three") },
-			wantSnapshot:     []string{"negative.one", "zero.one", "zero.two", "zero.three", "one", "three"},
-			wantNumRemaining: 5,
-			wantRemaining:    []string{"zero.one", "zero.two", "zero.three", "one", "three"},
-			wantUsed:         []string{"two", "two.one", "two.two"},
+			name:              "sixth",
+			f:                 func() { input.PushFront("zero.one", "zero.two", "zero.three") },
+			wantSnapshot:      []string{"negative.one", "zero.one", "zero.two", "zero.three", "one", "three"},
+			wantNumRemaining:  5,
+			wantRemaining:     []string{"zero.one", "zero.two", "zero.three", "one", "three"},
+			wantUsed:          []string{"two", "two.one", "two.two"},
+			wantNumSnapshots:  6,
+			wantConvertedArgs: []string{"zero.one", "zero.two", "zero.three", "one", "two", "two.one", "two.two", "three"},
 		},
 		{
-			f:                func() { input.offset = 3 },
-			wantSnapshot:     []string{"one", "three"},
-			wantNumRemaining: 2,
-			wantRemaining:    []string{"one", "three"},
-			wantUsed:         []string{"two", "two.one", "two.two"},
+			name:              "seventh",
+			f:                 func() { input.si.Offset = 3 },
+			wantSnapshot:      []string{"one", "three"},
+			wantNumRemaining:  2,
+			wantRemaining:     []string{"one", "three"},
+			wantUsed:          []string{"two", "two.one", "two.two"},
+			wantNumSnapshots:  7,
+			wantConvertedArgs: []string{"zero.one", "zero.two", "zero.three", "one", "two", "two.one", "two.two", "three"},
 		},
 		{
-			f:                func() { input.Pop(nil) },
-			wantSnapshot:     []string{"three"},
-			wantNumRemaining: 1,
-			wantRemaining:    []string{"three"},
-			wantUsed:         []string{"one", "two", "two.one", "two.two"},
+			name:              "eighth",
+			f:                 func() { input.Pop(nil) },
+			wantSnapshot:      []string{"three"},
+			wantNumRemaining:  1,
+			wantRemaining:     []string{"three"},
+			wantUsed:          []string{"one", "two", "two.one", "two.two"},
+			wantNumSnapshots:  8,
+			wantConvertedArgs: []string{"zero.one", "zero.two", "zero.three", "one", "two", "two.one", "two.two", "three"},
 		},
 		{
-			f:                func() { input.offset = 0 },
-			wantSnapshot:     []string{"negative.one", "zero.one", "zero.two", "zero.three", "three"},
-			wantNumRemaining: 4,
-			wantRemaining:    []string{"zero.one", "zero.two", "zero.three", "three"},
-			wantUsed:         []string{"one", "two", "two.one", "two.two"},
+			name:              "ninth",
+			f:                 func() { input.si.Offset = 0 },
+			wantSnapshot:      []string{"negative.one", "zero.one", "zero.two", "zero.three", "three"},
+			wantNumRemaining:  4,
+			wantRemaining:     []string{"zero.one", "zero.two", "zero.three", "three"},
+			wantUsed:          []string{"one", "two", "two.one", "two.two"},
+			wantNumSnapshots:  9,
+			wantConvertedArgs: []string{"zero.one", "zero.two", "zero.three", "one", "two", "two.one", "two.two", "three"},
 		},
 		{
-			f:                func() { input.PushFront("negative.one") },
-			wantSnapshot:     []string{"negative.one", "zero.one", "zero.two", "zero.three", "three"},
-			wantNumRemaining: 5,
-			wantRemaining:    []string{"negative.one", "zero.one", "zero.two", "zero.three", "three"},
-			wantUsed:         []string{"one", "two", "two.one", "two.two"},
+			name:              "tenth",
+			f:                 func() { input.PushFront("negative.one") },
+			wantSnapshot:      []string{"negative.one", "zero.one", "zero.two", "zero.three", "three"},
+			wantNumRemaining:  5,
+			wantRemaining:     []string{"negative.one", "zero.one", "zero.two", "zero.three", "three"},
+			wantUsed:          []string{"one", "two", "two.one", "two.two"},
+			wantNumSnapshots:  10,
+			wantConvertedArgs: []string{"negative.one", "zero.one", "zero.two", "zero.three", "one", "two", "two.one", "two.two", "three"},
 		},
 		{
+			name: "11th",
 			f: func() {
-				input.pushBreakers(&ListBreaker{
-					Validators: []InputBreakerFunc{
-						BreakAtSymbol("three"),
-					},
+				input.PushBreakers(&simpleListBreaker{
+					breakFunc: func(s string, d *Data) bool { return s == "three" },
 				})
 				input.PopNAt(1, 0, UnboundedList, nil, nil)
-				input.popBreakers(1)
+				input.PopBreakers(1)
 			},
-			wantSnapshot:     []string{"negative.one", "three"},
-			wantNumRemaining: 2,
-			wantRemaining:    []string{"negative.one", "three"},
-			wantUsed:         []string{"zero.one", "zero.two", "zero.three", "one", "two", "two.one", "two.two"},
+			wantSnapshot:      []string{"negative.one", "three"},
+			wantNumRemaining:  2,
+			wantRemaining:     []string{"negative.one", "three"},
+			wantUsed:          []string{"zero.one", "zero.two", "zero.three", "one", "two", "two.one", "two.two"},
+			wantNumSnapshots:  11,
+			wantConvertedArgs: []string{"negative.one", "zero.one", "zero.two", "zero.three", "one", "two", "two.one", "two.two", "three"},
 		},
 		{
+			name:               "12th",
 			f:                  func() { input.PopN(0, UnboundedList, nil, nil) },
 			wantRemaining:      []string{},
 			wantUsed:           []string{"negative.one", "zero.one", "zero.two", "zero.three", "one", "two", "two.one", "two.two", "three"},
 			wantFullyProcessed: true,
+			wantNumSnapshots:   12,
+			wantConvertedArgs:  []string{"negative.one", "zero.one", "zero.two", "zero.three", "one", "two", "two.one", "two.two", "three"},
 		},
 	} {
 		if test.f != nil {
@@ -226,10 +264,12 @@ func TestSnapshots(t *testing.T) {
 		snapshots = append(snapshots, input.Snapshot())
 		wantValues = append(wantValues, test.wantSnapshot)
 
-		testutil.Cmp(t, "input.NumRemaining() returned incorrect value", test.wantNumRemaining, input.NumRemaining())
-		testutil.Cmp(t, "input.Remaining() returned incorrect value", test.wantRemaining, input.Remaining())
-		testutil.Cmp(t, "input.Used() returned incorrect value", test.wantUsed, input.Used())
-		testutil.Cmp(t, "input.FullyProcessed() returned incorrect value", test.wantFullyProcessed, input.FullyProcessed())
+		testutil.Cmp(t, fmt.Sprintf("%s: input.NumRemaining() returned incorrect value", test.name), test.wantNumRemaining, input.NumRemaining())
+		testutil.Cmp(t, fmt.Sprintf("%s: input.Remaining() returned incorrect value", test.name), test.wantRemaining, input.Remaining())
+		testutil.Cmp(t, fmt.Sprintf("%s: input.Used() returned incorrect value", test.name), test.wantUsed, input.Used())
+		testutil.Cmp(t, fmt.Sprintf("%s: input.FullyProcessed() returned incorrect value", test.name), test.wantFullyProcessed, input.FullyProcessed())
+		testutil.Cmp(t, fmt.Sprintf("%s: input.NumSnapshots() returned incorrect value", test.name), test.wantNumSnapshots, input.NumSnapshots())
+		testutil.Cmp(t, fmt.Sprintf("%s: input.ConvertedArgs() returned incorrect value", test.name), test.wantConvertedArgs, input.ConvertedArgs())
 	}
 
 	var snapshotValues [][]string
@@ -240,9 +280,9 @@ func TestSnapshots(t *testing.T) {
 		t.Errorf("Input.Snapshots failed with snapshot diff (-want, +got):\n%s", diff)
 	}
 
-	wantInput := &Input{
-		snapshotCount: 7,
-		args: []*spycommand.InputArg{
+	wantInput := &Input{&spyinput.SpyInput[InputBreaker]{
+		SnapshotCount: 7,
+		Args: []*spycommand.InputArg{
 			{Value: "zero.one", Snapshots: snapshotsMap(1, 2, 3, 4, 5)},
 			{Value: "zero.two", Snapshots: snapshotsMap(1, 2, 3, 4, 5)},
 			{Value: "zero.three", Snapshots: snapshotsMap(1, 2, 3, 4, 5)},
@@ -252,7 +292,7 @@ func TestSnapshots(t *testing.T) {
 			{Value: "two.two", Snapshots: snapshotsMap(1, 2)},
 			{Value: "three", Snapshots: snapshotsMap(1, 2, 3, 4, 5, 6)},
 		},
-	}
+	}}
 	if diff := cmp.Diff(wantInput, input, cmp.AllowUnexported(Input{}, spycommand.InputArg{})); diff == "" {
 		t.Errorf("Input.Snapshots failed with input diff (-want, +got):\n%s", diff)
 	}
@@ -273,16 +313,16 @@ func TestPopN(t *testing.T) {
 		{
 			name:      "pops none",
 			wantOK:    true,
-			wantInput: &Input{},
+			wantInput: &Input{&spyinput.SpyInput[InputBreaker]{}},
 		},
 		{
 			name:   "pops none from list",
 			input:  []string{"hello"},
 			wantOK: true,
-			wantInput: &Input{
-				args:      []*spycommand.InputArg{{Value: "hello"}},
-				remaining: []int{0},
-			},
+			wantInput: &Input{&spyinput.SpyInput[InputBreaker]{
+				Args:      []*spycommand.InputArg{{Value: "hello"}},
+				Remaining: []int{0},
+			}},
 		},
 		{
 			name:   "returns all if unbounded list",
@@ -290,9 +330,9 @@ func TestPopN(t *testing.T) {
 			optN:   UnboundedList,
 			want:   []string{"hello", "there", "person"},
 			wantOK: true,
-			wantInput: &Input{
-				args: []*spycommand.InputArg{{Value: "hello"}, {Value: "there"}, {Value: "person"}},
-			},
+			wantInput: &Input{&spyinput.SpyInput[InputBreaker]{
+				Args: []*spycommand.InputArg{{Value: "hello"}, {Value: "there"}, {Value: "person"}},
+			}},
 		},
 		{
 			name:  "breaks unbounded list at breaker",
@@ -300,17 +340,15 @@ func TestPopN(t *testing.T) {
 			optN:  UnboundedList,
 			want:  []string{"hello", "there", "person"},
 			breakers: []InputBreaker{
-				&ListBreaker{
-					Validators: []InputBreakerFunc{
-						BreakAtSymbol("how"),
-					},
+				&simpleListBreaker{
+					breakFunc: func(s string, d *Data) bool { return s == "how" },
 				},
 			},
 			wantOK: true,
-			wantInput: &Input{
-				args:      []*spycommand.InputArg{{Value: "hello"}, {Value: "there"}, {Value: "person"}, {Value: "how"}, {Value: "are"}, {Value: "you"}},
-				remaining: []int{3, 4, 5},
-			},
+			wantInput: &Input{&spyinput.SpyInput[InputBreaker]{
+				Args:      []*spycommand.InputArg{{Value: "hello"}, {Value: "there"}, {Value: "person"}, {Value: "how"}, {Value: "are"}, {Value: "you"}},
+				Remaining: []int{3, 4, 5},
+			}},
 		},
 		{
 			name:  "breaks unbounded list at breaker with discard",
@@ -318,18 +356,16 @@ func TestPopN(t *testing.T) {
 			optN:  UnboundedList,
 			want:  []string{"hello", "there", "person"},
 			breakers: []InputBreaker{
-				&ListBreaker{
-					Validators: []InputBreakerFunc{
-						BreakAtSymbol("how"),
-					},
-					Discard: true,
+				&simpleListBreaker{
+					breakFunc: func(s string, d *Data) bool { return s == "how" },
+					discard:   true,
 				},
 			},
 			wantOK: true,
-			wantInput: &Input{
-				args:      []*spycommand.InputArg{{Value: "hello"}, {Value: "there"}, {Value: "person"}, {Value: "how"}, {Value: "are"}, {Value: "you"}},
-				remaining: []int{4, 5},
-			},
+			wantInput: &Input{&spyinput.SpyInput[InputBreaker]{
+				Args:      []*spycommand.InputArg{{Value: "hello"}, {Value: "there"}, {Value: "person"}, {Value: "how"}, {Value: "are"}, {Value: "you"}},
+				Remaining: []int{4, 5},
+			}},
 		},
 		{
 			name:  "pops all when no ListBreaker breaks",
@@ -337,17 +373,15 @@ func TestPopN(t *testing.T) {
 			optN:  UnboundedList,
 			want:  []string{"hello", "there", "person", "how", "are", "you"},
 			breakers: []InputBreaker{
-				&ListBreaker{
-					Validators: []InputBreakerFunc{
-						BreakAtSymbol("no match"),
-					},
-					Discard: true,
+				&simpleListBreaker{
+					breakFunc: func(s string, d *Data) bool { return s == "no match" },
+					discard:   true,
 				},
 			},
 			wantOK: true,
-			wantInput: &Input{
-				args: []*spycommand.InputArg{{Value: "hello"}, {Value: "there"}, {Value: "person"}, {Value: "how"}, {Value: "are"}, {Value: "you"}},
-			},
+			wantInput: &Input{&spyinput.SpyInput[InputBreaker]{
+				Args: []*spycommand.InputArg{{Value: "hello"}, {Value: "there"}, {Value: "person"}, {Value: "how"}, {Value: "are"}, {Value: "you"}},
+			}},
 		},
 		{
 			name:   "pops requested amount from list",
@@ -355,19 +389,19 @@ func TestPopN(t *testing.T) {
 			n:      2,
 			want:   []string{"hello", "there"},
 			wantOK: true,
-			wantInput: &Input{
-				args:      []*spycommand.InputArg{{Value: "hello"}, {Value: "there"}, {Value: "person"}},
-				remaining: []int{2},
-			},
+			wantInput: &Input{&spyinput.SpyInput[InputBreaker]{
+				Args:      []*spycommand.InputArg{{Value: "hello"}, {Value: "there"}, {Value: "person"}},
+				Remaining: []int{2},
+			}},
 		},
 		{
 			name:  "still returns values when too many requested",
 			input: []string{"hello", "there", "person"},
 			n:     4,
 			want:  []string{"hello", "there", "person"},
-			wantInput: &Input{
-				args: []*spycommand.InputArg{{Value: "hello"}, {Value: "there"}, {Value: "person"}},
-			},
+			wantInput: &Input{&spyinput.SpyInput[InputBreaker]{
+				Args: []*spycommand.InputArg{{Value: "hello"}, {Value: "there"}, {Value: "person"}},
+			}},
 		},
 		{
 			name:  "modifies input",
@@ -378,10 +412,10 @@ func TestPopN(t *testing.T) {
 				*s[0] = "goodbye"
 			},
 			wantOK: true,
-			wantInput: &Input{
-				args:      []*spycommand.InputArg{{Value: "goodbye"}, {Value: "there"}, {Value: "person"}},
-				remaining: []int{2},
-			},
+			wantInput: &Input{&spyinput.SpyInput[InputBreaker]{
+				Args:      []*spycommand.InputArg{{Value: "goodbye"}, {Value: "there"}, {Value: "person"}},
+				Remaining: []int{2},
+			}},
 		},
 		{
 			name:  "modifies when not enough",
@@ -391,9 +425,9 @@ func TestPopN(t *testing.T) {
 				*s[1] = "good"
 			},
 			want: []string{"hello", "there", "person"},
-			wantInput: &Input{
-				args: []*spycommand.InputArg{{Value: "hello"}, {Value: "good"}, {Value: "person"}},
-			},
+			wantInput: &Input{&spyinput.SpyInput[InputBreaker]{
+				Args: []*spycommand.InputArg{{Value: "hello"}, {Value: "good"}, {Value: "person"}},
+			}},
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
@@ -437,32 +471,32 @@ func TestPopNOffset(t *testing.T) {
 		{
 			name:      "pops none",
 			wantOK:    true,
-			wantInput: &Input{},
+			wantInput: &Input{&spyinput.SpyInput[InputBreaker]{}},
 		},
 		{
 			name:   "pops none when offset",
 			offset: 1,
 			wantOK: true,
-			wantInput: &Input{
-				offset: 1,
-			},
+			wantInput: &Input{&spyinput.SpyInput[InputBreaker]{
+				Offset: 1,
+			}},
 		},
 		{
 			name:   "returns false if big offset and n",
 			offset: 1,
 			n:      1,
-			wantInput: &Input{
-				offset: 1,
-			},
+			wantInput: &Input{&spyinput.SpyInput[InputBreaker]{
+				Offset: 1,
+			}},
 		},
 		{
 			name:   "pops none from list",
 			input:  []string{"hello"},
 			wantOK: true,
-			wantInput: &Input{
-				args:      []*spycommand.InputArg{{Value: "hello"}},
-				remaining: []int{0},
-			},
+			wantInput: &Input{&spyinput.SpyInput[InputBreaker]{
+				Args:      []*spycommand.InputArg{{Value: "hello"}},
+				Remaining: []int{0},
+			}},
 		},
 		{
 			name:   "pops none from list with offset",
@@ -470,11 +504,11 @@ func TestPopNOffset(t *testing.T) {
 			offset: 1,
 			optN:   2,
 			wantOK: true,
-			wantInput: &Input{
-				args:      []*spycommand.InputArg{{Value: "hello"}},
-				remaining: []int{0},
-				offset:    1,
-			},
+			wantInput: &Input{&spyinput.SpyInput[InputBreaker]{
+				Args:      []*spycommand.InputArg{{Value: "hello"}},
+				Remaining: []int{0},
+				Offset:    1,
+			}},
 		},
 		{
 			name:   "returns all if unbounded list",
@@ -482,9 +516,9 @@ func TestPopNOffset(t *testing.T) {
 			optN:   UnboundedList,
 			want:   []string{"hello", "there", "person"},
 			wantOK: true,
-			wantInput: &Input{
-				args: []*spycommand.InputArg{{Value: "hello"}, {Value: "there"}, {Value: "person"}},
-			},
+			wantInput: &Input{&spyinput.SpyInput[InputBreaker]{
+				Args: []*spycommand.InputArg{{Value: "hello"}, {Value: "there"}, {Value: "person"}},
+			}},
 		},
 		{
 			name:   "returns remaining if unbounded list",
@@ -493,11 +527,11 @@ func TestPopNOffset(t *testing.T) {
 			optN:   UnboundedList,
 			want:   []string{"there", "person"},
 			wantOK: true,
-			wantInput: &Input{
-				args:      []*spycommand.InputArg{{Value: "hello"}, {Value: "there"}, {Value: "person"}},
-				remaining: []int{0},
-				offset:    1,
-			},
+			wantInput: &Input{&spyinput.SpyInput[InputBreaker]{
+				Args:      []*spycommand.InputArg{{Value: "hello"}, {Value: "there"}, {Value: "person"}},
+				Remaining: []int{0},
+				Offset:    1,
+			}},
 		},
 		{
 			name:   "pops requested amount from list",
@@ -505,10 +539,10 @@ func TestPopNOffset(t *testing.T) {
 			n:      2,
 			want:   []string{"hello", "there"},
 			wantOK: true,
-			wantInput: &Input{
-				args:      []*spycommand.InputArg{{Value: "hello"}, {Value: "there"}, {Value: "person"}},
-				remaining: []int{2},
-			},
+			wantInput: &Input{&spyinput.SpyInput[InputBreaker]{
+				Args:      []*spycommand.InputArg{{Value: "hello"}, {Value: "there"}, {Value: "person"}},
+				Remaining: []int{2},
+			}},
 		},
 		{
 			name:   "pops requested amount from list with offset",
@@ -517,20 +551,20 @@ func TestPopNOffset(t *testing.T) {
 			n:      2,
 			want:   []string{"there", "general"},
 			wantOK: true,
-			wantInput: &Input{
-				args:      []*spycommand.InputArg{{Value: "hello"}, {Value: "there"}, {Value: "general"}, {Value: "kenobi"}},
-				remaining: []int{0, 3},
-				offset:    1,
-			},
+			wantInput: &Input{&spyinput.SpyInput[InputBreaker]{
+				Args:      []*spycommand.InputArg{{Value: "hello"}, {Value: "there"}, {Value: "general"}, {Value: "kenobi"}},
+				Remaining: []int{0, 3},
+				Offset:    1,
+			}},
 		},
 		{
 			name:  "still returns values when too many requested",
 			input: []string{"hello", "there", "person"},
 			n:     4,
 			want:  []string{"hello", "there", "person"},
-			wantInput: &Input{
-				args: []*spycommand.InputArg{{Value: "hello"}, {Value: "there"}, {Value: "person"}},
-			},
+			wantInput: &Input{&spyinput.SpyInput[InputBreaker]{
+				Args: []*spycommand.InputArg{{Value: "hello"}, {Value: "there"}, {Value: "person"}},
+			}},
 		},
 		{
 			name:   "still returns values when too many requested with offset",
@@ -538,11 +572,11 @@ func TestPopNOffset(t *testing.T) {
 			offset: 2,
 			n:      4,
 			want:   []string{"person"},
-			wantInput: &Input{
-				args:      []*spycommand.InputArg{{Value: "hello"}, {Value: "there"}, {Value: "person"}},
-				remaining: []int{0, 1},
-				offset:    2,
-			},
+			wantInput: &Input{&spyinput.SpyInput[InputBreaker]{
+				Args:      []*spycommand.InputArg{{Value: "hello"}, {Value: "there"}, {Value: "person"}},
+				Remaining: []int{0, 1},
+				Offset:    2,
+			}},
 		},
 		{
 			name:  "modifies input",
@@ -553,10 +587,10 @@ func TestPopNOffset(t *testing.T) {
 				*s[0] = "goodbye"
 			},
 			wantOK: true,
-			wantInput: &Input{
-				args:      []*spycommand.InputArg{{Value: "goodbye"}, {Value: "there"}, {Value: "person"}},
-				remaining: []int{2},
-			},
+			wantInput: &Input{&spyinput.SpyInput[InputBreaker]{
+				Args:      []*spycommand.InputArg{{Value: "goodbye"}, {Value: "there"}, {Value: "person"}},
+				Remaining: []int{2},
+			}},
 		},
 		{
 			name:   "modifies input with offset",
@@ -569,11 +603,11 @@ func TestPopNOffset(t *testing.T) {
 				*s[1] = "kenobi"
 			},
 			wantOK: true,
-			wantInput: &Input{
-				args:      []*spycommand.InputArg{{Value: "hello"}, {Value: "there"}, {Value: "general"}, {Value: "kenobi"}},
-				remaining: []int{0, 1},
-				offset:    2,
-			},
+			wantInput: &Input{&spyinput.SpyInput[InputBreaker]{
+				Args:      []*spycommand.InputArg{{Value: "hello"}, {Value: "there"}, {Value: "general"}, {Value: "kenobi"}},
+				Remaining: []int{0, 1},
+				Offset:    2,
+			}},
 		},
 		{
 			name:  "modifies when not enough",
@@ -583,9 +617,9 @@ func TestPopNOffset(t *testing.T) {
 				*s[1] = "good"
 			},
 			want: []string{"hello", "there", "person"},
-			wantInput: &Input{
-				args: []*spycommand.InputArg{{Value: "hello"}, {Value: "good"}, {Value: "person"}},
-			},
+			wantInput: &Input{&spyinput.SpyInput[InputBreaker]{
+				Args: []*spycommand.InputArg{{Value: "hello"}, {Value: "good"}, {Value: "person"}},
+			}},
 		},
 		{
 			name:   "modifies when not enough with offset",
@@ -596,16 +630,16 @@ func TestPopNOffset(t *testing.T) {
 				*s[0] = "motors"
 			},
 			want: []string{"kenobi"},
-			wantInput: &Input{
-				args:      []*spycommand.InputArg{{Value: "hello"}, {Value: "there"}, {Value: "general"}, {Value: "motors"}},
-				remaining: []int{0, 1, 2},
-				offset:    3,
-			},
+			wantInput: &Input{&spyinput.SpyInput[InputBreaker]{
+				Args:      []*spycommand.InputArg{{Value: "hello"}, {Value: "there"}, {Value: "general"}, {Value: "motors"}},
+				Remaining: []int{0, 1, 2},
+				Offset:    3,
+			}},
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			input := NewInput(test.input, nil)
-			input.offset = test.offset
+			input.si.Offset = test.offset
 			gotPtrs, gotOK := input.PopN(test.n, test.optN, nil, nil)
 			var got []string
 			for _, p := range gotPtrs {
@@ -639,160 +673,160 @@ func TestParseCompLine(t *testing.T) {
 	}{
 		{
 			name: "handles empty input",
-			want: &Input{
-				args:      []*spycommand.InputArg{{Value: ""}},
-				remaining: []int{0},
-			},
+			want: &Input{&spyinput.SpyInput[InputBreaker]{
+				Args:      []*spycommand.InputArg{{Value: ""}},
+				Remaining: []int{0},
+			}},
 		},
 		{
 			name:  "handles empty command",
 			input: "cmd",
-			want: &Input{
-				args:      []*spycommand.InputArg{{Value: ""}},
-				remaining: []int{0},
-			},
+			want: &Input{&spyinput.SpyInput[InputBreaker]{
+				Args:      []*spycommand.InputArg{{Value: ""}},
+				Remaining: []int{0},
+			}},
 		},
 		{
 			name:  "converts single argument",
 			input: "cmd one",
-			want: &Input{
-				args:      []*spycommand.InputArg{{Value: "one"}},
-				remaining: []int{0},
-			},
+			want: &Input{&spyinput.SpyInput[InputBreaker]{
+				Args:      []*spycommand.InputArg{{Value: "one"}},
+				Remaining: []int{0},
+			}},
 		},
 		{
 			name:   "includes passthrough args",
 			input:  "cmd one two",
 			ptArgs: []string{"nOne", "zero"},
-			want: &Input{
-				args: []*spycommand.InputArg{
+			want: &Input{&spyinput.SpyInput[InputBreaker]{
+				Args: []*spycommand.InputArg{
 					{Value: "nOne"},
 					{Value: "zero"},
 					{Value: "one"},
 					{Value: "two"},
 				},
-				remaining: []int{0, 1, 2, 3},
-			},
+				Remaining: []int{0, 1, 2, 3},
+			}},
 		},
 		{
 			name:  "converts single argument with quote",
 			input: `cmd "one`,
-			want: &Input{
-				args:      []*spycommand.InputArg{{Value: "one"}},
-				delimiter: runePtr('"'),
-				remaining: []int{0},
-			},
+			want: &Input{&spyinput.SpyInput[InputBreaker]{
+				Args:      []*spycommand.InputArg{{Value: "one"}},
+				Delimiter: runePtr('"'),
+				Remaining: []int{0},
+			}},
 		},
 		{
 			name:  "converts quoted argument",
 			input: `cmd "one"`,
-			want: &Input{
-				args:      []*spycommand.InputArg{{Value: "one"}},
-				remaining: []int{0},
-			},
+			want: &Input{&spyinput.SpyInput[InputBreaker]{
+				Args:      []*spycommand.InputArg{{Value: "one"}},
+				Remaining: []int{0},
+			}},
 		},
 		{
 			name:  "ignores last argument if quote",
 			input: `cmd one "`,
-			want: &Input{
-				args:      []*spycommand.InputArg{{Value: "one"}, {Value: ""}},
-				delimiter: runePtr('"'),
-				remaining: []int{0, 1},
-			},
+			want: &Input{&spyinput.SpyInput[InputBreaker]{
+				Args:      []*spycommand.InputArg{{Value: "one"}, {Value: ""}},
+				Delimiter: runePtr('"'),
+				Remaining: []int{0, 1},
+			}},
 		},
 		{
 			name:  "space character",
 			input: "cmd ab cd",
-			want: &Input{
-				args: []*spycommand.InputArg{
+			want: &Input{&spyinput.SpyInput[InputBreaker]{
+				Args: []*spycommand.InputArg{
 					{Value: "ab"},
 					{Value: "cd"},
 				},
-				remaining: []int{0, 1},
-			},
+				Remaining: []int{0, 1},
+			}},
 		},
 		{
 			name:  "multiple space characters",
 			input: "cmd ab cd  ef       gh",
-			want: &Input{
-				args: []*spycommand.InputArg{
+			want: &Input{&spyinput.SpyInput[InputBreaker]{
+				Args: []*spycommand.InputArg{
 					{Value: "ab"},
 					{Value: "cd"},
 					{Value: "ef"},
 					{Value: "gh"},
 				},
-				remaining: []int{0, 1, 2, 3},
-			},
+				Remaining: []int{0, 1, 2, 3},
+			}},
 		},
 		{
 			name:  "quotation between words",
 			input: "cmd a'b c'd",
-			want: &Input{
-				args:      []*spycommand.InputArg{{Value: "ab cd"}},
-				remaining: []int{0},
-			},
+			want: &Input{&spyinput.SpyInput[InputBreaker]{
+				Args:      []*spycommand.InputArg{{Value: "ab cd"}},
+				Remaining: []int{0},
+			}},
 		},
 		{
 			name:  "escaped space character",
 			input: `cmd ab\ cd`,
-			want: &Input{
-				args:      []*spycommand.InputArg{{Value: "ab cd"}},
-				remaining: []int{0},
-			},
+			want: &Input{&spyinput.SpyInput[InputBreaker]{
+				Args:      []*spycommand.InputArg{{Value: "ab cd"}},
+				Remaining: []int{0},
+			}},
 		},
 		{
 			name:  "escaped space character between words",
 			input: "cmd ab\\ cd",
-			want: &Input{
-				args:      []*spycommand.InputArg{{Value: "ab cd"}},
-				remaining: []int{0},
-			},
+			want: &Input{&spyinput.SpyInput[InputBreaker]{
+				Args:      []*spycommand.InputArg{{Value: "ab cd"}},
+				Remaining: []int{0},
+			}},
 		},
 		{
 			name:  "ending backslash in word",
 			input: "cmd ab cd\\",
-			want: &Input{
-				args: []*spycommand.InputArg{
+			want: &Input{&spyinput.SpyInput[InputBreaker]{
+				Args: []*spycommand.InputArg{
 					{Value: `ab`},
 					{Value: `cd\`},
 				},
-				remaining: []int{0, 1},
-			},
+				Remaining: []int{0, 1},
+			}},
 		},
 		{
 			name:  "escaped character to start word",
 			input: `cmd ab \cd`,
-			want: &Input{
-				args: []*spycommand.InputArg{
+			want: &Input{&spyinput.SpyInput[InputBreaker]{
+				Args: []*spycommand.InputArg{
 					{Value: "ab"},
 					{Value: `\cd`},
 				},
-				remaining: []int{0, 1},
-			},
+				Remaining: []int{0, 1},
+			}},
 		},
 		{
 			name:  "end with backslash while in word",
 			input: `cmd ab cd ef\`,
-			want: &Input{
-				args: []*spycommand.InputArg{
+			want: &Input{&spyinput.SpyInput[InputBreaker]{
+				Args: []*spycommand.InputArg{
 					{Value: "ab"},
 					{Value: `cd`},
 					{Value: `ef\`},
 				},
-				remaining: []int{0, 1, 2},
-			},
+				Remaining: []int{0, 1, 2},
+			}},
 		},
 		{
 			name:  "end with backslash while not in word",
 			input: `cmd ab cd \`,
-			want: &Input{
-				args: []*spycommand.InputArg{
+			want: &Input{&spyinput.SpyInput[InputBreaker]{
+				Args: []*spycommand.InputArg{
 					{Value: "ab"},
 					{Value: `cd`},
 					{Value: `\`},
 				},
-				remaining: []int{0, 1, 2},
-			},
+				Remaining: []int{0, 1, 2},
+			}},
 		},
 		/* Useful for commenting out tests. */
 	} {
@@ -818,46 +852,46 @@ func TestPopAtAndPeekAt(t *testing.T) {
 	}{
 		{
 			name:      "empty input",
-			input:     &Input{},
-			wantInput: &Input{},
+			input:     &Input{&spyinput.SpyInput[InputBreaker]{}},
+			wantInput: &Input{&spyinput.SpyInput[InputBreaker]{}},
 		},
 		{
 			name: "non-empty input, but out of range",
 			idx:  2,
-			input: &Input{
-				args: []*spycommand.InputArg{
+			input: &Input{&spyinput.SpyInput[InputBreaker]{
+				Args: []*spycommand.InputArg{
 					{Value: "abc"},
 					{Value: "def"},
 				},
-				remaining: []int{0, 1},
-			},
-			wantInput: &Input{
-				args: []*spycommand.InputArg{
+				Remaining: []int{0, 1},
+			}},
+			wantInput: &Input{&spyinput.SpyInput[InputBreaker]{
+				Args: []*spycommand.InputArg{
 					{Value: "abc"},
 					{Value: "def"},
 				},
-				remaining: []int{0, 1},
-			},
+				Remaining: []int{0, 1},
+			}},
 			wantPeek:   "abc",
 			wantPeekOK: true,
 		},
 		{
 			name: "pops first element",
 			idx:  0,
-			input: &Input{
-				args: []*spycommand.InputArg{
+			input: &Input{&spyinput.SpyInput[InputBreaker]{
+				Args: []*spycommand.InputArg{
 					{Value: "abc"},
 					{Value: "def"},
 				},
-				remaining: []int{0, 1},
-			},
-			wantInput: &Input{
-				args: []*spycommand.InputArg{
+				Remaining: []int{0, 1},
+			}},
+			wantInput: &Input{&spyinput.SpyInput[InputBreaker]{
+				Args: []*spycommand.InputArg{
 					{Value: "abc"},
 					{Value: "def"},
 				},
-				remaining: []int{1},
-			},
+				Remaining: []int{1},
+			}},
 			wantPeek:   "abc",
 			wantPeekOK: true,
 			want:       "abc",
@@ -866,20 +900,20 @@ func TestPopAtAndPeekAt(t *testing.T) {
 		{
 			name: "pops second element",
 			idx:  1,
-			input: &Input{
-				args: []*spycommand.InputArg{
+			input: &Input{&spyinput.SpyInput[InputBreaker]{
+				Args: []*spycommand.InputArg{
 					{Value: "abc"},
 					{Value: "def"},
 				},
-				remaining: []int{0, 1},
-			},
-			wantInput: &Input{
-				args: []*spycommand.InputArg{
+				Remaining: []int{0, 1},
+			}},
+			wantInput: &Input{&spyinput.SpyInput[InputBreaker]{
+				Args: []*spycommand.InputArg{
 					{Value: "abc"},
 					{Value: "def"},
 				},
-				remaining: []int{0},
-			},
+				Remaining: []int{0},
+			}},
 			wantPeek:   "abc",
 			wantPeekOK: true,
 			want:       "def",
@@ -913,4 +947,17 @@ func snapshotsMap(iss ...spycommand.InputSnapshot) map[spycommand.InputSnapshot]
 		m[is] = true
 	}
 	return m
+}
+
+type simpleListBreaker struct {
+	breakFunc func(string, *Data) bool
+	discard   bool
+}
+
+func (slb *simpleListBreaker) Break(s string, d *Data) bool {
+	return slb.breakFunc != nil && slb.breakFunc(s, d)
+}
+
+func (slb *simpleListBreaker) DiscardBreak(s string, d *Data) bool {
+	return slb.discard
 }

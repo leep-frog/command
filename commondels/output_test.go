@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/leep-frog/command/internal/spycommander"
 	"github.com/leep-frog/command/internal/testutil"
 )
 
@@ -90,7 +89,7 @@ func TestOutput(t *testing.T) {
 				o.Stderr("this")
 				return nil
 			},
-			wantPanic: spycommander.TerminationErr(fmt.Errorf("donzo")),
+			wantPanic: TerminationErr(fmt.Errorf("donzo")),
 			wantStdout: strings.Join([]string{
 				"hello",
 				"general",
@@ -115,7 +114,7 @@ func TestOutput(t *testing.T) {
 			},
 			wantStdout: "hello",
 			wantStderr: "thereahoy matey",
-			wantPanic:  spycommander.TerminationErr(fmt.Errorf("ahoy matey")),
+			wantPanic:  TerminationErr(fmt.Errorf("ahoy matey")),
 		},
 		{
 			name: "Tannotate terminates",
@@ -136,7 +135,7 @@ func TestOutput(t *testing.T) {
 			},
 			wantStdout: "hellogeneral",
 			wantStderr: "therekenobibut: do mind me\n",
-			wantPanic:  spycommander.TerminationErr(fmt.Errorf("but: do mind me")),
+			wantPanic:  TerminationErr(fmt.Errorf("but: do mind me")),
 		},
 		{
 			name: "Tannotate terminates",
@@ -157,7 +156,7 @@ func TestOutput(t *testing.T) {
 			},
 			wantStdout: "hellogeneral",
 			wantStderr: "therekenobihowever: do mind me\n",
-			wantPanic:  spycommander.TerminationErr(fmt.Errorf("however: do mind me")),
+			wantPanic:  TerminationErr(fmt.Errorf("however: do mind me")),
 		},
 		// IgnoreErr output
 		{
@@ -226,7 +225,7 @@ func TestOutput(t *testing.T) {
 				o.Annotate(fmt.Errorf("oops"), "c")
 				return o.Err(fmt.Errorf("e"))
 			},
-			wantPanic: spycommander.TerminationErr(fmt.Errorf("whoops")),
+			wantPanic: TerminationErr(fmt.Errorf("whoops")),
 		},
 		/* Useful for commenting out tests. */
 	} {
@@ -237,7 +236,7 @@ func TestOutput(t *testing.T) {
 				o = test.fo(o)
 			}
 
-			err := testutil.CmpPanic(t, "Output func()", func() error { return test.f(o) }, test.wantPanic, spycommander.TerminationCmpopts())
+			err := testutil.CmpPanic(t, "Output func()", func() error { return test.f(o) }, test.wantPanic, TerminationCmpopts())
 			testutil.CmpError(t, "Output func()", test.wantErr, err)
 			testutil.Cmp(t, "Output func() produced incorrect stdout", test.wantStdout, fakeO.GetStdout())
 			testutil.Cmp(t, "Output func() produced incorrect stderr", test.wantStderr, fakeO.GetStderr())

@@ -7,11 +7,6 @@ import (
 	"strings"
 )
 
-type Operator[T any] interface {
-	toArgs(T) []string
-	fromArgs([]*string) (T, error)
-}
-
 var (
 	// IntRegex is the regex checked for int `Args`. Underscores will be removed
 	// if they are in a valid position (not the first or last character).
@@ -28,11 +23,11 @@ func ParseInt(s string) (int, error) {
 
 type intOperator struct{}
 
-func (*intOperator) toArgs(i int) []string {
+func (*intOperator) ToArgs(i int) []string {
 	return []string{fmt.Sprintf("%d", i)}
 }
 
-func (*intOperator) fromArgs(sl []*string) (int, error) {
+func (*intOperator) FromArgs(sl []*string) (int, error) {
 	if len(sl) == 0 {
 		return 0, nil
 	}
@@ -41,7 +36,7 @@ func (*intOperator) fromArgs(sl []*string) (int, error) {
 
 type intListOperator struct{}
 
-func (*intListOperator) toArgs(is []int) []string {
+func (*intListOperator) ToArgs(is []int) []string {
 	sl := make([]string, 0, len(is))
 	for _, i := range is {
 		sl = append(sl, fmt.Sprintf("%d", i))
@@ -49,7 +44,7 @@ func (*intListOperator) toArgs(is []int) []string {
 	return sl
 }
 
-func (*intListOperator) fromArgs(sl []*string) ([]int, error) {
+func (*intListOperator) FromArgs(sl []*string) ([]int, error) {
 	var err error
 	var is []int
 	for _, s := range sl {

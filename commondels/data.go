@@ -20,9 +20,10 @@ type OS interface {
 type Data struct {
 	// Values is a map from argument name to the data for that argument.
 	Values map[string]interface{}
-	// complexecute indictes whether we are running complexecute logic.
-	complexecute bool
+	// Complexecute indictes whether we are running complexecute logic.
+	Complexecute bool
 	// OS is the current operating system
+	// TODO: Remove OS from Data and just make it a package variable
 	OS OS
 }
 
