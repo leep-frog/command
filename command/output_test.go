@@ -267,10 +267,7 @@ func TestOutputWriters(t *testing.T) {
 }
 
 func TestMetadata(t *testing.T) {
-	t.Run("NewOutput() succeeds and prints", func(t *testing.T) {
-		o := NewOutput()
-		// TODO: Stub things so this doesn't actually
-		o.Stdoutln("Output.Stdoutln() test")
-		o.Stderrln("Output.Stderrln() test")
+	t.Run("NewOutput() succeeds", func(t *testing.T) {
+		NewOutput()
 	})
 }

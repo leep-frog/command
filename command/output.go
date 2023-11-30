@@ -319,13 +319,3 @@ func TerminationCmpopts() cmp.Option {
 func Terminate(err error) {
 	panic(TerminationErr(err))
 }
-
-/*func TerminationCmpopts(err error) cmp.Option {
-	return cmp.Comparer(func(this, that *terminator) bool {
-		if this == nil || that == nil {
-			return (this == nil) == (that == nil)
-		}
-
-		return this.terminationError.Error() == that.terminationError.Error()
-	})
-}*/

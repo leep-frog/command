@@ -396,7 +396,7 @@ func (qs *quoteState) delimiter() *rune {
 
 func (*quoteState) endState(w *words) {}
 
-// TODO: Should this belong to the os-type implementer
+// ParseCompLine parses the COMP_LINE value provided by the shell
 func ParseCompLine(compLine string, passthroughArgs ...string) *Input {
 	w := &words{}
 	state := parserState(&whitespaceState{})
