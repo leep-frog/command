@@ -9,7 +9,13 @@ import (
 func ListUntilSymbol[T comparable](symbol T) *ListBreaker[[]T] {
 	return &ListBreaker[[]T]{
 		Validators: []*ValidatorOption[[]T]{
-			ListifyValidatorOption(EQ[T](symbol)),
+			ListifyValidatorOption(NEQ[T](symbol)),
+		},
+		UsageFunc: func(d *commondels.Data, u *commondels.Usage) error {
+			arg := operator.GetOperator[T]().ToArgs(symbol)[0] // slices aren't comparable, so this will only ever be length 1
+			u.Usage = append(u.Usage, arg)
+			u.UsageSection.Add(commondels.SymbolSection, arg, "List breaker")
+			return nil
 		},
 	}
 }

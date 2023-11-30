@@ -11,6 +11,13 @@ const (
 	UsageBoxLeftDown      = "\u2513" // ┓
 )
 
+const (
+	ShortcutDesc             = "  *: Start of new shortcut-able section"
+	CacheDesc                = "  ^: Start of new cachable section"
+	BranchDescWithDefault    = "  ┳: Start of subcommand branches (with default node)"
+	BranchDescWithoutDefault = "  ┓: Start of subcommand branches (without default node)"
+)
+
 var (
 	BoolStringValues = []string{
 		"1",

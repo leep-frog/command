@@ -67,8 +67,13 @@ type executeFn func(commondels.Node, *commondels.Input, commondels.Output, *comm
 
 type usageFn func(commondels.Node, *commondels.Input) (*commondels.Usage, error)
 
+type nameProcessor interface {
+	commondels.Processor
+	Name() string
+}
+
 // ExecuteTest runs a command execution test.
-func ExecuteTest(t *testing.T, etc *commandtest.ExecuteTestCase, ietc *spycommandtest.ExecuteTestCase, exFn executeFn, uFn usageFn) {
+func ExecuteTest(t *testing.T, etc *commandtest.ExecuteTestCase, ietc *spycommandtest.ExecuteTestCase, exFn executeFn, uFn usageFn, setupArg nameProcessor, serialNodes func(...commondels.Processor) commondels.Node) {
 	t.Helper()
 
 	if etc == nil {
@@ -96,12 +101,10 @@ func ExecuteTest(t *testing.T, etc *commandtest.ExecuteTestCase, ietc *spycomman
 	t.Cleanup(tc.fo.Close)
 	args := etc.Args
 	if etc.RequiresSetup {
-		// TODO: Either support or remove etc.RequiresSetup field
-		panic("Unsupported")
-		// setupFile := setupForTest(t, etc.SetupContents)
-		// args = append([]string{setupFile}, args...)
-		// etc.WantData.Set(SetupArg.Name(), setupFile)
-		// t.Cleanup(func() { os.Remove(setupFile) })
+		setupFile := setupForTest(t, etc.SetupContents)
+		args = append([]string{setupFile}, args...)
+		etc.WantData.Set(setupArg.Name(), setupFile)
+		t.Cleanup(func() { os.Remove(setupFile) })
 	}
 	var helpFlag bool
 	for i, a := range args {
@@ -130,9 +133,7 @@ func ExecuteTest(t *testing.T, etc *commandtest.ExecuteTestCase, ietc *spycomman
 
 	n := etc.Node
 	if etc.RequiresSetup {
-		// TODO: Either support or remove etc.RequiresSetup field
-		panic("Unsupported")
-		// n = PreprendSetupArg(n)
+		n = serialNodes(setupArg, n)
 	}
 
 	if helpFlag {

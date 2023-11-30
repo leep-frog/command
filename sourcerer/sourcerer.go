@@ -12,8 +12,11 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/leep-frog/command"
 	"github.com/leep-frog/command/cache"
+	"github.com/leep-frog/command/commander"
+	"github.com/leep-frog/command/commondels"
+	"github.com/leep-frog/command/internal/spycommander"
+	"github.com/leep-frog/command/internal/testutil"
 	"golang.org/x/exp/maps"
 	"golang.org/x/exp/slices"
 )
@@ -21,16 +24,16 @@ import (
 // TODO: FileArgument to allow new files
 
 var (
-	fileArg         = command.FileArgument("FILE", "Temporary file for execution")
-	targetNameRegex = command.MatchesRegex("^[a-zA-Z0-9]+$")
-	targetNameArg   = command.Arg[string]("TARGET_NAME", "The name of the created target in $GOPATH/bin", targetNameRegex)
-	passthroughArgs = command.ListArg[string]("ARG", "Arguments that get passed through to relevant CLI command", 0, command.UnboundedList)
-	helpFlag        = command.BoolFlag("help", command.FlagNoShortName, "Display command's usage doc")
+	fileArg         = commander.FileArgument("FILE", "Temporary file for execution")
+	targetNameRegex = commander.MatchesRegex("^[a-zA-Z0-9]+$")
+	targetNameArg   = commander.Arg[string]("TARGET_NAME", "The name of the created target in $GOPATH/bin", targetNameRegex)
+	passthroughArgs = commander.ListArg[string]("ARG", "Arguments that get passed through to relevant CLI command", 0, commondels.UnboundedList)
+	helpFlag        = commander.BoolFlag("help", commander.FlagNoShortName, "Display command's usage doc")
 	// See the below link for more details on COMP_* details:
 	// https://www.gnu.org/software/bash/manual/html_node/Bash-Variables.html#Bash-Variables
-	compTypeArg  = command.Arg[int]("COMP_TYPE", "COMP_TYPE variable from bash complete function")
-	compPointArg = command.Arg[int]("COMP_POINT", "COMP_POINT variable from bash complete function")
-	compLineArg  = command.Arg[string]("COMP_LINE", "COMP_LINE variable from bash complete function", &command.Transformer[string]{F: func(s string, d *command.Data) (string, error) {
+	compTypeArg  = commander.Arg[int]("COMP_TYPE", "COMP_TYPE variable from bash complete function")
+	compPointArg = commander.Arg[int]("COMP_POINT", "COMP_POINT variable from bash complete function")
+	compLineArg  = commander.Arg[string]("COMP_LINE", "COMP_LINE variable from bash complete function", &commander.Transformer[string]{F: func(s string, d *commondels.Data) (string, error) {
 		if compLineFileFlag.Get(d) {
 			b, err := osReadFile(s)
 			if err != nil {
@@ -47,8 +50,8 @@ var (
 		// The space isn't included in comp line in windows sometimes, hence the need for this.
 		return s + strings.Repeat(" ", cPoint-len(s)), nil
 	}})
-	compLineFileFlag            = command.BoolFlag("comp-line-file", command.FlagNoShortName, "If set, the COMP_LINE arg is taken to be a file that contains the COMP_LINE contents")
-	autocompletePassthroughArgs = command.ListArg[string]("PASSTHROUGH_ARG", "Arguments that get passed through to autocomplete command", 0, command.UnboundedList)
+	compLineFileFlag            = commander.BoolFlag("comp-line-file", commander.FlagNoShortName, "If set, the COMP_LINE arg is taken to be a file that contains the COMP_LINE contents")
+	autocompletePassthroughArgs = commander.ListArg[string]("PASSTHROUGH_ARG", "Arguments that get passed through to autocomplete command", 0, commondels.UnboundedList)
 
 	// Made these methods so they can be stubbed out in tests
 	getUuid    = uuid.NewString
@@ -64,7 +67,7 @@ type CLI interface {
 	// Name is the name of the alias command to use for this CLI.
 	Name() string
 	// Node returns the command node for the CLI. This is where the CLI's logic lives.
-	Node() command.Node
+	Node() commondels.Node
 	// Changed indicates whether or not the CLI has changed after execution.
 	// If true, the CLI's value will be save to the cache.
 	Changed() bool
@@ -78,7 +81,7 @@ type CLI interface {
 }
 
 // Returns if there was an error
-func (s *sourcerer) executeExecutor(output command.Output, d *command.Data) error {
+func (s *sourcerer) executeExecutor(output commondels.Output, d *commondels.Data) error {
 	cli := s.cliArg.GetProcessor().Get(d)
 
 	sourcingFile := d.String(fileArg.Name())
@@ -95,12 +98,12 @@ func (s *sourcerer) executeExecutor(output command.Output, d *command.Data) erro
 		if s.isRunCLI() {
 			return output.Stderrln("Setup() must be empty when running via RunCLI() (supported only via Source())")
 		}
-		n = command.PreprendSetupArg(n)
+		n = commander.SerialNodes(commander.SetupArg, n)
 	}
 
 	// We check this error afer saving. It is up to the user to only mark something as
 	// changed when it should actually be changed (i.e. check for errors in their logic).
-	eData, err := command.Execute(n, command.ParseExecuteArgs(args), output, CurrentOS)
+	eData, err := commander.Execute(n, commondels.ParseExecuteArgs(args), output, CurrentOS)
 
 	// Save the CLI if it has changed.
 	if cli.Changed() {
@@ -110,9 +113,9 @@ func (s *sourcerer) executeExecutor(output command.Output, d *command.Data) erro
 	}
 
 	if err != nil {
-		if command.IsUsageError(err) && !s.printedUsageError && !s.forAutocomplete && !command.IsExtraArgsError(err) {
+		if commander.IsUsageError(err) && !s.printedUsageError && !s.forAutocomplete && !commondels.IsExtraArgsError(err) {
 			s.printedUsageError = true
-			command.ShowUsageAfterError(n, output)
+			spycommander.ShowUsageAfterError(n, output)
 		}
 		// Commands are responsible for printing out error messages so
 		// we just return if there are any issues here
@@ -146,11 +149,11 @@ func (s *sourcerer) executeExecutor(output command.Output, d *command.Data) erro
 	return nil
 }
 
-func (s *sourcerer) autocompleteExecutor(o command.Output, d *command.Data) error {
+func (s *sourcerer) autocompleteExecutor(o commondels.Output, d *commondels.Data) error {
 	s.forAutocomplete = true
 	cli := s.cliArg.GetProcessor().Get(d)
 
-	autocompletion, err := command.Autocomplete(cli.Node(), compLineArg.Get(d), autocompletePassthroughArgs.Get(d), CurrentOS)
+	autocompletion, err := commander.Autocomplete(cli.Node(), compLineArg.Get(d), autocompletePassthroughArgs.Get(d), CurrentOS)
 	if err != nil {
 		CurrentOS.HandleAutocompleteError(o, compTypeArg.Get(d), err)
 		return err
@@ -188,7 +191,7 @@ func load(cli CLI) error {
 type sourcerer struct {
 	goExecutableFilePath string
 	clis                 map[string]CLI
-	cliArg               *refProcessor[*command.MapFlargument[string, CLI]]
+	cliArg               *refProcessor[*commander.MapFlargument[string, CLI]]
 	sourceLocation       string
 	printedUsageError    bool
 	opts                 *compiledOpts
@@ -218,23 +221,23 @@ const (
 )
 
 // TODO: Make this a first-class type
-type refProcessor[P command.Processor] struct {
+type refProcessor[P commondels.Processor] struct {
 	Processor *P
 }
 
-func newRefProcessor[P command.Processor](p P) *refProcessor[P] {
+func newRefProcessor[P commondels.Processor](p P) *refProcessor[P] {
 	return &refProcessor[P]{&p}
 }
 
-func (rp *refProcessor[P]) Execute(i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
+func (rp *refProcessor[P]) Execute(i *commondels.Input, o commondels.Output, d *commondels.Data, ed *commondels.ExecuteData) error {
 	return (*rp.Processor).Execute(i, o, d, ed)
 }
 
-func (rp *refProcessor[P]) Complete(i *command.Input, d *command.Data) (*command.Completion, error) {
+func (rp *refProcessor[P]) Complete(i *commondels.Input, d *commondels.Data) (*commondels.Completion, error) {
 	return (*rp.Processor).Complete(i, d)
 }
 
-func (rp *refProcessor[P]) Usage(i *command.Input, d *command.Data, u *command.Usage) error {
+func (rp *refProcessor[P]) Usage(i *commondels.Input, d *commondels.Data, u *commondels.Usage) error {
 	return (*rp.Processor).Usage(i, d, u)
 }
 
@@ -246,14 +249,14 @@ func (rp *refProcessor[P]) SetProcessor(p P) {
 	rp.Processor = &p
 }
 
-func (s *sourcerer) Node() command.Node {
-	loadCLIArg := command.SuperSimpleProcessor(func(i *command.Input, d *command.Data) error {
+func (s *sourcerer) Node() commondels.Node {
+	loadCLIArg := commander.SuperSimpleProcessor(func(i *commondels.Input, d *commondels.Data) error {
 		return load(s.cliArg.GetProcessor().Get(d))
 	})
 
-	autocompleteBranchNode := func(runCLI bool) command.Node {
-		nodes := []command.Processor{
-			command.FlagProcessor(
+	autocompleteBranchNode := func(runCLI bool) commondels.Node {
+		nodes := []commondels.Processor{
+			commander.FlagProcessor(
 				compLineFileFlag,
 			),
 		}
@@ -262,33 +265,33 @@ func (s *sourcerer) Node() command.Node {
 			nodes = append(nodes, s.cliArg)
 		}
 
-		return command.SerialNodes(append(nodes,
+		return commander.SerialNodes(append(nodes,
 			loadCLIArg,
 			compTypeArg,
 			compPointArg,
 			compLineArg,
 			autocompletePassthroughArgs,
-			&command.ExecutorProcessor{F: s.autocompleteExecutor},
+			&commander.ExecutorProcessor{F: s.autocompleteExecutor},
 		)...)
 	}
 
 	// Change if runcli
 	if s.isRunCLI() {
-		aliasFlag := command.Flag[string]("alias", command.FlagNoShortName, "")
-		return command.SerialNodes(
+		aliasFlag := commander.Flag[string]("alias", commander.FlagNoShortName, "")
+		return commander.SerialNodes(
 			// Set the CLI to runCLI
-			command.SuperSimpleProcessor(func(i *command.Input, d *command.Data) error {
+			commander.SuperSimpleProcessor(func(i *commondels.Input, d *commondels.Data) error {
 				s.cliArg.GetProcessor().Set(s.runCLI.Name(), d)
 				return nil
 			}),
-			&command.BranchNode{
-				Branches: map[string]command.Node{
+			&commander.BranchNode{
+				Branches: map[string]commondels.Node{
 					AutocompleteBranchName: autocompleteBranchNode(true),
-					GenerateAutocompleteSetupBranchName: command.SerialNodes(
-						command.FlagProcessor(
+					GenerateAutocompleteSetupBranchName: commander.SerialNodes(
+						commander.FlagProcessor(
 							aliasFlag,
 						),
-						&command.ExecutorProcessor{func(o command.Output, d *command.Data) error {
+						&commander.ExecutorProcessor{func(o commondels.Output, d *commondels.Data) error {
 							alias := aliasFlag.GetOrDefault(d, filepath.Base(s.goExecutableFilePath))
 							if err := targetNameRegex.Validate(alias, d); err != nil {
 								return o.Err(err)
@@ -303,20 +306,20 @@ func (s *sourcerer) Node() command.Node {
 				},
 				// TODO: remove this and just check if BranchNode.UsageOrder is empty list
 				HideUsage: true,
-				Default: command.SerialNodes(
+				Default: commander.SerialNodes(
 					loadCLIArg,
-					command.FlagProcessor(
+					commander.FlagProcessor(
 						helpFlag,
 					),
 					passthroughArgs,
-					&command.ExecutorProcessor{F: s.executeExecutor},
+					&commander.ExecutorProcessor{F: s.executeExecutor},
 				),
 			},
 		)
 	}
 
-	return command.SerialNodes(
-		command.SuperSimpleProcessor(func(i *command.Input, d *command.Data) error {
+	return commander.SerialNodes(
+		commander.SuperSimpleProcessor(func(i *commondels.Input, d *commondels.Data) error {
 			// If the first argument is the built-in parameter, then only use the built-in commands
 			if p, _ := i.Peek(); p == BuiltInCommandParameter {
 				i.Pop(d)
@@ -326,38 +329,32 @@ func (s *sourcerer) Node() command.Node {
 			}
 			return nil
 		}),
-		&command.BranchNode{
-			Branches: map[string]command.Node{
+		&commander.BranchNode{
+			Branches: map[string]commondels.Node{
 				AutocompleteBranchName: autocompleteBranchNode(false),
-				UsageBranchName: command.SerialNodes(
-					s.cliArg,
-					loadCLIArg,
-					passthroughArgs,
-					command.SimpleProcessor(s.usageExecutor, nil),
+				ListBranchName: commander.SerialNodes(
+					commander.SimpleProcessor(s.listCLIExecutor, nil),
 				),
-				ListBranchName: command.SerialNodes(
-					command.SimpleProcessor(s.listCLIExecutor, nil),
-				),
-				ExecuteBranchName: command.SerialNodes(
+				ExecuteBranchName: commander.SerialNodes(
 					s.cliArg,
 					loadCLIArg,
 					fileArg,
-					command.FlagProcessor(
+					commander.FlagProcessor(
 						helpFlag,
 					),
 					passthroughArgs,
-					&command.ExecutorProcessor{F: s.executeExecutor},
+					&commander.ExecutorProcessor{F: s.executeExecutor},
 				),
-				SourceBranchName: command.SerialNodes(
+				SourceBranchName: commander.SerialNodes(
 					targetNameArg,
-					&command.ExecutorProcessor{F: s.generateFile},
+					&commander.ExecutorProcessor{F: s.generateFile},
 				),
 			},
 			HideUsage: true,
-			Default: command.SerialNodes(
+			Default: commander.SerialNodes(
 				// Just eat the remaining args
-				// command.ListArg[string]("UNUSED", "", 0, command.UnboundedList),
-				&command.ExecutorProcessor{func(o command.Output, d *command.Data) error {
+				// commander.ListArg[string]("UNUSED", "", 0, commondels.UnboundedList),
+				&commander.ExecutorProcessor{func(o commondels.Output, d *commondels.Data) error {
 					// Add echo so it's a comment if included in sourced output
 					return o.Stderrf("echo %q\n", "Executing a sourcerer.CLI directly through `go run` is tricky. Either generate a CLI or use the `goleep` command to directly run the file.")
 				}},
@@ -366,27 +363,22 @@ func (s *sourcerer) Node() command.Node {
 	)
 }
 
-func (s *sourcerer) listCLIExecutor(i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
+func (s *sourcerer) listCLIExecutor(i *commondels.Input, o commondels.Output, d *commondels.Data, ed *commondels.ExecuteData) error {
 	clis := maps.Keys(s.clis)
 	slices.Sort(clis)
 	o.Stdoutln(strings.Join(clis, "\n"))
 	return nil
 }
 
-func (s *sourcerer) usageExecutor(i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
-	ed.Executor = append(ed.Executor, s.usageExecutorHelper(s.cliArg.GetProcessor().Get(d), passthroughArgs.Get(d)))
-	return nil
-}
-
-func (s *sourcerer) usageExecutorHelper(cli CLI, args []string) func(o command.Output, d *command.Data) error {
-	return func(o command.Output, d *command.Data) error {
+func (s *sourcerer) usageExecutorHelper(cli CLI, args []string) func(o commondels.Output, d *commondels.Data) error {
+	return func(o commondels.Output, d *commondels.Data) error {
 		n := cli.Node()
-		u, err := command.Use(n, command.ParseExecuteArgs(args))
+		u, err := spycommander.Use(n, commondels.ParseExecuteArgs(args))
 		if err != nil {
 			o.Err(err)
 			// TODO: I believe this is handled by ParseExecuteArgs; confirm and remove if so
-			if command.IsUsageError(err) {
-				command.ShowUsageAfterError(n, o)
+			if commander.IsUsageError(err) {
+				spycommander.ShowUsageAfterError(n, o)
 			}
 			return err
 		}
@@ -421,7 +413,7 @@ type compiledOpts struct {
 // RunCLI runs an individual CLI, thus making the go executable file the only
 // setup needed.
 func RunCLI(cli CLI) int {
-	o := command.NewOutput()
+	o := commondels.NewOutput()
 	defer o.Close()
 	if source(true, []CLI{cli}, os.Args[0], os.Args[1:], o) != nil {
 		return 1
@@ -431,7 +423,7 @@ func RunCLI(cli CLI) int {
 
 // Source generates the bash source file for a list of CLIs.
 func Source(clis []CLI, opts ...Option) int {
-	o := command.NewOutput()
+	o := commondels.NewOutput()
 	defer o.Close()
 	if source(false, clis, os.Args[0], os.Args[1:], o, opts...) != nil {
 		return 1
@@ -468,7 +460,7 @@ func (s *sourcerer) initSourcerer(runCLI, builtin bool, clis []CLI, sourceLocati
 	}
 
 	s.clis = cliMap
-	s.cliArg.SetProcessor(command.MapArg("CLI", "", cliMap, false))
+	s.cliArg.SetProcessor(commander.MapArg("CLI", "", cliMap, false))
 
 	s.sourceLocation = sourceLocation
 	s.opts = cos
@@ -492,14 +484,14 @@ const (
 
 // StubExecutableFile stubs the executable file returned by ExecutableFileGetProcessor()
 func StubExecutableFile(t *testing.T, filepath string) {
-	command.StubValue(t, &externalGoExecutableFilePath, filepath)
+	testutil.StubValue(t, &externalGoExecutableFilePath, filepath)
 }
 
-// ExecutableFileGetProcessor returns a `command.GetProcessor` that sets and gets
+// ExecutableFileGetProcessor returns a `commander.GetProcessor` that sets and gets
 // the full go executable file path.
-func ExecutableFileGetProcessor() *command.GetProcessor[string] {
-	return &command.GetProcessor[string]{
-		command.SuperSimpleProcessor(func(i *command.Input, d *command.Data) error {
+func ExecutableFileGetProcessor() *commander.GetProcessor[string] {
+	return &commander.GetProcessor[string]{
+		commander.SuperSimpleProcessor(func(i *commondels.Input, d *commondels.Data) error {
 			d.Set(ExecutableFileGetProcessorName, externalGoExecutableFilePath)
 			return nil
 		}),
@@ -508,7 +500,7 @@ func ExecutableFileGetProcessor() *command.GetProcessor[string] {
 }
 
 // Separate method used for testing.
-func source(runCLI bool, clis []CLI, goExecutableFilePath string, osArgs []string, o command.Output, opts ...Option) error {
+func source(runCLI bool, clis []CLI, goExecutableFilePath string, osArgs []string, o commondels.Output, opts ...Option) error {
 	sl, err := getSourceLoc()
 	if err != nil {
 		return o.Annotate(err, "failed to get source location")
@@ -516,7 +508,7 @@ func source(runCLI bool, clis []CLI, goExecutableFilePath string, osArgs []strin
 
 	s := &sourcerer{
 		goExecutableFilePath: goExecutableFilePath,
-		cliArg:               newRefProcessor[*command.MapFlargument[string, CLI]](nil),
+		cliArg:               newRefProcessor[*commander.MapFlargument[string, CLI]](nil),
 	}
 	if err := s.initSourcerer(runCLI, false, clis, sl, opts); err != nil {
 		return o.Err(err)
@@ -524,7 +516,7 @@ func source(runCLI bool, clis []CLI, goExecutableFilePath string, osArgs []strin
 
 	// Sourcerer is always executed. Its execution branches into the relevant CLI's
 	// execution/autocomplete/usage path.
-	d := &command.Data{
+	d := &commondels.Data{
 		Values: map[string]interface{}{
 			s.cliArg.GetProcessor().Name(): s,
 			// Don't need execute file here
@@ -549,10 +541,10 @@ func getSourceLoc() (string, error) {
 }
 
 var (
-	commandStat = command.Stat
+	commandStat = commander.Stat
 )
 
-func (s *sourcerer) generateFile(o command.Output, d *command.Data) error {
+func (s *sourcerer) generateFile(o commondels.Output, d *commondels.Data) error {
 	targetName := targetNameArg.Get(d)
 
 	fileData := CurrentOS.RegisterCLIs(s.builtin, s.goExecutableFilePath, targetName, maps.Values(s.clis))

@@ -4,7 +4,8 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/leep-frog/command"
+	"github.com/leep-frog/command/commondels"
+	"github.com/leep-frog/command/internal/testutil"
 )
 
 func TestFormat(t *testing.T) {
@@ -82,7 +83,7 @@ func TestFormat(t *testing.T) {
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			var calls [][]interface{}
-			command.StubValue(t, &TputCommand, func(output command.Output, args ...interface{}) error {
+			testutil.StubValue(t, &TputCommand, func(output commondels.Output, args ...interface{}) error {
 				calls = append(calls, args)
 				return nil
 			})

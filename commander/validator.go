@@ -268,7 +268,7 @@ func EQ[T comparable](n T) *ValidatorOption[T] {
 }
 
 // NEQ [`ValidatorOption`] validates an argument does not equal `n`.
-func NEQ[T constraints.Ordered](n T) *ValidatorOption[T] {
+func NEQ[T comparable](n T) *ValidatorOption[T] {
 	return &ValidatorOption[T]{
 		func(v T, d *commondels.Data) error {
 			if v != n {

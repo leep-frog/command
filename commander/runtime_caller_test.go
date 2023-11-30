@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/leep-frog/command/commondels"
 )
 
 func TestRuntimeCaller(t *testing.T) {
@@ -13,8 +14,8 @@ func TestRuntimeCaller(t *testing.T) {
 		t.Fatalf("failed to get absolute path: %v", err)
 	}
 
-	d := &Data{}
-	o := NewFakeOutput()
+	d := &commondels.Data{}
+	o := commondels.NewFakeOutput()
 	rc := RuntimeCaller()
 	if err := rc.Execute(nil, o, d, nil); err != nil {
 		t.Fatalf("failed to execute runtime caller: %v", err)

@@ -188,7 +188,7 @@ func TestShortcutExecute(t *testing.T) {
 				WantStderr: strings.Join([]string{
 					`Unprocessed extra args: [two one]`,
 					``,
-					`======= Command commondels.Usage =======`,
+					`======= Command Usage =======`,
 					`* sl [ sl sl ]`,
 					``,
 					`Arguments:`,

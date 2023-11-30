@@ -1,14 +1,8 @@
 package commander
 
 import (
-	"os"
-
 	"github.com/leep-frog/command/commondels"
-)
-
-var (
-	// variables so it can be stubbed out in tests.
-	OSLookupEnv = os.LookupEnv
+	"github.com/leep-frog/command/internal/stubs"
 )
 
 // EnvArg loads the provided environment variable's value into `commondels.Data`.
@@ -16,7 +10,7 @@ var (
 func EnvArg(name string) *GetProcessor[string] {
 	return &GetProcessor[string]{
 		SuperSimpleProcessor(func(i *commondels.Input, d *commondels.Data) error {
-			if v, ok := OSLookupEnv(name); ok {
+			if v, ok := stubs.OSLookupEnv(name); ok {
 				d.Set(name, v)
 			}
 			return nil

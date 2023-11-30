@@ -7,13 +7,9 @@ import (
 
 	"github.com/leep-frog/command/commandtest"
 	"github.com/leep-frog/command/commondels"
-)
-
-const (
-	ShortcutDesc             = "  *: Start of new shortcut-able section"
-	CacheDesc                = "  ^: Start of new cachable section"
-	BranchDescWithDefault    = "  ┳: Start of subcommand branches (with default node)"
-	BranchDescWithoutDefault = "  ┓: Start of subcommand branches (without default node)"
+	"github.com/leep-frog/command/internal/constants"
+	"github.com/leep-frog/command/internal/spycommand"
+	"github.com/leep-frog/command/internal/spycommandtest"
 )
 
 type usageNode struct {
@@ -57,22 +53,28 @@ func TestUsage(t *testing.T) {
 	for _, test := range []struct {
 		name string
 		etc  *commandtest.ExecuteTestCase
+		ietc *spycommandtest.ExecuteTestCase
 	}{
 		{
 			name: "works with empty node",
+			etc: &commandtest.ExecuteTestCase{
+				WantStdout: "\n",
+			},
 		},
 		{
 			name: "fails if node.Usage() returns error",
 			etc: &commandtest.ExecuteTestCase{
-				Node:    &usageNode{fmt.Errorf("oops"), nil},
-				WantErr: fmt.Errorf("oops"),
+				Node:       &usageNode{fmt.Errorf("oops"), nil},
+				WantErr:    fmt.Errorf("oops"),
+				WantStderr: "oops\n",
 			},
 		},
 		{
 			name: "fails if node.UsageNext() returns error",
 			etc: &commandtest.ExecuteTestCase{
-				Node:    &usageNode{nil, fmt.Errorf("whoops")},
-				WantErr: fmt.Errorf("whoops"),
+				Node:       &usageNode{nil, fmt.Errorf("whoops")},
+				WantErr:    fmt.Errorf("whoops"),
+				WantStderr: "whoops\n",
 			},
 		},
 		{
@@ -81,6 +83,7 @@ func TestUsage(t *testing.T) {
 				Node: SerialNodes(Description("hello %s")),
 				WantStdout: strings.Join([]string{
 					"hello %s",
+					"",
 				}, "\n"),
 			},
 		},
@@ -90,6 +93,7 @@ func TestUsage(t *testing.T) {
 				Node: SerialNodes(Descriptionf("hello %s", "there")),
 				WantStdout: strings.Join([]string{
 					"hello there",
+					"",
 				}, "\n"),
 			},
 		},
@@ -102,6 +106,7 @@ func TestUsage(t *testing.T) {
 					"",
 					"Arguments:",
 					"  SARG: desc",
+					"",
 				}, "\n"),
 			},
 		},
@@ -114,6 +119,7 @@ func TestUsage(t *testing.T) {
 					"",
 					"Arguments:",
 					"  SARG: desc",
+					"",
 				}, "\n"),
 			},
 		},
@@ -131,6 +137,7 @@ func TestUsage(t *testing.T) {
 					"Arguments:",
 					"  SARG1: desc",
 					"  SARG3: desc",
+					"",
 				}, "\n"),
 			},
 		},
@@ -148,6 +155,7 @@ func TestUsage(t *testing.T) {
 					"Arguments:",
 					"  IARG: idesc",
 					"  SARG: desc",
+					"",
 				}, "\n"),
 			},
 		},
@@ -161,6 +169,7 @@ func TestUsage(t *testing.T) {
 					"",
 					"Arguments:",
 					"  SARG: desc",
+					"",
 				}, "\n"),
 			},
 		},
@@ -184,6 +193,7 @@ func TestUsage(t *testing.T) {
 					"    MinLength(3)",
 					`    Contains("X")`,
 					`    FileExists()`,
+					"",
 				}, "\n"),
 			},
 		},
@@ -216,6 +226,7 @@ func TestUsage(t *testing.T) {
 					"    MinLength(3)",
 					`    Contains("X")`,
 					`    FileExists()`,
+					"",
 				}, "\n"),
 			},
 		},
@@ -231,7 +242,15 @@ func TestUsage(t *testing.T) {
 					),
 					Description("Does absolutely nothing"),
 				),
-				WantErr: fmt.Errorf(`validation for "SARG" failed: [MinLength] length must be at least 3`),
+				WantErr:    fmt.Errorf(`validation for "SARG" failed: [MinLength] length must be at least 3`),
+				WantStderr: "validation for \"SARG\" failed: [MinLength] length must be at least 3\n",
+			},
+			ietc: &spycommandtest.ExecuteTestCase{
+				WantInput: &spycommandtest.SpyInput{
+					Args: []*spycommand.InputArg{
+						{Value: "12"},
+					},
+				},
 			},
 		},
 		{
@@ -243,6 +262,7 @@ func TestUsage(t *testing.T) {
 					"",
 					"Arguments:",
 					"  SARG: test desc",
+					"",
 				}, "\n"),
 			},
 		},
@@ -255,6 +275,7 @@ func TestUsage(t *testing.T) {
 					"",
 					"Arguments:",
 					"  SARG: test desc",
+					"",
 				}, "\n"),
 			},
 		},
@@ -274,7 +295,8 @@ func TestUsage(t *testing.T) {
 					"  SARG: test desc",
 					"",
 					"Symbols:",
-					ShortcutDesc,
+					constants.ShortcutDesc,
+					"",
 				}, "\n"),
 			},
 		},
@@ -294,7 +316,8 @@ func TestUsage(t *testing.T) {
 					"  SARG: test desc",
 					"",
 					"Symbols:",
-					CacheDesc,
+					constants.CacheDesc,
+					"",
 				}, "\n"),
 			},
 		},
@@ -318,7 +341,8 @@ func TestUsage(t *testing.T) {
 					"  STRINGS: unltd strings",
 					"",
 					"Symbols:",
-					BranchDescWithDefault,
+					constants.BranchDescWithDefault,
+					"",
 				}, "\n"),
 			},
 		},
@@ -336,7 +360,8 @@ func TestUsage(t *testing.T) {
 					"┗━━ alpha",
 					"",
 					"Symbols:",
-					BranchDescWithoutDefault,
+					constants.BranchDescWithoutDefault,
+					"",
 				}, "\n"),
 			},
 		},
@@ -356,7 +381,15 @@ func TestUsage(t *testing.T) {
 					"",
 					"Arguments:",
 					"  STRINGS: unltd strings",
+					"",
 				}, "\n"),
+			},
+			ietc: &spycommandtest.ExecuteTestCase{
+				WantInput: &spycommandtest.SpyInput{
+					Args: []*spycommand.InputArg{
+						{Value: "123"},
+					},
+				},
 			},
 		},
 		{
@@ -375,7 +408,15 @@ func TestUsage(t *testing.T) {
 					"",
 					"Arguments:",
 					"  ROPES: lots of strings",
+					"",
 				}, "\n"),
+			},
+			ietc: &spycommandtest.ExecuteTestCase{
+				WantInput: &spycommandtest.SpyInput{
+					Args: []*spycommand.InputArg{
+						{Value: "beta"},
+					},
+				},
 			},
 		},
 		{
@@ -400,6 +441,7 @@ func TestUsage(t *testing.T) {
 					"  INT_ARG: an integer",
 					"  STRING: A string",
 					"  STRINGS: unltd strings",
+					"",
 				}, "\n"),
 			},
 		},
@@ -422,6 +464,7 @@ func TestUsage(t *testing.T) {
 					"",
 					"Arguments:",
 					"  STRING: A string",
+					"",
 				}, "\n"),
 			},
 		},
@@ -463,8 +506,9 @@ func TestUsage(t *testing.T) {
 					"  STRINGS: unltd strings",
 					"",
 					"Symbols:",
-					BranchDescWithoutDefault,
-					BranchDescWithDefault,
+					constants.BranchDescWithoutDefault,
+					constants.BranchDescWithDefault,
+					"",
 				}, "\n"),
 			},
 		},
@@ -513,8 +557,9 @@ func TestUsage(t *testing.T) {
 					"  STRINGS: unltd strings",
 					"",
 					"Symbols:",
-					BranchDescWithoutDefault,
-					BranchDescWithDefault,
+					constants.BranchDescWithoutDefault,
+					constants.BranchDescWithDefault,
+					"",
 				}, "\n"),
 			},
 		},
@@ -563,8 +608,9 @@ func TestUsage(t *testing.T) {
 					"  STRINGS: unltd strings",
 					"",
 					"Symbols:",
-					BranchDescWithoutDefault,
-					BranchDescWithDefault,
+					constants.BranchDescWithoutDefault,
+					constants.BranchDescWithDefault,
+					"",
 				}, "\n"),
 			},
 		},
@@ -639,8 +685,9 @@ func TestUsage(t *testing.T) {
 					"  TWO: Another number",
 					"",
 					"Symbols:",
-					BranchDescWithoutDefault,
-					BranchDescWithDefault,
+					constants.BranchDescWithoutDefault,
+					constants.BranchDescWithDefault,
+					"",
 				}, "\n"),
 			},
 		},
@@ -653,7 +700,8 @@ func TestUsage(t *testing.T) {
 					Branches:         branchesForSorting,
 					Default:          SerialNodes(Description("the default command"), Arg[int]("INT_ARG", "an integer"), ListArg[string]("STRINGS", "unltd strings", 1, commondels.UnboundedList)),
 				},
-				WantErr: fmt.Errorf("BranchUsageOrder includes an incorrect set of branches: expected [alpha beta charlie delta echo]; got [alpha beta charlie delta echo foxtrot]"),
+				WantErr:    fmt.Errorf("BranchUsageOrder includes an incorrect set of branches: expected [alpha beta charlie delta echo]; got [alpha beta charlie delta echo foxtrot]"),
+				WantStderr: "BranchUsageOrder includes an incorrect set of branches: expected [alpha beta charlie delta echo]; got [alpha beta charlie delta echo foxtrot]\n",
 			},
 		},
 		{
@@ -664,7 +712,8 @@ func TestUsage(t *testing.T) {
 					Branches:         branchesForSorting,
 					Default:          SerialNodes(Description("the default command"), Arg[int]("INT_ARG", "an integer"), ListArg[string]("STRINGS", "unltd strings", 1, commondels.UnboundedList)),
 				},
-				WantErr: fmt.Errorf("BranchUsageOrder includes an incorrect set of branches: expected [alpha beta charlie delta echo]; got [alpha beta delta echo]"),
+				WantErr:    fmt.Errorf("BranchUsageOrder includes an incorrect set of branches: expected [alpha beta charlie delta echo]; got [alpha beta delta echo]"),
+				WantStderr: "BranchUsageOrder includes an incorrect set of branches: expected [alpha beta charlie delta echo]; got [alpha beta delta echo]\n",
 			},
 		},
 		{
@@ -675,7 +724,8 @@ func TestUsage(t *testing.T) {
 					Branches:         branchesForSorting,
 					Default:          SerialNodes(Description("the default command"), Arg[int]("INT_ARG", "an integer"), ListArg[string]("STRINGS", "unltd strings", 1, commondels.UnboundedList)),
 				},
-				WantErr: fmt.Errorf("BranchUsageOrder includes an incorrect set of branches: expected [alpha beta charlie delta echo]; got [alpha beta beta charlie delta echo]"),
+				WantErr:    fmt.Errorf("BranchUsageOrder includes an incorrect set of branches: expected [alpha beta charlie delta echo]; got [alpha beta beta charlie delta echo]"),
+				WantStderr: "BranchUsageOrder includes an incorrect set of branches: expected [alpha beta charlie delta echo]; got [alpha beta beta charlie delta echo]\n",
 			},
 		},
 		{
@@ -686,7 +736,8 @@ func TestUsage(t *testing.T) {
 					Branches:         branchesForSorting,
 					Default:          SerialNodes(Description("the default command"), Arg[int]("INT_ARG", "an integer"), ListArg[string]("STRINGS", "unltd strings", 1, commondels.UnboundedList)),
 				},
-				WantErr: fmt.Errorf("BranchUsageOrder includes an incorrect set of branches: expected [alpha beta charlie delta echo]; got [alpha beta beta delta echo]"),
+				WantErr:    fmt.Errorf("BranchUsageOrder includes an incorrect set of branches: expected [alpha beta charlie delta echo]; got [alpha beta beta delta echo]"),
+				WantStderr: "BranchUsageOrder includes an incorrect set of branches: expected [alpha beta charlie delta echo]; got [alpha beta beta delta echo]\n",
 			},
 		},
 		{
@@ -723,8 +774,9 @@ func TestUsage(t *testing.T) {
 					"  STRINGS: unltd strings",
 					"",
 					"Symbols:",
-					BranchDescWithoutDefault,
-					BranchDescWithDefault,
+					constants.BranchDescWithoutDefault,
+					constants.BranchDescWithDefault,
+					"",
 				}, "\n"),
 			},
 		},
@@ -742,6 +794,7 @@ func TestUsage(t *testing.T) {
 					"Flags:",
 					"  [d] debug: debug stuff",
 					"  [n] new: new files",
+					"",
 				}, "\n"),
 			},
 		},
@@ -757,7 +810,15 @@ func TestUsage(t *testing.T) {
 					"",
 					"Flags:",
 					"  [s] str: strings",
+					"",
 				}, "\n"),
+			},
+			ietc: &spycommandtest.ExecuteTestCase{
+				WantInput: &spycommandtest.SpyInput{
+					Args: []*spycommand.InputArg{
+						{Value: "--str"},
+					},
+				},
 			},
 		},
 		{
@@ -772,7 +833,16 @@ func TestUsage(t *testing.T) {
 					"",
 					"Flags:",
 					"  [s] str: strings",
+					"",
 				}, "\n"),
+			},
+			ietc: &spycommandtest.ExecuteTestCase{
+				WantInput: &spycommandtest.SpyInput{
+					Args: []*spycommand.InputArg{
+						{Value: "--str"},
+						{Value: "un"},
+					},
+				},
 			},
 		},
 		{
@@ -782,7 +852,16 @@ func TestUsage(t *testing.T) {
 				Node: SerialNodes(FlagProcessor(
 					Flag[string]("str", 's', "desc", Contains("t")),
 				)),
-				WantErr: fmt.Errorf(`validation for "str" failed: [Contains] value doesn't contain substring "t"`),
+				WantErr:    fmt.Errorf(`validation for "str" failed: [Contains] value doesn't contain substring "t"`),
+				WantStderr: "validation for \"str\" failed: [Contains] value doesn't contain substring \"t\"\n",
+			},
+			ietc: &spycommandtest.ExecuteTestCase{
+				WantInput: &spycommandtest.SpyInput{
+					Args: []*spycommand.InputArg{
+						{Value: "--str"},
+						{Value: "nope"},
+					},
+				},
 			},
 		},
 		{
@@ -797,7 +876,17 @@ func TestUsage(t *testing.T) {
 					"",
 					"Flags:",
 					"  [s] str: strings",
+					"",
 				}, "\n"),
+			},
+			ietc: &spycommandtest.ExecuteTestCase{
+				WantInput: &spycommandtest.SpyInput{
+					Args: []*spycommand.InputArg{
+						{Value: "--str"},
+						{Value: "un"},
+						{Value: "deux"},
+					},
+				},
 			},
 		},
 		{
@@ -812,7 +901,18 @@ func TestUsage(t *testing.T) {
 					"",
 					"Flags:",
 					"  [s] str: strings",
+					"",
 				}, "\n"),
+			},
+			ietc: &spycommandtest.ExecuteTestCase{
+				WantInput: &spycommandtest.SpyInput{
+					Args: []*spycommand.InputArg{
+						{Value: "--str"},
+						{Value: "un"},
+						{Value: "deux"},
+						{Value: "trois"},
+					},
+				},
 			},
 		},
 		{
@@ -827,7 +927,20 @@ func TestUsage(t *testing.T) {
 					"",
 					"Flags:",
 					"  [s] str: strings",
+					"",
 				}, "\n"),
+			},
+			ietc: &spycommandtest.ExecuteTestCase{
+				WantInput: &spycommandtest.SpyInput{
+					Args: []*spycommand.InputArg{
+						{Value: "--str"},
+						{Value: "un"},
+						{Value: "deux"},
+						{Value: "trois"},
+						{Value: "quatre"},
+					},
+					Remaining: []int{4},
+				},
 			},
 		},
 		{
@@ -849,6 +962,7 @@ func TestUsage(t *testing.T) {
 					"Flags:",
 					"  [d] debug: debug stuff",
 					"  [n] new: new files",
+					"",
 				}, "\n"),
 			},
 		},
@@ -871,6 +985,7 @@ func TestUsage(t *testing.T) {
 					"Flags:",
 					"  [b] first: un",
 					"  [a] second: deux",
+					"",
 				}, "\n"),
 			},
 		},
@@ -921,6 +1036,7 @@ func TestUsage(t *testing.T) {
 					"      fourth: quatre",
 					"  [2] second: deux",
 					"  [3] third: trois",
+					"",
 				}, "\n"),
 			},
 		},
@@ -934,6 +1050,7 @@ func TestUsage(t *testing.T) {
 					"Arguments:",
 					"  KEY: test desc",
 					"  VALUE: test desc",
+					"",
 				}, "\n"),
 			},
 		},
@@ -947,6 +1064,7 @@ func TestUsage(t *testing.T) {
 					"Arguments:",
 					"  KEY: test desc",
 					"  VALUE: test desc",
+					"",
 				}, "\n"),
 			},
 		},
@@ -960,6 +1078,7 @@ func TestUsage(t *testing.T) {
 					"Arguments:",
 					"  KEY: test desc",
 					"  VALUE: test desc",
+					"",
 				}, "\n"),
 			},
 		},
@@ -973,6 +1092,7 @@ func TestUsage(t *testing.T) {
 					"Arguments:",
 					"  KEY: test desc",
 					"  VALUE: test desc",
+					"",
 				}, "\n"),
 			},
 		},
@@ -993,6 +1113,7 @@ func TestUsage(t *testing.T) {
 					"",
 					"Symbols:",
 					"  ghi: List breaker",
+					"",
 				}, "\n"),
 			},
 		},
@@ -1009,6 +1130,7 @@ func TestUsage(t *testing.T) {
 					"",
 					"Symbols:",
 					"  ;: List breaker",
+					"",
 				}, "\n"),
 			},
 		},
@@ -1024,6 +1146,7 @@ func TestUsage(t *testing.T) {
 					"",
 					"Symbols:",
 					"  ;: List breaker",
+					"",
 				}, "\n"),
 			},
 		},
@@ -1068,6 +1191,7 @@ func TestUsage(t *testing.T) {
 						"Flags:",
 						"  [m] m1: un",
 						"      m2: deux",
+						"",
 					}, "\n"),
 				}
 			}(),
@@ -1075,7 +1199,15 @@ func TestUsage(t *testing.T) {
 		/* Useful comment for commenting out tests */
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			executeTest(t, test.etc, nil)
+			if test.etc == nil {
+				test.etc = &commandtest.ExecuteTestCase{}
+			}
+			test.etc.Args = append(test.etc.Args, "--help")
+			if test.ietc == nil {
+				test.ietc = &spycommandtest.ExecuteTestCase{}
+			}
+			test.ietc.TestInput = true
+			executeTest(t, test.etc, test.ietc)
 		})
 	}
 }

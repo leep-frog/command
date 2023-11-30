@@ -22,16 +22,19 @@ import (
 
 // executeTest is a wrapper around spycommandertest.ExecuteTest
 func executeTest(t *testing.T, etc *commandtest.ExecuteTestCase, ietc *spycommandtest.ExecuteTestCase) {
-	spycommandertest.ExecuteTest(t, etc, ietc, spycommander.Execute, spycommander.Use)
+	t.Helper()
+	spycommandertest.ExecuteTest(t, etc, ietc, spycommander.Execute, spycommander.Use, SetupArg, SerialNodes)
 }
 
 // changeTest is a wrapper around spycommandertest.ChangeTest
 func changeTest[T commandtest.Changeable](t *testing.T, want, original T, opts ...cmp.Option) {
+	t.Helper()
 	spycommandertest.ChangeTest[T](t, want, original, opts...)
 }
 
 // autocompleteTest is a wrapper around spycommandertest.CompleteTest
 func autocompleteTest(t *testing.T, ctc *commandtest.CompleteTestCase, ictc *spycommandtest.CompleteTestCase) {
+	t.Helper()
 	spycommandertest.CompleteTest(t, ctc, ictc, spycommander.Autocomplete)
 }
 
@@ -58,6 +61,9 @@ func TestExecute(t *testing.T) {
 	rcNode := RuntimeCaller()
 	StubRuntimeCaller(t, "some/file/path", false)
 	rcErrNode := RuntimeCaller()
+
+	_ = rcNode
+	_ = rcErrNode
 
 	envArgProcessor := EnvArg("ENV_VAR")
 	optionalString := OptionalArg[string]("opt-arg", "desc")
@@ -788,15 +794,15 @@ func TestExecute(t *testing.T) {
 			name: "FileCompleter with Complexecute properly completes a single directory",
 			etc: &commandtest.ExecuteTestCase{
 				Node: SerialNodes(FileArgument("s", testDesc, Complexecute[string]())),
-				Args: []string{"do"},
+				Args: []string{"te"},
 				WantData: &commondels.Data{Values: map[string]interface{}{
-					"s": testutil.FilepathAbs(t, "docs"),
+					"s": testutil.FilepathAbs(t, "testdata"),
 				}},
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
-						{Value: testutil.FilepathAbs(t, "docs")},
+						{Value: testutil.FilepathAbs(t, "testdata")},
 					},
 				},
 			},
@@ -805,15 +811,15 @@ func TestExecute(t *testing.T) {
 			name: "FileCompleter with Complexecute properly completes a full directory",
 			etc: &commandtest.ExecuteTestCase{
 				Node: SerialNodes(FileArgument("s", testDesc, Complexecute[string]())),
-				Args: []string{"docs"},
+				Args: []string{"testdata"},
 				WantData: &commondels.Data{Values: map[string]interface{}{
-					"s": testutil.FilepathAbs(t, "docs"),
+					"s": testutil.FilepathAbs(t, "testdata"),
 				}},
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
-						{Value: testutil.FilepathAbs(t, "docs")},
+						{Value: testutil.FilepathAbs(t, "testdata")},
 					},
 				},
 			},
@@ -822,15 +828,15 @@ func TestExecute(t *testing.T) {
 			name: "FileCompleter with Complexecute properly completes a full directory with trailing slash",
 			etc: &commandtest.ExecuteTestCase{
 				Node: SerialNodes(FileArgument("s", testDesc, Complexecute[string]())),
-				Args: []string{fmt.Sprintf("docs%c", filepath.Separator)},
+				Args: []string{fmt.Sprintf("testdata%c", filepath.Separator)},
 				WantData: &commondels.Data{Values: map[string]interface{}{
-					"s": testutil.FilepathAbs(t, "docs"),
+					"s": testutil.FilepathAbs(t, "testdata"),
 				}},
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
-						{Value: testutil.FilepathAbs(t, "docs")},
+						{Value: testutil.FilepathAbs(t, "testdata")},
 					},
 				},
 			},
@@ -839,15 +845,15 @@ func TestExecute(t *testing.T) {
 			name: "FileCompleter with Complexecute properly completes nested directory",
 			etc: &commandtest.ExecuteTestCase{
 				Node: SerialNodes(FileArgument("s", testDesc, Complexecute[string]())),
-				Args: []string{filepath.Join("sourcerer", "c")},
+				Args: []string{filepath.Join("testdata", "c")},
 				WantData: &commondels.Data{Values: map[string]interface{}{
-					"s": testutil.FilepathAbs(t, "sourcerer", "cmd"),
+					"s": testutil.FilepathAbs(t, "testdata", "cases"),
 				}},
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
-						{Value: testutil.FilepathAbs(t, "sourcerer", "cmd")},
+						{Value: testutil.FilepathAbs(t, "testdata", "cases")},
 					},
 				},
 			},
@@ -856,15 +862,15 @@ func TestExecute(t *testing.T) {
 			name: "FileCompleter with Complexecute properly completes nested file",
 			etc: &commandtest.ExecuteTestCase{
 				Node: SerialNodes(FileArgument("s", testDesc, Complexecute[string]())),
-				Args: []string{filepath.Join("sourcerer", "cmd", "test_goleeper", "m")},
+				Args: []string{filepath.Join("testdata", "cases", "o")},
 				WantData: &commondels.Data{Values: map[string]interface{}{
-					"s": testutil.FilepathAbs(t, "sourcerer", "cmd", "test_goleeper", "main.go"),
+					"s": testutil.FilepathAbs(t, "testdata", "cases", "other.txt"),
 				}},
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
-						{Value: testutil.FilepathAbs(t, "sourcerer", "cmd", "test_goleeper", "main.go")},
+						{Value: testutil.FilepathAbs(t, "testdata", "cases", "other.txt")},
 					},
 				},
 			},
@@ -891,14 +897,14 @@ func TestExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				OS:         &commandtest.FakeOS{},
 				Node:       SerialNodes(FileArgument("s", testDesc, Complexecute[string]())),
-				Args:       []string{"ca"},
-				WantStderr: filepath.FromSlash("[Complexecute] requires exactly one suggestion to be returned for \"s\", got 3: [cache.go cache/ cache_test.go]\n"),
-				WantErr:    fmt.Errorf(filepath.FromSlash("[Complexecute] requires exactly one suggestion to be returned for \"s\", got 3: [cache.go cache/ cache_test.go]")),
+				Args:       []string{"t"},
+				WantStderr: filepath.FromSlash("[Complexecute] requires exactly one suggestion to be returned for \"s\", got 2: [testdata/ transformer.go]\n"),
+				WantErr:    fmt.Errorf(filepath.FromSlash("[Complexecute] requires exactly one suggestion to be returned for \"s\", got 2: [testdata/ transformer.go]")),
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
-						{Value: "ca"},
+						{Value: "t"},
 					},
 				},
 			},
@@ -921,7 +927,7 @@ func TestExecute(t *testing.T) {
 		},
 		{
 			name:    "FileCompleter with Complexecute and ExcludePwd",
-			osGetwd: testutil.FilepathAbs(t, "."),
+			osGetwd: testutil.FilepathAbs(t, "cotest"),
 			etc: &commandtest.ExecuteTestCase{
 				Node: SerialNodes(
 					Arg[string]("s", testDesc, Complexecute[string](), &FileCompleter[string]{
@@ -929,15 +935,15 @@ func TestExecute(t *testing.T) {
 						IgnoreFiles: true,
 					}),
 				),
-				Args: []string{"col"},
+				Args: []string{"c"},
 				WantData: &commondels.Data{Values: map[string]interface{}{
-					"s": filepath.FromSlash("color/"),
+					"s": filepath.FromSlash("co2test/"),
 				}},
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
-						{Value: filepath.FromSlash("color/")},
+						{Value: filepath.FromSlash("co2test/")},
 					},
 				},
 			},
@@ -1604,7 +1610,7 @@ func TestExecute(t *testing.T) {
 				WantStderr: strings.Join([]string{
 					`Unprocessed extra args: [sir]`,
 					``,
-					`======= Command commondels.Usage =======`,
+					`======= Command Usage =======`,
 					`sl [ sl ]`,
 					``,
 					`Arguments:`,
@@ -1843,7 +1849,7 @@ func TestExecute(t *testing.T) {
 				WantErr: fmt.Errorf("Unprocessed extra args: [6]"),
 				WantStderr: strings.Join([]string{`Unprocessed extra args: [6]`,
 					``,
-					`======= Command commondels.Usage =======`,
+					`======= Command Usage =======`,
 					`il il s fl [ fl fl ]`,
 					``,
 					`Arguments:`,
@@ -2859,16 +2865,16 @@ func TestExecute(t *testing.T) {
 				Node: &SimpleNode{
 					Processor: ListArg[string]("SL", testDesc, 1, 3, ListifyValidatorOption(IsDir())),
 				},
-				Args: []string{"testdata", "cache"},
+				Args: []string{"testdata", "co2test"},
 				WantData: &commondels.Data{Values: map[string]interface{}{
-					"SL": []string{"testdata", "cache"},
+					"SL": []string{"testdata", "co2test"},
 				}},
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
 						{Value: "testdata"},
-						{Value: "cache"},
+						{Value: "co2test"},
 					},
 				},
 			},
@@ -2879,18 +2885,18 @@ func TestExecute(t *testing.T) {
 				Node: &SimpleNode{
 					Processor: ListArg[string]("SL", testDesc, 1, 3, ListifyValidatorOption(IsDir())),
 				},
-				Args: []string{"testdata", "cash"},
+				Args: []string{"testdata", "co3test"},
 				WantData: &commondels.Data{Values: map[string]interface{}{
-					"SL": []string{"testdata", "cash"},
+					"SL": []string{"testdata", "co3test"},
 				}},
-				WantErr:    fmt.Errorf(`validation for "SL" failed: [IsDir] file "cash" does not exist`),
-				WantStderr: "validation for \"SL\" failed: [IsDir] file \"cash\" does not exist\n",
+				WantErr:    fmt.Errorf(`validation for "SL" failed: [IsDir] file "co3test" does not exist`),
+				WantStderr: "validation for \"SL\" failed: [IsDir] file \"co3test\" does not exist\n",
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
 						{Value: "testdata"},
-						{Value: "cash"},
+						{Value: "co3test"},
 					},
 				},
 			},
@@ -6262,7 +6268,7 @@ func TestExecute(t *testing.T) {
 				WantStderr: strings.Join([]string{
 					`Unprocessed extra args: [k2 200]`,
 					``,
-					`======= Command commondels.Usage =======`,
+					`======= Command Usage =======`,
 					`KEY VALUE`,
 					``,
 					`Arguments:`,
@@ -6674,7 +6680,7 @@ func TestExecute(t *testing.T) {
 				WantStderr: strings.Join([]string{
 					`Unprocessed extra args: [other stuff]`,
 					``,
-					`======= Command commondels.Usage =======`,
+					`======= Command Usage =======`,
 					`[ SLL ... ] | { [ SLL ... ] | [ SLL ... ] | }`,
 					``,
 					`Arguments:`,
@@ -7247,6 +7253,13 @@ func TestExecute(t *testing.T) {
 					}, "\n"),
 				}
 			}(),
+			ietc: &spycommandtest.ExecuteTestCase{
+				WantInput: &spycommandtest.SpyInput{
+					Args: []*spycommand.InputArg{
+						{Value: "three"},
+					},
+				},
+			},
 		},
 		{
 			name: "MapArg.Get, GetOrDefault, and GetKey works with custom type",
@@ -7436,13 +7449,6 @@ func TestExecute(t *testing.T) {
 					"",
 				}, "\n"),
 			},
-			ietc: &spycommandtest.ExecuteTestCase{
-				WantInput: &spycommandtest.SpyInput{
-					Args: []*spycommand.InputArg{
-						{Value: "three"},
-					},
-				},
-			},
 		},
 		// Panic tests
 		{
@@ -7459,6 +7465,7 @@ func TestExecute(t *testing.T) {
 		/* Useful for commenting out tests. */
 	} {
 		t.Run(test.name, func(t *testing.T) {
+			fmt.Println("===========", test.name)
 			stubs.StubGetwd(t, test.osGetwd, test.osGetwdErr)
 
 			if test.etc == nil {
@@ -8682,58 +8689,40 @@ func TestComplete(t *testing.T) {
 				}},
 				Want: &commondels.Autocompletion{
 					Suggestions: []string{
-						filepath.FromSlash(".git/"),
+						filepath.FromSlash(".dot-dir/"),
 						filepath.FromSlash("_testdata_symlink/"),
 						"arg.go",
 						"autocomplete.go",
-						"bool_operator.go",
 						"branch_node.go",
 						"cache.go",
-						filepath.FromSlash("cache/"),
 						"cache_test.go",
-						filepath.FromSlash("color/"),
-						"command.go",
-						filepath.FromSlash("commander/"),
+						filepath.FromSlash("co2test/"),
 						"commandtest.go",
 						"completer.go",
 						"completer_test.go",
 						"conditional.go",
-						"data.go",
-						"data_test.go",
+						filepath.FromSlash("cotest/"),
 						"data_transformer.go",
 						"debug.go",
 						"description.go",
-						filepath.FromSlash("docs/"),
 						"echo.go",
 						"error.go",
-						filepath.FromSlash("example-cli/"),
 						"execute.go",
 						"execute_test.go",
 						"executor.go",
+						"fake.mod",
+						"fake.sum",
 						"file_functions.go",
 						"file_functions.txt",
 						"flag.go",
-						"float_operator.go",
 						"get_processor.go",
-						filepath.FromSlash("glog/"),
-						"go.mod",
-						"go.sum",
-						"input.go",
-						"input_test.go",
-						"int_operator.go",
-						"int_operator_test.go",
-						filepath.FromSlash("internal/"),
-						"LICENSE",
 						"list_breaker.go",
 						"map_arg.go",
 						"menu.go",
 						"node_repeater.go",
 						"option.go",
 						"osenv.go",
-						"output.go",
-						"output_test.go",
 						"prompt.go",
-						"README.md",
 						"runtime_caller.go",
 						"runtime_caller_test.go",
 						"serial_nodes.go",
@@ -8744,13 +8733,11 @@ func TestComplete(t *testing.T) {
 						"shortcut_test.go",
 						"simple_node.go",
 						"simple_processor.go",
-						filepath.FromSlash("sourcerer/"),
 						"static_cli.go",
 						"static_cli_test.go",
 						"stdin.go",
-						"string_operator.go",
 						filepath.FromSlash("testdata/"),
-						"usage.go",
+						"transformer.go",
 						"usage_test.go",
 						"validator.go",
 						"working_directory.go",
@@ -8774,18 +8761,12 @@ func TestComplete(t *testing.T) {
 				}},
 				Want: &commondels.Autocompletion{
 					Suggestions: []string{
-						filepath.FromSlash(".git/"),
+						filepath.FromSlash(".dot-dir/"),
 						filepath.FromSlash("_testdata_symlink/"),
-						filepath.FromSlash("cache/"),
-						filepath.FromSlash("color/"),
-						filepath.FromSlash("commander/"),
-						filepath.FromSlash("docs/"),
-						filepath.FromSlash("example-cli/"),
-						filepath.FromSlash("glog/"),
-						"go.mod",
-						"go.sum",
-						filepath.FromSlash("internal/"),
-						filepath.FromSlash("sourcerer/"),
+						filepath.FromSlash("co2test/"),
+						filepath.FromSlash("cotest/"),
+						"fake.mod",
+						"fake.sum",
 						filepath.FromSlash("testdata/"),
 						" ",
 					},
@@ -10107,7 +10088,7 @@ func TestPanics(t *testing.T) {
 			f: func() {
 				Arg[*SimpleNode]("n", testDesc).Execute(commondels.NewInput([]string{"abc"}, nil), commondels.NewFakeOutput(), &commondels.Data{}, &commondels.ExecuteData{})
 			},
-			want: "no operator defined for type *command.SimpleNode",
+			want: "no operator defined for type *commander.SimpleNode",
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {

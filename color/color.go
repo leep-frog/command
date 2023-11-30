@@ -8,7 +8,7 @@ package color
 import (
 	"strconv"
 
-	"github.com/leep-frog/command"
+	"github.com/leep-frog/command/commondels"
 )
 
 // Format is a format (bold, color, etc.) that can be applied to output.
@@ -33,7 +33,7 @@ const (
 var (
 	// TputCommand is a function that applies a format via tput. It is a variable
 	// so it can be stubbed out by tests in other packages.
-	TputCommand = func(output command.Output, args ...interface{}) error {
+	TputCommand = func(output commondels.Output, args ...interface{}) error {
 		return nil
 		// TODO:
 		// import github.com/codeskyblue/go-sh
@@ -47,7 +47,7 @@ func newF(args ...string) *Format {
 }
 
 // Apply applies the `Format`.
-func (f *Format) Apply(output command.Output) {
+func (f *Format) Apply(output commondels.Output) {
 	var i []interface{}
 	for _, j := range *f {
 		i = append(i, j)

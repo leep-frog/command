@@ -7,6 +7,7 @@ import (
 
 	"github.com/leep-frog/command/commandtest"
 	"github.com/leep-frog/command/commondels"
+	"github.com/leep-frog/command/internal/spycommand"
 	"github.com/leep-frog/command/internal/spycommandertest"
 	"github.com/leep-frog/command/internal/spycommandtest"
 )
@@ -26,6 +27,13 @@ func TestExecute(t *testing.T) {
 				Args:       []string{"abc"},
 				WantStderr: "Unprocessed extra args: [abc]\n",
 				WantErr:    fmt.Errorf("Unprocessed extra args: [abc]"),
+			},
+			ietc: &spycommandtest.ExecuteTestCase{
+				WantInput: &spycommandtest.SpyInput{
+					Args: []*spycommand.InputArg{
+						{Value: "abc"},
+					},
+				},
 			},
 		},
 		{
@@ -423,6 +431,13 @@ func TestExecute(t *testing.T) {
 					"",
 				}, "\n"),
 			},
+			ietc: &spycommandtest.ExecuteTestCase{
+				WantInput: &spycommandtest.SpyInput{
+					Args: []*spycommand.InputArg{
+						{Value: "extra-arg"},
+					},
+				},
+			},
 		},
 		{
 			name: "Extra args results in usage error with usage doc -- with usage error",
@@ -459,11 +474,18 @@ func TestExecute(t *testing.T) {
 					"",
 				}, "\n"),
 			},
+			ietc: &spycommandtest.ExecuteTestCase{
+				WantInput: &spycommandtest.SpyInput{
+					Args: []*spycommand.InputArg{
+						{Value: "extra-arg"},
+					},
+				},
+			},
 		},
 		/* Useful for commenting out tests. */
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			spycommandertest.ExecuteTest(t, test.etc, test.ietc, Execute, Use)
+			spycommandertest.ExecuteTest(t, test.etc, test.ietc, Execute, Use, nil, serialNodes)
 		})
 	}
 }

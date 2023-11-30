@@ -11,8 +11,12 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/leep-frog/command"
 	"github.com/leep-frog/command/cache"
+	"github.com/leep-frog/command/commander"
+	"github.com/leep-frog/command/commandertest"
+	"github.com/leep-frog/command/commandtest"
+	"github.com/leep-frog/command/commondels"
+	"github.com/leep-frog/command/internal/testutil"
 )
 
 const (
@@ -26,10 +30,10 @@ const (
 
 // TODO: Merge test methods
 func TestGenerateBinaryNode(t *testing.T) {
-	command.StubValue(t, &runtimeCaller, func(int) (uintptr, string, int, bool) {
+	testutil.StubValue(t, &runtimeCaller, func(int) (uintptr, string, int, bool) {
 		return 0, "/fake/source/location", 0, true
 	})
-	fakeGoExecutableFilePath := command.TempFile(t, "leepFrogSourcererTest")
+	fakeGoExecutableFilePath := testutil.TempFile(t, "leepFrogSourcererTest")
 	exeBaseName := filepath.Base(fakeGoExecutableFilePath.Name())
 
 	type osCheck struct {
@@ -1214,17 +1218,17 @@ func TestGenerateBinaryNode(t *testing.T) {
 					oschk = &osCheck{}
 				}
 
-				command.StubValue(t, &CurrentOS, curOS)
-				command.StubValue(t, &commandStat, func(name string) (os.FileInfo, error) {
+				testutil.StubValue(t, &CurrentOS, curOS)
+				testutil.StubValue(t, &commandStat, func(name string) (os.FileInfo, error) {
 					return test.commandStatFile, test.commandStatErr
 				})
 
 				if test.ignoreNosort {
-					command.StubValue(t, &NosortString, func() string { return "" })
+					testutil.StubValue(t, &NosortString, func() string { return "" })
 				}
-				o := command.NewFakeOutput()
+				o := commondels.NewFakeOutput()
 				err := source(test.runCLI, test.clis, fakeGoExecutableFilePath.Name(), test.args, o, test.opts...)
-				command.CmpError(t, "source(...)", test.wantErr, err)
+				testutil.CmpError(t, "source(...)", test.wantErr, err)
 				o.Close()
 
 				// append to add a final newline (which should *always* be present).
@@ -1264,14 +1268,14 @@ func TestSourcerer(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create tmp file: %v", err)
 	}
-	fakeGoExecutableFilePath := command.TempFile(t, "leepFrogSourcerer-test")
+	fakeGoExecutableFilePath := testutil.TempFile(t, "leepFrogSourcerer-test")
 
 	someCLI := &testCLI{
 		name: "basic",
-		processors: []command.Processor{
-			command.Arg[string]("S", "desc"),
-			command.ListArg[int]("IS", "ints", 2, 0),
-			command.ListArg[float64]("FS", "floats", 0, command.UnboundedList),
+		processors: []commondels.Processor{
+			commander.Arg[string]("S", "desc"),
+			commander.ListArg[int]("IS", "ints", 2, 0),
+			commander.ListArg[float64]("FS", "floats", 0, commondels.UnboundedList),
 		},
 	}
 
@@ -1298,6 +1302,7 @@ func TestSourcerer(t *testing.T) {
 			uuids     []string
 			cacheErrs []error
 			runCLI    bool
+			wantPanic any
 			osCheck   *osCheck
 			osChecks  map[string]*osCheck
 			// We need to tsub osReadFile errors to be consistent across systems
@@ -1366,7 +1371,7 @@ func TestSourcerer(t *testing.T) {
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
-						f: func(tc *testCLI, i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
+						f: func(tc *testCLI, i *commondels.Input, o commondels.Output, d *commondels.Data, ed *commondels.ExecuteData) error {
 							var keys []string
 							for k := range d.Values {
 								keys = append(keys, k)
@@ -1390,7 +1395,7 @@ func TestSourcerer(t *testing.T) {
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
-						f: func(tc *testCLI, i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
+						f: func(tc *testCLI, i *commondels.Input, o commondels.Output, d *commondels.Data, ed *commondels.ExecuteData) error {
 							return o.Stderrln("oops")
 						},
 					},
@@ -1406,10 +1411,10 @@ func TestSourcerer(t *testing.T) {
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
-						processors: []command.Processor{
-							command.ListArg[string]("sl", "test desc", 1, 4),
+						processors: []commondels.Processor{
+							commander.ListArg[string]("sl", "test desc", 1, 4),
 						},
-						f: func(tc *testCLI, i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
+						f: func(tc *testCLI, i *commondels.Input, o commondels.Output, d *commondels.Data, ed *commondels.ExecuteData) error {
 							var keys []string
 							for k := range d.Values {
 								keys = append(keys, k)
@@ -1436,7 +1441,7 @@ func TestSourcerer(t *testing.T) {
 				clis: []CLI{
 					&testCLI{
 						name:       "basic",
-						processors: []command.Processor{command.ListArg[string]("SL", "test", 1, 1)},
+						processors: []commondels.Processor{commander.ListArg[string]("SL", "test", 1, 1)},
 					},
 				},
 				args: []string{"execute", "basic", fakeFile, "un", "deux", "trois", "quatre"},
@@ -1461,7 +1466,7 @@ func TestSourcerer(t *testing.T) {
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
-						f: func(tc *testCLI, i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
+						f: func(tc *testCLI, i *commondels.Input, o commondels.Output, d *commondels.Data, ed *commondels.ExecuteData) error {
 							tc.Stuff = "things"
 							tc.changed = true
 							return nil
@@ -1482,7 +1487,7 @@ func TestSourcerer(t *testing.T) {
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
-						f: func(tc *testCLI, i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
+						f: func(tc *testCLI, i *commondels.Input, o commondels.Output, d *commondels.Data, ed *commondels.ExecuteData) error {
 							tc.Stuff = "things"
 							tc.changed = true
 							return o.Stderrln("whoops")
@@ -1507,7 +1512,7 @@ func TestSourcerer(t *testing.T) {
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
-						f: func(tc *testCLI, i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
+						f: func(tc *testCLI, i *commondels.Input, o commondels.Output, d *commondels.Data, ed *commondels.ExecuteData) error {
 							tc.MapStuff = selfRef
 							tc.changed = true
 							return nil
@@ -1532,7 +1537,7 @@ func TestSourcerer(t *testing.T) {
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
-						f: func(tc *testCLI, i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
+						f: func(tc *testCLI, i *commondels.Input, o commondels.Output, d *commondels.Data, ed *commondels.ExecuteData) error {
 							tc.MapStuff = selfRef
 							tc.changed = true
 							return nil
@@ -1561,7 +1566,7 @@ func TestSourcerer(t *testing.T) {
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
-						f: func(tc *testCLI, i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
+						f: func(tc *testCLI, i *commondels.Input, o commondels.Output, d *commondels.Data, ed *commondels.ExecuteData) error {
 							ed.Executable = []string{"echo", "hello", "there"}
 							return nil
 						},
@@ -1581,7 +1586,7 @@ func TestSourcerer(t *testing.T) {
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
-						f: func(tc *testCLI, i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
+						f: func(tc *testCLI, i *commondels.Input, o commondels.Output, d *commondels.Data, ed *commondels.ExecuteData) error {
 							ed.Executable = []string{"echo", "hello", "there"}
 							ed.FunctionWrap = true
 							return nil
@@ -1622,14 +1627,14 @@ func TestSourcerer(t *testing.T) {
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
-						processors: []command.Processor{
-							command.FlagProcessor(
-								command.Flag[string]("strFlag", 's', "strDesc"),
-								command.Flag[string]("strFlag2", '2', "str2Desc"),
-								command.BoolFlag("boolFlag", 'b', "bDesc"),
-								command.BoolFlag("bool2Flag", command.FlagNoShortName, "b2Desc"),
+						processors: []commondels.Processor{
+							commander.FlagProcessor(
+								commander.Flag[string]("strFlag", 's', "strDesc"),
+								commander.Flag[string]("strFlag2", '2', "str2Desc"),
+								commander.BoolFlag("boolFlag", 'b', "bDesc"),
+								commander.BoolFlag("bool2Flag", commander.FlagNoShortName, "b2Desc"),
 							),
-							command.ListArg[string]("SL", "test", 2, 1),
+							commander.ListArg[string]("SL", "test", 2, 1),
 						},
 					},
 				},
@@ -1656,14 +1661,14 @@ func TestSourcerer(t *testing.T) {
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
-						processors: []command.Processor{
-							command.FlagProcessor(
-								command.Flag[string]("strFlag", 's', "strDesc"),
-								command.Flag[string]("strFlag2", '2', "str2Desc"),
-								command.BoolFlag("boolFlag", 'b', "bDesc"),
-								command.BoolFlag("bool2Flag", command.FlagNoShortName, "b2Desc"),
+						processors: []commondels.Processor{
+							commander.FlagProcessor(
+								commander.Flag[string]("strFlag", 's', "strDesc"),
+								commander.Flag[string]("strFlag2", '2', "str2Desc"),
+								commander.BoolFlag("boolFlag", 'b', "bDesc"),
+								commander.BoolFlag("bool2Flag", commander.FlagNoShortName, "b2Desc"),
 							),
-							command.ListArg[string]("SL", "test", 2, 1),
+							commander.ListArg[string]("SL", "test", 2, 1),
 						},
 					},
 				},
@@ -1690,14 +1695,14 @@ func TestSourcerer(t *testing.T) {
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
-						processors: []command.Processor{
-							command.FlagProcessor(
-								command.Flag[string]("strFlag", 's', "strDesc"),
-								command.Flag[string]("strFlag2", '2', "str2Desc"),
-								command.BoolFlag("boolFlag", 'b', "bDesc"),
-								command.BoolFlag("bool2Flag", command.FlagNoShortName, "b2Desc"),
+						processors: []commondels.Processor{
+							commander.FlagProcessor(
+								commander.Flag[string]("strFlag", 's', "strDesc"),
+								commander.Flag[string]("strFlag2", '2', "str2Desc"),
+								commander.BoolFlag("boolFlag", 'b', "bDesc"),
+								commander.BoolFlag("bool2Flag", commander.FlagNoShortName, "b2Desc"),
 							),
-							command.ListArg[string]("SL", "test", 2, 1),
+							commander.ListArg[string]("SL", "test", 2, 1),
 						},
 					},
 				},
@@ -1721,14 +1726,14 @@ func TestSourcerer(t *testing.T) {
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
-						processors: []command.Processor{
-							command.FlagProcessor(
-								command.Flag[string]("strFlag", 's', "strDesc"),
-								command.Flag[string]("strFlag2", '2', "str2Desc"),
-								command.BoolFlag("boolFlag", 'b', "bDesc"),
-								command.BoolFlag("bool2Flag", command.FlagNoShortName, "b2Desc"),
+						processors: []commondels.Processor{
+							commander.FlagProcessor(
+								commander.Flag[string]("strFlag", 's', "strDesc"),
+								commander.Flag[string]("strFlag2", '2', "str2Desc"),
+								commander.BoolFlag("boolFlag", 'b', "bDesc"),
+								commander.BoolFlag("bool2Flag", commander.FlagNoShortName, "b2Desc"),
 							),
-							command.ListArg[string]("SL", "test", 2, 1),
+							commander.ListArg[string]("SL", "test", 2, 1),
 						},
 					},
 				},
@@ -1752,14 +1757,14 @@ func TestSourcerer(t *testing.T) {
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
-						processors: []command.Processor{
-							command.FlagProcessor(
-								command.Flag[string]("strFlag", 's', "strDesc"),
-								command.Flag[string]("strFlag2", '2', "str2Desc"),
-								command.BoolFlag("boolFlag", 'b', "bDesc"),
-								command.BoolFlag("bool2Flag", command.FlagNoShortName, "b2Desc"),
+						processors: []commondels.Processor{
+							commander.FlagProcessor(
+								commander.Flag[string]("strFlag", 's', "strDesc"),
+								commander.Flag[string]("strFlag2", '2', "str2Desc"),
+								commander.BoolFlag("boolFlag", 'b', "bDesc"),
+								commander.BoolFlag("bool2Flag", commander.FlagNoShortName, "b2Desc"),
 							),
-							command.ListArg[string]("SL", "test", 2, 1),
+							commander.ListArg[string]("SL", "test", 2, 1),
 						},
 					},
 				},
@@ -1786,7 +1791,7 @@ func TestSourcerer(t *testing.T) {
 					&testCLI{
 						name:  "basic",
 						setup: []string{"his", "story"},
-						f: func(tc *testCLI, i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
+						f: func(tc *testCLI, i *commondels.Input, o commondels.Output, d *commondels.Data, ed *commondels.ExecuteData) error {
 							o.Stdoutf("stdout: %v\n", d.Values)
 							return nil
 						},
@@ -1808,7 +1813,7 @@ func TestSourcerer(t *testing.T) {
 					&testCLI{
 						name:  "basic",
 						setup: []string{"his", "story"},
-						f: func(tc *testCLI, i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
+						f: func(tc *testCLI, i *commondels.Input, o commondels.Output, d *commondels.Data, ed *commondels.ExecuteData) error {
 							o.Stdoutf("stdout: %v\n", d.Values)
 							return nil
 						},
@@ -1824,7 +1829,7 @@ func TestSourcerer(t *testing.T) {
 				osCheck: &osCheck{
 					wantStdout: []string{
 						// false is for data.complexecute
-						fmt.Sprintf(`stdout: map[SETUP_FILE:%s]`, command.FilepathAbs(t, "sourcerer.go")),
+						fmt.Sprintf(`stdout: map[SETUP_FILE:%s]`, testutil.FilepathAbs(t, "sourcerer.go")),
 					},
 				},
 			},
@@ -1834,10 +1839,10 @@ func TestSourcerer(t *testing.T) {
 					&testCLI{
 						name:  "basic",
 						setup: []string{"his", "story"},
-						processors: []command.Processor{
-							command.Arg[int]("i", "desc"),
+						processors: []commondels.Processor{
+							commander.Arg[int]("i", "desc"),
 						},
-						f: func(tc *testCLI, i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
+						f: func(tc *testCLI, i *commondels.Input, o commondels.Output, d *commondels.Data, ed *commondels.ExecuteData) error {
 							o.Stdoutf("stdout: %v\n", d.Values)
 							return nil
 						},
@@ -1854,7 +1859,7 @@ func TestSourcerer(t *testing.T) {
 				osCheck: &osCheck{
 					wantStdout: []string{
 						// false is for data.complexecute
-						fmt.Sprintf(`stdout: map[SETUP_FILE:%s i:5]`, command.FilepathAbs(t, "sourcerer.go")),
+						fmt.Sprintf(`stdout: map[SETUP_FILE:%s i:5]`, testutil.FilepathAbs(t, "sourcerer.go")),
 					},
 				},
 			},
@@ -2075,8 +2080,8 @@ func TestSourcerer(t *testing.T) {
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
-						processors: []command.Processor{
-							command.Arg[string]("s", "desc", command.SimpleCompleter[string]("alpha", "bravo", "charlie")),
+						processors: []commondels.Processor{
+							commander.Arg[string]("s", "desc", commander.SimpleCompleter[string]("alpha", "bravo", "charlie")),
 						},
 					},
 				},
@@ -2094,8 +2099,8 @@ func TestSourcerer(t *testing.T) {
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
-						processors: []command.Processor{
-							command.Arg[string]("s", "desc", command.SimpleCompleter[string]()),
+						processors: []commondels.Processor{
+							commander.Arg[string]("s", "desc", commander.SimpleCompleter[string]()),
 						},
 					},
 				},
@@ -2109,9 +2114,9 @@ func TestSourcerer(t *testing.T) {
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
-						processors: []command.Processor{
-							command.Arg[string]("s", "desc", command.CompleterFromFunc[string](func(s string, d *command.Data) (*command.Completion, error) {
-								return &command.Completion{
+						processors: []commondels.Processor{
+							commander.Arg[string]("s", "desc", commander.CompleterFromFunc[string](func(s string, d *commondels.Data) (*commondels.Completion, error) {
+								return &commondels.Completion{
 									Suggestions:         []string{"howdy"},
 									SpacelessCompletion: true,
 								}, nil
@@ -2139,9 +2144,9 @@ func TestSourcerer(t *testing.T) {
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
-						processors: []command.Processor{
-							command.Arg[string]("s", "desc", command.CompleterFromFunc[string](func(s string, d *command.Data) (*command.Completion, error) {
-								return &command.Completion{
+						processors: []commondels.Processor{
+							commander.Arg[string]("s", "desc", commander.CompleterFromFunc[string](func(s string, d *commondels.Data) (*commondels.Completion, error) {
+								return &commondels.Completion{
 									Suggestions:         []string{"howdy"},
 									SpacelessCompletion: false,
 								}, nil
@@ -2168,8 +2173,8 @@ func TestSourcerer(t *testing.T) {
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
-						processors: []command.Processor{
-							command.ListArg[string]("s", "desc", 0, command.UnboundedList, command.SimpleCompleter[[]string]("alpha", "bravo", "charlie")),
+						processors: []commondels.Processor{
+							commander.ListArg[string]("s", "desc", 0, commondels.UnboundedList, commander.SimpleCompleter[[]string]("alpha", "bravo", "charlie")),
 						},
 					},
 				},
@@ -2187,11 +2192,11 @@ func TestSourcerer(t *testing.T) {
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
-						processors: []command.Processor{
-							command.ListArg[string]()
-							command.Arg[string]("s", "desc",
-								&command.Completer[string]{
-									Fetcher: command.SimpleFetcher(func(t string, d *command.Data) (*command.Completion, error) {
+						processors: []commondels.Processor{
+							commander.ListArg[string]()
+							commander.Arg[string]("s", "desc",
+								&commander.Completer[string]{
+									Fetcher: commander.SimpleFetcher(func(t string, d *commondels.Data) (*commondels.Completion, error) {
 										return nil, nil
 									}),
 								},
@@ -2211,8 +2216,8 @@ func TestSourcerer(t *testing.T) {
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
-						processors: []command.Processor{
-							command.Arg[string]("s", "desc", command.SimpleCompleter[string]("alpha", "bravo", "charlie", "brown", "baker")),
+						processors: []commondels.Processor{
+							commander.Arg[string]("s", "desc", commander.SimpleCompleter[string]("alpha", "bravo", "charlie", "brown", "baker")),
 						},
 					},
 				},
@@ -2233,8 +2238,8 @@ func TestSourcerer(t *testing.T) {
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
-						processors: []command.Processor{
-							command.Arg[string]("s", "desc", command.SimpleCompleter[string]("alpha", "bravo", "charlie", "brown", "baker")),
+						processors: []commondels.Processor{
+							commander.Arg[string]("s", "desc", commander.SimpleCompleter[string]("alpha", "bravo", "charlie", "brown", "baker")),
 						},
 					},
 				},
@@ -2255,8 +2260,8 @@ func TestSourcerer(t *testing.T) {
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
-						processors: []command.Processor{
-							command.Arg[string]("s", "desc", command.SimpleCompleter[string]("alpha", "bravo", "charlie", "brown", "baker")),
+						processors: []commondels.Processor{
+							commander.Arg[string]("s", "desc", commander.SimpleCompleter[string]("alpha", "bravo", "charlie", "brown", "baker")),
 						},
 					},
 				},
@@ -2275,9 +2280,9 @@ func TestSourcerer(t *testing.T) {
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
-						processors: []command.Processor{
-							command.Arg[string]("s", "desc", command.SimpleCompleter[string]("alpha", "bravo", "charlie", "brown", "baker")),
-							command.Arg[string]("z", "desz", command.SimpleCompleter[string]("un", "deux", "trois")),
+						processors: []commondels.Processor{
+							commander.Arg[string]("s", "desc", commander.SimpleCompleter[string]("alpha", "bravo", "charlie", "brown", "baker")),
+							commander.Arg[string]("z", "desz", commander.SimpleCompleter[string]("un", "deux", "trois")),
 						},
 					},
 				},
@@ -2295,9 +2300,9 @@ func TestSourcerer(t *testing.T) {
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
-						processors: []command.Processor{
-							command.Arg[string]("s", "desc", command.SimpleCompleter[string]("alpha", "bravo", "charlie", "brown", "baker")),
-							command.Arg[string]("z", "desz", command.SimpleCompleter[string]("un", "deux", "trois")),
+						processors: []commondels.Processor{
+							commander.Arg[string]("s", "desc", commander.SimpleCompleter[string]("alpha", "bravo", "charlie", "brown", "baker")),
+							commander.Arg[string]("z", "desz", commander.SimpleCompleter[string]("un", "deux", "trois")),
 						},
 					},
 				},
@@ -2320,9 +2325,9 @@ func TestSourcerer(t *testing.T) {
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
-						processors: []command.Processor{
-							command.Arg[string]("s", "desc", command.SimpleCompleter[string]("alpha", "bravo", "charlie", "brown", "baker")),
-							command.Arg[string]("z", "desz", command.SimpleCompleter[string]("un", "deux", "trois")),
+						processors: []commondels.Processor{
+							commander.Arg[string]("s", "desc", commander.SimpleCompleter[string]("alpha", "bravo", "charlie", "brown", "baker")),
+							commander.Arg[string]("z", "desz", commander.SimpleCompleter[string]("un", "deux", "trois")),
 						},
 					},
 				},
@@ -2345,9 +2350,9 @@ func TestSourcerer(t *testing.T) {
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
-						processors: []command.Processor{
-							command.Arg[string]("s", "desc", command.SimpleCompleter[string]("alpha", "bravo", "charlie", "brown", "baker")),
-							command.Arg[string]("z", "desz", command.SimpleCompleter[string]("un", "deux", "trois")),
+						processors: []commondels.Processor{
+							commander.Arg[string]("s", "desc", commander.SimpleCompleter[string]("alpha", "bravo", "charlie", "brown", "baker")),
+							commander.Arg[string]("z", "desz", commander.SimpleCompleter[string]("un", "deux", "trois")),
 						},
 					},
 				},
@@ -2374,9 +2379,9 @@ func TestSourcerer(t *testing.T) {
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
-						processors: []command.Processor{
-							command.Arg[string]("s", "desc", command.SimpleCompleter[string]("alpha", "bravo", "charlie", "brown", "baker")),
-							command.Arg[string]("z", "desz", command.SimpleCompleter[string]("un", "deux", "trois")),
+						processors: []commondels.Processor{
+							commander.Arg[string]("s", "desc", commander.SimpleCompleter[string]("alpha", "bravo", "charlie", "brown", "baker")),
+							commander.Arg[string]("z", "desz", commander.SimpleCompleter[string]("un", "deux", "trois")),
 						},
 					},
 				},
@@ -2403,9 +2408,9 @@ func TestSourcerer(t *testing.T) {
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
-						processors: []command.Processor{
-							command.Arg[string]("s", "desc", command.SimpleCompleter[string]("c alpha", "c bravo", "c charlie", "cheese", "baker")),
-							command.Arg[string]("z", "desz", command.SimpleCompleter[string]("un", "deux", "trois")),
+						processors: []commondels.Processor{
+							commander.Arg[string]("s", "desc", commander.SimpleCompleter[string]("c alpha", "c bravo", "c charlie", "cheese", "baker")),
+							commander.Arg[string]("z", "desz", commander.SimpleCompleter[string]("un", "deux", "trois")),
 						},
 					},
 				},
@@ -2432,9 +2437,9 @@ func TestSourcerer(t *testing.T) {
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
-						processors: []command.Processor{
-							command.Arg[string]("s", "desc", command.SimpleCompleter[string]("c alpha", "c bravo", "c charlie", "brown", "baker")),
-							command.Arg[string]("z", "desz", command.SimpleCompleter[string]("un", "deux", "trois")),
+						processors: []commondels.Processor{
+							commander.Arg[string]("s", "desc", commander.SimpleCompleter[string]("c alpha", "c bravo", "c charlie", "brown", "baker")),
+							commander.Arg[string]("z", "desz", commander.SimpleCompleter[string]("un", "deux", "trois")),
 						},
 					},
 				},
@@ -2443,116 +2448,7 @@ func TestSourcerer(t *testing.T) {
 					wantStdout: []string{""},
 				},
 			},
-			// Usage tests
-			{
-				name: "usage requires cli name",
-				args: []string{"usage"},
-				osCheck: &osCheck{
-					wantStderr: []string{
-						`Argument "CLI" requires at least 1 argument, got 0`,
-					},
-					wantErr: fmt.Errorf(`Argument "CLI" requires at least 1 argument, got 0`),
-				},
-			},
-			{
-				name: "usage handles too many args with no errors",
-				args: []string{"usage", "uec", "b", "un", "deux"},
-				clis: []CLI{&usageErrCLI{}},
-				osCheck: &osCheck{
-					wantStdout: []string{""},
-				},
-			},
-			{
-				name: "usage handles too many args with flags",
-				args: []string{"usage", "basic", "b", "un", "deux", "--sf", "hey"},
-				clis: []CLI{&testCLI{
-					name: "basic",
-					processors: []command.Processor{command.FlagProcessor(
-						command.BoolFlag("bf", 'b', "desc"),
-						command.Flag[string]("sf", 's', "desc string"),
-					)},
-				}},
-				osCheck: &osCheck{
-					wantStdout: []string{
-						"--bf|-b --sf|-s",
-						"",
-						"Flags:",
-						"  [b] bf: desc",
-						"  [s] sf: desc string",
-					},
-				},
-			},
-			{
-				name: "usage prints command's usage",
-				clis: []CLI{
-					&testCLI{
-						name: "basic",
-						processors: []command.Processor{
-							command.Arg[string]("S", "desc"),
-							command.ListArg[int]("IS", "ints", 2, 0),
-							command.ListArg[float64]("FS", "floats", 0, command.UnboundedList),
-						},
-					},
-				},
-				args: []string{"usage", someCLI.name},
-				osCheck: &osCheck{
-					wantStdout: []string{strings.Join([]string{
-						"S IS IS [ FS ... ]",
-						"",
-						"Arguments:",
-						"  FS: floats",
-						"  IS: ints",
-						"  S: desc",
-						"",
-					}, "\n")},
-					noStdoutNewline: true,
-				},
-			},
-			{
-				name: "usage handles non-usage error",
-				clis: []CLI{
-					&testCLI{
-						name: "basic",
-						processors: []command.Processor{
-							command.Arg[string]("S", "desc", command.Contains("ABC")),
-						},
-					},
-				},
-				args: []string{"usage", someCLI.name, "DEF"},
-				osCheck: &osCheck{
-					wantErr: fmt.Errorf(`validation for "S" failed: [Contains] value doesn't contain substring "ABC"`),
-					wantStderr: []string{
-						`validation for "S" failed: [Contains] value doesn't contain substring "ABC"`,
-					},
-				},
-			},
 			// Builtin command tests
-			{
-				name: "builtin usage doesn't work with provided CLIs",
-				clis: []CLI{someCLI},
-				args: []string{"builtin", "usage", someCLI.name},
-				osCheck: &osCheck{
-					wantStderr: []string{
-						"validation for \"CLI\" failed: [MapArg] key (basic) is not in map; expected one of [aliaser gg goleep leep_debug sourcerer]",
-					},
-					wantErr:         fmt.Errorf("validation for \"CLI\" failed: [MapArg] key (basic) is not in map; expected one of [aliaser gg goleep leep_debug sourcerer]"),
-					noStdoutNewline: true,
-				},
-			},
-			{
-				name: "builtin usage works with builtin CLIs",
-				clis: []CLI{someCLI},
-				args: []string{"builtin", "usage", "gg"},
-				osCheck: &osCheck{
-					wantStdout: []string{
-						"gg updates go packages from the github.com/leep-frog repository",
-						"PACKAGE [ PACKAGE ... ]",
-						"",
-						"Arguments:",
-						"  PACKAGE: Package name",
-					},
-				},
-			},
 			{
 				name: "builtin execute doesn't work with provided CLIs",
 				clis: []CLI{someCLI},
@@ -2777,8 +2673,8 @@ func TestSourcerer(t *testing.T) {
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
-						processors: []command.Processor{
-							command.ListArg[string]("SS", "desc", 0, command.UnboundedList, command.SimpleCompleter[[]string]("abc", "def", "ghi")),
+						processors: []commondels.Processor{
+							commander.ListArg[string]("SS", "desc", 0, commondels.UnboundedList, commander.SimpleCompleter[[]string]("abc", "def", "ghi")),
 						},
 					},
 				},
@@ -2797,8 +2693,8 @@ func TestSourcerer(t *testing.T) {
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
-						processors: []command.Processor{
-							command.ListArg[string]("SS", "desc", 0, command.UnboundedList, command.SimpleDistinctCompleter[[]string]("abc", "def", "ghi")),
+						processors: []commondels.Processor{
+							commander.ListArg[string]("SS", "desc", 0, commondels.UnboundedList, commander.SimpleDistinctCompleter[[]string]("abc", "def", "ghi")),
 						},
 					},
 				},
@@ -2822,13 +2718,13 @@ func TestSourcerer(t *testing.T) {
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
-						processors: []command.Processor{
-							command.FlagProcessor(
-								command.BoolFlag("b", 'b', "B desc"),
-								command.Flag[int]("count", command.FlagNoShortName, "Cnt desc"),
+						processors: []commondels.Processor{
+							commander.FlagProcessor(
+								commander.BoolFlag("b", 'b', "B desc"),
+								commander.Flag[int]("count", commander.FlagNoShortName, "Cnt desc"),
 							),
-							command.ListArg[string]("SS", "desc", 0, command.UnboundedList),
-							&command.ExecutorProcessor{func(o command.Output, d *command.Data) error {
+							commander.ListArg[string]("SS", "desc", 0, commondels.UnboundedList),
+							&commander.ExecutorProcessor{func(o commondels.Output, d *commondels.Data) error {
 								o.Stdoutln(d.Values)
 								return nil
 							}},
@@ -2848,13 +2744,13 @@ func TestSourcerer(t *testing.T) {
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
-						processors: []command.Processor{
-							command.FlagProcessor(
-								command.BoolFlag("b", 'b', "B desc"),
-								command.Flag[int]("count", command.FlagNoShortName, "Cnt desc"),
+						processors: []commondels.Processor{
+							commander.FlagProcessor(
+								commander.BoolFlag("b", 'b', "B desc"),
+								commander.Flag[int]("count", commander.FlagNoShortName, "Cnt desc"),
 							),
-							command.ListArg[string]("SS", "desc", 0, 3),
-							&command.ExecutorProcessor{func(o command.Output, d *command.Data) error {
+							commander.ListArg[string]("SS", "desc", 0, 3),
+							&commander.ExecutorProcessor{func(o commondels.Output, d *commondels.Data) error {
 								o.Stdoutln(d.Values)
 								return nil
 							}},
@@ -2885,13 +2781,13 @@ func TestSourcerer(t *testing.T) {
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
-						processors: []command.Processor{
-							command.FlagProcessor(
-								command.BoolFlag("b", 'b', "B desc"),
-								command.Flag[int]("count", command.FlagNoShortName, "Cnt desc"),
+						processors: []commondels.Processor{
+							commander.FlagProcessor(
+								commander.BoolFlag("b", 'b', "B desc"),
+								commander.Flag[int]("count", commander.FlagNoShortName, "Cnt desc"),
 							),
-							command.ListArg[string]("SS", "desc", 0, 3),
-							&command.ExecutorProcessor{func(o command.Output, d *command.Data) error {
+							commander.ListArg[string]("SS", "desc", 0, 3),
+							&commander.ExecutorProcessor{func(o commondels.Output, d *commondels.Data) error {
 								o.Stdoutln(d.Values)
 								return nil
 							}},
@@ -2918,13 +2814,13 @@ func TestSourcerer(t *testing.T) {
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
-						processors: []command.Processor{
-							command.FlagProcessor(
-								command.BoolFlag("b", 'b', "B desc"),
-								command.Flag[int]("count", command.FlagNoShortName, "Cnt desc"),
+						processors: []commondels.Processor{
+							commander.FlagProcessor(
+								commander.BoolFlag("b", 'b', "B desc"),
+								commander.Flag[int]("count", commander.FlagNoShortName, "Cnt desc"),
 							),
-							command.ListArg[string]("SS", "desc", 0, 3),
-							&command.ExecutorProcessor{func(o command.Output, d *command.Data) error {
+							commander.ListArg[string]("SS", "desc", 0, 3),
+							&commander.ExecutorProcessor{func(o commondels.Output, d *commondels.Data) error {
 								o.Stdoutln(d.Values)
 								return nil
 							}},
@@ -2963,8 +2859,8 @@ func TestSourcerer(t *testing.T) {
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
-						processors: []command.Processor{
-							command.SimpleProcessor(func(i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
+						processors: []commondels.Processor{
+							commander.SimpleProcessor(func(i *commondels.Input, o commondels.Output, d *commondels.Data, ed *commondels.ExecuteData) error {
 								ed.Executable = append(ed.Executable, "echo hi")
 								return nil
 							}, nil),
@@ -2985,10 +2881,10 @@ func TestSourcerer(t *testing.T) {
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
-						processors: []command.Processor{
+						processors: []commondels.Processor{
 							ExecutableFileGetProcessor(),
 						},
-						f: func(tc *testCLI, i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
+						f: func(tc *testCLI, i *commondels.Input, o commondels.Output, d *commondels.Data, ed *commondels.ExecuteData) error {
 							o.Stdoutln(d.Values)
 							return nil
 						},
@@ -3005,24 +2901,24 @@ func TestSourcerer(t *testing.T) {
 			t.Run(fmt.Sprintf("[%s] %s", curOS.Name(), test.name), func(t *testing.T) {
 				StubExecutableFile(t, "osArgs-at-zero")
 				if test.osReadFileStub {
-					command.StubValue(t, &osReadFile, func(b string) ([]byte, error) {
+					testutil.StubValue(t, &osReadFile, func(b string) ([]byte, error) {
 						return []byte(test.osReadFileResp), test.osReadFileErr
 					})
 				}
-				command.StubValue(t, &CurrentOS, curOS)
+				testutil.StubValue(t, &CurrentOS, curOS)
 				oschk, ok := test.osChecks[curOS.Name()]
 				if !ok {
 					oschk = test.osCheck
 				}
 
 				var uuidIdx int
-				command.StubValue(t, &getUuid, func() string {
+				testutil.StubValue(t, &getUuid, func() string {
 					r := test.uuids[uuidIdx]
 					uuidIdx++
 					return r
 				})
 
-				command.StubValue(t, &runtimeCaller, func(n int) (uintptr, string, int, bool) {
+				testutil.StubValue(t, &runtimeCaller, func(n int) (uintptr, string, int, bool) {
 					return 0, "/fake/source/location/main.go", 0, !oschk.runtimeCallerMiss
 				})
 
@@ -3030,7 +2926,7 @@ func TestSourcerer(t *testing.T) {
 					t.Fatalf("failed to clear file: %v", err)
 				}
 
-				fake := command.TempFile(t, "leepFrogSourcerer-test")
+				fake := testutil.TempFile(t, "leepFrogSourcerer-test")
 				for i, s := range test.args {
 					if s == fakeFile {
 						test.args[i] = fake.Name()
@@ -3038,7 +2934,7 @@ func TestSourcerer(t *testing.T) {
 				}
 
 				if len(test.fakeInputFileContents) > 0 {
-					fakeInput := command.TempFile(t, "leepFrogSourcerer-test")
+					fakeInput := testutil.TempFile(t, "leepFrogSourcerer-test")
 					for i, s := range test.args {
 						if s == fakeInputFile {
 							test.args[i] = fakeInput.Name()
@@ -3051,7 +2947,7 @@ func TestSourcerer(t *testing.T) {
 
 				// Stub out real cache
 				cash := cache.NewTestCache(t)
-				command.StubValue(t, &getCache, func() (*cache.Cache, error) {
+				testutil.StubValue(t, &getCache, func() (*cache.Cache, error) {
 					if len(test.cacheErrs) == 0 {
 						return cash, nil
 					}
@@ -3061,9 +2957,11 @@ func TestSourcerer(t *testing.T) {
 				})
 
 				// Run source command
-				o := command.NewFakeOutput()
-				err = source(test.runCLI, test.clis, fakeGoExecutableFilePath.Name(), test.args, o)
-				command.CmpError(t, fmt.Sprintf("source(%v)", test.args), oschk.wantErr, err)
+				o := commondels.NewFakeOutput()
+				err = testutil.CmpPanic(t, "source()", func() error {
+					return source(test.runCLI, test.clis, fakeGoExecutableFilePath.Name(), test.args, o)
+				}, test.wantPanic)
+				testutil.CmpError(t, fmt.Sprintf("source(%v)", test.args), oschk.wantErr, err)
 				o.Close()
 
 				// Verify executeData file contains expected contents
@@ -3120,8 +3018,8 @@ func TestSourcerer(t *testing.T) {
 
 type testCLI struct {
 	name       string
-	processors []command.Processor
-	f          func(*testCLI, *command.Input, command.Output, *command.Data, *command.ExecuteData) error
+	processors []commondels.Processor
+	f          func(*testCLI, *commondels.Input, commondels.Output, *commondels.Data, *commondels.ExecuteData) error
 	changed    bool
 	setup      []string
 	// Used for json checking
@@ -3134,8 +3032,8 @@ func (tc *testCLI) Name() string {
 }
 
 func (tc *testCLI) UnmarshalJSON([]byte) error { return nil }
-func (tc *testCLI) Node() command.Node {
-	return command.SerialNodes(append(tc.processors, command.SimpleProcessor(func(i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
+func (tc *testCLI) Node() commondels.Node {
+	return commander.SerialNodes(append(tc.processors, commander.SimpleProcessor(func(i *commondels.Input, o commondels.Output, d *commondels.Data, ed *commondels.ExecuteData) error {
 		if tc.f != nil {
 			return tc.f(tc, i, o, d, ed)
 		}
@@ -3157,11 +3055,11 @@ func (uec *usageErrCLI) Name() string {
 }
 
 func (uec *usageErrCLI) UnmarshalJSON([]byte) error { return nil }
-func (uec *usageErrCLI) Node() command.Node {
-	return &command.BranchNode{
-		Branches: map[string]command.Node{
-			"a": command.SerialNodes(command.ListArg[string]("A_SL", "str list", 0, 1)),
-			"b": command.SerialNodes(command.ListArg[string]("B_SL", "str list", 1, 0)),
+func (uec *usageErrCLI) Node() commondels.Node {
+	return &commander.BranchNode{
+		Branches: map[string]commondels.Node{
+			"a": commander.SerialNodes(commander.ListArg[string]("A_SL", "str list", 0, 1)),
+			"b": commander.SerialNodes(commander.ListArg[string]("B_SL", "str list", 1, 0)),
 		},
 		DefaultCompletion: true,
 	}
@@ -3183,7 +3081,7 @@ func uecUsage() string {
 		`  B_SL: str list`,
 		``,
 		`Symbols:`,
-		command.BranchDescWithoutDefault,
+		commandertest.BranchDescWithoutDefault,
 		``,
 	}, "\n")
 }
@@ -3204,33 +3102,33 @@ var (
 )
 
 type badUsage struct {
-	command.Processor
+	commondels.Processor
 	err error
 }
 
-func (b *badUsage) Usage(*command.Input, *command.Data, *command.Usage) error {
+func (b *badUsage) Usage(*commondels.Input, *commondels.Data, *commondels.Usage) error {
 	return b.err
 }
 
-// This set of tests ensures that command.ChangeTest behaves the same as logic
+// This set of tests ensures that commander.ChangeTest behaves the same as logic
 // in sourcerer.go (specifically around saving a CLI regardless of error).
 func TestCommandSave(t *testing.T) {
 	for _, test := range []struct {
 		name string
-		etc  *command.ExecuteTestCase
+		etc  *commandtest.ExecuteTestCase
 		cli  *testCLI
 		want *testCLI
 	}{
 		{
 			name: "saves a CLI",
 			cli: &testCLI{
-				f: func(tc *testCLI, i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
+				f: func(tc *testCLI, i *commondels.Input, o commondels.Output, d *commondels.Data, ed *commondels.ExecuteData) error {
 					tc.Stuff = "new stuff"
 					tc.changed = true
 					return nil
 				},
 			},
-			etc: &command.ExecuteTestCase{},
+			etc: &commandtest.ExecuteTestCase{},
 			want: &testCLI{
 				Stuff: "new stuff",
 			},
@@ -3238,13 +3136,13 @@ func TestCommandSave(t *testing.T) {
 		{
 			name: "saves a CLI even when error",
 			cli: &testCLI{
-				f: func(tc *testCLI, i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
+				f: func(tc *testCLI, i *commondels.Input, o commondels.Output, d *commondels.Data, ed *commondels.ExecuteData) error {
 					tc.Stuff = "new stuff"
 					tc.changed = true
 					return o.Stderrln("whoops")
 				},
 			},
-			etc: &command.ExecuteTestCase{
+			etc: &commandtest.ExecuteTestCase{
 				WantStderr: "whoops\n",
 				WantErr:    fmt.Errorf("whoops"),
 			},
@@ -3255,19 +3153,19 @@ func TestCommandSave(t *testing.T) {
 		{
 			name: "doesn't save a non-changed CLI",
 			cli: &testCLI{
-				f: func(tc *testCLI, i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
+				f: func(tc *testCLI, i *commondels.Input, o commondels.Output, d *commondels.Data, ed *commondels.ExecuteData) error {
 					tc.Stuff = "new stuff"
 					tc.changed = false
 					return nil
 				},
 			},
-			etc: &command.ExecuteTestCase{},
+			etc: &commandtest.ExecuteTestCase{},
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			test.etc.Node = test.cli.Node()
-			command.ExecuteTest(t, test.etc)
-			command.ChangeTest(t, test.want, test.cli, cmpopts.IgnoreUnexported(testCLI{}))
+			commandertest.ExecuteTest(t, test.etc)
+			commandertest.ChangeTest(t, test.want, test.cli, cmpopts.IgnoreUnexported(testCLI{}))
 		})
 	}
 }

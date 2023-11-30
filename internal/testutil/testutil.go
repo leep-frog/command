@@ -42,6 +42,7 @@ func CmpPanic[T any](t *testing.T, funcString string, f func() T, want interface
 	t.Helper()
 
 	defer func() {
+		t.Helper()
 		Cmp(t, fmt.Sprintf("%s panicked with incorrect value", funcString), want, recover(), opts...)
 	}()
 
@@ -49,6 +50,7 @@ func CmpPanic[T any](t *testing.T, funcString string, f func() T, want interface
 }
 
 func TempFile(t *testing.T, pattern string) *os.File {
+	t.Helper()
 	tmp, err := os.CreateTemp("", pattern)
 	if err != nil {
 		t.Fatalf("failed to create temp file: %v", err)
@@ -75,6 +77,7 @@ func FilepathAbs(t *testing.T, s ...string) string {
 }
 
 func Write(t *testing.T, iow io.Writer, contents []string) {
+	t.Helper()
 	for _, c := range contents {
 		if _, err := bytes.NewBufferString(fmt.Sprintf("%s\n", c)).WriteTo(iow); err != nil {
 			t.Fatalf("failed to write buffer to io.Writer: %v", err)

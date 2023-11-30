@@ -11,7 +11,12 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/leep-frog/command"
+	"github.com/leep-frog/command/commander"
+	"github.com/leep-frog/command/commandertest"
+	"github.com/leep-frog/command/commandtest"
+	"github.com/leep-frog/command/commondels"
+	"github.com/leep-frog/command/internal/stubs"
+	"github.com/leep-frog/command/internal/testutil"
 )
 
 func TestCacheInitFunctions(t *testing.T) {
@@ -206,12 +211,12 @@ func TestCacheInitFunctions(t *testing.T) {
 		/* Useful for commenting out tests. */
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			command.StubEnv(t, test.env)
+			stubs.StubEnv(t, test.env)
 			for _, osOp := range test.osOps {
 				osOp.setup(t)
 			}
 			c, err := test.f()
-			command.CmpError(t, "", test.wantErr, err)
+			testutil.CmpError(t, "", test.wantErr, err)
 			if diff := cmp.Diff(test.want, c, cmpopts.IgnoreUnexported(Cache{})); diff != "" {
 				t.Errorf("Cache init produced incorrect cache (-want, +got):\n%s", diff)
 			}
@@ -254,10 +259,10 @@ func TestPut(t *testing.T) {
 
 			prefix := fmt.Sprintf("Put(%s, %s)", test.key, test.data)
 			err := c.Put(test.key, test.data)
-			command.CmpError(t, prefix, test.wantErr, err)
+			testutil.CmpError(t, prefix, test.wantErr, err)
 
 			stored, ok, err := c.Get(test.key)
-			command.CmpError(t, prefix, test.wantGetErr, err)
+			testutil.CmpError(t, prefix, test.wantGetErr, err)
 			if ok != test.wantGetOk {
 				t.Errorf("PutStruct(%s, %v) returned ok=%v; want %v", test.key, test.data, ok, test.wantGetOk)
 			}
@@ -300,7 +305,7 @@ func TestGet(t *testing.T) {
 
 			prefix := fmt.Sprintf("Get(%s)", test.key)
 			resp, ok, err := c.Get(test.key)
-			command.CmpError(t, prefix, test.wantErr, err)
+			testutil.CmpError(t, prefix, test.wantErr, err)
 
 			if ok != test.wantOk {
 				t.Errorf("Get(%s) returned ok=%v; want %v", test.key, ok, test.wantOk)
@@ -415,7 +420,7 @@ func TestExecute(t *testing.T) {
 		name          string
 		c             *Cache
 		puts          []*put
-		etc           *command.ExecuteTestCase
+		etc           *commandtest.ExecuteTestCase
 		osOps         []osOp
 		skipFileCheck bool
 		mkdirAllErr   error
@@ -425,7 +430,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "Requires branching arg",
 			c:    NewTestCache(t),
-			etc: &command.ExecuteTestCase{
+			etc: &commandtest.ExecuteTestCase{
 				WantErr:    fmt.Errorf("Branching argument must be one of [delete get list put setdir]"),
 				WantStderr: "Branching argument must be one of [delete get list put setdir]\n",
 			},
@@ -438,7 +443,7 @@ func TestExecute(t *testing.T) {
 			},
 			skipFileCheck: true,
 			mkdirAllErr:   fmt.Errorf("oops"),
-			etc: &command.ExecuteTestCase{
+			etc: &commandtest.ExecuteTestCase{
 				Args:       []string{"get", "here"},
 				WantStderr: fmt.Sprintf("failed to get file for key: failed to get cache directory: cache directory does not exist and could not be created: oops\n"),
 				WantErr:    fmt.Errorf("failed to get file for key: failed to get cache directory: cache directory does not exist and could not be created: oops"),
@@ -447,7 +452,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "Get requires key",
 			c:    NewTestCache(t),
-			etc: &command.ExecuteTestCase{
+			etc: &commandtest.ExecuteTestCase{
 				Args:       []string{"get"},
 				WantErr:    fmt.Errorf(`Argument "KEY" requires at least 1 argument, got 0`),
 				WantStderr: "Argument \"KEY\" requires at least 1 argument, got 0\n",
@@ -456,7 +461,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "Get requires valid key",
 			c:    NewTestCache(t),
-			etc: &command.ExecuteTestCase{
+			etc: &commandtest.ExecuteTestCase{
 				Args:       []string{"get", ".?,"},
 				WantErr:    fmt.Errorf(`validation for "KEY" failed: [MatchesRegex] value ".?," doesn't match regex %q`, keyRegex),
 				WantStderr: fmt.Sprintf("validation for \"KEY\" failed: [MatchesRegex] value \".?,\" doesn't match regex %q\n", keyRegex),
@@ -465,7 +470,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "Get missing key",
 			c:    NewTestCache(t),
-			etc: &command.ExecuteTestCase{
+			etc: &commandtest.ExecuteTestCase{
 				Args:       []string{"get", "uh"},
 				WantStderr: "key not found\n",
 			},
@@ -479,7 +484,7 @@ func TestExecute(t *testing.T) {
 					data: "hello\nthere",
 				},
 			},
-			etc: &command.ExecuteTestCase{
+			etc: &commandtest.ExecuteTestCase{
 				Args:       []string{"get", "here"},
 				WantStdout: "hello\nthere\n",
 			},
@@ -495,7 +500,7 @@ func TestExecute(t *testing.T) {
 			},
 			skipFileCheck: true,
 			mkdirAllErr:   fmt.Errorf("whoops"),
-			etc: &command.ExecuteTestCase{
+			etc: &commandtest.ExecuteTestCase{
 				Args:       []string{"put", "things", "here"},
 				WantStderr: fmt.Sprintf("failed to get file for key: failed to get cache directory: cache directory does not exist and could not be created: whoops\n"),
 				WantErr:    fmt.Errorf("failed to get file for key: failed to get cache directory: cache directory does not exist and could not be created: whoops"),
@@ -504,7 +509,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "Put requires key",
 			c:    NewTestCache(t),
-			etc: &command.ExecuteTestCase{
+			etc: &commandtest.ExecuteTestCase{
 				Args:       []string{"put"},
 				WantErr:    fmt.Errorf(`Argument "KEY" requires at least 1 argument, got 0`),
 				WantStderr: "Argument \"KEY\" requires at least 1 argument, got 0\n",
@@ -513,7 +518,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "Put requires valid key",
 			c:    NewTestCache(t),
-			etc: &command.ExecuteTestCase{
+			etc: &commandtest.ExecuteTestCase{
 				Args:       []string{"put", ".?,"},
 				WantErr:    fmt.Errorf(`validation for "KEY" failed: [MatchesRegex] value ".?," doesn't match regex %q`, keyRegex),
 				WantStderr: fmt.Sprintf("validation for \"KEY\" failed: [MatchesRegex] value \".?,\" doesn't match regex %q\n", keyRegex),
@@ -522,7 +527,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "Put requires data",
 			c:    NewTestCache(t),
-			etc: &command.ExecuteTestCase{
+			etc: &commandtest.ExecuteTestCase{
 				Args:       []string{"put", "things"},
 				WantErr:    fmt.Errorf(`Argument "DATA" requires at least 1 argument, got 0`),
 				WantStderr: "Argument \"DATA\" requires at least 1 argument, got 0\n",
@@ -531,7 +536,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "Put works",
 			c:    NewTestCache(t),
-			etc: &command.ExecuteTestCase{
+			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"put", "things", "better than", "you found them"},
 			},
 			want: map[string]string{
@@ -546,7 +551,7 @@ func TestExecute(t *testing.T) {
 				{"things", "worse"},
 				{"hello", "there"},
 			},
-			etc: &command.ExecuteTestCase{
+			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"put", "things", "better than", "you found them"},
 			},
 			want: map[string]string{
@@ -563,7 +568,7 @@ func TestExecute(t *testing.T) {
 			},
 			skipFileCheck: true,
 			mkdirAllErr:   fmt.Errorf("argh"),
-			etc: &command.ExecuteTestCase{
+			etc: &commandtest.ExecuteTestCase{
 				Args:       []string{"list"},
 				WantStderr: fmt.Sprintf("cache directory does not exist and could not be created: argh\n"),
 				WantErr:    fmt.Errorf("cache directory does not exist and could not be created: argh"),
@@ -572,7 +577,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "List works with no data",
 			c:    NewTestCache(t),
-			etc: &command.ExecuteTestCase{
+			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"list"},
 			},
 		},
@@ -584,7 +589,7 @@ func TestExecute(t *testing.T) {
 				{"things", "better than you found them"},
 				{"hello", "there"},
 			},
-			etc: &command.ExecuteTestCase{
+			etc: &commandtest.ExecuteTestCase{
 				Args:       []string{"list"},
 				WantStdout: "hello\nthings\nthis\n",
 			},
@@ -598,7 +603,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "Delete requires key",
 			c:    NewTestCache(t),
-			etc: &command.ExecuteTestCase{
+			etc: &commandtest.ExecuteTestCase{
 				Args:       []string{"delete"},
 				WantErr:    fmt.Errorf(`Argument "KEY" requires at least 1 argument, got 0`),
 				WantStderr: "Argument \"KEY\" requires at least 1 argument, got 0\n",
@@ -607,7 +612,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "Delete requires valid key",
 			c:    NewTestCache(t),
-			etc: &command.ExecuteTestCase{
+			etc: &commandtest.ExecuteTestCase{
 				Args:       []string{"delete", ".?,"},
 				WantErr:    fmt.Errorf(`validation for "KEY" failed: [MatchesRegex] value ".?," doesn't match regex %q`, keyRegex),
 				WantStderr: fmt.Sprintf("validation for \"KEY\" failed: [MatchesRegex] value \".?,\" doesn't match regex %q\n", keyRegex),
@@ -616,7 +621,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "Delete non-existant key",
 			c:    NewTestCache(t),
-			etc: &command.ExecuteTestCase{
+			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"delete", "uh"},
 			},
 		},
@@ -628,7 +633,7 @@ func TestExecute(t *testing.T) {
 				{"things", "worse than you found them"},
 				{"hello", "there"},
 			},
-			etc: &command.ExecuteTestCase{
+			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"delete", "things"},
 			},
 			want: map[string]string{
@@ -640,7 +645,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "setdir requires an argument",
 			c:    NewTestCache(t),
-			etc: &command.ExecuteTestCase{
+			etc: &commandtest.ExecuteTestCase{
 				Args:       []string{"setdir"},
 				WantErr:    fmt.Errorf(`Argument "DIR" requires at least 1 argument, got 0`),
 				WantStderr: "Argument \"DIR\" requires at least 1 argument, got 0\n",
@@ -649,29 +654,29 @@ func TestExecute(t *testing.T) {
 		{
 			name: "setdir requires an existing file",
 			c:    NewTestCache(t),
-			etc: &command.ExecuteTestCase{
+			etc: &commandtest.ExecuteTestCase{
 				Args:       []string{"setdir", "uh"},
-				WantErr:    fmt.Errorf("validation for \"DIR\" failed: [FileExists] file %q does not exist", command.FilepathAbs(t, "uh")),
-				WantStderr: fmt.Sprintf("validation for \"DIR\" failed: [FileExists] file %q does not exist\n", command.FilepathAbs(t, "uh")),
+				WantErr:    fmt.Errorf("validation for \"DIR\" failed: [FileExists] file %q does not exist", testutil.FilepathAbs(t, "uh")),
+				WantStderr: fmt.Sprintf("validation for \"DIR\" failed: [FileExists] file %q does not exist\n", testutil.FilepathAbs(t, "uh")),
 			},
 		},
 		{
 			name: "setdir doesn't allow files",
 			c:    NewTestCache(t),
-			etc: &command.ExecuteTestCase{
+			etc: &commandtest.ExecuteTestCase{
 				Args:       []string{"setdir", "cache.go"},
-				WantErr:    fmt.Errorf("validation for \"DIR\" failed: [IsDir] argument %q is a file", command.FilepathAbs(t, "cache.go")),
-				WantStderr: fmt.Sprintf("validation for \"DIR\" failed: [IsDir] argument %q is a file\n", command.FilepathAbs(t, "cache.go")),
+				WantErr:    fmt.Errorf("validation for \"DIR\" failed: [IsDir] argument %q is a file", testutil.FilepathAbs(t, "cache.go")),
+				WantStderr: fmt.Sprintf("validation for \"DIR\" failed: [IsDir] argument %q is a file\n", testutil.FilepathAbs(t, "cache.go")),
 			},
 		},
 		{
 			name: "setdir works",
 			c:    NewTestCache(t),
-			etc: &command.ExecuteTestCase{
+			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"setdir", "testing"},
 			},
 			wantC: &Cache{
-				Dir: command.FilepathAbs(t, "testing"),
+				Dir: testutil.FilepathAbs(t, "testing"),
 			},
 			want: map[string]string{
 				"empty.txt": "nothing to see here",
@@ -682,20 +687,20 @@ func TestExecute(t *testing.T) {
 			for _, osOp := range test.osOps {
 				osOp.setup(t)
 			}
-			command.StubValue(t, &osMkdirAll, func(string, fs.FileMode) error {
+			testutil.StubValue(t, &osMkdirAll, func(string, fs.FileMode) error {
 				return test.mkdirAllErr
 			})
 			for _, p := range test.puts {
 				Put(t, test.c, p.key, p.data)
 			}
 			if test.etc == nil {
-				test.etc = &command.ExecuteTestCase{}
+				test.etc = &commandtest.ExecuteTestCase{}
 			}
-			test.etc.OS = &command.FakeOS{}
+			test.etc.OS = &commandtest.FakeOS{}
 			test.etc.Node = test.c.Node()
 			test.etc.SkipDataCheck = true
-			command.ExecuteTest(t, test.etc)
-			command.ChangeTest(t, test.wantC, test.c, cmpopts.IgnoreUnexported(Cache{}))
+			commandertest.ExecuteTest(t, test.etc)
+			commandertest.ChangeTest(t, test.wantC, test.c, cmpopts.IgnoreUnexported(Cache{}))
 
 			if !test.skipFileCheck {
 				if diff := cmp.Diff(test.want, fullCache(t, test.c), cmpopts.EquateEmpty()); diff != "" {
@@ -718,13 +723,13 @@ func TestCompletion(t *testing.T) {
 	for _, test := range []struct {
 		name string
 		puts []*put
-		ctc  *command.CompleteTestCase
+		ctc  *commandtest.CompleteTestCase
 	}{
 		{
 			name: "completes branches",
-			ctc: &command.CompleteTestCase{
+			ctc: &commandtest.CompleteTestCase{
 				Args: "cmd ",
-				Want: &command.Autocompletion{
+				Want: &commondels.Autocompletion{
 					Suggestions: []string{"delete", "get", "list", "put", "setdir"},
 				},
 			},
@@ -732,9 +737,9 @@ func TestCompletion(t *testing.T) {
 		{
 			name: "completes for get",
 			puts: puts,
-			ctc: &command.CompleteTestCase{
+			ctc: &commandtest.CompleteTestCase{
 				Args: "cmd get ",
-				Want: &command.Autocompletion{
+				Want: &commondels.Autocompletion{
 					Suggestions: []string{"hello", "things", "this"},
 				},
 			},
@@ -742,9 +747,9 @@ func TestCompletion(t *testing.T) {
 		{
 			name: "completes for put",
 			puts: puts,
-			ctc: &command.CompleteTestCase{
+			ctc: &commandtest.CompleteTestCase{
 				Args: "cmd put t",
-				Want: &command.Autocompletion{
+				Want: &commondels.Autocompletion{
 					Suggestions: []string{"things", "this"},
 				},
 			},
@@ -752,9 +757,9 @@ func TestCompletion(t *testing.T) {
 		{
 			name: "completes for delete",
 			puts: puts,
-			ctc: &command.CompleteTestCase{
+			ctc: &commandtest.CompleteTestCase{
 				Args: "cmd put thin",
-				Want: &command.Autocompletion{
+				Want: &commondels.Autocompletion{
 					Suggestions: []string{"things"},
 				},
 			},
@@ -766,11 +771,11 @@ func TestCompletion(t *testing.T) {
 				Put(t, c, p.key, p.data)
 			}
 			if test.ctc == nil {
-				test.ctc = &command.CompleteTestCase{}
+				test.ctc = &commandtest.CompleteTestCase{}
 			}
 			test.ctc.Node = c.Node()
 			test.ctc.SkipDataCheck = true
-			command.CompleteTest(t, test.ctc)
+			commandertest.CompleteTest(t, test.ctc)
 		})
 	}
 }
@@ -956,7 +961,7 @@ func TestGetStruct(t *testing.T) {
 			if ok != test.wantOK {
 				t.Errorf("%s returned ok=%v; want %v", prefix, ok, test.wantOK)
 			}
-			command.CmpError(t, prefix, test.wantErr, err)
+			testutil.CmpError(t, prefix, test.wantErr, err)
 
 			if diff := cmp.Diff(test.wantObj, test.obj, cmp.AllowUnexported(Cache{})); diff != "" {
 				t.Errorf("%s returned object diff (-want, +got):\n%s", prefix, diff)
@@ -1067,10 +1072,10 @@ func TestPutStruct(t *testing.T) {
 			prefix := fmt.Sprintf("PutStruct(%s, %v)", test.key, test.data)
 
 			err := c.PutStruct(test.key, test.data)
-			command.CmpError(t, prefix, test.wantErr, err)
+			testutil.CmpError(t, prefix, test.wantErr, err)
 
 			stored, ok, err := c.Get(test.key)
-			command.CmpError(t, prefix, test.wantGetErr, err)
+			testutil.CmpError(t, prefix, test.wantGetErr, err)
 			if ok != test.wantGetOk {
 				t.Errorf("PutStruct(%s, %v) returned ok=%v; want %v", test.key, test.data, ok, test.wantGetOk)
 			}
@@ -1092,7 +1097,7 @@ func TestNewTestCacheWithData(t *testing.T) {
 		if ok != wantOK {
 			t.Errorf("Cache returned incorrect ok: got %v, want %v", ok, wantOK)
 		}
-		command.CmpError(t, "Cache", wantErr, err)
+		testutil.CmpError(t, "Cache", wantErr, err)
 	}
 
 	for _, test := range []struct {
@@ -1179,11 +1184,11 @@ func TestNewShell(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)
 	}
-	fos := &command.FakeOS{}
+	fos := &commandtest.FakeOS{}
 
 	for _, test := range []struct {
 		name         string
-		etc          *command.ExecuteTestCase
+		etc          *commandtest.ExecuteTestCase
 		mkdirTemp    string
 		mkdirTempErr error
 		mkdirAllErr  error
@@ -1191,11 +1196,11 @@ func TestNewShell(t *testing.T) {
 	}{
 		{
 			name: "returns existing shell cache",
-			etc: &command.ExecuteTestCase{
+			etc: &commandtest.ExecuteTestCase{
 				Env: map[string]string{
 					ShellOSEnvVar: dir,
 				},
-				WantData: &command.Data{Values: map[string]interface{}{
+				WantData: &commondels.Data{Values: map[string]interface{}{
 					ShellDataKey: &Cache{Dir: dir},
 				}},
 			},
@@ -1206,7 +1211,7 @@ func TestNewShell(t *testing.T) {
 		{
 			name:        "returns error if existing shell cache doesn't point to a directory and fail to create",
 			mkdirAllErr: fmt.Errorf("whoops"),
-			etc: &command.ExecuteTestCase{
+			etc: &commandtest.ExecuteTestCase{
 				Env: map[string]string{
 					ShellOSEnvVar: filepath.Join(dir, "bleh", "eh"),
 				},
@@ -1217,7 +1222,7 @@ func TestNewShell(t *testing.T) {
 		{
 			name:         "Error if fails to create temp dir",
 			mkdirTempErr: fmt.Errorf("oops"),
-			etc: &command.ExecuteTestCase{
+			etc: &commandtest.ExecuteTestCase{
 				WantErr:    fmt.Errorf("failed to create temporary directory: oops"),
 				WantStderr: "failed to create temporary directory: oops\n",
 			},
@@ -1228,31 +1233,31 @@ func TestNewShell(t *testing.T) {
 			wantCache: &Cache{
 				Dir: dir,
 			},
-			etc: &command.ExecuteTestCase{
-				WantExecuteData: &command.ExecuteData{
+			etc: &commandtest.ExecuteTestCase{
+				WantExecuteData: &commondels.ExecuteData{
 					Executable: []string{
 						fos.SetEnvVar(ShellOSEnvVar, dir),
 					},
 				},
-				WantData: &command.Data{Values: map[string]interface{}{
+				WantData: &commondels.Data{Values: map[string]interface{}{
 					ShellDataKey: &Cache{Dir: dir},
 				}},
 			},
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			command.StubValue(t, &osMkdirTemp, func(string, string) (string, error) {
+			testutil.StubValue(t, &osMkdirTemp, func(string, string) (string, error) {
 				return dir, test.mkdirTempErr
 			})
-			command.StubValue(t, &osMkdirAll, func(string, fs.FileMode) error {
+			testutil.StubValue(t, &osMkdirAll, func(string, fs.FileMode) error {
 				return test.mkdirAllErr
 			})
 
 			var c *Cache
-			d := &command.Data{}
-			test.etc.Node = command.SerialNodes(
+			d := &commondels.Data{}
+			test.etc.Node = commander.SerialNodes(
 				ShellProcessor(),
-				command.SuperSimpleProcessor(func(i *command.Input, data *command.Data) error {
+				commander.SuperSimpleProcessor(func(i *commondels.Input, data *commondels.Data) error {
 					c = ShellFromData(data)
 					d = data
 					return nil
@@ -1260,9 +1265,9 @@ func TestNewShell(t *testing.T) {
 			)
 			test.etc.SkipDataCheck = true
 			test.etc.OS = fos
-			command.ExecuteTest(t, test.etc)
+			commandertest.ExecuteTest(t, test.etc)
 
-			if diff := cmp.Diff(test.etc.WantData, d, cmp.AllowUnexported(Cache{}, command.Data{}), cmpopts.IgnoreFields(command.Data{}, "OS")); diff != "" {
+			if diff := cmp.Diff(test.etc.WantData, d, cmp.AllowUnexported(Cache{}, commondels.Data{}), cmpopts.IgnoreFields(commondels.Data{}, "OS")); diff != "" {
 				t.Errorf("ShellProcessor() produced incorrect data (-want, +got):\n%s", diff)
 			}
 			if diff := cmp.Diff(test.wantCache, c, cmp.AllowUnexported(Cache{})); diff != "" {
@@ -1294,7 +1299,7 @@ type mkdirAllOp struct {
 }
 
 func (ma *mkdirAllOp) setup(t *testing.T) {
-	command.StubValue(t, &osMkdirAll, func(s string, m fs.FileMode) error {
+	testutil.StubValue(t, &osMkdirAll, func(s string, m fs.FileMode) error {
 		if ma.got != nil {
 			t.Fatalf("osMkdirAll called multiple times")
 		}
@@ -1320,7 +1325,7 @@ type statOp struct {
 }
 
 func (so *statOp) setup(t *testing.T) {
-	command.StubValue(t, &osStat, func(s string) (fs.FileInfo, error) {
+	testutil.StubValue(t, &osStat, func(s string) (fs.FileInfo, error) {
 		defer func() { so.stubCount++ }()
 		if so.stubCount != so.stubAt {
 			if so.allowReal {
@@ -1348,7 +1353,7 @@ type readFileOp struct {
 }
 
 func (rfo *readFileOp) setup(t *testing.T) {
-	command.StubValue(t, &osReadFile, func(s string) ([]byte, error) {
+	testutil.StubValue(t, &osReadFile, func(s string) ([]byte, error) {
 		if rfo.got != nil {
 			t.Fatalf("osReadFile called multiple times")
 		}
@@ -1372,7 +1377,7 @@ type writeFileOp struct {
 }
 
 func (wfo *writeFileOp) setup(t *testing.T) {
-	command.StubValue(t, &osWriteFile, func(s string, data []byte, fm fs.FileMode) error {
+	testutil.StubValue(t, &osWriteFile, func(s string, data []byte, fm fs.FileMode) error {
 		if wfo.got != nil {
 			t.Fatalf("osReadFile called multiple times")
 		}
@@ -1399,7 +1404,7 @@ type removeOp struct {
 }
 
 func (ro *removeOp) setup(t *testing.T) {
-	command.StubValue(t, &osRemove, func(s string) error {
+	testutil.StubValue(t, &osRemove, func(s string) error {
 		if ro.got != nil {
 			t.Fatalf("osRemove called multiple times")
 		}
@@ -1422,7 +1427,7 @@ type absOp struct {
 }
 
 func (ao *absOp) setup(t *testing.T) {
-	command.StubValue(t, &filepathAbs, func(s string) (string, error) {
+	testutil.StubValue(t, &filepathAbs, func(s string) (string, error) {
 		if ao.got != nil {
 			t.Fatalf("filepathAbs called multiple times")
 		}

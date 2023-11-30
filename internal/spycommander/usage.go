@@ -53,7 +53,7 @@ func ProcessOrUsage(p commondels.Processor, i *commondels.Input, d *commondels.D
 }
 
 const (
-	UsageErrorSectionStart = "======= Command commondels.Usage ======="
+	UsageErrorSectionStart = "======= Command Usage ======="
 )
 
 // ShowUsageAfterError generates the usage doc for the provided `Node`. If there

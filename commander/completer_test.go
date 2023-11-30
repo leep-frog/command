@@ -11,7 +11,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/leep-frog/command/commandertest"
 	"github.com/leep-frog/command/commandtest"
 	"github.com/leep-frog/command/commondels"
 	"github.com/leep-frog/command/internal/stubs"
@@ -222,7 +221,7 @@ func TestStringCompleters(t *testing.T) {
 			if test.c != nil {
 				opts = append(opts, test.c)
 			}
-			commandertest.CompleteTest(t, &commandtest.CompleteTestCase{
+			autocompleteTest(t, &commandtest.CompleteTestCase{
 				Node: SerialNodes(ListArg("test", testDesc, 2, 5, opts...)),
 				Args: test.args,
 				Want: &commondels.Autocompletion{
@@ -231,13 +230,13 @@ func TestStringCompleters(t *testing.T) {
 				},
 				WantErr:       test.wantErr,
 				SkipDataCheck: true,
-			})
+			}, nil)
 		})
 	}
 }
 
 func TestBoolCompleter(t *testing.T) {
-	commandertest.CompleteTest(t, &commandtest.CompleteTestCase{
+	autocompleteTest(t, &commandtest.CompleteTestCase{
 		Node: SerialNodes(Arg[bool]("test", testDesc, BoolCompleter())),
 		Args: "cmd ",
 		Want: &commondels.Autocompletion{
@@ -257,7 +256,7 @@ func TestBoolCompleter(t *testing.T) {
 			},
 		},
 		SkipDataCheck: true,
-	})
+	}, nil)
 }
 
 func TestParseAndComplete(t *testing.T) {
@@ -819,18 +818,12 @@ func TestTypedCompleters(t *testing.T) {
 			args: "cmd ",
 			want: &commondels.Autocompletion{
 				Suggestions: []string{
-					filepath.FromSlash(".git/"),
+					filepath.FromSlash(".dot-dir/"),
 					filepath.FromSlash("_testdata_symlink/"),
-					filepath.FromSlash("cache/"),
-					filepath.FromSlash("color/"),
-					filepath.FromSlash("commander/"),
-					filepath.FromSlash("docs/"),
-					filepath.FromSlash("example-cli/"),
-					filepath.FromSlash("glog/"),
-					"go.mod",
-					"go.sum",
-					filepath.FromSlash("internal/"),
-					filepath.FromSlash("sourcerer/"),
+					filepath.FromSlash("co2test/"),
+					filepath.FromSlash("cotest/"),
+					"fake.mod",
+					"fake.sum",
 					filepath.FromSlash("testdata/"),
 					" ",
 				},
@@ -1436,15 +1429,13 @@ func TestTypedCompleters(t *testing.T) {
 			want: &commondels.Autocompletion{
 				Suggestions: []string{
 					"cache.go",
-					filepath.FromSlash("cache/"),
 					"cache_test.go",
-					filepath.FromSlash("color/"),
-					"command.go",
-					filepath.FromSlash("commander/"),
+					filepath.FromSlash("co2test/"),
 					"commandtest.go",
 					"completer.go",
 					"completer_test.go",
 					"conditional.go",
+					filepath.FromSlash("cotest/"),
 					" ",
 				},
 			},
@@ -1471,14 +1462,12 @@ func TestTypedCompleters(t *testing.T) {
 			want: &commondels.Autocompletion{
 				Suggestions: []string{
 					"cache.go",
-					filepath.FromSlash("cache/"),
 					"cache_test.go",
-					filepath.FromSlash("color/"),
-					"command.go",
-					filepath.FromSlash("commander/"),
+					filepath.FromSlash("co2test/"),
 					"commandtest.go",
 					"completer_test.go",
 					"conditional.go",
+					filepath.FromSlash("cotest/"),
 					" ",
 				},
 			},
@@ -1492,13 +1481,11 @@ func TestTypedCompleters(t *testing.T) {
 			want: &commondels.Autocompletion{
 				Suggestions: []string{
 					"cache.go",
-					filepath.FromSlash("cache/"),
 					"cache_test.go",
-					filepath.FromSlash("color/"),
-					"command.go",
-					filepath.FromSlash("commander/"),
+					filepath.FromSlash("co2test/"),
 					"commandtest.go",
 					"conditional.go",
+					filepath.FromSlash("cotest/"),
 					" ",
 				},
 			},
@@ -1723,18 +1710,12 @@ func TestTypedCompleters(t *testing.T) {
 			args: "cmd ",
 			want: &commondels.Autocompletion{
 				Suggestions: []string{
-					filepath.FromSlash(".git/"),
+					filepath.FromSlash(".dot-dir/"),
 					filepath.FromSlash("_testdata_symlink/"),
-					filepath.FromSlash("cache/"),
-					filepath.FromSlash("color/"),
-					filepath.FromSlash("commander/"),
-					filepath.FromSlash("docs/"),
-					filepath.FromSlash("example-cli/"),
-					filepath.FromSlash("glog/"),
-					"go.mod",
-					"go.sum",
-					filepath.FromSlash("internal/"),
-					filepath.FromSlash("sourcerer/"),
+					filepath.FromSlash("co2test/"),
+					filepath.FromSlash("cotest/"),
+					"fake.mod",
+					"fake.sum",
 					filepath.FromSlash("testdata/"),
 					" ",
 				},
@@ -1749,18 +1730,12 @@ func TestTypedCompleters(t *testing.T) {
 			args: "cmd ",
 			want: &commondels.Autocompletion{
 				Suggestions: []string{
-					filepath.FromSlash(".git/"),
+					filepath.FromSlash(".dot-dir/"),
 					filepath.FromSlash("_testdata_symlink/"),
-					filepath.FromSlash("cache/"),
-					filepath.FromSlash("color/"),
-					filepath.FromSlash("commander/"),
-					filepath.FromSlash("docs/"),
-					filepath.FromSlash("example-cli/"),
-					filepath.FromSlash("glog/"),
-					"go.mod",
-					"go.sum",
-					filepath.FromSlash("internal/"),
-					filepath.FromSlash("sourcerer/"),
+					filepath.FromSlash("co2test/"),
+					filepath.FromSlash("cotest/"),
+					"fake.mod",
+					"fake.sum",
 					filepath.FromSlash("testdata/"),
 					" ",
 				},
@@ -1775,18 +1750,12 @@ func TestTypedCompleters(t *testing.T) {
 			args: "cmd ",
 			want: &commondels.Autocompletion{
 				Suggestions: []string{
-					".git",
+					".dot-dir",
 					"_testdata_symlink",
-					"cache",
-					"color",
-					"commander",
-					"docs",
-					"example-cli",
-					"glog",
-					"go.mod",
-					"go.sum",
-					"internal",
-					"sourcerer",
+					"co2test",
+					"cotest",
+					"fake.mod",
+					"fake.sum",
 					"testdata",
 					" ",
 				},
@@ -1798,10 +1767,10 @@ func TestTypedCompleters(t *testing.T) {
 				MaxDepth:  1,
 				FileTypes: []string{".mod", ".sum"},
 			},
-			args: "cmd go",
+			args: "cmd fake",
 			want: &commondels.Autocompletion{
 				Suggestions: []string{
-					"go.",
+					"fake.",
 				},
 				SpacelessCompletion: true,
 			},
@@ -1812,10 +1781,10 @@ func TestTypedCompleters(t *testing.T) {
 				MaxDepth:  2,
 				FileTypes: []string{".mod", ".sum"},
 			},
-			args: "cmd go",
+			args: "cmd fake",
 			want: &commondels.Autocompletion{
 				Suggestions: []string{
-					"go.",
+					"fake.",
 				},
 				SpacelessCompletion: true,
 			},

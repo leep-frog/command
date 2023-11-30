@@ -1,6 +1,9 @@
 package sourcerer
 
-import "github.com/leep-frog/command"
+import (
+	"github.com/leep-frog/command/commander"
+	"github.com/leep-frog/command/commondels"
+)
 
 type Debugger struct{}
 
@@ -8,20 +11,20 @@ func (*Debugger) Setup() []string { return nil }
 func (*Debugger) Changed() bool   { return false }
 func (*Debugger) Name() string    { return "leep_debug" }
 
-func (*Debugger) Node() command.Node {
-	return command.SerialNodes(
+func (*Debugger) Node() commondels.Node {
+	return commander.SerialNodes(
 		// Get the environment variable
-		command.EnvArg(command.DebugEnvVar),
+		commander.EnvArg(commander.DebugEnvVar),
 		// Either set or unset the environment variable.
-		command.IfElseData(
-			command.DebugEnvVar,
-			command.SerialNodes(
-				command.UnsetEnvVarProcessor(command.DebugEnvVar),
-				command.PrintlnProcessor("Exiting debug mode."),
+		commander.IfElseData(
+			commander.DebugEnvVar,
+			commander.SerialNodes(
+				commander.UnsetEnvVarProcessor(commander.DebugEnvVar),
+				commander.PrintlnProcessor("Exiting debug mode."),
 			),
-			command.SerialNodes(
-				command.SetEnvVarProcessor(command.DebugEnvVar, "1"),
-				command.PrintlnProcessor("Entering debug mode."),
+			commander.SerialNodes(
+				commander.SetEnvVarProcessor(commander.DebugEnvVar, "1"),
+				commander.PrintlnProcessor("Entering debug mode."),
 			),
 		),
 	)

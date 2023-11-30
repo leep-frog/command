@@ -6,11 +6,13 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/leep-frog/command"
+	"github.com/leep-frog/command/commandertest"
+	"github.com/leep-frog/command/commandtest"
+	"github.com/leep-frog/command/commondels"
 )
 
-func rc(pkg string) *command.RunContents {
-	return &command.RunContents{
+func rc(pkg string) *commandtest.RunContents {
+	return &commandtest.RunContents{
 		Name: "git",
 		Args: []string{
 			"ls-remote",
@@ -22,23 +24,23 @@ func rc(pkg string) *command.RunContents {
 func TestGG(t *testing.T) {
 	for _, test := range []struct {
 		name string
-		etc  *command.ExecuteTestCase
+		etc  *commandtest.ExecuteTestCase
 	}{
 		{
 			name: "Gets a package",
-			etc: &command.ExecuteTestCase{
+			etc: &commandtest.ExecuteTestCase{
 				Args: []string{
 					"some-package",
 				},
-				WantData: &command.Data{Values: map[string]interface{}{
+				WantData: &commondels.Data{Values: map[string]interface{}{
 					packageArg.Name(): []string{
 						"some-package",
 					},
 				}},
-				WantRunContents: []*command.RunContents{
+				WantRunContents: []*commandtest.RunContents{
 					rc("some-package"),
 				},
-				RunResponses: []*command.FakeRun{
+				RunResponses: []*commandtest.FakeRun{
 					{
 						Stdout: []string{
 							"1234567890abcdef HEAD",
@@ -50,7 +52,7 @@ func TestGG(t *testing.T) {
 					`go get -v "github.com/leep-frog/some-package@246810"`,
 					``,
 				}, "\n"),
-				WantExecuteData: &command.ExecuteData{
+				WantExecuteData: &commondels.ExecuteData{
 					Executable: []string{
 						`go get -v "github.com/leep-frog/some-package@246810"`,
 					},
@@ -59,19 +61,19 @@ func TestGG(t *testing.T) {
 		},
 		{
 			name: "Handles no known main branch",
-			etc: &command.ExecuteTestCase{
+			etc: &commandtest.ExecuteTestCase{
 				Args: []string{
 					"some-package",
 				},
-				WantData: &command.Data{Values: map[string]interface{}{
+				WantData: &commondels.Data{Values: map[string]interface{}{
 					packageArg.Name(): []string{
 						"some-package",
 					},
 				}},
-				WantRunContents: []*command.RunContents{
+				WantRunContents: []*commandtest.RunContents{
 					rc("some-package"),
 				},
-				RunResponses: []*command.FakeRun{
+				RunResponses: []*commandtest.FakeRun{
 					{
 						Stdout: []string{
 							"1234567890abcdef HEAD",
@@ -87,19 +89,19 @@ func TestGG(t *testing.T) {
 		},
 		{
 			name: "Handles shell command error",
-			etc: &command.ExecuteTestCase{
+			etc: &commandtest.ExecuteTestCase{
 				Args: []string{
 					"some-package",
 				},
-				WantData: &command.Data{Values: map[string]interface{}{
+				WantData: &commondels.Data{Values: map[string]interface{}{
 					packageArg.Name(): []string{
 						"some-package",
 					},
 				}},
-				WantRunContents: []*command.RunContents{
+				WantRunContents: []*commandtest.RunContents{
 					rc("some-package"),
 				},
-				RunResponses: []*command.FakeRun{
+				RunResponses: []*commandtest.FakeRun{
 					{
 						Stdout: []string{
 							"1234567890abcdef HEAD",
@@ -117,25 +119,25 @@ func TestGG(t *testing.T) {
 		},
 		{
 			name: "Gets multiple packages",
-			etc: &command.ExecuteTestCase{
+			etc: &commandtest.ExecuteTestCase{
 				Args: []string{
 					"ups",
 					"fedex",
 					"usps",
 				},
-				WantData: &command.Data{Values: map[string]interface{}{
+				WantData: &commondels.Data{Values: map[string]interface{}{
 					packageArg.Name(): []string{
 						"ups",
 						"fedex",
 						"usps",
 					},
 				}},
-				WantRunContents: []*command.RunContents{
+				WantRunContents: []*commandtest.RunContents{
 					rc("ups"),
 					rc("fedex"),
 					rc("usps"),
 				},
-				RunResponses: []*command.FakeRun{
+				RunResponses: []*commandtest.FakeRun{
 					{
 						Stdout: []string{
 							"1a refs/heads/main",
@@ -158,7 +160,7 @@ func TestGG(t *testing.T) {
 					`go get -v "github.com/leep-frog/usps@3c"`,
 					``,
 				}, "\n"),
-				WantExecuteData: &command.ExecuteData{
+				WantExecuteData: &commondels.ExecuteData{
 					Executable: []string{
 						`go get -v "github.com/leep-frog/ups@1a"`,
 						`go get -v "github.com/leep-frog/fedex@2b"`,
@@ -169,25 +171,25 @@ func TestGG(t *testing.T) {
 		},
 		{
 			name: "Gets multiple packages with errors",
-			etc: &command.ExecuteTestCase{
+			etc: &commandtest.ExecuteTestCase{
 				Args: []string{
 					"ups",
 					"fedex",
 					"usps",
 				},
-				WantData: &command.Data{Values: map[string]interface{}{
+				WantData: &commondels.Data{Values: map[string]interface{}{
 					packageArg.Name(): []string{
 						"ups",
 						"fedex",
 						"usps",
 					},
 				}},
-				WantRunContents: []*command.RunContents{
+				WantRunContents: []*commandtest.RunContents{
 					rc("ups"),
 					rc("fedex"),
 					rc("usps"),
 				},
-				RunResponses: []*command.FakeRun{
+				RunResponses: []*commandtest.FakeRun{
 					{
 						Stdout: []string{
 							"1a refs/heads/main",
@@ -215,7 +217,7 @@ func TestGG(t *testing.T) {
 					"who",
 					`Failed to fetch commit info for package "fedex"`,
 				}, "\n"),
-				WantExecuteData: &command.ExecuteData{
+				WantExecuteData: &commondels.ExecuteData{
 					Executable: []string{
 						`go get -v "github.com/leep-frog/ups@1a"`,
 						`go get -v "github.com/leep-frog/usps@3c"`,
@@ -228,8 +230,8 @@ func TestGG(t *testing.T) {
 			t.Run(test.name, func(t *testing.T) {
 				cli := &UpdateLeepPackageCommand{}
 				test.etc.Node = cli.Node()
-				command.ExecuteTest(t, test.etc)
-				command.ChangeTest(t, nil, cli)
+				commandertest.ExecuteTest(t, test.etc)
+				commandertest.ChangeTest(t, nil, cli)
 			})
 		})
 	}

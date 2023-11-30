@@ -5,7 +5,7 @@ import (
 	"os"
 	"runtime"
 
-	"github.com/leep-frog/command"
+	"github.com/leep-frog/command/commondels"
 )
 
 var (
@@ -30,7 +30,7 @@ var (
 )
 
 type OS interface {
-	command.OS
+	commondels.OS
 
 	// Name is the operating system as specified by runtime.GOOS
 	Name() string
@@ -39,9 +39,9 @@ type OS interface {
 	FunctionWrap(name, fn string) string
 
 	// HandleAutocompleteSuccess should output the suggestions for autocomplete consumption
-	HandleAutocompleteSuccess(command.Output, *command.Autocompletion)
+	HandleAutocompleteSuccess(commondels.Output, *commondels.Autocompletion)
 	// HandleAutocompleteError should output error info on `Autocomplete` failure
-	HandleAutocompleteError(output command.Output, compType int, err error)
+	HandleAutocompleteError(output commondels.Output, compType int, err error)
 
 	//
 	SourcererGoCLI(dir string, targetName string) []string

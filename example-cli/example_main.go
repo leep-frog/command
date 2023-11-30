@@ -4,7 +4,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/leep-frog/command"
+	"github.com/leep-frog/command/commander"
+	"github.com/leep-frog/command/commondels"
 	"github.com/leep-frog/command/sourcerer"
 )
 
@@ -39,43 +40,43 @@ func (mfc *myFirstCommand) Setup() []string {
 }
 
 // Node returns the logic of your new command!
-func (mfc *myFirstCommand) Node() command.Node {
+func (mfc *myFirstCommand) Node() commondels.Node {
 
-	fc := &command.FileCompleter[string]{
+	fc := &commander.FileCompleter[string]{
 		Directory:   filepath.Join(".."),
 		IgnoreFiles: true,
 		ExcludePwd:  true,
 	}
 
-	ff := command.FileArgument("FILE", "desc", fc)
+	ff := commander.FileArgument("FILE", "desc", fc)
 	// A boolean flag (set by passing `--formal` or `-f` to your command in bash).
-	formalFlag := command.BoolFlag("formal", 'f', "Whether or not the response should be formal")
+	formalFlag := commander.BoolFlag("formal", 'f', "Whether or not the response should be formal")
 	// A required string argument that can be autocompleted!
-	nameArg := command.Arg[string]("NAME", "Your name", command.SimpleCompleter[string]("Alice", "Bob", "Bruno", "Charlie", "World"))
+	nameArg := commander.Arg[string]("NAME", "Your name", commander.SimpleCompleter[string]("Alice", "Bob", "Bruno", "Charlie", "World"))
 	// An optional integer argument that must be a positive number and defaults to 1.
-	nArg := command.OptionalArg[int](
+	nArg := commander.OptionalArg[int](
 		"N", "Number of times to say hello",
-		command.Positive[int](),
-		command.Default(1),
+		commander.Positive[int](),
+		commander.Default(1),
 	)
 
 	// SerialNodes runs a list of processors in sequence.
-	return command.SerialNodes(
+	return commander.SerialNodes(
 		sourcerer.ExecutableFileGetProcessor(),
 		// Description adds a description field to your commands usage doc.
-		command.Description("My very first command!"),
+		commander.Description("My very first command!"),
 		ff,
 		// This node defines all of the flags for your command.
-		command.FlagProcessor(
+		commander.FlagProcessor(
 			formalFlag,
-			command.BoolFlag("blop", 'b', "desc"),
+			commander.BoolFlag("blop", 'b', "desc"),
 		),
 		nameArg,
 		nArg,
 		// The logic of your function!
 		// ExecutorNode doesn't deal with errors. If your command involves potential
 		// errors, use ExecuteErrNode instead.
-		&command.ExecutorProcessor{F: func(o command.Output, d *command.Data) error {
+		&commander.ExecutorProcessor{F: func(o commondels.Output, d *commondels.Data) error {
 			name := nameArg.Get(d)
 			n := nArg.Get(d)
 			for i := 0; i < n; i++ {

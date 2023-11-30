@@ -10,7 +10,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/leep-frog/command"
+	"github.com/leep-frog/command/commander"
+	"github.com/leep-frog/command/commondels"
+	"github.com/leep-frog/command/internal/stubs"
 )
 
 const (
@@ -51,22 +53,22 @@ func (c *Cache) Changed() bool {
 // Setup fulfills the `sourcerer.CLI` interface.
 func (c *Cache) Setup() []string { return nil }
 
-// Node returns the `command.Node` for the cache CLI.
-func (c *Cache) Node() command.Node {
-	arg := command.Arg[string]("KEY", "Key of the data to get", command.MatchesRegex(keyRegexString), completer(c))
-	return &command.BranchNode{
-		Branches: map[string]command.Node{
-			"setdir": command.SerialNodes(
-				command.FileArgument("DIR", "Directory in which to store data", command.IsDir()),
-				&command.ExecutorProcessor{F: func(o command.Output, d *command.Data) error {
+// Node returns the `commondels.Node` for the cache CLI.
+func (c *Cache) Node() commondels.Node {
+	arg := commander.Arg[string]("KEY", "Key of the data to get", commander.MatchesRegex(keyRegexString), completer(c))
+	return &commander.BranchNode{
+		Branches: map[string]commondels.Node{
+			"setdir": commander.SerialNodes(
+				commander.FileArgument("DIR", "Directory in which to store data", commander.IsDir()),
+				&commander.ExecutorProcessor{F: func(o commondels.Output, d *commondels.Data) error {
 					c.Dir = d.String("DIR")
 					c.changed = true
 					return nil
 				}},
 			),
-			"get": command.SerialNodes(
+			"get": commander.SerialNodes(
 				arg,
-				&command.ExecutorProcessor{F: func(o command.Output, d *command.Data) error {
+				&commander.ExecutorProcessor{F: func(o commondels.Output, d *commondels.Data) error {
 					s, ok, err := c.Get(d.String(arg.Name()))
 					if err != nil {
 						return o.Err(err)
@@ -79,21 +81,21 @@ func (c *Cache) Node() command.Node {
 					return nil
 				}},
 			),
-			"put": command.SerialNodes(
+			"put": commander.SerialNodes(
 				arg,
-				command.ListArg[string]("DATA", "Data to store", 1, command.UnboundedList),
-				&command.ExecutorProcessor{F: func(o command.Output, d *command.Data) error {
+				commander.ListArg[string]("DATA", "Data to store", 1, commondels.UnboundedList),
+				&commander.ExecutorProcessor{F: func(o commondels.Output, d *commondels.Data) error {
 					return o.Err(c.Put(d.String(arg.Name()), strings.Join(d.StringList("DATA"), " ")))
 				}},
 			),
-			"delete": command.SerialNodes(
+			"delete": commander.SerialNodes(
 				arg,
-				&command.ExecutorProcessor{F: func(o command.Output, d *command.Data) error {
+				&commander.ExecutorProcessor{F: func(o commondels.Output, d *commondels.Data) error {
 					return o.Err(c.Delete(d.String(arg.Name())))
 				}},
 			),
-			"list": command.SerialNodes(
-				&command.ExecutorProcessor{F: func(o command.Output, d *command.Data) error {
+			"list": commander.SerialNodes(
+				&commander.ExecutorProcessor{F: func(o commondels.Output, d *commondels.Data) error {
 					r, err := c.List()
 					if err != nil {
 						return o.Err(err)
@@ -109,13 +111,13 @@ func (c *Cache) Node() command.Node {
 	}
 }
 
-func completer(c *Cache) command.Completer[string] {
-	return command.CompleterFromFunc(func(s string, d *command.Data) (*command.Completion, error) {
+func completer(c *Cache) commander.Completer[string] {
+	return commander.CompleterFromFunc(func(s string, d *commondels.Data) (*commondels.Completion, error) {
 		r, err := c.List()
 		if err != nil {
 			return nil, fmt.Errorf("failed to list files: %v", err)
 		}
-		return &command.Completion{
+		return &commondels.Completion{
 			Suggestions: r,
 		}, nil
 	})
@@ -175,7 +177,7 @@ func FromDir(dir string) (*Cache, error) {
 // FromEnvVar creates a new cache pointing to the directory specified
 // by the provided environment variable.
 func FromEnvVar(e string) (*Cache, error) {
-	v, ok := command.OSLookupEnv(e)
+	v, ok := stubs.OSLookupEnv(e)
 	if !ok || v == "" {
 		return nil, fmt.Errorf("environment variable %q is not set or is empty", e)
 	}
@@ -185,7 +187,7 @@ func FromEnvVar(e string) (*Cache, error) {
 // FromEnvVar creates a new cache pointing to the directory specified
 // by the provided environment variable.
 func FromEnvVarOrDir(e, dir string) (*Cache, error) {
-	v, ok := command.OSLookupEnv(e)
+	v, ok := stubs.OSLookupEnv(e)
 	if !ok || v == "" {
 		return FromDir(dir)
 	}

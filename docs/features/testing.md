@@ -19,12 +19,12 @@ func TestExecution(t *testing.T) {
 	for _, test := range []struct {
 		name string
 		cli    *myCLI
-		etc  *command.ExecuteTestCase
+		etc  *commandtest.ExecuteTestCase
 		wantCLI *myCLI
 	}{
     {
       name: "simple execution works",
-      etc: &command.ExecuteTestCase{
+      etc: &commandtest.ExecuteTestCase{
         Args: []string{"arg1", "arg2", /* ... */}
       },
     },

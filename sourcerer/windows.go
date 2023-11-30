@@ -5,7 +5,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/leep-frog/command"
+	"github.com/leep-frog/command/commondels"
 )
 
 type windows struct{}
@@ -181,7 +181,7 @@ func (w *windows) autocompleteFunctionName(forAlias bool, targetName string) str
 	return fmt.Sprintf("%s%s", prefix, targetName)
 }
 
-func (w *windows) HandleAutocompleteSuccess(output command.Output, autocompletion *command.Autocompletion) {
+func (w *windows) HandleAutocompleteSuccess(output commondels.Output, autocompletion *commondels.Autocompletion) {
 	// Add a trailing space because powershell doesn't do that for us for single-guaranteed completions
 	if len(autocompletion.Suggestions) == 1 && !autocompletion.SpacelessCompletion {
 		autocompletion.Suggestions[0] = fmt.Sprintf("%s ", autocompletion.Suggestions[0])
@@ -189,7 +189,7 @@ func (w *windows) HandleAutocompleteSuccess(output command.Output, autocompletio
 	output.Stdoutf("%s\n", strings.Join(autocompletion.Suggestions, "\n"))
 }
 
-func (w *windows) HandleAutocompleteError(output command.Output, compType int, err error) {
+func (w *windows) HandleAutocompleteError(output commondels.Output, compType int, err error) {
 	// Stderr gets hidden, so we need to write to stdout
 	output.Stderrf("\nAutocomplete Error: %v", err)
 	// Print another string so text isn't autocompleted to error text

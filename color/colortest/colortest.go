@@ -6,14 +6,15 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/leep-frog/command"
 	"github.com/leep-frog/command/color"
+	"github.com/leep-frog/command/commondels"
+	"github.com/leep-frog/command/internal/testutil"
 )
 
 // StubTput will write to stdout for each format.Apply call rather than
 // actually running tput. See the `colortest.FakeOutput` function for
 func StubTput(t *testing.T) {
-	command.StubValue(t, &color.TputCommand, func(output command.Output, args ...interface{}) error {
+	testutil.StubValue(t, &color.TputCommand, func(output commondels.Output, args ...interface{}) error {
 		var ss []string
 		for _, a := range args {
 			ss = append(ss, fmt.Sprintf("%v", a))

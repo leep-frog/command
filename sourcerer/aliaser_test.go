@@ -5,35 +5,38 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/leep-frog/command"
+	"github.com/leep-frog/command/commandertest"
+	"github.com/leep-frog/command/commandtest"
+	"github.com/leep-frog/command/commondels"
+	"github.com/leep-frog/command/internal/testutil"
 )
 
 func TestAliaser(t *testing.T) {
 	type osCheck struct {
-		WantExecuteData *command.ExecuteData
+		WantExecuteData *commondels.ExecuteData
 	}
-	fakeGoExecutableFilePath := command.TempFile(t, "leepFrogSourcerer-test")
+	fakeGoExecutableFilePath := testutil.TempFile(t, "leepFrogSourcerer-test")
 	for _, curOS := range []OS{Linux(), Windows()} {
 		for _, test := range []struct {
 			name     string
-			etc      *command.ExecuteTestCase
+			etc      *commandtest.ExecuteTestCase
 			osChecks map[string]*osCheck
 		}{
 			{
 				name: "Creates aliaser with no passthrough args",
-				etc: &command.ExecuteTestCase{
+				etc: &commandtest.ExecuteTestCase{
 					Args: []string{
 						"some-alias",
 						"someCLI",
 					},
-					WantData: &command.Data{Values: map[string]interface{}{
+					WantData: &commondels.Data{Values: map[string]interface{}{
 						aliasArg.Name():    "some-alias",
 						aliasCLIArg.Name(): "someCLI",
 					}},
 				},
 				osChecks: map[string]*osCheck{
 					"linux": {
-						WantExecuteData: &command.ExecuteData{
+						WantExecuteData: &commondels.ExecuteData{
 							Executable: []string{
 								`function _leep_frog_autocompleter {`,
 								`  local tFile=$(mktemp)`,
@@ -65,7 +68,7 @@ func TestAliaser(t *testing.T) {
 						},
 					},
 					"windows": {
-						WantExecuteData: &command.ExecuteData{
+						WantExecuteData: &commondels.ExecuteData{
 							Executable: []string{
 								`if (!(Test-Path alias:someCLI) -or !(Get-Alias someCLI | where {$_.DEFINITION -match "_custom_execute_"}).NAME) {`,
 								`  throw "The CLI provided (someCLI) is not a sourcerer-generated command"`,
@@ -92,7 +95,7 @@ func TestAliaser(t *testing.T) {
 			},
 			{
 				name: "Creates aliaser with passthrough args",
-				etc: &command.ExecuteTestCase{
+				etc: &commandtest.ExecuteTestCase{
 					Args: []string{
 						"some-alias",
 						"someCLI",
@@ -100,7 +103,7 @@ func TestAliaser(t *testing.T) {
 						"2",
 						"trois",
 					},
-					WantData: &command.Data{Values: map[string]interface{}{
+					WantData: &commondels.Data{Values: map[string]interface{}{
 						aliasArg.Name():    "some-alias",
 						aliasCLIArg.Name(): "someCLI",
 						aliasPTArg.Name(): []string{
@@ -112,7 +115,7 @@ func TestAliaser(t *testing.T) {
 				},
 				osChecks: map[string]*osCheck{
 					"linux": {
-						WantExecuteData: &command.ExecuteData{
+						WantExecuteData: &commondels.ExecuteData{
 							Executable: []string{
 								`function _leep_frog_autocompleter {`,
 								`  local tFile=$(mktemp)`,
@@ -151,13 +154,13 @@ func TestAliaser(t *testing.T) {
 				if !ok {
 					t.Skipf("No osCheck set for this OS")
 				}
-				command.StubValue(t, &CurrentOS, curOS)
+				testutil.StubValue(t, &CurrentOS, curOS)
 
 				cli := &AliaserCommand{fakeGoExecutableFilePath.Name()}
 				test.etc.Node = cli.Node()
 				test.etc.WantExecuteData = oschk.WantExecuteData
-				command.ExecuteTest(t, test.etc)
-				command.ChangeTest(t, nil, cli)
+				commandertest.ExecuteTest(t, test.etc)
+				commandertest.ChangeTest(t, nil, cli)
 			})
 		}
 	}

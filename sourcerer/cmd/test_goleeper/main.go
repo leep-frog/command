@@ -3,7 +3,8 @@ package main
 import (
 	"os"
 
-	"github.com/leep-frog/command"
+	"github.com/leep-frog/command/commander"
+	"github.com/leep-frog/command/commondels"
 	"github.com/leep-frog/command/sourcerer"
 )
 
@@ -30,9 +31,9 @@ goleep main.go
 func main() {
 	// fmt.Println(runtime.Caller(0))
 	os.Exit(sourcerer.Source([]sourcerer.CLI{
-		sourcerer.ToCLI("simple", command.SerialNodes(
-			command.ListArg[string]("SL", "", 1, 2, command.SimpleCompleter[[]string]("un", "deux", "trois")),
-			&command.ExecutorProcessor{F: func(o command.Output, d *command.Data) error {
+		sourcerer.ToCLI("simple", commander.SerialNodes(
+			commander.ListArg[string]("SL", "", 1, 2, commander.SimpleCompleter[[]string]("un", "deux", "trois")),
+			&commander.ExecutorProcessor{F: func(o commondels.Output, d *commondels.Data) error {
 				o.Stdoutf("%v\n", d.StringList("SL"))
 				return nil
 			}},

@@ -2,7 +2,7 @@ package commander
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 	"strings"
 
 	"github.com/leep-frog/command/commondels"
@@ -22,7 +22,7 @@ func SetupOutputFile(d *commondels.Data) string {
 
 // SetupOutputString returns the file contents, as a string, of the setup file for the command.
 func SetupOutputString(d *commondels.Data) (string, error) {
-	b, err := ioutil.ReadFile(SetupOutputFile(d))
+	b, err := os.ReadFile(SetupOutputFile(d))
 	if err != nil {
 		return "", fmt.Errorf("failed to read setup file (%s): %v", SetupOutputFile(d), err)
 	}

@@ -6,7 +6,9 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/leep-frog/command"
+	"github.com/leep-frog/command/commander"
+	"github.com/leep-frog/command/commondels"
+	"github.com/leep-frog/command/internal/stubs"
 )
 
 const (
@@ -56,14 +58,14 @@ func (l *linux) FunctionWrap(name, fn string) string {
 	}, "\n")
 }
 
-func (l *linux) HandleAutocompleteSuccess(output command.Output, autocompletion *command.Autocompletion) {
+func (l *linux) HandleAutocompleteSuccess(output commondels.Output, autocompletion *commondels.Autocompletion) {
 	if len(autocompletion.Suggestions) == 1 && autocompletion.SpacelessCompletion {
 		autocompletion.Suggestions = append(autocompletion.Suggestions, fmt.Sprintf("%s_", autocompletion.Suggestions[0]))
 	}
 	output.Stdoutf("%s\n", strings.Join(autocompletion.Suggestions, "\n"))
 }
 
-func (l *linux) HandleAutocompleteError(output command.Output, compType int, err error) {
+func (l *linux) HandleAutocompleteError(output commondels.Output, compType int, err error) {
 	// Only display the error if the user is requesting completion via successive tabs (so distinct completions are guaranteed to be displayed)
 	if compType == 63 { /* code 63 = '?' character */
 		// Add newline so we're outputting stderr on a newline (and not line with cursor)
@@ -142,7 +144,7 @@ func (l *linux) autocompleteFunction(runCLI bool, builtin bool, goExecutable, ta
 	}
 	branchStr := l.getBranchString(builtin, AutocompleteBranchName)
 	compType := "$COMP_TYPE"
-	if _, ok := command.OSLookupEnv(zshEnvVar); ok {
+	if _, ok := stubs.OSLookupEnv(zshEnvVar); ok {
 		compType = "0"
 	}
 	return []string{
@@ -174,7 +176,7 @@ func (l *linux) executeFileContents(builtin bool, goExecutable, filename string)
 		`  # Otherwise, run the ExecuteData.Executable data`,
 		`  source $tmpFile`,
 		`  local errorCode=$?`,
-		fmt.Sprintf(`  if [ -z "$%s" ]; then`, command.DebugEnvVar),
+		fmt.Sprintf(`  if [ -z "$%s" ]; then`, commander.DebugEnvVar),
 		`    rm $tmpFile`,
 		`  else`,
 		`    echo $tmpFile`,

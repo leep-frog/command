@@ -28,7 +28,7 @@ func (mc *myCLI) Cache() map[string][][]string {
   return mc.MyCache
 }
 
-func (mc *myCLI) Node() command.Node {
+func (mc *myCLI) Node() commondels.Node {
   fileArg := command.Arg[string]("FILE", "filename to print", command.FileTransformer())
 
   printArgs := command.ListArg[string]("PRINT", "args to print", 1, command.UnboundedList)
@@ -36,7 +36,7 @@ func (mc *myCLI) Node() command.Node {
   regularNode := command.SerialNodes(
     fileArg,
     printArgs,
-    &command.ExecutorProcessor{F: func(o command.Output, d *command.Data) error {
+    &command.ExecutorProcessor{F: func(o commondels.Output, d *commondels.Data) error {
       o.Stdoutln(fileArg.Get(d))
       o.Stdoutln(strings.Join(printArgs.Get(d), " "))
       return nil
