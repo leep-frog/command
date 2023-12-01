@@ -6,13 +6,14 @@ import (
 	"sort"
 
 	"github.com/leep-frog/command/command"
+	"github.com/leep-frog/command/internal/constants"
 	"golang.org/x/exp/maps"
 	"golang.org/x/exp/slices"
 )
 
 const (
 	// FlagNoShortName is the rune value for flags that indicates no short flag should be included.
-	FlagNoShortName rune = -1 // Runes are actually int32. Negative values indicate unknown rune
+	FlagNoShortName rune = constants.FlagNoShortName // Runes are actually int32. Negative values indicate unknown rune
 
 	// FlagStop is a string indicating that no further flag values should be processed.
 	FlagStop = "--"

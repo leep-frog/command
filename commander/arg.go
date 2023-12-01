@@ -86,14 +86,12 @@ func (an *Argument[T]) Usage(i *command.Input, d *command.Data, u *command.Usage
 		return nil
 	}
 
-	if an.desc != "" {
-		u.UsageSection.Add(command.ArgSection, an.name, an.desc)
-		if an.opt != nil {
-			for _, v := range an.opt.validators {
-				u.UsageSection.Add(command.ArgSection, an.name, v.Usage)
-			}
+	u.AddArg(an.name, an.desc, an.minN, an.optionalN /* TODO: Validators */)
+	/*if an.opt != nil {
+		for _, v := range an.opt.validators {
+			u.UsageSection.Add(command.ArgSection, an.name, v.Usage)
 		}
-	}
+	}*/
 
 	for i := 0; i < an.minN; i++ {
 		u.Usage = append(u.Usage, an.name)

@@ -1,6 +1,8 @@
 package constants
 
 const (
+	FlagNoShortName rune = -1 // Runes are actually int32. Negative values indicate unknown rune
+
 	NoDrawLinePrefix = "  "
 	// https://en.wikipedia.org/wiki/List_of_Unicode_characters#Box_Drawing
 	UsageBoxUpDown        = "\u2503" // ┃
@@ -9,9 +11,8 @@ const (
 	UsageBoxRightDown     = "\u250f" // ┏
 	UsageBoxLeftUp        = "\u251b" // ┛
 	UsageBoxLeftDown      = "\u2513" // ┓
-)
 
-const (
+	// Description strings
 	ShortcutDesc             = "  *: Start of new shortcut-able section"
 	CacheDesc                = "  ^: Start of new cachable section"
 	BranchDescWithDefault    = "  ┳: Start of subcommand branches (with default node)"
