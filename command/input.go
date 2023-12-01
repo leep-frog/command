@@ -440,28 +440,28 @@ func NewInput(args []string, delimiter *rune) *Input {
 type InputTransformer struct {
 	// F is the function that will be run on each element in Input.
 	F func(Output, *Data, string) ([]string, error)
-	// UpToIndex is the input argument index that F will be run through.
-	// This is zero-indexed so default behavior (UpToIndex: 0) will run on the
-	// first argument. If UpToIndex is less than zero, then this will run
-	// on all remaining arguments.
-	UpToIndex int // TODO: Test this
+	// UpToIndexInclusive is the input argument index that F will be run through.
+	// This is zero-indexed so default behavior (UpToIndexInclusive: 0) will run
+	// on the first argument only. If UpToIndexInclusive is less than zero
+	// (or command.UnboundedList), then this will run on all remaining arguments.
+	UpToIndexInclusive int
 }
 
 func (it *InputTransformer) Transform(input *Input, output Output, data *Data, complete bool) error {
-	k := 0
+	negativeOffset := 0
 	if complete {
 		// Don't check the last argument (i.e. the completion argument)
-		k = -1
+		negativeOffset = 1
 	}
 
-	for j := input.si.Offset; j < input.NumRemaining()+k && (it.UpToIndex < 0 || j <= input.si.Offset+it.UpToIndex); {
+	for j := input.si.Offset; j < input.NumRemaining()-negativeOffset && (it.UpToIndexInclusive < 0 || j <= input.si.Offset+it.UpToIndexInclusive); {
 		sl, err := it.F(output, data, input.get(j).Value)
 		if err != nil {
 			return err
 		}
 
 		if len(sl) == 0 {
-			return fmt.Errorf("shortcut has empty value")
+			return fmt.Errorf("InputTransformer returned an empty list")
 		}
 		// TODO: Inserted args should be added to the input snapshot
 		end := len(sl) - 1

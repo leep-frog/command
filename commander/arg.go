@@ -237,14 +237,14 @@ func (an *Argument[T]) shortcutCheck(input *command.Input, output command.Output
 	return shortcutInputTransformer(an.opt.shortcut.ShortcutCLI, an.opt.shortcut.ShortcutName, upTo-1).Transform(input, output, data, complete)
 }
 
-func shortcutInputTransformer(sc ShortcutCLI, name string, upToIndex int) *command.InputTransformer {
+func shortcutInputTransformer(sc ShortcutCLI, name string, UpToIndexInclusive int) *command.InputTransformer {
 	return &command.InputTransformer{F: func(o command.Output, d *command.Data, s string) ([]string, error) {
 		sl, ok := getShortcut(sc, name, s)
 		if !ok {
 			return []string{s}, nil
 		}
 		return sl, nil
-	}, UpToIndex: upToIndex}
+	}, UpToIndexInclusive: UpToIndexInclusive}
 }
 
 // Complete fulfills the `command.Processor` interface for `Argument`.

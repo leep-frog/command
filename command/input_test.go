@@ -15,6 +15,408 @@ func runePtr(r rune) *rune {
 	return &r
 }
 
+func TestInputTransformer(t *testing.T) {
+	for _, withFunc := range []bool{true, false} {
+		for _, test := range []struct {
+			name     string
+			i        *Input
+			t        *InputTransformer
+			complete bool
+			want     *spyinput.SpyInput[InputBreaker]
+			wantErr  error
+		}{
+			// Simple tests
+			{
+				name: "simple transformer transforms single argument",
+				i: &Input{si: &spyinput.SpyInput[InputBreaker]{
+					Args: []*spycommand.InputArg{
+						{Value: "uno"},
+						{Value: "dos"},
+						{Value: "tres"},
+					},
+					Remaining: []int{0, 1, 2},
+				}},
+				t: &InputTransformer{
+					F: func(o Output, d *Data, s string) ([]string, error) {
+						return []string{fmt.Sprintf("¡%s!", s)}, nil
+					},
+				},
+				want: &spyinput.SpyInput[InputBreaker]{
+					Args: []*spycommand.InputArg{
+						{Value: "¡uno!"},
+						{Value: "dos"},
+						{Value: "tres"},
+					},
+					Remaining: []int{0, 1, 2},
+				},
+			},
+			{
+				name: "fails if returns error",
+				i: &Input{si: &spyinput.SpyInput[InputBreaker]{
+					Args: []*spycommand.InputArg{
+						{Value: "uno"},
+						{Value: "dos"},
+						{Value: "tres"},
+					},
+					Remaining: []int{0, 1, 2},
+				}},
+				t: &InputTransformer{
+					F: func(o Output, d *Data, s string) ([]string, error) {
+						return nil, fmt.Errorf("oops")
+					},
+				},
+				want: &spyinput.SpyInput[InputBreaker]{
+					Args: []*spycommand.InputArg{
+						{Value: "uno"},
+						{Value: "dos"},
+						{Value: "tres"},
+					},
+					Remaining: []int{0, 1, 2},
+				},
+				wantErr: fmt.Errorf("oops"),
+			},
+			{
+				name: "fails if returns empty list",
+				i: &Input{si: &spyinput.SpyInput[InputBreaker]{
+					Args: []*spycommand.InputArg{
+						{Value: "uno"},
+						{Value: "dos"},
+						{Value: "tres"},
+					},
+					Remaining: []int{0, 1, 2},
+				}},
+				t: &InputTransformer{
+					F: func(o Output, d *Data, s string) ([]string, error) {
+						return []string{}, nil
+					},
+				},
+				want: &spyinput.SpyInput[InputBreaker]{
+					Args: []*spycommand.InputArg{
+						{Value: "uno"},
+						{Value: "dos"},
+						{Value: "tres"},
+					},
+					Remaining: []int{0, 1, 2},
+				},
+				wantErr: fmt.Errorf("InputTransformer returned an empty list"),
+			},
+			// UpToIndexInclusive tests
+			{
+				name: "simple transformer with UpToIndexInclusive",
+				i: &Input{si: &spyinput.SpyInput[InputBreaker]{
+					Args: []*spycommand.InputArg{
+						{Value: "uno"},
+						{Value: "dos"},
+						{Value: "tres"},
+						{Value: "quatro"},
+						{Value: "cinco"},
+						{Value: "seis"},
+					},
+					Remaining: []int{0, 1, 2, 3, 4, 5},
+				}},
+				t: &InputTransformer{
+					UpToIndexInclusive: 3,
+					F: func(o Output, d *Data, s string) ([]string, error) {
+						return []string{fmt.Sprintf("¡%s!", s)}, nil
+					},
+				},
+				want: &spyinput.SpyInput[InputBreaker]{
+					Args: []*spycommand.InputArg{
+						{Value: "¡uno!"},
+						{Value: "¡dos!"},
+						{Value: "¡tres!"},
+						{Value: "¡quatro!"},
+						{Value: "cinco"},
+						{Value: "seis"},
+					},
+					Remaining: []int{0, 1, 2, 3, 4, 5},
+				},
+			},
+			{
+				name: "simple transformer with UpToIndexInclusive equal to input size",
+				i: &Input{si: &spyinput.SpyInput[InputBreaker]{
+					Args: []*spycommand.InputArg{
+						{Value: "uno"},
+						{Value: "dos"},
+						{Value: "tres"},
+						{Value: "quatro"},
+						{Value: "cinco"},
+						{Value: "seis"},
+					},
+					Remaining: []int{0, 1, 2, 3, 4, 5},
+				}},
+				t: &InputTransformer{
+					UpToIndexInclusive: 5,
+					F: func(o Output, d *Data, s string) ([]string, error) {
+						return []string{fmt.Sprintf("¡%s!", s)}, nil
+					},
+				},
+				want: &spyinput.SpyInput[InputBreaker]{
+					Args: []*spycommand.InputArg{
+						{Value: "¡uno!"},
+						{Value: "¡dos!"},
+						{Value: "¡tres!"},
+						{Value: "¡quatro!"},
+						{Value: "¡cinco!"},
+						{Value: "¡seis!"},
+					},
+					Remaining: []int{0, 1, 2, 3, 4, 5},
+				},
+			},
+			{
+				name: "simple transformer with UpToIndexInclusive greater than input size",
+				i: &Input{si: &spyinput.SpyInput[InputBreaker]{
+					Args: []*spycommand.InputArg{
+						{Value: "uno"},
+						{Value: "dos"},
+						{Value: "tres"},
+						{Value: "quatro"},
+						{Value: "cinco"},
+						{Value: "seis"},
+					},
+					Remaining: []int{0, 1, 2, 3, 4, 5},
+				}},
+				t: &InputTransformer{
+					UpToIndexInclusive: 5,
+					F: func(o Output, d *Data, s string) ([]string, error) {
+						return []string{fmt.Sprintf("¡%s!", s)}, nil
+					},
+				},
+				want: &spyinput.SpyInput[InputBreaker]{
+					Args: []*spycommand.InputArg{
+						{Value: "¡uno!"},
+						{Value: "¡dos!"},
+						{Value: "¡tres!"},
+						{Value: "¡quatro!"},
+						{Value: "¡cinco!"},
+						{Value: "¡seis!"},
+					},
+					Remaining: []int{0, 1, 2, 3, 4, 5},
+				},
+			},
+			{
+				name: "simple transformer with negative UpToIndexInclusive (all objects)",
+				i: &Input{si: &spyinput.SpyInput[InputBreaker]{
+					Args: []*spycommand.InputArg{
+						{Value: "uno"},
+						{Value: "dos"},
+						{Value: "tres"},
+						{Value: "quatro"},
+						{Value: "cinco"},
+						{Value: "seis"},
+					},
+					Remaining: []int{0, 1, 2, 3, 4, 5},
+				}},
+				t: &InputTransformer{
+					UpToIndexInclusive: -1,
+					F: func(o Output, d *Data, s string) ([]string, error) {
+						return []string{fmt.Sprintf("¡%s!", s)}, nil
+					},
+				},
+				want: &spyinput.SpyInput[InputBreaker]{
+					Args: []*spycommand.InputArg{
+						{Value: "¡uno!"},
+						{Value: "¡dos!"},
+						{Value: "¡tres!"},
+						{Value: "¡quatro!"},
+						{Value: "¡cinco!"},
+						{Value: "¡seis!"},
+					},
+					Remaining: []int{0, 1, 2, 3, 4, 5},
+				},
+			},
+			{
+				name: "simple transformer with UpToIndexInclusive set to UnboundedList",
+				i: &Input{si: &spyinput.SpyInput[InputBreaker]{
+					Args: []*spycommand.InputArg{
+						{Value: "uno"},
+						{Value: "dos"},
+						{Value: "tres"},
+						{Value: "quatro"},
+						{Value: "cinco"},
+						{Value: "seis"},
+					},
+					Remaining: []int{0, 1, 2, 3, 4, 5},
+				}},
+				t: &InputTransformer{
+					UpToIndexInclusive: UnboundedList,
+					F: func(o Output, d *Data, s string) ([]string, error) {
+						return []string{fmt.Sprintf("¡%s!", s)}, nil
+					},
+				},
+				want: &spyinput.SpyInput[InputBreaker]{
+					Args: []*spycommand.InputArg{
+						{Value: "¡uno!"},
+						{Value: "¡dos!"},
+						{Value: "¡tres!"},
+						{Value: "¡quatro!"},
+						{Value: "¡cinco!"},
+						{Value: "¡seis!"},
+					},
+					Remaining: []int{0, 1, 2, 3, 4, 5},
+				},
+			},
+			// Complete tests
+			{
+				name:     "Ignores last argument if complete and full list (UpToIndexInclusive set to UnboundedList)",
+				complete: true,
+				i: &Input{si: &spyinput.SpyInput[InputBreaker]{
+					Args: []*spycommand.InputArg{
+						{Value: "uno"},
+						{Value: "dos"},
+						{Value: "tres"},
+						{Value: "quatro"},
+						{Value: "cinco"},
+						{Value: "seis"},
+					},
+					Remaining: []int{0, 1, 2, 3, 4, 5},
+				}},
+				t: &InputTransformer{
+					UpToIndexInclusive: UnboundedList,
+					F: func(o Output, d *Data, s string) ([]string, error) {
+						return []string{fmt.Sprintf("¡%s!", s)}, nil
+					},
+				},
+				want: &spyinput.SpyInput[InputBreaker]{
+					Args: []*spycommand.InputArg{
+						{Value: "¡uno!"},
+						{Value: "¡dos!"},
+						{Value: "¡tres!"},
+						{Value: "¡quatro!"},
+						{Value: "¡cinco!"},
+						{Value: "seis"},
+					},
+					Remaining: []int{0, 1, 2, 3, 4, 5},
+				},
+			},
+			{
+				name:     "Ignores last argument if complete and full list (UpToIndexInclusive is less than input size)",
+				complete: true,
+				i: &Input{si: &spyinput.SpyInput[InputBreaker]{
+					Args: []*spycommand.InputArg{
+						{Value: "uno"},
+						{Value: "dos"},
+						{Value: "tres"},
+						{Value: "quatro"},
+						{Value: "cinco"},
+						{Value: "seis"},
+					},
+					Remaining: []int{0, 1, 2, 3, 4, 5},
+				}},
+				t: &InputTransformer{
+					UpToIndexInclusive: 123,
+					F: func(o Output, d *Data, s string) ([]string, error) {
+						return []string{fmt.Sprintf("¡%s!", s)}, nil
+					},
+				},
+				want: &spyinput.SpyInput[InputBreaker]{
+					Args: []*spycommand.InputArg{
+						{Value: "¡uno!"},
+						{Value: "¡dos!"},
+						{Value: "¡tres!"},
+						{Value: "¡quatro!"},
+						{Value: "¡cinco!"},
+						{Value: "seis"},
+					},
+					Remaining: []int{0, 1, 2, 3, 4, 5},
+				},
+			},
+			{
+				name:     "Complete has no effect if UpToIndexInclusive is less than input size)",
+				complete: true,
+				i: &Input{si: &spyinput.SpyInput[InputBreaker]{
+					Args: []*spycommand.InputArg{
+						{Value: "uno"},
+						{Value: "dos"},
+						{Value: "tres"},
+						{Value: "quatro"},
+						{Value: "cinco"},
+						{Value: "seis"},
+					},
+					Remaining: []int{0, 1, 2, 3, 4, 5},
+				}},
+				t: &InputTransformer{
+					UpToIndexInclusive: 2,
+					F: func(o Output, d *Data, s string) ([]string, error) {
+						return []string{fmt.Sprintf("¡%s!", s)}, nil
+					},
+				},
+				want: &spyinput.SpyInput[InputBreaker]{
+					Args: []*spycommand.InputArg{
+						{Value: "¡uno!"},
+						{Value: "¡dos!"},
+						{Value: "¡tres!"},
+						{Value: "quatro"},
+						{Value: "cinco"},
+						{Value: "seis"},
+					},
+					Remaining: []int{0, 1, 2, 3, 4, 5},
+				},
+			},
+			// Offset tests
+			{
+				name: "Only transforms remaining args",
+				i: &Input{si: &spyinput.SpyInput[InputBreaker]{
+					Args: []*spycommand.InputArg{
+						{Value: "uno"},
+						{Value: "dos"},
+						{Value: "tres"},
+						{Value: "quatro"},
+						{Value: "cinco"},
+						{Value: "seis"},
+					},
+					Remaining: []int{0, 3, 4},
+				}},
+				t: &InputTransformer{
+					UpToIndexInclusive: UnboundedList,
+					F: func(o Output, d *Data, s string) ([]string, error) {
+						return []string{fmt.Sprintf("¡%s!", s)}, nil
+					},
+				},
+				want: &spyinput.SpyInput[InputBreaker]{
+					Args: []*spycommand.InputArg{
+						{Value: "¡uno!"},
+						{Value: "dos"},
+						{Value: "tres"},
+						{Value: "¡quatro!"},
+						{Value: "¡cinco!"},
+						{Value: "seis"},
+					},
+					Remaining: []int{0, 3, 4},
+				},
+			},
+			/* Useful for commenting out tests. */
+		} {
+			name := test.name
+			if withFunc {
+				name += "[via Execute/Complete function]"
+			}
+			t.Run(name, func(t *testing.T) {
+				var err error
+				if withFunc {
+					if test.complete {
+						var c *Completion
+						c, err = test.t.Complete(test.i, nil)
+						testutil.Cmp(t, "Complete() returned non-nil completion", nil, c)
+					} else {
+						err = test.t.Execute(test.i, nil, nil, nil)
+					}
+				} else {
+					err = test.t.Transform(test.i, nil, nil, test.complete)
+				}
+
+				testutil.CmpError(t, "InputTransformer.Transform()", test.wantErr, err)
+				testutil.Cmp(t, "InputTransformer.Transform() resulted in incorrect Input object", test.want, test.i.si)
+			})
+		}
+	}
+
+	t.Run("InputTransformer.Usage() returns nil", func(t *testing.T) {
+		it := &InputTransformer{}
+		testutil.CmpError(t, "InputTransformer.Usage()", nil, it.Usage(nil, nil, nil))
+	})
+}
+
 func TestPushFront(t *testing.T) {
 	for _, test := range []struct {
 		name string
@@ -960,4 +1362,21 @@ func (slb *simpleListBreaker) Break(s string, d *Data) bool {
 
 func (slb *simpleListBreaker) DiscardBreak(s string, d *Data) bool {
 	return slb.discard
+}
+
+func TestExtraArgsErr(t *testing.T) {
+	ex := ExtraArgsErr(&Input{si: &spyinput.SpyInput[InputBreaker]{
+		Args: []*spycommand.InputArg{
+			{Value: "abc"},
+			{Value: "def"},
+			{Value: "ghi"},
+		},
+		Remaining: []int{0, 2},
+	}})
+
+	testutil.CmpError(t, "ExtraArgsErr()", fmt.Errorf("Unprocessed extra args: [abc ghi]"), ex)
+
+	testutil.Cmp(t, "ExtraArgsErr(ExtraArgsErr())", true, IsExtraArgsError(ex))
+	testutil.Cmp(t, "ExtraArgsErr(fmt.Errorf())", false, IsExtraArgsError(fmt.Errorf("other error")))
+	testutil.Cmp(t, "ExtraArgsErr(nil)", false, IsExtraArgsError(nil))
 }

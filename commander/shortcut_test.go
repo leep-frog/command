@@ -495,8 +495,8 @@ func TestShortcutExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Node:       ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
 				Args:       []string{"t", "grizzly", "other"},
-				WantErr:    fmt.Errorf("shortcut has empty value"),
-				WantStderr: "shortcut has empty value\n",
+				WantErr:    fmt.Errorf("InputTransformer returned an empty list"),
+				WantStderr: "InputTransformer returned an empty list\n",
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
 				WantInput: &spycommandtest.SpyInput{
@@ -1400,7 +1400,7 @@ func TestAliasComplete(t *testing.T) {
 					SimpleCompleter[[]string]("un", "deux", "trois"),
 				))),
 				Args:    "cmd alpha b ",
-				WantErr: fmt.Errorf("shortcut has empty value"),
+				WantErr: fmt.Errorf("InputTransformer returned an empty list"),
 			},
 		},
 		{
