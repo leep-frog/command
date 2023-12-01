@@ -13,8 +13,7 @@ func ListUntilSymbol[T comparable](symbol T) *ListBreaker[[]T] {
 		},
 		UsageFunc: func(d *command.Data, u *command.Usage) error {
 			arg := operator.GetOperator[T]().ToArgs(symbol)[0] // slices aren't comparable, so this will only ever be length 1
-			u.Usage = append(u.Usage, arg)
-			u.UsageSection.Add(command.SymbolSection, arg, "List breaker")
+			u.AddSymbol(arg, "List breaker")
 			return nil
 		},
 	}

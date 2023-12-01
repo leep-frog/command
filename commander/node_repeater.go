@@ -42,8 +42,39 @@ type nodeRepeater struct {
 	n         command.Node
 }
 
-func (nr *nodeRepeater) Usage(i *command.Input, d *command.Data, u *command.Usage) error {
-	nu, err := spycommander.ProcessNewGraphUse(nr.n, i)
+func (nr *nodeRepeater) Usage(input *command.Input, d *command.Data, u *command.Usage) error {
+	for i := 0; i < nr.minN; i++ {
+		if err := spycommander.ProcessGraphUse(nr.n, input, d, u); err != nil {
+			return err
+		}
+	}
+
+	if nr.optionalN == command.UnboundedList {
+
+		// u.Usage = append(u.Usage, "{")
+		u.AddArg("{", "", 1, 0)
+
+		// u.Usage = append(u.Usage, nu.Usage...)
+		if err := spycommander.ProcessGraphUse(nr.n, input, d, u); err != nil {
+			return err
+		}
+
+		// u.Usage = append(u.Usage, "}")
+		u.AddArg("}", "", 1, 0)
+
+		// u.Usage = append(u.Usage, "...")
+		u.AddArg("...", "", 1, 0)
+	} else if nr.optionalN > 0 {
+		u.AddArg("{", "", 1, 0)
+		for i := 0; i < nr.optionalN; i++ {
+			if err := spycommander.ProcessGraphUse(nr.n, input, d, u); err != nil {
+				return err
+			}
+		}
+		u.AddArg("}", "", 1, 0)
+	}
+
+	/*nu, err := spycommander.ProcessNewGraphUse(nr.n, i)
 	if err != nil {
 		return err
 	}
@@ -63,20 +94,7 @@ func (nr *nodeRepeater) Usage(i *command.Input, d *command.Data, u *command.Usag
 	// Add Arguments
 	for i := 0; i < nr.minN; i++ {
 		u.Usage = append(u.Usage, nu.Usage...)
-	}
-
-	if nr.optionalN == command.UnboundedList {
-		u.Usage = append(u.Usage, "{")
-		u.Usage = append(u.Usage, nu.Usage...)
-		u.Usage = append(u.Usage, "}")
-		u.Usage = append(u.Usage, "...")
-	} else if nr.optionalN > 0 {
-		u.Usage = append(u.Usage, "{")
-		for i := 0; i < nr.optionalN; i++ {
-			u.Usage = append(u.Usage, nu.Usage...)
-		}
-		u.Usage = append(u.Usage, "}")
-	}
+	}*/
 
 	// We don't add flags because those are, presumably, done all at once at the beginning.
 	// Additionally, SubSections are only used by BranchNodes, and I can't imagine those being used inside of NodeRepeater

@@ -379,21 +379,7 @@ func (fn *flagProcessor) Usage(i *command.Input, d *command.Data, u *command.Usa
 	sort.SliceStable(flags, func(i, j int) bool { return flags[i].Name() < flags[j].Name() })
 
 	for _, f := range flags {
-		sn := f.ShortName()
-		if f.Desc() != "" {
-			if sn == FlagNoShortName {
-				u.UsageSection.Add(command.FlagSection, fmt.Sprintf("    %s", f.Name()), f.Desc())
-			} else {
-				u.UsageSection.Add(command.FlagSection, fmt.Sprintf("[%c] %s", f.ShortName(), f.Name()), f.Desc())
-			}
-		}
-
-		if sn == FlagNoShortName {
-			u.Flags = append(u.Flags, fmt.Sprintf("%s", flagName(f)))
-		} else {
-			u.Flags = append(u.Flags, fmt.Sprintf("%s|%s", flagName(f), flagShortName(f)))
-		}
-
+		u.AddFlag(f.Name(), f.ShortName(), "TODO", f.Desc(), 0, 0) // TODO: numbers here
 	}
 	return nil
 }
@@ -547,7 +533,7 @@ func (bf *boolFlag[T]) Usage(i *command.Input, d *command.Data, u *command.Usage
 
 	// Since flag processors are added at the beginning, the usage statements can be a bit awkward
 	// Instead add another row for supported flags
-	u.UsageSection.Add(command.FlagSection, bf.name, bf.desc)
+	u.AddFlag(bf.name, bf.shortName, "TODO-BOOL", bf.desc, 0, 0)
 	return nil
 }
 

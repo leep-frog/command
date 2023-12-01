@@ -15,10 +15,8 @@ import (
 )
 
 const (
-	ShortcutDesc             = constants.ShortcutDesc
-	CacheDesc                = constants.CacheDesc
-	BranchDescWithDefault    = constants.BranchDescWithDefault
-	BranchDescWithoutDefault = constants.BranchDescWithoutDefault
+	ShortcutDesc = constants.ShortcutDesc
+	CacheDesc    = constants.CacheDesc
 )
 
 // ExecuteTest runs a command exectuion test against the provided command configuration.

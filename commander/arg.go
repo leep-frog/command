@@ -2,6 +2,7 @@ package commander
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/leep-frog/command/command"
 	"github.com/leep-frog/command/internal/operator"
@@ -86,27 +87,20 @@ func (an *Argument[T]) Usage(i *command.Input, d *command.Data, u *command.Usage
 		return nil
 	}
 
-	u.AddArg(an.name, an.desc, an.minN, an.optionalN /* TODO: Validators */)
-	/*if an.opt != nil {
-		for _, v := range an.opt.validators {
-			u.UsageSection.Add(command.ArgSection, an.name, v.Usage)
-		}
-	}*/
+	var gotCnt int
+	if err != nil {
+		gotCnt = err.(*notEnoughArgs).got
+	}
 
-	for i := 0; i < an.minN; i++ {
-		u.Usage = append(u.Usage, an.name)
-	}
-	if an.optionalN == command.UnboundedList {
-		u.Usage = append(u.Usage, fmt.Sprintf("[ %s ... ]", an.name))
-	} else {
-		if an.optionalN > 0 {
-			u.Usage = append(u.Usage, "[")
-			for i := 0; i < an.optionalN; i++ {
-				u.Usage = append(u.Usage, an.name)
-			}
-			u.Usage = append(u.Usage, "]")
+	// We know we got less than an.minN args, so that is guaranteed to be positive
+	desc := []string{an.desc}
+	if an.opt != nil {
+		for _, v := range an.opt.validators {
+			desc = append(desc, v.Usage)
 		}
 	}
+
+	u.AddArg(an.name, strings.Join(desc, "\n    "), an.minN-gotCnt, an.optionalN /* TODO: Validators */)
 
 	for _, b := range an.opt.breakers {
 		if err := b.Usage(d, u); err != nil {

@@ -19,9 +19,7 @@ func Use(root command.Node, input *command.Input) (*command.Usage, error) {
 
 // ProcessNewGraphUse processes the usage for provided graph
 func ProcessNewGraphUse(root command.Node, input *command.Input) (*command.Usage, error) {
-	u := &command.Usage{
-		UsageSection: &command.UsageSection{},
-	}
+	u := &command.Usage{}
 	return u, ProcessGraphUse(root, input, &command.Data{}, u)
 }
 

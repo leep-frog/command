@@ -1691,9 +1691,6 @@ func TestSourcerer(t *testing.T) {
 						"Arguments:",
 						"  F: f",
 						"  S: s",
-						"",
-						"Symbols:",
-						"  ┓: Start of subcommand branches (without default node)",
 					},
 				},
 			},
@@ -1745,7 +1742,7 @@ func TestSourcerer(t *testing.T) {
 				osCheck: &osCheck{
 					wantStdout: []string{
 						strings.Join([]string{
-							"SL SL [ SL ] --bool2Flag --boolFlag|-b --strFlag|-s --strFlag2|-2",
+							"SL [ SL ] --bool2Flag --boolFlag|-b --strFlag|-s --strFlag2|-2",
 							"",
 							"Arguments:",
 							"  SL: test",
@@ -3148,9 +3145,6 @@ func uecUsage() string {
 		`Arguments:`,
 		`  A_SL: str list`,
 		`  B_SL: str list`,
-		``,
-		`Symbols:`,
-		commandertest.BranchDescWithoutDefault,
 		``,
 	}, "\n")
 }

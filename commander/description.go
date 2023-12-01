@@ -21,7 +21,7 @@ type descNode struct {
 }
 
 func (dn *descNode) Usage(i *command.Input, d *command.Data, u *command.Usage) error {
-	u.Description = dn.desc
+	u.SetDescription(dn.desc)
 	return nil
 }
 

@@ -43,6 +43,24 @@ func TestUsage(t *testing.T) {
 			},
 		},
 		{
+			name: "Usage with args and symbol",
+			yuf: func(y *Usage) {
+				y.AddArg("ARG_1", "arg 1", 1, 0)
+				y.AddSymbol("*", "Star")
+				y.AddArg("ARG_2", "arg 2", 1, 0)
+			},
+			want: []string{
+				"ARG_1 * ARG_2",
+				"",
+				"Arguments:",
+				"  ARG_1: arg 1",
+				"  ARG_2: arg 2",
+				"",
+				"Symbols:",
+				"  *: Star",
+			},
+		},
+		{
 			name: "Arg with no description",
 			yuf: func(y *Usage) {
 				y.AddArg("ARG_1", "", 1, 0)
@@ -78,7 +96,7 @@ func TestUsage(t *testing.T) {
 				y.AddArg("ARG_1", "arg 1", 1, UnboundedList)
 			},
 			want: []string{
-				"ARG_1 [ ... ]",
+				"ARG_1 [ ARG_1 ... ]",
 				"",
 				"Arguments:",
 				"  ARG_1: arg 1",
@@ -90,7 +108,7 @@ func TestUsage(t *testing.T) {
 				y.AddArg("ARG_1", "arg 1", 2, UnboundedList)
 			},
 			want: []string{
-				"ARG_1 ARG_1 [ ... ]",
+				"ARG_1 ARG_1 [ ARG_1 ... ]",
 				"",
 				"Arguments:",
 				"  ARG_1: arg 1",
@@ -172,7 +190,7 @@ func TestUsage(t *testing.T) {
 			name: "Ignores nil branches",
 			yuf: func(y *Usage) {
 				y.SetDescription("Does stuff")
-				y.InsertBranches(nil)
+				y.SetBranches(nil)
 			},
 			want: []string{
 				"Does stuff",
@@ -182,7 +200,7 @@ func TestUsage(t *testing.T) {
 			name: "Ignores empty branches",
 			yuf: func(y *Usage) {
 				y.SetDescription("Does stuff")
-				y.InsertBranches([]*BranchUsage{})
+				y.SetBranches([]*BranchUsage{})
 			},
 			want: []string{
 				"Does stuff",
@@ -198,8 +216,8 @@ func TestUsage(t *testing.T) {
 				"--first-flag|-f --second-flag",
 				"",
 				"Flags:",
-				"  [f] --first-flag: 1st",
-				"      --second-flag: 2nd",
+				"  [f] first-flag: 1st",
+				"      second-flag: 2nd",
 			},
 		},
 		{
@@ -221,8 +239,8 @@ func TestUsage(t *testing.T) {
 				"  ARG_2: arg 2",
 				"",
 				"Flags:",
-				"  [f] --first-flag: 1st",
-				"      --second-flag: 2nd",
+				"  [f] first-flag: 1st",
+				"      second-flag: 2nd",
 			},
 		},
 		{
@@ -240,8 +258,8 @@ func TestUsage(t *testing.T) {
 				// Intermix flag and args to verify flags go at end
 				y.AddArg("ARG_1", "arg 1", 1, 0)
 
-				y.InsertBranches([]*BranchUsage{}) // Confirm ignore `InsertBranches with empty is ignored
-				y.InsertBranches([]*BranchUsage{
+				y.SetBranches([]*BranchUsage{}) // Confirm ignore `SetBranches with empty is ignored
+				y.SetBranches([]*BranchUsage{
 					{Usage: b1},
 					{Usage: b2},
 				})
@@ -265,9 +283,9 @@ func TestUsage(t *testing.T) {
 				`  ARG_B_2: Second branch arg`,
 				``,
 				`Flags:`,
-				`  [b] --branch-1: First branch`,
-				`      --first-flag: 1st`,
-				`      --second-flag: 2nd`,
+				`  [b] branch-1: First branch`,
+				`      first-flag: 1st`,
+				`      second-flag: 2nd`,
 			},
 		},
 		{
@@ -287,7 +305,7 @@ func TestUsage(t *testing.T) {
 				b1.SetDescription("Branch 1")
 				b1.AddFlag("branch-1", 'b', "B", "First branch", 2, 0)
 
-				b1.InsertBranches([]*BranchUsage{
+				b1.SetBranches([]*BranchUsage{
 					{Usage: b1_1},
 					{Usage: b1_2},
 					{Usage: b1_3},
@@ -301,14 +319,14 @@ func TestUsage(t *testing.T) {
 				b2.SetDescription("Branch 2")
 				b2.AddArg("ARG_B_2", "Second branch arg", 2, 1)
 
-				b2.InsertBranches([]*BranchUsage{
+				b2.SetBranches([]*BranchUsage{
 					{Usage: b2_1},
 				})
 
 				y.SetDescription("Does stuff")
 				// Intermix flag and args to verify flags go at end
 				y.AddArg("ARG_1", "arg 1", 1, 0)
-				y.InsertBranches([]*BranchUsage{
+				y.SetBranches([]*BranchUsage{
 					{Usage: b1},
 					{Usage: b2},
 				})
@@ -344,12 +362,12 @@ func TestUsage(t *testing.T) {
 				`  ARG_B_2: Second branch arg`,
 				``,
 				`Flags:`,
-				`      --ARG_B_2_1: two point one`,
-				`  [b] --branch-1: First branch`,
-				`      --branch-1.1: one point one`,
-				`      --branch-1.2: one point two`,
-				`      --first-flag: 1st`,
-				`      --second-flag: 2nd`,
+				`      ARG_B_2_1: two point one`,
+				`  [b] branch-1: First branch`,
+				`      branch-1.1: one point one`,
+				`      branch-1.2: one point two`,
+				`      first-flag: 1st`,
+				`      second-flag: 2nd`,
 			},
 		},
 		/* Useful for commenting out tests. */
@@ -362,11 +380,11 @@ func TestUsage(t *testing.T) {
 	}
 }
 
-func TestInsertBranches(t *testing.T) {
-	testutil.CmpPanic(t, "[InsertBranches() x 2]", func() bool {
+func TestSetBranches(t *testing.T) {
+	testutil.CmpPanic(t, "[SetBranches() x 2]", func() bool {
 		u := &Usage{}
-		u.InsertBranches([]*BranchUsage{nil})
-		u.InsertBranches([]*BranchUsage{nil})
+		u.SetBranches([]*BranchUsage{nil})
+		u.SetBranches([]*BranchUsage{nil})
 		return false
 	}, "Currently, only one branch point is supported per line")
 }

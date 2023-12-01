@@ -187,9 +187,9 @@ type executeShortcut struct {
 }
 
 func (ea *executeShortcut) Usage(i *command.Input, d *command.Data, u *command.Usage) error {
-	u.UsageSection.Add(command.SymbolSection, "*", "Start of new shortcut-able section")
+	u.AddSymbol("*", "Start of new shortcut-able section")
 	// TODO: show shortcut subcommands on --help
-	u.Usage = append(u.Usage, "*")
+	// u.Usage = append(u.Usage, "*")
 	return nil
 }
 

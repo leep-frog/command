@@ -7,6 +7,7 @@ import (
 
 	"github.com/leep-frog/command/command"
 	"github.com/leep-frog/command/commandtest"
+	"github.com/leep-frog/command/internal/constants"
 	"github.com/leep-frog/command/internal/spycommand"
 	"github.com/leep-frog/command/internal/spycommandertest"
 	"github.com/leep-frog/command/internal/spycommandtest"
@@ -297,7 +298,7 @@ func TestExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"--help"},
 				Node: &simpleNode{u: func(i *command.Input, d *command.Data, u *command.Usage) error {
-					u.Description = "Desc"
+					u.SetDescription("Desc")
 					return nil
 				}},
 				WantStdout: "Desc\n",
@@ -308,7 +309,7 @@ func TestExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"--help"},
 				Node: &simpleNode{u: func(i *command.Input, d *command.Data, u *command.Usage) error {
-					u.Description = "Desc"
+					u.SetDescription("Desc")
 					return fmt.Errorf("whoops")
 				}},
 				WantStderr: "whoops\n",
@@ -321,13 +322,13 @@ func TestExecute(t *testing.T) {
 				Args: []string{"--help"},
 				Node: serialNodes(
 					&simpleNode{u: func(i *command.Input, d *command.Data, u *command.Usage) error {
-						u.Description = "Desc"
-						u.Flags = append(u.Flags, "--un")
+						u.SetDescription("Desc")
+						u.AddFlag("un", constants.FlagNoShortName, "", "", 0, 0)
 						return nil
 					}},
 					&simpleNode{u: func(i *command.Input, d *command.Data, u *command.Usage) error {
-						u.Usage = append(u.Usage, "ARG")
-						u.Flags = append(u.Flags, "--deux")
+						u.AddArg("ARG", "", 1, 0)
+						u.AddFlag("deux", constants.FlagNoShortName, "", "", 0, 0)
 						return nil
 					}},
 				),
@@ -340,8 +341,8 @@ func TestExecute(t *testing.T) {
 				Args: []string{"--help"},
 				Node: &simpleNode{
 					u: func(i *command.Input, d *command.Data, u *command.Usage) error {
-						u.Description = "Desc"
-						u.Flags = append(u.Flags, "--un")
+						u.SetDescription("Desc")
+						u.AddFlag("un", constants.FlagNoShortName, "", "", 0, 0)
 						return nil
 					},
 					unx: func(i *command.Input, d *command.Data) (command.Node, error) {
@@ -362,7 +363,7 @@ func TestExecute(t *testing.T) {
 						u: func(i *command.Input, d *command.Data, u *command.Usage) error {
 							var subN command.Node
 							subN = &simpleNode{u: func(i *command.Input, d *command.Data, u *command.Usage) error {
-								u.Usage = append(u.Usage, "HERE")
+								u.SetDescription("HERE")
 								return nil
 							}}
 							return ProcessOrUsage(subN, i, d, u)
@@ -381,7 +382,7 @@ func TestExecute(t *testing.T) {
 						u: func(i *command.Input, d *command.Data, u *command.Usage) error {
 							var subP command.Processor
 							subP = &simpleProcessor{u: func(i *command.Input, d *command.Data, u *command.Usage) error {
-								u.Flags = append(u.Flags, "--sub")
+								u.AddFlag("sub", constants.FlagNoShortName, "", "", 0, 0)
 								return nil
 							}}
 
@@ -403,7 +404,7 @@ func TestExecute(t *testing.T) {
 				Node: serialNodes(
 					&simpleNode{
 						u: func(i *command.Input, d *command.Data, u *command.Usage) error {
-							u.Flags = append(u.Flags, "--sub")
+							u.AddFlag("sub", constants.FlagNoShortName, "", "", 0, 0)
 							return nil
 						},
 						ex: func(i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
@@ -446,7 +447,7 @@ func TestExecute(t *testing.T) {
 				Node: serialNodes(
 					&simpleNode{
 						u: func(i *command.Input, d *command.Data, u *command.Usage) error {
-							u.Flags = append(u.Flags, "--sub")
+							u.AddFlag("sub", constants.FlagNoShortName, "", "", 0, 0)
 							return fmt.Errorf("usage oops")
 						},
 						ex: func(i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {

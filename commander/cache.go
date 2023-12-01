@@ -123,8 +123,7 @@ func (cc *commandCache) history(input *command.Input, output command.Output, dat
 }
 
 func (cc *commandCache) Usage(input *command.Input, data *command.Data, u *command.Usage) error {
-	u.UsageSection.Add(command.SymbolSection, "^", "Start of new cachable section")
-	u.Usage = append(u.Usage, "^")
+	u.AddSymbol("^", "Start of new cachable section")
 	return nil
 }
 

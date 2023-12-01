@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/leep-frog/command/command"
-	"github.com/leep-frog/command/internal/constants"
 	"github.com/leep-frog/command/internal/spycommander"
 	"golang.org/x/exp/maps"
 	"golang.org/x/exp/slices"
@@ -245,38 +244,36 @@ func (bn *BranchNode) Usage(input *command.Input, data *command.Data, u *command
 		return nil
 	}
 
-	if bn.Default != nil {
-		u.UsageSection.Set(command.SymbolSection, constants.UsageBoxLeftRightDown, "Start of subcommand branches (with default node)")
-		u.Usage = append(u.Usage, constants.UsageBoxLeftRightDown)
-	} else {
-		u.UsageSection.Set(command.SymbolSection, constants.UsageBoxLeftDown, "Start of subcommand branches (without default node)")
-		u.Usage = append(u.Usage, constants.UsageBoxLeftDown)
-	}
-
 	bss := maps.Values(bn.getSyns())
 	if err := bn.sortBranchSyns(bss); err != nil {
 		return err
 	}
 
+	var branchUsages []*command.BranchUsage
+	for _, bs := range bss {
+		// command.Input is empty at this point, so fine to pass the same input to all branches
+		su := &command.Usage{}
+
+		name := bs.name
+		if len(bs.values) > 0 {
+			name = fmt.Sprintf("[%s|%s]", name, strings.Join(bs.values, "|"))
+		}
+		su.AddArg(name, "", 1, 0)
+		err := spycommander.ProcessGraphUse(bs.n, input, data, su)
+		if err != nil {
+			return err
+		}
+		branchUsages = append(branchUsages, &command.BranchUsage{
+			Usage: su,
+			// TODO: NoLines?
+		})
+	}
+	u.SetBranches(branchUsages)
+
 	if bn.Default != nil {
 		if err := spycommander.ProcessGraphUse(bn.Default, input, data, u); err != nil {
 			return err
 		}
-	}
-
-	for _, bs := range bss {
-		// command.Input is empty at this point, so fine to pass the same input to all branches
-		su, err := spycommander.ProcessNewGraphUse(bs.n, input)
-		if err != nil {
-			return err
-		}
-		v := bs.name
-		if len(bs.values) > 0 {
-			v = fmt.Sprintf("[%s|%s]", bs.name, strings.Join(bs.values, "|"))
-		}
-		su.Usage = append([]string{v}, su.Usage...)
-		u.SubSections = append(u.SubSections, su)
-		su.SubSectionLines = true
 	}
 	return nil
 }

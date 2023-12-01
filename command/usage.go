@@ -96,6 +96,8 @@ type Usage struct {
 	cacheArgIdx  int
 
 	branches []*BranchUsage
+
+	symbols map[string]string
 }
 
 func (u *Usage) SetDescription(desc string) {
@@ -113,12 +115,21 @@ func (u *Usage) AddArg(name, description string, required, optional int) {
 	})
 }
 
+func (u *Usage) AddSymbol(symbol, description string) {
+	if u.symbols == nil {
+		u.symbols = map[string]string{}
+	}
+	u.symbols[symbol] = description
+
+	u.AddArg(symbol, "", 1, 0)
+}
+
 func (u *Usage) AddFlag(fullFlag string, shortFlag rune, argName string, description string, required, optional int) {
 	usageStringPrefix := fmt.Sprintf("--%s", fullFlag)
-	sectionKey := fmt.Sprintf("    %s", usageStringPrefix)
+	sectionKey := fmt.Sprintf("    %s", fullFlag)
 
 	if shortFlag != constants.FlagNoShortName {
-		sectionKey = fmt.Sprintf("[%c] %s", shortFlag, usageStringPrefix)
+		sectionKey = fmt.Sprintf("[%c] %s", shortFlag, fullFlag)
 		usageStringPrefix = fmt.Sprintf("%s|-%c", usageStringPrefix, shortFlag)
 	}
 	u.flags = append(u.flags, &argumentUsage{
@@ -133,7 +144,7 @@ func (u *Usage) AddFlag(fullFlag string, shortFlag rune, argName string, descrip
 	})
 }
 
-func (u *Usage) InsertBranches(branches []*BranchUsage) {
+func (u *Usage) SetBranches(branches []*BranchUsage) {
 	if u.branchArgIdx != nil {
 		panic("Currently, only one branch point is supported per line")
 	}
@@ -197,6 +208,9 @@ func (u *Usage) String() string {
 }
 
 func (u *Usage) string(r []string, preItemPrefix, itemPrefix, postItemPrefix string, sections *usageSectionMap) []string {
+	for sym, desc := range u.symbols {
+		sections.add(SymbolSection, sym, desc)
+	}
 	rappendf := func(prefix, s string) {
 		r = append(r, prefix+s)
 	}
@@ -234,17 +248,11 @@ func (u *Usage) string(r []string, preItemPrefix, itemPrefix, postItemPrefix str
 				}
 				usageLine = append(usageLine, "]")
 			} else if ui.optional == UnboundedList {
-				if ui.required > 0 {
-					// Just add ...
-					usageLine = append(usageLine, "[", "...", "]")
-				} else {
-					usageLine = append(usageLine, "[", *ui.usageString, "...", "]")
-				}
-
+				usageLine = append(usageLine, "[", *ui.usageString, "...", "]")
 			}
 		}
 		if ui.description != "" {
-			sections.Add(ui.section, ui.sectionKey, ui.description)
+			sections.add(ui.section, ui.sectionKey, ui.description)
 		}
 	}
 
@@ -303,7 +311,7 @@ func (u *Usage) string(r []string, preItemPrefix, itemPrefix, postItemPrefix str
 type usageSectionMap map[UsageSection]map[string]string
 
 // Add adds a usage section.
-func (us *usageSectionMap) Add(section UsageSection, key string, value string) {
+func (us *usageSectionMap) add(section UsageSection, key string, value string) {
 	if (*us)[section] == nil {
 		(*us)[section] = map[string]string{}
 	}
