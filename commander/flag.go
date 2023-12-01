@@ -406,11 +406,7 @@ func (f *flag[T]) Options() *FlagOptions {
 				return nil
 			}
 
-			def, err := f.argument.opt._default.f(d)
-			if err != nil {
-				return err
-			}
-			f.argument.Set(def, d)
+			f.argument.Set(f.argument.opt._default.v, d)
 			return nil
 		},
 	}

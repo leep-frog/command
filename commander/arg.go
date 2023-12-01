@@ -95,6 +95,9 @@ func (an *Argument[T]) Usage(i *command.Input, d *command.Data, u *command.Usage
 	// We know we got less than an.minN args, so that is guaranteed to be positive
 	desc := []string{an.desc}
 	if an.opt != nil {
+		if an.opt._default != nil {
+			desc = append(desc, fmt.Sprintf("Default: %v", an.opt._default.v))
+		}
 		for _, v := range an.opt.validators {
 			desc = append(desc, v.Usage)
 		}
@@ -122,11 +125,7 @@ func (an *Argument[T]) Execute(i *command.Input, o command.Output, data *command
 			return o.Err(an.notEnoughErr(len(sl)))
 		}
 		if an.opt != nil && an.opt._default != nil {
-			def, err := an.opt._default.f(data)
-			if err != nil {
-				return o.Annotatef(err, "failed to get default")
-			}
-			an.Set(def, data)
+			an.Set(an.opt._default.v, data)
 		}
 		return nil
 	}

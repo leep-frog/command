@@ -174,13 +174,14 @@ func TestUsage(t *testing.T) {
 			},
 		},
 		{
-			name: "works with validators and description node",
+			name: "works with default, validators, and description node",
 			etc: &commandtest.ExecuteTestCase{
 				Node: SerialNodes(
 					Arg[string]("SARG", "desc",
 						MinLength[string, string](3),
 						Contains("X"),
 						FileExists(),
+						Default("dflt"),
 					),
 					Description("Does absolutely nothing"),
 				),
@@ -190,6 +191,7 @@ func TestUsage(t *testing.T) {
 					"",
 					"Arguments:",
 					"  SARG: desc",
+					"    Default: dflt",
 					"    MinLength(3)",
 					`    Contains("X")`,
 					`    FileExists()`,

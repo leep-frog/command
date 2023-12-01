@@ -1402,27 +1402,12 @@ func TestExecute(t *testing.T) {
 		},
 		// Default value tests
 		{
-			name: "Uses DefaultFunc if no arg provided",
+			name: "Uses Default value if no arg provided",
 			etc: &commandtest.ExecuteTestCase{
-				Node: SerialNodes(OptionalArg("s", testDesc, DefaultFunc(func(d *command.Data) (string, error) {
-					return "heyo", nil
-				}))),
+				Node: SerialNodes(OptionalArg("s", testDesc, Default("heyo"))),
 				WantData: &command.Data{Values: map[string]interface{}{
 					"s": "heyo",
 				}},
-			},
-			ietc: &spycommandtest.ExecuteTestCase{
-				WantInput: &spycommandtest.SpyInput{},
-			},
-		},
-		{
-			name: "Failure if DefaultFunc failure for arg",
-			etc: &commandtest.ExecuteTestCase{
-				Node: SerialNodes(OptionalArg("s", testDesc, DefaultFunc(func(d *command.Data) (string, error) {
-					return "oops", fmt.Errorf("bad news bears")
-				}))),
-				WantErr:    fmt.Errorf("failed to get default: bad news bears"),
-				WantStderr: "failed to get default: bad news bears\n",
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
 				WantInput: &spycommandtest.SpyInput{},
@@ -1434,13 +1419,9 @@ func TestExecute(t *testing.T) {
 				Node: SerialNodes(
 					FlagProcessor(
 						Flag("s", 's', testDesc, Default("defStr")),
-						Flag("s2", 'S', testDesc, DefaultFunc(func(d *command.Data) (string, error) {
-							return "dos", nil
-						})),
+						Flag("s2", 'S', testDesc, Default("dos")),
 						Flag("it", 't', testDesc, Default(-456)),
-						Flag("i", 'i', testDesc, DefaultFunc(func(d *command.Data) (int, error) {
-							return 123, nil
-						})),
+						Flag("i", 'i', testDesc, Default(123)),
 						Flag("fs", 'f', testDesc, Default([]float64{1.2, 3.4, -5.6})),
 					),
 				),
@@ -1452,44 +1433,6 @@ func TestExecute(t *testing.T) {
 					"i":  123,
 					"fs": []float64{1.2, 3.4, -5.6},
 				}},
-			},
-			ietc: &spycommandtest.ExecuteTestCase{
-				WantInput: &spycommandtest.SpyInput{
-					Args: []*spycommand.InputArg{
-						{Value: "--it"},
-						{Value: "7"},
-						{Value: "-S"},
-						{Value: "dos"},
-					},
-				},
-			},
-		},
-		{
-			name: "Flag defaults get set",
-			etc: &commandtest.ExecuteTestCase{
-				Node: SerialNodes(
-					FlagProcessor(
-						Flag("s", 's', testDesc, Default("defStr")),
-						Flag("s2", 'S', testDesc, DefaultFunc(func(d *command.Data) (string, error) {
-							// This flag is set, so this error func shouldn't be run at all,
-							// hence why we don't expect to see this error.
-							return "dos", fmt.Errorf("nooooooo")
-						})),
-						Flag("it", 't', testDesc, Default(-456)),
-						Flag("i", 'i', testDesc, DefaultFunc(func(d *command.Data) (int, error) {
-							return 123, fmt.Errorf("uh oh")
-						})),
-						Flag("fs", 'f', testDesc, Default([]float64{1.2, 3.4, -5.6})),
-					),
-				),
-				Args: []string{"--it", "7", "-S", "dos"},
-				WantData: &command.Data{Values: map[string]interface{}{
-					"s2": "dos",
-					"it": 7,
-					"fs": []float64{1.2, 3.4, -5.6},
-				}},
-				WantErr:    fmt.Errorf("failed to get default: uh oh"),
-				WantStderr: "failed to get default: uh oh\n",
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
 				WantInput: &spycommandtest.SpyInput{
