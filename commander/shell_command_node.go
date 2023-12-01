@@ -115,7 +115,7 @@ func (bn *ShellCommand[T]) Complete(input *command.Input, data *command.Data) (*
 	if bn.DontRunOnComplete {
 		return nil, nil
 	}
-	return nil, bn.execute(&command.FakeOutput{}, data)
+	return nil, bn.execute(command.NewIgnoreAllOutput(), data)
 }
 
 // command.Usage fulfills the `command.Processor` interface for `ShellCommand`.

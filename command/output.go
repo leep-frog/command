@@ -172,10 +172,15 @@ func NewOutput() Output {
 	se := func(s string) {
 		stderr.Print(s)
 	}
-	return osFromChan(so, se)
+	return OutputFromFuncs(so, se)
 }
 
-func osFromChan(so, se func(string)) Output {
+// OutputFromFuncs returns an Output object that forwards data to the provided stdout
+// and stderr functions.
+//
+// If you need an Output object for testing purposes, consider using commandtest.NewOutput()
+// which provides the `GetStdout/GetStderr` and `GetStdoutByCalls/GetStderrByCalls` functions.
+func OutputFromFuncs(stdoutFunc, stderrFunc func(string)) Output {
 	stdoutChan := make(chan string)
 	stderrChan := make(chan string)
 	var wg sync.WaitGroup
@@ -183,14 +188,14 @@ func osFromChan(so, se func(string)) Output {
 	wg.Add(2)
 	go func() {
 		for s := range stdoutChan {
-			so(s)
+			stdoutFunc(s)
 		}
 		wg.Done()
 	}()
 
 	go func() {
 		for s := range stderrChan {
-			se(s)
+			stderrFunc(s)
 		}
 		wg.Done()
 	}()
@@ -209,14 +214,11 @@ func NewIgnoreErrOutput(o Output, fs ...func(error) bool) Output {
 
 // NewIgnoreAllOutput is an output that ignores all output.
 func NewIgnoreAllOutput() Output {
-	return osFromChan(func(s string) {}, func(s string) {})
+	return OutputFromFuncs(func(s string) {}, func(s string) {})
 }
 
-// so it can be a field name in Output wrapper implementors
-type fo Output
-
 type ignoreErrOutput struct {
-	fo
+	Output
 	fs []func(error) bool
 }
 
@@ -228,62 +230,7 @@ func (ieo *ignoreErrOutput) Err(err error) error {
 		}
 	}
 	// Regular output functionality if no filter matched.
-	return ieo.fo.Err(err)
-}
-
-// FakeOutput is a fake `Output` object that can be used for testing.
-type FakeOutput struct {
-	fo
-	stdout []string
-	stderr []string
-	closed bool
-}
-
-// TODO: Move this to internal test package
-// NewFakeOutput returns a new `FakeOutput` object.
-func NewFakeOutput() *FakeOutput {
-	tcos := &FakeOutput{}
-	so := func(s string) {
-		tcos.stdout = append(tcos.stdout, s)
-	}
-	se := func(s string) {
-		tcos.stderr = append(tcos.stderr, s)
-	}
-	cos := osFromChan(so, se)
-	tcos.fo = cos
-	return tcos
-}
-
-// Close closes the fake output channel.
-func (fo *FakeOutput) Close() {
-	if !fo.closed {
-		fo.fo.Close()
-		fo.closed = true
-	}
-}
-
-// GetStdout returns all of the data that was written to the stdout channel.
-func (fo *FakeOutput) GetStdout() string {
-	fo.Close()
-	return strings.Join(fo.stdout, "")
-}
-
-// GetStdoutByCalls returns all of the individual calls made to stdout.
-func (fo *FakeOutput) GetStdoutByCalls() []string {
-	fo.Close()
-	return fo.stdout
-}
-
-// GetStderr returns all of the data that was written to the stderr channel.
-func (fo *FakeOutput) GetStderr() string {
-	fo.Close()
-	return strings.Join(fo.stderr, "")
-}
-
-// GetStderrByCalls returns all of the individual calls made to stdout.
-func (fo *FakeOutput) GetStderrByCalls() []string {
-	fo.Close()
-	return fo.stderr
+	return ieo.Output.Err(err)
 }
 
 // terminator is a custom type that is passed to panic

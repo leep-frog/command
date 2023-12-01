@@ -9,6 +9,7 @@ import (
 
 	"github.com/leep-frog/command/command"
 	"github.com/leep-frog/command/commander"
+	"github.com/leep-frog/command/commandtest"
 )
 
 // GoLeep is a CLI that runs command nodes that are defined in "main" packages.
@@ -160,7 +161,7 @@ func (gl *GoLeep) completer() commander.Completer[[]string] {
 		}
 		bc := runCommand[[]string](data, AutocompleteBranchName, goleepCLIArg.Get(data), extraArgs)
 		bc.ArgName = "SHELL_OUTPUT"
-		fo := command.NewFakeOutput()
+		fo := commandtest.NewOutput()
 		v, err := bc.Run(fo, data)
 		fo.Close()
 		if err != nil {

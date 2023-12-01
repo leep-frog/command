@@ -1226,7 +1226,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 				if test.ignoreNosort {
 					testutil.StubValue(t, &NosortString, func() string { return "" })
 				}
-				o := command.NewFakeOutput()
+				o := commandtest.NewOutput()
 				err := source(test.runCLI, test.clis, fakeGoExecutableFilePath.Name(), test.args, o, test.opts...)
 				testutil.CmpError(t, "source(...)", test.wantErr, err)
 				o.Close()
@@ -3022,7 +3022,7 @@ func TestSourcerer(t *testing.T) {
 				})
 
 				// Run source command
-				o := command.NewFakeOutput()
+				o := commandtest.NewOutput()
 				err = testutil.CmpPanic(t, "source()", func() error {
 					return source(test.runCLI, test.clis, fakeGoExecutableFilePath.Name(), test.args, o)
 				}, test.wantPanic)

@@ -230,22 +230,25 @@ func TestOutput(t *testing.T) {
 		/* Useful for commenting out tests. */
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			fakeO := NewFakeOutput()
+			var so, se []string
+			fakeO := OutputFromFuncs(func(s string) { so = append(so, s) }, func(s string) { se = append(se, s) })
 			var o Output = fakeO
 			if test.fo != nil {
 				o = test.fo(o)
 			}
 
 			err := testutil.CmpPanic(t, "Output func()", func() error { return test.f(o) }, test.wantPanic, TerminationCmpopts())
+			fakeO.Close()
 			testutil.CmpError(t, "Output func()", test.wantErr, err)
-			testutil.Cmp(t, "Output func() produced incorrect stdout", test.wantStdout, fakeO.GetStdout())
-			testutil.Cmp(t, "Output func() produced incorrect stderr", test.wantStderr, fakeO.GetStderr())
+			testutil.Cmp(t, "Output func() produced incorrect stdout", test.wantStdout, strings.Join(so, ""))
+			testutil.Cmp(t, "Output func() produced incorrect stderr", test.wantStderr, strings.Join(se, ""))
 		})
 	}
 }
 
 func TestOutputWriters(t *testing.T) {
-	fo := NewFakeOutput()
+	var so, se []string
+	fo := OutputFromFuncs(func(s string) { so = append(so, s) }, func(s string) { se = append(se, s) })
 	outW := StdoutWriter(fo)
 	errW := StderrWriter(fo)
 
@@ -256,12 +259,13 @@ func TestOutputWriters(t *testing.T) {
 		t.Errorf("failed to write to stderr: %v", err)
 	}
 
+	fo.Close()
 	wantStdout := "output"
 	wantStderr := "errput"
-	if diff := cmp.Diff(wantStdout, fo.GetStdout()); diff != "" {
+	if diff := cmp.Diff(wantStdout, strings.Join(so, "")); diff != "" {
 		t.Errorf("Incorrect output sent to stdout writer:\n%s", diff)
 	}
-	if diff := cmp.Diff(wantStderr, fo.GetStderr()); diff != "" {
+	if diff := cmp.Diff(wantStderr, strings.Join(se, "")); diff != "" {
 		t.Errorf("Incorrect output sent to stderr writer:\n%s", diff)
 	}
 }

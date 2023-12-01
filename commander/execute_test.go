@@ -10084,7 +10084,7 @@ func TestPanics(t *testing.T) {
 		{
 			name: "Can't create arg for unsupported type",
 			f: func() {
-				Arg[*SimpleNode]("n", testDesc).Execute(command.NewInput([]string{"abc"}, nil), command.NewFakeOutput(), &command.Data{}, &command.ExecuteData{})
+				Arg[*SimpleNode]("n", testDesc).Execute(command.NewInput([]string{"abc"}, nil), commandtest.NewOutput(), &command.Data{}, &command.ExecuteData{})
 			},
 			want: "no operator defined for type *commander.SimpleNode",
 		},

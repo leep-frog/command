@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/leep-frog/command/command"
+	"github.com/leep-frog/command/commandtest"
 )
 
 func TestRuntimeCaller(t *testing.T) {
@@ -15,7 +16,7 @@ func TestRuntimeCaller(t *testing.T) {
 	}
 
 	d := &command.Data{}
-	o := command.NewFakeOutput()
+	o := commandtest.NewOutput()
 	rc := RuntimeCaller()
 	if err := rc.Execute(nil, o, d, nil); err != nil {
 		t.Fatalf("failed to execute runtime caller: %v", err)

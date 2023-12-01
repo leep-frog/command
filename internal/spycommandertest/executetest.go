@@ -17,7 +17,7 @@ type testContext struct {
 	testCase testCase
 
 	data  *command.Data
-	fo    *command.FakeOutput
+	fo    *commandtest.Output
 	input *command.Input
 
 	err   error
@@ -96,7 +96,7 @@ func ExecuteTest(t *testing.T, etc *commandtest.ExecuteTestCase, ietc *spycomman
 		prefix:   fmt.Sprintf("Execute(%v)", etc.Args),
 		testCase: etc,
 		data:     &command.Data{OS: etc.OS},
-		fo:       command.NewFakeOutput(),
+		fo:       commandtest.NewOutput(),
 	}
 	t.Cleanup(tc.fo.Close)
 	args := etc.Args
