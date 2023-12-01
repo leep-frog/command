@@ -271,6 +271,7 @@ func TestUsage(t *testing.T) {
 				`Does stuff`,
 				`ARG_1 ┳ ARG_2 --first-flag --second-flag`,
 				`┏━━━━━┛`,
+				`┃`,
 				`┃   Branch 1`,
 				`┣━━ --branch-1|-b`,
 				`┃`,
@@ -310,7 +311,6 @@ func TestUsage(t *testing.T) {
 			want: []string{
 				`Does stuff`,
 				`┓`,
-				`┃`,
 				`┃   Branch 1`,
 				`┣━━ --branch-1|-b`,
 				`┃`,
@@ -386,7 +386,7 @@ func TestUsage(t *testing.T) {
 				`Does stuff`,
 				`ARG_1 ┳ ARG_2 --first-flag --second-flag`,
 				`┏━━━━━┛`,
-				// TODO: Newline here
+				`┃`,
 				`┃   Branch 1`,
 				`┣━━━┳ --branch-1|-b`,
 				`┃   ┃`,
@@ -400,14 +400,101 @@ func TestUsage(t *testing.T) {
 				`┃`,
 				`┃   Branch 2`,
 				`┣━━━┓`,
-				`┃   ┃`,
 				`┃   ┃   Branch 2.1`,
 				`┃   ┗━━ --ARG_B_2_1`,
 				`┃`,
 				`┃   Branch 3`,
 				`┗━━ ARG_B_3 ARG_B_3 ARG_B_3 [ ARG_B_3 ] ┓`,
 				`    ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛`,
+				`    ┃`,
 				`    ┃   Branch 3.1`,
+				`    ┗━━ --ARG_B_3_1`,
+				``,
+				`Arguments:`,
+				`  ARG_1: arg 1`,
+				`  ARG_2: arg 2`,
+				`  ARG_B_3: Third branch arg`,
+				``,
+				`Flags:`,
+				`      ARG_B_2_1: two point one`,
+				`      ARG_B_3_1: three point one`,
+				`  [b] branch-1: First branch`,
+				`      branch-1.1: one point one`,
+				`      branch-1.2: one point two`,
+				`      first-flag: 1st`,
+				`      second-flag: 2nd`,
+			},
+		},
+		{
+			name: "Nested SubSections without descriptions",
+			yuf: func(y *Usage) {
+				b1_1 := &Usage{}
+				b1_1.AddFlag("branch-1.1", constants.FlagNoShortName, "1_1", "one point one", 1, 1)
+
+				b1_2 := &Usage{}
+				b1_2.AddFlag("branch-1.2", constants.FlagNoShortName, "1_2", "one point two", 1, 2)
+
+				b1_3 := &Usage{}
+
+				b1 := &Usage{}
+				b1.AddFlag("branch-1", 'b', "B", "First branch", 2, 0)
+
+				b1.SetBranches([]*BranchUsage{
+					{Usage: b1_1},
+					{Usage: b1_2},
+					{Usage: b1_3},
+				})
+
+				b2_1 := &Usage{}
+				b2_1.AddFlag("ARG_B_2_1", constants.FlagNoShortName, "21", "two point one", 0, 2)
+
+				b2 := &Usage{}
+
+				b2.SetBranches([]*BranchUsage{
+					{Usage: b2_1},
+				})
+
+				b3_1 := &Usage{}
+				b3_1.AddFlag("ARG_B_3_1", constants.FlagNoShortName, "31", "three point one", 0, 3)
+
+				b3 := &Usage{}
+				b3.AddArg("ARG_B_3", "Third branch arg", 3, 1)
+
+				b3.SetBranches([]*BranchUsage{
+					{Usage: b3_1},
+				})
+
+				y.SetDescription("Does stuff")
+				// Intermix flag and args to verify flags go at end
+				y.AddArg("ARG_1", "arg 1", 1, 0)
+				y.SetBranches([]*BranchUsage{
+					{Usage: b1},
+					{Usage: b2},
+					{Usage: b3},
+				})
+				y.AddFlag("first-flag", constants.FlagNoShortName, "FFF", "1st", 1, 0)
+				y.AddArg("ARG_2", "arg 2", 1, 0)
+				y.AddFlag("second-flag", constants.FlagNoShortName, "SS", "2nd", 1, 2)
+			},
+			want: []string{
+				`Does stuff`,
+				`ARG_1 ┳ ARG_2 --first-flag --second-flag`,
+				`┏━━━━━┛`,
+				`┃`,
+				`┣━━━┳ --branch-1|-b`,
+				`┃   ┃`,
+				`┃   ┣━━ --branch-1.1`,
+				`┃   ┃`,
+				`┃   ┣━━ --branch-1.2`,
+				`┃   ┃`,
+				`┃   ┗━━ `,
+				`┃`,
+				`┣━━━┓`,
+				`┃   ┗━━ --ARG_B_2_1`,
+				`┃`,
+				`┗━━ ARG_B_3 ARG_B_3 ARG_B_3 [ ARG_B_3 ] ┓`,
+				`    ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛`,
+				`    ┃`,
 				`    ┗━━ --ARG_B_3_1`,
 				``,
 				`Arguments:`,

@@ -1683,7 +1683,6 @@ func TestSourcerer(t *testing.T) {
 						"",
 						"======= Command Usage =======",
 						"┓",
-						"┃",
 						"┣━━ first F [ F F F F F F F F F F ]",
 						"┃",
 						"┗━━ second S S",
@@ -3137,7 +3136,6 @@ func uecUsage() string {
 	return strings.Join([]string{
 		usagePrefixString,
 		`┓`,
-		`┃`,
 		`┣━━ a [ A_SL ]`,
 		`┃`,
 		`┗━━ b B_SL`,

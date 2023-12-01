@@ -211,12 +211,12 @@ func (u *Usage) string(r []string, preItemPrefix, itemPrefix, postItemPrefix str
 	for sym, desc := range u.symbols {
 		sections.add(SymbolSection, sym, desc)
 	}
-	rappendf := func(prefix, s string) {
+	rappend := func(prefix, s string) {
 		r = append(r, prefix+s)
 	}
 
 	if u.description != nil {
-		rappendf(preItemPrefix, *u.description)
+		rappend(preItemPrefix, *u.description)
 	}
 
 	// Construct usage line
@@ -257,6 +257,7 @@ func (u *Usage) string(r []string, preItemPrefix, itemPrefix, postItemPrefix str
 	}
 
 	// Add branch character if relevant
+	var hasPostBranchUsage bool
 	if branchStringIdx != nil {
 		pre := strings.Join(usageLine[:*branchStringIdx], " ")
 		post := strings.Join(usageLine[*branchStringIdx:], " ")
@@ -267,6 +268,7 @@ func (u *Usage) string(r []string, preItemPrefix, itemPrefix, postItemPrefix str
 		}
 
 		if len(post) > 0 {
+			hasPostBranchUsage = true
 			usageLine = append(usageLine, constants.UsageBoxLeftRightDown)
 			usageLine = append(usageLine, post)
 		} else {
@@ -279,7 +281,7 @@ func (u *Usage) string(r []string, preItemPrefix, itemPrefix, postItemPrefix str
 	if branchStringIdx != nil && *branchStringIdx == 0 && strings.HasSuffix(itemPrefix, " ") {
 		r = append(r, fmt.Sprintf("%s━%s", strings.TrimSuffix(itemPrefix, " "), strings.Join(usageLine, " ")))
 	} else {
-		rappendf(itemPrefix, strings.Join(usageLine, " "))
+		rappend(itemPrefix, strings.Join(usageLine, " "))
 	}
 
 	if len(u.branches) == 0 {
@@ -287,10 +289,11 @@ func (u *Usage) string(r []string, preItemPrefix, itemPrefix, postItemPrefix str
 	}
 
 	// The previous check implies that branchStringIdx is not nil
-	if *branchStringIdx == 0 {
-		rappendf(postItemPrefix, constants.UsageBoxUpDown)
-	} else {
-		rappendf(postItemPrefix, constants.UsageBoxRightDown+strings.Repeat(constants.UsageBoxLeftRight, *branchStringIdx)+constants.UsageBoxLeftUp)
+	if *branchStringIdx != 0 {
+		rappend(postItemPrefix, constants.UsageBoxRightDown+strings.Repeat(constants.UsageBoxLeftRight, *branchStringIdx)+constants.UsageBoxLeftUp)
+		rappend(postItemPrefix, constants.UsageBoxUpDown)
+	} else if hasPostBranchUsage {
+		rappend(postItemPrefix, constants.UsageBoxUpDown)
 	}
 
 	for i, subUsage := range u.branches {
@@ -304,7 +307,7 @@ func (u *Usage) string(r []string, preItemPrefix, itemPrefix, postItemPrefix str
 		r = subUsage.Usage.string(r, subPreItemPrefix, subItemPrefix, subPostItemPrefix, sections)
 
 		if !isFinal {
-			rappendf(trimRightSpace(subPostItemPrefix), "")
+			rappend(trimRightSpace(subPostItemPrefix), "")
 		}
 	}
 
