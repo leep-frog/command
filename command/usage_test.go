@@ -289,6 +289,42 @@ func TestUsage(t *testing.T) {
 			},
 		},
 		{
+			name: "SubSections with no root args",
+			yuf: func(y *Usage) {
+				b1 := &Usage{}
+				b1.SetDescription("Branch 1")
+				b1.AddFlag("branch-1", 'b', "B", "First branch", 2, 0)
+
+				b2 := &Usage{}
+				b2.SetDescription("Branch 2")
+				b2.AddArg("ARG_B_2", "Second branch arg", 2, 1)
+
+				y.SetDescription("Does stuff")
+
+				y.SetBranches([]*BranchUsage{}) // Confirm ignore `SetBranches with empty is ignored
+				y.SetBranches([]*BranchUsage{
+					{Usage: b1},
+					{Usage: b2},
+				})
+			},
+			want: []string{
+				`Does stuff`,
+				`┓`,
+				`┃`,
+				`┃   Branch 1`,
+				`┣━━ --branch-1|-b`,
+				`┃`,
+				`┃   Branch 2`,
+				`┗━━ ARG_B_2 ARG_B_2 [ ARG_B_2 ]`,
+				``,
+				`Arguments:`,
+				`  ARG_B_2: Second branch arg`,
+				``,
+				`Flags:`,
+				`  [b] branch-1: First branch`,
+			},
+		},
+		{
 			name: "Nested SubSections",
 			yuf: func(y *Usage) {
 				b1_1 := &Usage{}
@@ -317,10 +353,21 @@ func TestUsage(t *testing.T) {
 
 				b2 := &Usage{}
 				b2.SetDescription("Branch 2")
-				b2.AddArg("ARG_B_2", "Second branch arg", 2, 1)
 
 				b2.SetBranches([]*BranchUsage{
 					{Usage: b2_1},
+				})
+
+				b3_1 := &Usage{}
+				b3_1.SetDescription("Branch 3.1")
+				b3_1.AddFlag("ARG_B_3_1", constants.FlagNoShortName, "31", "three point one", 0, 3)
+
+				b3 := &Usage{}
+				b3.SetDescription("Branch 3")
+				b3.AddArg("ARG_B_3", "Third branch arg", 3, 1)
+
+				b3.SetBranches([]*BranchUsage{
+					{Usage: b3_1},
 				})
 
 				y.SetDescription("Does stuff")
@@ -329,6 +376,7 @@ func TestUsage(t *testing.T) {
 				y.SetBranches([]*BranchUsage{
 					{Usage: b1},
 					{Usage: b2},
+					{Usage: b3},
 				})
 				y.AddFlag("first-flag", constants.FlagNoShortName, "FFF", "1st", 1, 0)
 				y.AddArg("ARG_2", "arg 2", 1, 0)
@@ -338,9 +386,9 @@ func TestUsage(t *testing.T) {
 				`Does stuff`,
 				`ARG_1 ┳ ARG_2 --first-flag --second-flag`,
 				`┏━━━━━┛`,
+				// TODO: Newline here
 				`┃   Branch 1`,
-				// TODO: fill in this space with a line
-				`┣━━ ┳ --branch-1|-b`,
+				`┣━━━┳ --branch-1|-b`,
 				`┃   ┃`,
 				`┃   ┃   Branch 1.1`,
 				`┃   ┣━━ --branch-1.1`,
@@ -351,18 +399,25 @@ func TestUsage(t *testing.T) {
 				`┃   ┗━━ `,
 				`┃`,
 				`┃   Branch 2`,
-				`┗━━ ARG_B_2 ARG_B_2 [ ARG_B_2 ] ┓`,
-				`    ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┛`,
-				`    ┃   Branch 2.1`,
-				`    ┗━━ --ARG_B_2_1`,
+				`┣━━━┓`,
+				`┃   ┃`,
+				`┃   ┃   Branch 2.1`,
+				`┃   ┗━━ --ARG_B_2_1`,
+				`┃`,
+				`┃   Branch 3`,
+				`┗━━ ARG_B_3 ARG_B_3 ARG_B_3 [ ARG_B_3 ] ┓`,
+				`    ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛`,
+				`    ┃   Branch 3.1`,
+				`    ┗━━ --ARG_B_3_1`,
 				``,
 				`Arguments:`,
 				`  ARG_1: arg 1`,
 				`  ARG_2: arg 2`,
-				`  ARG_B_2: Second branch arg`,
+				`  ARG_B_3: Third branch arg`,
 				``,
 				`Flags:`,
 				`      ARG_B_2_1: two point one`,
+				`      ARG_B_3_1: three point one`,
 				`  [b] branch-1: First branch`,
 				`      branch-1.1: one point one`,
 				`      branch-1.2: one point two`,

@@ -276,7 +276,11 @@ func (u *Usage) string(r []string, preItemPrefix, itemPrefix, postItemPrefix str
 		branchStringIdx = &newIdx
 	}
 
-	rappendf(itemPrefix, strings.Join(usageLine, " "))
+	if branchStringIdx != nil && *branchStringIdx == 0 && strings.HasSuffix(itemPrefix, " ") {
+		r = append(r, fmt.Sprintf("%s━%s", strings.TrimSuffix(itemPrefix, " "), strings.Join(usageLine, " ")))
+	} else {
+		rappendf(itemPrefix, strings.Join(usageLine, " "))
+	}
 
 	if len(u.branches) == 0 {
 		return r
