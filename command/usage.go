@@ -243,7 +243,9 @@ func (u *Usage) string(r []string, preItemPrefix, itemPrefix, postItemPrefix str
 
 			}
 		}
-		sections.Add(ui.section, ui.sectionKey, ui.description)
+		if ui.description != "" {
+			sections.Add(ui.section, ui.sectionKey, ui.description)
+		}
 	}
 
 	// Add branch character if relevant

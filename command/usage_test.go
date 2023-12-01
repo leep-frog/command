@@ -43,6 +43,24 @@ func TestUsage(t *testing.T) {
 			},
 		},
 		{
+			name: "Arg with no description",
+			yuf: func(y *Usage) {
+				y.AddArg("ARG_1", "", 1, 0)
+			},
+			want: []string{
+				"ARG_1",
+			},
+		},
+		{
+			name: "Flag with no description",
+			yuf: func(y *Usage) {
+				y.AddFlag("flag", 'f', "FFF", "", 1, 0)
+			},
+			want: []string{
+				"--flag|-f",
+			},
+		},
+		{
 			name: "Required, optional = 0, Unbounded",
 			yuf: func(y *Usage) {
 				y.AddArg("ARG_1", "arg 1", 0, UnboundedList)
