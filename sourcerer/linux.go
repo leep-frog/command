@@ -93,8 +93,12 @@ func (l *linux) RegisterRunCLIAutocomplete(goExecutable, alias string) []string 
 	)
 }
 
+func (l *linux) completeScriptCommand(functionName, alias string) string {
+	return fmt.Sprintf("(type complete > /dev/null 2>&1) && complete -F %s %s %s", functionName, NosortString(), alias)
+}
+
 func (l *linux) autocompleteRegistration(targetName, alias string) string {
-	return fmt.Sprintf("(type complete > /dev/null 2>&1) && complete -F %s %s %s", l.autocompleteFunctionName(targetName, false), NosortString(), alias)
+	return l.completeScriptCommand(l.autocompleteFunctionName(targetName, false), alias)
 }
 
 func (l *linux) RegisterCLIs(builtin bool, goExecutable, targetName string, clis []CLI) []string {
@@ -222,7 +226,7 @@ func (l *linux) RegisterAliaser(goExecutable string, a *Aliaser) []string {
 
 	r = append(r, l.aliaserAutocompleteFunction(a.alias, a.cli, quotedArgs)...)
 	return append(r,
-		fmt.Sprintf("(type complete > /dev/null 2>&1) && complete -F %s %s %s", l.autocompleteFunctionName(a.alias, true), NosortString(), a.alias),
+		l.completeScriptCommand(l.autocompleteFunctionName(a.alias, true), a.alias),
 		``,
 	)
 }
