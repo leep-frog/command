@@ -437,9 +437,7 @@ func (s *sourcerer) initBuiltInSourcerer() error {
 		&Debugger{},
 		&GoLeep{},
 		&UpdateLeepPackageCommand{},
-	}, s.sourceLocation, []Option{
-		// TODO: Add aliasers?
-	})
+	}, s.sourceLocation, []Option{})
 }
 
 func (s *sourcerer) initSourcerer(runCLI, builtin bool, clis []CLI, sourceLocation string, opts []Option) error {
@@ -474,7 +472,7 @@ func (s *sourcerer) initSourcerer(runCLI, builtin bool, clis []CLI, sourceLocati
 }
 
 var (
-	externalGoExecutableFilePath = os.Args[0]
+	osExecutable = os.Executable
 )
 
 const (
@@ -482,8 +480,8 @@ const (
 )
 
 // StubExecutableFile stubs the executable file returned by ExecutableFileGetProcessor()
-func StubExecutableFile(t *testing.T, filepath string) {
-	testutil.StubValue(t, &externalGoExecutableFilePath, filepath)
+func StubExecutableFile(t *testing.T, filepath string, err error) {
+	testutil.StubValue(t, &osExecutable, func() (string, error) { return filepath, err })
 }
 
 // ExecutableFileGetProcessor returns a `commander.GetProcessor` that sets and gets
@@ -491,7 +489,11 @@ func StubExecutableFile(t *testing.T, filepath string) {
 func ExecutableFileGetProcessor() *commander.GetProcessor[string] {
 	return &commander.GetProcessor[string]{
 		commander.SuperSimpleProcessor(func(i *command.Input, d *command.Data) error {
-			d.Set(ExecutableFileGetProcessorName, externalGoExecutableFilePath)
+			f, err := osExecutable()
+			if err != nil {
+				return fmt.Errorf("failed to get file from os.Executable(): %v", err)
+			}
+			d.Set(ExecutableFileGetProcessorName, f)
 			return nil
 		}),
 		ExecutableFileGetProcessorName,

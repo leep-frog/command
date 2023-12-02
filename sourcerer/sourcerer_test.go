@@ -1309,6 +1309,7 @@ func TestSourcerer(t *testing.T) {
 			osReadFileStub        bool
 			osReadFileResp        string
 			osReadFileErr         error
+			osExecutableErr       error
 			fakeInputFileContents []string
 		}{
 			{
@@ -2961,10 +2962,33 @@ func TestSourcerer(t *testing.T) {
 					},
 				},
 			},
+			{
+				name:   "RunCLI() fails if os.Executable error",
+				runCLI: true,
+				clis: []CLI{
+					&testCLI{
+						name: "basic",
+						processors: []command.Processor{
+							ExecutableFileGetProcessor(),
+						},
+						f: func(tc *testCLI, i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
+							o.Stdoutln(d.Values)
+							return nil
+						},
+					},
+				},
+				osExecutableErr: fmt.Errorf("goExe err"),
+				osCheck: &osCheck{
+					wantErr: fmt.Errorf("failed to get file from os.Executable(): goExe err"),
+					wantStderr: []string{
+						"failed to get file from os.Executable(): goExe err",
+					},
+				},
+			},
 			/* Useful for commenting out tests */
 		} {
 			t.Run(fmt.Sprintf("[%s] %s", curOS.Name(), test.name), func(t *testing.T) {
-				StubExecutableFile(t, "osArgs-at-zero")
+				StubExecutableFile(t, "osArgs-at-zero", test.osExecutableErr)
 				if test.osReadFileStub {
 					testutil.StubValue(t, &osReadFile, func(b string) ([]byte, error) {
 						return []byte(test.osReadFileResp), test.osReadFileErr
