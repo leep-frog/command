@@ -20,8 +20,8 @@ This example constructs a graph that simply works its way through a set of linea
 
 ```go
 func SerialGraph() command.Node {
-  firstNameArg := command.Arg[string]("FIRST_NAME", "First name")
-  lastNameArg := command.Arg[string]("LAST_NAME", "Last name")
+  firstNameArg := commander.Arg[string]("FIRST_NAME", "First name")
+  lastNameArg := commander.Arg[string]("LAST_NAME", "Last name")
   excArg := command.OptionalArg[int]("EXCITEMENT", "How excited you are", commander.Default(1))
   return commander.SerialNodes(
     command.Description("A friendly CLI"),

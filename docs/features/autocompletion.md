@@ -8,7 +8,7 @@ The simplest completer is one that autocompletes a set of hardcoded options:
 
 ```go
 var (
-  myArg = command.Arg[string]("CHARACTER", "Choose a character", command.SimpleCompleter("Mario", "Kirby", "Link")
+  myArg = commander.Arg[string]("CHARACTER", "Choose a character", command.SimpleCompleter("Mario", "Kirby", "Link")
 )
 ```
 
@@ -38,7 +38,7 @@ This function is most useful for writing your own completion logic:
 
 ```go
 var (
-  myArg = command.Arg[string]("ARG", "Description", commander.CompleterFromFunc(func(s string, d *command.Data) (*command.Completion, error) {
+  myArg = commander.Arg[string]("ARG", "Description", commander.CompleterFromFunc(func(s string, d *command.Data) (*command.Completion, error) {
     var sl []string
 
     // Run whatever logic you want

@@ -32,8 +32,8 @@ A `Validator` validates an input. Each argument/flag can have as many valiadator
 ```go
 var (
   // An integer that must be positive
-  positiveInt = command.Arg[int]("N", "An int argument", command.Positive())
+  positiveInt = commander.Arg[int]("N", "An int argument", command.Positive())
   // A string argument that must be at least 8 characters long.
-  username = command.Arg[string]("USERNAME", "Your username", command.MinLength(8))
+  username = commander.Arg[string]("USERNAME", "Your username", command.MinLength(8))
 )
 ```

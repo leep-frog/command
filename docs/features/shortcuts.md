@@ -29,7 +29,7 @@ func (mc *myCLI) ShortcutMap() map[string]map[string][]string {
 }
 
 func (mc *myCLI) Node() command.Node {
-  fileArg := command.Arg[string]("FILE", "filename to print", command.FileTransformer())
+  fileArg := commander.Arg[string]("FILE", "filename to print", command.FileTransformer())
 
   printArgs := commander.ListArg[string]("PRINT", "args to print", 1, command.UnboundedList)
 

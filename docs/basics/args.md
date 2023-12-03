@@ -2,7 +2,7 @@
 
 ## Overview
 
-The most common way to provide arguments to a bash command is through positional arguments. This package provides users the capability to define arguments with the `command.Arg` function. This function creates a `Node` object from an argument name and description (which are used when creating the command's usage doc). See below for examples:
+The most common way to provide arguments to a bash command is through positional arguments. This package provides users the capability to define arguments with the `commander.Arg` function. This function creates a `Node` object from an argument name and description (which are used when creating the command's usage doc). See below for examples:
 
 ### Creating an Argument object
 
@@ -14,8 +14,8 @@ An argument's value is stored in the `command.Data` object. Retrieve an argument
 
 ```go
 var (
-  strArg = command.Arg[string]("STR_ARG", "A string")
-  intArg = command.Arg[int]("INT_ARG", "An int")
+  strArg = commander.Arg[string]("STR_ARG", "A string")
+  intArg = commander.Arg[int]("INT_ARG", "An int")
 )
 
 // (data *command.Data)
@@ -30,7 +30,7 @@ myInt := intArg.Get(data) // returns an int
 A simple `string` argument.
 
 ```go
-command.Arg[string]("ARG_NAME", "A simple string argument")
+commander.Arg[string]("ARG_NAME", "A simple string argument")
 ```
 
 ### Optional Argument
