@@ -33,7 +33,7 @@ func TestExecution(t *testing.T) {
     t.Run(test.name, func(t *testing.T) {
       // Test the command's execution.
 			test.etc.Node = test.cli.Node()
-			command.ExecuteTest(t, test.etc)
+			commandertest.ExecuteTest(t, test.etc)
 
       // Test if the command changed
 			command.ChangeTest(t, test.wantCLI, test.cli, cmp.AllowUnexported(myCLI{}))
