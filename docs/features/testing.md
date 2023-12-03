@@ -36,7 +36,7 @@ func TestExecution(t *testing.T) {
 			commandertest.ExecuteTest(t, test.etc)
 
       // Test if the command changed
-			command.ChangeTest(t, test.wantCLI, test.cli, cmp.AllowUnexported(myCLI{}))
+			commandertest.ChangeTest(t, test.wantCLI, test.cli, cmp.AllowUnexported(myCLI{}))
 		})
   }
 }
