@@ -30,7 +30,7 @@ func (mc *myCLI) Node() command.Node {
 
   return command.AsNode(&command.BranchNode{
     Branches: map[string]command.Node{
-      "test": command.SerialNodes(
+      "test": commander.SerialNodes(
         fileArg,
         command.ExecutableProcessor(func(o command.Output, d *command.Data) ([]string, error) {
 					return []string{

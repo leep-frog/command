@@ -6,15 +6,15 @@
 
 To activate autocompletion for arguments and flags, `Completer` objects can be passed in as options. See the [autocompletion doc](../features/autocompletion.md) for more details.
 
-## `command.Default`
+## `commander.Default`
 
 This argument option sets the argument's value (only useful for optional arguments and flags).
 
 ```go
 var (
-  optionalFloat = command.OptionalArg[float64]("N", "An optional float argument", command.Default[float64](12.3))
+  optionalFloat = command.OptionalArg[float64]("N", "An optional float argument", commander.Default[float64](12.3))
 
-  stringFlag = command.Flag[string]("STRING", 's', "A string flag", command.Default[string]("default value"))
+  stringFlag = commander.Flag[string]("STRING", 's', "A string flag", commander.Default[string]("default value"))
 ```
 
 ## `command.CustomSetter`

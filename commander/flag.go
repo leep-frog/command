@@ -566,7 +566,7 @@ type optionalFlag[T any] struct {
 // OptionalFlag is a flag that can accept an optional parameter. Unlike `OptionalArg`, it actually has three different outcomes:
 // Example with `OptionalFlag[string]("optStr", 'o', "description", "default-value")`
 // 1. `Args=["--optStr"]`: The flag's value is set to "default-value" in data.
-// 2. `Args=[]`: The flag's value isn't set (or is set to command.Default(...) option if provided).
+// 2. `Args=[]`: The flag's value isn't set (or is set to commander.Default(...) option if provided).
 // 3. `Args=["--optStr", "custom-value"]`: The flag's value is set to "custom-value" in data.
 func OptionalFlag[T any](name string, shortName rune, desc string, defaultValue T, opts ...ArgumentOption[T]) FlagWithType[T] {
 	return &optionalFlag[T]{

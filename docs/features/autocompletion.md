@@ -19,18 +19,18 @@ This completer is identical to the `SimpleCompleter` except it won't include ite
 ```go
 var (
   // `cli Mario [tab]` will only suggest "Kirby" and "Link".
-  myArgs = command.ListArg[string]("CHARACTERS", "Choose two characters", 2, 0 command.SimpleCompleter("Mario", "Kirby", "Link")
+  myArgs = commander.ListArg[string]("CHARACTERS", "Choose two characters", 2, 0 command.SimpleCompleter("Mario", "Kirby", "Link")
 
   // Also works for list flags.
   myFlags = command.ListFlags[string]("TEAMMATE", "Choose two characters", 2, 0 command.SimpleCompleter("Luigi", "Metaknight", "Zelda")
 )
 ```
 
-## `command.FileCompleter`
+## `commander.FileCompleter`
 
 This struct completes file/directory names. See the [go doc](TODO) for more info.
 
-## Writing Your Own Completer (`command.CompleterFromFunc`)
+## Writing Your Own Completer (`commander.CompleterFromFunc`)
 
 This completer runs the provided function and uses the `Completion/error` returned from that function as the completion object.
 
@@ -38,7 +38,7 @@ This function is most useful for writing your own completion logic:
 
 ```go
 var (
-  myArg = command.Arg[string]("ARG", "Description", command.CompleterFromFunc(func(s string, d *command.Data) (*command.Completion, error) {
+  myArg = command.Arg[string]("ARG", "Description", commander.CompleterFromFunc(func(s string, d *command.Data) (*command.Completion, error) {
     var sl []string
 
     // Run whatever logic you want

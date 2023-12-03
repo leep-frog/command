@@ -48,11 +48,11 @@ The `ListArg` function requires a few more inputs. Specifically, the minimum num
 ```go
 var (
   // A list that requires exactly three arguments
-  listOne := command.ListArg[int]("LIST_ONE", "Desc", 3, 0)
+  listOne := commander.ListArg[int]("LIST_ONE", "Desc", 3, 0)
   // A list that requires between two and five arguments.
-  listOne := command.ListArg[float64]("LIST_ONE", "Desc", 2, 3)
+  listOne := commander.ListArg[float64]("LIST_ONE", "Desc", 2, 3)
   // A list that requires at least four arguments
-  listOne := command.ListArg[int]("LIST_ONE", "Desc", 4, command.UnboundedList)
+  listOne := commander.ListArg[int]("LIST_ONE", "Desc", 4, command.UnboundedList)
 )
 ```
 

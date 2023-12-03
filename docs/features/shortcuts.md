@@ -31,12 +31,12 @@ func (mc *myCLI) ShortcutMap() map[string]map[string][]string {
 func (mc *myCLI) Node() command.Node {
   fileArg := command.Arg[string]("FILE", "filename to print", command.FileTransformer())
 
-  printArgs := command.ListArg[string]("PRINT", "args to print", 1, command.UnboundedList)
+  printArgs := commander.ListArg[string]("PRINT", "args to print", 1, command.UnboundedList)
 
-  regularNode := command.SerialNodes(
+  regularNode := commander.SerialNodes(
     fileArg,
     printArgs,
-    &command.ExecutorProcessor{F: func(o command.Output, d *command.Data) error {
+    &commander.ExecutorProcessor{F: func(o command.Output, d *command.Data) error {
       o.Stdoutln(fileArg.Get(d))
       o.Stdoutln(strings.Join(printArgs.Get(d), " "))
       return nil

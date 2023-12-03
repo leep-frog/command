@@ -22,13 +22,13 @@ This example constructs a graph that simply works its way through a set of linea
 func SerialGraph() command.Node {
   firstNameArg := command.Arg[string]("FIRST_NAME", "First name")
   lastNameArg := command.Arg[string]("LAST_NAME", "Last name")
-  excArg := command.OptionalArg[int]("EXCITEMENT", "How excited you are", command.Default(1))
-  return command.SerialNodes(
+  excArg := command.OptionalArg[int]("EXCITEMENT", "How excited you are", commander.Default(1))
+  return commander.SerialNodes(
     command.Description("A friendly CLI"),
     firstNameArg,
     lastNameArg,
     excArg,
-    &command.ExecutorProcessor{func(o command.Output, d *command.Data) {
+    &commander.ExecutorProcessor{func(o command.Output, d *command.Data) {
       o.Stdoutf("Hello, %s %s%s\n", firstNameArg.Get(d), lastNameArg.Get(d), strings.Repeat("!", excArg.Get(d)))
     }}
   )
@@ -41,23 +41,23 @@ This graph does different things depending on the first argument.
 
 ```go
 func BranchingGraph() command.Node {
-  defaultNode := command.SerialNodes(
+  defaultNode := commander.SerialNodes(
     command.ExecutorNode(func(o command.Output, d *command.Data) {
       o.Stdoutln("Why didn't you pick a door?")
     })
   )
   return command.BranchNode(map[string]command.Node{
-    "one": command.SerialNodes(
+    "one": commander.SerialNodes(
       command.ExecutorNode(func(o command.Output, d *command.Data) {
         o.Stdoutln("Not quite!")
       }),
     ),
-    "two": command.SerialNodes(
+    "two": commander.SerialNodes(
       command.ExecutorNode(func(o command.Output, d *command.Data) {
         o.Stdoutln("You won a new car!")
       }),
     ),
-    "three": command.SerialNodes(
+    "three": commander.SerialNodes(
       command.ExecutorNode(func(o command.Output, d *command.Data) {
         o.Stdoutln("Try again!")
       }),
