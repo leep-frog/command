@@ -27,21 +27,10 @@ type BranchNode struct {
 	// This is only relevant when the branching argument is the argument
 	// being completed. Otherwise, this node is executed as normal.
 	DefaultCompletion bool
-	// HideUsage is wheter or not usage info for this node should be
-	// hidden.
-	// TODO: Change to HideBranchUsage and HideDefaultUsage
-	HideUsage bool
-	// BranchUsageOrder allows you to set the order for branch usage docs.
-	// If this isn't provided, then branches are sorted in alphabetical order.
-	BranchUsageOrder []string
-
-	// HideDefaultUsage is wheter or not usage info for the `Default` `Node` should be
-	// hidden.
-	// HideDefaultUsage bool
 	// BranchUsageOrder allows you to set the order for branch usage docs.
 	// If this is nil, then branches are sorted in alphabetical order.
 	// If this is an empty list, then no branch usage is shown.
-	// BranchUsageOrder []string
+	BranchUsageOrder []string
 
 	next command.Node
 }
@@ -231,14 +220,6 @@ func (bn *BranchNode) Usage(input *command.Input, data *command.Data, u *command
 	// if !input.FullyProcessed() {
 	if input.NumRemaining() > 0 {
 		return bn.getNext(input, data)
-	}
-
-	if bn.HideUsage {
-		// Proceed to default
-		if bn.Default != nil {
-			return bn.getNext(input, data)
-		}
-		return nil
 	}
 
 	bss, err := bn.sortBranchSyns()

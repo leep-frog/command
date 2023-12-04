@@ -62,7 +62,7 @@ func CacheNode(name string, c CachableCLI, n command.Node, opts ...CacheOption) 
 			),
 		},
 		Default:           ccN,
-		HideUsage:         true,
+		BranchUsageOrder:  []string{},
 		DefaultCompletion: true,
 		Synonyms:          BranchSynonyms(map[string][]string{"history": {"h"}}),
 	}

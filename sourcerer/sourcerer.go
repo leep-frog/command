@@ -305,7 +305,7 @@ func (s *sourcerer) Node() command.Node {
 					),
 				},
 				// TODO: remove this and just check if BranchNode.UsageOrder is empty list
-				HideUsage: true,
+				BranchUsageOrder: []string{},
 				Default: commander.SerialNodes(
 					loadCLIArg,
 					commander.FlagProcessor(
@@ -350,7 +350,7 @@ func (s *sourcerer) Node() command.Node {
 					&commander.ExecutorProcessor{F: s.generateFile},
 				),
 			},
-			HideUsage: true,
+			BranchUsageOrder: []string{},
 			Default: commander.SerialNodes(
 				// Just eat the remaining args
 				// commander.ListArg[string]("UNUSED", "", 0, command.UnboundedList),

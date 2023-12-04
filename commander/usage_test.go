@@ -415,7 +415,7 @@ func TestUsage(t *testing.T) {
 			},
 		},
 		{
-			name: "branch node with HideUsage and default",
+			name: "branch node with empty BranchUsageOrder and default",
 			etc: &commandtest.ExecuteTestCase{
 				Node: SerialNodes(
 					Description("command start"),
@@ -424,8 +424,8 @@ func TestUsage(t *testing.T) {
 						Branches: map[string]command.Node{
 							"alpha": nil,
 						},
-						HideUsage: true,
-						Default:   SerialNodes(Description("the default command"), Arg[int]("INT_ARG", "an integer"), ListArg[string]("STRINGS", "unltd strings", 1, command.UnboundedList)),
+						BranchUsageOrder: []string{},
+						Default:          SerialNodes(Description("the default command"), Arg[int]("INT_ARG", "an integer"), ListArg[string]("STRINGS", "unltd strings", 1, command.UnboundedList)),
 					},
 				),
 				WantStdout: strings.Join([]string{
@@ -441,7 +441,7 @@ func TestUsage(t *testing.T) {
 			},
 		},
 		{
-			name: "branch node with HideUsage and no default",
+			name: "branch node with empty BranchUsageOrder and no default",
 			etc: &commandtest.ExecuteTestCase{
 				Node: SerialNodes(
 					Description("command start"),
@@ -450,7 +450,7 @@ func TestUsage(t *testing.T) {
 						Branches: map[string]command.Node{
 							"alpha": nil,
 						},
-						HideUsage: true,
+						BranchUsageOrder: []string{},
 					},
 				),
 				WantStdout: strings.Join([]string{
