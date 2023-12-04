@@ -6,7 +6,6 @@ import (
 
 	"github.com/leep-frog/command/command"
 	"github.com/leep-frog/command/commander"
-	"github.com/leep-frog/command/internal/stubs"
 	"github.com/leep-frog/command/internal/testutil"
 )
 
@@ -22,7 +21,7 @@ const (
 
 var (
 	getShellCache = func(d *command.Data, ed *command.ExecuteData) error {
-		v, ok := stubs.OSLookupEnv(ShellOSEnvVar)
+		v, ok := command.OSLookupEnv(ShellOSEnvVar)
 		if !ok || v == "" {
 			var err error
 			v, err = osMkdirTemp("", "leep-shell-cache")

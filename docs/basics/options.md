@@ -12,7 +12,7 @@ This argument option sets the argument's value (only useful for optional argumen
 
 ```go
 var (
-  optionalFloat = command.OptionalArg[float64]("N", "An optional float argument", commander.Default[float64](12.3))
+  optionalFloat = commander.OptionalArg[float64]("N", "An optional float argument", commander.Default[float64](12.3))
 
   stringFlag = commander.Flag[string]("STRING", 's', "A string flag", commander.Default[string]("default value"))
 ```
@@ -32,7 +32,7 @@ A `Validator` validates an input. Each argument/flag can have as many valiadator
 ```go
 var (
   // An integer that must be positive
-  positiveInt = commander.Arg[int]("N", "An int argument", command.Positive())
+  positiveInt = commander.Arg[int]("N", "An int argument", commander.Positive())
   // A string argument that must be at least 8 characters long.
   username = commander.Arg[string]("USERNAME", "Your username", command.MinLength(8))
 )

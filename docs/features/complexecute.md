@@ -28,11 +28,11 @@ func (mc *myCLI) Name() string {
 func (mc *myCLI) Node() command.Node {
   fileArg := command.FileArgument("TEST_FILE", "File to test", command.CompleteForExecute())
 
-  return command.AsNode(&command.BranchNode{
+  return command.AsNode(&commander.BranchNode{
     Branches: map[string]command.Node{
       "test": commander.SerialNodes(
         fileArg,
-        command.ExecutableProcessor(func(o command.Output, d *command.Data) ([]string, error) {
+        commander.ExecutableProcessor(func(o command.Output, d *command.Data) ([]string, error) {
 					return []string{
 						fmt.Sprintf("test %q", fileArg.Get(d)),
 					}, nil

@@ -12,7 +12,6 @@ import (
 
 	"github.com/leep-frog/command/command"
 	"github.com/leep-frog/command/commander"
-	"github.com/leep-frog/command/internal/stubs"
 )
 
 const (
@@ -177,7 +176,7 @@ func FromDir(dir string) (*Cache, error) {
 // FromEnvVar creates a new cache pointing to the directory specified
 // by the provided environment variable.
 func FromEnvVar(e string) (*Cache, error) {
-	v, ok := stubs.OSLookupEnv(e)
+	v, ok := command.OSLookupEnv(e)
 	if !ok || v == "" {
 		return nil, fmt.Errorf("environment variable %q is not set or is empty", e)
 	}
@@ -187,7 +186,7 @@ func FromEnvVar(e string) (*Cache, error) {
 // FromEnvVar creates a new cache pointing to the directory specified
 // by the provided environment variable.
 func FromEnvVarOrDir(e, dir string) (*Cache, error) {
-	v, ok := stubs.OSLookupEnv(e)
+	v, ok := command.OSLookupEnv(e)
 	if !ok || v == "" {
 		return FromDir(dir)
 	}

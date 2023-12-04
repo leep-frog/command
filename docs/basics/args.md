@@ -38,7 +38,7 @@ commander.Arg[string]("ARG_NAME", "A simple string argument")
 An optional `int` argument.
 
 ```go
-command.OptionalArg[int]("N", "An optional integer argument")
+commander.OptionalArg[int]("N", "An optional integer argument")
 ```
 
 ### List Argument

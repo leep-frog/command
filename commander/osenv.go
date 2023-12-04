@@ -2,7 +2,6 @@ package commander
 
 import (
 	"github.com/leep-frog/command/command"
-	"github.com/leep-frog/command/internal/stubs"
 )
 
 // EnvArg loads the provided environment variable's value into `command.Data`.
@@ -10,7 +9,7 @@ import (
 func EnvArg(name string) *GetProcessor[string] {
 	return &GetProcessor[string]{
 		SuperSimpleProcessor(func(i *command.Input, d *command.Data) error {
-			if v, ok := stubs.OSLookupEnv(name); ok {
+			if v, ok := command.OSLookupEnv(name); ok {
 				d.Set(name, v)
 			}
 			return nil

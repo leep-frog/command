@@ -5,13 +5,11 @@ import (
 	"os/exec"
 	"testing"
 
+	"github.com/leep-frog/command/command"
 	"github.com/leep-frog/command/internal/testutil"
 )
 
 var (
-	// OSLookupEnv is the env lookup to use that will be stubbed by `commandtest.*TestCase` objects.
-	OSLookupEnv = os.LookupEnv
-
 	// OSGetwd is a stub for os.Getwd
 	OSGetwd = os.Getwd
 
@@ -23,7 +21,7 @@ var (
 
 // StubEnv stubs the environment variable used throughout this package.
 func StubEnv(t *testing.T, m map[string]string) {
-	testutil.StubValue(t, &OSLookupEnv, func(key string) (string, bool) {
+	testutil.StubValue(t, &command.OSLookupEnv, func(key string) (string, bool) {
 		v, ok := m[key]
 		return v, ok
 	})

@@ -8,7 +8,6 @@ import (
 
 	"github.com/leep-frog/command/command"
 	"github.com/leep-frog/command/commander"
-	"github.com/leep-frog/command/internal/stubs"
 )
 
 const (
@@ -148,7 +147,7 @@ func (l *linux) autocompleteFunction(runCLI bool, builtin bool, goExecutable, ta
 	}
 	branchStr := l.getBranchString(builtin, AutocompleteBranchName)
 	compType := "$COMP_TYPE"
-	if _, ok := stubs.OSLookupEnv(zshEnvVar); ok {
+	if _, ok := command.OSLookupEnv(zshEnvVar); ok {
 		compType = "0"
 	}
 	return []string{
