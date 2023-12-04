@@ -35,45 +35,42 @@ type BranchNode struct {
 	// If this isn't provided, then branches are sorted in alphabetical order.
 	BranchUsageOrder []string
 
+	// HideDefaultUsage is wheter or not usage info for the `Default` `Node` should be
+	// hidden.
+	// HideDefaultUsage bool
+	// BranchUsageOrder allows you to set the order for branch usage docs.
+	// If this is nil, then branches are sorted in alphabetical order.
+	// If this is an empty list, then no branch usage is shown.
+	// BranchUsageOrder []string
+
 	next command.Node
 }
 
-func (bn *BranchNode) sortBranchSyns(bss []*branchSyn) error {
-	if len(bn.BranchUsageOrder) == 0 {
+func (bn *BranchNode) sortBranchSyns() ([]*branchSyn, error) {
+	syns := bn.getSyns()
+	if bn.BranchUsageOrder == nil {
+		bss := maps.Values(syns)
 		sort.Slice(bss, func(i, j int) bool {
 			this, that := bss[i], bss[j]
 			return this.name < that.name
 		})
-		return nil
+		return bss, nil
 	}
 
-	customOrder := bn.BranchUsageOrder
-	want := map[string]bool{}
-	var bsNames []string
-	for _, bs := range bss {
-		want[bs.name] = true
-		bsNames = append(bsNames, bs.name)
-	}
-	sort.Strings(bsNames)
-	mismatchErr := fmt.Errorf("BranchUsageOrder includes an incorrect set of branches: expected %v; got %v", bsNames, customOrder)
-
-	if len(customOrder) != len(want) {
-		return mismatchErr
-	}
-
-	for _, branch := range customOrder {
-		delete(want, branch)
-	}
-	if len(want) != 0 {
-		return mismatchErr
+	got := map[string]bool{}
+	var order []*branchSyn
+	for _, branch := range bn.BranchUsageOrder {
+		if _, ok := bn.Branches[branch]; !ok {
+			return nil, fmt.Errorf("provided branch (%s) isn't a valid branch (note branch synonyms aren't allowed in BranchUsageOrder)", branch)
+		}
+		if got[branch] {
+			return nil, fmt.Errorf("BranchUsageOrder contains a duplicate entry (%s)", branch)
+		}
+		got[branch] = true
+		order = append(order, syns[branch])
 	}
 
-	sort.Slice(bss, func(i, j int) bool {
-		this, that := bss[i], bss[j]
-		return slices.Index(customOrder, this.name) < slices.Index(customOrder, that.name)
-	})
-
-	return nil
+	return order, nil
 }
 
 // BranchSynonyms converts a map from branching argument to synonyms to a
@@ -244,8 +241,8 @@ func (bn *BranchNode) Usage(input *command.Input, data *command.Data, u *command
 		return nil
 	}
 
-	bss := maps.Values(bn.getSyns())
-	if err := bn.sortBranchSyns(bss); err != nil {
+	bss, err := bn.sortBranchSyns()
+	if err != nil {
 		return err
 	}
 
