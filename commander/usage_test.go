@@ -415,6 +415,44 @@ func TestUsage(t *testing.T) {
 			},
 		},
 		{
+			name: "branch node fails if usage error on branch",
+			etc: &commandtest.ExecuteTestCase{
+				Node: SerialNodes(
+					Description("command start"),
+					Arg[string]("STRING", "A string"),
+					&BranchNode{
+						Branches: map[string]command.Node{
+							"alpha": SerialNodes(SuperSimpleProcessor(func(i *command.Input, d *command.Data) error {
+								return fmt.Errorf("usage oops")
+							})),
+						},
+						Default: SerialNodes(Description("the default command"), Arg[int]("INT_ARG", "an integer"), ListArg[string]("STRINGS", "unltd strings", 1, command.UnboundedList)),
+					},
+				),
+				WantErr:    fmt.Errorf("failed to get usage for branch alpha: usage oops"),
+				WantStderr: "failed to get usage for branch alpha: usage oops\n",
+			},
+		},
+		{
+			name: "branch node fails if usage error on default",
+			etc: &commandtest.ExecuteTestCase{
+				Node: SerialNodes(
+					Description("command start"),
+					Arg[string]("STRING", "A string"),
+					&BranchNode{
+						Branches: map[string]command.Node{
+							"alpha": SerialNodes(Description("first")),
+						},
+						Default: SerialNodes(SuperSimpleProcessor(func(i *command.Input, d *command.Data) error {
+							return fmt.Errorf("default usage oops")
+						})),
+					},
+				),
+				WantErr:    fmt.Errorf("failed to get usage for BranchNode default: default usage oops"),
+				WantStderr: "failed to get usage for BranchNode default: default usage oops\n",
+			},
+		},
+		{
 			name: "branch node with empty BranchUsageOrder and default",
 			etc: &commandtest.ExecuteTestCase{
 				Node: SerialNodes(

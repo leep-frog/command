@@ -239,7 +239,7 @@ func (bn *BranchNode) Usage(input *command.Input, data *command.Data, u *command
 		su.AddArg(name, "", 1, 0)
 		err := spycommander.ProcessGraphUse(bs.n, input, data, su)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to get usage for branch %s: %v", bs.name, err)
 		}
 		branchUsages = append(branchUsages, &command.BranchUsage{
 			Usage: su,
@@ -250,7 +250,7 @@ func (bn *BranchNode) Usage(input *command.Input, data *command.Data, u *command
 
 	if bn.Default != nil {
 		if err := spycommander.ProcessGraphUse(bn.Default, input, data, u); err != nil {
-			return err
+			return fmt.Errorf("failed to get usage for BranchNode default: %v", err)
 		}
 	}
 	return nil
