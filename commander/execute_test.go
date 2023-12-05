@@ -7549,6 +7549,67 @@ func TestExecute(t *testing.T) {
 				WantPanic: "oh no!",
 			},
 		},
+		// MutableProcessor tests
+		{
+			name: "Reference does not update underlying processor",
+			etc: func() *commandtest.ExecuteTestCase {
+				hi := PrintlnProcessor("hi")
+				hello := PrintlnProcessor("hello")
+
+				return &commandtest.ExecuteTestCase{
+					Node: SerialNodes(
+						SuperSimpleProcessor(func(i *command.Input, d *command.Data) error {
+							hi = hello
+							return nil
+						}),
+						hi,
+						SuperSimpleProcessor(func(i *command.Input, d *command.Data) error {
+							fo := commandtest.NewOutput()
+							if err := hi.Execute(nil, fo, nil, nil); err != nil {
+								return err
+							}
+							fo.Close()
+							d.Set("FINAL", fo.GetStdout())
+							return nil
+						}),
+					),
+					WantStdout: "hi\n",
+					WantData: &command.Data{Values: map[string]interface{}{
+						"FINAL": "hello\n",
+					}},
+				}
+			}(),
+		},
+		{
+			name: "MutableProcessor DOES update underlying processor",
+			etc: func() *commandtest.ExecuteTestCase {
+				hi := NewMutableProcessor[command.Processor](PrintlnProcessor("hi"))
+				hello := PrintlnProcessor("hello")
+
+				return &commandtest.ExecuteTestCase{
+					Node: SerialNodes(
+						SuperSimpleProcessor(func(i *command.Input, d *command.Data) error {
+							hi.Processor = &hello
+							return nil
+						}),
+						hi,
+						SuperSimpleProcessor(func(i *command.Input, d *command.Data) error {
+							fo := commandtest.NewOutput()
+							if err := hi.Execute(nil, fo, nil, nil); err != nil {
+								return err
+							}
+							fo.Close()
+							d.Set("FINAL", fo.GetStdout())
+							return nil
+						}),
+					),
+					WantStdout: "hello\n",
+					WantData: &command.Data{Values: map[string]interface{}{
+						"FINAL": "hello\n",
+					}},
+				}
+			}(),
+		},
 		/* Useful for commenting out tests. */
 	} {
 		t.Run(test.name, func(t *testing.T) {
@@ -8812,6 +8873,7 @@ func TestComplete(t *testing.T) {
 						"list_breaker.go",
 						"map_arg.go",
 						"menu.go",
+						"mutable_processor.go",
 						"node_repeater.go",
 						"option.go",
 						"osenv.go",
@@ -10021,6 +10083,77 @@ func TestComplete(t *testing.T) {
 					Suggestions: []string{"abc", "jkl"},
 				},
 			},
+		},
+		// MutableProcessor tests
+		{
+			name: "Reference does not update underlying processor",
+			ctc: func() *commandtest.CompleteTestCase {
+				hi := SimpleProcessor(nil, func(i *command.Input, d *command.Data) (*command.Completion, error) {
+					return &command.Completion{Suggestions: []string{"hi"}}, nil
+				})
+				hello := SimpleProcessor(nil, func(i *command.Input, d *command.Data) (*command.Completion, error) {
+					return &command.Completion{Suggestions: []string{"hello"}}, nil
+				})
+
+				return &commandtest.CompleteTestCase{
+					Node: SerialNodes(
+						SuperSimpleProcessor(func(i *command.Input, d *command.Data) error {
+							hi = hello
+							return nil
+						}),
+						SuperSimpleProcessor(func(i *command.Input, d *command.Data) error {
+							c, err := hi.Complete(nil, nil)
+							if err != nil {
+								return err
+							}
+							d.Set("FINAL", c.Suggestions)
+							return nil
+						}),
+						hi,
+					),
+					Want: &command.Autocompletion{
+						Suggestions: []string{"hi"},
+					},
+					WantData: &command.Data{Values: map[string]interface{}{
+						"FINAL": []string{"hello"},
+					}},
+				}
+			}(),
+		},
+		{
+			name: "MutableProcessor DOES update underlying processor",
+			ctc: func() *commandtest.CompleteTestCase {
+				hi := NewMutableProcessor(SimpleProcessor(nil, func(i *command.Input, d *command.Data) (*command.Completion, error) {
+					return &command.Completion{Suggestions: []string{"hi"}}, nil
+				}))
+				hello := SimpleProcessor(nil, func(i *command.Input, d *command.Data) (*command.Completion, error) {
+					return &command.Completion{Suggestions: []string{"hello"}}, nil
+				})
+
+				return &commandtest.CompleteTestCase{
+					Node: SerialNodes(
+						SuperSimpleProcessor(func(i *command.Input, d *command.Data) error {
+							hi.Processor = &hello
+							return nil
+						}),
+						SuperSimpleProcessor(func(i *command.Input, d *command.Data) error {
+							c, err := hi.Complete(nil, nil)
+							if err != nil {
+								return err
+							}
+							d.Set("FINAL", c.Suggestions)
+							return nil
+						}),
+						hi,
+					),
+					Want: &command.Autocompletion{
+						Suggestions: []string{"hello"},
+					},
+					WantData: &command.Data{Values: map[string]interface{}{
+						"FINAL": []string{"hello"},
+					}},
+				}
+			}(),
 		},
 		/* Useful for commenting out tests. */
 	} {

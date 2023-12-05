@@ -82,7 +82,7 @@ type CLI interface {
 
 // Returns if there was an error
 func (s *sourcerer) executeExecutor(output command.Output, d *command.Data) error {
-	cli := s.cliArg.GetProcessor().Get(d)
+	cli := (*s.cliArg.Processor).Get(d)
 
 	sourcingFile := d.String(fileArg.Name())
 	args := d.StringList(passthroughArgs.Name())
@@ -151,7 +151,7 @@ func (s *sourcerer) executeExecutor(output command.Output, d *command.Data) erro
 
 func (s *sourcerer) autocompleteExecutor(o command.Output, d *command.Data) error {
 	s.forAutocomplete = true
-	cli := s.cliArg.GetProcessor().Get(d)
+	cli := (*s.cliArg.Processor).Get(d)
 
 	autocompletion, err := commander.Autocomplete(cli.Node(), compLineArg.Get(d), autocompletePassthroughArgs.Get(d), CurrentOS)
 	if err != nil {
@@ -191,7 +191,7 @@ func load(cli CLI) error {
 type sourcerer struct {
 	goExecutableFilePath string
 	clis                 map[string]CLI
-	cliArg               *refProcessor[*commander.MapFlargument[string, CLI]]
+	cliArg               *commander.MutableProcessor[*commander.MapFlargument[string, CLI]]
 	sourceLocation       string
 	printedUsageError    bool
 	opts                 *compiledOpts
@@ -220,38 +220,9 @@ const (
 	BuiltInCommandParameter = "builtin"
 )
 
-// TODO: Make this a first-class type
-type refProcessor[P command.Processor] struct {
-	Processor *P
-}
-
-func newRefProcessor[P command.Processor](p P) *refProcessor[P] {
-	return &refProcessor[P]{&p}
-}
-
-func (rp *refProcessor[P]) Execute(i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
-	return (*rp.Processor).Execute(i, o, d, ed)
-}
-
-func (rp *refProcessor[P]) Complete(i *command.Input, d *command.Data) (*command.Completion, error) {
-	return (*rp.Processor).Complete(i, d)
-}
-
-func (rp *refProcessor[P]) Usage(i *command.Input, d *command.Data, u *command.Usage) error {
-	return (*rp.Processor).Usage(i, d, u)
-}
-
-func (rp *refProcessor[P]) GetProcessor() P {
-	return *rp.Processor
-}
-
-func (rp *refProcessor[P]) SetProcessor(p P) {
-	rp.Processor = &p
-}
-
 func (s *sourcerer) Node() command.Node {
 	loadCLIArg := commander.SuperSimpleProcessor(func(i *command.Input, d *command.Data) error {
-		return load(s.cliArg.GetProcessor().Get(d))
+		return load((*s.cliArg.Processor).Get(d))
 	})
 
 	autocompleteBranchNode := func(runCLI bool) command.Node {
@@ -281,7 +252,7 @@ func (s *sourcerer) Node() command.Node {
 		return commander.SerialNodes(
 			// Set the CLI to runCLI
 			commander.SuperSimpleProcessor(func(i *command.Input, d *command.Data) error {
-				s.cliArg.GetProcessor().Set(s.runCLI.Name(), d)
+				(*s.cliArg.Processor).Set(s.runCLI.Name(), d)
 				return nil
 			}),
 			&commander.BranchNode{
@@ -304,7 +275,6 @@ func (s *sourcerer) Node() command.Node {
 						}},
 					),
 				},
-				// TODO: remove this and just check if BranchNode.UsageOrder is empty list
 				BranchUsageOrder: []string{},
 				Default: commander.SerialNodes(
 					loadCLIArg,
@@ -457,7 +427,8 @@ func (s *sourcerer) initSourcerer(runCLI, builtin bool, clis []CLI, sourceLocati
 	}
 
 	s.clis = cliMap
-	s.cliArg.SetProcessor(commander.MapArg("CLI", "", cliMap, false))
+	ma := commander.MapArg("CLI", "", cliMap, false)
+	s.cliArg.Processor = &ma
 
 	s.sourceLocation = sourceLocation
 	s.opts = cos
@@ -509,7 +480,7 @@ func source(runCLI bool, clis []CLI, goExecutableFilePath string, osArgs []strin
 
 	s := &sourcerer{
 		goExecutableFilePath: goExecutableFilePath,
-		cliArg:               newRefProcessor[*commander.MapFlargument[string, CLI]](nil),
+		cliArg:               commander.NewMutableProcessor[*commander.MapFlargument[string, CLI]](nil),
 	}
 	if err := s.initSourcerer(runCLI, false, clis, sl, opts); err != nil {
 		return o.Err(err)
@@ -519,7 +490,7 @@ func source(runCLI bool, clis []CLI, goExecutableFilePath string, osArgs []strin
 	// execution/autocomplete/usage path.
 	d := &command.Data{
 		Values: map[string]interface{}{
-			s.cliArg.GetProcessor().Name(): s,
+			(*s.cliArg.Processor).Name(): s,
 			// Don't need execute file here
 			passthroughArgs.Name(): osArgs,
 		},

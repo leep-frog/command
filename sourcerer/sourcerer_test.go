@@ -28,7 +28,6 @@ const (
 	osWindows = "windows"
 )
 
-// TODO: Merge test methods
 func TestGenerateBinaryNode(t *testing.T) {
 	testutil.StubValue(t, &runtimeCaller, func(int) (uintptr, string, int, bool) {
 		return 0, "/fake/source/location", 0, true

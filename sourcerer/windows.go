@@ -207,7 +207,6 @@ func (w *windows) FunctionWrap(name string, fn string) string {
 	}, "\n")
 }
 
-// TODO: Aliasers
 func (w *windows) GlobalAliaserFunc(goExecutable string) []string { return nil }
 func (w *windows) VerifyAliaser(a *Aliaser) []string {
 	return w.verifyAliaserCommand(a.cli)
@@ -245,7 +244,6 @@ func (w *windows) RegisterAliaser(goExecutable string, a *Aliaser) []string {
 		`}`,
 		// Create the autocomplete function
 		fmt.Sprintf(`$%s = {`, w.autocompleteFunctionName(true, a.alias)),
-		// TODO: Unify this logic with `autocompleteFuncction`?
 		`  param($wordToComplete, $commandAst, $compPoint)`,
 		`  $Local:tmpPassthroughArgFile = New-TemporaryFile`,
 		`  [IO.File]::WriteAllText($Local:tmpPassthroughArgFile, $commandAst.ToString())`,

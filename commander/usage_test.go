@@ -1235,6 +1235,91 @@ func TestUsage(t *testing.T) {
 				}
 			}(),
 		},
+		// MutableProcessor tests
+		{
+			name: "Reference does not update underlying processor",
+			etc: func() *commandtest.ExecuteTestCase {
+				hi := &simpleProcessor{u: func(i *command.Input, d *command.Data, u *command.Usage) error {
+					u.SetDescription("hi")
+					return nil
+				}}
+				hello := &simpleProcessor{u: func(i *command.Input, d *command.Data, u *command.Usage) error {
+					u.SetDescription("hello")
+					return nil
+				}}
+
+				return &commandtest.ExecuteTestCase{
+					Node: SerialNodes(
+						&simpleProcessor{u: func(i *command.Input, d *command.Data, u *command.Usage) error {
+							hi = hello
+							return nil
+						}},
+						hi,
+						&simpleProcessor{u: func(i *command.Input, d *command.Data, u *command.Usage) error {
+							su := &command.Usage{}
+							err := hi.Usage(nil, nil, su)
+							if err != nil {
+								return err
+							}
+							u.AddSymbol("hi value", u.String())
+							return nil
+						}},
+					),
+					WantStdout: strings.Join([]string{
+						// From shallow reference usage
+						"hi",
+						// From referenced change usage
+						"hi value",
+						"",
+						"Symbols:",
+						"  hi value: hi",
+						"",
+					}, "\n"),
+				}
+			}(),
+		},
+		{
+			name: "MutableProcessor DOES update underlying processor",
+			etc: func() *commandtest.ExecuteTestCase {
+				hi := NewMutableProcessor(&simpleProcessor{u: func(i *command.Input, d *command.Data, u *command.Usage) error {
+					u.SetDescription("hi")
+					return nil
+				}})
+				hello := &simpleProcessor{u: func(i *command.Input, d *command.Data, u *command.Usage) error {
+					u.SetDescription("hello")
+					return nil
+				}}
+
+				return &commandtest.ExecuteTestCase{
+					Node: SerialNodes(
+						&simpleProcessor{u: func(i *command.Input, d *command.Data, u *command.Usage) error {
+							hi.Processor = &hello
+							return nil
+						}},
+						hi,
+						&simpleProcessor{u: func(i *command.Input, d *command.Data, u *command.Usage) error {
+							su := &command.Usage{}
+							err := hi.Usage(nil, nil, su)
+							if err != nil {
+								return err
+							}
+							u.AddSymbol("hi value", u.String())
+							return nil
+						}},
+					),
+					WantStdout: strings.Join([]string{
+						// From shallow reference usage
+						"hello",
+						// From referenced change usage
+						"hi value",
+						"",
+						"Symbols:",
+						"  hi value: hello",
+						"",
+					}, "\n"),
+				}
+			}(),
+		},
 		/* Useful comment for commenting out tests */
 	} {
 		t.Run(test.name, func(t *testing.T) {
