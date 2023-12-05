@@ -27,7 +27,7 @@ func Autocomplete(n command.Node, compLine string, passthroughArgs []string, dat
 
 // Separate method for use by modifiers (shortcut.go, cache.go, etc.)
 func ProcessGraphCompletion(n command.Node, input *command.Input, data *command.Data) (*command.Completion, error) {
-	for !isNil(n) {
+	for n != nil {
 		c, err := n.Complete(input, data)
 
 		// Proceed to next node if no completion and no error

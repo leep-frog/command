@@ -1,8 +1,6 @@
 package spycommander
 
 import (
-	"reflect"
-
 	"github.com/leep-frog/command/command"
 )
 
@@ -55,14 +53,9 @@ func ProcessOrExecute(p command.Processor, input *command.Input, output command.
 	return p.Execute(input, output, data, eData)
 }
 
-// TODO: replace with pointer types
-func isNil(o interface{}) bool {
-	return o == nil || reflect.ValueOf(o).IsNil()
-}
-
 // ProcessGraphExecution processes the provided graph
-func ProcessGraphExecution(root command.Node, input *command.Input, output command.Output, data *command.Data, eData *command.ExecuteData) error {
-	for n := root; !isNil(n); {
+func ProcessGraphExecution(n command.Node, input *command.Input, output command.Output, data *command.Data, eData *command.ExecuteData) error {
+	for n != nil {
 		if err := n.Execute(input, output, data, eData); err != nil {
 			return err
 		}

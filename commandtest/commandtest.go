@@ -120,8 +120,7 @@ type RunContents struct {
 	StdinContents string
 }
 
-// TODO: Is this needed? Just let users do this part or use OSSetEnv/OSLookupEnv?
-// FakeOS is a fake command.OS that can be used for testing purposes.
+// FakeOS is a fake `command.OS` interface implementer that can be used for testing purposes.
 type FakeOS struct{}
 
 func (*FakeOS) SetEnvVar(variable, value string) string {
