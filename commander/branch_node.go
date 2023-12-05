@@ -243,7 +243,6 @@ func (bn *BranchNode) Usage(input *command.Input, data *command.Data, u *command
 		}
 		branchUsages = append(branchUsages, &command.BranchUsage{
 			Usage: su,
-			// TODO: NoLines?
 		})
 	}
 	u.SetBranches(branchUsages)

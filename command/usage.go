@@ -25,46 +25,19 @@ var (
 	trailingNestedUsageRegex = regexp.MustCompile(fmt.Sprintf(`%s(\s*)$`, constants.UsageBoxUpDown))
 	trailingWhitspaceRegex   = regexp.MustCompile(`\s*$`)
 	branchStartRegex         = regexp.MustCompile(fmt.Sprintf(`[%s%s]`, constants.UsageBoxLeftRightDown, constants.UsageBoxLeftDown))
-	MIDDLE_ITEM_PREFIX       = map[bool]string{
-		true:  "┣━━ ",
-		false: constants.NoDrawLinePrefix,
-	}
-	NO_ITEM_PREFIX = map[bool]string{
-		true:  "┃   ",
-		false: constants.NoDrawLinePrefix,
-	}
-	END_ITEM_PREFIX = map[bool]string{
-		true:  "┗━━ ",
-		false: constants.NoDrawLinePrefix,
-	}
 
-	PRE_ITEM_PREFIX = map[bool]string{
-		true:  "┃   ",
-		false: constants.NoDrawLinePrefix,
-	}
-	ITEM_PREFIX = map[bool]map[bool]string{
+	PRE_ITEM_PREFIX = "┃   "
+	ITEM_PREFIX     = map[bool]string{
 		// Middle item
-		false: {
-			true:  "┣━━ ",
-			false: constants.NoDrawLinePrefix,
-		},
+		false: "┣━━ ",
 		// Final item
-		true: {
-			true:  "┗━━ ",
-			false: constants.NoDrawLinePrefix,
-		},
+		true: "┗━━ ",
 	}
-	POST_ITEM_PREFIX = map[bool]map[bool]string{
+	POST_ITEM_PREFIX = map[bool]string{
 		// Middle item
-		false: {
-			true:  "┃   ",
-			false: constants.NoDrawLinePrefix,
-		},
+		false: "┃   ",
 		// Final item
-		true: {
-			true:  "    ",
-			false: constants.NoDrawLinePrefix,
-		},
+		true: "    ",
 	}
 )
 
@@ -82,8 +55,6 @@ type argumentUsage struct {
 type BranchUsage struct {
 	// Usage is the usage object for the branched node.
 	Usage *Usage
-	// NoLines, if true, doesn't draw lines to sub-branches
-	NoLines bool
 }
 
 type Usage struct {
@@ -298,11 +269,10 @@ func (u *Usage) string(r []string, preItemPrefix, itemPrefix, postItemPrefix str
 
 	for i, subUsage := range u.branches {
 		isFinal := i == (len(u.branches) - 1)
-		drawLines := !subUsage.NoLines
 
-		subPreItemPrefix := postItemPrefix + PRE_ITEM_PREFIX[drawLines]
-		subItemPrefix := postItemPrefix + ITEM_PREFIX[isFinal][drawLines]
-		subPostItemPrefix := postItemPrefix + POST_ITEM_PREFIX[isFinal][drawLines]
+		subPreItemPrefix := postItemPrefix + PRE_ITEM_PREFIX
+		subItemPrefix := postItemPrefix + ITEM_PREFIX[isFinal]
+		subPostItemPrefix := postItemPrefix + POST_ITEM_PREFIX[isFinal]
 
 		r = subUsage.Usage.string(r, subPreItemPrefix, subItemPrefix, subPostItemPrefix, sections)
 
