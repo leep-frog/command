@@ -73,10 +73,11 @@ type nameProcessor interface {
 }
 
 type ExecuteTestFunctionBag struct {
-	ExFn        executeFn
-	UFn         usageFn
-	SetupArg    nameProcessor
-	SerialNodes func(...command.Processor) command.Node
+	ExFn         executeFn
+	UFn          usageFn
+	SetupArg     nameProcessor
+	SerialNodes  func(...command.Processor) command.Node
+	HelpBehavior func(command.Node, *command.Input, command.Output, func(error) bool) error
 
 	IsBranchingError     func(error) bool
 	IsUsageError         func(error) bool
@@ -163,15 +164,7 @@ func ExecuteTest(t *testing.T, etc *commandtest.ExecuteTestCase, ietc *spycomman
 	}
 
 	if helpFlag {
-		// TODO: This is synced with usageExecutorHelper in sourcerer (use interface to share logic? ie move this check into execute function?)
-		var u *command.Usage
-		u, tc.err = bag.UFn(n, tc.input)
-		if tc.err != nil {
-			tc.fo.Err(tc.err)
-		} else {
-			tc.fo.Stdoutln(u.String())
-		}
-
+		tc.err = bag.HelpBehavior(n, tc.input, tc.fo, bag.IsUsageError)
 	} else {
 		func() {
 			defer func() {

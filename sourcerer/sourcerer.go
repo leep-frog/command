@@ -342,17 +342,7 @@ func (s *sourcerer) listCLIExecutor(i *command.Input, o command.Output, d *comma
 
 func (s *sourcerer) usageExecutorHelper(cli CLI, args []string) func(o command.Output, d *command.Data) error {
 	return func(o command.Output, d *command.Data) error {
-		n := cli.Node()
-		u, err := spycommander.Use(n, command.ParseExecuteArgs(args))
-		if err != nil {
-			o.Err(err)
-			if commander.IsUsageError(err) {
-				spycommander.ShowUsageAfterError(n, o)
-			}
-			return err
-		}
-		o.Stdoutln(u.String())
-		return nil
+		return spycommander.HelpBehavior(cli.Node(), command.ParseExecuteArgs(args), o, commander.IsUsageError)
 	}
 }
 

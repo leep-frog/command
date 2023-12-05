@@ -150,9 +150,8 @@ func (gl *GoLeep) completer() commander.Completer[[]string] {
 
 		extraArgs := []string{
 			// COMP_TYPE: by setting to '?', we ensure that an error is always printed.
-			// TODO: Get this from data.
 			"63",
-			// COMP_POINT (-2 for quotes)
+			// COMP_POINT
 			compPoint,
 			// COMP_LINE
 			compLine,

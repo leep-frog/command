@@ -30,6 +30,7 @@ func ExecuteTest(t *testing.T, etc *commandtest.ExecuteTestCase) {
 		spycommander.Use,
 		commander.SetupArg,
 		commander.SerialNodes,
+		spycommander.HelpBehavior,
 		commander.IsBranchingError,
 		commander.IsUsageError,
 		commander.IsNotEnoughArgsError,

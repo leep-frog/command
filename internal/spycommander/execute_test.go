@@ -15,9 +15,11 @@ import (
 
 func TestExecute(t *testing.T) {
 	for _, test := range []struct {
-		name string
-		etc  *commandtest.ExecuteTestCase
-		ietc *spycommandtest.ExecuteTestCase
+		name                string
+		etc                 *commandtest.ExecuteTestCase
+		ietc                *spycommandtest.ExecuteTestCase
+		isUsageError        bool
+		wantUsageErrorCheck error
 	}{
 		{
 			name: "handles empty node",
@@ -305,7 +307,7 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "returns error",
+			name: "returns error and handles IsUsageError returns false",
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"--help"},
 				Node: &simpleNode{u: func(i *command.Input, d *command.Data, u *command.Usage) error {
@@ -315,6 +317,44 @@ func TestExecute(t *testing.T) {
 				WantStderr: "whoops\n",
 				WantErr:    fmt.Errorf("whoops"),
 			},
+			wantUsageErrorCheck: fmt.Errorf("whoops"),
+			isUsageError:        false,
+		},
+		{
+			name: "returns error and handles IsUsageError returns true",
+			etc: &commandtest.ExecuteTestCase{
+				Args: []string{"--help"},
+				Node: func() command.Node {
+					var cnt int
+					return &simpleNode{u: func(i *command.Input, d *command.Data, u *command.Usage) error {
+						cnt++
+						switch cnt {
+						case 1:
+							u.SetDescription("Desc")
+							u.AddArg("BOO", "boo", 1, 2)
+							return fmt.Errorf("first whoops")
+						case 2:
+							u.AddArg("HURRAY", "h desc", 2, 1)
+							return nil
+						default:
+							panic("Run too many times")
+						}
+					}}
+				}(),
+				WantStderr: strings.Join([]string{
+					"first whoops",
+					"",
+					"======= Command Usage =======",
+					"HURRAY HURRAY [ HURRAY ]",
+					"",
+					"Arguments:",
+					"  HURRAY: h desc",
+					"",
+				}, "\n"),
+				WantErr: fmt.Errorf("first whoops"),
+			},
+			wantUsageErrorCheck: fmt.Errorf("first whoops"),
+			isUsageError:        true,
 		},
 		{
 			name: "traverses multiple nodes",
@@ -336,7 +376,7 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "fails if UsageNext error",
+			name: "fails if UsageNext error and IsUsageError returns false",
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"--help"},
 				Node: &simpleNode{
@@ -352,6 +392,60 @@ func TestExecute(t *testing.T) {
 				WantErr:    fmt.Errorf("rats"),
 				WantStderr: "rats\n",
 			},
+			wantUsageErrorCheck: fmt.Errorf("rats"),
+			isUsageError:        false,
+		},
+		{
+			name: "fails if UsageNext error and IsUsageError returns true",
+			etc: &commandtest.ExecuteTestCase{
+				Args: []string{"--help"},
+				Node: func() command.Node {
+					var nxCnt, cnt int
+					return &simpleNode{
+						u: func(i *command.Input, d *command.Data, u *command.Usage) error {
+							cnt++
+							switch cnt {
+							case 1:
+								u.AddArg("BOO", "boo", 1, 2)
+								return nil
+							case 2:
+								u.AddArg("HURRAY", "h desc", 2, 1)
+								return nil
+							default:
+								panic("Run too many times")
+							}
+						},
+						unx: func(i *command.Input, d *command.Data) (command.Node, error) {
+							nxCnt++
+							switch nxCnt {
+							case 1:
+								return nil, fmt.Errorf("rats")
+							case 2:
+								return &simpleNode{u: func(i *command.Input, d *command.Data, u *command.Usage) error {
+									u.SetDescription("Made it!")
+									return nil
+								}}, nil
+							default:
+								panic("Run to many times")
+							}
+						},
+					}
+				}(),
+				WantErr: fmt.Errorf("rats"),
+				WantStderr: strings.Join([]string{
+					"rats",
+					"",
+					"======= Command Usage =======",
+					"Made it!",
+					"HURRAY HURRAY [ HURRAY ]",
+					"",
+					"Arguments:",
+					"  HURRAY: h desc",
+					"",
+				}, "\n"),
+			},
+			wantUsageErrorCheck: fmt.Errorf("rats"),
+			isUsageError:        true,
 		},
 		// ProcessOrUsage tests
 		{
@@ -490,17 +584,27 @@ func TestExecute(t *testing.T) {
 				test.ietc = &spycommandtest.ExecuteTestCase{}
 			}
 			test.ietc.CheckErrorType = false
+			var gotUsageErrorCheck error
 			spycommandertest.ExecuteTest(t, test.etc, test.ietc, &spycommandertest.ExecuteTestFunctionBag{
 				Execute,
 				Use,
 				nil,
 				serialNodes,
-				func(err error) bool { panic("Unsupported") },
-				func(err error) bool { panic("Unsupported") },
-				func(err error) bool { panic("Unsupported") },
-				func(err error) bool { panic("Unsupported") },
-				func(err error) bool { panic("Unsupported") },
+				HelpBehavior,
+				func(err error) bool { panic("Unsupported branching error") },
+				func(err error) bool {
+					if gotUsageErrorCheck != nil {
+						panic("Already checked usage error")
+					}
+					gotUsageErrorCheck = err
+					return test.isUsageError
+				},
+				func(err error) bool { panic("Unsupported not enough args error") },
+				func(err error) bool { panic("Unsupported extra args error") },
+				func(err error) bool { panic("Unsupported validation error") },
 			})
+
+			commandtest.CmpError(t, "IsUsageError()", test.wantUsageErrorCheck, gotUsageErrorCheck)
 		})
 	}
 }
