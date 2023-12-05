@@ -23,7 +23,22 @@ import (
 // executeTest is a wrapper around spycommandertest.ExecuteTest
 func executeTest(t *testing.T, etc *commandtest.ExecuteTestCase, ietc *spycommandtest.ExecuteTestCase) {
 	t.Helper()
-	spycommandertest.ExecuteTest(t, etc, ietc, spycommander.Execute, spycommander.Use, SetupArg, SerialNodes)
+	if ietc == nil {
+		ietc = &spycommandtest.ExecuteTestCase{}
+	}
+	ietc.TestInput = true
+	ietc.CheckErrorType = true
+	spycommandertest.ExecuteTest(t, etc, ietc, &spycommandertest.ExecuteTestFunctionBag{
+		spycommander.Execute,
+		spycommander.Use,
+		SetupArg,
+		SerialNodes,
+		IsBranchingError,
+		IsUsageError,
+		IsNotEnoughArgsError,
+		command.IsExtraArgsError,
+		IsValidationError,
+	})
 }
 
 // changeTest is a wrapper around spycommandertest.ChangeTest
@@ -35,7 +50,18 @@ func changeTest[T commandtest.Changeable](t *testing.T, want, original T, opts .
 // autocompleteTest is a wrapper around spycommandertest.AutocompleteTest
 func autocompleteTest(t *testing.T, ctc *commandtest.CompleteTestCase, ictc *spycommandtest.CompleteTestCase) {
 	t.Helper()
-	spycommandertest.AutocompleteTest(t, ctc, ictc, spycommander.Autocomplete)
+	if ictc == nil {
+		ictc = &spycommandtest.CompleteTestCase{}
+	}
+	ictc.CheckErrorType = true
+	spycommandertest.AutocompleteTest(t, ctc, ictc, &spycommandertest.CompleteTestFunctionBag{
+		spycommander.Autocomplete,
+		IsBranchingError,
+		IsUsageError,
+		IsNotEnoughArgsError,
+		command.IsExtraArgsError,
+		IsValidationError,
+	})
 }
 
 type errorEdge struct {
@@ -90,7 +116,9 @@ func TestExecute(t *testing.T) {
 				WantStderr: "Unprocessed extra args: [hello]\n",
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
-				TestInput: true,
+				WantIsExtraArgsError: true,
+				WantIsUsageError:     true,
+				TestInput:            true,
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
 						{Value: "hello"},
@@ -106,6 +134,10 @@ func TestExecute(t *testing.T) {
 				Node:       SerialNodes(Arg[string]("s", testDesc)),
 				WantErr:    fmt.Errorf(`Argument "s" requires at least 1 argument, got 0`),
 				WantStderr: "Argument \"s\" requires at least 1 argument, got 0\n",
+			},
+			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsUsageError:         true,
+				WantIsNotEnoughArgsError: true,
 			},
 		},
 		{
@@ -138,6 +170,10 @@ func TestExecute(t *testing.T) {
 				WantErr:    fmt.Errorf(`Argument "i" requires at least 1 argument, got 0`),
 				WantStderr: "Argument \"i\" requires at least 1 argument, got 0\n",
 			},
+			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsUsageError:         true,
+				WantIsNotEnoughArgsError: true,
+			},
 		},
 		{
 			name: "Fails if float arg and no argument",
@@ -145,6 +181,10 @@ func TestExecute(t *testing.T) {
 				Node:       SerialNodes(Arg[float64]("f", testDesc)),
 				WantErr:    fmt.Errorf(`Argument "f" requires at least 1 argument, got 0`),
 				WantStderr: "Argument \"f\" requires at least 1 argument, got 0\n",
+			},
+			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsUsageError:         true,
+				WantIsNotEnoughArgsError: true,
 			},
 		},
 		// Complexecute tests for single Arg
@@ -156,6 +196,10 @@ func TestExecute(t *testing.T) {
 				}))),
 				WantErr:    fmt.Errorf(`Argument "is" requires at least 1 argument, got 0`),
 				WantStderr: "Argument \"is\" requires at least 1 argument, got 0\n",
+			},
+			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsUsageError:         true,
+				WantIsNotEnoughArgsError: true,
 			},
 		},
 		{
@@ -958,6 +1002,10 @@ func TestExecute(t *testing.T) {
 				WantErr:    fmt.Errorf(`Argument "sl" requires at least 2 arguments, got 0`),
 				WantStderr: "Argument \"sl\" requires at least 2 arguments, got 0\n",
 			},
+			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsUsageError:         true,
+				WantIsNotEnoughArgsError: true,
+			},
 		},
 		{
 			name: "Complexecute for ListArg fails completer returns error",
@@ -1072,6 +1120,8 @@ func TestExecute(t *testing.T) {
 				},
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsUsageError:         true,
+				WantIsNotEnoughArgsError: true,
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
 						{Value: "alpha"},
@@ -1453,7 +1503,9 @@ func TestExecute(t *testing.T) {
 				WantErr:    fmt.Errorf(`Argument "s" requires at least 1 argument, got 0`),
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
-				WantInput: &spycommandtest.SpyInput{},
+				WantIsUsageError:         true,
+				WantIsNotEnoughArgsError: true,
+				WantInput:                &spycommandtest.SpyInput{},
 			},
 		},
 		// Simple arg tests
@@ -1562,6 +1614,8 @@ func TestExecute(t *testing.T) {
 				}, "\n"),
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsExtraArgsError: true,
+				WantIsUsageError:     true,
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
 						{Value: "hello"},
@@ -1638,6 +1692,8 @@ func TestExecute(t *testing.T) {
 				WantStderr: "Argument \"sl\" requires at least 4 arguments, got 3\n",
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsNotEnoughArgsError: true,
+				WantIsUsageError:         true,
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
 						{Value: "hello"},
@@ -1803,6 +1859,8 @@ func TestExecute(t *testing.T) {
 				}, "\n"),
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsExtraArgsError: true,
+				WantIsUsageError:     true,
 				WantInput: &spycommandtest.SpyInput{
 					Remaining: []int{6},
 					Args: []*spycommand.InputArg{
@@ -2380,6 +2438,7 @@ func TestExecute(t *testing.T) {
 				WantErr:    fmt.Errorf(`validation for "strArg" failed: [NEQ] value cannot equal bad`),
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsValidationError: true,
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
 						{Value: "bad"},
@@ -2421,6 +2480,7 @@ func TestExecute(t *testing.T) {
 				WantErr:    fmt.Errorf(`validation for "strArg" failed: [Contains] value doesn't contain substring "good"`),
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsValidationError: true,
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
 						{Value: "hello"},
@@ -2442,6 +2502,7 @@ func TestExecute(t *testing.T) {
 				WantErr:    fmt.Errorf(`validation for "strArg" failed: [Contains] value doesn't contain substring "good"`),
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsValidationError: true,
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
 						{Value: "hello"},
@@ -2464,6 +2525,7 @@ func TestExecute(t *testing.T) {
 				WantErr:    fmt.Errorf(`validation for "strArg" failed: [Not(Contains("good"))] failed`),
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsValidationError: true,
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
 						{Value: "goodbye"},
@@ -2524,6 +2586,7 @@ func TestExecute(t *testing.T) {
 				WantErr:    fmt.Errorf(`validation for "strArg" failed: [MatchesRegex] value "team" doesn't match regex "i+"`),
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsValidationError: true,
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
 						{Value: "team"},
@@ -2565,6 +2628,7 @@ func TestExecute(t *testing.T) {
 				WantErr:    fmt.Errorf(`validation for "slArg" failed: [MatchesRegex] value "oops" doesn't match regex "i+"`),
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsValidationError: true,
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
 						{Value: "equiation: aabcdef"},
@@ -2607,6 +2671,7 @@ func TestExecute(t *testing.T) {
 				WantErr:    fmt.Errorf("validation for \"strArg\" failed: [IsRegex] value \"*\" isn't a valid regex: error parsing regexp: missing argument to repetition operator: `*`"),
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsValidationError: true,
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
 						{Value: "*"},
@@ -2649,6 +2714,7 @@ func TestExecute(t *testing.T) {
 				WantErr:    fmt.Errorf("validation for \"slArg\" failed: [IsRegex] value \"+\" isn't a valid regex: error parsing regexp: missing argument to repetition operator: `+`"),
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsValidationError: true,
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
 						{Value: ".*"},
@@ -2691,6 +2757,7 @@ func TestExecute(t *testing.T) {
 				WantStderr: "validation for \"S\" failed: [FileExists] file \"execute_test.gone\" does not exist\n",
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsValidationError: true,
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
 						{Value: "execute_test.gone"},
@@ -2732,6 +2799,7 @@ func TestExecute(t *testing.T) {
 				WantStderr: "validation for \"SL\" failed: [FileExists] file \"execute.gone\" does not exist\n",
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsValidationError: true,
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
 						{Value: "execute_test.go"},
@@ -2774,6 +2842,7 @@ func TestExecute(t *testing.T) {
 				WantStderr: "validation for \"S\" failed: [IsDir] file \"tested\" does not exist\n",
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsValidationError: true,
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
 						{Value: "tested"},
@@ -2795,6 +2864,7 @@ func TestExecute(t *testing.T) {
 				WantStderr: "validation for \"S\" failed: [IsDir] argument \"execute_test.go\" is a file\n",
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsValidationError: true,
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
 						{Value: "execute_test.go"},
@@ -2836,6 +2906,7 @@ func TestExecute(t *testing.T) {
 				WantStderr: "validation for \"SL\" failed: [IsDir] file \"co3test\" does not exist\n",
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsValidationError: true,
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
 						{Value: "testdata"},
@@ -2858,6 +2929,7 @@ func TestExecute(t *testing.T) {
 				WantStderr: "validation for \"SL\" failed: [IsDir] argument \"execute.go\" is a file\n",
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsValidationError: true,
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
 						{Value: "testdata"},
@@ -2900,6 +2972,7 @@ func TestExecute(t *testing.T) {
 				WantStderr: "validation for \"S\" failed: [IsFile] file \"tested\" does not exist\n",
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsValidationError: true,
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
 						{Value: "tested"},
@@ -2921,6 +2994,7 @@ func TestExecute(t *testing.T) {
 				WantStderr: "validation for \"S\" failed: [IsFile] argument \"testdata\" is a directory\n",
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsValidationError: true,
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
 						{Value: "testdata"},
@@ -2962,6 +3036,7 @@ func TestExecute(t *testing.T) {
 				WantStderr: "validation for \"SL\" failed: [IsFile] file \"cash\" does not exist\n",
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsValidationError: true,
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
 						{Value: "execute.go"},
@@ -2984,6 +3059,7 @@ func TestExecute(t *testing.T) {
 				WantStderr: "validation for \"SL\" failed: [IsFile] argument \"testdata\" is a directory\n",
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsValidationError: true,
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
 						{Value: "execute.go"},
@@ -3026,6 +3102,7 @@ func TestExecute(t *testing.T) {
 				WantErr:    fmt.Errorf(`validation for "strArg" failed: [InList] argument must be one of [abc def ghi]`),
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsValidationError: true,
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
 						{Value: "jkl"},
@@ -3066,6 +3143,7 @@ func TestExecute(t *testing.T) {
 				WantErr:    fmt.Errorf(`validation for "strArg" failed: [InList] argument must be one of [abc def ghi]`),
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsValidationError: true,
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
 						{Value: "jkl"},
@@ -3124,6 +3202,7 @@ func TestExecute(t *testing.T) {
 				WantErr:    fmt.Errorf(`validation for "sf" failed: [InList] argument must be one of [abc def ghi]`),
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsValidationError: true,
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
 						{Value: "-s"},
@@ -3185,6 +3264,7 @@ func TestExecute(t *testing.T) {
 				WantErr:    fmt.Errorf(`validation for "strArg" failed: [MinLength] length must be at least 3`),
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsValidationError: true,
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
 						{Value: "hi"},
@@ -3260,6 +3340,7 @@ func TestExecute(t *testing.T) {
 				WantErr:    fmt.Errorf(`validation for "strArg" failed: [MaxLength] length must be at most 3`),
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsValidationError: true,
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
 						{Value: "1234"},
@@ -3304,6 +3385,7 @@ func TestExecute(t *testing.T) {
 				WantErr:    fmt.Errorf(`validation for "strArg" failed: [Length] length must be exactly 3`),
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsValidationError: true,
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
 						{Value: "hi"},
@@ -3325,6 +3407,7 @@ func TestExecute(t *testing.T) {
 				WantErr:    fmt.Errorf(`validation for "strArg" failed: [Length] length must be exactly 4`),
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsValidationError: true,
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
 						{Value: "howdy"},
@@ -3366,6 +3449,7 @@ func TestExecute(t *testing.T) {
 				WantErr:    fmt.Errorf(`validation for "i" failed: [EQ] value isn't equal to 24`),
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsValidationError: true,
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
 						{Value: "25"},
@@ -3407,6 +3491,7 @@ func TestExecute(t *testing.T) {
 				WantErr:    fmt.Errorf(`validation for "i" failed: [NEQ] value cannot equal 24`),
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsValidationError: true,
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
 						{Value: "24"},
@@ -3448,6 +3533,7 @@ func TestExecute(t *testing.T) {
 				WantErr:    fmt.Errorf(`validation for "i" failed: [LT] value isn't less than 25`),
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsValidationError: true,
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
 						{Value: "25"},
@@ -3469,6 +3555,7 @@ func TestExecute(t *testing.T) {
 				WantErr:    fmt.Errorf(`validation for "i" failed: [LT] value isn't less than 25`),
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsValidationError: true,
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
 						{Value: "26"},
@@ -3529,6 +3616,7 @@ func TestExecute(t *testing.T) {
 				WantErr:    fmt.Errorf(`validation for "i" failed: [LTE] value isn't less than or equal to 25`),
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsValidationError: true,
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
 						{Value: "26"},
@@ -3551,6 +3639,7 @@ func TestExecute(t *testing.T) {
 				WantErr:    fmt.Errorf(`validation for "i" failed: [GT] value isn't greater than 25`),
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsValidationError: true,
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
 						{Value: "24"},
@@ -3572,6 +3661,7 @@ func TestExecute(t *testing.T) {
 				WantErr:    fmt.Errorf(`validation for "i" failed: [GT] value isn't greater than 25`),
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsValidationError: true,
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
 						{Value: "25"},
@@ -3613,6 +3703,7 @@ func TestExecute(t *testing.T) {
 				WantErr:    fmt.Errorf(`validation for "i" failed: [GTE] value isn't greater than or equal to 25`),
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsValidationError: true,
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
 						{Value: "24"},
@@ -3673,6 +3764,7 @@ func TestExecute(t *testing.T) {
 				WantErr:    fmt.Errorf(`validation for "i" failed: [Positive] value isn't positive`),
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsValidationError: true,
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
 						{Value: "-1"},
@@ -3694,6 +3786,7 @@ func TestExecute(t *testing.T) {
 				WantErr:    fmt.Errorf(`validation for "i" failed: [Positive] value isn't positive`),
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsValidationError: true,
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
 						{Value: "0"},
@@ -3754,6 +3847,7 @@ func TestExecute(t *testing.T) {
 				WantErr:    fmt.Errorf(`validation for "i" failed: [Negative] value isn't negative`),
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsValidationError: true,
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
 						{Value: "0"},
@@ -3775,6 +3869,7 @@ func TestExecute(t *testing.T) {
 				WantErr:    fmt.Errorf(`validation for "i" failed: [Negative] value isn't negative`),
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsValidationError: true,
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
 						{Value: "1"},
@@ -3797,6 +3892,7 @@ func TestExecute(t *testing.T) {
 				WantErr:    fmt.Errorf(`validation for "i" failed: [NonNegative] value isn't non-negative`),
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsValidationError: true,
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
 						{Value: "-1"},
@@ -3876,6 +3972,7 @@ func TestExecute(t *testing.T) {
 				WantErr:    fmt.Errorf(`validation for "flArg" failed: [EQ] value isn't equal to 2.4`),
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsValidationError: true,
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
 						{Value: "2.5"},
@@ -3917,6 +4014,7 @@ func TestExecute(t *testing.T) {
 				WantErr:    fmt.Errorf(`validation for "flArg" failed: [NEQ] value cannot equal 2.4`),
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsValidationError: true,
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
 						{Value: "2.4"},
@@ -3958,6 +4056,7 @@ func TestExecute(t *testing.T) {
 				WantErr:    fmt.Errorf(`validation for "flArg" failed: [LT] value isn't less than 2.5`),
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsValidationError: true,
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
 						{Value: "2.5"},
@@ -3979,6 +4078,7 @@ func TestExecute(t *testing.T) {
 				WantErr:    fmt.Errorf(`validation for "flArg" failed: [LT] value isn't less than 2.5`),
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsValidationError: true,
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
 						{Value: "2.6"},
@@ -4039,6 +4139,7 @@ func TestExecute(t *testing.T) {
 				WantErr:    fmt.Errorf(`validation for "flArg" failed: [LTE] value isn't less than or equal to 2.5`),
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsValidationError: true,
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
 						{Value: "2.6"},
@@ -4061,6 +4162,7 @@ func TestExecute(t *testing.T) {
 				WantErr:    fmt.Errorf(`validation for "flArg" failed: [GT] value isn't greater than 2.5`),
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsValidationError: true,
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
 						{Value: "2.4"},
@@ -4082,6 +4184,7 @@ func TestExecute(t *testing.T) {
 				WantErr:    fmt.Errorf(`validation for "flArg" failed: [GT] value isn't greater than 2.5`),
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsValidationError: true,
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
 						{Value: "2.5"},
@@ -4123,6 +4226,7 @@ func TestExecute(t *testing.T) {
 				WantErr:    fmt.Errorf(`validation for "flArg" failed: [GTE] value isn't greater than or equal to 2.5`),
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsValidationError: true,
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
 						{Value: "2.4"},
@@ -4183,6 +4287,7 @@ func TestExecute(t *testing.T) {
 				WantErr:    fmt.Errorf(`validation for "flArg" failed: [Positive] value isn't positive`),
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsValidationError: true,
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
 						{Value: "-0.1"},
@@ -4204,6 +4309,7 @@ func TestExecute(t *testing.T) {
 				WantErr:    fmt.Errorf(`validation for "flArg" failed: [Positive] value isn't positive`),
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsValidationError: true,
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
 						{Value: "0"},
@@ -4264,6 +4370,7 @@ func TestExecute(t *testing.T) {
 				WantErr:    fmt.Errorf(`validation for "flArg" failed: [Negative] value isn't negative`),
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsValidationError: true,
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
 						{Value: "0"},
@@ -4285,6 +4392,7 @@ func TestExecute(t *testing.T) {
 				WantErr:    fmt.Errorf(`validation for "flArg" failed: [Negative] value isn't negative`),
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsValidationError: true,
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
 						{Value: "0.1"},
@@ -4307,6 +4415,7 @@ func TestExecute(t *testing.T) {
 				WantErr:    fmt.Errorf(`validation for "flArg" failed: [NonNegative] value isn't non-negative`),
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsValidationError: true,
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
 						{Value: "-0.1"},
@@ -4367,6 +4476,7 @@ func TestExecute(t *testing.T) {
 				WantErr:    fmt.Errorf("validation for \"iArg\" failed: [Between] value is less than lower bound (-3)"),
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsValidationError: true,
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
 						{Value: "-4"},
@@ -4445,6 +4555,7 @@ func TestExecute(t *testing.T) {
 				WantErr:    fmt.Errorf("validation for \"iArg\" failed: [Between] value is greater than upper bound (4)"),
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsValidationError: true,
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
 						{Value: "5"},
@@ -4467,6 +4578,7 @@ func TestExecute(t *testing.T) {
 				WantErr:    fmt.Errorf("validation for \"iArg\" failed: [Between] value is less than lower bound (-3)"),
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsValidationError: true,
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
 						{Value: "-4"},
@@ -4488,6 +4600,7 @@ func TestExecute(t *testing.T) {
 				WantErr:    fmt.Errorf("validation for \"iArg\" failed: [Between] value equals exclusive lower bound (-3)"),
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsValidationError: true,
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
 						{Value: "-3"},
@@ -4528,6 +4641,7 @@ func TestExecute(t *testing.T) {
 				WantErr:    fmt.Errorf("validation for \"iArg\" failed: [Between] value equals exclusive upper bound (4)"),
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsValidationError: true,
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
 						{Value: "4"},
@@ -4549,6 +4663,7 @@ func TestExecute(t *testing.T) {
 				WantErr:    fmt.Errorf("validation for \"iArg\" failed: [Between] value is greater than upper bound (4)"),
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsValidationError: true,
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
 						{Value: "5"},
@@ -4578,6 +4693,8 @@ func TestExecute(t *testing.T) {
 				WantErr:    fmt.Errorf(`Argument "strFlag" requires at least 1 argument, got 0`),
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsUsageError:         true,
+				WantIsNotEnoughArgsError: true,
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
 						{Value: "--strFlag"},
@@ -4870,6 +4987,8 @@ func TestExecute(t *testing.T) {
 				}},
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsUsageError:         true,
+				WantIsNotEnoughArgsError: true,
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
 						{Value: "un"},
@@ -5604,6 +5723,8 @@ func TestExecute(t *testing.T) {
 				WantStderr: "Argument \"ilf\" requires at least 1 argument, got 0\n",
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsUsageError:         true,
+				WantIsNotEnoughArgsError: true,
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
 						{Value: "--ilf"},
@@ -5896,6 +6017,10 @@ func TestExecute(t *testing.T) {
 				WantStderr: "Branching argument must be one of [b h]\n",
 				WantErr:    fmt.Errorf("Branching argument must be one of [b h]"),
 			},
+			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsUsageError:     true,
+				WantIsBranchingError: true,
+			},
 		},
 		{
 			name: "branch node requires matching branch argument",
@@ -5911,6 +6036,8 @@ func TestExecute(t *testing.T) {
 				WantErr:    fmt.Errorf("Branching argument must be one of [b h]"),
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsUsageError:     true,
+				WantIsBranchingError: true,
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
 						{Value: "uh"},
@@ -6018,6 +6145,8 @@ func TestExecute(t *testing.T) {
 				WantErr:    fmt.Errorf("Branching argument must be one of [b h]"),
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsUsageError:     true,
+				WantIsBranchingError: true,
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
 						{Value: "uh"},
@@ -6166,6 +6295,8 @@ func TestExecute(t *testing.T) {
 				WantStderr: "Argument \"KEY\" requires at least 1 argument, got 0\n",
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsUsageError:         true,
+				WantIsNotEnoughArgsError: true,
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
 						{Value: "k1"},
@@ -6189,6 +6320,8 @@ func TestExecute(t *testing.T) {
 				WantStderr: "Argument \"VALUE\" requires at least 1 argument, got 0\n",
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsUsageError:         true,
+				WantIsNotEnoughArgsError: true,
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
 						{Value: "k1"},
@@ -6221,6 +6354,8 @@ func TestExecute(t *testing.T) {
 				}, "\n"),
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsExtraArgsError: true,
+				WantIsUsageError:     true,
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
 						{Value: "k1"},
@@ -6405,6 +6540,8 @@ func TestExecute(t *testing.T) {
 				WantStderr: "Argument \"SL\" requires at least 3 arguments, got 2\n",
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsUsageError:         true,
+				WantIsNotEnoughArgsError: true,
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
 						{Value: "abc"},
@@ -6482,6 +6619,8 @@ func TestExecute(t *testing.T) {
 				WantStderr: "Argument \"SL2\" requires at least 1 argument, got 0\n",
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsUsageError:         true,
+				WantIsNotEnoughArgsError: true,
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
 						{Value: "abc"},
@@ -6635,6 +6774,8 @@ func TestExecute(t *testing.T) {
 				}, "\n"),
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsExtraArgsError: true,
+				WantIsUsageError:     true,
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
 						{Value: "abc"},
@@ -6686,6 +6827,7 @@ func TestExecute(t *testing.T) {
 				},
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsValidationError: true,
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
 						{Value: testutil.FilepathAbs(t, "uh")},
@@ -7093,6 +7235,7 @@ func TestExecute(t *testing.T) {
 				}},
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsValidationError: true,
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
 						{Value: "four"},
@@ -7118,6 +7261,7 @@ func TestExecute(t *testing.T) {
 				}},
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsValidationError: true,
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
 						{Value: "four"},
@@ -7419,7 +7563,6 @@ func TestExecute(t *testing.T) {
 			if test.ietc == nil {
 				test.ietc = &spycommandtest.ExecuteTestCase{}
 			}
-			test.ietc.TestInput = true
 			executeTest(t, test.etc, test.ietc)
 		})
 	}
@@ -7471,6 +7614,7 @@ func TestComplete(t *testing.T) {
 	for _, test := range []struct {
 		name           string
 		ctc            *commandtest.CompleteTestCase
+		ictc           *spycommandtest.CompleteTestCase
 		filepathAbs    string
 		filepathAbsErr error
 		osGetwd        string
@@ -7496,6 +7640,10 @@ func TestComplete(t *testing.T) {
 			ctc: &commandtest.CompleteTestCase{
 				Node:    &SimpleNode{},
 				WantErr: fmt.Errorf("Unprocessed extra args: []"),
+			},
+			ictc: &spycommandtest.CompleteTestCase{
+				WantIsExtraArgsError: true,
+				WantIsUsageError:     true,
 			},
 		},
 		{
@@ -7618,6 +7766,10 @@ func TestComplete(t *testing.T) {
 					"i":  1,
 				}},
 				WantErr: fmt.Errorf("Unprocessed extra args: [what now]"),
+			},
+			ictc: &spycommandtest.CompleteTestCase{
+				WantIsExtraArgsError: true,
+				WantIsUsageError:     true,
 			},
 		},
 		{
@@ -8804,6 +8956,10 @@ func TestComplete(t *testing.T) {
 				},
 				WantErr: fmt.Errorf("Unprocessed extra args: []"),
 			},
+			ictc: &spycommandtest.CompleteTestCase{
+				WantIsExtraArgsError: true,
+				WantIsUsageError:     true,
+			},
 		},
 		{
 			name: "doesn't complete branch options if complete arg is false",
@@ -8858,6 +9014,10 @@ func TestComplete(t *testing.T) {
 				},
 				Args:    "cmd some thing else",
 				WantErr: fmt.Errorf("Branching argument must be one of [a alpha bravo]"),
+			},
+			ictc: &spycommandtest.CompleteTestCase{
+				WantIsBranchingError: true,
+				WantIsUsageError:     true,
 			},
 		},
 		{
@@ -9328,6 +9488,10 @@ func TestComplete(t *testing.T) {
 					"values": []int{12, 21, 100},
 				}},
 				WantErr: fmt.Errorf("Unprocessed extra args: [b]"),
+			},
+			ictc: &spycommandtest.CompleteTestCase{
+				WantIsExtraArgsError: true,
+				WantIsUsageError:     true,
 			},
 		},
 		{
@@ -9865,7 +10029,7 @@ func TestComplete(t *testing.T) {
 			testutil.StubValue(t, &filepathAbs, func(s string) (string, error) {
 				return filepath.Join(test.filepathAbs, s), test.filepathAbsErr
 			})
-			autocompleteTest(t, test.ctc, nil)
+			autocompleteTest(t, test.ctc, test.ictc)
 		})
 	}
 }

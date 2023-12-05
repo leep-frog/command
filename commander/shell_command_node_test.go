@@ -8,12 +8,14 @@ import (
 
 	"github.com/leep-frog/command/command"
 	"github.com/leep-frog/command/commandtest"
+	"github.com/leep-frog/command/internal/spycommandtest"
 )
 
 func TestShellCommand(t *testing.T) {
 	for _, test := range []struct {
 		name string
 		etc  *commandtest.ExecuteTestCase
+		ietc *spycommandtest.ExecuteTestCase
 	}{
 		// Generic tests
 		{
@@ -523,12 +525,14 @@ func TestShellCommand(t *testing.T) {
 				}},
 				WantStderr: "validation for \"i\" failed: [NonNegative] value isn't non-negative\n",
 				WantErr:    fmt.Errorf("validation for \"i\" failed: [NonNegative] value isn't non-negative"),
-
 				RunResponses: []*commandtest.FakeRun{
 					{
 						Stdout: []string{"-1248"},
 					},
 				},
+			},
+			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsValidationError: true,
 			},
 		},
 		{
@@ -545,6 +549,9 @@ func TestShellCommand(t *testing.T) {
 						Stdout: []string{"-1248"},
 					},
 				},
+			},
+			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsValidationError: true,
 			},
 		},
 		// formatArgs tests
@@ -629,7 +636,7 @@ func TestShellCommand(t *testing.T) {
 		/* Useful for commenting out tests. */
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			executeTest(t, test.etc, nil)
+			executeTest(t, test.etc, test.ietc)
 		})
 	}
 }

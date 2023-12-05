@@ -486,7 +486,21 @@ func TestExecute(t *testing.T) {
 		/* Useful for commenting out tests. */
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			spycommandertest.ExecuteTest(t, test.etc, test.ietc, Execute, Use, nil, serialNodes)
+			if test.ietc == nil {
+				test.ietc = &spycommandtest.ExecuteTestCase{}
+			}
+			test.ietc.CheckErrorType = false
+			spycommandertest.ExecuteTest(t, test.etc, test.ietc, &spycommandertest.ExecuteTestFunctionBag{
+				Execute,
+				Use,
+				nil,
+				serialNodes,
+				func(err error) bool { panic("Unsupported") },
+				func(err error) bool { panic("Unsupported") },
+				func(err error) bool { panic("Unsupported") },
+				func(err error) bool { panic("Unsupported") },
+				func(err error) bool { panic("Unsupported") },
+			})
 		})
 	}
 }
@@ -812,7 +826,18 @@ func TestAutocomplete(t *testing.T) {
 		/* Useful for commenting out tests. */
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			spycommandertest.AutocompleteTest(t, test.ctc, test.ictc, Autocomplete)
+			if test.ictc == nil {
+				test.ictc = &spycommandtest.CompleteTestCase{}
+			}
+			test.ictc.CheckErrorType = false
+			spycommandertest.AutocompleteTest(t, test.ctc, test.ictc, &spycommandertest.CompleteTestFunctionBag{
+				Autocomplete,
+				func(err error) bool { panic("Unsupported") },
+				func(err error) bool { panic("Unsupported") },
+				func(err error) bool { panic("Unsupported") },
+				func(err error) bool { panic("Unsupported") },
+				func(err error) bool { panic("Unsupported") },
+			})
 		})
 	}
 }

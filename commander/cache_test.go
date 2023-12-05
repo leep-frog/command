@@ -56,6 +56,10 @@ func TestCacheExecution(t *testing.T) {
 				WantErr:    fmt.Errorf(`Argument "s" requires at least 1 argument, got 0`),
 				WantStderr: "Argument \"s\" requires at least 1 argument, got 0\n",
 			},
+			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsUsageError:         true,
+				WantIsNotEnoughArgsError: true,
+			},
 		},
 		{
 			name: "Fails if extra arguments and doesn't cache",
@@ -83,6 +87,8 @@ func TestCacheExecution(t *testing.T) {
 				}},
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsUsageError:     true,
+				WantIsExtraArgsError: true,
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
 						{Value: "dollar", Snapshots: spycommand.SnapshotsMap(1)},
@@ -107,6 +113,8 @@ func TestCacheExecution(t *testing.T) {
 				}},
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsUsageError:         true,
+				WantIsNotEnoughArgsError: true,
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
 						{Value: "dollar", Snapshots: spycommand.SnapshotsMap(1)},
@@ -130,6 +138,7 @@ func TestCacheExecution(t *testing.T) {
 				}},
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsValidationError: true,
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
 						{Value: "dollar", Snapshots: spycommand.SnapshotsMap(1)},
@@ -930,12 +939,17 @@ func TestCacheComplete(t *testing.T) {
 		name  string
 		cache map[string][][]string
 		ctc   *commandtest.CompleteTestCase
+		ictc  *spycommandtest.CompleteTestCase
 	}{
 		{
 			name: "handles empty",
 			ctc: &commandtest.CompleteTestCase{
 				WantData: &command.Data{},
 				WantErr:  fmt.Errorf("Unprocessed extra args: []"),
+			},
+			ictc: &spycommandtest.CompleteTestCase{
+				WantIsUsageError:     true,
+				WantIsExtraArgsError: true,
 			},
 		},
 		{
@@ -957,7 +971,7 @@ func TestCacheComplete(t *testing.T) {
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			cc.cache = test.cache
-			autocompleteTest(t, test.ctc, nil)
+			autocompleteTest(t, test.ctc, test.ictc)
 		})
 	}
 }

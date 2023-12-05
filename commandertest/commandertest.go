@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/leep-frog/command/command"
 	"github.com/leep-frog/command/commander"
 	"github.com/leep-frog/command/commandtest"
 	"github.com/leep-frog/command/internal/constants"
@@ -24,7 +25,17 @@ func ExecuteTest(t *testing.T, etc *commandtest.ExecuteTestCase) {
 	t.Helper()
 	spycommandertest.ExecuteTest(t, etc, &spycommandtest.ExecuteTestCase{
 		TestInput: false,
-	}, spycommander.Execute, spycommander.Use, commander.SetupArg, commander.SerialNodes)
+	}, &spycommandertest.ExecuteTestFunctionBag{
+		spycommander.Execute,
+		spycommander.Use,
+		commander.SetupArg,
+		commander.SerialNodes,
+		commander.IsBranchingError,
+		commander.IsUsageError,
+		commander.IsNotEnoughArgsError,
+		command.IsExtraArgsError,
+		commander.IsValidationError,
+	})
 }
 
 // ChangeTest checks if the provided
@@ -36,5 +47,12 @@ func ChangeTest[T commandtest.Changeable](t *testing.T, want, got T, opts ...cmp
 // AutocompleteTest runs a command completion test against the provided command configuration.
 func AutocompleteTest(t *testing.T, ctc *commandtest.CompleteTestCase) {
 	t.Helper()
-	spycommandertest.AutocompleteTest(t, ctc, &spycommandtest.CompleteTestCase{}, spycommander.Autocomplete)
+	spycommandertest.AutocompleteTest(t, ctc, &spycommandtest.CompleteTestCase{}, &spycommandertest.CompleteTestFunctionBag{
+		spycommander.Autocomplete,
+		commander.IsBranchingError,
+		commander.IsUsageError,
+		commander.IsNotEnoughArgsError,
+		command.IsExtraArgsError,
+		commander.IsValidationError,
+	})
 }

@@ -253,6 +253,7 @@ func TestUsage(t *testing.T) {
 						{Value: "12"},
 					},
 				},
+				WantIsValidationError: true,
 			},
 		},
 		{
@@ -899,6 +900,7 @@ func TestUsage(t *testing.T) {
 						{Value: "nope"},
 					},
 				},
+				WantIsValidationError: true,
 			},
 		},
 		{

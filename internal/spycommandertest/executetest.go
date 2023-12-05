@@ -72,8 +72,21 @@ type nameProcessor interface {
 	Name() string
 }
 
+type ExecuteTestFunctionBag struct {
+	ExFn        executeFn
+	UFn         usageFn
+	SetupArg    nameProcessor
+	SerialNodes func(...command.Processor) command.Node
+
+	IsBranchingError     func(error) bool
+	IsUsageError         func(error) bool
+	IsNotEnoughArgsError func(error) bool
+	IsExtraArgsError     func(error) bool
+	IsValidationError    func(error) bool
+}
+
 // ExecuteTest runs a command execution test.
-func ExecuteTest(t *testing.T, etc *commandtest.ExecuteTestCase, ietc *spycommandtest.ExecuteTestCase, exFn executeFn, uFn usageFn, setupArg nameProcessor, serialNodes func(...command.Processor) command.Node) {
+func ExecuteTest(t *testing.T, etc *commandtest.ExecuteTestCase, ietc *spycommandtest.ExecuteTestCase, bag *ExecuteTestFunctionBag) {
 	t.Helper()
 
 	if etc == nil {
@@ -103,7 +116,7 @@ func ExecuteTest(t *testing.T, etc *commandtest.ExecuteTestCase, ietc *spycomman
 	if etc.RequiresSetup {
 		setupFile := setupForTest(t, etc.SetupContents)
 		args = append([]string{setupFile}, args...)
-		etc.WantData.Set(setupArg.Name(), setupFile)
+		etc.WantData.Set(bag.SetupArg.Name(), setupFile)
 		t.Cleanup(func() { os.Remove(setupFile) })
 	}
 	var helpFlag bool
@@ -118,7 +131,20 @@ func ExecuteTest(t *testing.T, etc *commandtest.ExecuteTestCase, ietc *spycomman
 
 	testers := []commandTester{
 		&outputTester{etc.WantStdout, etc.WantStderr},
-		&errorTester{etc.WantErr},
+		&errorTester{
+			etc.WantErr,
+			ietc.CheckErrorType,
+			bag.IsBranchingError,
+			ietc.WantIsBranchingError,
+			bag.IsUsageError,
+			ietc.WantIsUsageError,
+			bag.IsNotEnoughArgsError,
+			ietc.WantIsNotEnoughArgsError,
+			bag.IsExtraArgsError,
+			ietc.WantIsExtraArgsError,
+			bag.IsValidationError,
+			ietc.WantIsValidationError,
+		},
 		&executeDataTester{etc.WantExecuteData},
 		&runResponseTester{etc.RunResponses, etc.WantRunContents, nil},
 		checkIf(!etc.SkipDataCheck, &dataTester{etc.WantData, etc.DataCmpOpts}),
@@ -133,13 +159,13 @@ func ExecuteTest(t *testing.T, etc *commandtest.ExecuteTestCase, ietc *spycomman
 
 	n := etc.Node
 	if etc.RequiresSetup {
-		n = serialNodes(setupArg, n)
+		n = bag.SerialNodes(bag.SetupArg, n)
 	}
 
 	if helpFlag {
 		// TODO: This is synced with usageExecutorHelper in sourcerer (use interface to share logic? ie move this check into execute function?)
 		var u *command.Usage
-		u, tc.err = uFn(n, tc.input)
+		u, tc.err = bag.UFn(n, tc.input)
 		if tc.err != nil {
 			tc.fo.Err(tc.err)
 		} else {
@@ -152,7 +178,7 @@ func ExecuteTest(t *testing.T, etc *commandtest.ExecuteTestCase, ietc *spycomman
 				tc.panic = recover()
 			}()
 			tc.eData = &command.ExecuteData{}
-			tc.err = exFn(n, tc.input, tc.fo, tc.data, tc.eData)
+			tc.err = bag.ExFn(n, tc.input, tc.fo, tc.data, tc.eData)
 		}()
 	}
 

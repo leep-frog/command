@@ -13,9 +13,23 @@ type ExecuteTestCase struct {
 	// Whether or not to test actual input against wantInput.
 	TestInput bool
 	WantInput *SpyInput
+
+	CheckErrorType bool
+	WantIsBranchingError     bool
+	WantIsUsageError         bool
+	WantIsNotEnoughArgsError bool
+	WantIsExtraArgsError     bool
+	WantIsValidationError    bool
 }
 
-type CompleteTestCase struct{}
+type CompleteTestCase struct{
+	CheckErrorType bool
+	WantIsBranchingError     bool
+	WantIsUsageError         bool
+	WantIsNotEnoughArgsError bool
+	WantIsExtraArgsError     bool
+	WantIsValidationError    bool
+}
 
 func convertSpyInput(si SpyInput) spyinput.SpyInput[command.InputBreaker] {
 	return spyinput.SpyInput[command.InputBreaker](si)

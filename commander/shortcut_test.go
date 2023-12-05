@@ -32,6 +32,10 @@ func TestShortcutExecute(t *testing.T) {
 				WantErr:    fmt.Errorf(`Argument "sl" requires at least 1 argument, got 0`),
 				WantStderr: "Argument \"sl\" requires at least 1 argument, got 0\n",
 			},
+			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsUsageError:         true,
+				WantIsNotEnoughArgsError: true,
+			},
 		},
 		// Add shortcut tests.
 		{
@@ -43,6 +47,8 @@ func TestShortcutExecute(t *testing.T) {
 				WantStderr: "Argument \"SHORTCUT\" requires at least 1 argument, got 0\n",
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsUsageError:         true,
+				WantIsNotEnoughArgsError: true,
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
 						{Value: "a"},
@@ -62,6 +68,7 @@ func TestShortcutExecute(t *testing.T) {
 				WantStderr: "validation for \"SHORTCUT\" failed: [MinLength] length must be at least 1\n",
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsValidationError: true,
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
 						{Value: "a"},
@@ -167,6 +174,7 @@ func TestShortcutExecute(t *testing.T) {
 				WantStderr: "validation for \"SHORTCUT\" failed: [MinLength] length must be at least 1\n",
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsValidationError: true,
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
 						{Value: "a"},
@@ -200,6 +208,8 @@ func TestShortcutExecute(t *testing.T) {
 				}, "\n"),
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsUsageError:     true,
+				WantIsExtraArgsError: true,
 				WantInput: &spycommandtest.SpyInput{
 					SnapshotCount: 1,
 					Args: []*spycommand.InputArg{
@@ -234,6 +244,8 @@ func TestShortcutExecute(t *testing.T) {
 						{Value: "empty"},
 					},
 				},
+				WantIsUsageError:         true,
+				WantIsNotEnoughArgsError: true,
 			},
 		},
 		{
@@ -886,6 +898,8 @@ func TestShortcutExecute(t *testing.T) {
 						{Value: "deux"},
 					},
 				},
+				WantIsUsageError:         true,
+				WantIsNotEnoughArgsError: true,
 			},
 		},
 		{
@@ -981,6 +995,8 @@ func TestShortcutExecute(t *testing.T) {
 						{Value: "g"},
 					},
 				},
+				WantIsUsageError:         true,
+				WantIsNotEnoughArgsError: true,
 			},
 		},
 		{
@@ -1108,6 +1124,8 @@ func TestShortcutExecute(t *testing.T) {
 						{Value: "s"},
 					},
 				},
+				WantIsUsageError:         true,
+				WantIsNotEnoughArgsError: true,
 			},
 		},
 		{
@@ -1128,6 +1146,7 @@ func TestShortcutExecute(t *testing.T) {
 						{Value: ":)"},
 					},
 				},
+				WantIsValidationError: true,
 			},
 		},
 		{
@@ -1216,6 +1235,8 @@ func TestShortcutExecute(t *testing.T) {
 						{Value: "d"},
 					},
 				},
+				WantIsUsageError:         true,
+				WantIsNotEnoughArgsError: true,
 			},
 		},
 		{
