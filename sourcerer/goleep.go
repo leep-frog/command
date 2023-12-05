@@ -146,7 +146,6 @@ func (gl *GoLeep) completer() commander.Completer[[]string] {
 	return commander.CompleterFromFunc(func(s []string, data *command.Data) (*command.Completion, error) {
 		// Add a "dummyCommand" prefix to be removed by the commander.Autocomplete function.
 		compLine := "dummyCommand " + strings.Join(passAlongArgs.Get(data), " ")
-		// TODO: This should also consider the quotes (before input processing). e.g. `abc "def"` should be 9 not 7
 		compPoint := fmt.Sprintf("%d", len(compLine))
 
 		extraArgs := []string{
