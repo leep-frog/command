@@ -14,12 +14,20 @@ import (
 )
 
 type inputTester struct {
+	skip bool
 	want *spycommandtest.SpyInput
 }
 
 func (*inputTester) setup(*testing.T, *testContext) {}
 func (it *inputTester) check(t *testing.T, tc *testContext) {
 	t.Helper()
+	if it.skip {
+		if it.want != nil {
+			t.Fatalf("SkipInputCheck set to true, but WantInput was provided")
+		}
+		return
+	}
+
 	if it.want == nil {
 		it.want = &spycommandtest.SpyInput{}
 	}

@@ -437,7 +437,7 @@ func TestExecute(t *testing.T) {
 		},
 		// Get tests
 		{
-			name: "Gets fails if unknown dir and mkdir error",
+			name: "Get fails if unknown dir and mkdir error",
 			c: &Cache{
 				Dir: filepath.Join("bob", "lob", "law"),
 			},
@@ -1254,22 +1254,17 @@ func TestNewShell(t *testing.T) {
 			})
 
 			var c *Cache
-			d := &command.Data{}
 			test.etc.Node = commander.SerialNodes(
 				ShellProcessor(),
 				commander.SuperSimpleProcessor(func(i *command.Input, data *command.Data) error {
 					c = ShellFromData(data)
-					d = data
 					return nil
 				}),
 			)
-			test.etc.SkipDataCheck = true
+			test.etc.DataCmpOpts = []cmp.Option{cmp.AllowUnexported(Cache{})}
 			test.etc.OS = fos
 			commandertest.ExecuteTest(t, test.etc)
 
-			if diff := cmp.Diff(test.etc.WantData, d, cmp.AllowUnexported(Cache{}, command.Data{}), cmpopts.IgnoreFields(command.Data{}, "OS")); diff != "" {
-				t.Errorf("ShellProcessor() produced incorrect data (-want, +got):\n%s", diff)
-			}
 			if diff := cmp.Diff(test.wantCache, c, cmp.AllowUnexported(Cache{})); diff != "" {
 				t.Errorf("NewShell() returned incorrect cache (-want, +got):\n%s", diff)
 			}

@@ -24,7 +24,8 @@ const (
 func ExecuteTest(t *testing.T, etc *commandtest.ExecuteTestCase) {
 	t.Helper()
 	spycommandertest.ExecuteTest(t, etc, &spycommandtest.ExecuteTestCase{
-		TestInput: false,
+		SkipInputCheck:     true,
+		SkipErrorTypeCheck: true,
 	}, &spycommandertest.ExecuteTestFunctionBag{
 		spycommander.Execute,
 		spycommander.Use,
@@ -48,7 +49,9 @@ func ChangeTest[T commandtest.Changeable](t *testing.T, want, got T, opts ...cmp
 // AutocompleteTest runs a command completion test against the provided command configuration.
 func AutocompleteTest(t *testing.T, ctc *commandtest.CompleteTestCase) {
 	t.Helper()
-	spycommandertest.AutocompleteTest(t, ctc, &spycommandtest.CompleteTestCase{}, &spycommandertest.CompleteTestFunctionBag{
+	spycommandertest.AutocompleteTest(t, ctc, &spycommandtest.CompleteTestCase{
+		SkipErrorTypeCheck: true,
+	}, &spycommandertest.CompleteTestFunctionBag{
 		spycommander.Autocomplete,
 		commander.IsBranchingError,
 		commander.IsUsageError,

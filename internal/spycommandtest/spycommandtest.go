@@ -11,10 +11,10 @@ type SpyInput spyinput.SpyInput[command.InputBreaker]
 
 type ExecuteTestCase struct {
 	// Whether or not to test actual input against wantInput.
-	TestInput bool
-	WantInput *SpyInput
+	SkipInputCheck bool
+	WantInput      *SpyInput
 
-	CheckErrorType bool
+	SkipErrorTypeCheck       bool
 	WantIsBranchingError     bool
 	WantIsUsageError         bool
 	WantIsNotEnoughArgsError bool
@@ -22,8 +22,8 @@ type ExecuteTestCase struct {
 	WantIsValidationError    bool
 }
 
-type CompleteTestCase struct{
-	CheckErrorType bool
+type CompleteTestCase struct {
+	SkipErrorTypeCheck       bool
 	WantIsBranchingError     bool
 	WantIsUsageError         bool
 	WantIsNotEnoughArgsError bool

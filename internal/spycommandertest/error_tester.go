@@ -8,8 +8,8 @@ import (
 )
 
 type errorTester struct {
-	want       error
-	checkFuncs bool
+	want               error
+	skipErrorTypeCheck bool
 
 	isBranchingError         func(error) bool
 	wantIsBranchingError     bool
@@ -29,11 +29,13 @@ func (et *errorTester) check(t *testing.T, tc *testContext) {
 
 	testutil.CmpError(t, tc.prefix, et.want, tc.err)
 
-	if et.checkFuncs {
+	if !et.skipErrorTypeCheck {
 		testutil.Cmp(t, fmt.Sprintf("IsBranchingError(%s) returned incorrect value", tc.prefix), et.wantIsBranchingError, et.isBranchingError(tc.err))
 		testutil.Cmp(t, fmt.Sprintf("IsUsageError(%s) returned incorrect value", tc.prefix), et.wantIsUsageError, et.isUsageError(tc.err))
 		testutil.Cmp(t, fmt.Sprintf("IsNotEnoughArgsError(%s) returned incorrect value", tc.prefix), et.wantIsNotEnoughArgsError, et.isNotEnoughArgsError(tc.err))
 		testutil.Cmp(t, fmt.Sprintf("IsExtraArgsError(%s) returned incorrect value", tc.prefix), et.wantIsExtraArgsError, et.isExtraArgsError(tc.err))
 		testutil.Cmp(t, fmt.Sprintf("IsValidationError(%s) returned incorrect value", tc.prefix), et.wantIsValidationError, et.isValidationError(tc.err))
+	} else if et.wantIsBranchingError || et.wantIsUsageError || et.wantIsNotEnoughArgsError || et.wantIsExtraArgsError || et.wantIsValidationError {
+		t.Fatalf("At least one errorTester.want*Error field was true, but error type checks are disabled")
 	}
 }

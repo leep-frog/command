@@ -36,6 +36,7 @@ func TestExecute(t *testing.T) {
 					Args: []*spycommand.InputArg{
 						{Value: "abc"},
 					},
+					Remaining: []int{0},
 				},
 			},
 		},
@@ -531,6 +532,7 @@ func TestExecute(t *testing.T) {
 					Args: []*spycommand.InputArg{
 						{Value: "extra-arg"},
 					},
+					Remaining: []int{0},
 				},
 			},
 		},
@@ -574,6 +576,7 @@ func TestExecute(t *testing.T) {
 					Args: []*spycommand.InputArg{
 						{Value: "extra-arg"},
 					},
+					Remaining: []int{0},
 				},
 			},
 		},
@@ -583,7 +586,7 @@ func TestExecute(t *testing.T) {
 			if test.ietc == nil {
 				test.ietc = &spycommandtest.ExecuteTestCase{}
 			}
-			test.ietc.CheckErrorType = false
+			test.ietc.SkipErrorTypeCheck = true
 			var gotUsageErrorCheck error
 			spycommandertest.ExecuteTest(t, test.etc, test.ietc, &spycommandertest.ExecuteTestFunctionBag{
 				Execute,
@@ -933,14 +936,14 @@ func TestAutocomplete(t *testing.T) {
 			if test.ictc == nil {
 				test.ictc = &spycommandtest.CompleteTestCase{}
 			}
-			test.ictc.CheckErrorType = false
+			test.ictc.SkipErrorTypeCheck = true
 			spycommandertest.AutocompleteTest(t, test.ctc, test.ictc, &spycommandertest.CompleteTestFunctionBag{
 				Autocomplete,
-				func(err error) bool { panic("Unsupported") },
-				func(err error) bool { panic("Unsupported") },
-				func(err error) bool { panic("Unsupported") },
-				func(err error) bool { panic("Unsupported") },
-				func(err error) bool { panic("Unsupported") },
+				func(err error) bool { panic("Unsupported IsBranchingError") },
+				func(err error) bool { panic("Unsupported IsUsageError") },
+				func(err error) bool { panic("Unsupported IsNotEnoughArgsError") },
+				func(err error) bool { panic("Unsupported IsExtraArgsError") },
+				func(err error) bool { panic("Unsupported IsValidationError") },
 			})
 		})
 	}

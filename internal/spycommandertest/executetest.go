@@ -50,19 +50,6 @@ type testCase interface {
 	GetEnv() map[string]string
 }
 
-type noOpTester struct{}
-
-func (*noOpTester) setup(*testing.T, *testContext) {}
-
-func (*noOpTester) check(t *testing.T, tc *testContext) {}
-
-func checkIf(cond bool, ct commandTester) commandTester {
-	if cond {
-		return ct
-	}
-	return &noOpTester{}
-}
-
 type executeFn func(command.Node, *command.Input, command.Output, *command.Data, *command.ExecuteData) error
 
 type usageFn func(command.Node, *command.Input) (*command.Usage, error)
@@ -94,16 +81,12 @@ func ExecuteTest(t *testing.T, etc *commandtest.ExecuteTestCase, ietc *spycomman
 		etc = &commandtest.ExecuteTestCase{}
 	}
 
-	if etc.WantData == nil {
+	if etc.WantData == nil && !etc.SkipDataCheck {
 		etc.WantData = &command.Data{}
 	}
 
 	if ietc == nil {
-		ietc = &spycommandtest.ExecuteTestCase{
-			// TODO: Change TestInput to SkipInputCheck (similar to SkipDataCheck)
-			// default to testing input
-			TestInput: true,
-		}
+		ietc = &spycommandtest.ExecuteTestCase{}
 	}
 
 	tc := &testContext{
@@ -134,7 +117,7 @@ func ExecuteTest(t *testing.T, etc *commandtest.ExecuteTestCase, ietc *spycomman
 		&outputTester{etc.WantStdout, etc.WantStderr},
 		&errorTester{
 			etc.WantErr,
-			ietc.CheckErrorType,
+			ietc.SkipErrorTypeCheck,
 			bag.IsBranchingError,
 			ietc.WantIsBranchingError,
 			bag.IsUsageError,
@@ -148,8 +131,8 @@ func ExecuteTest(t *testing.T, etc *commandtest.ExecuteTestCase, ietc *spycomman
 		},
 		&executeDataTester{etc.WantExecuteData},
 		&runResponseTester{etc.RunResponses, etc.WantRunContents, nil},
-		checkIf(!etc.SkipDataCheck, &dataTester{etc.WantData, etc.DataCmpOpts}),
-		checkIf(ietc.TestInput, &inputTester{ietc.WantInput}),
+		&dataTester{etc.SkipDataCheck, etc.WantData, etc.DataCmpOpts},
+		&inputTester{ietc.SkipInputCheck, ietc.WantInput},
 		&envTester{},
 		&panicTester{etc.WantPanic},
 	}

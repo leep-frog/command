@@ -9,6 +9,7 @@ import (
 )
 
 type dataTester struct {
+	skip bool
 	want *command.Data
 	opts cmp.Options
 }
@@ -17,6 +18,14 @@ func (*dataTester) setup(*testing.T, *testContext) {}
 
 func (dt *dataTester) check(t *testing.T, tc *testContext) {
 	t.Helper()
+
+	if dt.skip {
+		if dt.want != nil {
+			t.Fatalf("SkipDataCheck was true, but WantData was provided: %v", dt.want)
+		}
+		return
+	}
+
 	if dt.want == nil {
 		dt.want = &command.Data{}
 	}

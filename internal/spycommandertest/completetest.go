@@ -40,7 +40,7 @@ func AutocompleteTest(t *testing.T, ctc *commandtest.CompleteTestCase, ictc *spy
 		&runResponseTester{ctc.RunResponses, ctc.WantRunContents, nil},
 		&errorTester{
 			ctc.WantErr,
-			ictc.CheckErrorType,
+			ictc.SkipErrorTypeCheck,
 			bag.IsBranchingError,
 			ictc.WantIsBranchingError,
 			bag.IsUsageError,
@@ -53,7 +53,7 @@ func AutocompleteTest(t *testing.T, ctc *commandtest.CompleteTestCase, ictc *spy
 			ictc.WantIsValidationError,
 		},
 		&autocompleteTester{ctc.Want},
-		checkIf(!ctc.SkipDataCheck, &dataTester{ctc.WantData, ctc.DataCmpOpts}),
+		&dataTester{ctc.SkipDataCheck, ctc.WantData, ctc.DataCmpOpts},
 		&envTester{},
 	}
 

@@ -26,8 +26,8 @@ func executeTest(t *testing.T, etc *commandtest.ExecuteTestCase, ietc *spycomman
 	if ietc == nil {
 		ietc = &spycommandtest.ExecuteTestCase{}
 	}
-	ietc.TestInput = true
-	ietc.CheckErrorType = true
+	ietc.SkipInputCheck = false
+	ietc.SkipErrorTypeCheck = false
 	spycommandertest.ExecuteTest(t, etc, ietc, &spycommandertest.ExecuteTestFunctionBag{
 		spycommander.Execute,
 		spycommander.Use,
@@ -54,7 +54,7 @@ func autocompleteTest(t *testing.T, ctc *commandtest.CompleteTestCase, ictc *spy
 	if ictc == nil {
 		ictc = &spycommandtest.CompleteTestCase{}
 	}
-	ictc.CheckErrorType = true
+	ictc.SkipErrorTypeCheck = false
 	spycommandertest.AutocompleteTest(t, ctc, ictc, &spycommandertest.CompleteTestFunctionBag{
 		spycommander.Autocomplete,
 		IsBranchingError,
@@ -119,7 +119,6 @@ func TestExecute(t *testing.T) {
 			ietc: &spycommandtest.ExecuteTestCase{
 				WantIsExtraArgsError: true,
 				WantIsUsageError:     true,
-				TestInput:            true,
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
 						{Value: "hello"},
