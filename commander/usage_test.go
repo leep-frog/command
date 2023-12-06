@@ -837,53 +837,6 @@ func TestUsage(t *testing.T) {
 			},
 		},
 		{
-			name: "Works with input flag and no args",
-			etc: &commandtest.ExecuteTestCase{
-				Args: []string{"--str"},
-				Node: SerialNodes(FlagProcessor(
-					ListFlag[string]("str", 's', "strings", 2, 1),
-				)),
-				WantStdout: strings.Join([]string{
-					"--str|-s",
-					"",
-					"Flags:",
-					"  [s] str: strings",
-					"",
-				}, "\n"),
-			},
-			ietc: &spycommandtest.ExecuteTestCase{
-				WantInput: &spycommandtest.SpyInput{
-					Args: []*spycommand.InputArg{
-						{Value: "--str"},
-					},
-				},
-			},
-		},
-		{
-			name: "Works with input flag and some args",
-			etc: &commandtest.ExecuteTestCase{
-				Args: []string{"--str", "un"},
-				Node: SerialNodes(FlagProcessor(
-					ListFlag[string]("str", 's', "strings", 2, 1),
-				)),
-				WantStdout: strings.Join([]string{
-					"--str|-s",
-					"",
-					"Flags:",
-					"  [s] str: strings",
-					"",
-				}, "\n"),
-			},
-			ietc: &spycommandtest.ExecuteTestCase{
-				WantInput: &spycommandtest.SpyInput{
-					Args: []*spycommand.InputArg{
-						{Value: "--str"},
-						{Value: "un"},
-					},
-				},
-			},
-		},
-		{
 			name: "Fails if validation error",
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"--str", "nope"},
@@ -903,15 +856,39 @@ func TestUsage(t *testing.T) {
 				WantIsValidationError: true,
 			},
 		},
+		// ListFlag(1, 0) usage tests
 		{
-			name: "Works with input flag and required args",
+			name: "ListFlag(1, 0) and no flag prints flag usage",
 			etc: &commandtest.ExecuteTestCase{
-				Args: []string{"--str", "un", "deux"},
-				Node: SerialNodes(FlagProcessor(
-					ListFlag[string]("str", 's', "strings", 2, 1),
-				)),
+				Node: SerialNodes(
+					Arg[string]("BEFORE", ""),
+					FlagProcessor(
+						ListFlag[string]("str", 's', "strings", 1, 0),
+					),
+					Arg[string]("AFTER", ""),
+				),
 				WantStdout: strings.Join([]string{
-					"--str|-s",
+					"BEFORE AFTER --str|-s STR",
+					"",
+					"Flags:",
+					"  [s] str: strings",
+					"",
+				}, "\n"),
+			},
+		},
+		{
+			name: "ListFlag(1, 0) and flag with no args prints flag usage",
+			etc: &commandtest.ExecuteTestCase{
+				Args: []string{"--str"},
+				Node: SerialNodes(
+					FlagProcessor(
+						ListFlag[string]("str", 's', "strings", 1, 0),
+					),
+					Arg[string]("FIRST", ""),
+					Arg[string]("SECOND", ""),
+				),
+				WantStdout: strings.Join([]string{
+					"FIRST SECOND --str|-s STR",
 					"",
 					"Flags:",
 					"  [s] str: strings",
@@ -922,21 +899,68 @@ func TestUsage(t *testing.T) {
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
 						{Value: "--str"},
-						{Value: "un"},
-						{Value: "deux"},
 					},
 				},
 			},
 		},
 		{
-			name: "Works with input flag and all args",
+			name: "ListFlag(1, 0) and flag with arg does not print flag usage",
 			etc: &commandtest.ExecuteTestCase{
-				Args: []string{"--str", "un", "deux", "trois"},
-				Node: SerialNodes(FlagProcessor(
-					ListFlag[string]("str", 's', "strings", 2, 1),
-				)),
+				Args: []string{"--str", "v"},
+				Node: SerialNodes(
+					FlagProcessor(
+						ListFlag[string]("str", 's', "strings", 1, 0),
+					),
+					Arg[string]("FIRST", ""),
+					Arg[string]("SECOND", ""),
+				),
 				WantStdout: strings.Join([]string{
-					"--str|-s",
+					"FIRST SECOND",
+					"",
+				}, "\n"),
+			},
+			ietc: &spycommandtest.ExecuteTestCase{
+				WantInput: &spycommandtest.SpyInput{
+					Args: []*spycommand.InputArg{
+						{Value: "--str"},
+						{Value: "v"},
+					},
+				},
+			},
+		},
+		// ListFlag(2, 0) usage tests
+		{
+			name: "ListFlag(2, 0) and no flag prints flag usage",
+			etc: &commandtest.ExecuteTestCase{
+				Node: SerialNodes(
+					Arg[string]("BEFORE", ""),
+					FlagProcessor(
+						ListFlag[string]("str", 's', "strings", 2, 0),
+					),
+					Arg[string]("AFTER", ""),
+				),
+				WantStdout: strings.Join([]string{
+					"BEFORE AFTER --str|-s STR STR",
+					"",
+					"Flags:",
+					"  [s] str: strings",
+					"",
+				}, "\n"),
+			},
+		},
+		{
+			name: "ListFlag(2, 0) and flag with no args prints flag usage",
+			etc: &commandtest.ExecuteTestCase{
+				Args: []string{"--str"},
+				Node: SerialNodes(
+					FlagProcessor(
+						ListFlag[string]("str", 's', "strings", 2, 0),
+					),
+					Arg[string]("FIRST", ""),
+					Arg[string]("SECOND", ""),
+				),
+				WantStdout: strings.Join([]string{
+					"FIRST SECOND --str|-s STR STR",
 					"",
 					"Flags:",
 					"  [s] str: strings",
@@ -947,22 +971,23 @@ func TestUsage(t *testing.T) {
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
 						{Value: "--str"},
-						{Value: "un"},
-						{Value: "deux"},
-						{Value: "trois"},
 					},
 				},
 			},
 		},
 		{
-			name: "Works with input flag and extra args",
+			name: "ListFlag(2, 0) and flag with not enough args prints flag usage",
 			etc: &commandtest.ExecuteTestCase{
-				Args: []string{"--str", "un", "deux", "trois", "quatre"},
-				Node: SerialNodes(FlagProcessor(
-					ListFlag[string]("str", 's', "strings", 2, 1),
-				)),
+				Args: []string{"--str", "v"},
+				Node: SerialNodes(
+					FlagProcessor(
+						ListFlag[string]("str", 's', "strings", 2, 0),
+					),
+					Arg[string]("FIRST", ""),
+					Arg[string]("SECOND", ""),
+				),
 				WantStdout: strings.Join([]string{
-					"--str|-s",
+					"FIRST SECOND --str|-s STR STR",
 					"",
 					"Flags:",
 					"  [s] str: strings",
@@ -973,12 +998,414 @@ func TestUsage(t *testing.T) {
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
 						{Value: "--str"},
-						{Value: "un"},
-						{Value: "deux"},
-						{Value: "trois"},
-						{Value: "quatre"},
+						{Value: "v"},
 					},
-					Remaining: []int{4},
+				},
+			},
+		},
+		{
+			name: "ListFlag(2, 0) and flag with enough args does not print flag usage",
+			etc: &commandtest.ExecuteTestCase{
+				Args: []string{"--str", "v", "w"},
+				Node: SerialNodes(
+					FlagProcessor(
+						ListFlag[string]("str", 's', "strings", 2, 0),
+					),
+					Arg[string]("FIRST", ""),
+					Arg[string]("SECOND", ""),
+				),
+				WantStdout: strings.Join([]string{
+					"FIRST SECOND",
+					"",
+				}, "\n"),
+			},
+			ietc: &spycommandtest.ExecuteTestCase{
+				WantInput: &spycommandtest.SpyInput{
+					Args: []*spycommand.InputArg{
+						{Value: "--str"},
+						{Value: "v"},
+						{Value: "w"},
+					},
+				},
+			},
+		},
+		// ListFlag(1, 1) usage tests
+		{
+			name: "ListFlag(1, 1) and no flag prints flag usage",
+			etc: &commandtest.ExecuteTestCase{
+				Node: SerialNodes(
+					Arg[string]("BEFORE", ""),
+					FlagProcessor(
+						ListFlag[string]("str", 's', "strings", 1, 1),
+					),
+					Arg[string]("AFTER", ""),
+				),
+				WantStdout: strings.Join([]string{
+					"BEFORE AFTER --str|-s STR [ STR ]",
+					"",
+					"Flags:",
+					"  [s] str: strings",
+					"",
+				}, "\n"),
+			},
+		},
+		{
+			name: "ListFlag(1, 1) and flag with no args prints flag usage",
+			etc: &commandtest.ExecuteTestCase{
+				Args: []string{"--str"},
+				Node: SerialNodes(
+					FlagProcessor(
+						ListFlag[string]("str", 's', "strings", 1, 1),
+					),
+					Arg[string]("FIRST", ""),
+					Arg[string]("SECOND", ""),
+				),
+				WantStdout: strings.Join([]string{
+					"FIRST SECOND --str|-s STR [ STR ]",
+					"",
+					"Flags:",
+					"  [s] str: strings",
+					"",
+				}, "\n"),
+			},
+			ietc: &spycommandtest.ExecuteTestCase{
+				WantInput: &spycommandtest.SpyInput{
+					Args: []*spycommand.InputArg{
+						{Value: "--str"},
+					},
+				},
+			},
+		},
+		{
+			name: "ListFlag(1, 1) and flag with arg does not print flag usage",
+			etc: &commandtest.ExecuteTestCase{
+				Args: []string{"--str", "v"},
+				Node: SerialNodes(
+					FlagProcessor(
+						ListFlag[string]("str", 's', "strings", 1, 1),
+					),
+					Arg[string]("FIRST", ""),
+					Arg[string]("SECOND", ""),
+				),
+				WantStdout: strings.Join([]string{
+					"FIRST SECOND",
+					"",
+				}, "\n"),
+			},
+			ietc: &spycommandtest.ExecuteTestCase{
+				WantInput: &spycommandtest.SpyInput{
+					Args: []*spycommand.InputArg{
+						{Value: "--str"},
+						{Value: "v"},
+					},
+				},
+			},
+		},
+		{
+			name: "ListFlag(1, 1) and flag with optional args does not print flag usage",
+			etc: &commandtest.ExecuteTestCase{
+				Args: []string{"--str", "v", "w"},
+				Node: SerialNodes(
+					FlagProcessor(
+						ListFlag[string]("str", 's', "strings", 1, 1),
+					),
+					Arg[string]("FIRST", ""),
+					Arg[string]("SECOND", ""),
+				),
+				WantStdout: strings.Join([]string{
+					"FIRST SECOND",
+					"",
+				}, "\n"),
+			},
+			ietc: &spycommandtest.ExecuteTestCase{
+				WantInput: &spycommandtest.SpyInput{
+					Args: []*spycommand.InputArg{
+						{Value: "--str"},
+						{Value: "v"},
+						{Value: "w"},
+					},
+				},
+			},
+		},
+		// ListFlag(2, 2) usage tests
+		{
+			name: "ListFlag(2, 2) and no flag prints flag usage",
+			etc: &commandtest.ExecuteTestCase{
+				Node: SerialNodes(
+					Arg[string]("BEFORE", ""),
+					FlagProcessor(
+						ListFlag[string]("str", 's', "strings", 2, 2),
+					),
+					Arg[string]("AFTER", ""),
+				),
+				WantStdout: strings.Join([]string{
+					"BEFORE AFTER --str|-s STR STR [ STR STR ]",
+					"",
+					"Flags:",
+					"  [s] str: strings",
+					"",
+				}, "\n"),
+			},
+		},
+		{
+			name: "ListFlag(2, 2) and flag with no args prints flag usage",
+			etc: &commandtest.ExecuteTestCase{
+				Args: []string{"--str"},
+				Node: SerialNodes(
+					FlagProcessor(
+						ListFlag[string]("str", 's', "strings", 2, 2),
+					),
+					Arg[string]("FIRST", ""),
+					Arg[string]("SECOND", ""),
+				),
+				WantStdout: strings.Join([]string{
+					"FIRST SECOND --str|-s STR STR [ STR STR ]",
+					"",
+					"Flags:",
+					"  [s] str: strings",
+					"",
+				}, "\n"),
+			},
+			ietc: &spycommandtest.ExecuteTestCase{
+				WantInput: &spycommandtest.SpyInput{
+					Args: []*spycommand.InputArg{
+						{Value: "--str"},
+					},
+				},
+			},
+		},
+		{
+			name: "ListFlag(2, 2) and flag with not enough args prints flag usage",
+			etc: &commandtest.ExecuteTestCase{
+				Args: []string{"--str", "v"},
+				Node: SerialNodes(
+					FlagProcessor(
+						ListFlag[string]("str", 's', "strings", 2, 2),
+					),
+					Arg[string]("FIRST", ""),
+					Arg[string]("SECOND", ""),
+				),
+				WantStdout: strings.Join([]string{
+					"FIRST SECOND --str|-s STR STR [ STR STR ]",
+					"",
+					"Flags:",
+					"  [s] str: strings",
+					"",
+				}, "\n"),
+			},
+			ietc: &spycommandtest.ExecuteTestCase{
+				WantInput: &spycommandtest.SpyInput{
+					Args: []*spycommand.InputArg{
+						{Value: "--str"},
+						{Value: "v"},
+					},
+				},
+			},
+		},
+		{
+			name: "ListFlag(2, 2) and flag with enough args does not print flag usage",
+			etc: &commandtest.ExecuteTestCase{
+				Args: []string{"--str", "v", "w"},
+				Node: SerialNodes(
+					FlagProcessor(
+						ListFlag[string]("str", 's', "strings", 2, 2),
+					),
+					Arg[string]("FIRST", ""),
+					Arg[string]("SECOND", ""),
+				),
+				WantStdout: strings.Join([]string{
+					"FIRST SECOND",
+					"",
+				}, "\n"),
+			},
+			ietc: &spycommandtest.ExecuteTestCase{
+				WantInput: &spycommandtest.SpyInput{
+					Args: []*spycommand.InputArg{
+						{Value: "--str"},
+						{Value: "v"},
+						{Value: "w"},
+					},
+				},
+			},
+		},
+		{
+			name: "ListFlag(2, 2) and flag with some optional args does not print flag usage",
+			etc: &commandtest.ExecuteTestCase{
+				Args: []string{"--str", "v", "w", "vw"},
+				Node: SerialNodes(
+					FlagProcessor(
+						ListFlag[string]("str", 's', "strings", 2, 2),
+					),
+					Arg[string]("FIRST", ""),
+					Arg[string]("SECOND", ""),
+				),
+				WantStdout: strings.Join([]string{
+					"FIRST SECOND",
+					"",
+				}, "\n"),
+			},
+			ietc: &spycommandtest.ExecuteTestCase{
+				WantInput: &spycommandtest.SpyInput{
+					Args: []*spycommand.InputArg{
+						{Value: "--str"},
+						{Value: "v"},
+						{Value: "w"},
+						{Value: "vw"},
+					},
+				},
+			},
+		},
+		{
+			name: "ListFlag(2, 2) and flag with all optional args does not print flag usage",
+			etc: &commandtest.ExecuteTestCase{
+				Args: []string{"--str", "v", "w", "vw", "ww"},
+				Node: SerialNodes(
+					FlagProcessor(
+						ListFlag[string]("str", 's', "strings", 2, 2),
+					),
+					Arg[string]("FIRST", ""),
+					Arg[string]("SECOND", ""),
+				),
+				WantStdout: strings.Join([]string{
+					"FIRST SECOND",
+					"",
+				}, "\n"),
+			},
+			ietc: &spycommandtest.ExecuteTestCase{
+				WantInput: &spycommandtest.SpyInput{
+					Args: []*spycommand.InputArg{
+						{Value: "--str"},
+						{Value: "v"},
+						{Value: "w"},
+						{Value: "vw"},
+						{Value: "ww"},
+					},
+				},
+			},
+		},
+		// ListFlag(1, UnboundedList) usage tests
+		{
+			name: "ListFlag(1, UnboundedList) and no flag prints flag usage",
+			etc: &commandtest.ExecuteTestCase{
+				Node: SerialNodes(
+					Arg[string]("BEFORE", ""),
+					FlagProcessor(
+						ListFlag[string]("str", 's', "strings", 1, command.UnboundedList),
+					),
+					Arg[string]("AFTER", ""),
+				),
+				WantStdout: strings.Join([]string{
+					"BEFORE AFTER --str|-s STR [ STR ... ]",
+					"",
+					"Flags:",
+					"  [s] str: strings",
+					"",
+				}, "\n"),
+			},
+		},
+		{
+			name: "ListFlag(1, UnboundedList) and flag with no args prints flag usage",
+			etc: &commandtest.ExecuteTestCase{
+				Args: []string{"--str"},
+				Node: SerialNodes(
+					FlagProcessor(
+						ListFlag[string]("str", 's', "strings", 1, command.UnboundedList),
+					),
+					Arg[string]("FIRST", ""),
+					Arg[string]("SECOND", ""),
+				),
+				WantStdout: strings.Join([]string{
+					"FIRST SECOND --str|-s STR [ STR ... ]",
+					"",
+					"Flags:",
+					"  [s] str: strings",
+					"",
+				}, "\n"),
+			},
+			ietc: &spycommandtest.ExecuteTestCase{
+				WantInput: &spycommandtest.SpyInput{
+					Args: []*spycommand.InputArg{
+						{Value: "--str"},
+					},
+				},
+			},
+		},
+		{
+			name: "ListFlag(1, UnboundedList) and flag with arg does not print flag usage",
+			etc: &commandtest.ExecuteTestCase{
+				Args: []string{"--str", "v"},
+				Node: SerialNodes(
+					FlagProcessor(
+						ListFlag[string]("str", 's', "strings", 1, command.UnboundedList),
+					),
+					Arg[string]("FIRST", ""),
+					Arg[string]("SECOND", ""),
+				),
+				WantStdout: strings.Join([]string{
+					"FIRST SECOND",
+					"",
+				}, "\n"),
+			},
+			ietc: &spycommandtest.ExecuteTestCase{
+				WantInput: &spycommandtest.SpyInput{
+					Args: []*spycommand.InputArg{
+						{Value: "--str"},
+						{Value: "v"},
+					},
+				},
+			},
+		},
+		{
+			name: "ListFlag(1, UnboundedList) and flag with optional args does not print flag usage",
+			etc: &commandtest.ExecuteTestCase{
+				Args: []string{"--str", "v", "w"},
+				Node: SerialNodes(
+					FlagProcessor(
+						ListFlag[string]("str", 's', "strings", 1, command.UnboundedList),
+					),
+					Arg[string]("FIRST", ""),
+					Arg[string]("SECOND", ""),
+				),
+				WantStdout: strings.Join([]string{
+					"FIRST SECOND",
+					"",
+				}, "\n"),
+			},
+			ietc: &spycommandtest.ExecuteTestCase{
+				WantInput: &spycommandtest.SpyInput{
+					Args: []*spycommand.InputArg{
+						{Value: "--str"},
+						{Value: "v"},
+						{Value: "w"},
+					},
+				},
+			},
+		},
+		{
+			name: "ListFlag(1, UnboundedList) and flag with lots of optional args does not print flag usage",
+			etc: &commandtest.ExecuteTestCase{
+				Args: []string{"--str", "v", "w", "vw", "ww"},
+				Node: SerialNodes(
+					FlagProcessor(
+						ListFlag[string]("str", 's', "strings", 1, command.UnboundedList),
+					),
+					Arg[string]("FIRST", ""),
+					Arg[string]("SECOND", ""),
+				),
+				WantStdout: strings.Join([]string{
+					"FIRST SECOND",
+					"",
+				}, "\n"),
+			},
+			ietc: &spycommandtest.ExecuteTestCase{
+				WantInput: &spycommandtest.SpyInput{
+					Args: []*spycommand.InputArg{
+						{Value: "--str"},
+						{Value: "v"},
+						{Value: "w"},
+						{Value: "vw"},
+						{Value: "ww"},
+					},
 				},
 			},
 		},
@@ -1041,14 +1468,13 @@ func TestUsage(t *testing.T) {
 				),
 
 				WantStdout: strings.Join([]string{
-					"SN --first|-b --second|-a",
+					"SN --first|-b",
 					"",
 					"Arguments:",
 					"  SN: node for a string",
 					"",
 					"Flags:",
 					"  [b] first: un",
-					"  [a] second: deux",
 					"",
 				}, "\n"),
 			},
@@ -1074,7 +1500,7 @@ func TestUsage(t *testing.T) {
 					Arg[string]("SN", "node for a string"),
 				),
 				WantStdout: strings.Join([]string{
-					"SN --first --fourth --second|-2 --third|-3",
+					"SN --first --fourth FOURTH --second|-2 --third|-3 THIRD",
 					"",
 					"Arguments:",
 					"  SN: node for a string",
@@ -1231,7 +1657,7 @@ func TestUsage(t *testing.T) {
 						argMap,
 					),
 					WantStdout: strings.Join([]string{
-						"m3 --m1|-m --m2",
+						"m3 --m1|-m MAP_KEY --m2 MAP_KEY",
 						"",
 						"Arguments:",
 						"  m3: trois",

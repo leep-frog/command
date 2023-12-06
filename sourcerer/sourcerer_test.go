@@ -1686,7 +1686,7 @@ func TestSourcerer(t *testing.T) {
 				osCheck: &osCheck{
 					wantStdout: []string{
 						strings.Join([]string{
-							"SL SL [ SL ] --bool2Flag --boolFlag|-b --strFlag|-s --strFlag2|-2",
+							"SL SL [ SL ] --bool2Flag --boolFlag|-b --strFlag|-s STRFLAG --strFlag2|-2 STRFLAG2",
 							"",
 							"Arguments:",
 							"  SL: test",
@@ -1785,7 +1785,7 @@ func TestSourcerer(t *testing.T) {
 				osCheck: &osCheck{
 					wantStdout: []string{
 						strings.Join([]string{
-							"SL [ SL ] --bool2Flag --boolFlag|-b --strFlag|-s --strFlag2|-2",
+							"SL [ SL ] --bool2Flag --boolFlag|-b --strFlag|-s STRFLAG --strFlag2|-2 STRFLAG2",
 							"",
 							"Arguments:",
 							"  SL: test",
@@ -1819,7 +1819,7 @@ func TestSourcerer(t *testing.T) {
 				osCheck: &osCheck{
 					wantStdout: []string{
 						strings.Join([]string{
-							"--bool2Flag --boolFlag|-b --strFlag|-s --strFlag2|-2",
+							"--bool2Flag --boolFlag|-b --strFlag|-s STRFLAG --strFlag2|-2 STRFLAG2",
 							"",
 							"Flags:",
 							"      bool2Flag: b2Desc",
@@ -1850,12 +1850,10 @@ func TestSourcerer(t *testing.T) {
 				osCheck: &osCheck{
 					wantStdout: []string{
 						strings.Join([]string{
-							"--bool2Flag --boolFlag|-b --strFlag|-s --strFlag2|-2",
+							"--bool2Flag --strFlag2|-2 STRFLAG2",
 							"",
 							"Flags:",
 							"      bool2Flag: b2Desc",
-							"  [b] boolFlag: bDesc",
-							"  [s] strFlag: strDesc",
 							"  [2] strFlag2: str2Desc",
 						}, "\n"),
 					},
@@ -1882,7 +1880,7 @@ func TestSourcerer(t *testing.T) {
 					// wantErr: fmt.Errorf("Unprocessed extra args: [quatre]"),
 					wantStdout: []string{
 						strings.Join([]string{
-							"--bool2Flag --boolFlag|-b --strFlag|-s --strFlag2|-2",
+							"--bool2Flag --boolFlag|-b --strFlag|-s STRFLAG --strFlag2|-2 STRFLAG2",
 							"",
 							"Flags:",
 							"      bool2Flag: b2Desc",
@@ -2871,7 +2869,7 @@ func TestSourcerer(t *testing.T) {
 						`Unprocessed extra args: [bleh]`,
 						``,
 						`======= Command Usage =======`,
-						`[ SS SS SS ] --b|-b --count`,
+						`[ SS SS SS ] --b|-b --count COUNT`,
 						``,
 						`Arguments:`,
 						`  SS: desc`,
@@ -2905,7 +2903,7 @@ func TestSourcerer(t *testing.T) {
 				},
 				osCheck: &osCheck{
 					wantStdout: []string{
-						`[ SS SS SS ] --b|-b --count`,
+						`[ SS SS SS ] --b|-b --count COUNT`,
 						``,
 						`Arguments:`,
 						`  SS: desc`,
@@ -2938,10 +2936,9 @@ func TestSourcerer(t *testing.T) {
 				},
 				osCheck: &osCheck{
 					wantStdout: []string{
-						`--b|-b --count`,
+						`--count COUNT`,
 						``,
 						`Flags:`,
-						`  [b] b: B desc`,
 						`      count: Cnt desc`,
 					},
 				},

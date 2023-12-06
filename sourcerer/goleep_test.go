@@ -583,7 +583,7 @@ func TestUsage(t *testing.T) {
 		Args: []string{"--help"},
 		WantStdout: strings.Join([]string{
 			"Execute the provided go files",
-			"CLI ┳ [ PASSTHROUGH_ARGS ... ] --go-dir|-d",
+			"CLI ┳ [ PASSTHROUGH_ARGS ... ] --go-dir|-d GO_DIR",
 			"┏━━━┛",
 			"┃",
 			"┃   Get the usage of the provided go files",

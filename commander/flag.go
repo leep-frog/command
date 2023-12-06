@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"regexp"
 	"sort"
+	"strings"
 
 	"github.com/leep-frog/command/command"
 	"github.com/leep-frog/command/internal/constants"
@@ -37,6 +38,8 @@ type FlagInterface interface {
 	ShortName() rune
 	// command.Processor returns a node `command.Processor` that processes arguments after the flag indicator.
 	Processor() command.Processor
+	// FlagUsage runs the usage command for the flag
+	FlagUsage(*command.Input, *command.Data, *command.Usage) error
 
 	// Options returns the set of additional options for this flag.
 	// Returning a separate type (rather than enumerating functions here)
@@ -265,6 +268,11 @@ func (fn *flagProcessor) Complete(input *command.Input, data *command.Data) (*co
 }
 
 func (fn *flagProcessor) Execute(input *command.Input, output command.Output, data *command.Data, eData *command.ExecuteData) error {
+	return fn.executeOrUsage(input, output, data, eData, nil)
+}
+
+// executeOrUsage runs execute/usage logic (differentiated based on whether `u` is nil).
+func (fn *flagProcessor) executeOrUsage(input *command.Input, output command.Output, data *command.Data, eData *command.ExecuteData, u *command.Usage) error {
 	unprocessed := map[string]FlagInterface{}
 	processed := map[string]bool{}
 	for _, f := range fn.flagMap {
@@ -338,7 +346,17 @@ func (fn *flagProcessor) Execute(input *command.Input, output command.Output, da
 			err := command.InputRunAtOffset[error](input, i, func(tmpInput *command.Input) error {
 				tmpInput.PushBreakers(fn.ListBreaker())
 				defer input.PopBreakers(1)
-				return processOrExecute(f.Processor(), tmpInput, output, data, eData)
+				processErr := processOrExecute(f.Processor(), tmpInput, output, data, eData)
+
+				// The error is (nil or a different error), or we're in execution mode
+				if !IsNotEnoughArgsError(processErr) || u == nil {
+					return processErr
+				}
+
+				if err := f.FlagUsage(input, data, u); err != nil {
+					return err
+				}
+				return nil
 			})
 			if err != nil {
 				return err
@@ -349,6 +367,7 @@ func (fn *flagProcessor) Execute(input *command.Input, output command.Output, da
 		}
 	}
 
+	// TODO: do order of list provided to FlagProcessor
 	// Sort keys for deterministic behavior
 	keys := maps.Keys(unprocessed)
 	slices.Sort(keys)
@@ -360,28 +379,20 @@ func (fn *flagProcessor) Execute(input *command.Input, output command.Output, da
 	for _, f := range fn.flagMap {
 		f.Options().postProcess(input, output, data, eData)
 	}
+
+	if u != nil {
+		for _, k := range keys {
+			// TODO: Remove `input` from function (since flags need indicator for start position)
+			if err := unprocessed[k].FlagUsage(input, data, u); err != nil {
+				return err
+			}
+		}
+	}
 	return nil
 }
 
 func (fn *flagProcessor) Usage(i *command.Input, d *command.Data, u *command.Usage) error {
-	if err := fn.Execute(i, command.NewIgnoreAllOutput(), d, nil); err != nil && !IsNotEnoughArgsError(err) {
-		return err
-	}
-
-	var flags []FlagInterface
-	for k, f := range fn.flagMap {
-		// flagMap contains entries for name and short name, so ensure we only do each one once.
-		if k == flagName(f) {
-			flags = append(flags, f)
-		}
-	}
-
-	sort.SliceStable(flags, func(i, j int) bool { return flags[i].Name() < flags[j].Name() })
-
-	for _, f := range flags {
-		u.AddFlag(f.Name(), f.ShortName(), "TODO", f.Desc(), 0, 0) // TODO: numbers here
-	}
-	return nil
+	return fn.executeOrUsage(i, command.NewIgnoreAllOutput(), d, &command.ExecuteData{}, u)
 }
 
 type flag[T any] struct {
@@ -397,6 +408,13 @@ func (f *flag[T]) Desc() string {
 
 func (f *flag[T]) Processor() command.Processor {
 	return f.argument
+}
+
+func (f *flag[T]) FlagUsage(i *command.Input, d *command.Data, u *command.Usage) error {
+	// TODO: Add validators and default (like argument --> shared function to get this)
+	argName := strings.ReplaceAll(strings.ToUpper(f.name), "-", "_")
+	u.AddFlag(f.name, f.shortName, argName, f.desc, f.argument.minN, f.argument.optionalN)
+	return nil
 }
 
 func (f *flag[T]) Options() *FlagOptions {
@@ -525,11 +543,11 @@ func (bf *boolFlag[T]) Complete(input *command.Input, data *command.Data) (*comm
 }
 
 func (bf *boolFlag[T]) Usage(i *command.Input, d *command.Data, u *command.Usage) error {
-	// I believe individual abcFlag.Usage functions aren't ever called (e.g. this, optionalFlag.Usage, etc.)
+	return nil
+}
 
-	// Since flag processors are added at the beginning, the usage statements can be a bit awkward
-	// Instead add another row for supported flags
-	u.AddFlag(bf.name, bf.shortName, "TODO-BOOL", bf.desc, 0, 0)
+func (bf *boolFlag[T]) FlagUsage(i *command.Input, d *command.Data, u *command.Usage) error {
+	u.AddFlag(bf.name, bf.shortName, "UNUSED", bf.desc, 0, 0)
 	return nil
 }
 
@@ -613,6 +631,10 @@ func (of *optionalFlag[T]) Complete(input *command.Input, data *command.Data) (*
 }
 
 func (of *optionalFlag[T]) Usage(i *command.Input, d *command.Data, u *command.Usage) error {
+	panic("Unexpected OptionalFlag.Usage() call")
+}
+
+func (of *optionalFlag[T]) FlagUsage(i *command.Input, d *command.Data, u *command.Usage) error {
 	return of.FlagWithType.Processor().Usage(i, d, u)
 }
 
@@ -688,7 +710,11 @@ func (ilf *itemizedListFlag[T]) Complete(input *command.Input, data *command.Dat
 }
 
 func (ilf *itemizedListFlag[T]) Usage(i *command.Input, d *command.Data, u *command.Usage) error {
-	return ilf.FlagWithType.Processor().Usage(i, d, u)
+	panic("Unexpected ItemizedListFlag.Usage() call")
+}
+
+func (ilf *itemizedListFlag[T]) FlagUsage(i *command.Input, d *command.Data, u *command.Usage) error {
+	return ilf.FlagWithType.FlagUsage(i, d, u)
 }
 
 // ListFlag creates a `FlagInterface` from list argument info.
