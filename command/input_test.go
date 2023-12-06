@@ -1380,3 +1380,63 @@ func TestExtraArgsErr(t *testing.T) {
 	testutil.Cmp(t, "ExtraArgsErr(fmt.Errorf())", false, IsExtraArgsError(fmt.Errorf("other error")))
 	testutil.Cmp(t, "ExtraArgsErr(nil)", false, IsExtraArgsError(nil))
 }
+
+func TestMustPop(t *testing.T) {
+	for _, test := range []struct {
+		name      string
+		i         *Input
+		want      string
+		wantInput *spyinput.SpyInput[InputBreaker]
+		wantPanic interface{}
+	}{
+		{
+			name:      "empty input panics",
+			i:         &Input{&spyinput.SpyInput[InputBreaker]{}},
+			wantPanic: "Tried to pop Input value, but there are none arguments remaining",
+			wantInput: &spyinput.SpyInput[InputBreaker]{},
+		},
+		{
+			name: "non-empty input returns value",
+			i: &Input{&spyinput.SpyInput[InputBreaker]{
+				Args: []*spycommand.InputArg{
+					{Value: "un"},
+					{Value: "deux"},
+				},
+				Remaining: []int{0, 1},
+			}},
+			wantInput: &spyinput.SpyInput[InputBreaker]{
+				Args: []*spycommand.InputArg{
+					{Value: "un"},
+					{Value: "deux"},
+				},
+				Remaining: []int{1},
+			},
+			want: "un",
+		},
+		{
+			name: "non-empty input with no remaining values panics",
+			i: &Input{&spyinput.SpyInput[InputBreaker]{
+				Args: []*spycommand.InputArg{
+					{Value: "un"},
+					{Value: "deux"},
+				},
+			}},
+			wantInput: &spyinput.SpyInput[InputBreaker]{
+				Args: []*spycommand.InputArg{
+					{Value: "un"},
+					{Value: "deux"},
+				},
+			},
+			wantPanic: "Tried to pop Input value, but there are none arguments remaining",
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			got := testutil.CmpPanic(t, "Input.MustPop()", func() string {
+				return test.i.MustPop(nil)
+			}, test.wantPanic)
+
+			testutil.Cmp(t, "Input.MustPop() returned incorrect value", test.want, got)
+			testutil.Cmp(t, "Input.MustPop() resulted in incorrect Input object", test.wantInput, test.i.si)
+		})
+	}
+}
