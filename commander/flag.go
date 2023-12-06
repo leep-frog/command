@@ -417,8 +417,8 @@ func (f *flag[T]) Processor() command.Processor {
 }
 
 func (f *flag[T]) FlagUsage(d *command.Data, u *command.Usage) error {
-	// TODO: Add validators and default (like argument --> shared function to get this)
 	argName := strings.ReplaceAll(strings.ToUpper(f.name), "-", "_")
+	// TODO: u.AddFlag(f.name, f.shortName, argName, f.argument.usageDescription(), f.argument.minN, f.argument.optionalN)
 	u.AddFlag(f.name, f.shortName, argName, f.desc, f.argument.minN, f.argument.optionalN)
 	return nil
 }
@@ -659,12 +659,12 @@ Make intermediate arg that transforms values into json and then json into struct
 // ItemizedListFlag creates a flag that can be set with separate flags (e.g. `cmd -i value-one -i value-two -b other-flag -i value-three`).
 func ItemizedListFlag[T any](name string, shortName rune, desc string, opts ...ArgumentOption[[]T]) FlagWithType[[]T] {
 	return &itemizedListFlag[T]{
-		FlagWithType: ListFlag(name, shortName, desc, 1, command.UnboundedList, opts...),
+		flag: listFlag(name, desc, shortName, 1, command.UnboundedList, opts...),
 	}
 }
 
 type itemizedListFlag[T any] struct {
-	FlagWithType[[]T]
+	*flag[[]T]
 
 	rawArgs []string
 }
@@ -672,16 +672,16 @@ type itemizedListFlag[T any] struct {
 func (ilf *itemizedListFlag[T]) Options() *FlagOptions {
 	return &FlagOptions{
 		// Combinable
-		ilf.FlagWithType.Options().combinable(),
+		ilf.flag.Options().combinable(),
 		// AllowsMultiple
 		true,
 		// ProcessMissing
 		func(d *command.Data) error {
-			return ilf.FlagWithType.Options().processMissing(d)
+			return ilf.flag.Options().processMissing(d)
 		},
 		// PostProcess
 		func(i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
-			return processOrExecute(ilf.FlagWithType.Processor(), command.NewInput(ilf.rawArgs, nil), o, d, ed)
+			return processOrExecute(ilf.flag.Processor(), command.NewInput(ilf.rawArgs, nil), o, d, ed)
 		},
 	}
 }
@@ -706,7 +706,7 @@ func (ilf *itemizedListFlag[T]) Complete(input *command.Input, data *command.Dat
 	s := input.MustPop(data) // ItemizedListFlag only allows one element per flag, hence why we pop once and not a list.
 	ilf.rawArgs = append(ilf.rawArgs, s)
 	if input.FullyProcessed() {
-		c, e := processOrComplete(ilf.FlagWithType.Processor(), command.NewInput(ilf.rawArgs, nil), data)
+		c, e := processOrComplete(ilf.flag.Processor(), command.NewInput(ilf.rawArgs, nil), data)
 		return c, e
 	}
 	return nil, nil
@@ -717,8 +717,8 @@ func (ilf *itemizedListFlag[T]) Usage(i *command.Input, d *command.Data, u *comm
 }
 
 func (ilf *itemizedListFlag[T]) FlagUsage(d *command.Data, u *command.Usage) error {
-	// TODO: Add validators and default (like argument --> shared function to get this)
 	argName := strings.ReplaceAll(strings.ToUpper(ilf.Name()), "-", "_")
+	// TODO: u.AddFlag(ilf.Name(), ilf.ShortName(), argName, ilf.argument.usageDescription(), 1, 0)
 	u.AddFlag(ilf.Name(), ilf.ShortName(), argName, ilf.Desc(), 1, 0)
 	return nil
 }
@@ -728,6 +728,7 @@ func ListFlag[T any](name string, shortName rune, desc string, minN, optionalN i
 	return listFlag(name, desc, shortName, minN, optionalN, opts...)
 }
 
+// TODO: Swap order to match ListFlag
 func listFlag[T any](name, desc string, shortName rune, minN, optionalN int, opts ...ArgumentOption[T]) *flag[T] {
 	return &flag[T]{
 		name:      name,

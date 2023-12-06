@@ -93,6 +93,17 @@ func (an *Argument[T]) Usage(i *command.Input, d *command.Data, u *command.Usage
 	}
 
 	// We know we got less than an.minN args, so that is guaranteed to be positive
+	u.AddArg(an.name, an.usageDescription(), an.minN-gotCnt, an.optionalN)
+
+	for _, b := range an.opt.breakers {
+		if err := b.Usage(d, u); err != nil {
+			return fmt.Errorf("InputBreaker usage failed: %v", err)
+		}
+	}
+	return nil
+}
+
+func (an *Argument[T]) usageDescription() string {
 	desc := []string{an.desc}
 	if an.opt != nil {
 		if an.opt._default != nil {
@@ -102,15 +113,7 @@ func (an *Argument[T]) Usage(i *command.Input, d *command.Data, u *command.Usage
 			desc = append(desc, v.Usage)
 		}
 	}
-
-	u.AddArg(an.name, strings.Join(desc, "\n    "), an.minN-gotCnt, an.optionalN)
-
-	for _, b := range an.opt.breakers {
-		if err := b.Usage(d, u); err != nil {
-			return fmt.Errorf("InputBreaker usage failed: %v", err)
-		}
-	}
-	return nil
+	return strings.Join(desc, "\n    ")
 }
 
 // Execute fulfills the `command.Processor` interface for `Argument`.

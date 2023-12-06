@@ -1556,7 +1556,7 @@ func TestUsage(t *testing.T) {
 			ietc: &spycommandtest.ExecuteTestCase{
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
-						{Value: "--after"},
+						{Value: "--before"},
 					},
 				},
 			},
