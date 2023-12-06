@@ -1092,11 +1092,34 @@ func TestGenerateBinaryNode(t *testing.T) {
 				},
 			},
 			{
+				name:   "generate-autocomplete-setup with runCLI fails if multiple CLIs",
+				args:   []string{"generate-autocomplete-setup"},
+				runCLI: true,
+				clis: []CLI{
+					&testCLI{name: "basic"},
+					&testCLI{name: "other"},
+				},
+				wantErr: fmt.Errorf("2 CLIs provided with RunCLI(); expected exactly one"),
+				osChecks: map[string]*osCheck{
+					osLinux: {
+						wantStderr: []string{
+							"2 CLIs provided with RunCLI(); expected exactly one",
+							"",
+						},
+					},
+					osWindows: {
+						wantStderr: []string{
+							"2 CLIs provided with RunCLI(); expected exactly one",
+							"",
+						},
+					},
+				},
+			},
+			{
 				name:   "generates runCLI autocomplete source files using exeBaseName",
 				args:   []string{"generate-autocomplete-setup"},
 				runCLI: true,
 				clis: []CLI{
-					// TODO: Multiple CLIs/setup cause failure
 					&testCLI{name: "basic"},
 				},
 				osChecks: map[string]*osCheck{
@@ -1143,7 +1166,6 @@ func TestGenerateBinaryNode(t *testing.T) {
 				args:   []string{"generate-autocomplete-setup", "--alias", "abc"},
 				runCLI: true,
 				clis: []CLI{
-					// TODO: Multiple CLIs/setup cause failure
 					&testCLI{name: "basic"},
 				},
 				osChecks: map[string]*osCheck{
@@ -1190,7 +1212,6 @@ func TestGenerateBinaryNode(t *testing.T) {
 				args:   []string{"generate-autocomplete-setup", "--alias", "ab c"},
 				runCLI: true,
 				clis: []CLI{
-					// TODO: Multiple CLIs/setup cause failure
 					&testCLI{name: "basic"},
 				},
 				wantErr: fmt.Errorf(`[MatchesRegex] value "ab c" doesn't match regex "^[a-zA-Z0-9]+$"`),
