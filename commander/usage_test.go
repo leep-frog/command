@@ -1028,30 +1028,39 @@ func TestUsage(t *testing.T) {
 				}, "\n"),
 			},
 		},
-		// TODO:
-		// {
-		// 	name: "flags with values",
-		// 	etc: &commandtest.ExecuteTestCase{
-		// 		Args: []string{"--second", "2nd"},
-		// 		Node: SerialNodes(
-		// 			FlagProcessor(
-		// 				BoolFlag("first", 'b', "un"),
-		// 				BoolFlag("second", 'a', "deux"),
-		// 			),
-		// 			Arg[string]("SN", "node for a string"),
-		// 		),
-		// 		WantStdout: []string{
-		// 			"SN --first|-b --second|-a",
-		// 			"",
-		// 			"Arguments:",
-		// 			"  SN: node for a string",
-		// 			"",
-		// 			"Flags:",
-		// 			"  [b] first: un",
-		// 			"  [a] second: deux",
-		// 		},
-		// 	},
-		// },
+		{
+			name: "flags with values",
+			etc: &commandtest.ExecuteTestCase{
+				Args: []string{"--second", "2nd"},
+				Node: SerialNodes(
+					FlagProcessor(
+						BoolFlag("first", 'b', "un"),
+						Flag[string]("second", 'a', "deux"),
+					),
+					Arg[string]("SN", "node for a string"),
+				),
+
+				WantStdout: strings.Join([]string{
+					"SN --first|-b --second|-a",
+					"",
+					"Arguments:",
+					"  SN: node for a string",
+					"",
+					"Flags:",
+					"  [b] first: un",
+					"  [a] second: deux",
+					"",
+				}, "\n"),
+			},
+			ietc: &spycommandtest.ExecuteTestCase{
+				WantInput: &spycommandtest.SpyInput{
+					Args: []*spycommand.InputArg{
+						{Value: "--second"},
+						{Value: "2nd"},
+					},
+				},
+			},
+		},
 		{
 			name: "flags without short names work",
 			etc: &commandtest.ExecuteTestCase{

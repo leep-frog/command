@@ -103,7 +103,7 @@ func (an *Argument[T]) Usage(i *command.Input, d *command.Data, u *command.Usage
 		}
 	}
 
-	u.AddArg(an.name, strings.Join(desc, "\n    "), an.minN-gotCnt, an.optionalN /* TODO: Validators */)
+	u.AddArg(an.name, strings.Join(desc, "\n    "), an.minN-gotCnt, an.optionalN)
 
 	for _, b := range an.opt.breakers {
 		if err := b.Usage(d, u); err != nil {
