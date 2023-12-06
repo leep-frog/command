@@ -467,7 +467,7 @@ func (f *flag[T]) AddOptions(opts ...ArgumentOption[T]) FlagWithType[T] {
 
 // Flag creates a `FlagInterface` from argument info.
 func Flag[T any](name string, shortName rune, desc string, opts ...ArgumentOption[T]) FlagWithType[T] {
-	return listFlag(name, desc, shortName, 1, 0, opts...) //.AddOptions(ListUntil[T](MatchesRegex("^-")))
+	return listFlag(name, shortName, desc, 1, 0, opts...) //.AddOptions(ListUntil[T](MatchesRegex("^-")))
 }
 
 // BoolFlag creates a `FlagInterface` for a boolean argument.
@@ -593,7 +593,7 @@ type optionalFlag[T any] struct {
 // 3. `Args=["--optStr", "custom-value"]`: The flag's value is set to "custom-value" in data.
 func OptionalFlag[T any](name string, shortName rune, desc string, defaultValue T, opts ...ArgumentOption[T]) FlagWithType[T] {
 	return &optionalFlag[T]{
-		listFlag(name, desc, shortName, 0, 1, opts...),
+		listFlag(name, shortName, desc, 0, 1, opts...),
 		defaultValue,
 	}
 }
@@ -658,7 +658,7 @@ Make intermediate arg that transforms values into json and then json into struct
 // ItemizedListFlag creates a flag that can be set with separate flags (e.g. `cmd -i value-one -i value-two -b other-flag -i value-three`).
 func ItemizedListFlag[T any](name string, shortName rune, desc string, opts ...ArgumentOption[[]T]) FlagWithType[[]T] {
 	return &itemizedListFlag[T]{
-		flag: listFlag(name, desc, shortName, 1, command.UnboundedList, opts...),
+		flag: listFlag(name, shortName, desc, 1, command.UnboundedList, opts...),
 	}
 }
 
@@ -723,11 +723,10 @@ func (ilf *itemizedListFlag[T]) FlagUsage(d *command.Data, u *command.Usage) err
 
 // ListFlag creates a `FlagInterface` from list argument info.
 func ListFlag[T any](name string, shortName rune, desc string, minN, optionalN int, opts ...ArgumentOption[[]T]) FlagWithType[[]T] {
-	return listFlag(name, desc, shortName, minN, optionalN, opts...)
+	return listFlag(name, shortName, desc, minN, optionalN, opts...)
 }
 
-// TODO: Swap order to match ListFlag
-func listFlag[T any](name, desc string, shortName rune, minN, optionalN int, opts ...ArgumentOption[T]) *flag[T] {
+func listFlag[T any](name string, shortName rune, desc string, minN, optionalN int, opts ...ArgumentOption[T]) *flag[T] {
 	return &flag[T]{
 		name:      name,
 		desc:      desc,
