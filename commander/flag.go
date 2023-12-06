@@ -8,7 +8,6 @@ import (
 
 	"github.com/leep-frog/command/command"
 	"github.com/leep-frog/command/internal/constants"
-	"golang.org/x/exp/maps"
 	"golang.org/x/exp/slices"
 )
 
@@ -125,13 +124,18 @@ func FlagProcessor(fs ...FlagInterface) *flagProcessor {
 		}
 		m[flagShortName(f)] = f
 	}
+
 	return &flagProcessor{
-		flagMap: m,
+		flagMap:   m,
+		flagOrder: slices.Clone(fs),
 	}
 }
 
 type flagProcessor struct {
+	// flagMap is a map from key to `FlagInterface`
 	flagMap map[string]FlagInterface
+	// flagOrder is the order in which the flags were provided
+	flagOrder []FlagInterface
 }
 
 // ListBreaker returns a `ListBreaker` that breaks a list at any
@@ -273,10 +277,10 @@ func (fn *flagProcessor) Execute(input *command.Input, output command.Output, da
 
 // executeOrUsage runs execute/usage logic (differentiated based on whether `u` is nil).
 func (fn *flagProcessor) executeOrUsage(input *command.Input, output command.Output, data *command.Data, eData *command.ExecuteData, u *command.Usage) error {
-	unprocessed := map[string]FlagInterface{}
+	unprocessed := map[string]bool{}
 	processed := map[string]bool{}
 	for _, f := range fn.flagMap {
-		unprocessed[f.Name()] = f
+		unprocessed[f.Name()] = true
 	}
 	for i := 0; i < input.NumRemaining(); {
 		a, ok := input.PeekAt(i)
@@ -367,12 +371,12 @@ func (fn *flagProcessor) executeOrUsage(input *command.Input, output command.Out
 		}
 	}
 
-	// TODO: do order of list provided to FlagProcessor
-	// Sort keys for deterministic behavior
-	keys := maps.Keys(unprocessed)
-	slices.Sort(keys)
-	for _, k := range keys {
-		if err := unprocessed[k].Options().processMissing(data); err != nil {
+	for _, f := range fn.flagOrder {
+		if !unprocessed[f.Name()] {
+			continue
+		}
+
+		if err := f.Options().processMissing(data); err != nil {
 			return output.Annotatef(err, "failed to get default")
 		}
 	}
@@ -381,9 +385,13 @@ func (fn *flagProcessor) executeOrUsage(input *command.Input, output command.Out
 	}
 
 	if u != nil {
-		for _, k := range keys {
+		for _, f := range fn.flagOrder {
+			if !unprocessed[f.Name()] {
+				continue
+			}
+
 			// TODO: Remove `input` from function (since flags need indicator for start position)
-			if err := unprocessed[k].FlagUsage(input, data, u); err != nil {
+			if err := f.FlagUsage(input, data, u); err != nil {
 				return err
 			}
 		}

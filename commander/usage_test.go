@@ -820,14 +820,31 @@ func TestUsage(t *testing.T) {
 		},
 		// Flag tests
 		{
-			name: "works with flags",
+			name: "works with flags (in provided order 1)",
+			etc: &commandtest.ExecuteTestCase{
+				Node: SerialNodes(FlagProcessor(
+					BoolFlag("debug", 'd', "debug stuff"),
+					BoolFlag("new", 'n', "new files"),
+				)),
+				WantStdout: strings.Join([]string{
+					"--debug|-d --new|-n",
+					"",
+					"Flags:",
+					"  [d] debug: debug stuff",
+					"  [n] new: new files",
+					"",
+				}, "\n"),
+			},
+		},
+		{
+			name: "works with flags (in provided order 2)",
 			etc: &commandtest.ExecuteTestCase{
 				Node: SerialNodes(FlagProcessor(
 					BoolFlag("new", 'n', "new files"),
 					BoolFlag("debug", 'd', "debug stuff"),
 				)),
 				WantStdout: strings.Join([]string{
-					"--debug|-d --new|-n",
+					"--new|-n --debug|-d",
 					"",
 					"Flags:",
 					"  [d] debug: debug stuff",
@@ -1414,8 +1431,8 @@ func TestUsage(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Node: SerialNodes(
 					FlagProcessor(
-						BoolFlag("new", 'n', "new files"),
 						BoolFlag("debug", 'd', "debug stuff"),
+						BoolFlag("new", 'n', "new files"),
 					),
 					Arg[string]("SN", "node for a string"),
 				),
@@ -1500,7 +1517,7 @@ func TestUsage(t *testing.T) {
 					Arg[string]("SN", "node for a string"),
 				),
 				WantStdout: strings.Join([]string{
-					"SN --first --fourth FOURTH --second|-2 --third|-3 THIRD",
+					"SN --first --second|-2 --third|-3 THIRD --fourth FOURTH",
 					"",
 					"Arguments:",
 					"  SN: node for a string",

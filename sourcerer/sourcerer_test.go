@@ -1686,7 +1686,7 @@ func TestSourcerer(t *testing.T) {
 				osCheck: &osCheck{
 					wantStdout: []string{
 						strings.Join([]string{
-							"SL SL [ SL ] --bool2Flag --boolFlag|-b --strFlag|-s STRFLAG --strFlag2|-2 STRFLAG2",
+							"SL SL [ SL ] --strFlag|-s STRFLAG --strFlag2|-2 STRFLAG2 --boolFlag|-b --bool2Flag",
 							"",
 							"Arguments:",
 							"  SL: test",
@@ -1785,7 +1785,7 @@ func TestSourcerer(t *testing.T) {
 				osCheck: &osCheck{
 					wantStdout: []string{
 						strings.Join([]string{
-							"SL [ SL ] --bool2Flag --boolFlag|-b --strFlag|-s STRFLAG --strFlag2|-2 STRFLAG2",
+							"SL [ SL ] --strFlag|-s STRFLAG --strFlag2|-2 STRFLAG2 --boolFlag|-b --bool2Flag",
 							"",
 							"Arguments:",
 							"  SL: test",
@@ -1819,7 +1819,7 @@ func TestSourcerer(t *testing.T) {
 				osCheck: &osCheck{
 					wantStdout: []string{
 						strings.Join([]string{
-							"--bool2Flag --boolFlag|-b --strFlag|-s STRFLAG --strFlag2|-2 STRFLAG2",
+							"--strFlag|-s STRFLAG --strFlag2|-2 STRFLAG2 --boolFlag|-b --bool2Flag",
 							"",
 							"Flags:",
 							"      bool2Flag: b2Desc",
@@ -1850,7 +1850,7 @@ func TestSourcerer(t *testing.T) {
 				osCheck: &osCheck{
 					wantStdout: []string{
 						strings.Join([]string{
-							"--bool2Flag --strFlag2|-2 STRFLAG2",
+							"--strFlag2|-2 STRFLAG2 --bool2Flag",
 							"",
 							"Flags:",
 							"      bool2Flag: b2Desc",
@@ -1880,7 +1880,7 @@ func TestSourcerer(t *testing.T) {
 					// wantErr: fmt.Errorf("Unprocessed extra args: [quatre]"),
 					wantStdout: []string{
 						strings.Join([]string{
-							"--bool2Flag --boolFlag|-b --strFlag|-s STRFLAG --strFlag2|-2 STRFLAG2",
+							"--strFlag|-s STRFLAG --strFlag2|-2 STRFLAG2 --boolFlag|-b --bool2Flag",
 							"",
 							"Flags:",
 							"      bool2Flag: b2Desc",
