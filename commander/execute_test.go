@@ -10319,7 +10319,7 @@ func TestPanics(t *testing.T) {
 			f: func() {
 				BoolFlag("b", 'b', testDesc).AddOptions()
 			},
-			want: "options cannot be added to a boolean flag",
+			want: "Options cannot be added to a boolean flag",
 		},
 		{
 			name: "Can't create arg for unsupported type",

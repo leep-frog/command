@@ -548,6 +548,7 @@ func (bf *boolFlag[T]) Complete(input *command.Input, data *command.Data) (*comm
 }
 
 func (bf *boolFlag[T]) Usage(i *command.Input, d *command.Data, u *command.Usage) error {
+	// Never expect to reach here since FlagUsage will always be called instead.
 	panic("Unexpected BoolFlag.Usage() call")
 }
 
@@ -577,7 +578,7 @@ func (bf *boolFlag[T]) Provided(d *command.Data) bool {
 }
 
 func (bf *boolFlag[T]) AddOptions(opts ...ArgumentOption[T]) FlagWithType[T] {
-	panic("options cannot be added to a boolean flag")
+	panic("Options cannot be added to a boolean flag")
 }
 
 type optionalFlag[T any] struct {
@@ -636,6 +637,7 @@ func (of *optionalFlag[T]) Complete(input *command.Input, data *command.Data) (*
 }
 
 func (of *optionalFlag[T]) Usage(i *command.Input, d *command.Data, u *command.Usage) error {
+	// Never expect to reach here since FlagUsage will always be called instead.
 	panic("Unexpected OptionalFlag.Usage() call")
 }
 
@@ -712,6 +714,7 @@ func (ilf *itemizedListFlag[T]) Complete(input *command.Input, data *command.Dat
 }
 
 func (ilf *itemizedListFlag[T]) Usage(i *command.Input, d *command.Data, u *command.Usage) error {
+	// Never expect to reach here since FlagUsage will always be called instead.
 	panic("Unexpected ItemizedListFlag.Usage() call")
 }
 
