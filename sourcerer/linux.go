@@ -93,7 +93,8 @@ func (l *linux) RegisterRunCLIAutocomplete(goExecutable, alias string) []string 
 }
 
 func (l *linux) completeScriptCommand(functionName, alias string) string {
-	return fmt.Sprintf(`((type complete > /dev/null 2>&1) && complete -F %s %s %s) || (echo 'shell function "complete" either failed or does not exist; if using zsh, be sure to set up bashcompinit' 1>&2)`, functionName, NosortString(), alias)
+	// Use curly brackets (instead of parentheses) to ensure the code runs in the parent shell and not in a sub-shell
+	return fmt.Sprintf(`{ { type complete > /dev/null 2>&1 ; } && complete -F %s %s %s ; } || { echo 'shell function "complete" either failed or does not exist; if using zsh, be sure to set up bashcompinit' 1>&2 ; }`, functionName, NosortString(), alias)
 }
 
 func (l *linux) autocompleteRegistration(targetName, alias string) string {
