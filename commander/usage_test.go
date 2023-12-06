@@ -1901,7 +1901,7 @@ func TestUsage(t *testing.T) {
 					"one":   {1, 1.1},
 					"two":   {2, 2.2},
 					"three": {3, 3.3},
-				}, true)
+				}, false)
 				argMap := MapArg("m3", "trois", map[string]*vType{
 					"one":   {1, 1.1},
 					"two":   {2, 2.2},
@@ -1917,7 +1917,7 @@ func TestUsage(t *testing.T) {
 						argMap,
 					),
 					WantStdout: strings.Join([]string{
-						"m3 --m1|-m MAP_KEY --m2 MAP_KEY",
+						"m3 --m1|-m MAP_KEY_OR_M1 --m2 MAP_KEY",
 						"",
 						"Arguments:",
 						"  m3: trois",

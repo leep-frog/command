@@ -47,6 +47,7 @@ func MapFlag[K constraints.Ordered, V any](name string, shortName rune, desc str
 		})
 	}
 	ma.Argument = Arg(name, desc, opts...)
+	ma.allowMissing = allowMissing
 	return ma
 }
 
@@ -54,9 +55,10 @@ func MapFlag[K constraints.Ordered, V any](name string, shortName rune, desc str
 // that retrieves data from a provided map. Use the `MapArg` to construct it.
 type MapFlargument[K constraints.Ordered, V any] struct {
 	*Argument[K]
-	shortName rune
-	key       K
-	hit       bool
+	shortName    rune
+	key          K
+	hit          bool
+	allowMissing bool
 }
 
 func (man *MapFlargument[K, V]) ShortName() rune {
@@ -103,7 +105,10 @@ func (man *MapFlargument[K, V]) Processor() command.Processor {
 }
 
 func (man *MapFlargument[K, V]) FlagUsage(d *command.Data, u *command.Usage) error {
-	u.AddFlag(man.name, man.shortName, "MAP_KEY", man.desc, 1, 0)
-	// TODO: Add MAP_KEY symbol in argument section
+	argName := "MAP_KEY"
+	if man.allowMissing {
+		argName = fmt.Sprintf("MAP_KEY_OR_%s", argifyFlagName(man.name))
+	}
+	u.AddFlag(man.name, man.shortName, argName, man.desc, 1, 0)
 	return nil
 }

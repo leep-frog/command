@@ -416,9 +416,12 @@ func (f *flag[T]) Processor() command.Processor {
 	return f.argument
 }
 
+func argifyFlagName(flagName string) string {
+	return strings.ReplaceAll(strings.ToUpper(flagName), "-", "_")
+}
+
 func (f *flag[T]) FlagUsage(d *command.Data, u *command.Usage) error {
-	argName := strings.ReplaceAll(strings.ToUpper(f.name), "-", "_")
-	u.AddFlag(f.name, f.shortName, argName, f.argument.usageDescription(), f.argument.minN, f.argument.optionalN)
+	u.AddFlag(f.name, f.shortName, argifyFlagName(f.name), f.argument.usageDescription(), f.argument.minN, f.argument.optionalN)
 	return nil
 }
 
@@ -719,8 +722,7 @@ func (ilf *itemizedListFlag[T]) Usage(i *command.Input, d *command.Data, u *comm
 }
 
 func (ilf *itemizedListFlag[T]) FlagUsage(d *command.Data, u *command.Usage) error {
-	argName := strings.ReplaceAll(strings.ToUpper(ilf.Name()), "-", "_")
-	u.AddFlag(ilf.Name(), ilf.ShortName(), argName, ilf.argument.usageDescription(), 1, 0)
+	u.AddFlag(ilf.Name(), ilf.ShortName(), argifyFlagName(ilf.name), ilf.argument.usageDescription(), 1, 0)
 	return nil
 }
 
