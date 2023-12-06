@@ -595,6 +595,8 @@ func TestUsage(t *testing.T) {
 			"",
 			"Flags:",
 			"  [d] go-dir: Directory of package to run",
+			"    Default: ",
+			"    IsDir()",
 			"",
 		}, "\n"),
 	})

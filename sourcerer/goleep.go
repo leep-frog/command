@@ -22,7 +22,7 @@ var (
 		"Directory of package to run",
 		commander.IsDir(),
 		&commander.FileCompleter[string]{IgnoreFiles: true},
-		commander.Default(""),
+		commander.Default(""), // TODO: Should this be a dot?
 	)
 	passAlongArgs = commander.ListArg[string]("PASSTHROUGH_ARGS", "Args to pass through to the command", 0, command.UnboundedList)
 )

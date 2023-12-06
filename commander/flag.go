@@ -418,8 +418,7 @@ func (f *flag[T]) Processor() command.Processor {
 
 func (f *flag[T]) FlagUsage(d *command.Data, u *command.Usage) error {
 	argName := strings.ReplaceAll(strings.ToUpper(f.name), "-", "_")
-	// TODO: u.AddFlag(f.name, f.shortName, argName, f.argument.usageDescription(), f.argument.minN, f.argument.optionalN)
-	u.AddFlag(f.name, f.shortName, argName, f.desc, f.argument.minN, f.argument.optionalN)
+	u.AddFlag(f.name, f.shortName, argName, f.argument.usageDescription(), f.argument.minN, f.argument.optionalN)
 	return nil
 }
 
@@ -718,8 +717,7 @@ func (ilf *itemizedListFlag[T]) Usage(i *command.Input, d *command.Data, u *comm
 
 func (ilf *itemizedListFlag[T]) FlagUsage(d *command.Data, u *command.Usage) error {
 	argName := strings.ReplaceAll(strings.ToUpper(ilf.Name()), "-", "_")
-	// TODO: u.AddFlag(ilf.Name(), ilf.ShortName(), argName, ilf.argument.usageDescription(), 1, 0)
-	u.AddFlag(ilf.Name(), ilf.ShortName(), argName, ilf.Desc(), 1, 0)
+	u.AddFlag(ilf.Name(), ilf.ShortName(), argName, ilf.argument.usageDescription(), 1, 0)
 	return nil
 }
 
@@ -737,6 +735,7 @@ func listFlag[T any](name, desc string, shortName rune, minN, optionalN int, opt
 		argument: &Argument[T]{
 			flag:      true,
 			name:      name,
+			desc:      desc,
 			minN:      minN,
 			optionalN: optionalN,
 			opt:       multiArgumentOptions(opts...),

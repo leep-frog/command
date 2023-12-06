@@ -1590,6 +1590,97 @@ func TestUsage(t *testing.T) {
 				},
 			},
 		},
+		// OptionalFlag tests
+		{
+			name: "OptionalFlag is included in usage",
+			etc: &commandtest.ExecuteTestCase{
+				Node: SerialNodes(
+					FlagProcessor(
+						BoolFlag("first", FlagNoShortName, "un"),
+						OptionalFlag[string]("opt", 'o', "optional", "dflt"),
+						Flag[string]("third", '3', "trois"),
+					),
+					Arg[string]("SN", "node for a string"),
+				),
+				WantStdout: strings.Join([]string{
+					"SN --first --opt|-o [ OPT ] --third|-3 THIRD",
+					"",
+					"Arguments:",
+					"  SN: node for a string",
+					"",
+					"Flags:",
+					"      first: un",
+					"  [o] opt: optional",
+					"  [3] third: trois",
+					"",
+				}, "\n"),
+			},
+		},
+		{
+			name: "OptionalFlag isn't included in when flag provided with no arg",
+			etc: &commandtest.ExecuteTestCase{
+				Args: []string{"--opt"},
+				Node: SerialNodes(
+					FlagProcessor(
+						BoolFlag("first", FlagNoShortName, "un"),
+						OptionalFlag[string]("opt", 'o', "optional", "dflt"),
+						Flag[string]("third", '3', "trois"),
+					),
+					Arg[string]("SN", "node for a string"),
+				),
+				WantStdout: strings.Join([]string{
+					"SN --first --third|-3 THIRD",
+					"",
+					"Arguments:",
+					"  SN: node for a string",
+					"",
+					"Flags:",
+					"      first: un",
+					"  [3] third: trois",
+					"",
+				}, "\n"),
+			},
+			ietc: &spycommandtest.ExecuteTestCase{
+				WantInput: &spycommandtest.SpyInput{
+					Args: []*spycommand.InputArg{
+						{Value: "--opt"},
+					},
+				},
+			},
+		},
+		{
+			name: "OptionalFlag isn't included in when no flag provided with arg",
+			etc: &commandtest.ExecuteTestCase{
+				Args: []string{"--opt", "v"},
+				Node: SerialNodes(
+					FlagProcessor(
+						BoolFlag("first", FlagNoShortName, "un"),
+						OptionalFlag[string]("opt", 'o', "optional", "dflt"),
+						Flag[string]("third", '3', "trois"),
+					),
+					Arg[string]("SN", "node for a string"),
+				),
+				WantStdout: strings.Join([]string{
+					"SN --first --third|-3 THIRD",
+					"",
+					"Arguments:",
+					"  SN: node for a string",
+					"",
+					"Flags:",
+					"      first: un",
+					"  [3] third: trois",
+					"",
+				}, "\n"),
+			},
+			ietc: &spycommandtest.ExecuteTestCase{
+				WantInput: &spycommandtest.SpyInput{
+					Args: []*spycommand.InputArg{
+						{Value: "--opt"},
+						{Value: "v"},
+					},
+				},
+			},
+		},
 		// ItemizedListFlag tests
 		{
 			name: "ItemizedListFlag is included in usage",
