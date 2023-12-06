@@ -102,7 +102,7 @@ func (man *MapFlargument[K, V]) Processor() command.Processor {
 	return man
 }
 
-func (man *MapFlargument[K, V]) FlagUsage(i *command.Input, d *command.Data, u *command.Usage) error {
+func (man *MapFlargument[K, V]) FlagUsage(d *command.Data, u *command.Usage) error {
 	u.AddFlag(man.name, man.shortName, "MAP_KEY", man.desc, 1, 0)
 	// TODO: Add MAP_KEY symbol in argument section
 	return nil

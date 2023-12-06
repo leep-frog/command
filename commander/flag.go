@@ -38,7 +38,7 @@ type FlagInterface interface {
 	// command.Processor returns a node `command.Processor` that processes arguments after the flag indicator.
 	Processor() command.Processor
 	// FlagUsage runs the usage command for the flag
-	FlagUsage(*command.Input, *command.Data, *command.Usage) error
+	FlagUsage(*command.Data, *command.Usage) error
 
 	// Options returns the set of additional options for this flag.
 	// Returning a separate type (rather than enumerating functions here)
@@ -357,7 +357,7 @@ func (fn *flagProcessor) executeOrUsage(input *command.Input, output command.Out
 					return processErr
 				}
 
-				if err := f.FlagUsage(input, data, u); err != nil {
+				if err := f.FlagUsage(data, u); err != nil {
 					return err
 				}
 				return nil
@@ -390,8 +390,7 @@ func (fn *flagProcessor) executeOrUsage(input *command.Input, output command.Out
 				continue
 			}
 
-			// TODO: Remove `input` from function (since flags need indicator for start position)
-			if err := f.FlagUsage(input, data, u); err != nil {
+			if err := f.FlagUsage(data, u); err != nil {
 				return err
 			}
 		}
@@ -418,7 +417,7 @@ func (f *flag[T]) Processor() command.Processor {
 	return f.argument
 }
 
-func (f *flag[T]) FlagUsage(i *command.Input, d *command.Data, u *command.Usage) error {
+func (f *flag[T]) FlagUsage(d *command.Data, u *command.Usage) error {
 	// TODO: Add validators and default (like argument --> shared function to get this)
 	argName := strings.ReplaceAll(strings.ToUpper(f.name), "-", "_")
 	u.AddFlag(f.name, f.shortName, argName, f.desc, f.argument.minN, f.argument.optionalN)
@@ -554,7 +553,7 @@ func (bf *boolFlag[T]) Usage(i *command.Input, d *command.Data, u *command.Usage
 	return nil
 }
 
-func (bf *boolFlag[T]) FlagUsage(i *command.Input, d *command.Data, u *command.Usage) error {
+func (bf *boolFlag[T]) FlagUsage(d *command.Data, u *command.Usage) error {
 	u.AddFlag(bf.name, bf.shortName, "UNUSED", bf.desc, 0, 0)
 	return nil
 }
@@ -642,8 +641,8 @@ func (of *optionalFlag[T]) Usage(i *command.Input, d *command.Data, u *command.U
 	panic("Unexpected OptionalFlag.Usage() call")
 }
 
-func (of *optionalFlag[T]) FlagUsage(i *command.Input, d *command.Data, u *command.Usage) error {
-	return of.FlagWithType.Processor().Usage(i, d, u)
+func (of *optionalFlag[T]) FlagUsage(d *command.Data, u *command.Usage) error {
+	return of.FlagWithType.FlagUsage(d, u)
 }
 
 // TODO: command.Node that populates a struct from arguments.
@@ -721,8 +720,8 @@ func (ilf *itemizedListFlag[T]) Usage(i *command.Input, d *command.Data, u *comm
 	panic("Unexpected ItemizedListFlag.Usage() call")
 }
 
-func (ilf *itemizedListFlag[T]) FlagUsage(i *command.Input, d *command.Data, u *command.Usage) error {
-	return ilf.FlagWithType.FlagUsage(i, d, u)
+func (ilf *itemizedListFlag[T]) FlagUsage(d *command.Data, u *command.Usage) error {
+	return ilf.FlagWithType.FlagUsage(d, u)
 }
 
 // ListFlag creates a `FlagInterface` from list argument info.
