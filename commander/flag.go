@@ -548,7 +548,7 @@ func (bf *boolFlag[T]) Complete(input *command.Input, data *command.Data) (*comm
 }
 
 func (bf *boolFlag[T]) Usage(i *command.Input, d *command.Data, u *command.Usage) error {
-	return nil
+	panic("Unexpected BoolFlag.Usage() call")
 }
 
 func (bf *boolFlag[T]) FlagUsage(d *command.Data, u *command.Usage) error {

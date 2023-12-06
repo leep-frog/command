@@ -10328,6 +10328,27 @@ func TestPanics(t *testing.T) {
 			},
 			want: "no operator defined for type *commander.SimpleNode",
 		},
+		{
+			name: "BoolFlag.Usage()",
+			f: func() {
+				BoolFlag("", '_', "").Processor().Usage(nil, nil, nil)
+			},
+			want: "Unexpected BoolFlag.Usage() call",
+		},
+		{
+			name: "OptionalFlag.Usage()",
+			f: func() {
+				OptionalFlag[string]("", '_', "", "").Processor().Usage(nil, nil, nil)
+			},
+			want: "Unexpected OptionalFlag.Usage() call",
+		},
+		{
+			name: "ItemizedListFlag.Usage()",
+			f: func() {
+				ItemizedListFlag[string]("", '_', "").Processor().Usage(nil, nil, nil)
+			},
+			want: "Unexpected ItemizedListFlag.Usage() call",
+		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			testutil.CmpPanic(t, test.name, func() bool { test.f(); return false }, test.want)
