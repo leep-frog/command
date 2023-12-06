@@ -199,6 +199,15 @@ func (i *Input) Pop(d *Data) (string, bool) {
 	return i.PopAt(0, d)
 }
 
+// MustPop runs `Pop` and panics if there isn't at least one value remaining.
+func (i *Input) MustPop(d *Data) string {
+	s, ok := i.Pop(d)
+	if !ok {
+		panic("Tried to pop Input value, but there are none arguments remaining")
+	}
+	return s
+}
+
 func (i *Input) PopAt(offset int, d *Data) (string, bool) {
 	sl, ok := i.PopNAt(offset, 1, 0, nil, d)
 	if !ok {

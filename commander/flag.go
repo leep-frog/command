@@ -279,6 +279,7 @@ func (fn *flagProcessor) Execute(input *command.Input, output command.Output, da
 func (fn *flagProcessor) executeOrUsage(input *command.Input, output command.Output, data *command.Data, eData *command.ExecuteData, u *command.Usage) error {
 	unprocessed := map[string]bool{}
 	processed := map[string]bool{}
+	needsUsage := map[string]bool{}
 	for _, f := range fn.flagMap {
 		unprocessed[f.Name()] = true
 	}
@@ -357,9 +358,7 @@ func (fn *flagProcessor) executeOrUsage(input *command.Input, output command.Out
 					return processErr
 				}
 
-				if err := f.FlagUsage(data, u); err != nil {
-					return err
-				}
+				needsUsage[f.Name()] = true
 				return nil
 			})
 			if err != nil {
@@ -386,7 +385,7 @@ func (fn *flagProcessor) executeOrUsage(input *command.Input, output command.Out
 
 	if u != nil {
 		for _, f := range fn.flagOrder {
-			if !unprocessed[f.Name()] {
+			if !unprocessed[f.Name()] && !needsUsage[f.Name()] {
 				continue
 			}
 
@@ -660,7 +659,7 @@ Make intermediate arg that transforms values into json and then json into struct
 // ItemizedListFlag creates a flag that can be set with separate flags (e.g. `cmd -i value-one -i value-two -b other-flag -i value-three`).
 func ItemizedListFlag[T any](name string, shortName rune, desc string, opts ...ArgumentOption[[]T]) FlagWithType[[]T] {
 	return &itemizedListFlag[T]{
-		FlagWithType: ListFlag(name, shortName, desc, 0, command.UnboundedList, opts...),
+		FlagWithType: ListFlag(name, shortName, desc, 1, command.UnboundedList, opts...),
 	}
 }
 
@@ -701,13 +700,10 @@ func (ilf *itemizedListFlag[T]) Execute(input *command.Input, output command.Out
 }
 
 func (ilf *itemizedListFlag[T]) Complete(input *command.Input, data *command.Data) (*command.Completion, error) {
-	if input.FullyProcessed() {
-		// Don't think it's possible to get here (because the flag Complete function
-		// would complete the flag value ("--ilf") if it was the last value). So,
-		// the input will always have at least one more argument.
-		return nil, nil
-	}
-	s, _ := input.Pop(data)
+	// We don't need to check the `ok` return value because the flag `flagProcessor.Complete` function
+	// would complete the flag value ("--ilf") if it was the last value). So,
+	// the input will always have at least one more argument.
+	s := input.MustPop(data) // ItemizedListFlag only allows one element per flag, hence why we pop once and not a list.
 	ilf.rawArgs = append(ilf.rawArgs, s)
 	if input.FullyProcessed() {
 		c, e := processOrComplete(ilf.FlagWithType.Processor(), command.NewInput(ilf.rawArgs, nil), data)
@@ -721,7 +717,10 @@ func (ilf *itemizedListFlag[T]) Usage(i *command.Input, d *command.Data, u *comm
 }
 
 func (ilf *itemizedListFlag[T]) FlagUsage(d *command.Data, u *command.Usage) error {
-	return ilf.FlagWithType.FlagUsage(d, u)
+	// TODO: Add validators and default (like argument --> shared function to get this)
+	argName := strings.ReplaceAll(strings.ToUpper(ilf.Name()), "-", "_")
+	u.AddFlag(ilf.Name(), ilf.ShortName(), argName, ilf.Desc(), 1, 0)
+	return nil
 }
 
 // ListFlag creates a `FlagInterface` from list argument info.

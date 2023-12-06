@@ -1531,6 +1531,158 @@ func TestUsage(t *testing.T) {
 				}, "\n"),
 			},
 		},
+		// Flag order on not enough args error
+		{
+			name: "Flag order doesn't change if not enough args error for first flag",
+			etc: &commandtest.ExecuteTestCase{
+				Args: []string{"--before"},
+				Node: SerialNodes(
+					FlagProcessor(
+						ListFlag[string]("before", 'b', "before flag", 1, command.UnboundedList),
+						ListFlag[string]("after", 'a', "after flag", 1, 0),
+					),
+					Arg[string]("ARG_1", ""),
+					Arg[string]("ARG_2", ""),
+				),
+				WantStdout: strings.Join([]string{
+					"ARG_1 ARG_2 --before|-b BEFORE [ BEFORE ... ] --after|-a AFTER",
+					"",
+					"Flags:",
+					"  [a] after: after flag",
+					"  [b] before: before flag",
+					"",
+				}, "\n"),
+			},
+			ietc: &spycommandtest.ExecuteTestCase{
+				WantInput: &spycommandtest.SpyInput{
+					Args: []*spycommand.InputArg{
+						{Value: "--after"},
+					},
+				},
+			},
+		},
+		{
+			name: "Flag order doesn't change if not enough args error for second flag",
+			etc: &commandtest.ExecuteTestCase{
+				Args: []string{"--after"},
+				Node: SerialNodes(
+					FlagProcessor(
+						ListFlag[string]("before", 'b', "before flag", 1, command.UnboundedList),
+						ListFlag[string]("after", 'a', "after flag", 1, 0),
+					),
+					Arg[string]("ARG_1", ""),
+					Arg[string]("ARG_2", ""),
+				),
+				WantStdout: strings.Join([]string{
+					"ARG_1 ARG_2 --before|-b BEFORE [ BEFORE ... ] --after|-a AFTER",
+					"",
+					"Flags:",
+					"  [a] after: after flag",
+					"  [b] before: before flag",
+					"",
+				}, "\n"),
+			},
+			ietc: &spycommandtest.ExecuteTestCase{
+				WantInput: &spycommandtest.SpyInput{
+					Args: []*spycommand.InputArg{
+						{Value: "--after"},
+					},
+				},
+			},
+		},
+		// ItemizedListFlag tests
+		{
+			name: "ItemizedListFlag is included in usage",
+			etc: &commandtest.ExecuteTestCase{
+				Node: SerialNodes(
+					FlagProcessor(
+						BoolFlag("first", FlagNoShortName, "un"),
+						ItemizedListFlag[string]("ilf", 'i', "itemized"),
+						Flag[string]("third", '3', "trois"),
+					),
+					Arg[string]("SN", "node for a string"),
+				),
+				WantStdout: strings.Join([]string{
+					"SN --first --ilf|-i ILF --third|-3 THIRD",
+					"",
+					"Arguments:",
+					"  SN: node for a string",
+					"",
+					"Flags:",
+					"      first: un",
+					"  [i] ilf: itemized",
+					"  [3] third: trois",
+					"",
+				}, "\n"),
+			},
+		},
+		{
+			name: "ItemizedListFlag is included in usage if flag provided",
+			etc: &commandtest.ExecuteTestCase{
+				Args: []string{"--ilf"},
+				Node: SerialNodes(
+					FlagProcessor(
+						BoolFlag("first", FlagNoShortName, "un"),
+						ItemizedListFlag[string]("ilf", 'i', "itemized"),
+						Flag[string]("third", '3', "trois"),
+					),
+					Arg[string]("SN", "node for a string"),
+				),
+				WantStdout: strings.Join([]string{
+					"SN --first --ilf|-i ILF --third|-3 THIRD",
+					"",
+					"Arguments:",
+					"  SN: node for a string",
+					"",
+					"Flags:",
+					"      first: un",
+					"  [i] ilf: itemized",
+					"  [3] third: trois",
+					"",
+				}, "\n"),
+			},
+			ietc: &spycommandtest.ExecuteTestCase{
+				WantInput: &spycommandtest.SpyInput{
+					Args: []*spycommand.InputArg{
+						{Value: "--ilf"},
+					},
+				},
+			},
+		},
+		{
+			name: "ItemizedListFlag is not included in usage if flag provided with arg",
+			etc: &commandtest.ExecuteTestCase{
+				Args: []string{"--ilf", "v"},
+				Node: SerialNodes(
+					FlagProcessor(
+						BoolFlag("first", FlagNoShortName, "un"),
+						ItemizedListFlag[string]("ilf", 'i', "itemized"),
+						Flag[string]("third", '3', "trois"),
+					),
+					Arg[string]("SN", "node for a string"),
+				),
+				WantStdout: strings.Join([]string{
+					"SN --first --third|-3 THIRD",
+					"",
+					"Arguments:",
+					"  SN: node for a string",
+					"",
+					"Flags:",
+					"      first: un",
+					"  [3] third: trois",
+					"",
+				}, "\n"),
+			},
+			ietc: &spycommandtest.ExecuteTestCase{
+				WantInput: &spycommandtest.SpyInput{
+					Args: []*spycommand.InputArg{
+						{Value: "--ilf"},
+						{Value: "v"},
+					},
+				},
+			},
+		},
+		// NodeRepeater tests
 		{
 			name: "NodeRepeater usage works for finite optional",
 			etc: &commandtest.ExecuteTestCase{
