@@ -75,7 +75,7 @@ func TestUsage(t *testing.T) {
 				y.AddFlag("flag", 'f', "FFF", "", 1, 0)
 			},
 			want: []string{
-				"--flag|-f",
+				"--flag|-f FFF",
 			},
 		},
 		{
@@ -213,7 +213,7 @@ func TestUsage(t *testing.T) {
 				y.AddFlag("second-flag", constants.FlagNoShortName, "SS", "2nd", 1, 2)
 			},
 			want: []string{
-				"--first-flag|-f --second-flag",
+				"--first-flag|-f FFF --second-flag SS [ SS SS ]",
 				"",
 				"Flags:",
 				"  [f] first-flag: 1st",
@@ -228,11 +228,11 @@ func TestUsage(t *testing.T) {
 				y.AddArg("ARG_1", "arg 1", 1, 0)
 				y.AddFlag("first-flag", 'f', "FFF", "1st", 1, 0)
 				y.AddArg("ARG_2", "arg 2", 1, 0)
-				y.AddFlag("second-flag", constants.FlagNoShortName, "SS", "2nd", 1, 2)
+				y.AddFlag("second-flag", constants.FlagNoShortName, "SS", "2nd", 1, UnboundedList)
 			},
 			want: []string{
 				"Does stuff",
-				"ARG_1 ARG_2 --first-flag|-f --second-flag",
+				"ARG_1 ARG_2 --first-flag|-f FFF --second-flag SS [ SS ... ]",
 				"",
 				"Arguments:",
 				"  ARG_1: arg 1",
@@ -265,15 +265,15 @@ func TestUsage(t *testing.T) {
 				})
 				y.AddFlag("first-flag", constants.FlagNoShortName, "FFF", "1st", 1, 0)
 				y.AddArg("ARG_2", "arg 2", 1, 0)
-				y.AddFlag("second-flag", constants.FlagNoShortName, "SS", "2nd", 1, 2)
+				y.AddFlag("second-flag", constants.FlagNoShortName, "SS", "2nd", 0, 2)
 			},
 			want: []string{
 				`Does stuff`,
-				`ARG_1 ┳ ARG_2 --first-flag --second-flag`,
+				`ARG_1 ┳ ARG_2 --first-flag FFF --second-flag [ SS SS ]`,
 				`┏━━━━━┛`,
 				`┃`,
 				`┃   Branch 1`,
-				`┣━━ --branch-1|-b`,
+				`┣━━ --branch-1|-b B B`,
 				`┃`,
 				`┃   Branch 2`,
 				`┗━━ ARG_B_2 ARG_B_2 [ ARG_B_2 ]`,
@@ -312,7 +312,7 @@ func TestUsage(t *testing.T) {
 				`Does stuff`,
 				`┓`,
 				`┃   Branch 1`,
-				`┣━━ --branch-1|-b`,
+				`┣━━ --branch-1|-b B B`,
 				`┃`,
 				`┃   Branch 2`,
 				`┗━━ ARG_B_2 ARG_B_2 [ ARG_B_2 ]`,
@@ -384,16 +384,16 @@ func TestUsage(t *testing.T) {
 			},
 			want: []string{
 				`Does stuff`,
-				`ARG_1 ┳ ARG_2 --first-flag --second-flag`,
+				`ARG_1 ┳ ARG_2 --first-flag FFF --second-flag SS [ SS SS ]`,
 				`┏━━━━━┛`,
 				`┃`,
 				`┃   Branch 1`,
-				`┣━━━┳ --branch-1|-b`,
+				`┣━━━┳ --branch-1|-b B B`,
 				`┃   ┃`,
 				`┃   ┃   Branch 1.1`,
-				`┃   ┣━━ --branch-1.1`,
+				`┃   ┣━━ --branch-1.1 1_1 [ 1_1 ]`,
 				`┃   ┃`,
-				`┃   ┣━━ --branch-1.2`,
+				`┃   ┣━━ --branch-1.2 1_2 [ 1_2 1_2 ]`,
 				`┃   ┃`,
 				`┃   ┃   Branch 1.3`,
 				`┃   ┗━━ `,
@@ -401,14 +401,14 @@ func TestUsage(t *testing.T) {
 				`┃   Branch 2`,
 				`┣━━━┓`,
 				`┃   ┃   Branch 2.1`,
-				`┃   ┗━━ --ARG_B_2_1`,
+				`┃   ┗━━ --ARG_B_2_1 [ 21 21 ]`,
 				`┃`,
 				`┃   Branch 3`,
 				`┗━━ ARG_B_3 ARG_B_3 ARG_B_3 [ ARG_B_3 ] ┓`,
 				`    ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛`,
 				`    ┃`,
 				`    ┃   Branch 3.1`,
-				`    ┗━━ --ARG_B_3_1`,
+				`    ┗━━ --ARG_B_3_1 [ 31 31 31 ]`,
 				``,
 				`Arguments:`,
 				`  ARG_1: arg 1`,
@@ -478,24 +478,24 @@ func TestUsage(t *testing.T) {
 			},
 			want: []string{
 				`Does stuff`,
-				`ARG_1 ┳ ARG_2 --first-flag --second-flag`,
+				`ARG_1 ┳ ARG_2 --first-flag FFF --second-flag SS [ SS SS ]`,
 				`┏━━━━━┛`,
 				`┃`,
-				`┣━━━┳ --branch-1|-b`,
+				`┣━━━┳ --branch-1|-b B B`,
 				`┃   ┃`,
-				`┃   ┣━━ --branch-1.1`,
+				`┃   ┣━━ --branch-1.1 1_1 [ 1_1 ]`,
 				`┃   ┃`,
-				`┃   ┣━━ --branch-1.2`,
+				`┃   ┣━━ --branch-1.2 1_2 [ 1_2 1_2 ]`,
 				`┃   ┃`,
 				`┃   ┗━━ `,
 				`┃`,
 				`┣━━━┓`,
-				`┃   ┗━━ --ARG_B_2_1`,
+				`┃   ┗━━ --ARG_B_2_1 [ 21 21 ]`,
 				`┃`,
 				`┗━━ ARG_B_3 ARG_B_3 ARG_B_3 [ ARG_B_3 ] ┓`,
 				`    ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛`,
 				`    ┃`,
-				`    ┗━━ --ARG_B_3_1`,
+				`    ┗━━ --ARG_B_3_1 [ 31 31 31 ]`,
 				``,
 				`Arguments:`,
 				`  ARG_1: arg 1`,

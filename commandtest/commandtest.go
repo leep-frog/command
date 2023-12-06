@@ -10,7 +10,6 @@ import (
 
 // Changeable is an interface for commands that can be changed.
 // Note: this is really just using a function from the `sourcerer.CLI` interface.
-// TODO: Move this and ChangeTest to sourcerer package?
 type Changeable interface {
 	// Changed returns whether or not the undelrying command object has changed.
 	Changed() bool

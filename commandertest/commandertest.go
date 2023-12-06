@@ -40,7 +40,9 @@ func ExecuteTest(t *testing.T, etc *commandtest.ExecuteTestCase) {
 	})
 }
 
-// ChangeTest checks if the provided
+// ChangeTest tests if a command object has changed properly. If `want != nil`,
+// then `original.Changed()` should return `true` and `original` should equal `want`.
+// If `want == nil`, then `original.Changed()` should return `false`.
 func ChangeTest[T commandtest.Changeable](t *testing.T, want, got T, opts ...cmp.Option) {
 	t.Helper()
 	spycommandertest.ChangeTest[T](t, want, got, opts...)

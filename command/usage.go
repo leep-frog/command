@@ -108,10 +108,11 @@ func (u *Usage) AddFlag(fullFlag string, shortFlag rune, argName string, descrip
 		description:       description,
 		section:           FlagSection,
 		sectionKey:        sectionKey,
-		// TODO:
-		// usageString: ???
-		// required:    required,
-		// optional:    optional,
+
+		// Flag arguments
+		usageString: &argName,
+		required:    required,
+		optional:    optional,
 	})
 }
 
