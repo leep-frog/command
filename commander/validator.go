@@ -188,30 +188,51 @@ func Length[K any, T Lengthable[K]](length int) *ValidatorOption[T] {
 	}
 }
 
-func fileExists(vName, s string) (os.FileInfo, error) {
+func fileExistanceValidator(vName, s string, shouldExist bool) (os.FileInfo, error) {
 	fi, err := os.Stat(s)
+
 	if os.IsNotExist(err) {
-		return fi, fmt.Errorf("[%s] file %q does not exist", vName, s)
+		if shouldExist {
+			return fi, fmt.Errorf("[%s] file %q does not exist", vName, s)
+		}
+		return fi, nil
 	}
+
 	if err != nil {
 		return fi, fmt.Errorf("[%s] failed to read file %q: %v", vName, s, err)
 	}
-	return fi, nil
+
+	if shouldExist {
+		return fi, nil
+	}
+	return fi, fmt.Errorf("[%s] file %q does exist", vName, s)
 }
 
 // FileExists [`ValidatorOption`] validates the file or directory exists.
 func FileExists() *ValidatorOption[string] {
 	return &ValidatorOption[string]{
 		func(s string, d *command.Data) error {
-			_, err := fileExists("FileExists", s)
+			_, err := fileExistanceValidator("FileExists", s, true)
 			return err
 		},
 		"FileExists()",
 	}
 }
 
+// FileDoesNotExist [`ValidatorOption`] validates the file or directory does not exist.
+// This is useful when you need `Arguments` that create new files or directories.
+func FileDoesNotExist() *ValidatorOption[string] {
+	return &ValidatorOption[string]{
+		func(s string, d *command.Data) error {
+			_, err := fileExistanceValidator("FileDoesNotExist", s, false)
+			return err
+		},
+		"NewFile()",
+	}
+}
+
 func isDir(vName, s string) error {
-	fi, err := fileExists(vName, s)
+	fi, err := fileExistanceValidator(vName, s, true)
 	if err != nil {
 		return err
 	}
@@ -232,7 +253,7 @@ func IsDir() *ValidatorOption[string] {
 }
 
 func isFile(vName, s string) error {
-	fi, err := fileExists(vName, s)
+	fi, err := fileExistanceValidator(vName, s, true)
 	if err != nil {
 		return err
 	}

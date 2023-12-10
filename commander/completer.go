@@ -452,7 +452,10 @@ func getAutofillLetters(laFile string, suggestions []string) (string, bool) {
 	return caseToCompleteWith[:completeUpTo], true
 }
 
-// FileArgument creates an `Argument` processor for a file object.
+// FileArgument creates an `Argument` processor for a file object. The `Argument` returned
+// by this function only relates to existing files (for execution and completion).
+// For more granular control of the specifics, make your own `Arg(...)` with file-relevant
+// `ArgumentOptions` (such as `FileCompleter`, `FileExists`, `IsDir`, `FileTransformer`, etc.)
 func FileArgument(argName, desc string, opts ...ArgumentOption[string]) *Argument[string] {
 
 	// Defaults must go first so they can be overriden by provided opts

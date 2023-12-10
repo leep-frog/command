@@ -2723,7 +2723,7 @@ func TestExecute(t *testing.T) {
 				},
 			},
 		},
-		// FileExists and FilesExist
+		// FileExists, FileDoesNotExist, and FilesExist
 		{
 			name: "FileExists works",
 			etc: &commandtest.ExecuteTestCase{
@@ -2758,6 +2758,47 @@ func TestExecute(t *testing.T) {
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
 				WantIsValidationError: true,
+				WantInput: &spycommandtest.SpyInput{
+					Args: []*spycommand.InputArg{
+						{Value: "execute_test.gone"},
+					},
+				},
+			},
+		},
+		{
+			name: "FileDoesNotExist fails",
+			etc: &commandtest.ExecuteTestCase{
+				Node: &SimpleNode{
+					Processor: Arg[string]("S", testDesc, FileDoesNotExist()),
+				},
+				Args: []string{"execute_test.go"},
+				WantData: &command.Data{Values: map[string]interface{}{
+					"S": "execute_test.go",
+				}},
+				WantErr:    fmt.Errorf(`validation for "S" failed: [FileDoesNotExist] file "execute_test.go" does exist`),
+				WantStderr: "validation for \"S\" failed: [FileDoesNotExist] file \"execute_test.go\" does exist\n",
+			},
+			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsValidationError: true,
+				WantInput: &spycommandtest.SpyInput{
+					Args: []*spycommand.InputArg{
+						{Value: "execute_test.go"},
+					},
+				},
+			},
+		},
+		{
+			name: "FileDoesNotExist works",
+			etc: &commandtest.ExecuteTestCase{
+				Node: &SimpleNode{
+					Processor: Arg[string]("S", testDesc, FileDoesNotExist()),
+				},
+				Args: []string{"execute_test.gone"},
+				WantData: &command.Data{Values: map[string]interface{}{
+					"S": "execute_test.gone",
+				}},
+			},
+			ietc: &spycommandtest.ExecuteTestCase{
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
 						{Value: "execute_test.gone"},
