@@ -191,8 +191,7 @@ type executeShortcut struct {
 }
 
 func (ea *executeShortcut) Usage(i *command.Input, d *command.Data, u *command.Usage) error {
-	// TODO: Update this symbol to [ shortcuts ]
-	u.AddSymbol("*", "Start of new shortcut-able section")
+	u.AddSymbol("{ shortcuts }", "Start of new shortcut-able section. This is usable by providing the `shortcuts` keyword in this position. Run `cmd ... shortcuts --help` for more details")
 	return nil
 }
 

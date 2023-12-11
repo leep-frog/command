@@ -11,10 +11,6 @@ const (
 	UsageBoxRightDown     = "\u250f" // ┏
 	UsageBoxLeftUp        = "\u251b" // ┛
 	UsageBoxLeftDown      = "\u2513" // ┓
-
-	// Description strings
-	ShortcutDesc = "  *: Start of new shortcut-able section"
-	CacheDesc    = "  ^: Start of new cachable section"
 )
 
 var (

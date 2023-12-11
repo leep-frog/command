@@ -9,15 +9,9 @@ import (
 	"github.com/leep-frog/command/command"
 	"github.com/leep-frog/command/commander"
 	"github.com/leep-frog/command/commandtest"
-	"github.com/leep-frog/command/internal/constants"
 	"github.com/leep-frog/command/internal/spycommander"
 	"github.com/leep-frog/command/internal/spycommandertest"
 	"github.com/leep-frog/command/internal/spycommandtest"
-)
-
-const (
-	ShortcutDesc = constants.ShortcutDesc
-	CacheDesc    = constants.CacheDesc
 )
 
 // ExecuteTest runs a command exectuion test against the provided command configuration.

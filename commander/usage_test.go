@@ -7,7 +7,6 @@ import (
 
 	"github.com/leep-frog/command/command"
 	"github.com/leep-frog/command/commandtest"
-	"github.com/leep-frog/command/internal/constants"
 	"github.com/leep-frog/command/internal/spycommand"
 	"github.com/leep-frog/command/internal/spycommandtest"
 )
@@ -292,13 +291,13 @@ func TestUsage(t *testing.T) {
 				)),
 				WantStdout: strings.Join([]string{
 					"command desc",
-					"* [ SARG ... ]",
+					"{ shortcuts } [ SARG ... ]",
 					"",
 					"Arguments:",
 					"  SARG: test desc",
 					"",
 					"Symbols:",
-					constants.ShortcutDesc,
+					"  { shortcuts }: Start of new shortcut-able section. This is usable by providing the `shortcuts` keyword in this position. Run `cmd ... shortcuts --help` for more details",
 					"",
 				}, "\n"),
 			},
@@ -319,7 +318,7 @@ func TestUsage(t *testing.T) {
 					"  SARG: test desc",
 					"",
 					"Symbols:",
-					constants.CacheDesc,
+					"  ^: Start of new cachable section",
 					"",
 				}, "\n"),
 			},
