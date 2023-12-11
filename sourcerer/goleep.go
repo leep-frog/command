@@ -2,7 +2,6 @@ package sourcerer
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -22,7 +21,9 @@ var (
 		"Directory of package to run",
 		commander.IsDir(),
 		&commander.FileCompleter[string]{IgnoreFiles: true},
-		commander.Default(""), // TODO: Should this be a dot?
+		// This can be the empty string (and not `.`). From `exec.Cmd.Dir` field comment (which this is ultimately passed to):
+		// "If Dir is the empty string, Run runs the command in the calling process's current directory"
+		commander.Default(""),
 	)
 	passAlongArgs = commander.ListArg[string]("PASSTHROUGH_ARGS", "Args to pass through to the command", 0, command.UnboundedList)
 )
@@ -51,7 +52,7 @@ func runCommand[T any](d *command.Data, subCmd, cli string, extraArgs []string) 
 // Separate method for testing
 var (
 	getTmpFile = func() (*os.File, error) {
-		return ioutil.TempFile("", "goleep-node-runner")
+		return os.CreateTemp("", "goleep-node-runner")
 	}
 	goleepCLIArg = commander.Arg[string]("CLI", "CLI to use", commander.CompleterFromFunc(func(s string, d *command.Data) (*command.Completion, error) {
 		bc := &commander.ShellCommand[[]string]{
@@ -108,7 +109,7 @@ func (gl *GoLeep) Node() command.Node {
 				return o.Stderrf("failed to run shell script: %v\n", err)
 			}
 
-			b, err := ioutil.ReadFile(f.Name())
+			b, err := os.ReadFile(f.Name())
 			f.Close()
 			if err != nil {
 				return o.Stderrf("failed to read temporary file: %v\n", err)
