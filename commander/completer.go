@@ -83,7 +83,6 @@ func DeferredCompleter[T any](graph command.Node, completer Completer[T]) Comple
 		return &command.Completion{
 			DeferredCompletion: &command.DeferredCompletion{
 				graph,
-				// TODO: Should DeferredCompletion only run if no completion is returned?
 				func(c *command.Completion, d *command.Data) (*command.Completion, error) {
 					return RunArgumentCompleter(completer, t, d)
 				},
