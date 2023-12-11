@@ -2,6 +2,7 @@ package spycommander
 
 import (
 	"github.com/leep-frog/command/command"
+	"github.com/leep-frog/command/internal/spycommand"
 )
 
 // Separate method for testing purposes.
@@ -15,7 +16,7 @@ func Execute(n command.Node, input *command.Input, output command.Output, data *
 		}
 
 		// Panicked due to terminate error
-		if ok, err := command.IsTerminationPanic(r); ok {
+		if ok, err := spycommand.IsTerminationPanic(r); ok {
 			retErr = err
 			return
 		}

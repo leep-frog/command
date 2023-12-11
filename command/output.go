@@ -8,8 +8,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/google/go-cmp/cmp"
 	"github.com/leep-frog/command/glog"
+	"github.com/leep-frog/command/internal/spycommand"
 )
 
 // Output defines methods for writing output.
@@ -138,7 +138,7 @@ func (o *output) Tannotatef(err error, s string, a ...interface{}) {
 }
 
 func (o *output) terminate(err error) {
-	Terminate(err)
+	spycommand.Terminate(err)
 }
 
 func (o *output) writeStderr(s string) error {
@@ -231,38 +231,4 @@ func (ieo *ignoreErrOutput) Err(err error) error {
 	}
 	// Regular output functionality if no filter matched.
 	return ieo.Output.Err(err)
-}
-
-// terminator is a custom type that is passed to panic
-// when running `o.Terminate`
-type terminator struct {
-	terminationError error
-}
-
-func IsTerminationPanic(recovered interface{}) (bool, error) {
-	t, ok := recovered.(*terminator)
-	if !ok {
-		return false, nil
-	}
-	return ok && t.terminationError != nil, t.terminationError
-}
-
-func TerminationErr(err error) *terminator {
-	return &terminator{err}
-}
-
-// TODO: Move this to internal test package
-func TerminationCmpopts() cmp.Option {
-	return cmp.Options([]cmp.Option{
-		cmp.Comparer(func(this, that *terminator) bool {
-			if this == nil || that == nil {
-				return (this == nil) == (that == nil)
-			}
-			return this.terminationError.Error() == that.terminationError.Error()
-		}),
-	})
-}
-
-func Terminate(err error) {
-	panic(TerminationErr(err))
 }

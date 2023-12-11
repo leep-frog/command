@@ -6,6 +6,8 @@
 // as `func (DoInputArgStuff(ia *InputArg, abc)`.
 package spycommand
 
+import "github.com/google/go-cmp/cmp"
+
 type InputSnapshot int
 
 type InputArg struct {
@@ -22,4 +24,45 @@ func SnapshotsMap(iss ...InputSnapshot) map[InputSnapshot]bool {
 		m[is] = true
 	}
 	return m
+}
+
+// Terminator is a custom type that is passed to panic
+// when running `o.Terminate`
+type Terminator struct {
+	TerminationError error
+}
+
+// Terminate terminates the execution (via panic) with a `Terminator` error.
+func Terminate(err error) {
+	if err != nil {
+		panic(TerminationErr(err))
+	}
+}
+
+// IsTerminationPanic determines if the panic was caused by a termination error.
+func IsTerminationPanic(recovered any) (bool, error) {
+	t, ok := recovered.(*Terminator)
+	if !ok {
+		return false, nil
+	}
+	return ok && t.TerminationError != nil, t.TerminationError
+}
+
+func TerminationErr(err error) *Terminator {
+	return &Terminator{err}
+}
+
+// TerminationCmpopts returns a `cmp.Option` for comparing `Terminator` objects.
+func TerminationCmpopts() cmp.Option {
+	return cmp.Options([]cmp.Option{
+		cmp.Comparer(func(this, that *Terminator) bool {
+			if this == nil || that == nil {
+				return (this == nil) == (that == nil)
+			}
+			if this.TerminationError == nil || that.TerminationError == nil {
+				return (this.TerminationError == nil) == (that.TerminationError == nil)
+			}
+			return this.TerminationError.Error() == that.TerminationError.Error()
+		}),
+	})
 }
