@@ -1355,6 +1355,32 @@ func TestShortcutExecute(t *testing.T) {
 				},
 			},
 		},
+		// Usage tests
+		{
+			name: "Usage doc",
+			am: map[string]map[string][]string{
+				"pioneer": {
+					"p":      []string{"polar", "pooh"},
+					"colors": []string{"brown", "abc  defk"},
+					"t":      []string{"teddy"},
+					"g":      []string{"grizzly"},
+				},
+			},
+			etc: &commandtest.ExecuteTestCase{
+				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
+				Args: []string{"--help"},
+				WantStdout: strings.Join([]string{
+					"* sl [ sl sl ]",
+					"",
+					"Arguments:",
+					"  sl: test desc",
+					"",
+					"Symbols:",
+					"  *: Start of new shortcut-able section",
+					"",
+				}, "\n"),
+			},
+		},
 		/* Useful for commenting out tests. */
 	} {
 		t.Run(test.name, func(t *testing.T) {

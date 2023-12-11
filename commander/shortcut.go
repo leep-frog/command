@@ -63,6 +63,7 @@ func setShortcut(sc ShortcutCLI, name, shortcut string, value []string) {
 func shortcutMap(name string, sc ShortcutCLI, n command.Node) map[string]command.Node {
 	adder := SerialNodes(ShortcutArg, &addShortcut{node: n, sc: sc, name: name})
 	return map[string]command.Node{
+		// TODO: Trigger this section by a nested branch `shortcut add; shortcut delete; etc.`
 		"a": adder,
 		"d": shortcutDeleter(name, sc, n),
 		"g": shortcutGetter(name, sc, n),
