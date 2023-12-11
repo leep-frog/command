@@ -21,8 +21,6 @@ import (
 	"golang.org/x/exp/slices"
 )
 
-// TODO: Update FileArgument to allow new files
-
 var (
 	fileArg         = commander.FileArgument("FILE", "Temporary file for execution")
 	targetNameRegex = commander.MatchesRegex("^[a-zA-Z0-9]+$")
