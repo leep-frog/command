@@ -852,6 +852,27 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
+			name: "FileListArgument with Complexecute properly completes a single directory",
+			etc: &commandtest.ExecuteTestCase{
+				Node: SerialNodes(FileListArgument("s", testDesc, 2, 0, Complexecute[[]string]())),
+				Args: []string{"co2test", "te"},
+				WantData: &command.Data{Values: map[string]interface{}{
+					"s": []string{
+						testutil.FilepathAbs(t, "co2test"),
+						testutil.FilepathAbs(t, "testdata"),
+					},
+				}},
+			},
+			ietc: &spycommandtest.ExecuteTestCase{
+				WantInput: &spycommandtest.SpyInput{
+					Args: []*spycommand.InputArg{
+						{Value: testutil.FilepathAbs(t, "co2test")},
+						{Value: testutil.FilepathAbs(t, "testdata")},
+					},
+				},
+			},
+		},
+		{
 			name: "FileCompleter with Complexecute properly completes a full directory",
 			etc: &commandtest.ExecuteTestCase{
 				Node: SerialNodes(FileArgument("s", testDesc, Complexecute[string]())),
