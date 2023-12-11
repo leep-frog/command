@@ -11,7 +11,7 @@ import (
 
 var (
 	// ShortcutArg is the `Arg` used to check for shortcuts.
-	ShortcutArg = Arg[string]("SHORTCUT", "TODO shortcut desc", MinLength[string, string](1))
+	ShortcutArg = Arg[string]("SHORTCUT", "Name of the shortcut", MinLength[string, string](1))
 )
 
 // ShortcutCLI is the interface required for integrating with shortcut nodes.
@@ -60,22 +60,32 @@ func setShortcut(sc ShortcutCLI, name, shortcut string, value []string) {
 	m[shortcut] = value
 }
 
-func shortcutMap(name string, sc ShortcutCLI, n command.Node) map[string]command.Node {
-	adder := SerialNodes(ShortcutArg, &addShortcut{node: n, sc: sc, name: name})
-	return map[string]command.Node{
-		// TODO: Trigger this section by a nested branch `shortcut add; shortcut delete; etc.`
-		"a": adder,
-		"d": shortcutDeleter(name, sc, n),
-		"g": shortcutGetter(name, sc, n),
-		"l": shortcutLister(name, sc, n),
-		"s": shortcutSearcher(name, sc, n),
-	}
-}
-
 // ShortcutNode wraps the provided node with a shortcut node.
 func ShortcutNode(name string, sc ShortcutCLI, n command.Node) command.Node {
+	as := &addShortcut{node: n, sc: sc, name: name}
+	adder := SerialNodes(ShortcutArg, as)
+	shortcutBn := &BranchNode{
+		Branches: map[string]command.Node{
+			"add a":    adder,
+			"delete d": shortcutDeleter(name, sc, n),
+			"get g":    shortcutGetter(name, sc, n),
+			"list l":   shortcutLister(name, sc, n),
+			"search s": shortcutSearcher(name, sc, n),
+		},
+	}
+	as.branchNode = shortcutBn
+
 	executor := SerialNodes(&executeShortcut{node: n, sc: sc, name: name}, n)
-	return &BranchNode{Branches: shortcutMap(name, sc, n), Default: executor, BranchUsageOrder: []string{}, DefaultCompletion: true}
+	return &BranchNode{
+		Branches: map[string]command.Node{
+			"shortcuts": shortcutBn,
+		},
+		// This hides the `shortcuts` branch, but the help doc for it
+		// can still be obtained by running `cmd ... shortcuts --help`.
+		BranchUsageOrder:  []string{},
+		Default:           executor,
+		DefaultCompletion: true,
+	}
 }
 
 func shortcutCompleter(name string, sc ShortcutCLI) Completer[string] {
@@ -92,24 +102,17 @@ func shortcutCompleter(name string, sc ShortcutCLI) Completer[string] {
 
 }
 
-const (
-	hiddenNodeDesc = "hidden_node"
-)
-
 func shortcutListArg(name string, sc ShortcutCLI) command.Processor {
-	return ListArg[string](ShortcutArg.Name(), hiddenNodeDesc, 1, command.UnboundedList, CompleterList(shortcutCompleter(name, sc)))
+	return ListArg[string](ShortcutArg.Name(), ShortcutArg.usageDescription(), 1, command.UnboundedList, CompleterList(shortcutCompleter(name, sc)))
 }
 
 func shortcutSearcher(name string, sc ShortcutCLI, n command.Node) command.Node {
-	regexArg := ListArg[string]("regexp", hiddenNodeDesc, 1, command.UnboundedList, ListifyValidatorOption(IsRegex()))
+	regexArg := ListArg[string]("REGEXP", "Regexp values with which shortcut names will be searched", 1, command.UnboundedList, ListifyValidatorOption(IsRegex()))
 	return SerialNodes(regexArg, &ExecutorProcessor{func(output command.Output, data *command.Data) error {
 		var rs []*regexp.Regexp
-		for _, s := range data.StringList("regexp") {
-			r, err := regexp.Compile(s)
-			if err != nil {
-				return output.Annotate(err, "failed to compile shortcut regexp")
-			}
-			rs = append(rs, r)
+		for _, s := range regexArg.Get(data) {
+			// MustCompile can be used safely because of the `IsRegex()` validator used in the regexpArg definition.
+			rs = append(rs, regexp.MustCompile(s))
 		}
 		var as []string
 		for k, v := range getShortcutMap(sc, name) {
@@ -188,9 +191,8 @@ type executeShortcut struct {
 }
 
 func (ea *executeShortcut) Usage(i *command.Input, d *command.Data, u *command.Usage) error {
+	// TODO: Update this symbol to [ shortcuts ]
 	u.AddSymbol("*", "Start of new shortcut-able section")
-	// TODO: show shortcut subcommands on --help
-	// u.Usage = append(u.Usage, "*")
 	return nil
 }
 
@@ -203,20 +205,24 @@ func (ea *executeShortcut) Complete(input *command.Input, data *command.Data) (*
 }
 
 type addShortcut struct {
-	node command.Node
-	sc   ShortcutCLI
-	name string
+	node       command.Node
+	sc         ShortcutCLI
+	name       string
+	branchNode *BranchNode
 }
 
-func (as *addShortcut) Usage(*command.Input, *command.Data, *command.Usage) error {
+func (as *addShortcut) Usage(i *command.Input, d *command.Data, u *command.Usage) error {
+	u.AddArg("SHORTCUT_VALUE", strings.Join([]string{
+		"These are values that will be added to the shortcut.",
+		"They must follow the same usage pattern as the command.Node passed to the ShortcutNode function.",
+	}, " "), 1, command.UnboundedList)
 	return nil
 }
 
 func (as *addShortcut) Execute(input *command.Input, output command.Output, data *command.Data, _ *command.ExecuteData) error {
 	shortcut := data.String(ShortcutArg.Name())
-	sm := shortcutMap(as.name, as.sc, as.node)
-	if _, ok := sm[shortcut]; ok {
-		return output.Stderrln("cannot create shortcut for reserved value")
+	if as.branchNode.IsBranch(shortcut) {
+		return output.Stderrf("cannot create shortcut for reserved value (%s)\n", shortcut)
 	}
 	if _, ok := getShortcut(as.sc, as.name, shortcut); ok {
 		return output.Stderrf("Shortcut %q already exists\n", shortcut)

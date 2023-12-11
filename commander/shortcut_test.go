@@ -39,10 +39,28 @@ func TestShortcutExecute(t *testing.T) {
 		},
 		// Add shortcut tests.
 		{
-			name: "requires an shortcut value",
+			name: "requires a shortcut branch",
 			etc: &commandtest.ExecuteTestCase{
 				Node:       ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
-				Args:       []string{"a"},
+				Args:       []string{"shortcuts"},
+				WantStderr: "Branching argument must be one of [add a delete d get g list l search s]\n",
+				WantErr:    fmt.Errorf("Branching argument must be one of [add a delete d get g list l search s]"),
+			},
+			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsUsageError:     true,
+				WantIsBranchingError: true,
+				WantInput: &spycommandtest.SpyInput{
+					Args: []*spycommand.InputArg{
+						{Value: "shortcuts"},
+					},
+				},
+			},
+		},
+		{
+			name: "add requires a shortcut value",
+			etc: &commandtest.ExecuteTestCase{
+				Node:       ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
+				Args:       []string{"shortcuts", "a"},
 				WantErr:    fmt.Errorf(`Argument "SHORTCUT" requires at least 1 argument, got 0`),
 				WantStderr: "Argument \"SHORTCUT\" requires at least 1 argument, got 0\n",
 			},
@@ -51,6 +69,7 @@ func TestShortcutExecute(t *testing.T) {
 				WantIsNotEnoughArgsError: true,
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
+						{Value: "shortcuts"},
 						{Value: "a"},
 					},
 				},
@@ -60,7 +79,7 @@ func TestShortcutExecute(t *testing.T) {
 			name: "requires a non-empty shortcut value",
 			etc: &commandtest.ExecuteTestCase{
 				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
-				Args: []string{"a", ""},
+				Args: []string{"shortcuts", "a", ""},
 				WantData: &command.Data{Values: map[string]interface{}{
 					"SHORTCUT": "",
 				}},
@@ -71,6 +90,7 @@ func TestShortcutExecute(t *testing.T) {
 				WantIsValidationError: true,
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
+						{Value: "shortcuts"},
 						{Value: "a"},
 						{},
 					},
@@ -81,21 +101,45 @@ func TestShortcutExecute(t *testing.T) {
 			name: "doesn't override add command",
 			etc: &commandtest.ExecuteTestCase{
 				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
-				Args: []string{"a", "a", "hello"},
+				Args: []string{"shortcuts", "a", "add", "hello"},
 				WantData: &command.Data{Values: map[string]interface{}{
-					"SHORTCUT": "a",
+					"SHORTCUT": "add",
 				}},
-				WantErr:    fmt.Errorf("cannot create shortcut for reserved value"),
-				WantStderr: "cannot create shortcut for reserved value\n",
+				WantErr:    fmt.Errorf("cannot create shortcut for reserved value (add)"),
+				WantStderr: "cannot create shortcut for reserved value (add)\n",
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
+						{Value: "shortcuts"},
+						{Value: "a"},
+						{Value: "add"},
+						{Value: "hello"},
+					},
+					Remaining: []int{3},
+				},
+			},
+		},
+		{
+			name: "doesn't override add command synonym (a)",
+			etc: &commandtest.ExecuteTestCase{
+				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
+				Args: []string{"shortcuts", "a", "a", "hello"},
+				WantData: &command.Data{Values: map[string]interface{}{
+					"SHORTCUT": "a",
+				}},
+				WantErr:    fmt.Errorf("cannot create shortcut for reserved value (a)"),
+				WantStderr: "cannot create shortcut for reserved value (a)\n",
+			},
+			ietc: &spycommandtest.ExecuteTestCase{
+				WantInput: &spycommandtest.SpyInput{
+					Args: []*spycommand.InputArg{
+						{Value: "shortcuts"},
 						{Value: "a"},
 						{Value: "a"},
 						{Value: "hello"},
 					},
-					Remaining: []int{2},
+					Remaining: []int{3},
 				},
 			},
 		},
@@ -103,16 +147,38 @@ func TestShortcutExecute(t *testing.T) {
 			name: "doesn't override delete command",
 			etc: &commandtest.ExecuteTestCase{
 				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
-				Args: []string{"a", "d"},
+				Args: []string{"shortcuts", "a", "delete"},
 				WantData: &command.Data{Values: map[string]interface{}{
-					"SHORTCUT": "d",
+					"SHORTCUT": "delete",
 				}},
-				WantErr:    fmt.Errorf("cannot create shortcut for reserved value"),
-				WantStderr: "cannot create shortcut for reserved value\n",
+				WantErr:    fmt.Errorf("cannot create shortcut for reserved value (delete)"),
+				WantStderr: "cannot create shortcut for reserved value (delete)\n",
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
+						{Value: "shortcuts"},
+						{Value: "a"},
+						{Value: "delete"},
+					},
+				},
+			},
+		},
+		{
+			name: "doesn't override delete command synonym (d)",
+			etc: &commandtest.ExecuteTestCase{
+				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
+				Args: []string{"shortcuts", "a", "d"},
+				WantData: &command.Data{Values: map[string]interface{}{
+					"SHORTCUT": "d",
+				}},
+				WantErr:    fmt.Errorf("cannot create shortcut for reserved value (d)"),
+				WantStderr: "cannot create shortcut for reserved value (d)\n",
+			},
+			ietc: &spycommandtest.ExecuteTestCase{
+				WantInput: &spycommandtest.SpyInput{
+					Args: []*spycommand.InputArg{
+						{Value: "shortcuts"},
 						{Value: "a"},
 						{Value: "d"},
 					},
@@ -137,7 +203,7 @@ func TestShortcutExecute(t *testing.T) {
 					})
 					return nil
 				}, nil), nil)),
-				Args: []string{"a", "b", "c"},
+				Args: []string{"shortcuts", "a", "b", "c"},
 				WantData: &command.Data{Values: map[string]interface{}{
 					"SHORTCUT": "b",
 					"s":        "c",
@@ -147,6 +213,7 @@ func TestShortcutExecute(t *testing.T) {
 				WantInput: &spycommandtest.SpyInput{
 					SnapshotCount: 1,
 					Args: []*spycommand.InputArg{
+						{Value: "shortcuts"},
 						{Value: "a"},
 						{Value: "b"},
 						{Value: "c", Snapshots: spycommand.SnapshotsMap(1)},
@@ -166,7 +233,7 @@ func TestShortcutExecute(t *testing.T) {
 			name: "errors on empty shortcut",
 			etc: &commandtest.ExecuteTestCase{
 				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
-				Args: []string{"a", ""},
+				Args: []string{"shortcuts", "a", ""},
 				WantData: &command.Data{Values: map[string]interface{}{
 					"SHORTCUT": "",
 				}},
@@ -177,6 +244,7 @@ func TestShortcutExecute(t *testing.T) {
 				WantIsValidationError: true,
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
+						{Value: "shortcuts"},
 						{Value: "a"},
 						{Value: ""},
 					},
@@ -187,7 +255,7 @@ func TestShortcutExecute(t *testing.T) {
 			name: "errors on too many values",
 			etc: &commandtest.ExecuteTestCase{
 				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
-				Args: []string{"a", "overload", "five", "four", "three", "two", "one"},
+				Args: []string{"shortcuts", "a", "overload", "five", "four", "three", "two", "one"},
 				WantData: &command.Data{Values: map[string]interface{}{
 					"SHORTCUT": "overload",
 					"sl":       []string{"five", "four", "three"},
@@ -213,6 +281,7 @@ func TestShortcutExecute(t *testing.T) {
 				WantInput: &spycommandtest.SpyInput{
 					SnapshotCount: 1,
 					Args: []*spycommand.InputArg{
+						{Value: "shortcuts"},
 						{Value: "a"},
 						{Value: "overload"},
 						{Value: "five", Snapshots: spycommand.SnapshotsMap(1)},
@@ -221,7 +290,7 @@ func TestShortcutExecute(t *testing.T) {
 						{Value: "two", Snapshots: spycommand.SnapshotsMap(1)},
 						{Value: "one", Snapshots: spycommand.SnapshotsMap(1)},
 					},
-					Remaining: []int{5, 6},
+					Remaining: []int{6, 7},
 				},
 			},
 		},
@@ -229,7 +298,7 @@ func TestShortcutExecute(t *testing.T) {
 			name: "fails to add empty shortcut list",
 			etc: &commandtest.ExecuteTestCase{
 				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
-				Args: []string{"a", "empty"},
+				Args: []string{"shortcuts", "a", "empty"},
 				WantData: &command.Data{Values: map[string]interface{}{
 					"SHORTCUT": "empty",
 				}},
@@ -240,6 +309,7 @@ func TestShortcutExecute(t *testing.T) {
 				WantInput: &spycommandtest.SpyInput{
 					SnapshotCount: 1,
 					Args: []*spycommand.InputArg{
+						{Value: "shortcuts"},
 						{Value: "a"},
 						{Value: "empty"},
 					},
@@ -252,7 +322,7 @@ func TestShortcutExecute(t *testing.T) {
 			name: "adds shortcut list when just enough",
 			etc: &commandtest.ExecuteTestCase{
 				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
-				Args: []string{"a", "bearMinimum", "grizzly"},
+				Args: []string{"shortcuts", "a", "bearMinimum", "grizzly"},
 				WantData: &command.Data{Values: map[string]interface{}{
 					"SHORTCUT": "bearMinimum",
 					"sl":       []string{"grizzly"},
@@ -262,6 +332,7 @@ func TestShortcutExecute(t *testing.T) {
 				WantInput: &spycommandtest.SpyInput{
 					SnapshotCount: 1,
 					Args: []*spycommand.InputArg{
+						{Value: "shortcuts"},
 						{Value: "a"},
 						{Value: "bearMinimum"},
 						{Value: "grizzly", Snapshots: spycommand.SnapshotsMap(1)},
@@ -286,7 +357,7 @@ func TestShortcutExecute(t *testing.T) {
 			},
 			etc: &commandtest.ExecuteTestCase{
 				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
-				Args: []string{"a", "bearMinimum", "grizzly"},
+				Args: []string{"shortcuts", "a", "bearMinimum", "grizzly"},
 				WantData: &command.Data{Values: map[string]interface{}{
 					"SHORTCUT": "bearMinimum",
 				}},
@@ -296,11 +367,12 @@ func TestShortcutExecute(t *testing.T) {
 			ietc: &spycommandtest.ExecuteTestCase{
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
+						{Value: "shortcuts"},
 						{Value: "a"},
 						{Value: "bearMinimum"},
 						{Value: "grizzly"},
 					},
-					Remaining: []int{2},
+					Remaining: []int{3},
 				},
 			},
 		},
@@ -308,7 +380,7 @@ func TestShortcutExecute(t *testing.T) {
 			name: "adds shortcut list when maximum amount",
 			etc: &commandtest.ExecuteTestCase{
 				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
-				Args: []string{"a", "bearMinimum", "grizzly", "teddy", "brown"},
+				Args: []string{"shortcuts", "add", "bearMinimum", "grizzly", "teddy", "brown"},
 				WantData: &command.Data{Values: map[string]interface{}{
 					"SHORTCUT": "bearMinimum",
 					"sl":       []string{"grizzly", "teddy", "brown"},
@@ -318,7 +390,8 @@ func TestShortcutExecute(t *testing.T) {
 				WantInput: &spycommandtest.SpyInput{
 					SnapshotCount: 1,
 					Args: []*spycommand.InputArg{
-						{Value: "a"},
+						{Value: "shortcuts"},
+						{Value: "add"},
 						{Value: "bearMinimum"},
 						{Value: "grizzly", Snapshots: spycommand.SnapshotsMap(1)},
 						{Value: "teddy", Snapshots: spycommand.SnapshotsMap(1)},
@@ -339,7 +412,7 @@ func TestShortcutExecute(t *testing.T) {
 			name: "adds shortcut for multiple nodes",
 			etc: &commandtest.ExecuteTestCase{
 				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2), Arg[int]("i", testDesc), ListArg[float64]("fl", testDesc, 10, 0))),
-				Args: []string{"a", "bearMinimum", "grizzly", "teddy", "brown", "3", "2.2", "-1.1"},
+				Args: []string{"shortcuts", "a", "bearMinimum", "grizzly", "teddy", "brown", "3", "2.2", "-1.1"},
 				WantData: &command.Data{Values: map[string]interface{}{
 					"SHORTCUT": "bearMinimum",
 					"sl":       []string{"grizzly", "teddy", "brown"},
@@ -351,6 +424,7 @@ func TestShortcutExecute(t *testing.T) {
 				WantInput: &spycommandtest.SpyInput{
 					SnapshotCount: 1,
 					Args: []*spycommand.InputArg{
+						{Value: "shortcuts"},
 						{Value: "a"},
 						{Value: "bearMinimum"},
 						{Value: "grizzly", Snapshots: spycommand.SnapshotsMap(1)},
@@ -375,7 +449,7 @@ func TestShortcutExecute(t *testing.T) {
 			name: "adds shortcut when doesn't reach nodes",
 			etc: &commandtest.ExecuteTestCase{
 				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2), Arg[int]("i", testDesc), ListArg[float64]("fl", testDesc, 10, 0))),
-				Args: []string{"a", "bearMinimum", "grizzly"},
+				Args: []string{"shortcuts", "a", "bearMinimum", "grizzly"},
 				WantData: &command.Data{Values: map[string]interface{}{
 					"SHORTCUT": "bearMinimum",
 					"sl":       []string{"grizzly"},
@@ -385,6 +459,7 @@ func TestShortcutExecute(t *testing.T) {
 				WantInput: &spycommandtest.SpyInput{
 					SnapshotCount: 1,
 					Args: []*spycommand.InputArg{
+						{Value: "shortcuts"},
 						{Value: "a"},
 						{Value: "bearMinimum"},
 						{Value: "grizzly", Snapshots: spycommand.SnapshotsMap(1)},
@@ -404,7 +479,7 @@ func TestShortcutExecute(t *testing.T) {
 			name: "adds shortcut for unbounded list",
 			etc: &commandtest.ExecuteTestCase{
 				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, command.UnboundedList), Arg[int]("i", testDesc), ListArg[float64]("fl", testDesc, 10, 0))),
-				Args: []string{"a", "bearMinimum", "grizzly", "teddy", "brown", "3", "2.2", "-1.1"},
+				Args: []string{"shortcuts", "add", "bearMinimum", "grizzly", "teddy", "brown", "3", "2.2", "-1.1"},
 				WantData: &command.Data{Values: map[string]interface{}{
 					"SHORTCUT": "bearMinimum",
 					"sl":       []string{"grizzly", "teddy", "brown", "3", "2.2", "-1.1"},
@@ -414,7 +489,8 @@ func TestShortcutExecute(t *testing.T) {
 				WantInput: &spycommandtest.SpyInput{
 					SnapshotCount: 1,
 					Args: []*spycommand.InputArg{
-						{Value: "a"},
+						{Value: "shortcuts"},
+						{Value: "add"},
 						{Value: "bearMinimum"},
 						{Value: "grizzly", Snapshots: spycommand.SnapshotsMap(1)},
 						{Value: "teddy", Snapshots: spycommand.SnapshotsMap(1)},
@@ -442,7 +518,7 @@ func TestShortcutExecute(t *testing.T) {
 					&Transformer[[]string]{F: func([]string, *command.Data) ([]string, error) {
 						return []string{"papa", "mama", "baby"}, nil
 					}}))),
-				Args: []string{"a", "bearMinimum", "grizzly", "teddy", "brown"},
+				Args: []string{"shortcuts", "a", "bearMinimum", "grizzly", "teddy", "brown"},
 				WantData: &command.Data{Values: map[string]interface{}{
 					"SHORTCUT": "bearMinimum",
 					"sl":       []string{"papa", "mama", "baby"},
@@ -452,6 +528,7 @@ func TestShortcutExecute(t *testing.T) {
 				WantInput: &spycommandtest.SpyInput{
 					SnapshotCount: 1,
 					Args: []*spycommand.InputArg{
+						{Value: "shortcuts"},
 						{Value: "a"},
 						{Value: "bearMinimum"},
 						{Value: "papa", Snapshots: spycommand.SnapshotsMap(1)},
@@ -476,7 +553,7 @@ func TestShortcutExecute(t *testing.T) {
 					&Transformer[[]string]{F: func([]string, *command.Data) ([]string, error) {
 						return nil, fmt.Errorf("bad news bears")
 					}}))),
-				Args: []string{"a", "bearMinimum", "grizzly", "teddy", "brown"},
+				Args: []string{"shortcuts", "a", "bearMinimum", "grizzly", "teddy", "brown"},
 				WantData: &command.Data{Values: map[string]interface{}{
 					"SHORTCUT": "bearMinimum",
 				}},
@@ -487,6 +564,7 @@ func TestShortcutExecute(t *testing.T) {
 				WantInput: &spycommandtest.SpyInput{
 					SnapshotCount: 1,
 					Args: []*spycommand.InputArg{
+						{Value: "shortcuts"},
 						{Value: "a"},
 						{Value: "bearMinimum"},
 						{Value: "grizzly", Snapshots: spycommand.SnapshotsMap(1)},
@@ -544,7 +622,32 @@ func TestShortcutExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "Ignores non-shortcut values",
+			name: "Fails on non-shortcut values",
+			am: map[string]map[string][]string{
+				"pioneer": {
+					"t": []string{"teddy"},
+				},
+			},
+			etc: &commandtest.ExecuteTestCase{
+				Node:       ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
+				Args:       []string{"shortcuts", "tee"},
+				WantStderr: "Branching argument must be one of [add a delete d get g list l search s]\n",
+				WantErr:    fmt.Errorf("Branching argument must be one of [add a delete d get g list l search s]"),
+			},
+			ietc: &spycommandtest.ExecuteTestCase{
+				WantIsBranchingError: true,
+				WantIsUsageError:     true,
+				WantInput: &spycommandtest.SpyInput{
+					Args: []*spycommand.InputArg{
+						{Value: "shortcuts"},
+						{Value: "tee"},
+					},
+					Remaining: []int{1},
+				},
+			},
+		},
+		{
+			name: "Ignores on non-shortcut values",
 			am: map[string]map[string][]string{
 				"pioneer": {
 					"t": []string{"teddy"},
@@ -985,13 +1088,14 @@ func TestShortcutExecute(t *testing.T) {
 			name: "Get shortcut requires argument",
 			etc: &commandtest.ExecuteTestCase{
 				Node:       ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
-				Args:       []string{"g"},
+				Args:       []string{"shortcuts", "g"},
 				WantErr:    fmt.Errorf(`Argument "SHORTCUT" requires at least 1 argument, got 0`),
 				WantStderr: "Argument \"SHORTCUT\" requires at least 1 argument, got 0\n",
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
+						{Value: "shortcuts"},
 						{Value: "g"},
 					},
 				},
@@ -1003,7 +1107,7 @@ func TestShortcutExecute(t *testing.T) {
 			name: "Get shortcut handles missing shortcut type",
 			etc: &commandtest.ExecuteTestCase{
 				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
-				Args: []string{"g", "h"},
+				Args: []string{"shortcuts", "g", "h"},
 				WantData: &command.Data{Values: map[string]interface{}{
 					"SHORTCUT": []string{"h"},
 				}},
@@ -1013,6 +1117,7 @@ func TestShortcutExecute(t *testing.T) {
 			ietc: &spycommandtest.ExecuteTestCase{
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
+						{Value: "shortcuts"},
 						{Value: "g"},
 						{Value: "h"},
 					},
@@ -1032,7 +1137,7 @@ func TestShortcutExecute(t *testing.T) {
 			},
 			etc: &commandtest.ExecuteTestCase{
 				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
-				Args: []string{"g", "h", "i", "j", "k", "l", "m"},
+				Args: []string{"shortcuts", "g", "h", "i", "j", "k", "l", "m"},
 				WantData: &command.Data{Values: map[string]interface{}{
 					"SHORTCUT": []string{"h", "i", "j", "k", "l", "m"},
 				}},
@@ -1052,6 +1157,7 @@ func TestShortcutExecute(t *testing.T) {
 			ietc: &spycommandtest.ExecuteTestCase{
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
+						{Value: "shortcuts"},
 						{Value: "g"},
 						{Value: "h"},
 						{Value: "i"},
@@ -1068,11 +1174,12 @@ func TestShortcutExecute(t *testing.T) {
 			name: "lists shortcut handles unset map",
 			etc: &commandtest.ExecuteTestCase{
 				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
-				Args: []string{"l"},
+				Args: []string{"shortcuts", "l"},
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
+						{Value: "shortcuts"},
 						{Value: "l"},
 					},
 				},
@@ -1091,7 +1198,7 @@ func TestShortcutExecute(t *testing.T) {
 			},
 			etc: &commandtest.ExecuteTestCase{
 				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
-				Args: []string{"l"},
+				Args: []string{"shortcuts", "l"},
 				WantStdout: strings.Join([]string{
 					"h: ",
 					"i: ",
@@ -1104,6 +1211,7 @@ func TestShortcutExecute(t *testing.T) {
 			ietc: &spycommandtest.ExecuteTestCase{
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
+						{Value: "shortcuts"},
 						{Value: "l"},
 					},
 				},
@@ -1114,13 +1222,14 @@ func TestShortcutExecute(t *testing.T) {
 			name: "search shortcut requires argument",
 			etc: &commandtest.ExecuteTestCase{
 				Node:       ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
-				Args:       []string{"s"},
-				WantStderr: "Argument \"regexp\" requires at least 1 argument, got 0\n",
-				WantErr:    fmt.Errorf(`Argument "regexp" requires at least 1 argument, got 0`),
+				Args:       []string{"shortcuts", "s"},
+				WantStderr: "Argument \"REGEXP\" requires at least 1 argument, got 0\n",
+				WantErr:    fmt.Errorf(`Argument "REGEXP" requires at least 1 argument, got 0`),
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
+						{Value: "shortcuts"},
 						{Value: "s"},
 					},
 				},
@@ -1132,16 +1241,17 @@ func TestShortcutExecute(t *testing.T) {
 			name: "search shortcut fails on invalid regexp",
 			etc: &commandtest.ExecuteTestCase{
 				Node:       ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
-				Args:       []string{"s", ":)"},
-				WantStderr: "validation for \"regexp\" failed: [IsRegex] value \":)\" isn't a valid regex: error parsing regexp: unexpected ): `:)`\n",
-				WantErr:    fmt.Errorf("validation for \"regexp\" failed: [IsRegex] value \":)\" isn't a valid regex: error parsing regexp: unexpected ): `:)`"),
+				Args:       []string{"shortcuts", "s", ":)"},
+				WantStderr: "validation for \"REGEXP\" failed: [IsRegex] value \":)\" isn't a valid regex: error parsing regexp: unexpected ): `:)`\n",
+				WantErr:    fmt.Errorf("validation for \"REGEXP\" failed: [IsRegex] value \":)\" isn't a valid regex: error parsing regexp: unexpected ): `:)`"),
 				WantData: &command.Data{Values: map[string]interface{}{
-					"regexp": []string{":)"},
+					"REGEXP": []string{":)"},
 				}},
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
+						{Value: "shortcuts"},
 						{Value: "s"},
 						{Value: ":)"},
 					},
@@ -1165,9 +1275,9 @@ func TestShortcutExecute(t *testing.T) {
 			},
 			etc: &commandtest.ExecuteTestCase{
 				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
-				Args: []string{"s", "ga$"},
+				Args: []string{"shortcuts", "s", "ga$"},
 				WantData: &command.Data{Values: map[string]interface{}{
-					"regexp": []string{"ga$"},
+					"REGEXP": []string{"ga$"},
 				}},
 				WantStdout: strings.Join([]string{
 					"j: bazzinga",
@@ -1178,6 +1288,7 @@ func TestShortcutExecute(t *testing.T) {
 			ietc: &spycommandtest.ExecuteTestCase{
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
+						{Value: "shortcuts"},
 						{Value: "s"},
 						{Value: "ga$"},
 					},
@@ -1200,9 +1311,9 @@ func TestShortcutExecute(t *testing.T) {
 			},
 			etc: &commandtest.ExecuteTestCase{
 				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
-				Args: []string{"s", "a$", "^.: [aeiou]"},
+				Args: []string{"shortcuts", "s", "a$", "^.: [aeiou]"},
 				WantData: &command.Data{Values: map[string]interface{}{
-					"regexp": []string{"a$", "^.: [aeiou]"},
+					"REGEXP": []string{"a$", "^.: [aeiou]"},
 				}},
 				WantStdout: strings.Join([]string{
 					"k: alpha",
@@ -1213,6 +1324,7 @@ func TestShortcutExecute(t *testing.T) {
 			ietc: &spycommandtest.ExecuteTestCase{
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
+						{Value: "shortcuts"},
 						{Value: "s"},
 						{Value: "a$"},
 						{Value: "^.: [aeiou]"},
@@ -1225,13 +1337,14 @@ func TestShortcutExecute(t *testing.T) {
 			name: "Delete requires argument",
 			etc: &commandtest.ExecuteTestCase{
 				Node:       ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
-				Args:       []string{"d"},
+				Args:       []string{"shortcuts", "d"},
 				WantErr:    fmt.Errorf(`Argument "SHORTCUT" requires at least 1 argument, got 0`),
 				WantStderr: "Argument \"SHORTCUT\" requires at least 1 argument, got 0\n",
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
+						{Value: "shortcuts"},
 						{Value: "d"},
 					},
 				},
@@ -1243,7 +1356,7 @@ func TestShortcutExecute(t *testing.T) {
 			name: "Delete returns error if shortcut group does not exist",
 			etc: &commandtest.ExecuteTestCase{
 				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
-				Args: []string{"d", "e"},
+				Args: []string{"shortcuts", "d", "e"},
 				WantData: &command.Data{Values: map[string]interface{}{
 					"SHORTCUT": []string{"e"},
 				}},
@@ -1253,6 +1366,7 @@ func TestShortcutExecute(t *testing.T) {
 			ietc: &spycommandtest.ExecuteTestCase{
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
+						{Value: "shortcuts"},
 						{Value: "d"},
 						{Value: "e"},
 					},
@@ -1268,7 +1382,7 @@ func TestShortcutExecute(t *testing.T) {
 			},
 			etc: &commandtest.ExecuteTestCase{
 				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
-				Args: []string{"d", "tee"},
+				Args: []string{"shortcuts", "d", "tee"},
 				WantData: &command.Data{Values: map[string]interface{}{
 					"SHORTCUT": []string{"tee"},
 				}},
@@ -1277,6 +1391,7 @@ func TestShortcutExecute(t *testing.T) {
 			ietc: &spycommandtest.ExecuteTestCase{
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
+						{Value: "shortcuts"},
 						{Value: "d"},
 						{Value: "tee"},
 					},
@@ -1292,7 +1407,7 @@ func TestShortcutExecute(t *testing.T) {
 			},
 			etc: &commandtest.ExecuteTestCase{
 				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
-				Args: []string{"d", "t"},
+				Args: []string{"shortcuts", "d", "t"},
 				WantData: &command.Data{Values: map[string]interface{}{
 					"SHORTCUT": []string{"t"},
 				}},
@@ -1300,6 +1415,7 @@ func TestShortcutExecute(t *testing.T) {
 			ietc: &spycommandtest.ExecuteTestCase{
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
+						{Value: "shortcuts"},
 						{Value: "d"},
 						{Value: "t"},
 					},
@@ -1324,7 +1440,7 @@ func TestShortcutExecute(t *testing.T) {
 			},
 			etc: &commandtest.ExecuteTestCase{
 				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
-				Args: []string{"d", "t", "penguin", "colors", "bare"},
+				Args: []string{"shortcuts", "d", "t", "penguin", "colors", "bare"},
 				WantData: &command.Data{Values: map[string]interface{}{
 					"SHORTCUT": []string{"t", "penguin", "colors", "bare"},
 				}},
@@ -1337,6 +1453,7 @@ func TestShortcutExecute(t *testing.T) {
 			ietc: &spycommandtest.ExecuteTestCase{
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
+						{Value: "shortcuts"},
 						{Value: "d"},
 						{Value: "t"},
 						{Value: "penguin"},
@@ -1379,6 +1496,48 @@ func TestShortcutExecute(t *testing.T) {
 					"  *: Start of new shortcut-able section",
 					"",
 				}, "\n"),
+			},
+		},
+		{
+			name: "Usage doc for shortcuts",
+			am: map[string]map[string][]string{
+				"pioneer": {
+					"p":      []string{"polar", "pooh"},
+					"colors": []string{"brown", "abc  defk"},
+					"t":      []string{"teddy"},
+					"g":      []string{"grizzly"},
+				},
+			},
+			etc: &commandtest.ExecuteTestCase{
+				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
+				Args: []string{"--help", "shortcuts"},
+				WantStdout: strings.Join([]string{
+					"┓",
+					"┣━━ [add|a] SHORTCUT SHORTCUT_VALUE [ SHORTCUT_VALUE ... ]",
+					"┃",
+					"┣━━ [delete|d] SHORTCUT [ SHORTCUT ... ]",
+					"┃",
+					"┣━━ [get|g] SHORTCUT [ SHORTCUT ... ]",
+					"┃",
+					"┣━━ [list|l]",
+					"┃",
+					"┗━━ [search|s] REGEXP [ REGEXP ... ]",
+					"",
+					"Arguments:",
+					"  REGEXP: Regexp values with which shortcut names will be searched",
+					"    IsRegex()",
+					"  SHORTCUT: Name of the shortcut",
+					"    MinLength(1)",
+					"  SHORTCUT_VALUE: These are values that will be added to the shortcut. They must follow the same usage pattern as the command.Node passed to the ShortcutNode function.",
+					"",
+				}, "\n"),
+			},
+			ietc: &spycommandtest.ExecuteTestCase{
+				WantInput: &spycommandtest.SpyInput{
+					Args: []*spycommand.InputArg{
+						{Value: "shortcuts"},
+					},
+				},
 			},
 		},
 		/* Useful for commenting out tests. */
@@ -1429,7 +1588,7 @@ func TestAliasComplete(t *testing.T) {
 				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2,
 					SimpleCompleter[[]string]("un", "deux", "trois"),
 				))),
-				Args: "cmd a ",
+				Args: "cmd shortcuts a ",
 				WantData: &command.Data{Values: map[string]interface{}{
 					ShortcutArg.Name(): "",
 				}},
@@ -1456,7 +1615,7 @@ func TestAliasComplete(t *testing.T) {
 				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2,
 					SimpleCompleter[[]string]("un", "deux", "trois"),
 				))),
-				Args: "cmd a b ",
+				Args: "cmd shortcuts a b ",
 				WantData: &command.Data{Values: map[string]interface{}{
 					ShortcutArg.Name(): "b",
 					"sl":               []string{""},
@@ -1472,7 +1631,7 @@ func TestAliasComplete(t *testing.T) {
 				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2,
 					SimpleCompleter[[]string]("un", "deux", "trois"),
 				))),
-				Args: "cmd a b ",
+				Args: "cmd shortcuts a b ",
 				WantData: &command.Data{Values: map[string]interface{}{
 					ShortcutArg.Name(): "b",
 					"sl":               []string{""},
@@ -1496,7 +1655,7 @@ func TestAliasComplete(t *testing.T) {
 			},
 			ctc: &commandtest.CompleteTestCase{
 				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
-				Args: "cmd g ",
+				Args: "cmd shortcuts g ",
 				WantData: &command.Data{Values: map[string]interface{}{
 					ShortcutArg.Name(): []string{""},
 				}},
@@ -1518,7 +1677,7 @@ func TestAliasComplete(t *testing.T) {
 			},
 			ctc: &commandtest.CompleteTestCase{
 				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
-				Args: "cmd g b",
+				Args: "cmd shortcuts g b",
 				WantData: &command.Data{Values: map[string]interface{}{
 					ShortcutArg.Name(): []string{"b"},
 				}},
@@ -1540,7 +1699,7 @@ func TestAliasComplete(t *testing.T) {
 			},
 			ctc: &commandtest.CompleteTestCase{
 				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
-				Args: "cmd g alright balloon ",
+				Args: "cmd shortcuts g alright balloon ",
 				WantData: &command.Data{Values: map[string]interface{}{
 					ShortcutArg.Name(): []string{"alright", "balloon", ""},
 				}},
@@ -1563,7 +1722,7 @@ func TestAliasComplete(t *testing.T) {
 			},
 			ctc: &commandtest.CompleteTestCase{
 				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
-				Args: "cmd d ",
+				Args: "cmd shortcuts d ",
 				WantData: &command.Data{Values: map[string]interface{}{
 					ShortcutArg.Name(): []string{""},
 				}},
@@ -1585,7 +1744,7 @@ func TestAliasComplete(t *testing.T) {
 			},
 			ctc: &commandtest.CompleteTestCase{
 				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
-				Args: "cmd d b",
+				Args: "cmd shortcuts d b",
 				WantData: &command.Data{Values: map[string]interface{}{
 					ShortcutArg.Name(): []string{"b"},
 				}},
@@ -1607,7 +1766,7 @@ func TestAliasComplete(t *testing.T) {
 			},
 			ctc: &commandtest.CompleteTestCase{
 				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
-				Args: "cmd d alright balloon ",
+				Args: "cmd shortcuts d alright balloon ",
 				WantData: &command.Data{Values: map[string]interface{}{
 					ShortcutArg.Name(): []string{"alright", "balloon", ""},
 				}},

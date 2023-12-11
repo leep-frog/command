@@ -8890,6 +8890,7 @@ func TestComplete(t *testing.T) {
 						"arg.go",
 						"autocomplete.go",
 						"branch_node.go",
+						"branch_node_test.go",
 						"cache.go",
 						"cache_test.go",
 						filepath.FromSlash("co2test/"),

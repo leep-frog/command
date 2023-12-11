@@ -215,6 +215,16 @@ func (bn *BranchNode) getSyns() map[string]*branchSyn {
 	return nameToSyns
 }
 
+// IsBranch returns whether or not the provided string is a branching value.
+func (bn *BranchNode) IsBranch(s string) bool {
+	for name, bs := range bn.getSyns() {
+		if name == s || slices.Contains(bs.values, s) {
+			return true
+		}
+	}
+	return false
+}
+
 func (bn *BranchNode) Usage(input *command.Input, data *command.Data, u *command.Usage) error {
 	// Don't display usage if a branching argument is provided
 	// if !input.FullyProcessed() {
