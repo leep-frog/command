@@ -509,7 +509,6 @@ func (eae *extraArgsErr) Error() string {
 }
 
 // IsExtraArgs returns whether or not the provided error is an `ExtraArgsErr`.
-// TODO: error.go file.
 func IsExtraArgsError(err error) bool {
 	_, ok := err.(*extraArgsErr)
 	return ok
