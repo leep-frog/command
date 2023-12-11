@@ -12,6 +12,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/leep-frog/command/cache"
+	"github.com/leep-frog/command/cache/cachetest"
 	"github.com/leep-frog/command/command"
 	"github.com/leep-frog/command/commander"
 	"github.com/leep-frog/command/commandertest"
@@ -3075,7 +3076,7 @@ func TestSourcerer(t *testing.T) {
 				}
 
 				// Stub out real cache
-				cash := cache.NewTestCache(t)
+				cash := cachetest.NewTestCache(t)
 				testutil.StubValue(t, &getCache, func() (*cache.Cache, error) {
 					if len(test.cacheErrs) == 0 {
 						return cash, nil

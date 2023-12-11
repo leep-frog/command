@@ -15,6 +15,7 @@ import (
 	"github.com/leep-frog/command/commander"
 	"github.com/leep-frog/command/commandertest"
 	"github.com/leep-frog/command/commandtest"
+	"github.com/leep-frog/command/internal/spycachetest"
 	"github.com/leep-frog/command/internal/stubs"
 	"github.com/leep-frog/command/internal/testutil"
 )
@@ -255,7 +256,7 @@ func TestPut(t *testing.T) {
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			c := NewTestCache(t)
+			c := newTestCache(t)
 
 			prefix := fmt.Sprintf("Put(%s, %s)", test.key, test.data)
 			err := c.Put(test.key, test.data)
@@ -300,7 +301,7 @@ func TestGet(t *testing.T) {
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			// Temporarily change cache dir
-			c := NewTestCache(t)
+			c := newTestCache(t)
 			Put(t, c, "abc", "123\n456\n")
 
 			prefix := fmt.Sprintf("Get(%s)", test.key)
@@ -342,7 +343,7 @@ func Get(t *testing.T, c *Cache, key string) (string, bool) {
 }
 
 func TestDeleteOld(t *testing.T) {
-	c := NewTestCache(t)
+	c := newTestCache(t)
 	key := "qwerty"
 
 	t.Run("Delete works when file doesn't exist", func(t *testing.T) {
@@ -429,7 +430,7 @@ func TestExecute(t *testing.T) {
 	}{
 		{
 			name: "Requires branching arg",
-			c:    NewTestCache(t),
+			c:    newTestCache(t),
 			etc: &commandtest.ExecuteTestCase{
 				WantErr:    fmt.Errorf("Branching argument must be one of [delete get list put setdir]"),
 				WantStderr: "Branching argument must be one of [delete get list put setdir]\n",
@@ -451,7 +452,7 @@ func TestExecute(t *testing.T) {
 		},
 		{
 			name: "Get requires key",
-			c:    NewTestCache(t),
+			c:    newTestCache(t),
 			etc: &commandtest.ExecuteTestCase{
 				Args:       []string{"get"},
 				WantErr:    fmt.Errorf(`Argument "KEY" requires at least 1 argument, got 0`),
@@ -460,7 +461,7 @@ func TestExecute(t *testing.T) {
 		},
 		{
 			name: "Get requires valid key",
-			c:    NewTestCache(t),
+			c:    newTestCache(t),
 			etc: &commandtest.ExecuteTestCase{
 				Args:       []string{"get", ".?,"},
 				WantErr:    fmt.Errorf(`validation for "KEY" failed: [MatchesRegex] value ".?," doesn't match regex %q`, keyRegex),
@@ -469,7 +470,7 @@ func TestExecute(t *testing.T) {
 		},
 		{
 			name: "Get missing key",
-			c:    NewTestCache(t),
+			c:    newTestCache(t),
 			etc: &commandtest.ExecuteTestCase{
 				Args:       []string{"get", "uh"},
 				WantStderr: "key not found\n",
@@ -477,7 +478,7 @@ func TestExecute(t *testing.T) {
 		},
 		{
 			name: "Gets present key key",
-			c:    NewTestCache(t),
+			c:    newTestCache(t),
 			puts: []*put{
 				{
 					key:  "here",
@@ -508,7 +509,7 @@ func TestExecute(t *testing.T) {
 		},
 		{
 			name: "Put requires key",
-			c:    NewTestCache(t),
+			c:    newTestCache(t),
 			etc: &commandtest.ExecuteTestCase{
 				Args:       []string{"put"},
 				WantErr:    fmt.Errorf(`Argument "KEY" requires at least 1 argument, got 0`),
@@ -517,7 +518,7 @@ func TestExecute(t *testing.T) {
 		},
 		{
 			name: "Put requires valid key",
-			c:    NewTestCache(t),
+			c:    newTestCache(t),
 			etc: &commandtest.ExecuteTestCase{
 				Args:       []string{"put", ".?,"},
 				WantErr:    fmt.Errorf(`validation for "KEY" failed: [MatchesRegex] value ".?," doesn't match regex %q`, keyRegex),
@@ -526,7 +527,7 @@ func TestExecute(t *testing.T) {
 		},
 		{
 			name: "Put requires data",
-			c:    NewTestCache(t),
+			c:    newTestCache(t),
 			etc: &commandtest.ExecuteTestCase{
 				Args:       []string{"put", "things"},
 				WantErr:    fmt.Errorf(`Argument "DATA" requires at least 1 argument, got 0`),
@@ -535,7 +536,7 @@ func TestExecute(t *testing.T) {
 		},
 		{
 			name: "Put works",
-			c:    NewTestCache(t),
+			c:    newTestCache(t),
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"put", "things", "better than", "you found them"},
 			},
@@ -545,7 +546,7 @@ func TestExecute(t *testing.T) {
 		},
 		{
 			name: "Put overrides",
-			c:    NewTestCache(t),
+			c:    newTestCache(t),
 			puts: []*put{
 				{"this", "that"},
 				{"things", "worse"},
@@ -576,14 +577,14 @@ func TestExecute(t *testing.T) {
 		},
 		{
 			name: "List works with no data",
-			c:    NewTestCache(t),
+			c:    newTestCache(t),
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"list"},
 			},
 		},
 		{
 			name: "List works with data",
-			c:    NewTestCache(t),
+			c:    newTestCache(t),
 			puts: []*put{
 				{"this", "that"},
 				{"things", "better than you found them"},
@@ -602,7 +603,7 @@ func TestExecute(t *testing.T) {
 		// Delete tests
 		{
 			name: "Delete requires key",
-			c:    NewTestCache(t),
+			c:    newTestCache(t),
 			etc: &commandtest.ExecuteTestCase{
 				Args:       []string{"delete"},
 				WantErr:    fmt.Errorf(`Argument "KEY" requires at least 1 argument, got 0`),
@@ -611,7 +612,7 @@ func TestExecute(t *testing.T) {
 		},
 		{
 			name: "Delete requires valid key",
-			c:    NewTestCache(t),
+			c:    newTestCache(t),
 			etc: &commandtest.ExecuteTestCase{
 				Args:       []string{"delete", ".?,"},
 				WantErr:    fmt.Errorf(`validation for "KEY" failed: [MatchesRegex] value ".?," doesn't match regex %q`, keyRegex),
@@ -620,14 +621,14 @@ func TestExecute(t *testing.T) {
 		},
 		{
 			name: "Delete non-existant key",
-			c:    NewTestCache(t),
+			c:    newTestCache(t),
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"delete", "uh"},
 			},
 		},
 		{
 			name: "Delete key",
-			c:    NewTestCache(t),
+			c:    newTestCache(t),
 			puts: []*put{
 				{"this", "that"},
 				{"things", "worse than you found them"},
@@ -644,7 +645,7 @@ func TestExecute(t *testing.T) {
 		// setdir tests
 		{
 			name: "setdir requires an argument",
-			c:    NewTestCache(t),
+			c:    newTestCache(t),
 			etc: &commandtest.ExecuteTestCase{
 				Args:       []string{"setdir"},
 				WantErr:    fmt.Errorf(`Argument "DIR" requires at least 1 argument, got 0`),
@@ -653,7 +654,7 @@ func TestExecute(t *testing.T) {
 		},
 		{
 			name: "setdir requires an existing file",
-			c:    NewTestCache(t),
+			c:    newTestCache(t),
 			etc: &commandtest.ExecuteTestCase{
 				Args:       []string{"setdir", "uh"},
 				WantErr:    fmt.Errorf("validation for \"DIR\" failed: [FileExists] file %q does not exist", testutil.FilepathAbs(t, "uh")),
@@ -662,7 +663,7 @@ func TestExecute(t *testing.T) {
 		},
 		{
 			name: "setdir doesn't allow files",
-			c:    NewTestCache(t),
+			c:    newTestCache(t),
 			etc: &commandtest.ExecuteTestCase{
 				Args:       []string{"setdir", "cache.go"},
 				WantErr:    fmt.Errorf("validation for \"DIR\" failed: [IsDir] argument %q is a file", testutil.FilepathAbs(t, "cache.go")),
@@ -671,7 +672,7 @@ func TestExecute(t *testing.T) {
 		},
 		{
 			name: "setdir works",
-			c:    NewTestCache(t),
+			c:    newTestCache(t),
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"setdir", "testing"},
 			},
@@ -766,7 +767,7 @@ func TestCompletion(t *testing.T) {
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			c := NewTestCache(t)
+			c := newTestCache(t)
 			for _, p := range test.puts {
 				Put(t, c, p.key, p.data)
 			}
@@ -782,7 +783,7 @@ func TestCompletion(t *testing.T) {
 
 func TestGetStruct(t *testing.T) {
 	key := "key"
-	c := NewTestCache(t)
+	c := newTestCache(t)
 	val := &testStruct{
 		A: 1,
 		B: "two",
@@ -1064,7 +1065,7 @@ func TestPutStruct(t *testing.T) {
 			for _, osOp := range test.osOps {
 				osOp.setup(t)
 			}
-			c := NewTestCache(t)
+			c := newTestCache(t)
 			if test.stubCacheDir != "" {
 				c = &Cache{Dir: test.stubCacheDir}
 			}
@@ -1171,7 +1172,7 @@ func TestNewTestCacheWithData(t *testing.T) {
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			c := NewTestCacheWithData(t, test.data)
+			c := newTestCacheWithData(t, test.data)
 			if test.t != nil {
 				test.t(t, c)
 			}
@@ -1454,3 +1455,21 @@ var (
 	fakeFileType = &fakeFileInfo{}
 	fakeDirType  = &fakeFileInfo{true}
 )
+
+func makeCache(dir string) *Cache {
+	return &Cache{Dir: dir}
+}
+
+// newTestCache just copies newTestCache (which is the function
+// that should be used by all other packages).
+func newTestCache(t *testing.T) *Cache {
+	t.Helper()
+	return spycachetest.NewTestCache[*Cache](t, makeCache)
+}
+
+// newTestCacheWithData just copies newTestCacheWithData (which is the function
+// that should be used by all other packages).
+func newTestCacheWithData(t *testing.T, m map[string]interface{}) *Cache {
+	t.Helper()
+	return spycachetest.NewTestCacheWithData[*Cache](t, m, makeCache)
+}
