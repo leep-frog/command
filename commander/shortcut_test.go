@@ -1776,6 +1776,103 @@ func TestShortcutExecute(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "Shortcut addition works when ending in flag optional values",
+			am: map[string]map[string][]string{
+				"pioneer": {
+					"p":      []string{"polar", "pooh"},
+					"colors": []string{"brown", "abc  defk"},
+					"t":      []string{"teddy"},
+					"g":      []string{"grizzly"},
+				},
+			},
+			wantAC: &simpleShortcutCLIT{
+				changed: true,
+				mp: map[string]map[string][]string{
+					"pioneer": {
+						"p":       []string{"polar", "pooh"},
+						"colors":  []string{"brown", "abc  defk"},
+						"in-flag": []string{"hello", "--some-flag", "there"},
+						"t":       []string{"teddy"},
+						"g":       []string{"grizzly"},
+					},
+				},
+			},
+			etc: &commandtest.ExecuteTestCase{
+				Node: ShortcutNode("pioneer", sc, SerialNodes(
+					FlagProcessor(
+						ListFlag[string]("some-flag", 'f', "desc", 1, 1),
+					),
+					ListArg[string]("sl", testDesc, 1, 2),
+				)),
+				Args: []string{"shortcuts", "add", "in-flag", "hello", "--some-flag", "there"},
+				WantData: &command.Data{Values: map[string]interface{}{
+					"SHORTCUT":  "in-flag",
+					"sl":        []string{"hello"},
+					"some-flag": []string{"there"},
+				}},
+			},
+			ietc: &spycommandtest.ExecuteTestCase{
+				WantInput: &spycommandtest.SpyInput{
+					Args: []*spycommand.InputArg{
+						{Value: "shortcuts"},
+						{Value: "add"},
+						{Value: "in-flag"},
+						{
+							Value: "hello",
+							Snapshots: map[spycommand.InputSnapshot]bool{
+								1: true,
+							},
+						},
+						{
+							Value: "--some-flag",
+							Snapshots: map[spycommand.InputSnapshot]bool{
+								1: true,
+							},
+						},
+						{
+							Value: "there",
+							Snapshots: map[spycommand.InputSnapshot]bool{
+								1: true,
+							},
+						},
+					},
+					SnapshotCount: 1,
+				},
+			},
+		},
+		{
+			name: "Shortcut execution with optional arg positioning",
+			am: map[string]map[string][]string{
+				"pioneer": {
+					"in-flag": []string{"_hello_", "--some-flag", "THERE"},
+				},
+			},
+			etc: &commandtest.ExecuteTestCase{
+				Node: ShortcutNode("pioneer", sc, SerialNodes(
+					FlagProcessor(
+						ListFlag[string]("some-flag", 'f', "desc", 1, 1),
+					),
+					ListArg[string]("sl", testDesc, 1, 2),
+				)),
+				Args: []string{"in-flag", "should-be-in-flag", "should-be-in-arg"},
+				WantData: &command.Data{Values: map[string]interface{}{
+					"sl":        []string{"_hello_", "should-be-in-arg"},
+					"some-flag": []string{"THERE", "should-be-in-flag"},
+				}},
+			},
+			ietc: &spycommandtest.ExecuteTestCase{
+				WantInput: &spycommandtest.SpyInput{
+					Args: []*spycommand.InputArg{
+						{Value: "_hello_"},
+						{Value: "--some-flag"},
+						{Value: "THERE"},
+						{Value: "should-be-in-flag"},
+						{Value: "should-be-in-arg"},
+					},
+				},
+			},
+		},
 		/* Useful for commenting out tests. */
 	} {
 		t.Run(test.name, func(t *testing.T) {
