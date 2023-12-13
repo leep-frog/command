@@ -12,18 +12,20 @@ var (
 	RelevantPackages = []string{
 		"cd",
 		"command",
-		"differ",
-		"emacs",
+		"computer-setup",
+		// "differ",
+		// "emacs",
 		"gocli",
 		"grep",
-		"labelmaker",
-		"notification",
-		"pdf",
+		// "labelmaker",
+		// "notification",
+		// "pdf",
 		"replace",
-		"ssh",
+
+		// "ssh",
 		"sourcecontrol",
-		"todo",
-		"workspace",
+		// "todo",
+		// "workspace",
 	}
 )
 
