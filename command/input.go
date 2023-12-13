@@ -5,6 +5,7 @@ import (
 
 	"github.com/leep-frog/command/internal/spycommand"
 	"github.com/leep-frog/command/internal/spyinput"
+	"golang.org/x/exp/maps"
 )
 
 const (
@@ -144,34 +145,25 @@ func (i *Input) PushFrontAt(atOffset int, sl ...string) {
 		// Update remaining.
 		startIdx := len(i.si.Args)
 		var snapshots map[spycommand.InputSnapshot]bool
-		if len(i.si.Remaining) > 0 && i.si.Offset < len(i.si.Remaining) {
-			startIdx = i.si.Remaining[i.si.Offset]
 
-			if len(i.si.Args[startIdx].Snapshots) > 0 {
-				snapshots = map[spycommand.InputSnapshot]bool{}
-				for s := range i.si.Args[startIdx].Snapshots {
-					snapshots[s] = true
-				}
-			}
+		// Add snapshots to new values being added
+		if i.NumRemaining() > 0 {
+			startIdx = i.si.Remaining[i.si.Offset]
+			snapshots = i.si.Args[startIdx].Snapshots
 		}
 
 		ial := make([]*spycommand.InputArg, len(sl))
 		for j := 0; j < len(sl); j++ {
-			var sCopy map[spycommand.InputSnapshot]bool
-			if snapshots != nil {
-				sCopy = map[spycommand.InputSnapshot]bool{}
-				for s := range snapshots {
-					sCopy[s] = true
-				}
-			}
-
 			ial[j] = &spycommand.InputArg{
 				Value:     sl[j],
-				Snapshots: sCopy,
+				Snapshots: maps.Clone(snapshots),
 			}
 		}
+
+		// Update args array
 		i.si.Args = append(i.si.Args[:startIdx], append(ial, i.si.Args[startIdx:]...)...)
-		// increment all remaining after offset.
+
+		// Increment all remaining after offset.
 		for j := i.si.Offset; j < len(i.si.Remaining); j++ {
 			i.si.Remaining[j] += len(sl)
 		}
