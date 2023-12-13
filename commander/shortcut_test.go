@@ -1540,6 +1540,63 @@ func TestShortcutExecute(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "Shortcut works when args are added",
+			wantAC: &simpleShortcutCLIT{
+				changed: true,
+				mp: map[string]map[string][]string{
+					"pioneer": {
+						"new-sc": []string{"ABC", "IN", "THE", "MIDDLE", "DEF"},
+					},
+				},
+			},
+			etc: &commandtest.ExecuteTestCase{
+				Node: SerialNodes(
+					ShortcutNode("pioneer", sc, SerialNodes(
+						SuperSimpleProcessor(func(i *command.Input, d *command.Data) error {
+							i.PushFrontAt(1, "in", "the", "middle")
+							return nil
+						}),
+						ListArg[string]("sl", testDesc, 3, 4, UpperCaseTransformer()),
+					)),
+				),
+				Args: []string{"shortcuts", "add", "new-sc", "abc", "def"},
+				WantData: &command.Data{Values: map[string]interface{}{
+					"SHORTCUT": "new-sc",
+					"sl":       []string{"ABC", "IN", "THE", "MIDDLE", "DEF"},
+				}},
+			},
+			ietc: &spycommandtest.ExecuteTestCase{
+				WantInput: &spycommandtest.SpyInput{
+					Args: []*spycommand.InputArg{
+						{Value: "shortcuts"},
+						{Value: "add"},
+						{Value: "new-sc"},
+						{
+							Value:     "ABC",
+							Snapshots: map[spycommand.InputSnapshot]bool{1: true},
+						},
+						{
+							Value:     "IN",
+							Snapshots: map[spycommand.InputSnapshot]bool{1: true},
+						},
+						{
+							Value:     "THE",
+							Snapshots: map[spycommand.InputSnapshot]bool{1: true},
+						},
+						{
+							Value:     "MIDDLE",
+							Snapshots: map[spycommand.InputSnapshot]bool{1: true},
+						},
+						{
+							Value:     "DEF",
+							Snapshots: map[spycommand.InputSnapshot]bool{1: true},
+						},
+					},
+					SnapshotCount: 1,
+				},
+			},
+		},
 		// Shortcut tests when ending in the middle of flag args
 		{
 			name: "Shortcut works when ending with flag requiring values",

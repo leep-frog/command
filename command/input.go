@@ -472,7 +472,6 @@ func (it *InputTransformer) Transform(input *Input, output Output, data *Data, c
 		if len(sl) == 0 {
 			return fmt.Errorf("InputTransformer returned an empty list")
 		}
-		// TODO: Inserted args should be added to the input snapshot
 		end := len(sl) - 1
 		input.get(j).Value = sl[end]
 		input.PushFrontAt(j, sl[:end]...)
