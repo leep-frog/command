@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/leep-frog/command/color"
 	"github.com/leep-frog/command/internal/spycommand"
 	"github.com/leep-frog/command/internal/testutil"
 )
@@ -227,6 +228,29 @@ func TestOutput(t *testing.T) {
 				return o.Err(fmt.Errorf("e"))
 			},
 			wantPanic: spycommand.TerminationErr(fmt.Errorf("whoops")),
+		},
+		// Color tests
+		{
+			name: "output.Color works",
+			f: func(o Output) error {
+				o.Stdout("one")
+				o.Color(color.Blue)
+				o.Stdoutln("two")
+				return nil
+			},
+			wantStdout: "one\033[34mtwo\n",
+		},
+		{
+			name: "output.Colerr works",
+			f: func(o Output) error {
+				o.Stderrln("first")
+				o.Colerr(color.Bold, color.Underline, color.Magenta)
+				o.Err(fmt.Errorf("second"))
+				o.Colerr(color.Reset)
+				o.Stderr("third")
+				return nil
+			},
+			wantStderr: "first\n\033[1;4;35msecond\n\033[0mthird",
 		},
 		/* Useful for commenting out tests. */
 	} {

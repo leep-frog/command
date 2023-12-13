@@ -45,7 +45,7 @@ type Format interface {
 	// fmt.Println("After tput")
 	// ```
 	tputArgs() [][]string
-	// OutputCode is the string to send to output to activate the desired format.
+	// OutputCodes is the list of codes to use in the output string to activate the desired format.
 	outputCodes() []int
 }
 

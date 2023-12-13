@@ -8,6 +8,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/leep-frog/command/color"
 	"github.com/leep-frog/command/glog"
 	"github.com/leep-frog/command/internal/spycommand"
 )
@@ -42,6 +43,10 @@ type Output interface {
 	Tannotatef(error, string, ...interface{})
 	// Close informs the os that no more data will be written.
 	Close()
+	// Color changes the format of stdout to the provided formats.
+	Color(fs ...color.Format)
+	// Colerr (color + err hehe) changes the format of stderr to the provided formats.
+	Colerr(fs ...color.Format)
 }
 
 type outputWriter struct {
@@ -75,6 +80,14 @@ type output struct {
 	stderrChan chan string
 	wg         *sync.WaitGroup
 	termErr    error
+}
+
+func (o *output) Color(fs ...color.Format) {
+	o.Stdout(color.OutputCode(fs...))
+}
+
+func (o *output) Colerr(fs ...color.Format) {
+	o.Stderr(color.OutputCode(fs...))
 }
 
 func (o *output) Stdout(s string) {
