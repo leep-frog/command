@@ -1510,7 +1510,7 @@ func TestShortcutExecute(t *testing.T) {
 			},
 			etc: &commandtest.ExecuteTestCase{
 				Node: ShortcutNode("pioneer", sc, SerialNodes(ListArg[string]("sl", testDesc, 1, 2))),
-				Args: []string{"--help", "shortcuts"},
+				Args: []string{"shortcuts", "--help"},
 				WantStdout: strings.Join([]string{
 					"┓",
 					"┣━━ [add|a] SHORTCUT SHORTCUT_VALUE [ SHORTCUT_VALUE ... ]",
@@ -1536,6 +1536,239 @@ func TestShortcutExecute(t *testing.T) {
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
 						{Value: "shortcuts"},
+					},
+				},
+			},
+		},
+		// Add with flag end
+		{
+			name: "Shortcut works when ending with flag requiring values",
+			am: map[string]map[string][]string{
+				"pioneer": {
+					"p":      []string{"polar", "pooh"},
+					"colors": []string{"brown", "abc  defk"},
+					"t":      []string{"teddy"},
+					"g":      []string{"grizzly"},
+				},
+			},
+			wantAC: &simpleShortcutCLIT{
+				changed: true,
+				mp: map[string]map[string][]string{
+					"pioneer": {
+						"p":       []string{"polar", "pooh"},
+						"colors":  []string{"brown", "abc  defk"},
+						"in-flag": []string{"hello", "--some-flag"},
+						"t":       []string{"teddy"},
+						"g":       []string{"grizzly"},
+					},
+				},
+			},
+			etc: &commandtest.ExecuteTestCase{
+				Node: ShortcutNode("pioneer", sc, SerialNodes(
+					FlagProcessor(
+						ListFlag[string]("some-flag", 'f', "desc", 2, 0),
+					),
+					ListArg[string]("sl", testDesc, 1, 2),
+				)),
+				Args: []string{"shortcuts", "add", "in-flag", "hello", "--some-flag"},
+				WantData: &command.Data{Values: map[string]interface{}{
+					"SHORTCUT": "in-flag",
+					"sl":       []string{"hello"},
+				}},
+			},
+			ietc: &spycommandtest.ExecuteTestCase{
+				WantInput: &spycommandtest.SpyInput{
+					Args: []*spycommand.InputArg{
+						{Value: "shortcuts"},
+						{Value: "add"},
+						{Value: "in-flag"},
+						{
+							Value: "hello",
+							Snapshots: map[spycommand.InputSnapshot]bool{
+								1: true,
+							},
+						},
+						{
+							Value: "--some-flag",
+							Snapshots: map[spycommand.InputSnapshot]bool{
+								1: true,
+							},
+						},
+					},
+					SnapshotCount: 1,
+				},
+			},
+		},
+		{
+			name: "Shortcut works when ending with flag requiring values with some values",
+			am: map[string]map[string][]string{
+				"pioneer": {
+					"p":      []string{"polar", "pooh"},
+					"colors": []string{"brown", "abc  defk"},
+					"t":      []string{"teddy"},
+					"g":      []string{"grizzly"},
+				},
+			},
+			wantAC: &simpleShortcutCLIT{
+				changed: true,
+				mp: map[string]map[string][]string{
+					"pioneer": {
+						"p":       []string{"polar", "pooh"},
+						"colors":  []string{"brown", "abc  defk"},
+						"in-flag": []string{"hello", "--some-flag", "there"},
+						"t":       []string{"teddy"},
+						"g":       []string{"grizzly"},
+					},
+				},
+			},
+			etc: &commandtest.ExecuteTestCase{
+				Node: ShortcutNode("pioneer", sc, SerialNodes(
+					FlagProcessor(
+						ListFlag[string]("some-flag", 'f', "desc", 2, 0),
+					),
+					ListArg[string]("sl", testDesc, 1, 2),
+				)),
+				Args: []string{"shortcuts", "add", "in-flag", "hello", "--some-flag", "there"},
+				WantData: &command.Data{Values: map[string]interface{}{
+					"SHORTCUT":  "in-flag",
+					"sl":        []string{"hello"},
+					"some-flag": []string{"there"},
+				}},
+			},
+			ietc: &spycommandtest.ExecuteTestCase{
+				WantInput: &spycommandtest.SpyInput{
+					Args: []*spycommand.InputArg{
+						{Value: "shortcuts"},
+						{Value: "add"},
+						{Value: "in-flag"},
+						{
+							Value: "hello",
+							Snapshots: map[spycommand.InputSnapshot]bool{
+								1: true,
+							},
+						},
+						{
+							Value: "--some-flag",
+							Snapshots: map[spycommand.InputSnapshot]bool{
+								1: true,
+							},
+						},
+						{
+							Value: "there",
+							Snapshots: map[spycommand.InputSnapshot]bool{
+								1: true,
+							},
+						},
+					},
+					SnapshotCount: 1,
+				},
+			},
+		},
+		{
+			name: "Shortcut works when ending with flag requiring values with some values and transformers",
+			am: map[string]map[string][]string{
+				"pioneer": {
+					"p":      []string{"polar", "pooh"},
+					"colors": []string{"brown", "abc  defk"},
+					"t":      []string{"teddy"},
+					"g":      []string{"grizzly"},
+				},
+			},
+			wantAC: &simpleShortcutCLIT{
+				changed: true,
+				mp: map[string]map[string][]string{
+					"pioneer": {
+						"p":       []string{"polar", "pooh"},
+						"colors":  []string{"brown", "abc  defk"},
+						"in-flag": []string{"_hello_", "--some-flag", "THERE"},
+						"t":       []string{"teddy"},
+						"g":       []string{"grizzly"},
+					},
+				},
+			},
+			etc: &commandtest.ExecuteTestCase{
+				Node: ShortcutNode("pioneer", sc, SerialNodes(
+					FlagProcessor(
+						ListFlag[string]("some-flag", 'f', "desc", 2, 0, UpperCaseTransformer()),
+					),
+					ListArg[string]("sl", testDesc, 1, 2, &Transformer[[]string]{func(ss []string, d *command.Data) ([]string, error) {
+						var r []string
+						for _, s := range ss {
+							r = append(r, fmt.Sprintf("_%s_", s))
+						}
+						return r, nil
+					}}),
+				)),
+				Args: []string{"shortcuts", "add", "in-flag", "hello", "--some-flag", "there"},
+				WantData: &command.Data{Values: map[string]interface{}{
+					"SHORTCUT":  "in-flag",
+					"sl":        []string{"_hello_"},
+					"some-flag": []string{"THERE"},
+				}},
+			},
+			ietc: &spycommandtest.ExecuteTestCase{
+				WantInput: &spycommandtest.SpyInput{
+					Args: []*spycommand.InputArg{
+						{Value: "shortcuts"},
+						{Value: "add"},
+						{Value: "in-flag"},
+						{
+							Value: "_hello_",
+							Snapshots: map[spycommand.InputSnapshot]bool{
+								1: true,
+							},
+						},
+						{
+							Value: "--some-flag",
+							Snapshots: map[spycommand.InputSnapshot]bool{
+								1: true,
+							},
+						},
+						{
+							Value: "THERE",
+							Snapshots: map[spycommand.InputSnapshot]bool{
+								1: true,
+							},
+						},
+					},
+					SnapshotCount: 1,
+				},
+			},
+		},
+		{
+			name: "Shortcut works when using a shortcut that stopped in the middle of a flag",
+			am: map[string]map[string][]string{
+				"pioneer": {
+					"in-flag": []string{"_hello_", "--some-flag", "THERE"},
+				},
+			},
+			etc: &commandtest.ExecuteTestCase{
+				Node: ShortcutNode("pioneer", sc, SerialNodes(
+					FlagProcessor(
+						ListFlag[string]("some-flag", 'f', "desc", 2, 0, UpperCaseTransformer()),
+					),
+					ListArg[string]("sl", testDesc, 1, 2, &Transformer[[]string]{func(ss []string, d *command.Data) ([]string, error) {
+						var r []string
+						for _, s := range ss {
+							r = append(r, fmt.Sprintf("_%s_", s))
+						}
+						return r, nil
+					}}),
+				)),
+				Args: []string{"in-flag", "should-be-in-flag", "should-be-in-arg"},
+				WantData: &command.Data{Values: map[string]interface{}{
+					"sl":        []string{"__hello__", "_should-be-in-arg_"},
+					"some-flag": []string{"THERE", "SHOULD-BE-IN-FLAG"},
+				}},
+			},
+			ietc: &spycommandtest.ExecuteTestCase{
+				WantInput: &spycommandtest.SpyInput{
+					Args: []*spycommand.InputArg{
+						{Value: "__hello__"},
+						{Value: "--some-flag"},
+						{Value: "THERE"},
+						{Value: "SHOULD-BE-IN-FLAG"},
+						{Value: "_should-be-in-arg_"},
 					},
 				},
 			},

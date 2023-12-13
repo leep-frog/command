@@ -16,6 +16,7 @@ func execute(n command.Node, input *command.Input, output command.Output, data *
 	return eData, spycommander.Execute(n, input, output, data, eData)
 }
 
+// TODO: Remove these intermediate functions and just call spycommander functions directly in all call sites.
 // processOrExecute checks if the provided processor is a `command.Node` or just a `command.Processor`
 // and traverses the subgraph or executes the processor accordingly.
 func processOrExecute(p command.Processor, input *command.Input, output command.Output, data *command.Data, eData *command.ExecuteData) error {
@@ -23,6 +24,6 @@ func processOrExecute(p command.Processor, input *command.Input, output command.
 }
 
 // processGraphExecution processes the provided graph
-func processGraphExecution(root command.Node, input *command.Input, output command.Output, data *command.Data, eData *command.ExecuteData) error {
-	return spycommander.ProcessGraphExecution(root, input, output, data, eData)
+func processGraphExecution(root command.Node, input *command.Input, output command.Output, data *command.Data, eData *command.ExecuteData, ignoreErrFuncs ...func(error) bool) error {
+	return spycommander.ProcessGraphExecution(root, input, output, data, eData, ignoreErrFuncs...)
 }

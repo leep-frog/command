@@ -55,10 +55,16 @@ func ProcessOrExecute(p command.Processor, input *command.Input, output command.
 }
 
 // ProcessGraphExecution processes the provided graph
-func ProcessGraphExecution(n command.Node, input *command.Input, output command.Output, data *command.Data, eData *command.ExecuteData) error {
+func ProcessGraphExecution(n command.Node, input *command.Input, output command.Output, data *command.Data, eData *command.ExecuteData, ignoreErrFuncs ...func(error) bool) error {
 	for n != nil {
 		if err := n.Execute(input, output, data, eData); err != nil {
+			for _, f := range ignoreErrFuncs {
+				if f(err) {
+					goto IGNORE_ERR
+				}
+			}
 			return err
+		IGNORE_ERR:
 		}
 
 		var err error

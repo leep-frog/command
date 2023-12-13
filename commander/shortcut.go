@@ -63,10 +63,9 @@ func setShortcut(sc ShortcutCLI, name, shortcut string, value []string) {
 // ShortcutNode wraps the provided node with a shortcut node.
 func ShortcutNode(name string, sc ShortcutCLI, n command.Node) command.Node {
 	as := &addShortcut{node: n, sc: sc, name: name}
-	adder := SerialNodes(ShortcutArg, as)
 	shortcutBn := &BranchNode{
 		Branches: map[string]command.Node{
-			"add a":    adder,
+			"add a":    SerialNodes(ShortcutArg, as),
 			"delete d": shortcutDeleter(name, sc, n),
 			"get g":    shortcutGetter(name, sc, n),
 			"list l":   shortcutLister(name, sc, n),
@@ -234,7 +233,7 @@ func (as *addShortcut) Execute(input *command.Input, output command.Output, data
 	// We don't want to output not enough args error, because we actually
 	// don't mind those when adding shortcuts.
 	ieo := command.NewIgnoreErrOutput(output, IsNotEnoughArgsError)
-	if err := processGraphExecution(as.node, input, ieo, data, fakeEData); err != nil && !IsNotEnoughArgsError(err) {
+	if err := processGraphExecution(as.node, input, ieo, data, fakeEData, IsNotEnoughArgsError); err != nil && !IsNotEnoughArgsError(err) {
 		return err
 	}
 
