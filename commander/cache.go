@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/leep-frog/command/command"
+	"github.com/leep-frog/command/internal/spycommander"
 )
 
 var (
@@ -137,11 +138,11 @@ func (cc *commandCache) Execute(input *command.Input, output command.Output, dat
 		if sls, ok := cc.c.Cache()[cc.name]; ok {
 			input.PushFront(sls[len(sls)-1]...)
 		}
-		return processGraphExecution(cc.n, input, output, data, eData)
+		return spycommander.ProcessGraphExecution(cc.n, input, output, data, eData)
 	}
 
 	snapshot := input.Snapshot()
-	err := processGraphExecution(cc.n, input, output, data, eData)
+	err := spycommander.ProcessGraphExecution(cc.n, input, output, data, eData)
 
 	// Don't cache if retrying will never fix the issue (outside of a change
 	// to the code for the specific CLI).

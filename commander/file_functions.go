@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/leep-frog/command/command"
+	"github.com/leep-frog/command/internal/spycommander"
 )
 
 var (
@@ -57,7 +58,7 @@ func Stat(name string) (os.FileInfo, error) {
 func FileContents(name, desc string, opts ...ArgumentOption[string]) command.Processor {
 	fc := FileArgument(name, desc, opts...)
 	return SimpleProcessor(func(i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
-		if err := processOrExecute(fc, i, o, d, ed); err != nil {
+		if err := spycommander.ProcessOrExecute(fc, i, o, d, ed); err != nil {
 			return err
 		}
 		b, err := os.ReadFile(d.String(name))

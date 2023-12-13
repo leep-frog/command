@@ -113,7 +113,7 @@ func (nr *nodeRepeater) proceedCondition(exCount int, i *command.Input) bool {
 
 func (nr *nodeRepeater) Execute(i *command.Input, o command.Output, d *command.Data, e *command.ExecuteData) error {
 	for exCount := 0; nr.proceedCondition(exCount, i); exCount++ {
-		if err := processGraphExecution(nr.n, i, o, d, e); err != nil {
+		if err := spycommander.ProcessGraphExecution(nr.n, i, o, d, e); err != nil {
 			return err
 		}
 	}

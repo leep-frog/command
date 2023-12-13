@@ -1,6 +1,9 @@
 package commander
 
-import "github.com/leep-frog/command/command"
+import (
+	"github.com/leep-frog/command/command"
+	"github.com/leep-frog/command/internal/spycommander"
+)
 
 // IfElse runs `command.Processor` t if the function argunment returns true
 // in the relevant complete and execute contexts. Otherwise, `command.Processor` f
@@ -9,12 +12,12 @@ func IfElse(t, f command.Processor, fn func(i *command.Input, d *command.Data) b
 	return SimpleProcessor(
 		func(i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
 			if fn(i, d) {
-				return processOrExecute(t, i, o, d, ed)
+				return spycommander.ProcessOrExecute(t, i, o, d, ed)
 			}
 			if f == nil {
 				return nil
 			}
-			return processOrExecute(f, i, o, d, ed)
+			return spycommander.ProcessOrExecute(f, i, o, d, ed)
 		},
 		func(i *command.Input, d *command.Data) (*command.Completion, error) {
 			if fn(i, d) {

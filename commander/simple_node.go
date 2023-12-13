@@ -29,7 +29,7 @@ func (sn *SimpleNode) Execute(input *command.Input, output command.Output, data 
 	if sn.Processor == nil {
 		return nil
 	}
-	return processOrExecute(sn.Processor, input, output, data, exData)
+	return spycommander.ProcessOrExecute(sn.Processor, input, output, data, exData)
 }
 
 func (sn *SimpleNode) Complete(input *command.Input, data *command.Data) (*command.Completion, error) {

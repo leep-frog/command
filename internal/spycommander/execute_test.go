@@ -20,6 +20,7 @@ func TestExecute(t *testing.T) {
 		ietc                *spycommandtest.ExecuteTestCase
 		isUsageError        bool
 		wantUsageErrorCheck error
+		ignoreErrFuncs      []func(error) bool
 	}{
 		{
 			name: "handles empty node",
@@ -282,6 +283,47 @@ func TestExecute(t *testing.T) {
 					},
 				),
 				WantStdout: "hurray processor!\n",
+			},
+		},
+		// IgnoreErr tests
+		{
+			name: "ProcessGraphExecution doesn't return ignorable error",
+			etc: &commandtest.ExecuteTestCase{
+				Node: serialNodes(
+					&simpleNode{
+						ex: func(i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
+							return ProcessGraphExecution(serialNodes(
+								&simpleNode{ex: func(i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
+									o.Stdoutln("First")
+									return fmt.Errorf("please skip this error")
+								}},
+							), i, o, d, ed, func(err error) bool { return strings.Contains(err.Error(), "skip") })
+						},
+					},
+				),
+				WantStdout: "First\n",
+			},
+		},
+		{
+			name: "ProcessGraphExecution continues processing graph after ignorable error",
+			etc: &commandtest.ExecuteTestCase{
+				Node: serialNodes(
+					&simpleNode{
+						ex: func(i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
+							return ProcessGraphExecution(serialNodes(
+								&simpleNode{ex: func(i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
+									o.Stdoutln("First")
+									return fmt.Errorf("please skip this error")
+								}},
+								&simpleNode{ex: func(i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
+									o.Stdoutln("Second")
+									return nil
+								}},
+							), i, o, d, ed, func(err error) bool { return strings.Contains(err.Error(), "skip") })
+						},
+					},
+				),
+				WantStdout: "First\nSecond\n",
 			},
 		},
 		/* Useful for commenting out tests. */

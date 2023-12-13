@@ -8,6 +8,7 @@ import (
 
 	"github.com/leep-frog/command/command"
 	"github.com/leep-frog/command/internal/constants"
+	"github.com/leep-frog/command/internal/spycommander"
 	"golang.org/x/exp/slices"
 )
 
@@ -328,7 +329,7 @@ func (fn *flagProcessor) executeOrUsage(input *command.Input, output command.Out
 
 				// Pass an empty input so multiple flags don't compete
 				// for the remaining args
-				if err := processOrExecute(f.Processor(), command.NewInput(nil, nil), output, data, eData); err != nil {
+				if err := spycommander.ProcessOrExecute(f.Processor(), command.NewInput(nil, nil), output, data, eData); err != nil {
 					return err
 				}
 			}
@@ -351,7 +352,7 @@ func (fn *flagProcessor) executeOrUsage(input *command.Input, output command.Out
 			err := command.InputRunAtOffset[error](input, i, func(tmpInput *command.Input) error {
 				tmpInput.PushBreakers(fn.ListBreaker())
 				defer input.PopBreakers(1)
-				processErr := processOrExecute(f.Processor(), tmpInput, output, data, eData)
+				processErr := spycommander.ProcessOrExecute(f.Processor(), tmpInput, output, data, eData)
 
 				// The error is (nil or a different error), or we're in execution mode
 				if !IsNotEnoughArgsError(processErr) || u == nil {
@@ -607,7 +608,7 @@ func (of *optionalFlag[T]) Processor() command.Processor {
 }
 
 func (of *optionalFlag[T]) Execute(input *command.Input, output command.Output, data *command.Data, eData *command.ExecuteData) error {
-	if err := processOrExecute(of.FlagWithType.Processor(), input, output, data, eData); err != nil {
+	if err := spycommander.ProcessOrExecute(of.FlagWithType.Processor(), input, output, data, eData); err != nil {
 		return err
 	}
 
@@ -673,7 +674,7 @@ func (ilf *itemizedListFlag[T]) Options() *FlagOptions {
 		},
 		// PostProcess
 		func(i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
-			return processOrExecute(ilf.flag.Processor(), command.NewInput(ilf.rawArgs, nil), o, d, ed)
+			return spycommander.ProcessOrExecute(ilf.flag.Processor(), command.NewInput(ilf.rawArgs, nil), o, d, ed)
 		},
 	}
 }

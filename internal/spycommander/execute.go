@@ -54,7 +54,7 @@ func ProcessOrExecute(p command.Processor, input *command.Input, output command.
 	return p.Execute(input, output, data, eData)
 }
 
-// ProcessGraphExecution processes the provided graph
+// ProcessGraphExecution processes the provided graph.
 func ProcessGraphExecution(n command.Node, input *command.Input, output command.Output, data *command.Data, eData *command.ExecuteData, ignoreErrFuncs ...func(error) bool) error {
 	for n != nil {
 		if err := n.Execute(input, output, data, eData); err != nil {

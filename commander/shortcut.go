@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/leep-frog/command/command"
+	"github.com/leep-frog/command/internal/spycommander"
 )
 
 var (
@@ -209,7 +210,7 @@ func (ea *executeShortcut) Usage(i *command.Input, d *command.Data, u *command.U
 }
 
 func (ea *executeShortcut) Execute(input *command.Input, output command.Output, data *command.Data, eData *command.ExecuteData) error {
-	return output.Err(processOrExecute(shortcutInputTransformer(ea.sc, ea.name, 0), input, output, data, eData))
+	return output.Err(spycommander.ProcessOrExecute(shortcutInputTransformer(ea.sc, ea.name, 0), input, output, data, eData))
 }
 
 func (ea *executeShortcut) Complete(input *command.Input, data *command.Data) (*command.Completion, error) {
@@ -247,7 +248,7 @@ func (as *addShortcut) Execute(input *command.Input, output command.Output, data
 	// We don't want to output not enough args error, because we actually
 	// don't mind those when adding shortcuts.
 	ieo := command.NewIgnoreErrOutput(output, IsNotEnoughArgsError)
-	if err := processGraphExecution(as.node, input, ieo, data, fakeEData, IsNotEnoughArgsError); err != nil && !IsNotEnoughArgsError(err) {
+	if err := spycommander.ProcessGraphExecution(as.node, input, ieo, data, fakeEData, IsNotEnoughArgsError); err != nil && !IsNotEnoughArgsError(err) {
 		return err
 	}
 
