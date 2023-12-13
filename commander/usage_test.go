@@ -346,6 +346,95 @@ func TestUsage(t *testing.T) {
 			},
 		},
 		{
+			name: "works with simple branch node and shortcut node",
+			etc: &commandtest.ExecuteTestCase{
+				Node: &BranchNode{
+					Branches: map[string]command.Node{
+						"alpha": nil,
+					},
+					Default: ShortcutNode("sc", nil, SerialNodes(Description("the default command"), Arg[int]("INT_ARG", "an integer"), ListArg[string]("STRINGS", "unltd strings", 1, command.UnboundedList))),
+				},
+				WantStdout: strings.Join([]string{
+					"the default command",
+					"┳ { shortcuts } INT_ARG STRINGS [ STRINGS ... ]",
+					"┃",
+					"┗━━ alpha",
+					"",
+					"Arguments:",
+					"  INT_ARG: an integer",
+					"  STRINGS: unltd strings",
+					"",
+					"Symbols:",
+					"  { shortcuts }: Start of new shortcut-able section. This is usable by providing the `shortcuts` keyword in this position. Run `cmd ... shortcuts --help` for more details",
+					"",
+				}, "\n"),
+			},
+		},
+		{
+			name: "works when multiple BranchNodes, but root one has hidden usage",
+			etc: &commandtest.ExecuteTestCase{
+				Node: &BranchNode{
+					Branches: map[string]command.Node{
+						"alpha": SerialNodes(Arg[string]("ONE", "uno")),
+					},
+					BranchUsageOrder: []string{},
+					Default: &BranchNode{
+						Branches: map[string]command.Node{
+							"beta": SerialNodes(Arg[string]("TWO", "dos")),
+						},
+					},
+				},
+				WantStdout: strings.Join([]string{
+					"┓",
+					"┗━━ beta TWO",
+					"",
+					"Arguments:",
+					"  TWO: dos",
+					"",
+				}, "\n"),
+			},
+		},
+		{
+			name: "works when multiple BranchNodes, but sub-one one has hidden usage",
+			etc: &commandtest.ExecuteTestCase{
+				Node: &BranchNode{
+					Branches: map[string]command.Node{
+						"alpha": SerialNodes(Arg[string]("ONE", "uno")),
+					},
+					Default: &BranchNode{
+						BranchUsageOrder: []string{},
+						Branches: map[string]command.Node{
+							"beta": SerialNodes(Arg[string]("TWO", "dos")),
+						},
+					},
+				},
+				WantStdout: strings.Join([]string{
+					"┓",
+					"┗━━ alpha ONE",
+					"",
+					"Arguments:",
+					"  ONE: uno",
+					"",
+				}, "\n"),
+			},
+		},
+		{
+			name: "panics when multiple BranchNodes at same level",
+			etc: &commandtest.ExecuteTestCase{
+				WantPanic: "Currently, only one branch point is supported per line",
+				Node: &BranchNode{
+					Branches: map[string]command.Node{
+						"alpha": SerialNodes(Arg[string]("ONE", "uno")),
+					},
+					Default: &BranchNode{
+						Branches: map[string]command.Node{
+							"beta": SerialNodes(Arg[string]("TWO", "dos")),
+						},
+					},
+				},
+			},
+		},
+		{
 			name: "works with simple branch node with no default",
 			etc: &commandtest.ExecuteTestCase{
 				Node: &BranchNode{

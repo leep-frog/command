@@ -255,7 +255,9 @@ func (bn *BranchNode) Usage(input *command.Input, data *command.Data, u *command
 			Usage: su,
 		})
 	}
-	u.SetBranches(branchUsages)
+	if len(branchUsages) > 0 {
+		u.SetBranches(branchUsages)
+	}
 
 	if bn.Default != nil {
 		if err := spycommander.ProcessGraphUse(bn.Default, input, data, u); err != nil {

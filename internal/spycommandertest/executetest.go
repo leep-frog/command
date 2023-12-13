@@ -146,17 +146,17 @@ func ExecuteTest(t *testing.T, etc *commandtest.ExecuteTestCase, ietc *spycomman
 		n = bag.SerialNodes(bag.SetupArg, n)
 	}
 
-	if helpFlag {
-		tc.err = bag.HelpBehavior(n, tc.input, tc.fo, bag.IsUsageError)
-	} else {
-		func() {
-			defer func() {
-				tc.panic = recover()
-			}()
+	func() {
+		defer func() {
+			tc.panic = recover()
+		}()
+		if helpFlag {
+			tc.err = bag.HelpBehavior(n, tc.input, tc.fo, bag.IsUsageError)
+		} else {
 			tc.eData = &command.ExecuteData{}
 			tc.err = bag.ExFn(n, tc.input, tc.fo, tc.data, tc.eData)
-		}()
-	}
+		}
+	}()
 
 	for _, tester := range testers {
 		tester.check(t, tc)
