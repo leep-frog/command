@@ -1,7 +1,9 @@
 package main
 
 import (
+	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 
 	"github.com/leep-frog/command/command"
@@ -18,6 +20,17 @@ func main() {
 	// ...
 	// }, sourcerer.NewAliaser("jj", "mfc", "--formal")))
 	os.Exit(sourcerer.RunCLI(&myFirstCommand{}))
+}
+
+func tputStuff() {
+	fmt.Println("Before tput")
+	cmd := exec.Command("tput", "setaf", "4")
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	if err := cmd.Run(); err != nil {
+		fmt.Printf("tput error: %v\n", err)
+	}
+	fmt.Println("After tput")
 }
 
 type myFirstCommand struct{}

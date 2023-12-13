@@ -13,19 +13,19 @@ func main() {
 	o.Stderrln("Errput 1")
 	fmt.Println("Fmt 1")
 
-	color.Text(color.Blue).Apply(nil)
+	o.Stdout(color.OutputCode(color.Blue))
 
 	o.Stdoutln("Output 2")
 	o.Stderrln("Errput 2")
 	fmt.Println("Fmt 2")
 
-	color.MultiFormat(color.Bold(), color.Text(color.Green)).Apply(nil)
+	o.Stdout(color.OutputCode(color.MultiFormat(color.Bold, color.Green)))
 
 	o.Stdoutln("Output 3")
 	o.Stderrln("Errput 3")
 	fmt.Println("Fmt 3")
 
-	color.Init().Apply(nil)
+	o.Stdout(color.OutputCode(color.Reset))
 
 	o.Stdoutln("Output 4")
 	o.Stderrln("Errput 4")

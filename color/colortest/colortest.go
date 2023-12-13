@@ -1,19 +1,9 @@
 // Package colortest contains useful functions and logic for testing with the color package.
 package colortest
 
-import (
-	"fmt"
-	"strings"
-	"testing"
-
-	"github.com/leep-frog/command/color"
-	"github.com/leep-frog/command/command"
-	"github.com/leep-frog/command/internal/testutil"
-)
-
 // StubTput will write to stdout for each format.Apply call rather than
 // actually running tput. See the `colortest.FakeOutput` function for
-func StubTput(t *testing.T) {
+/*func StubTput(t *testing.T) {
 	testutil.StubValue(t, &color.TputCommand, func(output command.Output, args ...interface{}) error {
 		var ss []string
 		for _, a := range args {
@@ -34,3 +24,4 @@ func FakeOutput(f *color.Format) string {
 func WrapOutput(f *color.Format, s string) string {
 	return fmt.Sprintf("%s%s%s", FakeOutput(f), s, FakeOutput(color.Init()))
 }
+*/

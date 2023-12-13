@@ -1,100 +1,138 @@
-// Package color makes it easy to output formatted text (via tput). See the tput
-// documentation for more info:
+// Package color makes it easy to output formatted text (via tput or output codes depending on the operating system).
+// tput is preferred when possible as that doesn't modify the text passed to downstream commands
+// See the tput documentation for more info:
 // https://linuxcommand.org/lc3_adv_tput.php
 // This package is specifically implemented to work well with the base `command`
 // package, both in terms of usage and testing.
 package color
 
 import (
-	"strconv"
+	"fmt"
+	"strings"
 
-	"github.com/leep-frog/command/command"
+	"golang.org/x/exp/slices"
 )
+
+// OutputCode gets the output codes for the provided `Formats`.
+// Note: the callers of this package are responsible for applying the
+// `Reset` format.
+func OutputCode(fs ...Format) string {
+	var r []string
+	for _, f := range fs {
+		for _, c := range f.outputCodes() {
+			r = append(r, fmt.Sprintf("%d", c))
+		}
+	}
+	if len(r) == 0 {
+		return ""
+	}
+
+	return fmt.Sprintf("\033[%sm", strings.Join(r, ";"))
+}
 
 // Format is a format (bold, color, etc.) that can be applied to output.
-type Format []string
+// This package defines a handful of these for the typical use cases.
+type Format interface {
+	// tputArgs are the args passed to a `tput` command.
+	// this was made private as `outputCodes` is the preferred (and only formally supported)
+	// mechanism for now.
+	// If we did want to use tputArgs, this would be the way to do it:
+	// ```
+	// cmd := exec.Command("tput", "bold")
+	// cmd.Stdout = os.Stdout // or output.StdoutWriter if in `command` package
+	// cmd.Stderr = os.Stderr
+	// if err := cmd.Run(); err != nil { ... }
+	// fmt.Println("After tput")
+	// ```
+	tputArgs() [][]string
+	// OutputCode is the string to send to output to activate the desired format.
+	outputCodes() []int
+}
 
-// TputColorCode is the tput code for specific colors.
-type TputColorCode int
+func MultiFormat(fs ...Format) Format {
+	mf := multiFormat(slices.Clone(fs))
+	return &mf
+}
 
-const (
-	Black TputColorCode = iota
-	Red
-	Green
-	Yellow
-	Blue
-	Magenta
-	Cyan
-	White
-	unused
-	ResetColor
-)
+// multiFormat is simply a collection of multiple `Format` objects.
+type multiFormat []Format
+
+func (mf *multiFormat) tputArgs() [][]string {
+	var r [][]string
+	for _, f := range *mf {
+		r = append(r, f.tputArgs()...)
+	}
+	return r
+}
+
+func (mf *multiFormat) outputCodes() []int {
+	var r []int
+	for _, f := range *mf {
+		r = append(r, f.outputCodes()...)
+	}
+	return r
+}
+
+// ColorCode is the color code for tput and for the output format `\033[0;(30+X)m`.
+type ColorCode struct {
+	code       int
+	foreground bool
+}
 
 var (
-	// TputCommand is a function that applies a format via tput. It is a variable
-	// so it can be stubbed out by tests in other packages.
-	TputCommand = func(output command.Output, args ...interface{}) error {
-		return nil
-		// TODO:
-		// import github.com/codeskyblue/go-sh
-		// return sh.Command("tput", args...).Run()
-	}
+	// Can't use iota outside of `const` definition :(
+
+	Black   = &ColorCode{0, true}
+	Red     = &ColorCode{1, true}
+	Green   = &ColorCode{2, true}
+	Yellow  = &ColorCode{3, true}
+	Blue    = &ColorCode{4, true}
+	Magenta = &ColorCode{5, true}
+	Cyan    = &ColorCode{6, true}
+	White   = &ColorCode{7, true}
+	unused  = &ColorCode{8, true}
+
+	Reset        = newEffect(0, "init")
+	Bold         = newEffect(1, "bold")
+	Underline    = newEffect(4, "smul")
+	EndUnderline = newEffect(24, "rmul")
+
+	foregroundOutputColorCodeOffset = 30
+	backgroundOutputColorCodeOffset = 40
 )
 
-func newF(args ...string) *Format {
-	f := Format(args)
-	return &f
+func (c *ColorCode) Background() *ColorCode {
+	return &ColorCode{c.code, false}
 }
 
-// Apply applies the `Format`.
-func (f *Format) Apply(output command.Output) {
-	var i []interface{}
-	for _, j := range *f {
-		i = append(i, j)
+func (c *ColorCode) tputArgs() [][]string {
+	if c.foreground {
+		return [][]string{{"setaf", fmt.Sprintf("%d", c.code)}}
 	}
-	TputCommand(output, i...)
+	return [][]string{{"setab", fmt.Sprintf("%d", c.code)}}
 }
 
-// MultiFormat combines multiple formats into one format.
-func MultiFormat(fs ...*Format) *Format {
-	var s []string
-	for _, f := range fs {
-		s = append(s, []string(*f)...)
+func (c *ColorCode) outputCodes() []int {
+	if c.foreground {
+		return []int{c.code + foregroundOutputColorCodeOffset}
 	}
-	return newF(s...)
+	return []int{c.code + backgroundOutputColorCodeOffset}
 }
 
-// Background is a `Format` that applies color to the background.
-func Background(color TputColorCode) *Format {
-	return newF("setab", strconv.Itoa(int(color)))
+// Effect is an effect that defines separate code and tput args.
+type Effect struct {
+	code          int
+	tputArguments []string
 }
 
-// Text is a `Format` that applies color to text.
-func Text(color TputColorCode) *Format {
-	return newF("setaf", strconv.Itoa(int(color)))
+func newEffect(code int, tputArgs ...string) *Effect {
+	return &Effect{code, tputArgs}
 }
 
-// Bold is a `Format` that applies bold.
-func Bold() *Format {
-	return newF("bold")
+func (e *Effect) tputArgs() [][]string {
+	return [][]string{slices.Clone(e.tputArguments)}
 }
 
-// Underline is a `Format` that applies underline.
-func Underline() *Format {
-	return newF("smul")
-}
-
-// EndUnderline is a `Format` that un-applies underline.
-func EndUnderline() *Format {
-	return newF("rmul")
-}
-
-// Reset is a `Format` that resets all tput formatting and clears the terminal screen.
-func Reset() *Format {
-	return newF("reset")
-}
-
-// Init is a `Format` that resets all tput formatting.
-func Init() *Format {
-	return newF("init")
+func (e *Effect) outputCodes() []int {
+	return []int{e.code}
 }

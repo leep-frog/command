@@ -3,95 +3,90 @@ package color
 import (
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
-	"github.com/leep-frog/command/command"
 	"github.com/leep-frog/command/internal/testutil"
 )
 
 func TestFormat(t *testing.T) {
 	for _, test := range []struct {
-		name      string
-		format    *Format
-		wantCalls [][]interface{}
+		name           string
+		format         Format
+		wantOutputCode string
+		wantTputCalls  [][]string
 	}{
 		{
-			name:   "Background color",
-			format: Background(3),
-			wantCalls: [][]interface{}{{
-				"setab", "3",
-			}},
-		},
-		{
 			name:   "Text color",
-			format: Text(6),
-			wantCalls: [][]interface{}{{
+			format: Cyan,
+			wantTputCalls: [][]string{{
 				"setaf", "6",
 			}},
+			wantOutputCode: "\033[36m",
+		},
+		{
+			name:   "Background color",
+			format: Yellow.Background(),
+			wantTputCalls: [][]string{{
+				"setab", "3",
+			}},
+			wantOutputCode: "\033[43m",
 		},
 		{
 			name:   "Bold",
-			format: Bold(),
-			wantCalls: [][]interface{}{{
+			format: Bold,
+			wantTputCalls: [][]string{{
 				"bold",
 			}},
+			wantOutputCode: "\033[1m",
 		},
 		{
 			name:   "Underline",
-			format: Underline(),
-			wantCalls: [][]interface{}{{
+			format: Underline,
+			wantTputCalls: [][]string{{
 				"smul",
 			}},
+			wantOutputCode: "\033[4m",
 		},
 		{
 			name:   "End Unerline",
-			format: EndUnderline(),
-			wantCalls: [][]interface{}{{
+			format: EndUnderline,
+			wantTputCalls: [][]string{{
 				"rmul",
 			}},
+			wantOutputCode: "\033[24m",
 		},
 		{
 			name:   "Reset",
-			format: Reset(),
-			wantCalls: [][]interface{}{{
-				"reset",
-			}},
-		},
-		{
-			name:   "Init",
-			format: Init(),
-			wantCalls: [][]interface{}{{
+			format: Reset,
+			wantTputCalls: [][]string{{
 				"init",
 			}},
+			wantOutputCode: "\033[0m",
 		},
 		{
-			name: "Multi format",
+			name:   "empty MultiFormat",
+			format: MultiFormat(),
+		},
+		{
+			name: "MultiFormat",
 			format: MultiFormat(
-				Text(5),
-				Bold(),
-				Underline(),
-				Background(7),
-				Text(11),
+				Magenta,
+				Bold,
+				Underline,
+				White.Background(),
+				Blue,
 			),
-			wantCalls: [][]interface{}{{
-				"setaf", "5",
-				"bold",
-				"smul",
-				"setab", "7",
-				"setaf", "11",
-			}},
+			wantTputCalls: [][]string{
+				{"setaf", "5"},
+				{"bold"},
+				{"smul"},
+				{"setab", "7"},
+				{"setaf", "4"},
+			},
+			wantOutputCode: "\033[35;1;4;47;34m",
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			var calls [][]interface{}
-			testutil.StubValue(t, &TputCommand, func(output command.Output, args ...interface{}) error {
-				calls = append(calls, args)
-				return nil
-			})
-
-			test.format.Apply(nil)
-			if diff := cmp.Diff(test.wantCalls, calls); diff != "" {
-				t.Errorf("Format %v produced incorrect tput calls (-want, +got):\n%s", test.format, diff)
-			}
+			testutil.Cmp(t, "Format.tputArgs() returned incorrect value", test.wantTputCalls, test.format.tputArgs())
+			testutil.Cmp(t, "Format.OutputCode() returned incorrect value", test.wantOutputCode, OutputCode(test.format))
 		})
 	}
 }
