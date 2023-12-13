@@ -1540,7 +1540,7 @@ func TestShortcutExecute(t *testing.T) {
 				},
 			},
 		},
-		// Add with flag end
+		// Shortcut tests when ending in the middle of flag args
 		{
 			name: "Shortcut works when ending with flag requiring values",
 			am: map[string]map[string][]string{
@@ -1736,7 +1736,7 @@ func TestShortcutExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "Shortcut works when using a shortcut that stopped in the middle of a flag",
+			name: "Shortcut execution works when using a shortcut that stopped in the middle of a flag",
 			am: map[string]map[string][]string{
 				"pioneer": {
 					"in-flag": []string{"_hello_", "--some-flag", "THERE"},
@@ -1764,6 +1764,9 @@ func TestShortcutExecute(t *testing.T) {
 			ietc: &spycommandtest.ExecuteTestCase{
 				WantInput: &spycommandtest.SpyInput{
 					Args: []*spycommand.InputArg{
+						// Note that transformations happen twice here which *is* a known case
+						// and is intentionally kept this way. See the method comment on `ShortcutNode`
+						// for the full explanation.
 						{Value: "__hello__"},
 						{Value: "--some-flag"},
 						{Value: "THERE"},

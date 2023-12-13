@@ -61,6 +61,20 @@ func setShortcut(sc ShortcutCLI, name, shortcut string, value []string) {
 }
 
 // ShortcutNode wraps the provided node with a shortcut node.
+// It is important to note that any argument transformers should be idempotent
+// (e.g. for some string variable `s`, `transformer.F(s) == transformer.F(transformer.F(s))`)
+// as the transformer will run when the shortcut values are added to a shortcut
+// *and* after the shortcut values are popped when using the shortcut with those
+// values. The transformation when adding the shortcut was intentionally
+// implemented mostly for file arguments, so that if you use a relative path for
+// a file argument when creating your shortcut, it will still work with the same
+// file when executing your shortcut from another directory.
+// The second transformation wasn't intentionally added, but removing it
+// requires multiple isolated types to know the inner workings of each other
+// (mainly `ShorcutNode`, `Argument`, `Flag`, and `Input`). That makes all of
+// those implementations more closely tied together and less independent and
+// robust which is why there will not be work done to remove/fix the second
+// transformation occurrence.
 func ShortcutNode(name string, sc ShortcutCLI, n command.Node) command.Node {
 	as := &addShortcut{node: n, sc: sc, name: name}
 	shortcutBn := &BranchNode{
