@@ -62,9 +62,9 @@ func (an *Argument[T]) GetOrDefault(data *command.Data, dflt T) T {
 
 // GetOrDefaultFunc fetches the `Argument`'s value from the `command.Data` object, or returns the `dflt`
 // value provided if the `Argument` has not been set.
-func (an *Argument[T]) GetOrDefaultFunc(data *command.Data, dfltFunc func(*command.Data) T) T {
+func (an *Argument[T]) GetOrDefaultFunc(data *command.Data, dfltFunc func(*command.Data) (T, error)) (T, error) {
 	if data.Has(an.name) {
-		return command.GetData[T](data, an.name)
+		return command.GetData[T](data, an.name), nil
 	}
 	return dfltFunc(data)
 }

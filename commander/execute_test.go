@@ -1304,11 +1304,12 @@ func TestExecute(t *testing.T) {
 				Node: SerialNodes(
 					optionalString,
 					&ExecutorProcessor{func(o command.Output, d *command.Data) error {
+						df, _ := optionalString.GetOrDefaultFunc(d, func(d *command.Data) (string, error) { return "funcDflt", nil })
 						o.Stdoutln(
 							optionalString.Provided(d),
 							optionalString.Get(d),
 							optionalString.GetOrDefault(d, "dflt"),
-							optionalString.GetOrDefaultFunc(d, func(d *command.Data) string { return "funcDflt" }),
+							df,
 						)
 						return nil
 					}},
@@ -1332,17 +1333,35 @@ func TestExecute(t *testing.T) {
 				Node: SerialNodes(
 					optionalString,
 					&ExecutorProcessor{func(o command.Output, d *command.Data) error {
+						df, _ := optionalString.GetOrDefaultFunc(d, func(d *command.Data) (string, error) { return "funcDflt", nil })
 						o.Stdoutln(
 							optionalString.Provided(d),
 							optionalString.GetOrDefault(d, "dflt"),
-							optionalString.GetOrDefaultFunc(d, func(d *command.Data) string {
-								return "funcDflt"
-							}),
+							df,
 						)
 						return nil
 					}},
 				),
 				WantStdout: "false dflt funcDflt\n",
+			},
+			ietc: &spycommandtest.ExecuteTestCase{
+				WantInput: &spycommandtest.SpyInput{},
+			},
+		},
+		{
+			name: "Arg.GetOrDefaultFunc returns error",
+			etc: &commandtest.ExecuteTestCase{
+				Node: SerialNodes(
+					optionalString,
+					&ExecutorProcessor{func(o command.Output, d *command.Data) error {
+						df, err := optionalString.GetOrDefaultFunc(d, func(d *command.Data) (string, error) { return "funcDflt", fmt.Errorf("oops") })
+						o.Stdoutln(df)
+						return o.Err(err)
+					}},
+				),
+				WantStdout: "funcDflt\n",
+				WantStderr: "oops\n",
+				WantErr:    fmt.Errorf("oops"),
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
 				WantInput: &spycommandtest.SpyInput{},
