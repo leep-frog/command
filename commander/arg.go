@@ -93,7 +93,7 @@ func (an *Argument[T]) Usage(i *command.Input, d *command.Data, u *command.Usage
 	}
 
 	// We know we got less than an.minN args, so that is guaranteed to be positive
-	u.AddArg(an.name, an.usageDescription(), an.minN-gotCnt, an.optionalN)
+	u.AddArg(an.name, an.usageDescription(d), an.minN-gotCnt, an.optionalN)
 
 	for _, b := range an.opt.breakers {
 		if err := b.Usage(d, u); err != nil {
@@ -103,11 +103,19 @@ func (an *Argument[T]) Usage(i *command.Input, d *command.Data, u *command.Usage
 	return nil
 }
 
-func (an *Argument[T]) usageDescription() string {
+func (an *Argument[T]) getDefault(d *command.Data) (T, bool) {
+	var nill T
+	if an.opt == nil || an.opt._default == nil || an.opt._default.f == nil {
+		return nill, false
+	}
+	return an.opt._default.f(d), true
+}
+
+func (an *Argument[T]) usageDescription(d *command.Data) string {
 	desc := []string{an.desc}
 	if an.opt != nil {
-		if an.opt._default != nil {
-			desc = append(desc, fmt.Sprintf("Default: %v", an.opt._default.v))
+		if dflt, ok := an.getDefault(d); ok {
+			desc = append(desc, fmt.Sprintf("Default: %v", dflt))
 		}
 		for _, v := range an.opt.validators {
 			desc = append(desc, v.Usage)
@@ -127,8 +135,8 @@ func (an *Argument[T]) Execute(i *command.Input, o command.Output, data *command
 		if !enough {
 			return o.Err(an.notEnoughErr(len(sl)))
 		}
-		if an.opt != nil && an.opt._default != nil {
-			an.Set(an.opt._default.v, data)
+		if dflt, ok := an.getDefault(data); ok {
+			an.Set(dflt, data)
 		}
 		return nil
 	}

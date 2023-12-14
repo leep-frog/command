@@ -117,7 +117,10 @@ func shortcutCompleter(name string, sc ShortcutCLI) Completer[string] {
 }
 
 func shortcutListArg(name string, sc ShortcutCLI) command.Processor {
-	return ListArg[string](ShortcutArg.Name(), ShortcutArg.usageDescription(), 1, command.UnboundedList, CompleterList(shortcutCompleter(name, sc)))
+	// usageDescription() only requires (*Data) for the argument.opt.default processing.
+	// Since ShortcutArg is known to have no Default, then it is fine to pass nil for the data argument.
+	desc := ShortcutArg.usageDescription(nil)
+	return ListArg[string](ShortcutArg.Name(), desc, 1, command.UnboundedList, CompleterList(shortcutCompleter(name, sc)))
 }
 
 func shortcutSearcher(name string, sc ShortcutCLI, n command.Node) command.Node {

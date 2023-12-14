@@ -422,18 +422,16 @@ func argifyFlagName(flagName string) string {
 }
 
 func (f *flag[T]) FlagUsage(d *command.Data, u *command.Usage) error {
-	u.AddFlag(f.name, f.shortName, argifyFlagName(f.name), f.argument.usageDescription(), f.argument.minN, f.argument.optionalN)
+	u.AddFlag(f.name, f.shortName, argifyFlagName(f.name), f.argument.usageDescription(d), f.argument.minN, f.argument.optionalN)
 	return nil
 }
 
 func (f *flag[T]) Options() *FlagOptions {
 	return &FlagOptions{
 		ProcessMissing: func(d *command.Data) error {
-			if f.argument.opt == nil || f.argument.opt._default == nil {
-				return nil
+			if dflt, ok := f.argument.getDefault(d); ok {
+				f.argument.Set(dflt, d)
 			}
-
-			f.argument.Set(f.argument.opt._default.v, d)
 			return nil
 		},
 	}
@@ -711,7 +709,7 @@ func (ilf *itemizedListFlag[T]) Usage(i *command.Input, d *command.Data, u *comm
 }
 
 func (ilf *itemizedListFlag[T]) FlagUsage(d *command.Data, u *command.Usage) error {
-	u.AddFlag(ilf.Name(), ilf.ShortName(), argifyFlagName(ilf.name), ilf.argument.usageDescription(), 1, 0)
+	u.AddFlag(ilf.Name(), ilf.ShortName(), argifyFlagName(ilf.name), ilf.argument.usageDescription(d), 1, 0)
 	return nil
 }
 
