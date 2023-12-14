@@ -41,7 +41,7 @@ func (an *Argument[T]) Desc() string {
 	return an.desc
 }
 
-// Get fetches the arguments value from the `command.Data` object.
+// Get fetches the `Argument`'s value from the `command.Data` object.
 func (an *Argument[T]) Get(data *command.Data) T {
 	return command.GetData[T](data, an.name)
 }
@@ -51,12 +51,22 @@ func (an *Argument[T]) Provided(data *command.Data) bool {
 	return data.Has(an.name)
 }
 
-// GetOrDefault fetches the arguments value from the `command.Data` object.
+// GetOrDefault fetches the `Argument`'s value from the `command.Data` object, or returns the `dflt`
+// value provided if the `Argument` has not been set.
 func (an *Argument[T]) GetOrDefault(data *command.Data, dflt T) T {
 	if data.Has(an.name) {
 		return command.GetData[T](data, an.name)
 	}
 	return dflt
+}
+
+// GetOrDefaultFunc fetches the `Argument`'s value from the `command.Data` object, or returns the `dflt`
+// value provided if the `Argument` has not been set.
+func (an *Argument[T]) GetOrDefaultFunc(data *command.Data, dfltFunc func(*command.Data) T) T {
+	if data.Has(an.name) {
+		return command.GetData[T](data, an.name)
+	}
+	return dfltFunc(data)
 }
 
 // Set sets the argument key in the given `command.Data` object.
@@ -93,7 +103,7 @@ func (an *Argument[T]) Usage(i *command.Input, d *command.Data, u *command.Usage
 	}
 
 	// We know we got less than an.minN args, so that is guaranteed to be positive
-	u.AddArg(an.name, an.usageDescription(d), an.minN-gotCnt, an.optionalN)
+	u.AddArg(an.name, an.usageDescription(), an.minN-gotCnt, an.optionalN)
 
 	for _, b := range an.opt.breakers {
 		if err := b.Usage(d, u); err != nil {
@@ -103,18 +113,18 @@ func (an *Argument[T]) Usage(i *command.Input, d *command.Data, u *command.Usage
 	return nil
 }
 
-func (an *Argument[T]) getDefault(d *command.Data) (T, bool) {
+func (an *Argument[T]) getDefault() (T, bool) {
 	var nill T
-	if an.opt == nil || an.opt._default == nil || an.opt._default.f == nil {
+	if an.opt == nil || an.opt._default == nil {
 		return nill, false
 	}
-	return an.opt._default.f(d), true
+	return an.opt._default.v, true
 }
 
-func (an *Argument[T]) usageDescription(d *command.Data) string {
+func (an *Argument[T]) usageDescription() string {
 	desc := []string{an.desc}
 	if an.opt != nil {
-		if dflt, ok := an.getDefault(d); ok {
+		if dflt, ok := an.getDefault(); ok {
 			desc = append(desc, fmt.Sprintf("Default: %v", dflt))
 		}
 		for _, v := range an.opt.validators {
@@ -135,7 +145,7 @@ func (an *Argument[T]) Execute(i *command.Input, o command.Output, data *command
 		if !enough {
 			return o.Err(an.notEnoughErr(len(sl)))
 		}
-		if dflt, ok := an.getDefault(data); ok {
+		if dflt, ok := an.getDefault(); ok {
 			an.Set(dflt, data)
 		}
 		return nil

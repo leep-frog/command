@@ -1298,17 +1298,22 @@ func TestExecute(t *testing.T) {
 		},
 		// Arg convenience functions
 		{
-			name: "Arg.Get",
+			name: "Arg.Provided, Get, GetOrDefault, GetOrDefaultFunc when argument is present",
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"some-string"},
 				Node: SerialNodes(
 					optionalString,
 					&ExecutorProcessor{func(o command.Output, d *command.Data) error {
-						o.Stdoutln(optionalString.Provided(d), optionalString.Get(d), optionalString.GetOrDefault(d, "dflt"))
+						o.Stdoutln(
+							optionalString.Provided(d),
+							optionalString.Get(d),
+							optionalString.GetOrDefault(d, "dflt"),
+							optionalString.GetOrDefaultFunc(d, func(d *command.Data) string { return "funcDflt" }),
+						)
 						return nil
 					}},
 				),
-				WantStdout: "true some-string some-string\n",
+				WantStdout: "true some-string some-string some-string\n",
 				WantData: &command.Data{Values: map[string]interface{}{
 					optionalString.Name(): "some-string",
 				}},
@@ -1322,16 +1327,22 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "Arg.Provided and Arg.GetOrDefault",
+			name: "Arg.Provided, GetOrDefault, GetOrDefaultFunc when argument is not present",
 			etc: &commandtest.ExecuteTestCase{
 				Node: SerialNodes(
 					optionalString,
 					&ExecutorProcessor{func(o command.Output, d *command.Data) error {
-						o.Stdoutln(optionalString.Provided(d), optionalString.GetOrDefault(d, "dflt"))
+						o.Stdoutln(
+							optionalString.Provided(d),
+							optionalString.GetOrDefault(d, "dflt"),
+							optionalString.GetOrDefaultFunc(d, func(d *command.Data) string {
+								return "funcDflt"
+							}),
+						)
 						return nil
 					}},
 				),
-				WantStdout: "false dflt\n",
+				WantStdout: "false dflt funcDflt\n",
 			},
 			ietc: &spycommandtest.ExecuteTestCase{
 				WantInput: &spycommandtest.SpyInput{},

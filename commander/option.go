@@ -137,19 +137,14 @@ func TransformerList[T any](t *Transformer[T]) *Transformer[[]T] {
 }
 
 // Default is an `ArgumentOption` that sets a default value for an `Arg` node.
+// Note, this package explicitly does not support a `DefaultFunc` `ArgumentOption`. Instead,
+// use the `Argument.GetOrDefaultFunc` method inside of your `Node`'s executor logic.
 func Default[T any](v T) ArgumentOption[T] {
-	return DefaultFunc[T](func(d *command.Data) T { return v })
-}
-
-// DefaultFunc is an `ArgumentOption` that sets a default value for an `Arg` node
-// to the value returned by the provided function. This function is only run if
-// a value for the `Argument` is not provided.
-func DefaultFunc[T any](f func(*command.Data) T) ArgumentOption[T] {
-	return &defaultArgumentOption[T]{f}
+	return &defaultArgumentOption[T]{v}
 }
 
 type defaultArgumentOption[T any] struct {
-	f func(*command.Data) T
+	v T
 }
 
 func (dao *defaultArgumentOption[T]) modifyArgumentOption(ao *argumentOption[T]) {
