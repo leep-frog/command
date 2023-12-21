@@ -12,7 +12,6 @@ var (
 	RelevantPackages = []string{
 		"cd",
 		"command",
-		"computer-setup",
 		// "differ",
 		// "emacs",
 		"gocli",
@@ -20,6 +19,7 @@ var (
 		// "labelmaker",
 		// "notification",
 		// "pdf",
+		"qmkwrapper",
 		"replace",
 
 		// "ssh",

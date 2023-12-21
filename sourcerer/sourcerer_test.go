@@ -2648,7 +2648,6 @@ func TestSourcerer(t *testing.T) {
 					wantStdout: []string{
 						"cd",
 						"command",
-						"computer-setup",
 					},
 				},
 			},
