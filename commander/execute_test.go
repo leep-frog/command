@@ -8983,7 +8983,6 @@ func TestComplete(t *testing.T) {
 						"simple_processor.go",
 						"static_cli.go",
 						"static_cli_test.go",
-						"stdin.go",
 						filepath.FromSlash("testdata/"),
 						"transformer.go",
 						"usage_test.go",
