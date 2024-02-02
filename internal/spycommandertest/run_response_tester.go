@@ -1,6 +1,8 @@
 package spycommandertest
 
 import (
+	"bytes"
+	"fmt"
 	"io"
 	"os/exec"
 	"testing"
@@ -15,6 +17,14 @@ type runResponseTester struct {
 	runResponses   []*commandtest.FakeRun
 	want           []*commandtest.RunContents
 	gotRunContents []*commandtest.RunContents
+}
+
+type fakeWriteCloser struct {
+	*bytes.Buffer
+}
+
+func (f *fakeWriteCloser) Close() error {
+	return nil
 }
 
 func (rrt *runResponseTester) stubRunResponses(t *testing.T) func(cmd *exec.Cmd) error {
@@ -49,6 +59,14 @@ func (rrt *runResponseTester) stubRunResponses(t *testing.T) func(cmd *exec.Cmd)
 
 func (rrt *runResponseTester) setup(t *testing.T, tc *testContext) {
 	testutil.StubValue(t, &stubs.Run, rrt.stubRunResponses(t))
+	testutil.StubValue(t, &stubs.StubStdinPipe, func(cmd *exec.Cmd) (io.WriteCloser, error) {
+		if cmd.Stdin != nil {
+			return nil, fmt.Errorf("cmd.Stdin is already set")
+		}
+		f := &fakeWriteCloser{bytes.NewBufferString("")}
+		cmd.Stdin = f
+		return f, nil
+	})
 }
 
 func (rrt *runResponseTester) check(t *testing.T, tc *testContext) {

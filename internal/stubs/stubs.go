@@ -1,6 +1,7 @@
 package stubs
 
 import (
+	"io"
 	"os"
 	"os/exec"
 	"testing"
@@ -16,6 +17,11 @@ var (
 	// Run is a wrapper `exec.Cmd` used for stubbing purposes.
 	Run = func(cmd *exec.Cmd) error {
 		return cmd.Run()
+	}
+
+	// StubStdinPipe stubs the cmd.StdinPipe method (used for testing purposes)
+	StubStdinPipe = func(cmd *exec.Cmd) (io.WriteCloser, error) {
+		return cmd.StdinPipe()
 	}
 )
 

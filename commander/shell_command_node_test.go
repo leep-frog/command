@@ -1,10 +1,8 @@
 package commander
 
 import (
-	"bytes"
 	"fmt"
 	"io"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -16,10 +14,9 @@ import (
 
 func TestShellCommand(t *testing.T) {
 	for _, test := range []struct {
-		name        string
-		etc         *commandtest.ExecuteTestCase
-		ietc        *spycommandtest.ExecuteTestCase
-		wantWritten string
+		name string
+		etc  *commandtest.ExecuteTestCase
+		ietc *spycommandtest.ExecuteTestCase
 	}{
 		// Generic tests
 		{
@@ -595,7 +592,6 @@ func TestShellCommand(t *testing.T) {
 				WantErr:    fmt.Errorf("failed to run StdinPipeFn: oops 2"),
 				WantStderr: "failed to run StdinPipeFn: oops 2\n",
 			},
-			wantWritten: "some text",
 		},
 		{
 			name: "Successfully writes",
@@ -615,8 +611,9 @@ func TestShellCommand(t *testing.T) {
 					},
 				),
 				WantRunContents: []*commandtest.RunContents{{
-					Name: "echo",
-					Args: []string{"-1248"},
+					Name:          "echo",
+					Args:          []string{"-1248"},
+					StdinContents: "some text",
 				}},
 				RunResponses: []*commandtest.FakeRun{
 					{
@@ -628,7 +625,6 @@ func TestShellCommand(t *testing.T) {
 				}},
 				WantStdout: "-1248\n",
 			},
-			wantWritten: "some text",
 		},
 		// formatArgs tests
 		/*{
@@ -712,23 +708,7 @@ func TestShellCommand(t *testing.T) {
 		/* Useful for commenting out tests. */
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			f := &fakeWriteCloser{bytes.NewBufferString(""), false}
-			commandtest.StubValue(t, &getStdinPipe, func(*exec.Cmd) (io.WriteCloser, error) {
-				return f, nil
-			})
 			executeTest(t, test.etc, test.ietc)
-			commandtest.Cmp(t, "StdinPipe buffer had incorrect values written to it", test.wantWritten, f.String())
 		})
 	}
-}
-
-type fakeWriteCloser struct {
-	*bytes.Buffer
-
-	closed bool
-}
-
-func (f *fakeWriteCloser) Close() error {
-	f.closed = true
-	return nil
 }
