@@ -564,7 +564,7 @@ func TestShellCommand(t *testing.T) {
 						ArgName:     "i",
 						CommandName: "echo",
 						Args:        []string{"-1248"},
-						StdinPipeFn: func(w io.WriteCloser, err error) error {
+						stdinPipeFn: func(w io.WriteCloser, err error) error {
 							return fmt.Errorf("oopsies")
 						},
 					},
@@ -581,7 +581,7 @@ func TestShellCommand(t *testing.T) {
 						ArgName:     "i",
 						CommandName: "echo",
 						Args:        []string{"-1248"},
-						StdinPipeFn: func(w io.WriteCloser, _ error) error {
+						stdinPipeFn: func(w io.WriteCloser, _ error) error {
 							if _, err := w.Write(([]byte("some text"))); err != nil {
 								t.Fatalf("failed to write: %v", err)
 							}
@@ -602,7 +602,7 @@ func TestShellCommand(t *testing.T) {
 						CommandName:   "echo",
 						Args:          []string{"-1248"},
 						ForwardStdout: true,
-						StdinPipeFn: func(w io.WriteCloser, _ error) error {
+						stdinPipeFn: func(w io.WriteCloser, _ error) error {
 							if _, err := w.Write(([]byte("some text"))); err != nil {
 								t.Fatalf("failed to write: %v", err)
 							}

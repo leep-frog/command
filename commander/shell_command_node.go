@@ -63,8 +63,10 @@ type ShellCommand[T any] struct {
 	Dir string
 	// Stdin is the `io.Reader` to forward for use in `exec.Command`
 	Stdin io.Reader
-	// StdinPipeFn is a function that will be run with the output of cmd.StdinPipe
-	StdinPipeFn func(io.WriteCloser, error) error
+
+	// This is still a work-in-progress
+	// stdinPipeFn is a function that will be run with the output of cmd.StdinPipe
+	stdinPipeFn func(io.WriteCloser, error) error
 
 	// Validators contains a list of validators to run with the shell command output.
 	Validators []*ValidatorOption[T]
@@ -184,8 +186,8 @@ func (bn *ShellCommand[T]) Run(output command.Output, data *command.Data) (T, er
 		cmd.Stderr = command.StderrWriter(output)
 	}
 
-	if bn.StdinPipeFn != nil {
-		if err := bn.StdinPipeFn(stubs.StubStdinPipe(cmd)); err != nil {
+	if bn.stdinPipeFn != nil {
+		if err := bn.stdinPipeFn(stubs.StubStdinPipe(cmd)); err != nil {
 			return nill, fmt.Errorf("failed to run StdinPipeFn: %v", err)
 		}
 	} else {
