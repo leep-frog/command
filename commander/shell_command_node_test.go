@@ -1,7 +1,10 @@
 package commander
 
 import (
+	"bytes"
 	"fmt"
+	"io"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -13,9 +16,10 @@ import (
 
 func TestShellCommand(t *testing.T) {
 	for _, test := range []struct {
-		name string
-		etc  *commandtest.ExecuteTestCase
-		ietc *spycommandtest.ExecuteTestCase
+		name        string
+		etc         *commandtest.ExecuteTestCase
+		ietc        *spycommandtest.ExecuteTestCase
+		wantWritten string
 	}{
 		// Generic tests
 		{
@@ -554,6 +558,78 @@ func TestShellCommand(t *testing.T) {
 				WantIsValidationError: true,
 			},
 		},
+		// StdinPipeFn tests
+		{
+			name: "Fails without running command if StdinPipeFn returns error",
+			etc: &commandtest.ExecuteTestCase{
+				Node: SerialNodes(
+					&ShellCommand[int]{
+						ArgName:     "i",
+						CommandName: "echo",
+						Args:        []string{"-1248"},
+						StdinPipeFn: func(w io.WriteCloser, err error) error {
+							return fmt.Errorf("oopsies")
+						},
+					},
+				),
+				WantErr:    fmt.Errorf("failed to run StdinPipeFn: oopsies"),
+				WantStderr: "failed to run StdinPipeFn: oopsies\n",
+			},
+		},
+		{
+			name: "Writes and returns error",
+			etc: &commandtest.ExecuteTestCase{
+				Node: SerialNodes(
+					&ShellCommand[int]{
+						ArgName:     "i",
+						CommandName: "echo",
+						Args:        []string{"-1248"},
+						StdinPipeFn: func(w io.WriteCloser, _ error) error {
+							if _, err := w.Write(([]byte("some text"))); err != nil {
+								t.Fatalf("failed to write: %v", err)
+							}
+							return fmt.Errorf("oops 2")
+						},
+					},
+				),
+				WantErr:    fmt.Errorf("failed to run StdinPipeFn: oops 2"),
+				WantStderr: "failed to run StdinPipeFn: oops 2\n",
+			},
+			wantWritten: "some text",
+		},
+		{
+			name: "Successfully writes",
+			etc: &commandtest.ExecuteTestCase{
+				Node: SerialNodes(
+					&ShellCommand[int]{
+						ArgName:       "i",
+						CommandName:   "echo",
+						Args:          []string{"-1248"},
+						ForwardStdout: true,
+						StdinPipeFn: func(w io.WriteCloser, _ error) error {
+							if _, err := w.Write(([]byte("some text"))); err != nil {
+								t.Fatalf("failed to write: %v", err)
+							}
+							return nil
+						},
+					},
+				),
+				WantRunContents: []*commandtest.RunContents{{
+					Name: "echo",
+					Args: []string{"-1248"},
+				}},
+				RunResponses: []*commandtest.FakeRun{
+					{
+						Stdout: []string{"-1248"},
+					},
+				},
+				WantData: &command.Data{Values: map[string]interface{}{
+					"i": -1248,
+				}},
+				WantStdout: "-1248\n",
+			},
+			wantWritten: "some text",
+		},
 		// formatArgs tests
 		/*{
 			name: "shell node formats all input types",
@@ -636,7 +712,23 @@ func TestShellCommand(t *testing.T) {
 		/* Useful for commenting out tests. */
 	} {
 		t.Run(test.name, func(t *testing.T) {
+			f := &fakeWriteCloser{bytes.NewBufferString(""), false}
+			commandtest.StubValue(t, &getStdinPipe, func(*exec.Cmd) (io.WriteCloser, error) {
+				return f, nil
+			})
 			executeTest(t, test.etc, test.ietc)
+			commandtest.Cmp(t, "StdinPipe buffer had incorrect values written to it", test.wantWritten, f.String())
 		})
 	}
+}
+
+type fakeWriteCloser struct {
+	*bytes.Buffer
+
+	closed bool
+}
+
+func (f *fakeWriteCloser) Close() error {
+	f.closed = true
+	return nil
 }

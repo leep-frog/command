@@ -12,6 +12,10 @@ import (
 	"github.com/leep-frog/command/internal/stubs"
 )
 
+var (
+	getStdinPipe = func(cmd *exec.Cmd) (io.WriteCloser, error) { return cmd.StdinPipe() }
+)
+
 // ShellCommandCompleter creates a completer object that completes a command
 // graph with the output from the provided shell command.
 func ShellCommandCompleter[T any](name string, args ...string) Completer[T] {
@@ -63,6 +67,8 @@ type ShellCommand[T any] struct {
 	Dir string
 	// Stdin is the `io.Reader` to forward for use in `exec.Command`
 	Stdin io.Reader
+	// StdinPipeFn is a function that will be run with the output of cmd.StdinPipe
+	StdinPipeFn func(io.WriteCloser, error) error
 
 	// Validators contains a list of validators to run with the shell command output.
 	Validators []*ValidatorOption[T]
@@ -181,6 +187,12 @@ func (bn *ShellCommand[T]) Run(output command.Output, data *command.Data) (T, er
 		cmd.Stderr = command.DevNull()
 	} else {
 		cmd.Stderr = command.StderrWriter(output)
+	}
+
+	if bn.StdinPipeFn != nil {
+		if err := bn.StdinPipeFn(getStdinPipe(cmd)); err != nil {
+			return nill, fmt.Errorf("failed to run StdinPipeFn: %v", err)
+		}
 	}
 
 	if bn.EchoCommand {
