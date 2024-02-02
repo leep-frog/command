@@ -173,7 +173,6 @@ func (bn *ShellCommand[T]) Run(output command.Output, data *command.Data) (T, er
 	var rawOut bytes.Buffer
 	stdoutWriters := []io.Writer{&rawOut}
 	cmd := exec.Command(bn.CommandName, bn.Args...)
-	cmd.Stdin = bn.Stdin
 	cmd.Dir = bn.Dir
 	if bn.ForwardStdout && output != nil {
 		stdoutWriters = append(stdoutWriters, command.StdoutWriter(output))
@@ -193,6 +192,8 @@ func (bn *ShellCommand[T]) Run(output command.Output, data *command.Data) (T, er
 		if err := bn.StdinPipeFn(getStdinPipe(cmd)); err != nil {
 			return nill, fmt.Errorf("failed to run StdinPipeFn: %v", err)
 		}
+	} else {
+		cmd.Stdin = bn.Stdin
 	}
 
 	if bn.EchoCommand {
