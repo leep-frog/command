@@ -191,7 +191,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "Complexecute for Arg fails if no arg provided",
 			etc: &commandtest.ExecuteTestCase{
-				Node: SerialNodes(Arg[int]("is", testDesc, Complexecute[int](), CompleterFromFunc(func(i int, d *command.Data) (*command.Completion, error) {
+				Node: SerialNodes(Arg[int]("is", testDesc, &Complexecute[int]{}, CompleterFromFunc(func(i int, d *command.Data) (*command.Completion, error) {
 					return nil, fmt.Errorf("oopsie")
 				}))),
 				WantErr:    fmt.Errorf(`Argument "is" requires at least 1 argument, got 0`),
@@ -206,7 +206,7 @@ func TestExecute(t *testing.T) {
 			name: "Complexecute for Arg fails completer returns error",
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{""},
-				Node: SerialNodes(Arg[int]("is", testDesc, Complexecute[int](), CompleterFromFunc(func(i int, d *command.Data) (*command.Completion, error) {
+				Node: SerialNodes(Arg[int]("is", testDesc, &Complexecute[int]{}, CompleterFromFunc(func(i int, d *command.Data) (*command.Completion, error) {
 					return nil, fmt.Errorf("oopsie")
 				}))),
 				WantErr:    fmt.Errorf("[Complexecute] failed to fetch completion for \"is\": oopsie"),
@@ -224,7 +224,7 @@ func TestExecute(t *testing.T) {
 			name: "Complexecute for Arg fails if returned completion is nil",
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{""},
-				Node: SerialNodes(Arg[int]("is", testDesc, Complexecute[int](), CompleterFromFunc(func(i int, d *command.Data) (*command.Completion, error) {
+				Node: SerialNodes(Arg[int]("is", testDesc, &Complexecute[int]{}, CompleterFromFunc(func(i int, d *command.Data) (*command.Completion, error) {
 					return nil, nil
 				}))),
 				WantErr:    fmt.Errorf("[Complexecute] nil completion returned for \"is\""),
@@ -242,7 +242,7 @@ func TestExecute(t *testing.T) {
 			name: "Complexecute for Arg fails if 0 suggestions",
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{""},
-				Node: SerialNodes(Arg[int]("is", testDesc, Complexecute[int](), CompleterFromFunc(func(i int, d *command.Data) (*command.Completion, error) {
+				Node: SerialNodes(Arg[int]("is", testDesc, &Complexecute[int]{}, CompleterFromFunc(func(i int, d *command.Data) (*command.Completion, error) {
 					return &command.Completion{}, nil
 				}))),
 				WantErr:    fmt.Errorf("[Complexecute] requires exactly one suggestion to be returned for \"is\", got 0: []"),
@@ -260,7 +260,7 @@ func TestExecute(t *testing.T) {
 			name: "Complexecute for Arg fails if multiple suggestions",
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{""},
-				Node: SerialNodes(Arg[int]("is", testDesc, Complexecute[int](), CompleterFromFunc(func(i int, d *command.Data) (*command.Completion, error) {
+				Node: SerialNodes(Arg[int]("is", testDesc, &Complexecute[int]{}, CompleterFromFunc(func(i int, d *command.Data) (*command.Completion, error) {
 					return &command.Completion{
 						Suggestions: []string{"1", "4"},
 					}, nil
@@ -280,7 +280,7 @@ func TestExecute(t *testing.T) {
 			name: "Complexecute for Arg fails if suggestions is wrong type",
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{""},
-				Node: SerialNodes(Arg[int]("is", testDesc, Complexecute[int](), CompleterFromFunc(func(i int, d *command.Data) (*command.Completion, error) {
+				Node: SerialNodes(Arg[int]("is", testDesc, &Complexecute[int]{}, CompleterFromFunc(func(i int, d *command.Data) (*command.Completion, error) {
 					return &command.Completion{
 						Suggestions: []string{"someString"},
 					}, nil
@@ -300,7 +300,7 @@ func TestExecute(t *testing.T) {
 			name: "Complexecute for Arg works if one suggestion",
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{""},
-				Node: SerialNodes(Arg[int]("is", testDesc, Complexecute[int](), CompleterFromFunc(func(i int, d *command.Data) (*command.Completion, error) {
+				Node: SerialNodes(Arg[int]("is", testDesc, &Complexecute[int]{}, CompleterFromFunc(func(i int, d *command.Data) (*command.Completion, error) {
 					return &command.Completion{
 						Suggestions: []string{"123"},
 					}, nil
@@ -323,7 +323,7 @@ func TestExecute(t *testing.T) {
 			name: "Complexecute for Arg completes on best effort",
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{""},
-				Node: SerialNodes(Arg[int]("is", testDesc, Complexecute[int](ComplexecuteBestEffort()), CompleterFromFunc(func(i int, d *command.Data) (*command.Completion, error) {
+				Node: SerialNodes(Arg[int]("is", testDesc, &Complexecute[int]{Lenient: true}, CompleterFromFunc(func(i int, d *command.Data) (*command.Completion, error) {
 					return &command.Completion{
 						Suggestions: []string{"123"},
 					}, nil
@@ -346,7 +346,7 @@ func TestExecute(t *testing.T) {
 			name: "Complexecute for Arg doesn't complete or error on best effort if no suggestions",
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"h"},
-				Node: SerialNodes(Arg[string]("s", testDesc, Complexecute[string](ComplexecuteBestEffort()), CompleterFromFunc(func(i string, d *command.Data) (*command.Completion, error) {
+				Node: SerialNodes(Arg[string]("s", testDesc, &Complexecute[string]{Lenient: true}, CompleterFromFunc(func(i string, d *command.Data) (*command.Completion, error) {
 					return &command.Completion{}, nil
 				}))),
 				WantData: &command.Data{
@@ -367,7 +367,7 @@ func TestExecute(t *testing.T) {
 			name: "Complexecute for Arg doesn't complete or error on best effort if multiple suggestions",
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"h"},
-				Node: SerialNodes(Arg[string]("s", testDesc, Complexecute[string](ComplexecuteBestEffort()), CompleterFromFunc(func(i string, d *command.Data) (*command.Completion, error) {
+				Node: SerialNodes(Arg[string]("s", testDesc, &Complexecute[string]{Lenient: true}, CompleterFromFunc(func(i string, d *command.Data) (*command.Completion, error) {
 					return &command.Completion{
 						Suggestions: []string{"hey", "hi"},
 					}, nil
@@ -390,7 +390,7 @@ func TestExecute(t *testing.T) {
 			name: "Complexecute for Arg doesn't complete or error on best effort if error",
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"h"},
-				Node: SerialNodes(Arg[string]("s", testDesc, Complexecute[string](ComplexecuteBestEffort()), CompleterFromFunc(func(i string, d *command.Data) (*command.Completion, error) {
+				Node: SerialNodes(Arg[string]("s", testDesc, &Complexecute[string]{Lenient: true}, CompleterFromFunc(func(i string, d *command.Data) (*command.Completion, error) {
 					return nil, fmt.Errorf("oopsie")
 				}))),
 				WantData: &command.Data{
@@ -411,7 +411,7 @@ func TestExecute(t *testing.T) {
 			name: "Complexecute for Arg doesn't complete or error on best effort if nil command.Completion",
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"h"},
-				Node: SerialNodes(Arg[string]("s", testDesc, Complexecute[string](ComplexecuteBestEffort()), CompleterFromFunc(func(i string, d *command.Data) (*command.Completion, error) {
+				Node: SerialNodes(Arg[string]("s", testDesc, &Complexecute[string]{Lenient: true}, CompleterFromFunc(func(i string, d *command.Data) (*command.Completion, error) {
 					return nil, nil
 				}))),
 				WantData: &command.Data{
@@ -432,7 +432,7 @@ func TestExecute(t *testing.T) {
 			name: "Complexecute for Arg works when only one prefix matches",
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"4"},
-				Node: SerialNodes(Arg[int]("is", testDesc, Complexecute[int](), CompleterFromFunc(func(i int, d *command.Data) (*command.Completion, error) {
+				Node: SerialNodes(Arg[int]("is", testDesc, &Complexecute[int]{}, CompleterFromFunc(func(i int, d *command.Data) (*command.Completion, error) {
 					return &command.Completion{
 						Suggestions: []string{"123", "234", "345", "456", "567"},
 					}, nil
@@ -455,7 +455,7 @@ func TestExecute(t *testing.T) {
 			name: "Complexecute for Arg fails if multiple completions",
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"f"},
-				Node: SerialNodes(Arg[string]("s", testDesc, Complexecute[string](), CompleterFromFunc(func(i string, d *command.Data) (*command.Completion, error) {
+				Node: SerialNodes(Arg[string]("s", testDesc, &Complexecute[string]{}, CompleterFromFunc(func(i string, d *command.Data) (*command.Completion, error) {
 					return &command.Completion{
 						Suggestions: []string{"one", "two", "three", "four", "five", "six"},
 					}, nil
@@ -475,7 +475,7 @@ func TestExecute(t *testing.T) {
 			name: "Complexecute for Arg works for string",
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"fi"},
-				Node: SerialNodes(Arg[string]("s", testDesc, Complexecute[string](), CompleterFromFunc(func(i string, d *command.Data) (*command.Completion, error) {
+				Node: SerialNodes(Arg[string]("s", testDesc, &Complexecute[string]{}, CompleterFromFunc(func(i string, d *command.Data) (*command.Completion, error) {
 					return &command.Completion{
 						Suggestions: []string{"one", "two", "three", "four", "five", "six"},
 					}, nil
@@ -499,12 +499,12 @@ func TestExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"fi", "tr"},
 				Node: SerialNodes(
-					Arg[string]("s", testDesc, Complexecute[string](), CompleterFromFunc(func(i string, d *command.Data) (*command.Completion, error) {
+					Arg[string]("s", testDesc, &Complexecute[string]{}, CompleterFromFunc(func(i string, d *command.Data) (*command.Completion, error) {
 						return &command.Completion{
 							Suggestions: []string{"one", "two", "three", "four", "five", "six"},
 						}, nil
 					})),
-					Arg[string]("s2", testDesc, Complexecute[string](), CompleterFromFunc(func(i string, d *command.Data) (*command.Completion, error) {
+					Arg[string]("s2", testDesc, &Complexecute[string]{}, CompleterFromFunc(func(i string, d *command.Data) (*command.Completion, error) {
 						return &command.Completion{
 							Suggestions: []string{"un", "deux", "trois", "quatre"},
 						}, nil
@@ -531,15 +531,15 @@ func TestExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"fi", "mouse", "tr"},
 				Node: SerialNodes(
-					Arg[string]("s", testDesc, Complexecute[string](), CompleterFromFunc(func(i string, d *command.Data) (*command.Completion, error) {
+					Arg[string]("s", testDesc, &Complexecute[string]{}, CompleterFromFunc(func(i string, d *command.Data) (*command.Completion, error) {
 						return &command.Completion{
 							Suggestions: []string{"one", "two", "three", "four", "five", "six"},
 						}, nil
 					})),
-					Arg[string]("s2", testDesc, Complexecute[string](), CompleterFromFunc(func(i string, d *command.Data) (*command.Completion, error) {
+					Arg[string]("s2", testDesc, &Complexecute[string]{}, CompleterFromFunc(func(i string, d *command.Data) (*command.Completion, error) {
 						return nil, fmt.Errorf("rats")
 					})),
-					Arg[string]("s3", testDesc, Complexecute[string](), CompleterFromFunc(func(i string, d *command.Data) (*command.Completion, error) {
+					Arg[string]("s3", testDesc, &Complexecute[string]{}, CompleterFromFunc(func(i string, d *command.Data) (*command.Completion, error) {
 						return &command.Completion{
 							Suggestions: []string{"un", "deux", "trois", "quatre"},
 						}, nil
@@ -569,15 +569,15 @@ func TestExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"fi", "mouse", "tr"},
 				Node: SerialNodes(
-					Arg[string]("s", testDesc, Complexecute[string](), CompleterFromFunc(func(i string, d *command.Data) (*command.Completion, error) {
+					Arg[string]("s", testDesc, &Complexecute[string]{}, CompleterFromFunc(func(i string, d *command.Data) (*command.Completion, error) {
 						return &command.Completion{
 							Suggestions: []string{"one", "two", "three", "four", "five", "six"},
 						}, nil
 					})),
-					Arg[string]("s2", testDesc, Complexecute[string](ComplexecuteBestEffort()), CompleterFromFunc(func(i string, d *command.Data) (*command.Completion, error) {
+					Arg[string]("s2", testDesc, &Complexecute[string]{Lenient: true}, CompleterFromFunc(func(i string, d *command.Data) (*command.Completion, error) {
 						return nil, fmt.Errorf("rats")
 					})),
-					Arg[string]("s3", testDesc, Complexecute[string](), CompleterFromFunc(func(i string, d *command.Data) (*command.Completion, error) {
+					Arg[string]("s3", testDesc, &Complexecute[string]{}, CompleterFromFunc(func(i string, d *command.Data) (*command.Completion, error) {
 						return &command.Completion{
 							Suggestions: []string{"un", "deux", "trois", "quatre"},
 						}, nil
@@ -606,7 +606,7 @@ func TestExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{""},
 				Node: SerialNodes(Arg[string]("s", testDesc,
-					Complexecute[string](),
+					&Complexecute[string]{},
 					CompleterFromFunc(func(s string, d *command.Data) (*command.Completion, error) {
 						return &command.Completion{
 							Suggestions: []string{"abc"},
@@ -635,7 +635,7 @@ func TestExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"bra"},
 				Node: SerialNodes(Arg[string]("s", testDesc,
-					Complexecute[string](),
+					&Complexecute[string]{},
 					CompleterFromFunc(func(s string, d *command.Data) (*command.Completion, error) {
 						return &command.Completion{
 							Suggestions: []string{"alpha", "bravo", "charlie", "brown"},
@@ -664,7 +664,7 @@ func TestExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"br"},
 				Node: SerialNodes(Arg[string]("s", testDesc,
-					Complexecute[string](),
+					&Complexecute[string]{},
 					CompleterFromFunc(func(s string, d *command.Data) (*command.Completion, error) {
 						return &command.Completion{
 							Suggestions: []string{"alpha", "bravo", "charlie", "brown"},
@@ -690,7 +690,7 @@ func TestExecute(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"br"},
 				Node: SerialNodes(Arg[string]("s", testDesc,
-					Complexecute[string](ComplexecuteBestEffort()),
+					&Complexecute[string]{Lenient: true},
 					CompleterFromFunc(func(s string, d *command.Data) (*command.Completion, error) {
 						return &command.Completion{
 							Suggestions: []string{"alpha", "bravo", "charlie", "brown"},
@@ -717,7 +717,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "Complexecute is properly set in data",
 			etc: &commandtest.ExecuteTestCase{
-				Node: SerialNodes(Arg[string]("s", testDesc, Complexecute[string](), CompleterFromFunc(func(s string, d *command.Data) (*command.Completion, error) {
+				Node: SerialNodes(Arg[string]("s", testDesc, &Complexecute[string]{}, CompleterFromFunc(func(s string, d *command.Data) (*command.Completion, error) {
 					d.Set("CFE", d.Complexecute)
 					return &command.Completion{Suggestions: []string{"abcde"}}, nil
 				}))),
@@ -735,50 +735,11 @@ func TestExecute(t *testing.T) {
 				},
 			},
 		},
-		// ComplexecuteAllowExactMatch tests
 		{
-			name: "Complexecute fails if exact match and ExactMatch option not provided",
+			name: "Complexecute succeeds if exact match",
 			etc: &commandtest.ExecuteTestCase{
 				Node: SerialNodes(Arg[string]("s", testDesc,
-					Complexecute[string](),
-					SimpleCompleter[string]("Hello", "HelloThere", "Hello!", "Goodbye"),
-				)),
-				Args:       []string{"Hello"},
-				WantStderr: "[Complexecute] requires exactly one suggestion to be returned for \"s\", got 3: [Hello Hello! HelloThere]\n",
-				WantErr:    fmt.Errorf("[Complexecute] requires exactly one suggestion to be returned for \"s\", got 3: [Hello Hello! HelloThere]"),
-			},
-			ietc: &spycommandtest.ExecuteTestCase{
-				WantInput: &spycommandtest.SpyInput{
-					Args: []*spycommand.InputArg{
-						{Value: "Hello"},
-					},
-				},
-			},
-		},
-		{
-			name: "ComplexecuteAllowExactMatch fails if partial match",
-			etc: &commandtest.ExecuteTestCase{
-				Node: SerialNodes(Arg[string]("s", testDesc,
-					Complexecute[string](ComplexecuteAllowExactMatch()),
-					SimpleCompleter[string]("Hello", "HelloThere", "Hello!", "Goodbye"),
-				)),
-				Args:       []string{"Hel"},
-				WantStderr: "[Complexecute] requires exactly one suggestion to be returned for \"s\", got 3: [Hello Hello! HelloThere]\n",
-				WantErr:    fmt.Errorf("[Complexecute] requires exactly one suggestion to be returned for \"s\", got 3: [Hello Hello! HelloThere]"),
-			},
-			ietc: &spycommandtest.ExecuteTestCase{
-				WantInput: &spycommandtest.SpyInput{
-					Args: []*spycommand.InputArg{
-						{Value: "Hel"},
-					},
-				},
-			},
-		},
-		{
-			name: "ComplexecuteAllowExactMatch works if exact match",
-			etc: &commandtest.ExecuteTestCase{
-				Node: SerialNodes(Arg[string]("s", testDesc,
-					Complexecute[string](ComplexecuteAllowExactMatch()),
+					&Complexecute[string]{},
 					SimpleCompleter[string]("Hello", "HelloThere", "Hello!", "Goodbye"),
 				)),
 				Args: []string{"Hello"},
@@ -795,10 +756,49 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "ComplexecuteAllowExactMatch works if exact match with sub match",
+			name: "Complexecute fails if partial match",
 			etc: &commandtest.ExecuteTestCase{
 				Node: SerialNodes(Arg[string]("s", testDesc,
-					Complexecute[string](ComplexecuteAllowExactMatch()),
+					&Complexecute[string]{},
+					SimpleCompleter[string]("Hello", "HelloThere", "Hello!", "Goodbye"),
+				)),
+				Args:       []string{"Hel"},
+				WantStderr: "[Complexecute] requires exactly one suggestion to be returned for \"s\", got 3: [Hello Hello! HelloThere]\n",
+				WantErr:    fmt.Errorf("[Complexecute] requires exactly one suggestion to be returned for \"s\", got 3: [Hello Hello! HelloThere]"),
+			},
+			ietc: &spycommandtest.ExecuteTestCase{
+				WantInput: &spycommandtest.SpyInput{
+					Args: []*spycommand.InputArg{
+						{Value: "Hel"},
+					},
+				},
+			},
+		},
+		{
+			name: "Complexecute works if exact match",
+			etc: &commandtest.ExecuteTestCase{
+				Node: SerialNodes(Arg[string]("s", testDesc,
+					&Complexecute[string]{Lenient: true},
+					SimpleCompleter[string]("Hello", "HelloThere", "Hello!", "Goodbye"),
+				)),
+				Args: []string{"Hello"},
+				WantData: &command.Data{Values: map[string]interface{}{
+					"s": "Hello",
+				}},
+			},
+			ietc: &spycommandtest.ExecuteTestCase{
+				WantInput: &spycommandtest.SpyInput{
+					Args: []*spycommand.InputArg{
+						{Value: "Hello"},
+					},
+				},
+			},
+		},
+		{
+			name: "Complexecute works if exact match with sub match",
+			etc: &commandtest.ExecuteTestCase{
+				Node: SerialNodes(Arg[string]("s", testDesc,
+					&Complexecute[string]{Lenient: true},
 					SimpleCompleter[string]("Hello", "HelloThere", "Hello!", "Goodbye"),
 				)),
 				Args: []string{"HelloThere"},
@@ -815,10 +815,10 @@ func TestExecute(t *testing.T) {
 			},
 		},
 		{
-			name: "ComplexecuteAllowExactMatch works if only sub match",
+			name: "Complexecute works if only sub match",
 			etc: &commandtest.ExecuteTestCase{
 				Node: SerialNodes(Arg[string]("s", testDesc,
-					Complexecute[string](ComplexecuteAllowExactMatch()),
+					&Complexecute[string]{},
 					SimpleCompleter[string]("Hello", "HelloThere", "Hello!", "Goodbye"),
 				)),
 				Args:       []string{"HelloThere!"},
@@ -837,7 +837,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "FileCompleter with Complexecute properly completes a single directory",
 			etc: &commandtest.ExecuteTestCase{
-				Node: SerialNodes(FileArgument("s", testDesc, Complexecute[string]())),
+				Node: SerialNodes(FileArgument("s", testDesc, &Complexecute[string]{})),
 				Args: []string{"te"},
 				WantData: &command.Data{Values: map[string]interface{}{
 					"s": testutil.FilepathAbs(t, "testdata"),
@@ -854,7 +854,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "FileListArgument with Complexecute properly completes a single directory",
 			etc: &commandtest.ExecuteTestCase{
-				Node: SerialNodes(FileListArgument("s", testDesc, 2, 0, Complexecute[[]string]())),
+				Node: SerialNodes(FileListArgument("s", testDesc, 2, 0, &Complexecute[[]string]{})),
 				Args: []string{"co2test", "te"},
 				WantData: &command.Data{Values: map[string]interface{}{
 					"s": []string{
@@ -875,7 +875,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "FileCompleter with Complexecute properly completes a full directory",
 			etc: &commandtest.ExecuteTestCase{
-				Node: SerialNodes(FileArgument("s", testDesc, Complexecute[string]())),
+				Node: SerialNodes(FileArgument("s", testDesc, &Complexecute[string]{})),
 				Args: []string{"testdata"},
 				WantData: &command.Data{Values: map[string]interface{}{
 					"s": testutil.FilepathAbs(t, "testdata"),
@@ -892,7 +892,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "FileCompleter with Complexecute properly completes a full directory with trailing slash",
 			etc: &commandtest.ExecuteTestCase{
-				Node: SerialNodes(FileArgument("s", testDesc, Complexecute[string]())),
+				Node: SerialNodes(FileArgument("s", testDesc, &Complexecute[string]{})),
 				Args: []string{fmt.Sprintf("testdata%c", filepath.Separator)},
 				WantData: &command.Data{Values: map[string]interface{}{
 					"s": testutil.FilepathAbs(t, "testdata"),
@@ -909,7 +909,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "FileCompleter with Complexecute properly completes nested directory",
 			etc: &commandtest.ExecuteTestCase{
-				Node: SerialNodes(FileArgument("s", testDesc, Complexecute[string]())),
+				Node: SerialNodes(FileArgument("s", testDesc, &Complexecute[string]{})),
 				Args: []string{filepath.Join("testdata", "c")},
 				WantData: &command.Data{Values: map[string]interface{}{
 					"s": testutil.FilepathAbs(t, "testdata", "cases"),
@@ -926,7 +926,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "FileCompleter with Complexecute properly completes nested file",
 			etc: &commandtest.ExecuteTestCase{
-				Node: SerialNodes(FileArgument("s", testDesc, Complexecute[string]())),
+				Node: SerialNodes(FileArgument("s", testDesc, &Complexecute[string]{})),
 				Args: []string{filepath.Join("testdata", "cases", "o")},
 				WantData: &command.Data{Values: map[string]interface{}{
 					"s": testutil.FilepathAbs(t, "testdata", "cases", "other.txt"),
@@ -943,7 +943,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "FileCompleter with Complexecute properly completes a single file",
 			etc: &commandtest.ExecuteTestCase{
-				Node: SerialNodes(FileArgument("s", testDesc, Complexecute[string]())),
+				Node: SerialNodes(FileArgument("s", testDesc, &Complexecute[string]{})),
 				Args: []string{"v"},
 				WantData: &command.Data{Values: map[string]interface{}{
 					"s": testutil.FilepathAbs(t, "validator.go"),
@@ -961,7 +961,7 @@ func TestExecute(t *testing.T) {
 			name: "FileCompleter with Complexecute fails if multiple options (autofilling letters)",
 			etc: &commandtest.ExecuteTestCase{
 				OS:         &commandtest.FakeOS{},
-				Node:       SerialNodes(FileArgument("s", testDesc, Complexecute[string]())),
+				Node:       SerialNodes(FileArgument("s", testDesc, &Complexecute[string]{})),
 				Args:       []string{"t"},
 				WantStderr: filepath.FromSlash("[Complexecute] requires exactly one suggestion to be returned for \"s\", got 2: [testdata/ transformer.go]\n"),
 				WantErr:    fmt.Errorf(filepath.FromSlash("[Complexecute] requires exactly one suggestion to be returned for \"s\", got 2: [testdata/ transformer.go]")),
@@ -977,7 +977,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "FileCompleter with Complexecute fails if no options",
 			etc: &commandtest.ExecuteTestCase{
-				Node:       SerialNodes(FileArgument("s", testDesc, Complexecute[string]())),
+				Node:       SerialNodes(FileArgument("s", testDesc, &Complexecute[string]{})),
 				Args:       []string{"uhhh"},
 				WantStderr: "[Complexecute] nil completion returned for \"s\"\n",
 				WantErr:    fmt.Errorf("[Complexecute] nil completion returned for \"s\""),
@@ -995,7 +995,7 @@ func TestExecute(t *testing.T) {
 			osGetwd: testutil.FilepathAbs(t, "cotest"),
 			etc: &commandtest.ExecuteTestCase{
 				Node: SerialNodes(
-					Arg[string]("s", testDesc, Complexecute[string](), &FileCompleter[string]{
+					Arg[string]("s", testDesc, &Complexecute[string]{}, &FileCompleter[string]{
 						ExcludePwd:  true,
 						IgnoreFiles: true,
 					}),
@@ -1017,7 +1017,7 @@ func TestExecute(t *testing.T) {
 		{
 			name: "Complexecute for ListArg fails if no arg provided",
 			etc: &commandtest.ExecuteTestCase{
-				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, Complexecute[[]string](), CompleterFromFunc(func(sl []string, d *command.Data) (*command.Completion, error) {
+				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, &Complexecute[[]string]{}, CompleterFromFunc(func(sl []string, d *command.Data) (*command.Completion, error) {
 					return nil, fmt.Errorf("oopsie")
 				}))),
 				WantErr:    fmt.Errorf(`Argument "sl" requires at least 2 arguments, got 0`),
@@ -1032,7 +1032,7 @@ func TestExecute(t *testing.T) {
 			name: "Complexecute for ListArg fails completer returns error",
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{""},
-				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, Complexecute[[]string](), CompleterFromFunc(func(sl []string, d *command.Data) (*command.Completion, error) {
+				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, &Complexecute[[]string]{}, CompleterFromFunc(func(sl []string, d *command.Data) (*command.Completion, error) {
 					return nil, fmt.Errorf("oopsie")
 				}))),
 				WantErr:    fmt.Errorf("[Complexecute] failed to fetch completion for \"sl\": oopsie"),
@@ -1050,7 +1050,7 @@ func TestExecute(t *testing.T) {
 			name: "Complexecute for ListArg fails if returned completion is nil",
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{""},
-				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, Complexecute[[]string](), CompleterFromFunc(func(sl []string, d *command.Data) (*command.Completion, error) {
+				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, &Complexecute[[]string]{}, CompleterFromFunc(func(sl []string, d *command.Data) (*command.Completion, error) {
 					return nil, nil
 				}))),
 				WantErr:    fmt.Errorf("[Complexecute] nil completion returned for \"sl\""),
@@ -1068,7 +1068,7 @@ func TestExecute(t *testing.T) {
 			name: "Complexecute for ListArg fails if 0 suggestions",
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{""},
-				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, Complexecute[[]string](), CompleterFromFunc(func(sl []string, d *command.Data) (*command.Completion, error) {
+				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, &Complexecute[[]string]{}, CompleterFromFunc(func(sl []string, d *command.Data) (*command.Completion, error) {
 					return &command.Completion{}, nil
 				}))),
 				WantErr:    fmt.Errorf("[Complexecute] requires exactly one suggestion to be returned for \"sl\", got 0: []"),
@@ -1086,7 +1086,7 @@ func TestExecute(t *testing.T) {
 			name: "Complexecute for ListArg fails if multiple suggestions",
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{""},
-				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, Complexecute[[]string](), CompleterFromFunc(func(sl []string, d *command.Data) (*command.Completion, error) {
+				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, &Complexecute[[]string]{}, CompleterFromFunc(func(sl []string, d *command.Data) (*command.Completion, error) {
 					return &command.Completion{
 						Suggestions: []string{"alpha", "bravo"},
 					}, nil
@@ -1106,7 +1106,7 @@ func TestExecute(t *testing.T) {
 			name: "Complexecute for ListArg fails if suggestions is wrong type",
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{""},
-				Node: SerialNodes(ListArg[int]("il", testDesc, 2, 3, Complexecute[[]int](), CompleterFromFunc(func(sl []int, d *command.Data) (*command.Completion, error) {
+				Node: SerialNodes(ListArg[int]("il", testDesc, 2, 3, &Complexecute[[]int]{}, CompleterFromFunc(func(sl []int, d *command.Data) (*command.Completion, error) {
 					return &command.Completion{
 						Suggestions: []string{"alpha"},
 					}, nil
@@ -1126,7 +1126,7 @@ func TestExecute(t *testing.T) {
 			name: "Complexecute for ListArg fails if still not enough args",
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"alpha", ""},
-				Node: SerialNodes(ListArg[string]("sl", testDesc, 3, 3, Complexecute[[]string](), CompleterFromFunc(func(sl []string, d *command.Data) (*command.Completion, error) {
+				Node: SerialNodes(ListArg[string]("sl", testDesc, 3, 3, &Complexecute[[]string]{}, CompleterFromFunc(func(sl []string, d *command.Data) (*command.Completion, error) {
 					return &command.Completion{
 						Distinct:    true,
 						Suggestions: []string{"alpha", "charlie"},
@@ -1155,7 +1155,7 @@ func TestExecute(t *testing.T) {
 			name: "Complexecute for ListArg works if one suggestion",
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"alpha", "bravo", ""},
-				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, Complexecute[[]string](), CompleterFromFunc(func(sl []string, d *command.Data) (*command.Completion, error) {
+				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, &Complexecute[[]string]{}, CompleterFromFunc(func(sl []string, d *command.Data) (*command.Completion, error) {
 					return &command.Completion{
 						Distinct:    true,
 						Suggestions: []string{"alpha", "bravo", "charlie"},
@@ -1181,7 +1181,7 @@ func TestExecute(t *testing.T) {
 			name: "Complexecute for ListArg works when only one prefix matches",
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"alpha", "bravo", "c"},
-				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, Complexecute[[]string](), CompleterFromFunc(func(sl []string, d *command.Data) (*command.Completion, error) {
+				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, &Complexecute[[]string]{}, CompleterFromFunc(func(sl []string, d *command.Data) (*command.Completion, error) {
 					return &command.Completion{
 						Distinct:    true,
 						Suggestions: []string{"alpha", "bravo", "charlie", "delta", "epsilon"},
@@ -1207,7 +1207,7 @@ func TestExecute(t *testing.T) {
 			name: "Complexecute for ListArg fails if no distinct filter",
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"alpha", "bravo", ""},
-				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, Complexecute[[]string](), CompleterFromFunc(func(sl []string, d *command.Data) (*command.Completion, error) {
+				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, &Complexecute[[]string]{}, CompleterFromFunc(func(sl []string, d *command.Data) (*command.Completion, error) {
 					return &command.Completion{
 						Suggestions: []string{"alpha", "bravo", "charlie"},
 					}, nil
@@ -1229,7 +1229,7 @@ func TestExecute(t *testing.T) {
 			name: "Complexecute for ListArg works with distinct filter",
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"alpha", "bravo", ""},
-				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, Complexecute[[]string](), CompleterFromFunc(func(sl []string, d *command.Data) (*command.Completion, error) {
+				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, &Complexecute[[]string]{}, CompleterFromFunc(func(sl []string, d *command.Data) (*command.Completion, error) {
 					return &command.Completion{
 						Distinct:    true,
 						Suggestions: []string{"alpha", "bravo", "charlie"},
@@ -1255,7 +1255,7 @@ func TestExecute(t *testing.T) {
 			name: "Complexecute for ListArg completes multiple args",
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"a", "br", "c"},
-				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, Complexecute[[]string](), CompleterFromFunc(func(sl []string, d *command.Data) (*command.Completion, error) {
+				Node: SerialNodes(ListArg[string]("sl", testDesc, 2, 3, &Complexecute[[]string]{}, CompleterFromFunc(func(sl []string, d *command.Data) (*command.Completion, error) {
 					return &command.Completion{
 						Suggestions: []string{"alpha", "bravo", "charlie"},
 					}, nil
@@ -1280,7 +1280,7 @@ func TestExecute(t *testing.T) {
 			name: "Complexecute for ListArg fails if multiple completions",
 			etc: &commandtest.ExecuteTestCase{
 				Args: []string{"f"},
-				Node: SerialNodes(Arg[string]("s", testDesc, Complexecute[string](), CompleterFromFunc(func(i string, d *command.Data) (*command.Completion, error) {
+				Node: SerialNodes(Arg[string]("s", testDesc, &Complexecute[string]{}, CompleterFromFunc(func(i string, d *command.Data) (*command.Completion, error) {
 					return &command.Completion{
 						Suggestions: []string{"one", "two", "three", "four", "five", "six"},
 					}, nil

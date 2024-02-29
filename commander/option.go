@@ -15,7 +15,7 @@ type argumentOption[T any] struct {
 	customSet    *CustomSetter[T]
 	_default     *defaultArgumentOption[T]
 	breakers     []*ListBreaker[T]
-	complexecute *complexecute
+	complexecute *Complexecute[T]
 	hideUsage    bool
 }
 
@@ -77,39 +77,18 @@ func (cs *CustomSetter[T]) modifyArgumentOption(ao *argumentOption[T]) {
 // If a command execution is run, then the last value for this arg
 // will be completed using its `Complete` logic. Exactly one suggestion
 // must be returned.
-func Complexecute[T any](opts ...ComplexecuteOption) ArgumentOption[T] {
-	cfe := &complexecute{
-		enabled: true,
-		strict:  true,
-	}
-	for _, o := range opts {
-		o(cfe)
-	}
-	return newArgumentOption(func(ao *argumentOption[T]) {
-		ao.complexecute = cfe
-	})
+//
+// The type parameter is needed because it implements `ArgumentOption[T]`.
+type Complexecute[T any] struct {
+	// Lenient indicates whether a no-match should result in error or not.
+	// Default behavior (false) means that an error will be thrown if the completion
+	// argument doesn't exactly match one of the completion values and if the number
+	// of completion suggestions isn't exactly one.
+	Lenient bool
 }
 
-type ComplexecuteOption func(*complexecute)
-
-type complexecute struct {
-	// Whether or not to actually complete it
-	enabled    bool
-	strict     bool
-	exactMatch bool
-}
-
-// ComplexecuteBestEffort runs Complexecute on a best effort basis.
-// If zero or multiple completions are suggested, then the argument isn't altered.
-func ComplexecuteBestEffort() ComplexecuteOption {
-	return func(cfe *complexecute) { cfe.strict = false }
-}
-
-// ComplexecuteAllowExactMatch allows exact matches even if multiple
-// completions were returned. For example, if the arg is "Hello", and the resulting
-// completions are ["Hello", "HelloThere", "Hello!"], then we won't error.
-func ComplexecuteAllowExactMatch() ComplexecuteOption {
-	return func(cfe *complexecute) { cfe.exactMatch = true }
+func (c *Complexecute[T]) modifyArgumentOption(ao *argumentOption[T]) {
+	ao.complexecute = c
 }
 
 // Transformer is an `ArgumentOption` that transforms an argument.

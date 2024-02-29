@@ -151,8 +151,8 @@ func (an *Argument[T]) Execute(i *command.Input, o command.Output, data *command
 		return nil
 	}
 
-	if an.opt != nil && an.opt.complexecute != nil && an.opt.complexecute.enabled {
-		strict := an.opt.complexecute.strict
+	if an.opt != nil && an.opt.complexecute != nil {
+		strict := !an.opt.complexecute.Lenient
 
 		// Iteratively complete arguments
 		for i := 1; i <= len(sl); i++ {
@@ -175,7 +175,7 @@ func (an *Argument[T]) Execute(i *command.Input, o command.Output, data *command
 
 			lastArg := *tsl[len(tsl)-1]
 			suggestions := compl.Process(lastArg, nil, true)
-			if len(suggestions) == 1 || (an.opt.complexecute.exactMatch && slices.Contains(suggestions, lastArg)) {
+			if len(suggestions) == 1 || slices.Contains(suggestions, lastArg) {
 				*tsl[len(tsl)-1] = suggestions[0]
 			} else if strict {
 				return o.Stderrf("[Complexecute] requires exactly one suggestion to be returned for %q, got %d: %v\n", an.name, len(suggestions), suggestions)
