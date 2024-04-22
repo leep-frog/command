@@ -1276,12 +1276,25 @@ func TestTypedCompleters(t *testing.T) {
 			},
 		},
 		&completerTest[string]{
-			name: "file completer completes to case matched completion",
+			name: "file completer completes to case matched completion of shortest matching prefix",
 			c:    &FileCompleter[[]string]{},
 			args: "cmd testdata/meta",
 			want: &command.Autocompletion{
 				Suggestions: []string{
-					"testdata/metadata",
+					// There is a metadata_ and METADATA file. The latter matches since it is a prefix
+					"testdata/METADATA",
+				},
+				SpacelessCompletion: true,
+			},
+		},
+		&completerTest[string]{
+			name: "file completer fixes case matched completion of shortest matching prefix",
+			c:    &FileCompleter[[]string]{},
+			args: "cmd testdata/mETAdATa",
+			want: &command.Autocompletion{
+				Suggestions: []string{
+					// There is a metadata_ and METADATA file. The latter matches since it is a prefix
+					"testdata/METADATA",
 				},
 				SpacelessCompletion: true,
 			},
@@ -1316,7 +1329,7 @@ func TestTypedCompleters(t *testing.T) {
 			args: "cmd meta",
 			want: &command.Autocompletion{
 				Suggestions: []string{
-					"metadata",
+					"METADATA",
 				},
 				SpacelessCompletion: true,
 			},

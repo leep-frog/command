@@ -412,19 +412,27 @@ func (ff *FileCompleter[T]) Complete(value T, data *command.Data) (*command.Comp
 func getAutofillLetters(laFile string, suggestions []string) (string, bool) {
 	nextLetterPos := len(laFile)
 	for proceed := true; proceed; nextLetterPos++ {
-		var nextLetter *rune
+		var nextLetterSet bool
 		var lowerNextLetter rune
 		for _, s := range suggestions {
+
+			// If a remaining suggestion has run out of letters, then
+			// we can't autocomplete more than that.
 			if len(s) <= nextLetterPos {
-				// If a remaining suggestion has run out of letters, then
-				// we can't autocomplete more than that.
+
+				// If the suggestion doesn't equal the partial file name, then either add the letters or fix the casing
+				if s != laFile {
+					return s, true
+				}
+
+				// Otherwise, we want to display all suggestions (which is done below)
 				proceed = false
 				break
 			}
 
 			char := rune(s[nextLetterPos])
-			if nextLetter == nil {
-				nextLetter = &char
+			if !nextLetterSet {
+				nextLetterSet = true
 				lowerNextLetter = unicode.ToLower(char)
 				continue
 			}
