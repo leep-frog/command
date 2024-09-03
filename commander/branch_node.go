@@ -22,10 +22,12 @@ type BranchNode struct {
 	// Default is the `command.Node` that should be executed if the branching argument
 	// does not match of any of the branches.
 	Default command.Node
-	// BranchCompletions is whether or not branch arguments should be completed
-	// or if the completions from the Default `command.Node` should be used.
-	// This is only relevant when the branching argument is the argument
-	// being completed. Otherwise, this node is executed as normal.
+	// DefaultCompletion is whether or not the Default `command.Node` completion is run or
+	// if branch argument values are used for completion suggestions.
+	//
+	// Note: this is only relevant when the branching argument is the argument
+	// being completed. If a later arg is being completed, then the Default completion
+	// is always run.
 	DefaultCompletion bool
 	// BranchUsageOrder allows you to set the order for branch usage docs.
 	// If this is nil, then branches are sorted in alphabetical order.
