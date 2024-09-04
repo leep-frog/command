@@ -30,6 +30,11 @@ func OutputCode(fs ...Format) string {
 	return fmt.Sprintf("\033[%sm", strings.Join(r, ";"))
 }
 
+// Apply applies the provided format to the string and then resets the format.
+func Apply(s string, fs ...Format) string {
+	return fmt.Sprintf("%s%s%s", OutputCode(fs...), s, OutputCode(Reset))
+}
+
 // Format is a format (bold, color, etc.) that can be applied to output.
 // This package defines a handful of these for the typical use cases.
 type Format interface {

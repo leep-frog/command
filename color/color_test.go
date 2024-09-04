@@ -87,6 +87,7 @@ func TestFormat(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			testutil.Cmp(t, "Format.tputArgs() returned incorrect value", test.wantTputCalls, test.format.tputArgs())
 			testutil.Cmp(t, "Format.OutputCode() returned incorrect value", test.wantOutputCode, OutputCode(test.format))
+			testutil.Cmp(t, "color.Apply() returned incorrect value", test.wantOutputCode+"Abc\033[0m", Apply("Abc", test.format))
 		})
 	}
 }
