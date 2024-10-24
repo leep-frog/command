@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"strings"
 
-	"golang.org/x/exp/slices"
+	"slices"
 )
 
 // OutputCode gets the output codes for the provided `Formats`.

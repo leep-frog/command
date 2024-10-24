@@ -2,10 +2,10 @@ package command
 
 import (
 	"fmt"
+	"maps"
 
 	"github.com/leep-frog/command/internal/spycommand"
 	"github.com/leep-frog/command/internal/spyinput"
-	"golang.org/x/exp/maps"
 )
 
 const (

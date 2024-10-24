@@ -3,11 +3,11 @@ package command
 import (
 	"fmt"
 	"regexp"
+	"slices"
 	"sort"
 	"strings"
 
 	"github.com/leep-frog/command/internal/constants"
-	"golang.org/x/exp/slices"
 )
 
 type UsageSection string

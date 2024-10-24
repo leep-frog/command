@@ -5,9 +5,11 @@ package sourcerer
 
 import (
 	"fmt"
+	"maps"
 	"os"
 	"path/filepath"
 	"runtime"
+	"slices"
 	"strings"
 	"testing"
 
@@ -17,8 +19,6 @@ import (
 	"github.com/leep-frog/command/commander"
 	"github.com/leep-frog/command/internal/spycommander"
 	"github.com/leep-frog/command/internal/testutil"
-	"golang.org/x/exp/maps"
-	"golang.org/x/exp/slices"
 )
 
 var (
@@ -332,8 +332,7 @@ func (s *sourcerer) Node() command.Node {
 }
 
 func (s *sourcerer) listCLIExecutor(i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
-	clis := maps.Keys(s.clis)
-	slices.Sort(clis)
+	clis := slices.Sorted(maps.Keys(s.clis))
 	o.Stdoutln(strings.Join(clis, "\n"))
 	return nil
 }
@@ -507,9 +506,9 @@ var (
 func (s *sourcerer) generateFile(o command.Output, d *command.Data) error {
 	targetName := targetNameArg.Get(d)
 
-	fileData := CurrentOS.RegisterCLIs(s.builtin, s.goExecutableFilePath, targetName, maps.Values(s.clis))
+	fileData := CurrentOS.RegisterCLIs(s.builtin, s.goExecutableFilePath, targetName, slices.Collect(maps.Values(s.clis)))
 
-	fileData = append(fileData, AliasSourcery(s.goExecutableFilePath, maps.Values(s.opts.aliasers)...)...)
+	fileData = append(fileData, AliasSourcery(s.goExecutableFilePath, slices.Collect(maps.Values(s.opts.aliasers))...)...)
 
 	o.Stdoutln(CurrentOS.FunctionWrap(fmt.Sprintf("_%s_wrap_function", targetName), strings.Join(fileData, "\n")))
 

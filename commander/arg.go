@@ -2,11 +2,11 @@ package commander
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/leep-frog/command/command"
 	"github.com/leep-frog/command/internal/operator"
-	"golang.org/x/exp/slices"
 )
 
 // Argument is a type that implements `command.Processor`. It can be

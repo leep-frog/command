@@ -3,13 +3,13 @@ package commander
 import (
 	"fmt"
 	"regexp"
+	"slices"
 	"sort"
 	"strings"
 
 	"github.com/leep-frog/command/command"
 	"github.com/leep-frog/command/internal/constants"
 	"github.com/leep-frog/command/internal/spycommander"
-	"golang.org/x/exp/slices"
 )
 
 const (
