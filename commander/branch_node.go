@@ -2,13 +2,13 @@ package commander
 
 import (
 	"fmt"
-	"maps"
 	"slices"
 	"sort"
 	"strings"
 
 	"github.com/leep-frog/command/command"
 	"github.com/leep-frog/command/internal/spycommander"
+	"golang.org/x/exp/maps"
 )
 
 // BranchNode implements a node that branches on specific string arguments.
@@ -40,12 +40,14 @@ type BranchNode struct {
 func (bn *BranchNode) sortBranchSyns() ([]*branchSyn, error) {
 	syns := bn.getSyns()
 	if bn.BranchUsageOrder == nil {
-		return slices.SortedFunc(maps.Values(syns), func(this, that *branchSyn) int {
+		vs := maps.Values(syns)
+		slices.SortFunc(vs, func(this, that *branchSyn) int {
 			if this.name < that.name {
 				return -1
 			}
 			return 1
-		}), nil
+		})
+		return vs, nil
 	}
 
 	got := map[string]bool{}

@@ -1,6 +1,6 @@
 module github.com/leep-frog/command
 
-go 1.23.2
+go 1.21.0
 
 require (
 	github.com/google/go-cmp v0.5.8

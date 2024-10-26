@@ -2,11 +2,11 @@ package commander
 
 import (
 	"fmt"
-	"maps"
 	"slices"
 
 	"github.com/leep-frog/command/command"
 	"golang.org/x/exp/constraints"
+	"golang.org/x/exp/maps"
 )
 
 // MapArg returns a `command.Processor` that converts an input key into it's value.
@@ -17,7 +17,7 @@ func MapArg[K constraints.Ordered, V any](name, desc string, m map[K]V, allowMis
 // MapFlag returns a `Flag` that converts an input key into it's value.
 func MapFlag[K constraints.Ordered, V any](name string, shortName rune, desc string, m map[K]V, allowMissing bool) *MapFlargument[K, V] {
 	var keys []string
-	for k := range maps.Keys(m) {
+	for _, k := range maps.Keys(m) {
 		keys = append(keys, fmt.Sprintf("%v", k))
 	}
 	ma := &MapFlargument[K, V]{
@@ -37,7 +37,8 @@ func MapFlag[K constraints.Ordered, V any](name string, shortName rune, desc str
 		opts = append(opts, &ValidatorOption[K]{
 			func(k K, d *command.Data) error {
 				if _, ok := m[k]; !ok {
-					keys := slices.Sorted(maps.Keys(m))
+					keys := maps.Keys(m)
+					slices.Sort(keys)
 					return fmt.Errorf("[MapArg] key (%v) is not in map; expected one of %v", k, keys)
 				}
 				return nil
