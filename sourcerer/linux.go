@@ -59,7 +59,7 @@ func (l *linux) SourceSetup(sourceableFile, targetName, goRunSourceCommand strin
 		`# Load all of your CLIs`,
 		fmt.Sprintf(`source %q`, sourceableFile),
 		``,
-		`# Useful function to easily regenerate all of your CLIs`,
+		`# Useful function to easily regenerate all of your CLIs whenever your go code changes`,
 		fmt.Sprintf(`function _regenerate_%s_CLIs() {`, targetName),
 		`  pushd . > /dev/null`,
 		`  cd <PATH_TO_YOUR_CLI_DIRECTORY>`,

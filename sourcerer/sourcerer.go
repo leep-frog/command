@@ -546,6 +546,7 @@ func (s *sourcerer) generateFile(o command.Output, d *command.Data) error {
 		fmt.Sprintf("Sourceable file created: %q", sourceableFile),
 		``,
 		color.Apply("All steps have completed successfully!", color.Green, color.Bold),
+		``,
 		"Run the following (and/or add it to your terminal profile) to finish setting up your CLIs:",
 		``,
 		color.Apply(strings.Join(CurrentOS.SourceSetup(sourceableFile, targetName, goRunSourceCommand), "\n"), color.Blue),
