@@ -24,7 +24,7 @@ See the following docs folders for more info:
 
 1. Create a new go project (`go mod init`)
 
-1. Include this in the project (`go get github.com/leep-frog/command`)
+1. Include this library in the project (`go get github.com/leep-frog/command`)
 
 1. Create a `main.go` with the following contents:
 
@@ -50,32 +50,12 @@ func main() {
 }
 ```
 
-4. `cd` into your project and run the following onetime setup:
+4. `cd` into your project, run the following onetime setup, and follow the
+   instructions provided in the output:
 
 ```bash
-go run . source myCLIs $FOLDER_FOR_BINARY_OUTPUT > $FILE_TO_SOURCE
+go run . source myCLIs $OUTPUT_FOLDER
 ```
-
-> Note: if you ever make a change to your CLIs or above go file, you'll need to
-> re-run the above command. If you do this frequently, consider making a helper
-> function and adding it to your bash profile:
-
-```bash
-function reload_clis() {
-  pushd . > /dev/null
-  cd $PATH_TO_YOUR_GO_PROJECT
-  go run . source myCLIs $FOLDER_FOR_BINARY_OUTPUT > $FILE_TO_SOURCE
-  popd . > /dev/null
-}
-```
-
-5. Add the following to your bash profile:
-
-```bash
-source $FILE_TO_SOURCE # <-- this must match the output file from the previous step
-```
-
-6. Either run the above command or start a new terminal session for your changes to take effect.
 
 ## Writing Your First Command
 

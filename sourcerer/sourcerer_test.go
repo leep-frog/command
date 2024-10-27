@@ -25,6 +25,7 @@ import (
 const (
 	fakeFile          = "FAKE_FILE"
 	fakeInputFile     = "FAKE_INPUT_FILE"
+	fakeFileContents  = "fake file contents"
 	usagePrefixString = "\n======= Command Usage ======="
 
 	osLinux   = "linux"
@@ -180,7 +181,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 						wantOsWriteFiles: []*osWriteFileArgs{
 							{
 								File:     testutil.FilepathAbs(t, "cmd", "leepFrogSource"),
-								Contents: []string{"fake file contents"},
+								Contents: []string{fakeFileContents},
 								FileMode: 0744,
 							},
 						},
@@ -193,7 +194,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 						wantOsWriteFiles: []*osWriteFileArgs{
 							{
 								File:     testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe"),
-								Contents: []string{"fake file contents"},
+								Contents: []string{fakeFileContents},
 								FileMode: 0744,
 							},
 						},
@@ -223,7 +224,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							{
 								File:     testutil.FilepathAbs(t, "cmd", "leepFrogSource"),
 								FileMode: 0744,
-								Contents: []string{"fake file contents"},
+								Contents: []string{fakeFileContents},
 							},
 							{
 								File:     testutil.FilepathAbs(t, "cmd", "leepFrogSource_loader.sh"),
@@ -278,7 +279,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 						wantOsWriteFiles: []*osWriteFileArgs{
 							{
 								File:     testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe"),
-								Contents: []string{"fake file contents"},
+								Contents: []string{fakeFileContents},
 								FileMode: 0744,
 							},
 							{
@@ -335,7 +336,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							{
 								File:     testutil.FilepathAbs(t, "cmd", "leepFrogSource"),
 								FileMode: 0744,
-								Contents: []string{"fake file contents"},
+								Contents: []string{fakeFileContents},
 							},
 							{
 								File:     testutil.FilepathAbs(t, "cmd", "leepFrogSource_loader.sh"),
@@ -405,7 +406,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							{
 								File:     testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe"),
 								FileMode: 0744,
-								Contents: []string{"fake file contents"},
+								Contents: []string{fakeFileContents},
 							},
 							{
 								File:     testutil.FilepathAbs(t, "cmd", "leepFrogSource_loader.ps1"),
@@ -465,7 +466,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							{
 								File:     testutil.FilepathAbs(t, "cmd", "leepFrogSource"),
 								FileMode: 0744,
-								Contents: []string{"fake file contents"},
+								Contents: []string{fakeFileContents},
 							},
 							{
 								File:     testutil.FilepathAbs(t, "cmd", "leepFrogSource_loader.sh"),
@@ -578,7 +579,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							{
 								File:     testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe"),
 								FileMode: 0744,
-								Contents: []string{"fake file contents"},
+								Contents: []string{fakeFileContents},
 							},
 							{
 								File:     testutil.FilepathAbs(t, "cmd", "leepFrogSource_loader.ps1"),
@@ -675,7 +676,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							{
 								File:     testutil.FilepathAbs(t, "cmd", "leepFrogSource"),
 								FileMode: 0744,
-								Contents: []string{"fake file contents"},
+								Contents: []string{fakeFileContents},
 							},
 							{
 								File:     testutil.FilepathAbs(t, "cmd", "leepFrogSource_loader.sh"),
@@ -780,7 +781,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							{
 								File:     testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe"),
 								FileMode: 0744,
-								Contents: []string{"fake file contents"},
+								Contents: []string{fakeFileContents},
 							},
 							{
 								File:     testutil.FilepathAbs(t, "cmd", "leepFrogSource_loader.ps1"),
@@ -875,7 +876,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							{
 								File:     testutil.FilepathAbs(t, "cmd", "leepFrogSource"),
 								FileMode: 0744,
-								Contents: []string{"fake file contents"},
+								Contents: []string{fakeFileContents},
 							},
 							{
 								File:     testutil.FilepathAbs(t, "cmd", "leepFrogSource_loader.sh"),
@@ -988,7 +989,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							{
 								File:     testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe"),
 								FileMode: 0744,
-								Contents: []string{"fake file contents"},
+								Contents: []string{fakeFileContents},
 							},
 							{
 								File:     testutil.FilepathAbs(t, "cmd", "leepFrogSource_loader.ps1"),
@@ -1080,7 +1081,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							{
 								File:     testutil.FilepathAbs(t, "cmd", "customOutputFile"),
 								FileMode: 0744,
-								Contents: []string{"fake file contents"},
+								Contents: []string{fakeFileContents},
 							},
 							{
 								File:     testutil.FilepathAbs(t, "cmd", "customOutputFile_loader.sh"),
@@ -1150,7 +1151,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							{
 								File:     testutil.FilepathAbs(t, "cmd", "customOutputFile.exe"),
 								FileMode: 0744,
-								Contents: []string{"fake file contents"},
+								Contents: []string{fakeFileContents},
 							},
 							{
 								File:     testutil.FilepathAbs(t, "cmd", "customOutputFile_loader.ps1"),
@@ -1211,7 +1212,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							{
 								File:     testutil.FilepathAbs(t, "cmd", "leepFrogSource"),
 								FileMode: 0744,
-								Contents: []string{"fake file contents"},
+								Contents: []string{fakeFileContents},
 							},
 							{
 								File:     testutil.FilepathAbs(t, "cmd", "leepFrogSource_loader.sh"),
@@ -1292,7 +1293,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							{
 								File:     testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe"),
 								FileMode: 0744,
-								Contents: []string{"fake file contents"},
+								Contents: []string{fakeFileContents},
 							},
 							{
 								File:     testutil.FilepathAbs(t, "cmd", "leepFrogSource_loader.ps1"),
@@ -1433,7 +1434,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							{
 								File:     testutil.FilepathAbs(t, "cmd", "leepFrogSource"),
 								FileMode: 0744,
-								Contents: []string{"fake file contents"},
+								Contents: []string{fakeFileContents},
 							},
 							{
 								File:     testutil.FilepathAbs(t, "cmd", "leepFrogSource_loader.sh"),
@@ -1514,7 +1515,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							{
 								File:     testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe"),
 								FileMode: 0744,
-								Contents: []string{"fake file contents"},
+								Contents: []string{fakeFileContents},
 							},
 							{
 								File:     testutil.FilepathAbs(t, "cmd", "leepFrogSource_loader.ps1"),
@@ -1656,7 +1657,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							{
 								File:     testutil.FilepathAbs(t, "cmd", "leepFrogBuiltIns"),
 								FileMode: 0744,
-								Contents: []string{"fake file contents"},
+								Contents: []string{fakeFileContents},
 							},
 							{
 								File:     testutil.FilepathAbs(t, "cmd", "leepFrogBuiltIns_loader.sh"),
@@ -1736,7 +1737,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							{
 								File:     testutil.FilepathAbs(t, "cmd", "leepFrogBuiltIns.exe"),
 								FileMode: 0744,
-								Contents: []string{"fake file contents"},
+								Contents: []string{fakeFileContents},
 							},
 							{
 								File:     testutil.FilepathAbs(t, "cmd", "leepFrogBuiltIns_loader.ps1"),
@@ -2033,13 +2034,10 @@ func TestGenerateBinaryNode(t *testing.T) {
 					return test.commandStatFile, test.commandStatErr
 				})
 
-				// TODO: Make const
-				fakeFileContents := []byte("fake file contents")
-
 				var gotOSReadFile []string
 				testutil.StubValue(t, &osReadFile, func(f string) ([]byte, error) {
 					gotOSReadFile = append(gotOSReadFile, f)
-					return fakeFileContents, test.osReadFileErr
+					return []byte(fakeFileContents), test.osReadFileErr
 				})
 				var gotOSWriteFile []*osWriteFileArgs
 				testutil.StubValue(t, &osWriteFile, func(f string, b []byte, fm fs.FileMode) error {
