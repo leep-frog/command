@@ -526,14 +526,14 @@ func (s *sourcerer) generateFile(o command.Output, d *command.Data) error {
 
 	fileData = append(fileData, AliasSourcery(s.goExecutableFilePath, maps.Values(s.opts.aliasers)...)...)
 
-	// fileContents := CurrentOS.FunctionWrap(fmt.Sprintf("_%s_wrap_function", targetName), strings.Join(fileData, "\n"))
+	fileContents := CurrentOS.FunctionWrap(fmt.Sprintf("_%s_wrap_function", targetName), strings.Join(fileData, "\n"))
 
-	// sourceableFile := filepath.Join(outputFolder, fmt.Sprintf("%s.%s", targetName, CurrentOS.SourceableFileSuffix()))
-	// if err := osWriteFile(sourceableFile, []byte(fileContents), 0644); err != nil {
-	// 	return o.Annotatef(err, "failed to write sourceable file contents to %q", sourceableFile)
-	// }
+	sourceableFile := filepath.Join(outputFolder, fmt.Sprintf("%s.%s", targetName, CurrentOS.SourceableFileSuffix()))
+	if err := osWriteFile(sourceableFile, []byte(fileContents), 0644); err != nil {
+		return o.Annotatef(err, "failed to write sourceable file contents to %q", sourceableFile)
+	}
 
-	o.Stdoutln(CurrentOS.FunctionWrap(fmt.Sprintf("_%s_wrap_function", targetName), strings.Join(fileData, "\n")))
+	// o.Stdoutln(CurrentOS.FunctionWrap(fmt.Sprintf("_%s_wrap_function", targetName), strings.Join(fileData, "\n")))
 
 	return nil
 }

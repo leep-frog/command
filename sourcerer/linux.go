@@ -51,7 +51,7 @@ func (l *linux) ExecutableFileSuffix() string {
 }
 
 func (l *linux) SourceableFileSuffix() string {
-	return "sh"
+	return "TMP"
 }
 
 func (l *linux) FunctionWrap(name, fn string) string {
