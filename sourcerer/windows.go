@@ -47,7 +47,7 @@ func (*windows) ExecutableFileSuffix() string {
 }
 
 func (*windows) SourceableFileSuffix() string {
-	return "TMP"
+	return "ps1"
 }
 
 func (w *windows) SourcererGoCLI(dir string, targetName string) []string {
