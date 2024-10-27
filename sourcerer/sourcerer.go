@@ -530,10 +530,8 @@ func (s *sourcerer) generateFile(o command.Output, d *command.Data) error {
 
 	sourceableFile := filepath.Join(outputFolder, fmt.Sprintf("%s.%s", targetName, CurrentOS.SourceableFileSuffix()))
 	if err := osWriteFile(sourceableFile, []byte(fileContents), 0644); err != nil {
-		return o.Annotatef(err, "failed to write sourceable file contents to %q", sourceableFile)
+		return o.Annotatef(err, "failed to write sourceable file contents")
 	}
-
-	// o.Stdoutln(CurrentOS.FunctionWrap(fmt.Sprintf("_%s_wrap_function", targetName), strings.Join(fileData, "\n")))
 
 	return nil
 }

@@ -208,11 +208,11 @@ func TestGenerateBinaryNode(t *testing.T) {
 				args:            []string{"source", "leepFrogSource", "cmd"},
 				wantOSReadFile:  []string{fakeGoExecutableFilePath.Name()},
 				osWriteFileErrs: []error{nil, fmt.Errorf("write sourceable whoops")},
-				wantErr:         fmt.Errorf(`failed to write sourceable file contents to %q: write sourceable whoops`, testutil.FilepathAbs(t, "cmd", "leepFrogSource.TMP")),
+				wantErr:         fmt.Errorf(`failed to write sourceable file contents: write sourceable whoops`),
 				osChecks: map[string]*osCheck{
 					osLinux: {
 						wantStderr: []string{
-							fmt.Sprintf(`failed to write sourceable file contents to %q: write sourceable whoops`, testutil.FilepathAbs(t, "cmd", "leepFrogSource.TMP")),
+							`failed to write sourceable file contents: write sourceable whoops`,
 							``,
 						},
 						wantOsWriteFiles: []*osWriteFileArgs{
@@ -265,7 +265,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 					},
 					osWindows: {
 						wantStderr: []string{
-							fmt.Sprintf(`failed to write sourceable file contents to %q: write sourceable whoops`, testutil.FilepathAbs(t, "cmd", "leepFrogSource.TMP")),
+							`failed to write sourceable file contents: write sourceable whoops`,
 							``,
 						},
 						wantOsWriteFiles: []*osWriteFileArgs{
