@@ -14,6 +14,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/leep-frog/command/cache"
+	"github.com/leep-frog/command/color"
 	"github.com/leep-frog/command/command"
 	"github.com/leep-frog/command/commander"
 	"github.com/leep-frog/command/internal/spycommander"
@@ -535,22 +536,20 @@ func (s *sourcerer) generateFile(o command.Output, d *command.Data) error {
 		return o.Annotatef(err, "failed to write sourceable file contents")
 	}
 
-	o.Stdoutln(strings.Join([]string{
-		fmt.Sprintf("Sourceable file created: %q", sourceableFile),
-		``,
-		"All steps have completed successfully!",
-		"Run the following (and/or add it to your terminal profile) to finish setting up your CLIs:",
-		``,
-	}, "\n"))
-
-	// o.Color(color.Green)
 	var builtinArg string
 	if s.builtin {
 		builtinArg = fmt.Sprintf(" %s", BuiltInCommandParameter)
 	}
 	goRunSourceCommand := fmt.Sprintf(`go run .%s source %q %q`, builtinArg, targetName, outputFolder)
-	o.Stdoutln(strings.Join(CurrentOS.SourceSetup(sourceableFile, targetName, goRunSourceCommand), "\n"))
-	// o.Color(color.Reset)
+
+	o.Stdoutln(strings.Join([]string{
+		fmt.Sprintf("Sourceable file created: %q", sourceableFile),
+		``,
+		color.Apply("All steps have completed successfully!", color.Green, color.Bold),
+		"Run the following (and/or add it to your terminal profile) to finish setting up your CLIs:",
+		``,
+		color.Apply(strings.Join(CurrentOS.SourceSetup(sourceableFile, targetName, goRunSourceCommand), "\n"), color.Blue),
+	}, "\n"))
 
 	return nil
 }
