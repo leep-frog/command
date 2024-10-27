@@ -1621,6 +1621,31 @@ func TestGenerateBinaryNode(t *testing.T) {
 			},
 			// Test `builtin` keyword
 			{
+				name: "builtin error bubbles up",
+				args: []string{"builtin", "source"},
+				// These should be ignored
+				clis: []CLI{
+					ToCLI("x", nil),
+					ToCLI("l", nil),
+					&testCLI{name: "basic", setup: []string{"his", "story"}},
+				},
+				wantErr: fmt.Errorf(`Argument "TARGET_NAME" requires at least 1 argument, got 0`),
+				osChecks: map[string]*osCheck{
+					osLinux: {
+						wantStderr: []string{
+							`Argument "TARGET_NAME" requires at least 1 argument, got 0`,
+							``,
+						},
+					},
+					osWindows: {
+						wantStderr: []string{
+							`Argument "TARGET_NAME" requires at least 1 argument, got 0`,
+							``,
+						},
+					},
+				},
+			},
+			{
 				name: "generates builtin source files",
 				args: []string{"builtin", "source", "leepFrogBuiltIns", "cmd"},
 				// These should be ignored
