@@ -211,6 +211,9 @@ func TestGenerateBinaryNode(t *testing.T) {
 				wantErr:         fmt.Errorf(`failed to write sourceable file contents: write sourceable whoops`),
 				osChecks: map[string]*osCheck{
 					osLinux: {
+						wantStdout: []string{
+							fmt.Sprintf(`Binary file created: %q`, testutil.FilepathAbs(t, "cmd", "leepFrogSource")),
+						},
 						wantStderr: []string{
 							`failed to write sourceable file contents: write sourceable whoops`,
 							``,
@@ -264,6 +267,9 @@ func TestGenerateBinaryNode(t *testing.T) {
 						},
 					},
 					osWindows: {
+						wantStdout: []string{
+							fmt.Sprintf(`Binary file created: %q`, testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe")),
+						},
 						wantStderr: []string{
 							`failed to write sourceable file contents: write sourceable whoops`,
 							``,
@@ -303,6 +309,10 @@ func TestGenerateBinaryNode(t *testing.T) {
 				wantOSReadFile: []string{fakeGoExecutableFilePath.Name()},
 				osChecks: map[string]*osCheck{
 					osLinux: {
+						wantStdout: []string{
+							fmt.Sprintf(`Binary file created: %q`, testutil.FilepathAbs(t, "cmd", "leepFrogSource")),
+							fmt.Sprintf(`Sourceable file created: %q`, testutil.FilepathAbs(t, "cmd", "leepFrogSource_loader.sh")),
+						},
 						wantOsWriteFiles: []*osWriteFileArgs{
 							{
 								File:     testutil.FilepathAbs(t, "cmd", "leepFrogSource"),
@@ -352,6 +362,10 @@ func TestGenerateBinaryNode(t *testing.T) {
 						},
 					},
 					osWindows: {
+						wantStdout: []string{
+							fmt.Sprintf(`Binary file created: %q`, testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe")),
+							fmt.Sprintf(`Sourceable file created: %q`, testutil.FilepathAbs(t, "cmd", "leepFrogSource_loader.ps1")),
+						},
 						wantOsWriteFiles: []*osWriteFileArgs{
 							{
 								File:     testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe"),
@@ -391,6 +405,10 @@ func TestGenerateBinaryNode(t *testing.T) {
 				wantOSReadFile: []string{fakeGoExecutableFilePath.Name()},
 				osChecks: map[string]*osCheck{
 					osLinux: {
+						wantStdout: []string{
+							fmt.Sprintf(`Binary file created: %q`, testutil.FilepathAbs(t, "cmd", "leepFrogSource")),
+							fmt.Sprintf(`Sourceable file created: %q`, testutil.FilepathAbs(t, "cmd", "leepFrogSource_loader.sh")),
+						},
 						wantOsWriteFiles: []*osWriteFileArgs{
 							{
 								File:     testutil.FilepathAbs(t, "cmd", "leepFrogSource"),
@@ -483,6 +501,10 @@ func TestGenerateBinaryNode(t *testing.T) {
 						},
 					},
 					osWindows: {
+						wantStdout: []string{
+							fmt.Sprintf(`Binary file created: %q`, testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe")),
+							fmt.Sprintf(`Sourceable file created: %q`, testutil.FilepathAbs(t, "cmd", "leepFrogSource_loader.ps1")),
+						},
 						wantOsWriteFiles: []*osWriteFileArgs{
 							{
 								File:     testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe"),
@@ -559,6 +581,10 @@ func TestGenerateBinaryNode(t *testing.T) {
 				wantOSReadFile: []string{fakeGoExecutableFilePath.Name()},
 				osChecks: map[string]*osCheck{
 					osLinux: {
+						wantStdout: []string{
+							fmt.Sprintf(`Binary file created: %q`, testutil.FilepathAbs(t, "cmd", "leepFrogSource")),
+							fmt.Sprintf(`Sourceable file created: %q`, testutil.FilepathAbs(t, "cmd", "leepFrogSource_loader.sh")),
+						},
 						wantOsWriteFiles: []*osWriteFileArgs{
 							{
 								File:     testutil.FilepathAbs(t, "cmd", "leepFrogSource"),
@@ -643,6 +669,10 @@ func TestGenerateBinaryNode(t *testing.T) {
 						},
 					},
 					osWindows: {
+						wantStdout: []string{
+							fmt.Sprintf(`Binary file created: %q`, testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe")),
+							fmt.Sprintf(`Sourceable file created: %q`, testutil.FilepathAbs(t, "cmd", "leepFrogSource_loader.ps1")),
+						},
 						wantOsWriteFiles: []*osWriteFileArgs{
 							{
 								File:     testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe"),
@@ -717,6 +747,10 @@ func TestGenerateBinaryNode(t *testing.T) {
 				wantOSReadFile: []string{fakeGoExecutableFilePath.Name()},
 				osChecks: map[string]*osCheck{
 					osLinux: {
+						wantStdout: []string{
+							fmt.Sprintf(`Binary file created: %q`, testutil.FilepathAbs(t, "cmd", "leepFrogSource")),
+							fmt.Sprintf(`Sourceable file created: %q`, testutil.FilepathAbs(t, "cmd", "leepFrogSource_loader.sh")),
+						},
 						wantOsWriteFiles: []*osWriteFileArgs{
 							{
 								File:     testutil.FilepathAbs(t, "cmd", "leepFrogSource"),
@@ -809,6 +843,10 @@ func TestGenerateBinaryNode(t *testing.T) {
 						},
 					},
 					osWindows: {
+						wantStdout: []string{
+							fmt.Sprintf(`Binary file created: %q`, testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe")),
+							fmt.Sprintf(`Sourceable file created: %q`, testutil.FilepathAbs(t, "cmd", "leepFrogSource_loader.ps1")),
+						},
 						wantOsWriteFiles: []*osWriteFileArgs{
 							{
 								File:     testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe"),
@@ -880,6 +918,10 @@ func TestGenerateBinaryNode(t *testing.T) {
 				wantOSReadFile: []string{fakeGoExecutableFilePath.Name()},
 				osChecks: map[string]*osCheck{
 					osLinux: {
+						wantStdout: []string{
+							fmt.Sprintf(`Binary file created: %q`, testutil.FilepathAbs(t, "cmd", "customOutputFile")),
+							fmt.Sprintf(`Sourceable file created: %q`, testutil.FilepathAbs(t, "cmd", "customOutputFile_loader.sh")),
+						},
 						wantOsWriteFiles: []*osWriteFileArgs{
 							{
 								File:     testutil.FilepathAbs(t, "cmd", "customOutputFile"),
@@ -929,6 +971,10 @@ func TestGenerateBinaryNode(t *testing.T) {
 						},
 					},
 					osWindows: {
+						wantStdout: []string{
+							fmt.Sprintf(`Binary file created: %q`, testutil.FilepathAbs(t, "cmd", "customOutputFile.exe")),
+							fmt.Sprintf(`Sourceable file created: %q`, testutil.FilepathAbs(t, "cmd", "customOutputFile_loader.ps1")),
+						},
 						wantOsWriteFiles: []*osWriteFileArgs{
 							{
 								File:     testutil.FilepathAbs(t, "cmd", "customOutputFile.exe"),
@@ -969,6 +1015,10 @@ func TestGenerateBinaryNode(t *testing.T) {
 				wantOSReadFile: []string{fakeGoExecutableFilePath.Name()},
 				osChecks: map[string]*osCheck{
 					osLinux: {
+						wantStdout: []string{
+							fmt.Sprintf(`Binary file created: %q`, testutil.FilepathAbs(t, "cmd", "leepFrogSource")),
+							fmt.Sprintf(`Sourceable file created: %q`, testutil.FilepathAbs(t, "cmd", "leepFrogSource_loader.sh")),
+						},
 						wantOsWriteFiles: []*osWriteFileArgs{
 							{
 								File:     testutil.FilepathAbs(t, "cmd", "leepFrogSource"),
@@ -1029,6 +1079,10 @@ func TestGenerateBinaryNode(t *testing.T) {
 						},
 					},
 					osWindows: {
+						wantStdout: []string{
+							fmt.Sprintf(`Binary file created: %q`, testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe")),
+							fmt.Sprintf(`Sourceable file created: %q`, testutil.FilepathAbs(t, "cmd", "leepFrogSource_loader.ps1")),
+						},
 						wantOsWriteFiles: []*osWriteFileArgs{
 							{
 								File:     testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe"),
@@ -1149,6 +1203,10 @@ func TestGenerateBinaryNode(t *testing.T) {
 				wantOSReadFile: []string{fakeGoExecutableFilePath.Name()},
 				osChecks: map[string]*osCheck{
 					osLinux: {
+						wantStdout: []string{
+							fmt.Sprintf(`Binary file created: %q`, testutil.FilepathAbs(t, "cmd", "leepFrogSource")),
+							fmt.Sprintf(`Sourceable file created: %q`, testutil.FilepathAbs(t, "cmd", "leepFrogSource_loader.sh")),
+						},
 						wantOsWriteFiles: []*osWriteFileArgs{
 							{
 								File:     testutil.FilepathAbs(t, "cmd", "leepFrogSource"),
@@ -1209,6 +1267,10 @@ func TestGenerateBinaryNode(t *testing.T) {
 						},
 					},
 					osWindows: {
+						wantStdout: []string{
+							fmt.Sprintf(`Binary file created: %q`, testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe")),
+							fmt.Sprintf(`Sourceable file created: %q`, testutil.FilepathAbs(t, "cmd", "leepFrogSource_loader.ps1")),
+						},
 						wantOsWriteFiles: []*osWriteFileArgs{
 							{
 								File:     testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe"),
@@ -1330,6 +1392,10 @@ func TestGenerateBinaryNode(t *testing.T) {
 				wantOSReadFile: []string{fakeGoExecutableFilePath.Name()},
 				osChecks: map[string]*osCheck{
 					osLinux: {
+						wantStdout: []string{
+							fmt.Sprintf(`Binary file created: %q`, testutil.FilepathAbs(t, "cmd", "leepFrogBuiltIns")),
+							fmt.Sprintf(`Sourceable file created: %q`, testutil.FilepathAbs(t, "cmd", "leepFrogBuiltIns_loader.sh")),
+						},
 						wantOsWriteFiles: []*osWriteFileArgs{
 							{
 								File:     testutil.FilepathAbs(t, "cmd", "leepFrogBuiltIns"),
@@ -1389,6 +1455,10 @@ func TestGenerateBinaryNode(t *testing.T) {
 						},
 					},
 					osWindows: {
+						wantStdout: []string{
+							fmt.Sprintf(`Binary file created: %q`, testutil.FilepathAbs(t, "cmd", "leepFrogBuiltIns.exe")),
+							fmt.Sprintf(`Sourceable file created: %q`, testutil.FilepathAbs(t, "cmd", "leepFrogBuiltIns_loader.ps1")),
+						},
 						wantOsWriteFiles: []*osWriteFileArgs{
 							{
 								File:     testutil.FilepathAbs(t, "cmd", "leepFrogBuiltIns.exe"),

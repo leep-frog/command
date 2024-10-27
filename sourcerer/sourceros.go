@@ -41,6 +41,9 @@ type OS interface {
 	// SourceableFileSuffix is the suffix to add for sourceable files (e.g. `sh` in linux)
 	SourceableFileSuffix() string
 
+	// SourceSuccessMessage outputs additional info to display after successfully running `go run . source ...`
+	SourceSuccessMessage(o command.Output, sourceableFile, targetName, outputFolder string)
+
 	// FunctionWrap wraps the provided commands in another function.
 	FunctionWrap(name, fn string) string
 

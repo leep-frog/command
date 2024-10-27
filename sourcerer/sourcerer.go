@@ -522,6 +522,8 @@ func (s *sourcerer) generateFile(o command.Output, d *command.Data) error {
 	}
 	s.goExecutableFilePath = newExecutableFilePath
 
+	o.Stdoutf("Binary file created: %q\n", newExecutableFilePath)
+
 	fileData := CurrentOS.RegisterCLIs(s.builtin, s.goExecutableFilePath, targetName, maps.Values(s.clis))
 
 	fileData = append(fileData, AliasSourcery(s.goExecutableFilePath, maps.Values(s.opts.aliasers)...)...)
@@ -533,6 +535,9 @@ func (s *sourcerer) generateFile(o command.Output, d *command.Data) error {
 		return o.Annotatef(err, "failed to write sourceable file contents")
 	}
 
+	o.Stdoutf("Sourceable file created: %q\n", sourceableFile)
+
+	// CurrentOS.SourceSuccessMessage(o)
 	return nil
 }
 
