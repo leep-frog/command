@@ -54,22 +54,19 @@ func (l *linux) SourceableFileSuffix() string {
 	return "sh"
 }
 
-func (l *linux) SourceSuccessMessage(o command.Output, sourceableFile, targetName, outputFolder string) {
-	o.Stdoutln("All steps have completed successfully!")
-	o.Stdoutln("Run the following (and/or add it to your bash profile) to finish setting up your CLIs:")
-	// o.Color(color.Blue)
-	o.Stdoutln(strings.Join([]string{
+func (l *linux) SourceSetup(sourceableFile, targetName, goRunSourceCommand string) []string {
+	return []string{
 		`# Load all of your CLIs`,
 		fmt.Sprintf(`source %q`, sourceableFile),
 		``,
 		`# Useful function to easily regenerate all of your CLIs`,
-		`function _regenerate_%s_CLIs() {`,
+		fmt.Sprintf(`function _regenerate_%s_CLIs() {`, targetName),
 		`  pushd . > /dev/null`,
 		`  cd <PATH_TO_YOUR_CLI_DIRECTORY>`,
-		fmt.Sprintf(`  go run . source %q %q`, targetName, outputFolder),
+		fmt.Sprintf("  %s", goRunSourceCommand),
 		`  popd . > /dev/null`,
 		`}`,
-	}, "\n"))
+	}
 }
 
 func (l *linux) FunctionWrap(name, fn string) string {

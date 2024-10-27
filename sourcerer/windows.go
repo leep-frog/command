@@ -50,22 +50,19 @@ func (*windows) SourceableFileSuffix() string {
 	return "ps1"
 }
 
-func (*windows) SourceSuccessMessage(o command.Output, sourceableFile, targetName, outputFolder string) {
-	o.Stdoutln("All steps have completed successfully!")
-	o.Stdoutln("Run the following (and/or add it to your PowerShell profile) to finish setting up your CLIs:")
-	// o.Color(color.Blue)
-	o.Stdoutln(strings.Join([]string{
+func (*windows) SourceSetup(sourceableFile, targetName, goRunSourceCommand string) []string {
+	return []string{
 		`# Load all of your CLIs`,
 		fmt.Sprintf(`. %q`, sourceableFile),
 		``,
 		`# Useful function to easily regenerate all of your CLIs`,
-		`function _regenerate_%s_CLIs() {`,
+		fmt.Sprintf(`function _regenerate_%s_CLIs() {`, targetName),
 		`  Push-Location`,
 		`  Set-Location <PATH_TO_YOUR_CLI_DIRECTORY>`,
-		fmt.Sprintf(`  go run . source %q %q`, targetName, outputFolder),
+		fmt.Sprintf("  %s", goRunSourceCommand),
 		`  Pop-Location`,
 		`}`,
-	}, "\n"))
+	}
 }
 
 func (w *windows) SourcererGoCLI(dir string, targetName string) []string {

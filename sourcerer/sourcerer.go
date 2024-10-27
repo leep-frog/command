@@ -535,9 +535,23 @@ func (s *sourcerer) generateFile(o command.Output, d *command.Data) error {
 		return o.Annotatef(err, "failed to write sourceable file contents")
 	}
 
-	o.Stdoutf("Sourceable file created: %q\n", sourceableFile)
+	o.Stdoutln(strings.Join([]string{
+		fmt.Sprintf("Sourceable file created: %q", sourceableFile),
+		``,
+		"All steps have completed successfully!",
+		"Run the following (and/or add it to your terminal profile) to finish setting up your CLIs:",
+		``,
+	}, "\n"))
 
-	// CurrentOS.SourceSuccessMessage(o)
+	// o.Color(color.Green)
+	var builtinArg string
+	if s.builtin {
+		builtinArg = fmt.Sprintf(" %s", BuiltInCommandParameter)
+	}
+	goRunSourceCommand := fmt.Sprintf(`go run .%s source %q %q`, builtinArg, targetName, outputFolder)
+	o.Stdoutln(strings.Join(CurrentOS.SourceSetup(sourceableFile, targetName, goRunSourceCommand), "\n"))
+	// o.Color(color.Reset)
+
 	return nil
 }
 
