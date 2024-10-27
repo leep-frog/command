@@ -50,6 +50,10 @@ func (l *linux) ExecutableFileSuffix() string {
 	return ""
 }
 
+func (l *linux) SourceableFileSuffix() string {
+	return "sh"
+}
+
 func (l *linux) FunctionWrap(name, fn string) string {
 	return strings.Join([]string{
 		"#!/bin/bash",

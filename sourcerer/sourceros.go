@@ -38,6 +38,9 @@ type OS interface {
 	// ExecutableFileSuffix is the suffix to add for executable files (e.g. `.exe` in Windows)
 	ExecutableFileSuffix() string
 
+	// SourceableFileSuffix is the suffix to add for sourceable files (e.g. `sh` in linux)
+	SourceableFileSuffix() string
+
 	// FunctionWrap wraps the provided commands in another function.
 	FunctionWrap(name, fn string) string
 

@@ -37,10 +37,15 @@ func TestGenerateBinaryNode(t *testing.T) {
 	fakeGoExecutableFilePath := testutil.TempFile(t, "leepFrogSourcererTest")
 	exeBaseName := filepath.Base(fakeGoExecutableFilePath.Name())
 
+	type osWriteFileArgs struct {
+		File     string
+		Contents []string
+	}
+
 	type osCheck struct {
-		wantOsWriteFile []string
-		wantStdout      []string
-		wantStderr      []string
+		wantOsWriteFiles []*osWriteFileArgs
+		wantStdout       []string
+		wantStderr       []string
 	}
 
 	// We loop the OS here (and not in the test), so any underlying test data for
@@ -60,9 +65,9 @@ func TestGenerateBinaryNode(t *testing.T) {
 			commandStatErr    error
 			wantErr           error
 
-			wantOSReadFile []string
-			osReadFileErr  error
-			osWriteFileErr error
+			wantOSReadFile  []string
+			osReadFileErr   error
+			osWriteFileErrs []error
 		}{
 			{
 				name:    "errors when no target name",
@@ -162,21 +167,31 @@ func TestGenerateBinaryNode(t *testing.T) {
 				},
 			},
 			{
-				name:           "fails when osWriteFileErr",
-				args:           []string{"source", "leepFrogSource", "cmd"},
-				wantOSReadFile: []string{fakeGoExecutableFilePath.Name()},
-				osWriteFileErr: fmt.Errorf("write whoops"),
-				wantErr:        fmt.Errorf(`failed to copy executable file: write whoops`),
+				name:            "fails when osWriteFileErr for copying binary file",
+				args:            []string{"source", "leepFrogSource", "cmd"},
+				wantOSReadFile:  []string{fakeGoExecutableFilePath.Name()},
+				osWriteFileErrs: []error{fmt.Errorf("write whoops")},
+				wantErr:         fmt.Errorf(`failed to copy executable file: write whoops`),
 				osChecks: map[string]*osCheck{
 					osLinux: {
-						wantOsWriteFile: []string{testutil.FilepathAbs(t, "cmd", "leepFrogSource")},
+						wantOsWriteFiles: []*osWriteFileArgs{
+							{
+								File:     testutil.FilepathAbs(t, "cmd", "leepFrogSource"),
+								Contents: []string{"fake file contents"},
+							},
+						},
 						wantStderr: []string{
 							`failed to copy executable file: write whoops`,
 							``,
 						},
 					},
 					osWindows: {
-						wantOsWriteFile: []string{testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe")},
+						wantOsWriteFiles: []*osWriteFileArgs{
+							{
+								File:     testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe"),
+								Contents: []string{"fake file contents"},
+							},
+						},
 						wantStderr: []string{
 							`failed to copy executable file: write whoops`,
 							``,
@@ -190,7 +205,12 @@ func TestGenerateBinaryNode(t *testing.T) {
 				wantOSReadFile: []string{fakeGoExecutableFilePath.Name()},
 				osChecks: map[string]*osCheck{
 					osLinux: {
-						wantOsWriteFile: []string{testutil.FilepathAbs(t, "cmd", "leepFrogSource")},
+						wantOsWriteFiles: []*osWriteFileArgs{
+							{
+								File:     testutil.FilepathAbs(t, "cmd", "leepFrogSource"),
+								Contents: []string{"fake file contents"},
+							},
+						},
 						wantStdout: []string{
 							`#!/bin/bash`,
 							`function _leepFrogSource_wrap_function {`,
@@ -229,7 +249,12 @@ func TestGenerateBinaryNode(t *testing.T) {
 						},
 					},
 					osWindows: {
-						wantOsWriteFile: []string{testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe")},
+						wantOsWriteFiles: []*osWriteFileArgs{
+							{
+								File:     testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe"),
+								Contents: []string{"fake file contents"},
+							},
+						},
 						wantStdout: []string{
 							`function _leepFrogSource_wrap_function {`,
 							`$_custom_autocomplete_leepFrogSource = {`,
@@ -258,7 +283,12 @@ func TestGenerateBinaryNode(t *testing.T) {
 				wantOSReadFile: []string{fakeGoExecutableFilePath.Name()},
 				osChecks: map[string]*osCheck{
 					osLinux: {
-						wantOsWriteFile: []string{testutil.FilepathAbs(t, "cmd", "leepFrogSource")},
+						wantOsWriteFiles: []*osWriteFileArgs{
+							{
+								File:     testutil.FilepathAbs(t, "cmd", "leepFrogSource"),
+								Contents: []string{"fake file contents"},
+							},
+						},
 						wantStdout: []string{
 							`#!/bin/bash`,
 							`function _leepFrogSource_wrap_function {`,
@@ -340,7 +370,12 @@ func TestGenerateBinaryNode(t *testing.T) {
 						},
 					},
 					osWindows: {
-						wantOsWriteFile: []string{testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe")},
+						wantOsWriteFiles: []*osWriteFileArgs{
+							{
+								File:     testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe"),
+								Contents: []string{"fake file contents"},
+							},
+						},
 						wantStdout: []string{
 							`function _leepFrogSource_wrap_function {`,
 							`$_custom_autocomplete_leepFrogSource = {`,
@@ -406,7 +441,12 @@ func TestGenerateBinaryNode(t *testing.T) {
 				wantOSReadFile: []string{fakeGoExecutableFilePath.Name()},
 				osChecks: map[string]*osCheck{
 					osLinux: {
-						wantOsWriteFile: []string{testutil.FilepathAbs(t, "cmd", "leepFrogSource")},
+						wantOsWriteFiles: []*osWriteFileArgs{
+							{
+								File:     testutil.FilepathAbs(t, "cmd", "leepFrogSource"),
+								Contents: []string{"fake file contents"},
+							},
+						},
 						wantStdout: []string{
 							`#!/bin/bash`,
 							`function _leepFrogSource_wrap_function {`,
@@ -480,7 +520,12 @@ func TestGenerateBinaryNode(t *testing.T) {
 						},
 					},
 					osWindows: {
-						wantOsWriteFile: []string{testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe")},
+						wantOsWriteFiles: []*osWriteFileArgs{
+							{
+								File:     testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe"),
+								Contents: []string{"fake file contents"},
+							},
+						},
 						wantStdout: []string{
 							`function _leepFrogSource_wrap_function {`,
 							`$_custom_autocomplete_leepFrogSource = {`,
@@ -544,7 +589,12 @@ func TestGenerateBinaryNode(t *testing.T) {
 				wantOSReadFile: []string{fakeGoExecutableFilePath.Name()},
 				osChecks: map[string]*osCheck{
 					osLinux: {
-						wantOsWriteFile: []string{testutil.FilepathAbs(t, "cmd", "leepFrogSource")},
+						wantOsWriteFiles: []*osWriteFileArgs{
+							{
+								File:     testutil.FilepathAbs(t, "cmd", "leepFrogSource"),
+								Contents: []string{"fake file contents"},
+							},
+						},
 						wantStdout: []string{
 							`#!/bin/bash`,
 							`function _leepFrogSource_wrap_function {`,
@@ -626,7 +676,12 @@ func TestGenerateBinaryNode(t *testing.T) {
 						},
 					},
 					osWindows: {
-						wantOsWriteFile: []string{testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe")},
+						wantOsWriteFiles: []*osWriteFileArgs{
+							{
+								File:     testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe"),
+								Contents: []string{"fake file contents"},
+							},
+						},
 						wantStdout: []string{
 							`function _leepFrogSource_wrap_function {`,
 							`$_custom_autocomplete_leepFrogSource = {`,
@@ -687,7 +742,12 @@ func TestGenerateBinaryNode(t *testing.T) {
 				wantOSReadFile: []string{fakeGoExecutableFilePath.Name()},
 				osChecks: map[string]*osCheck{
 					osLinux: {
-						wantOsWriteFile: []string{testutil.FilepathAbs(t, "cmd", "customOutputFile")},
+						wantOsWriteFiles: []*osWriteFileArgs{
+							{
+								File:     testutil.FilepathAbs(t, "cmd", "customOutputFile"),
+								Contents: []string{"fake file contents"},
+							},
+						},
 						wantStdout: []string{
 							`#!/bin/bash`,
 							`function _customOutputFile_wrap_function {`,
@@ -726,7 +786,12 @@ func TestGenerateBinaryNode(t *testing.T) {
 						},
 					},
 					osWindows: {
-						wantOsWriteFile: []string{testutil.FilepathAbs(t, "cmd", "customOutputFile.exe")},
+						wantOsWriteFiles: []*osWriteFileArgs{
+							{
+								File:     testutil.FilepathAbs(t, "cmd", "customOutputFile.exe"),
+								Contents: []string{"fake file contents"},
+							},
+						},
 						wantStdout: []string{
 							`function _customOutputFile_wrap_function {`,
 							`$_custom_autocomplete_customOutputFile = {`,
@@ -756,7 +821,12 @@ func TestGenerateBinaryNode(t *testing.T) {
 				wantOSReadFile: []string{fakeGoExecutableFilePath.Name()},
 				osChecks: map[string]*osCheck{
 					osLinux: {
-						wantOsWriteFile: []string{testutil.FilepathAbs(t, "cmd", "leepFrogSource")},
+						wantOsWriteFiles: []*osWriteFileArgs{
+							{
+								File:     testutil.FilepathAbs(t, "cmd", "leepFrogSource"),
+								Contents: []string{"fake file contents"},
+							},
+						},
 						wantStdout: []string{
 							`#!/bin/bash`,
 							`function _leepFrogSource_wrap_function {`,
@@ -806,7 +876,12 @@ func TestGenerateBinaryNode(t *testing.T) {
 						},
 					},
 					osWindows: {
-						wantOsWriteFile: []string{testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe")},
+						wantOsWriteFiles: []*osWriteFileArgs{
+							{
+								File:     testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe"),
+								Contents: []string{"fake file contents"},
+							},
+						},
 						wantStdout: []string{
 							`function _leepFrogSource_wrap_function {`,
 							`$_custom_autocomplete_leepFrogSource = {`,
@@ -916,7 +991,12 @@ func TestGenerateBinaryNode(t *testing.T) {
 				wantOSReadFile: []string{fakeGoExecutableFilePath.Name()},
 				osChecks: map[string]*osCheck{
 					osLinux: {
-						wantOsWriteFile: []string{testutil.FilepathAbs(t, "cmd", "leepFrogSource")},
+						wantOsWriteFiles: []*osWriteFileArgs{
+							{
+								File:     testutil.FilepathAbs(t, "cmd", "leepFrogSource"),
+								Contents: []string{"fake file contents"},
+							},
+						},
 						wantStdout: []string{
 							`#!/bin/bash`,
 							`function _leepFrogSource_wrap_function {`,
@@ -966,7 +1046,12 @@ func TestGenerateBinaryNode(t *testing.T) {
 						},
 					},
 					osWindows: {
-						wantOsWriteFile: []string{testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe")},
+						wantOsWriteFiles: []*osWriteFileArgs{
+							{
+								File:     testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe"),
+								Contents: []string{"fake file contents"},
+							},
+						},
 						wantStdout: []string{
 							`function _leepFrogSource_wrap_function {`,
 							`$_custom_autocomplete_leepFrogSource = {`,
@@ -1077,7 +1162,12 @@ func TestGenerateBinaryNode(t *testing.T) {
 				wantOSReadFile: []string{fakeGoExecutableFilePath.Name()},
 				osChecks: map[string]*osCheck{
 					osLinux: {
-						wantOsWriteFile: []string{testutil.FilepathAbs(t, "cmd", "leepFrogBuiltIns")},
+						wantOsWriteFiles: []*osWriteFileArgs{
+							{
+								File:     testutil.FilepathAbs(t, "cmd", "leepFrogBuiltIns"),
+								Contents: []string{"fake file contents"},
+							},
+						},
 						wantStdout: []string{
 							`#!/bin/bash`,
 							`function _leepFrogBuiltIns_wrap_function {`,
@@ -1126,7 +1216,12 @@ func TestGenerateBinaryNode(t *testing.T) {
 						},
 					},
 					osWindows: {
-						wantOsWriteFile: []string{testutil.FilepathAbs(t, "cmd", "leepFrogBuiltIns.exe")},
+						wantOsWriteFiles: []*osWriteFileArgs{
+							{
+								File:     testutil.FilepathAbs(t, "cmd", "leepFrogBuiltIns.exe"),
+								Contents: []string{"fake file contents"},
+							},
+						},
 						wantStdout: []string{
 							`function _leepFrogBuiltIns_wrap_function {`,
 							`$_custom_autocomplete_leepFrogBuiltIns = {`,
@@ -1417,6 +1512,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 					return test.commandStatFile, test.commandStatErr
 				})
 
+				// TODO: Make const
 				fakeFileContents := []byte("fake file contents")
 
 				var gotOSReadFile []string
@@ -1424,19 +1520,20 @@ func TestGenerateBinaryNode(t *testing.T) {
 					gotOSReadFile = append(gotOSReadFile, f)
 					return fakeFileContents, test.osReadFileErr
 				})
-				var gotOSWriteFile []string
+				var gotOSWriteFile []*osWriteFileArgs
 				testutil.StubValue(t, &osWriteFile, func(f string, b []byte, fm fs.FileMode) error {
-					gotOSWriteFile = append(gotOSWriteFile, f)
-
-					if diff := cmp.Diff(string(fakeFileContents), string(b)); diff != "" {
-						t.Errorf("source(%v) executed os.WriteFile with incorrect bytes (-wamt, +got):\n%s", test.args, diff)
-					}
+					gotOSWriteFile = append(gotOSWriteFile, &osWriteFileArgs{f, strings.Split(string(b), "\n")})
 
 					if diff := cmp.Diff(fs.FileMode(0744), fm); diff != "" {
 						t.Errorf("source(%v) executed os.WriteFile with incorrect fs.FileMode (-wamt, +got):\n%s", test.args, diff)
 					}
 
-					return test.osWriteFileErr
+					var err error
+					if len(test.osWriteFileErrs) > 0 {
+						err = test.osWriteFileErrs[0]
+						test.osWriteFileErrs = test.osWriteFileErrs[1:]
+					}
+					return err
 				})
 
 				if test.ignoreNosort {
@@ -1458,7 +1555,8 @@ func TestGenerateBinaryNode(t *testing.T) {
 				if diff := cmp.Diff(test.wantOSReadFile, gotOSReadFile); diff != "" {
 					t.Errorf("source(%v) executed incorrect os.ReadFile commands (-wamt, +got):\n%s", test.args, diff)
 				}
-				if diff := cmp.Diff(oschk.wantOsWriteFile, gotOSWriteFile); diff != "" {
+
+				if diff := cmp.Diff(oschk.wantOsWriteFiles, gotOSWriteFile); diff != "" {
 					t.Errorf("source(%v) executed incorrect os.WriteFile commands (-wamt, +got):\n%s", test.args, diff)
 				}
 			})
@@ -1470,7 +1568,7 @@ func cmpFile(t *testing.T, prefix, filename string, want []string) {
 	t.Helper()
 	contents, err := os.ReadFile(filename)
 	if err != nil {
-		t.Fatalf("failed to read file: %v", err)
+		t.Fatalf("failed to read File: %v", err)
 	}
 
 	if want == nil {
