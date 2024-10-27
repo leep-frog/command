@@ -42,6 +42,10 @@ func (*windows) Name() string {
 	return "windows"
 }
 
+func (*windows) ExecutableFileSuffix() string {
+	return ".exe"
+}
+
 func (w *windows) SourcererGoCLI(dir string, targetName string) []string {
 	return []string{
 		"Push-Location",

@@ -2,6 +2,7 @@ package sourcerer
 
 import (
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"sort"
@@ -37,8 +38,9 @@ func TestGenerateBinaryNode(t *testing.T) {
 	exeBaseName := filepath.Base(fakeGoExecutableFilePath.Name())
 
 	type osCheck struct {
-		wantStdout []string
-		wantStderr []string
+		wantOsWriteFile []string
+		wantStdout      []string
+		wantStderr      []string
 	}
 
 	// We loop the OS here (and not in the test), so any underlying test data for
@@ -57,12 +59,138 @@ func TestGenerateBinaryNode(t *testing.T) {
 			commandStatFile   os.FileInfo
 			commandStatErr    error
 			wantErr           error
+
+			wantOSReadFile []string
+			osReadFileErr  error
+			osWriteFileErr error
 		}{
 			{
-				name: "generates source file when no CLIs",
-				args: []string{"source", "leepFrogSource"},
+				name:    "errors when no target name",
+				args:    []string{"source"},
+				wantErr: fmt.Errorf(`Argument "TARGET_NAME" requires at least 1 argument, got 0`),
 				osChecks: map[string]*osCheck{
 					osLinux: {
+						wantStderr: []string{
+							`Argument "TARGET_NAME" requires at least 1 argument, got 0`,
+							``,
+						},
+					},
+					osWindows: {
+						wantStderr: []string{
+							`Argument "TARGET_NAME" requires at least 1 argument, got 0`,
+							``,
+						},
+					},
+				},
+			},
+			{
+				name:    "errors when no output folder name name",
+				args:    []string{"source", "leepFrogSource"},
+				wantErr: fmt.Errorf(`Argument "OUTPUT_FOLDER" requires at least 1 argument, got 0`),
+				osChecks: map[string]*osCheck{
+					osLinux: {
+						wantStderr: []string{
+							`Argument "OUTPUT_FOLDER" requires at least 1 argument, got 0`,
+							``,
+						},
+					},
+					osWindows: {
+						wantStderr: []string{
+							`Argument "OUTPUT_FOLDER" requires at least 1 argument, got 0`,
+							``,
+						},
+					},
+				},
+			},
+			{
+				name:    "errors when output folder does not exist",
+				args:    []string{"source", "leepFrogSource", "/some-path"},
+				wantErr: fmt.Errorf(`validation for "OUTPUT_FOLDER" failed: [FileExists] file %q does not exist`, testutil.FilepathAbs(t, "/some-path")),
+				osChecks: map[string]*osCheck{
+					osLinux: {
+						wantStderr: []string{
+							fmt.Sprintf(`validation for "OUTPUT_FOLDER" failed: [FileExists] file %q does not exist`, testutil.FilepathAbs(t, "/some-path")),
+							``,
+						},
+					},
+					osWindows: {
+						wantStderr: []string{
+							fmt.Sprintf(`validation for "OUTPUT_FOLDER" failed: [FileExists] file %q does not exist`, testutil.FilepathAbs(t, "/some-path")),
+							``,
+						},
+					},
+				},
+			},
+			{
+				name:    "errors when output folder is not a directory",
+				args:    []string{"source", "leepFrogSource", "sourcerer.go"},
+				wantErr: fmt.Errorf(`validation for "OUTPUT_FOLDER" failed: [IsDir] argument %q is a file`, testutil.FilepathAbs(t, "sourcerer.go")),
+				osChecks: map[string]*osCheck{
+					osLinux: {
+						wantStderr: []string{
+							fmt.Sprintf(`validation for "OUTPUT_FOLDER" failed: [IsDir] argument %q is a file`, testutil.FilepathAbs(t, "sourcerer.go")),
+							``,
+						},
+					},
+					osWindows: {
+						wantStderr: []string{
+							fmt.Sprintf(`validation for "OUTPUT_FOLDER" failed: [IsDir] argument %q is a file`, testutil.FilepathAbs(t, "sourcerer.go")),
+							``,
+						},
+					},
+				},
+			},
+			{
+				name:           "fails when osReadFileErr",
+				args:           []string{"source", "leepFrogSource", "cmd"},
+				osReadFileErr:  fmt.Errorf("read oops"),
+				wantOSReadFile: []string{fakeGoExecutableFilePath.Name()},
+				wantErr:        fmt.Errorf(`failed to read executable file: read oops`),
+				osChecks: map[string]*osCheck{
+					osLinux: {
+						wantStderr: []string{
+							`failed to read executable file: read oops`,
+							``,
+						},
+					},
+					osWindows: {
+						wantStderr: []string{
+							`failed to read executable file: read oops`,
+							``,
+						},
+					},
+				},
+			},
+			{
+				name:           "fails when osWriteFileErr",
+				args:           []string{"source", "leepFrogSource", "cmd"},
+				wantOSReadFile: []string{fakeGoExecutableFilePath.Name()},
+				osWriteFileErr: fmt.Errorf("write whoops"),
+				wantErr:        fmt.Errorf(`failed to copy executable file: write whoops`),
+				osChecks: map[string]*osCheck{
+					osLinux: {
+						wantOsWriteFile: []string{testutil.FilepathAbs(t, "cmd", "leepFrogSource")},
+						wantStderr: []string{
+							`failed to copy executable file: write whoops`,
+							``,
+						},
+					},
+					osWindows: {
+						wantOsWriteFile: []string{testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe")},
+						wantStderr: []string{
+							`failed to copy executable file: write whoops`,
+							``,
+						},
+					},
+				},
+			},
+			{
+				name:           "generates source file when no CLIs",
+				args:           []string{"source", "leepFrogSource", "cmd"},
+				wantOSReadFile: []string{fakeGoExecutableFilePath.Name()},
+				osChecks: map[string]*osCheck{
+					osLinux: {
+						wantOsWriteFile: []string{testutil.FilepathAbs(t, "cmd", "leepFrogSource")},
 						wantStdout: []string{
 							`#!/bin/bash`,
 							`function _leepFrogSource_wrap_function {`,
@@ -71,7 +199,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							`  local tmpFile=$(mktemp)`,
 							``,
 							`  # Run the go-only code`,
-							fmt.Sprintf(`  %s execute "$1" $tmpFile "${@:2}"`, fakeGoExecutableFilePath.Name()),
+							fmt.Sprintf(`  %s execute "$1" $tmpFile "${@:2}"`, testutil.FilepathAbs(t, "cmd", "leepFrogSource")),
 							`  # Return the error code if go code terminated with an error`,
 							`  local errorCode=$?`,
 							`  if [ $errorCode -ne 0 ]; then return $errorCode; fi`,
@@ -89,7 +217,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							``,
 							`function _custom_autocomplete_leepFrogSource {`,
 							`  local tFile=$(mktemp)`,
-							fmt.Sprintf(`  %s autocomplete ${COMP_WORDS[0]} "$COMP_TYPE" $COMP_POINT "$COMP_LINE" > $tFile`, fakeGoExecutableFilePath.Name()),
+							fmt.Sprintf(`  %s autocomplete ${COMP_WORDS[0]} "$COMP_TYPE" $COMP_POINT "$COMP_LINE" > $tFile`, testutil.FilepathAbs(t, "cmd", "leepFrogSource")),
 							`  local IFS=$'\n'`,
 							`  COMPREPLY=( $(cat $tFile) )`,
 							`  rm $tFile`,
@@ -101,13 +229,14 @@ func TestGenerateBinaryNode(t *testing.T) {
 						},
 					},
 					osWindows: {
+						wantOsWriteFile: []string{testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe")},
 						wantStdout: []string{
 							`function _leepFrogSource_wrap_function {`,
 							`$_custom_autocomplete_leepFrogSource = {`,
 							`  param($wordToComplete, $commandAst, $compPoint)`,
 							`  $Local:tmpPassthroughArgFile = New-TemporaryFile`,
 							`  [IO.File]::WriteAllText($Local:tmpPassthroughArgFile, $commandAst.ToString())`,
-							fmt.Sprintf(`  (& %s autocomplete ($commandAst.CommandElements | Select-Object -first 1) --comp-line-file "0" $compPoint $Local:tmpPassthroughArgFile) | ForEach-Object {`, fakeGoExecutableFilePath.Name()),
+							fmt.Sprintf(`  (& %s autocomplete ($commandAst.CommandElements | Select-Object -first 1) --comp-line-file "0" $compPoint $Local:tmpPassthroughArgFile) | ForEach-Object {`, testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe")),
 							`    "$_"`,
 							`  }`,
 							`}`,
@@ -121,13 +250,15 @@ func TestGenerateBinaryNode(t *testing.T) {
 			},
 			{
 				name: "adds multiple Aliaser (singular) options at the end",
-				args: []string{"source", "leepFrogSource"},
+				args: []string{"source", "leepFrogSource", "cmd"},
 				opts: []Option{
 					NewAliaser("a1", "do", "some", "stuff"),
 					NewAliaser("otherAlias", "flaggable", "--args", "--at", "once"),
 				},
+				wantOSReadFile: []string{fakeGoExecutableFilePath.Name()},
 				osChecks: map[string]*osCheck{
 					osLinux: {
+						wantOsWriteFile: []string{testutil.FilepathAbs(t, "cmd", "leepFrogSource")},
 						wantStdout: []string{
 							`#!/bin/bash`,
 							`function _leepFrogSource_wrap_function {`,
@@ -136,7 +267,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							`  local tmpFile=$(mktemp)`,
 							``,
 							`  # Run the go-only code`,
-							fmt.Sprintf(`  %s execute "$1" $tmpFile "${@:2}"`, fakeGoExecutableFilePath.Name()),
+							fmt.Sprintf(`  %s execute "$1" $tmpFile "${@:2}"`, testutil.FilepathAbs(t, "cmd", "leepFrogSource")),
 							`  # Return the error code if go code terminated with an error`,
 							`  local errorCode=$?`,
 							`  if [ $errorCode -ne 0 ]; then return $errorCode; fi`,
@@ -154,7 +285,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							``,
 							`function _custom_autocomplete_leepFrogSource {`,
 							`  local tFile=$(mktemp)`,
-							fmt.Sprintf(`  %s autocomplete ${COMP_WORDS[0]} "$COMP_TYPE" $COMP_POINT "$COMP_LINE" > $tFile`, fakeGoExecutableFilePath.Name()),
+							fmt.Sprintf(`  %s autocomplete ${COMP_WORDS[0]} "$COMP_TYPE" $COMP_POINT "$COMP_LINE" > $tFile`, testutil.FilepathAbs(t, "cmd", "leepFrogSource")),
 							`  local IFS=$'\n'`,
 							`  COMPREPLY=( $(cat $tFile) )`,
 							`  rm $tFile`,
@@ -162,7 +293,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							``,
 							`function _leep_frog_autocompleter {`,
 							`  local tFile=$(mktemp)`,
-							fmt.Sprintf(`  %s autocomplete "$1" "$COMP_TYPE" $COMP_POINT "$COMP_LINE" "${@:2}" > $tFile`, fakeGoExecutableFilePath.Name()),
+							fmt.Sprintf(`  %s autocomplete "$1" "$COMP_TYPE" $COMP_POINT "$COMP_LINE" "${@:2}" > $tFile`, testutil.FilepathAbs(t, "cmd", "leepFrogSource")),
 							`  local IFS='`,
 							`';`,
 							`  COMPREPLY=( $(cat $tFile) )`,
@@ -209,13 +340,14 @@ func TestGenerateBinaryNode(t *testing.T) {
 						},
 					},
 					osWindows: {
+						wantOsWriteFile: []string{testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe")},
 						wantStdout: []string{
 							`function _leepFrogSource_wrap_function {`,
 							`$_custom_autocomplete_leepFrogSource = {`,
 							`  param($wordToComplete, $commandAst, $compPoint)`,
 							`  $Local:tmpPassthroughArgFile = New-TemporaryFile`,
 							`  [IO.File]::WriteAllText($Local:tmpPassthroughArgFile, $commandAst.ToString())`,
-							fmt.Sprintf(`  (& %s autocomplete ($commandAst.CommandElements | Select-Object -first 1) --comp-line-file "0" $compPoint $Local:tmpPassthroughArgFile) | ForEach-Object {`, fakeGoExecutableFilePath.Name()),
+							fmt.Sprintf(`  (& %s autocomplete ($commandAst.CommandElements | Select-Object -first 1) --comp-line-file "0" $compPoint $Local:tmpPassthroughArgFile) | ForEach-Object {`, testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe")),
 							`    "$_"`,
 							`  }`,
 							`}`,
@@ -231,7 +363,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							`  param($wordToComplete, $commandAst, $compPoint)`,
 							`  $Local:tmpPassthroughArgFile = New-TemporaryFile`,
 							`  [IO.File]::WriteAllText($Local:tmpPassthroughArgFile, $commandAst.ToString())`,
-							fmt.Sprintf(`  (Invoke-Expression '& %s autocomplete "do" --comp-line-file "0" $compPoint $Local:tmpPassthroughArgFile "some" "stuff"') | ForEach-Object {`, fakeGoExecutableFilePath.Name()),
+							fmt.Sprintf(`  (Invoke-Expression '& %s autocomplete "do" --comp-line-file "0" $compPoint $Local:tmpPassthroughArgFile "some" "stuff"') | ForEach-Object {`, testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe")),
 							`    "$_"`,
 							`  }`,
 							`}`,
@@ -249,7 +381,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							`  param($wordToComplete, $commandAst, $compPoint)`,
 							`  $Local:tmpPassthroughArgFile = New-TemporaryFile`,
 							`  [IO.File]::WriteAllText($Local:tmpPassthroughArgFile, $commandAst.ToString())`,
-							fmt.Sprintf(`  (Invoke-Expression '& %s autocomplete "flaggable" --comp-line-file "0" $compPoint $Local:tmpPassthroughArgFile "--args" "--at" "once"') | ForEach-Object {`, fakeGoExecutableFilePath.Name()),
+							fmt.Sprintf(`  (Invoke-Expression '& %s autocomplete "flaggable" --comp-line-file "0" $compPoint $Local:tmpPassthroughArgFile "--args" "--at" "once"') | ForEach-Object {`, testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe")),
 							`    "$_"`,
 							`  }`,
 							`}`,
@@ -265,14 +397,16 @@ func TestGenerateBinaryNode(t *testing.T) {
 			},
 			{
 				name: "only verifies each CLI once",
-				args: []string{"source", "leepFrogSource"},
+				args: []string{"source", "leepFrogSource", "cmd"},
 				opts: []Option{
 					// Note the CLI in both of these is "do"
 					NewAliaser("a1", "do", "some", "stuff"),
 					NewAliaser("otherAlias", "do", "other", "stuff"),
 				},
+				wantOSReadFile: []string{fakeGoExecutableFilePath.Name()},
 				osChecks: map[string]*osCheck{
 					osLinux: {
+						wantOsWriteFile: []string{testutil.FilepathAbs(t, "cmd", "leepFrogSource")},
 						wantStdout: []string{
 							`#!/bin/bash`,
 							`function _leepFrogSource_wrap_function {`,
@@ -281,7 +415,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							`  local tmpFile=$(mktemp)`,
 							``,
 							`  # Run the go-only code`,
-							fmt.Sprintf(`  %s execute "$1" $tmpFile "${@:2}"`, fakeGoExecutableFilePath.Name()),
+							fmt.Sprintf(`  %s execute "$1" $tmpFile "${@:2}"`, testutil.FilepathAbs(t, "cmd", "leepFrogSource")),
 							`  # Return the error code if go code terminated with an error`,
 							`  local errorCode=$?`,
 							`  if [ $errorCode -ne 0 ]; then return $errorCode; fi`,
@@ -299,7 +433,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							``,
 							`function _custom_autocomplete_leepFrogSource {`,
 							`  local tFile=$(mktemp)`,
-							fmt.Sprintf(`  %s autocomplete ${COMP_WORDS[0]} "$COMP_TYPE" $COMP_POINT "$COMP_LINE" > $tFile`, fakeGoExecutableFilePath.Name()),
+							fmt.Sprintf(`  %s autocomplete ${COMP_WORDS[0]} "$COMP_TYPE" $COMP_POINT "$COMP_LINE" > $tFile`, testutil.FilepathAbs(t, "cmd", "leepFrogSource")),
 							`  local IFS=$'\n'`,
 							`  COMPREPLY=( $(cat $tFile) )`,
 							`  rm $tFile`,
@@ -307,7 +441,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							``,
 							`function _leep_frog_autocompleter {`,
 							`  local tFile=$(mktemp)`,
-							fmt.Sprintf(`  %s autocomplete "$1" "$COMP_TYPE" $COMP_POINT "$COMP_LINE" "${@:2}" > $tFile`, fakeGoExecutableFilePath.Name()),
+							fmt.Sprintf(`  %s autocomplete "$1" "$COMP_TYPE" $COMP_POINT "$COMP_LINE" "${@:2}" > $tFile`, testutil.FilepathAbs(t, "cmd", "leepFrogSource")),
 							`  local IFS='`,
 							`';`,
 							`  COMPREPLY=( $(cat $tFile) )`,
@@ -346,13 +480,14 @@ func TestGenerateBinaryNode(t *testing.T) {
 						},
 					},
 					osWindows: {
+						wantOsWriteFile: []string{testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe")},
 						wantStdout: []string{
 							`function _leepFrogSource_wrap_function {`,
 							`$_custom_autocomplete_leepFrogSource = {`,
 							`  param($wordToComplete, $commandAst, $compPoint)`,
 							`  $Local:tmpPassthroughArgFile = New-TemporaryFile`,
 							`  [IO.File]::WriteAllText($Local:tmpPassthroughArgFile, $commandAst.ToString())`,
-							fmt.Sprintf(`  (& %s autocomplete ($commandAst.CommandElements | Select-Object -first 1) --comp-line-file "0" $compPoint $Local:tmpPassthroughArgFile) | ForEach-Object {`, fakeGoExecutableFilePath.Name()),
+							fmt.Sprintf(`  (& %s autocomplete ($commandAst.CommandElements | Select-Object -first 1) --comp-line-file "0" $compPoint $Local:tmpPassthroughArgFile) | ForEach-Object {`, testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe")),
 							`    "$_"`,
 							`  }`,
 							`}`,
@@ -368,7 +503,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							`  param($wordToComplete, $commandAst, $compPoint)`,
 							`  $Local:tmpPassthroughArgFile = New-TemporaryFile`,
 							`  [IO.File]::WriteAllText($Local:tmpPassthroughArgFile, $commandAst.ToString())`,
-							fmt.Sprintf(`  (Invoke-Expression '& %s autocomplete "do" --comp-line-file "0" $compPoint $Local:tmpPassthroughArgFile "some" "stuff"') | ForEach-Object {`, fakeGoExecutableFilePath.Name()),
+							fmt.Sprintf(`  (Invoke-Expression '& %s autocomplete "do" --comp-line-file "0" $compPoint $Local:tmpPassthroughArgFile "some" "stuff"') | ForEach-Object {`, testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe")),
 							`    "$_"`,
 							`  }`,
 							`}`,
@@ -383,7 +518,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							`  param($wordToComplete, $commandAst, $compPoint)`,
 							`  $Local:tmpPassthroughArgFile = New-TemporaryFile`,
 							`  [IO.File]::WriteAllText($Local:tmpPassthroughArgFile, $commandAst.ToString())`,
-							fmt.Sprintf(`  (Invoke-Expression '& %s autocomplete "do" --comp-line-file "0" $compPoint $Local:tmpPassthroughArgFile "other" "stuff"') | ForEach-Object {`, fakeGoExecutableFilePath.Name()),
+							fmt.Sprintf(`  (Invoke-Expression '& %s autocomplete "do" --comp-line-file "0" $compPoint $Local:tmpPassthroughArgFile "other" "stuff"') | ForEach-Object {`, testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe")),
 							`    "$_"`,
 							`  }`,
 							`}`,
@@ -399,15 +534,17 @@ func TestGenerateBinaryNode(t *testing.T) {
 			},
 			{
 				name: "adds Aliasers (plural) at the end",
-				args: []string{"source", "leepFrogSource"},
+				args: []string{"source", "leepFrogSource", "cmd"},
 				opts: []Option{
 					Aliasers(map[string][]string{
 						"a1":         {"do", "some", "stuff"},
 						"otherAlias": {"flaggable", "--args", "--at", "once"},
 					}),
 				},
+				wantOSReadFile: []string{fakeGoExecutableFilePath.Name()},
 				osChecks: map[string]*osCheck{
 					osLinux: {
+						wantOsWriteFile: []string{testutil.FilepathAbs(t, "cmd", "leepFrogSource")},
 						wantStdout: []string{
 							`#!/bin/bash`,
 							`function _leepFrogSource_wrap_function {`,
@@ -416,7 +553,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							`  local tmpFile=$(mktemp)`,
 							``,
 							`  # Run the go-only code`,
-							fmt.Sprintf(`  %s execute "$1" $tmpFile "${@:2}"`, fakeGoExecutableFilePath.Name()),
+							fmt.Sprintf(`  %s execute "$1" $tmpFile "${@:2}"`, testutil.FilepathAbs(t, "cmd", "leepFrogSource")),
 							`  # Return the error code if go code terminated with an error`,
 							`  local errorCode=$?`,
 							`  if [ $errorCode -ne 0 ]; then return $errorCode; fi`,
@@ -434,7 +571,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							``,
 							`function _custom_autocomplete_leepFrogSource {`,
 							`  local tFile=$(mktemp)`,
-							fmt.Sprintf(`  %s autocomplete ${COMP_WORDS[0]} "$COMP_TYPE" $COMP_POINT "$COMP_LINE" > $tFile`, fakeGoExecutableFilePath.Name()),
+							fmt.Sprintf(`  %s autocomplete ${COMP_WORDS[0]} "$COMP_TYPE" $COMP_POINT "$COMP_LINE" > $tFile`, testutil.FilepathAbs(t, "cmd", "leepFrogSource")),
 							`  local IFS=$'\n'`,
 							`  COMPREPLY=( $(cat $tFile) )`,
 							`  rm $tFile`,
@@ -442,7 +579,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							``,
 							`function _leep_frog_autocompleter {`,
 							`  local tFile=$(mktemp)`,
-							fmt.Sprintf(`  %s autocomplete "$1" "$COMP_TYPE" $COMP_POINT "$COMP_LINE" "${@:2}" > $tFile`, fakeGoExecutableFilePath.Name()),
+							fmt.Sprintf(`  %s autocomplete "$1" "$COMP_TYPE" $COMP_POINT "$COMP_LINE" "${@:2}" > $tFile`, testutil.FilepathAbs(t, "cmd", "leepFrogSource")),
 							`  local IFS='`,
 							`';`,
 							`  COMPREPLY=( $(cat $tFile) )`,
@@ -489,13 +626,14 @@ func TestGenerateBinaryNode(t *testing.T) {
 						},
 					},
 					osWindows: {
+						wantOsWriteFile: []string{testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe")},
 						wantStdout: []string{
 							`function _leepFrogSource_wrap_function {`,
 							`$_custom_autocomplete_leepFrogSource = {`,
 							`  param($wordToComplete, $commandAst, $compPoint)`,
 							`  $Local:tmpPassthroughArgFile = New-TemporaryFile`,
 							`  [IO.File]::WriteAllText($Local:tmpPassthroughArgFile, $commandAst.ToString())`,
-							fmt.Sprintf(`  (& %s autocomplete ($commandAst.CommandElements | Select-Object -first 1) --comp-line-file "0" $compPoint $Local:tmpPassthroughArgFile) | ForEach-Object {`, fakeGoExecutableFilePath.Name()),
+							fmt.Sprintf(`  (& %s autocomplete ($commandAst.CommandElements | Select-Object -first 1) --comp-line-file "0" $compPoint $Local:tmpPassthroughArgFile) | ForEach-Object {`, testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe")),
 							`    "$_"`,
 							`  }`,
 							`}`,
@@ -511,7 +649,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							`  param($wordToComplete, $commandAst, $compPoint)`,
 							`  $Local:tmpPassthroughArgFile = New-TemporaryFile`,
 							`  [IO.File]::WriteAllText($Local:tmpPassthroughArgFile, $commandAst.ToString())`,
-							fmt.Sprintf(`  (Invoke-Expression '& %s autocomplete "do" --comp-line-file "0" $compPoint $Local:tmpPassthroughArgFile "some" "stuff"') | ForEach-Object {`, fakeGoExecutableFilePath.Name()),
+							fmt.Sprintf(`  (Invoke-Expression '& %s autocomplete "do" --comp-line-file "0" $compPoint $Local:tmpPassthroughArgFile "some" "stuff"') | ForEach-Object {`, testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe")),
 							`    "$_"`,
 							`  }`,
 							`}`,
@@ -529,7 +667,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							`  param($wordToComplete, $commandAst, $compPoint)`,
 							`  $Local:tmpPassthroughArgFile = New-TemporaryFile`,
 							`  [IO.File]::WriteAllText($Local:tmpPassthroughArgFile, $commandAst.ToString())`,
-							fmt.Sprintf(`  (Invoke-Expression '& %s autocomplete "flaggable" --comp-line-file "0" $compPoint $Local:tmpPassthroughArgFile "--args" "--at" "once"') | ForEach-Object {`, fakeGoExecutableFilePath.Name()),
+							fmt.Sprintf(`  (Invoke-Expression '& %s autocomplete "flaggable" --comp-line-file "0" $compPoint $Local:tmpPassthroughArgFile "--args" "--at" "once"') | ForEach-Object {`, testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe")),
 							`    "$_"`,
 							`  }`,
 							`}`,
@@ -544,10 +682,12 @@ func TestGenerateBinaryNode(t *testing.T) {
 				},
 			},
 			{
-				name: "generates source file with custom filename",
-				args: []string{"source", "customOutputFile"},
+				name:           "generates source file with custom filename",
+				args:           []string{"source", "customOutputFile", "cmd"},
+				wantOSReadFile: []string{fakeGoExecutableFilePath.Name()},
 				osChecks: map[string]*osCheck{
 					osLinux: {
+						wantOsWriteFile: []string{testutil.FilepathAbs(t, "cmd", "customOutputFile")},
 						wantStdout: []string{
 							`#!/bin/bash`,
 							`function _customOutputFile_wrap_function {`,
@@ -556,7 +696,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							`  local tmpFile=$(mktemp)`,
 							``,
 							`  # Run the go-only code`,
-							fmt.Sprintf(`  %s execute "$1" $tmpFile "${@:2}"`, fakeGoExecutableFilePath.Name()),
+							fmt.Sprintf(`  %s execute "$1" $tmpFile "${@:2}"`, testutil.FilepathAbs(t, "cmd", "customOutputFile")),
 							`  # Return the error code if go code terminated with an error`,
 							`  local errorCode=$?`,
 							`  if [ $errorCode -ne 0 ]; then return $errorCode; fi`,
@@ -574,7 +714,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							``,
 							`function _custom_autocomplete_customOutputFile {`,
 							`  local tFile=$(mktemp)`,
-							fmt.Sprintf(`  %s autocomplete ${COMP_WORDS[0]} "$COMP_TYPE" $COMP_POINT "$COMP_LINE" > $tFile`, fakeGoExecutableFilePath.Name()),
+							fmt.Sprintf(`  %s autocomplete ${COMP_WORDS[0]} "$COMP_TYPE" $COMP_POINT "$COMP_LINE" > $tFile`, testutil.FilepathAbs(t, "cmd", "customOutputFile")),
 							`  local IFS=$'\n'`,
 							`  COMPREPLY=( $(cat $tFile) )`,
 							`  rm $tFile`,
@@ -586,13 +726,14 @@ func TestGenerateBinaryNode(t *testing.T) {
 						},
 					},
 					osWindows: {
+						wantOsWriteFile: []string{testutil.FilepathAbs(t, "cmd", "customOutputFile.exe")},
 						wantStdout: []string{
 							`function _customOutputFile_wrap_function {`,
 							`$_custom_autocomplete_customOutputFile = {`,
 							`  param($wordToComplete, $commandAst, $compPoint)`,
 							`  $Local:tmpPassthroughArgFile = New-TemporaryFile`,
 							`  [IO.File]::WriteAllText($Local:tmpPassthroughArgFile, $commandAst.ToString())`,
-							fmt.Sprintf(`  (& %s autocomplete ($commandAst.CommandElements | Select-Object -first 1) --comp-line-file "0" $compPoint $Local:tmpPassthroughArgFile) | ForEach-Object {`, fakeGoExecutableFilePath.Name()),
+							fmt.Sprintf(`  (& %s autocomplete ($commandAst.CommandElements | Select-Object -first 1) --comp-line-file "0" $compPoint $Local:tmpPassthroughArgFile) | ForEach-Object {`, testutil.FilepathAbs(t, "cmd", "customOutputFile.exe")),
 							`    "$_"`,
 							`  }`,
 							`}`,
@@ -606,14 +747,16 @@ func TestGenerateBinaryNode(t *testing.T) {
 			},
 			{
 				name: "generates source file with CLIs",
-				args: []string{"source", "leepFrogSource"},
+				args: []string{"source", "leepFrogSource", "cmd"},
 				clis: []CLI{
 					ToCLI("x", nil),
 					ToCLI("l", nil),
 					&testCLI{name: "basic", setup: []string{"his", "story"}},
 				},
+				wantOSReadFile: []string{fakeGoExecutableFilePath.Name()},
 				osChecks: map[string]*osCheck{
 					osLinux: {
+						wantOsWriteFile: []string{testutil.FilepathAbs(t, "cmd", "leepFrogSource")},
 						wantStdout: []string{
 							`#!/bin/bash`,
 							`function _leepFrogSource_wrap_function {`,
@@ -622,7 +765,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							`  local tmpFile=$(mktemp)`,
 							``,
 							`  # Run the go-only code`,
-							fmt.Sprintf(`  %s execute "$1" $tmpFile "${@:2}"`, fakeGoExecutableFilePath.Name()),
+							fmt.Sprintf(`  %s execute "$1" $tmpFile "${@:2}"`, testutil.FilepathAbs(t, "cmd", "leepFrogSource")),
 							`  # Return the error code if go code terminated with an error`,
 							`  local errorCode=$?`,
 							`  if [ $errorCode -ne 0 ]; then return $errorCode; fi`,
@@ -640,7 +783,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							``,
 							`function _custom_autocomplete_leepFrogSource {`,
 							`  local tFile=$(mktemp)`,
-							fmt.Sprintf(`  %s autocomplete ${COMP_WORDS[0]} "$COMP_TYPE" $COMP_POINT "$COMP_LINE" > $tFile`, fakeGoExecutableFilePath.Name()),
+							fmt.Sprintf(`  %s autocomplete ${COMP_WORDS[0]} "$COMP_TYPE" $COMP_POINT "$COMP_LINE" > $tFile`, testutil.FilepathAbs(t, "cmd", "leepFrogSource")),
 							`  local IFS=$'\n'`,
 							`  COMPREPLY=( $(cat $tFile) )`,
 							`  rm $tFile`,
@@ -663,13 +806,14 @@ func TestGenerateBinaryNode(t *testing.T) {
 						},
 					},
 					osWindows: {
+						wantOsWriteFile: []string{testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe")},
 						wantStdout: []string{
 							`function _leepFrogSource_wrap_function {`,
 							`$_custom_autocomplete_leepFrogSource = {`,
 							`  param($wordToComplete, $commandAst, $compPoint)`,
 							`  $Local:tmpPassthroughArgFile = New-TemporaryFile`,
 							`  [IO.File]::WriteAllText($Local:tmpPassthroughArgFile, $commandAst.ToString())`,
-							fmt.Sprintf(`  (& %s autocomplete ($commandAst.CommandElements | Select-Object -first 1) --comp-line-file "0" $compPoint $Local:tmpPassthroughArgFile) | ForEach-Object {`, fakeGoExecutableFilePath.Name()),
+							fmt.Sprintf(`  (& %s autocomplete ($commandAst.CommandElements | Select-Object -first 1) --comp-line-file "0" $compPoint $Local:tmpPassthroughArgFile) | ForEach-Object {`, testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe")),
 							`    "$_"`,
 							`  }`,
 							`}`,
@@ -688,7 +832,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							`  $Local:setupTmpFile = New-TemporaryFile`,
 							`  _setup_for_basic_cli > "$Local:setupTmpFile"`,
 							`  Copy-Item "$Local:setupTmpFile" "$Local:setupTmpFile.txt"`,
-							fmt.Sprintf(`  & %s execute "basic" $Local:tmpFile "$Local:setupTmpFile.txt" $args`, fakeGoExecutableFilePath.Name()),
+							fmt.Sprintf(`  & %s execute "basic" $Local:tmpFile "$Local:setupTmpFile.txt" $args`, testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe")),
 							`  # Return error if failed`,
 							`  If (!$?) {`,
 							`    Write-Error "Go execution failed"`,
@@ -712,7 +856,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							`  $Local:tmpFile = New-TemporaryFile`,
 							``,
 							`  # Run the go-only code`,
-							fmt.Sprintf(`  & %s execute "l" $Local:tmpFile $args`, fakeGoExecutableFilePath.Name()),
+							fmt.Sprintf(`  & %s execute "l" $Local:tmpFile $args`, testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe")),
 							`  # Return error if failed`,
 							`  If (!$?) {`,
 							`    Write-Error "Go execution failed"`,
@@ -736,7 +880,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							`  $Local:tmpFile = New-TemporaryFile`,
 							``,
 							`  # Run the go-only code`,
-							fmt.Sprintf(`  & %s execute "x" $Local:tmpFile $args`, fakeGoExecutableFilePath.Name()),
+							fmt.Sprintf(`  & %s execute "x" $Local:tmpFile $args`, testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe")),
 							`  # Return error if failed`,
 							`  If (!$?) {`,
 							`    Write-Error "Go execution failed"`,
@@ -762,15 +906,17 @@ func TestGenerateBinaryNode(t *testing.T) {
 			},
 			{
 				name: "generates source file with CLIs ignoring nosort",
-				args: []string{"source", "leepFrogSource"},
+				args: []string{"source", "leepFrogSource", "cmd"},
 				clis: []CLI{
 					ToCLI("x", nil),
 					ToCLI("l", nil),
 					&testCLI{name: "basic", setup: []string{"his", "story"}},
 				},
-				ignoreNosort: true,
+				ignoreNosort:   true,
+				wantOSReadFile: []string{fakeGoExecutableFilePath.Name()},
 				osChecks: map[string]*osCheck{
 					osLinux: {
+						wantOsWriteFile: []string{testutil.FilepathAbs(t, "cmd", "leepFrogSource")},
 						wantStdout: []string{
 							`#!/bin/bash`,
 							`function _leepFrogSource_wrap_function {`,
@@ -779,7 +925,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							`  local tmpFile=$(mktemp)`,
 							``,
 							`  # Run the go-only code`,
-							fmt.Sprintf(`  %s execute "$1" $tmpFile "${@:2}"`, fakeGoExecutableFilePath.Name()),
+							fmt.Sprintf(`  %s execute "$1" $tmpFile "${@:2}"`, testutil.FilepathAbs(t, "cmd", "leepFrogSource")),
 							`  # Return the error code if go code terminated with an error`,
 							`  local errorCode=$?`,
 							`  if [ $errorCode -ne 0 ]; then return $errorCode; fi`,
@@ -797,7 +943,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							``,
 							`function _custom_autocomplete_leepFrogSource {`,
 							`  local tFile=$(mktemp)`,
-							fmt.Sprintf(`  %s autocomplete ${COMP_WORDS[0]} "$COMP_TYPE" $COMP_POINT "$COMP_LINE" > $tFile`, fakeGoExecutableFilePath.Name()),
+							fmt.Sprintf(`  %s autocomplete ${COMP_WORDS[0]} "$COMP_TYPE" $COMP_POINT "$COMP_LINE" > $tFile`, testutil.FilepathAbs(t, "cmd", "leepFrogSource")),
 							`  local IFS=$'\n'`,
 							`  COMPREPLY=( $(cat $tFile) )`,
 							`  rm $tFile`,
@@ -820,13 +966,14 @@ func TestGenerateBinaryNode(t *testing.T) {
 						},
 					},
 					osWindows: {
+						wantOsWriteFile: []string{testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe")},
 						wantStdout: []string{
 							`function _leepFrogSource_wrap_function {`,
 							`$_custom_autocomplete_leepFrogSource = {`,
 							`  param($wordToComplete, $commandAst, $compPoint)`,
 							`  $Local:tmpPassthroughArgFile = New-TemporaryFile`,
 							`  [IO.File]::WriteAllText($Local:tmpPassthroughArgFile, $commandAst.ToString())`,
-							fmt.Sprintf(`  (& %s autocomplete ($commandAst.CommandElements | Select-Object -first 1) --comp-line-file "0" $compPoint $Local:tmpPassthroughArgFile) | ForEach-Object {`, fakeGoExecutableFilePath.Name()),
+							fmt.Sprintf(`  (& %s autocomplete ($commandAst.CommandElements | Select-Object -first 1) --comp-line-file "0" $compPoint $Local:tmpPassthroughArgFile) | ForEach-Object {`, testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe")),
 							`    "$_"`,
 							`  }`,
 							`}`,
@@ -845,7 +992,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							`  $Local:setupTmpFile = New-TemporaryFile`,
 							`  _setup_for_basic_cli > "$Local:setupTmpFile"`,
 							`  Copy-Item "$Local:setupTmpFile" "$Local:setupTmpFile.txt"`,
-							fmt.Sprintf(`  & %s execute "basic" $Local:tmpFile "$Local:setupTmpFile.txt" $args`, fakeGoExecutableFilePath.Name()),
+							fmt.Sprintf(`  & %s execute "basic" $Local:tmpFile "$Local:setupTmpFile.txt" $args`, testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe")),
 							`  # Return error if failed`,
 							`  If (!$?) {`,
 							`    Write-Error "Go execution failed"`,
@@ -869,7 +1016,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							`  $Local:tmpFile = New-TemporaryFile`,
 							``,
 							`  # Run the go-only code`,
-							fmt.Sprintf(`  & %s execute "l" $Local:tmpFile $args`, fakeGoExecutableFilePath.Name()),
+							fmt.Sprintf(`  & %s execute "l" $Local:tmpFile $args`, testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe")),
 							`  # Return error if failed`,
 							`  If (!$?) {`,
 							`    Write-Error "Go execution failed"`,
@@ -893,7 +1040,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							`  $Local:tmpFile = New-TemporaryFile`,
 							``,
 							`  # Run the go-only code`,
-							fmt.Sprintf(`  & %s execute "x" $Local:tmpFile $args`, fakeGoExecutableFilePath.Name()),
+							fmt.Sprintf(`  & %s execute "x" $Local:tmpFile $args`, testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe")),
 							`  # Return error if failed`,
 							`  If (!$?) {`,
 							`    Write-Error "Go execution failed"`,
@@ -920,15 +1067,17 @@ func TestGenerateBinaryNode(t *testing.T) {
 			// Test `builtin` keyword
 			{
 				name: "generates builtin source files",
-				args: []string{"builtin", "source", "leepFrogBuiltIns"},
+				args: []string{"builtin", "source", "leepFrogBuiltIns", "cmd"},
 				// These should be ignored
 				clis: []CLI{
 					ToCLI("x", nil),
 					ToCLI("l", nil),
 					&testCLI{name: "basic", setup: []string{"his", "story"}},
 				},
+				wantOSReadFile: []string{fakeGoExecutableFilePath.Name()},
 				osChecks: map[string]*osCheck{
 					osLinux: {
+						wantOsWriteFile: []string{testutil.FilepathAbs(t, "cmd", "leepFrogBuiltIns")},
 						wantStdout: []string{
 							`#!/bin/bash`,
 							`function _leepFrogBuiltIns_wrap_function {`,
@@ -937,7 +1086,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							`  local tmpFile=$(mktemp)`,
 							``,
 							`  # Run the go-only code`,
-							fmt.Sprintf(`  %s builtin execute "$1" $tmpFile "${@:2}"`, fakeGoExecutableFilePath.Name()),
+							fmt.Sprintf(`  %s builtin execute "$1" $tmpFile "${@:2}"`, testutil.FilepathAbs(t, "cmd", "leepFrogBuiltIns")),
 							`  # Return the error code if go code terminated with an error`,
 							`  local errorCode=$?`,
 							`  if [ $errorCode -ne 0 ]; then return $errorCode; fi`,
@@ -955,7 +1104,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							``,
 							`function _custom_autocomplete_leepFrogBuiltIns {`,
 							`  local tFile=$(mktemp)`,
-							fmt.Sprintf(`  %s builtin autocomplete ${COMP_WORDS[0]} "$COMP_TYPE" $COMP_POINT "$COMP_LINE" > $tFile`, fakeGoExecutableFilePath.Name()),
+							fmt.Sprintf(`  %s builtin autocomplete ${COMP_WORDS[0]} "$COMP_TYPE" $COMP_POINT "$COMP_LINE" > $tFile`, testutil.FilepathAbs(t, "cmd", "leepFrogBuiltIns")),
 							`  local IFS=$'\n'`,
 							`  COMPREPLY=( $(cat $tFile) )`,
 							`  rm $tFile`,
@@ -977,13 +1126,14 @@ func TestGenerateBinaryNode(t *testing.T) {
 						},
 					},
 					osWindows: {
+						wantOsWriteFile: []string{testutil.FilepathAbs(t, "cmd", "leepFrogBuiltIns.exe")},
 						wantStdout: []string{
 							`function _leepFrogBuiltIns_wrap_function {`,
 							`$_custom_autocomplete_leepFrogBuiltIns = {`,
 							`  param($wordToComplete, $commandAst, $compPoint)`,
 							`  $Local:tmpPassthroughArgFile = New-TemporaryFile`,
 							`  [IO.File]::WriteAllText($Local:tmpPassthroughArgFile, $commandAst.ToString())`,
-							fmt.Sprintf(`  (& %s builtin autocomplete ($commandAst.CommandElements | Select-Object -first 1) --comp-line-file "0" $compPoint $Local:tmpPassthroughArgFile) | ForEach-Object {`, fakeGoExecutableFilePath.Name()),
+							fmt.Sprintf(`  (& %s builtin autocomplete ($commandAst.CommandElements | Select-Object -first 1) --comp-line-file "0" $compPoint $Local:tmpPassthroughArgFile) | ForEach-Object {`, testutil.FilepathAbs(t, "cmd", "leepFrogBuiltIns.exe")),
 							`    "$_"`,
 							`  }`,
 							`}`,
@@ -995,7 +1145,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							`  $Local:tmpFile = New-TemporaryFile`,
 							``,
 							`  # Run the go-only code`,
-							fmt.Sprintf(`  & %s builtin execute "aliaser" $Local:tmpFile $args`, fakeGoExecutableFilePath.Name()),
+							fmt.Sprintf(`  & %s builtin execute "aliaser" $Local:tmpFile $args`, testutil.FilepathAbs(t, "cmd", "leepFrogBuiltIns.exe")),
 							`  # Return error if failed`,
 							`  If (!$?) {`,
 							`    Write-Error "Go execution failed"`,
@@ -1019,7 +1169,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							`  $Local:tmpFile = New-TemporaryFile`,
 							``,
 							`  # Run the go-only code`,
-							fmt.Sprintf(`  & %s builtin execute "gg" $Local:tmpFile $args`, fakeGoExecutableFilePath.Name()),
+							fmt.Sprintf(`  & %s builtin execute "gg" $Local:tmpFile $args`, testutil.FilepathAbs(t, "cmd", "leepFrogBuiltIns.exe")),
 							`  # Return error if failed`,
 							`  If (!$?) {`,
 							`    Write-Error "Go execution failed"`,
@@ -1043,7 +1193,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							`  $Local:tmpFile = New-TemporaryFile`,
 							``,
 							`  # Run the go-only code`,
-							fmt.Sprintf(`  & %s builtin execute "goleep" $Local:tmpFile $args`, fakeGoExecutableFilePath.Name()),
+							fmt.Sprintf(`  & %s builtin execute "goleep" $Local:tmpFile $args`, testutil.FilepathAbs(t, "cmd", "leepFrogBuiltIns.exe")),
 							`  # Return error if failed`,
 							`  If (!$?) {`,
 							`    Write-Error "Go execution failed"`,
@@ -1067,7 +1217,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							`  $Local:tmpFile = New-TemporaryFile`,
 							``,
 							`  # Run the go-only code`,
-							fmt.Sprintf(`  & %s builtin execute "leep_debug" $Local:tmpFile $args`, fakeGoExecutableFilePath.Name()),
+							fmt.Sprintf(`  & %s builtin execute "leep_debug" $Local:tmpFile $args`, testutil.FilepathAbs(t, "cmd", "leepFrogBuiltIns.exe")),
 							`  # Return error if failed`,
 							`  If (!$?) {`,
 							`    Write-Error "Go execution failed"`,
@@ -1091,7 +1241,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							`  $Local:tmpFile = New-TemporaryFile`,
 							``,
 							`  # Run the go-only code`,
-							fmt.Sprintf(`  & %s builtin execute "sourcerer" $Local:tmpFile $args`, fakeGoExecutableFilePath.Name()),
+							fmt.Sprintf(`  & %s builtin execute "sourcerer" $Local:tmpFile $args`, testutil.FilepathAbs(t, "cmd", "leepFrogBuiltIns.exe")),
 							`  # Return error if failed`,
 							`  If (!$?) {`,
 							`    Write-Error "Go execution failed"`,
@@ -1267,6 +1417,28 @@ func TestGenerateBinaryNode(t *testing.T) {
 					return test.commandStatFile, test.commandStatErr
 				})
 
+				fakeFileContents := []byte("fake file contents")
+
+				var gotOSReadFile []string
+				testutil.StubValue(t, &osReadFile, func(f string) ([]byte, error) {
+					gotOSReadFile = append(gotOSReadFile, f)
+					return fakeFileContents, test.osReadFileErr
+				})
+				var gotOSWriteFile []string
+				testutil.StubValue(t, &osWriteFile, func(f string, b []byte, fm fs.FileMode) error {
+					gotOSWriteFile = append(gotOSWriteFile, f)
+
+					if diff := cmp.Diff(string(fakeFileContents), string(b)); diff != "" {
+						t.Errorf("source(%v) executed os.WriteFile with incorrect bytes (-wamt, +got):\n%s", test.args, diff)
+					}
+
+					if diff := cmp.Diff(fs.FileMode(0744), fm); diff != "" {
+						t.Errorf("source(%v) executed os.WriteFile with incorrect fs.FileMode (-wamt, +got):\n%s", test.args, diff)
+					}
+
+					return test.osWriteFileErr
+				})
+
 				if test.ignoreNosort {
 					testutil.StubValue(t, &NosortString, func() string { return "" })
 				}
@@ -1281,6 +1453,13 @@ func TestGenerateBinaryNode(t *testing.T) {
 				}
 				if diff := cmp.Diff(strings.Join(oschk.wantStderr, "\n"), o.GetStderr()); diff != "" {
 					t.Errorf("source(%v) sent incorrect data to stderr (-wamt, +got):\n%s", test.args, diff)
+				}
+
+				if diff := cmp.Diff(test.wantOSReadFile, gotOSReadFile); diff != "" {
+					t.Errorf("source(%v) executed incorrect os.ReadFile commands (-wamt, +got):\n%s", test.args, diff)
+				}
+				if diff := cmp.Diff(oschk.wantOsWriteFile, gotOSWriteFile); diff != "" {
+					t.Errorf("source(%v) executed incorrect os.WriteFile commands (-wamt, +got):\n%s", test.args, diff)
 				}
 			})
 		}
@@ -1349,7 +1528,7 @@ func TestSourcerer(t *testing.T) {
 			wantPanic any
 			osCheck   *osCheck
 			osChecks  map[string]*osCheck
-			// We need to tsub osReadFile errors to be consistent across systems
+			// We need to stub osReadFile errors to be consistent across systems
 			osReadFileStub        bool
 			osReadFileResp        string
 			osReadFileErr         error

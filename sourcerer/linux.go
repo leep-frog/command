@@ -46,6 +46,10 @@ func (l *linux) Name() string {
 	return "linux"
 }
 
+func (l *linux) ExecutableFileSuffix() string {
+	return ""
+}
+
 func (l *linux) FunctionWrap(name, fn string) string {
 	return strings.Join([]string{
 		"#!/bin/bash",

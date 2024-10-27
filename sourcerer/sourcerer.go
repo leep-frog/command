@@ -24,14 +24,15 @@ import (
 var (
 	fileArg         = commander.FileArgument("FILE", "Temporary file for execution")
 	targetNameRegex = commander.MatchesRegex("^[a-zA-Z0-9]+$")
-	targetNameArg   = commander.Arg[string]("TARGET_NAME", "The name of the created target in $GOPATH/bin", targetNameRegex)
+	targetNameArg   = commander.Arg("TARGET_NAME", "The base name of the created binary file", targetNameRegex)
+	outputFolderArg = commander.FileArgument("OUTPUT_FOLDER", "The folder in which to put the created binary file", commander.IsDir())
 	passthroughArgs = commander.ListArg[string]("ARG", "Arguments that get passed through to relevant CLI command", 0, command.UnboundedList)
 	helpFlag        = commander.BoolFlag("help", commander.FlagNoShortName, "Display command's usage doc")
 	// See the below link for more details on COMP_* details:
 	// https://www.gnu.org/software/bash/manual/html_node/Bash-Variables.html#Bash-Variables
 	compTypeArg  = commander.Arg[int]("COMP_TYPE", "COMP_TYPE variable from bash complete function")
 	compPointArg = commander.Arg[int]("COMP_POINT", "COMP_POINT variable from bash complete function")
-	compLineArg  = commander.Arg[string]("COMP_LINE", "COMP_LINE variable from bash complete function", &commander.Transformer[string]{F: func(s string, d *command.Data) (string, error) {
+	compLineArg  = commander.Arg("COMP_LINE", "COMP_LINE variable from bash complete function", &commander.Transformer[string]{F: func(s string, d *command.Data) (string, error) {
 		if compLineFileFlag.Get(d) {
 			b, err := osReadFile(s)
 			if err != nil {
@@ -52,8 +53,9 @@ var (
 	autocompletePassthroughArgs = commander.ListArg[string]("PASSTHROUGH_ARG", "Arguments that get passed through to autocomplete command", 0, command.UnboundedList)
 
 	// Made these methods so they can be stubbed out in tests
-	getUuid    = uuid.NewString
-	osReadFile = os.ReadFile
+	getUuid     = uuid.NewString
+	osReadFile  = os.ReadFile
+	osWriteFile = os.WriteFile
 )
 
 // CLI provides a way to construct CLIs in go, with tab-completion.
@@ -315,6 +317,7 @@ func (s *sourcerer) Node() command.Node {
 				),
 				SourceBranchName: commander.SerialNodes(
 					targetNameArg,
+					outputFolderArg,
 					&commander.ExecutorProcessor{F: s.generateFile},
 				),
 			},
@@ -506,6 +509,18 @@ var (
 
 func (s *sourcerer) generateFile(o command.Output, d *command.Data) error {
 	targetName := targetNameArg.Get(d)
+	outputFolder := outputFolderArg.Get(d)
+
+	b, err := osReadFile(s.goExecutableFilePath)
+	if err != nil {
+		return o.Annotatef(err, "failed to read executable file")
+	}
+
+	newExecutableFilePath := filepath.Join(outputFolder, fmt.Sprintf("%s%s", targetName, CurrentOS.ExecutableFileSuffix()))
+	if err := osWriteFile(newExecutableFilePath, b, 0744); err != nil {
+		return o.Annotatef(err, "failed to copy executable file")
+	}
+	s.goExecutableFilePath = newExecutableFilePath
 
 	fileData := CurrentOS.RegisterCLIs(s.builtin, s.goExecutableFilePath, targetName, maps.Values(s.clis))
 

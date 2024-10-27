@@ -35,6 +35,9 @@ type OS interface {
 	// Name is the operating system as specified by runtime.GOOS
 	Name() string
 
+	// ExecutableFileSuffix is the suffix to add for executable files (e.g. `.exe` in Windows)
+	ExecutableFileSuffix() string
+
 	// FunctionWrap wraps the provided commands in another function.
 	FunctionWrap(name, fn string) string
 
