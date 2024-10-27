@@ -50,7 +50,7 @@ func (*windows) SourceableFileSuffix() string {
 	return "ps1"
 }
 
-func (*windows) SourceSetup(sourceableFile, targetName, goRunSourceCommand string) []string {
+func (*windows) SourceSetup(sourceableFile, targetName, goRunSourceCommand, userDir string) []string {
 	return []string{
 		`# Load all of your CLIs`,
 		fmt.Sprintf(`. %q`, sourceableFile),
@@ -58,7 +58,7 @@ func (*windows) SourceSetup(sourceableFile, targetName, goRunSourceCommand strin
 		`# Useful function to easily regenerate all of your CLIs whenever your go code changes`,
 		fmt.Sprintf(`function _regenerate_%s_CLIs() {`, targetName),
 		`  Push-Location`,
-		`  Set-Location <PATH_TO_YOUR_CLI_DIRECTORY>`,
+		fmt.Sprintf(`  Set-Location %q`, userDir),
 		fmt.Sprintf("  %s", goRunSourceCommand),
 		`  Pop-Location`,
 		`}`,

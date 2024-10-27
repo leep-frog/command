@@ -54,7 +54,7 @@ func (l *linux) SourceableFileSuffix() string {
 	return "sh"
 }
 
-func (l *linux) SourceSetup(sourceableFile, targetName, goRunSourceCommand string) []string {
+func (l *linux) SourceSetup(sourceableFile, targetName, goRunSourceCommand, userDir string) []string {
 	return []string{
 		`# Load all of your CLIs`,
 		fmt.Sprintf(`source %q`, sourceableFile),
@@ -62,7 +62,7 @@ func (l *linux) SourceSetup(sourceableFile, targetName, goRunSourceCommand strin
 		`# Useful function to easily regenerate all of your CLIs whenever your go code changes`,
 		fmt.Sprintf(`function _regenerate_%s_CLIs() {`, targetName),
 		`  pushd . > /dev/null`,
-		`  cd <PATH_TO_YOUR_CLI_DIRECTORY>`,
+		fmt.Sprintf(`  cd %q`, userDir),
 		fmt.Sprintf("  %s", goRunSourceCommand),
 		`  popd . > /dev/null`,
 		`}`,

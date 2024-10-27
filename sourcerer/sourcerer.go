@@ -549,7 +549,7 @@ func (s *sourcerer) generateFile(o command.Output, d *command.Data) error {
 		``,
 		"Run the following (and/or add it to your terminal profile) to finish setting up your CLIs:",
 		``,
-		color.Apply(strings.Join(CurrentOS.SourceSetup(sourceableFile, targetName, goRunSourceCommand), "\n"), color.Blue),
+		color.Apply(strings.Join(CurrentOS.SourceSetup(sourceableFile, targetName, goRunSourceCommand, filepath.Dir(s.sourceLocation)), "\n"), color.Blue),
 	}, "\n"))
 
 	return nil

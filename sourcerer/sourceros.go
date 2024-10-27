@@ -43,7 +43,7 @@ type OS interface {
 
 	// SourceSetup returns the code that should be run and/or added to a user's terminal profile
 	// after successfully running `go run . source ...`
-	SourceSetup(sourceableFile, targetName, goRunSourceCommand string) []string
+	SourceSetup(sourceableFile, targetName, goRunSourceCommand, userDir string) []string
 
 	// FunctionWrap wraps the provided commands in another function.
 	FunctionWrap(name, fn string) string
