@@ -2103,6 +2103,41 @@ func TestUsage(t *testing.T) {
 				}
 			}(),
 		},
+		// ShellCommand
+		{
+			name: "ShellCommand doesn't run in Usage and doesn't override pre-existing description if empty",
+			etc: &commandtest.ExecuteTestCase{
+				Node: SerialNodes(
+					Description("initial description"),
+					&ShellCommand[string]{
+						ArgName:     "SOME_ARG",
+						CommandName: "bloop",
+						Desc:        "",
+					},
+				),
+				WantStdout: strings.Join([]string{
+					"initial description",
+					"",
+				}, "\n"),
+			},
+		},
+		{
+			name: "ShellCommand overrides pre-existing description",
+			etc: &commandtest.ExecuteTestCase{
+				Node: SerialNodes(
+					Description("initial description"),
+					&ShellCommand[string]{
+						ArgName:     "SOME_ARG",
+						CommandName: "bloop",
+						Desc:        "shell desc",
+					},
+				),
+				WantStdout: strings.Join([]string{
+					"shell desc",
+					"",
+				}, "\n"),
+			},
+		},
 		/* Useful comment for commenting out tests */
 	} {
 		t.Run(test.name, func(t *testing.T) {

@@ -124,7 +124,9 @@ func (bn *ShellCommand[T]) Complete(input *command.Input, data *command.Data) (*
 
 // command.Usage fulfills the `command.Processor` interface for `ShellCommand`.
 func (bn *ShellCommand[T]) Usage(i *command.Input, d *command.Data, u *command.Usage) error {
-	u.SetDescription(bn.Desc)
+	if bn.Desc != "" {
+		u.SetDescription(bn.Desc)
+	}
 	return nil
 }
 
