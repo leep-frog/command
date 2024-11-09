@@ -393,7 +393,7 @@ func Source(targetName string, clis []CLI, opts ...Option) int {
 }
 
 func (s *sourcerer) initBuiltInSourcerer() error {
-	return s.initSourcerer(false, true, []CLI{
+	return s.initSourcerer(false, true, "leepFrogCLIBuiltIns", []CLI{
 		&SourcererCommand{},
 		&AliaserCommand{s.goExecutableFilePath},
 		&Debugger{},
@@ -402,7 +402,7 @@ func (s *sourcerer) initBuiltInSourcerer() error {
 	}, s.sourceLocation, []Option{})
 }
 
-func (s *sourcerer) initSourcerer(runCLI, builtin bool, clis []CLI, sourceLocation string, opts []Option) error {
+func (s *sourcerer) initSourcerer(runCLI, builtin bool, targetName string, clis []CLI, sourceLocation string, opts []Option) error {
 	cos := &compiledOpts{
 		aliasers: map[string]*Aliaser{},
 	}
@@ -423,6 +423,7 @@ func (s *sourcerer) initSourcerer(runCLI, builtin bool, clis []CLI, sourceLocati
 	s.cliArg.Processor = &ma
 
 	s.sourceLocation = sourceLocation
+	s.targetName = targetName
 	s.opts = cos
 	s.builtin = builtin
 	if runCLI {
@@ -475,11 +476,10 @@ func source(runCLI bool, targetName string, clis []CLI, goExecutableFilePath str
 	}
 
 	s := &sourcerer{
-		targetName:           targetName,
 		goExecutableFilePath: goExecutableFilePath,
 		cliArg:               commander.NewMutableProcessor[*commander.MapFlargument[string, CLI]](nil),
 	}
-	if err := s.initSourcerer(runCLI, false, clis, sl, opts); err != nil {
+	if err := s.initSourcerer(runCLI, false, targetName, clis, sl, opts); err != nil {
 		return o.Err(err)
 	}
 
