@@ -30,7 +30,7 @@ goleep main.go
 
 func main() {
 	// fmt.Println(runtime.Caller(0))
-	os.Exit(sourcerer.Source([]sourcerer.CLI{
+	os.Exit(sourcerer.Source("testGoleeper", []sourcerer.CLI{
 		sourcerer.ToCLI("simple", commander.SerialNodes(
 			commander.ListArg[string]("SL", "", 1, 2, commander.SimpleCompleter[[]string]("un", "deux", "trois")),
 			&commander.ExecutorProcessor{F: func(o command.Output, d *command.Data) error {

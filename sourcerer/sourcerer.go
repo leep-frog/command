@@ -190,6 +190,7 @@ func load(cli CLI) error {
 }
 
 type sourcerer struct {
+	targetName           string
 	goExecutableFilePath string
 	clis                 map[string]CLI
 	cliArg               *commander.MutableProcessor[*commander.MapFlargument[string, CLI]]
@@ -317,7 +318,6 @@ func (s *sourcerer) Node() command.Node {
 					&commander.ExecutorProcessor{F: s.executeExecutor},
 				),
 				SourceBranchName: commander.SerialNodes(
-					targetNameArg,
 					outputFolderArg,
 					&commander.ExecutorProcessor{F: s.generateFile},
 				),
@@ -376,17 +376,17 @@ type compiledOpts struct {
 func RunCLI(cli CLI) int {
 	o := command.NewOutput()
 	defer o.Close()
-	if source(true, []CLI{cli}, os.Args[0], os.Args[1:], o) != nil {
+	if source(true, "ignoreTargetName", []CLI{cli}, os.Args[0], os.Args[1:], o) != nil {
 		return 1
 	}
 	return 0
 }
 
 // Source generates the bash source file for a list of CLIs.
-func Source(clis []CLI, opts ...Option) int {
+func Source(targetName string, clis []CLI, opts ...Option) int {
 	o := command.NewOutput()
 	defer o.Close()
-	if source(false, clis, os.Args[0], os.Args[1:], o, opts...) != nil {
+	if source(false, targetName, clis, os.Args[0], os.Args[1:], o, opts...) != nil {
 		return 1
 	}
 	return 0
@@ -464,13 +464,18 @@ func ExecutableFileGetProcessor() *commander.GetProcessor[string] {
 }
 
 // Separate method used for testing.
-func source(runCLI bool, clis []CLI, goExecutableFilePath string, osArgs []string, o command.Output, opts ...Option) error {
+func source(runCLI bool, targetName string, clis []CLI, goExecutableFilePath string, osArgs []string, o command.Output, opts ...Option) error {
+	if err := targetNameRegex.Validate(targetName, nil); err != nil {
+		return o.Annotatef(err, "Invalid target name")
+	}
+
 	sl, err := getSourceLoc()
 	if err != nil {
 		return o.Annotate(err, "failed to get source location")
 	}
 
 	s := &sourcerer{
+		targetName:           targetName,
 		goExecutableFilePath: goExecutableFilePath,
 		cliArg:               commander.NewMutableProcessor[*commander.MapFlargument[string, CLI]](nil),
 	}
@@ -509,7 +514,6 @@ var (
 )
 
 func (s *sourcerer) generateFile(o command.Output, d *command.Data) error {
-	targetName := targetNameArg.Get(d)
 	outputFolder := outputFolderArg.Get(d)
 
 	b, err := osReadFile(s.goExecutableFilePath)
@@ -517,7 +521,7 @@ func (s *sourcerer) generateFile(o command.Output, d *command.Data) error {
 		return o.Annotatef(err, "failed to read executable file")
 	}
 
-	newExecutableFilePath := filepath.Join(outputFolder, fmt.Sprintf("%s%s", targetName, CurrentOS.ExecutableFileSuffix()))
+	newExecutableFilePath := filepath.Join(outputFolder, fmt.Sprintf("%s%s", s.targetName, CurrentOS.ExecutableFileSuffix()))
 	if err := osWriteFile(newExecutableFilePath, b, 0744); err != nil {
 		return o.Annotatef(err, "failed to copy executable file")
 	}
@@ -525,13 +529,13 @@ func (s *sourcerer) generateFile(o command.Output, d *command.Data) error {
 
 	o.Stdoutf("Binary file created: %q\n", newExecutableFilePath)
 
-	fileData := CurrentOS.RegisterCLIs(s.builtin, s.goExecutableFilePath, targetName, maps.Values(s.clis))
+	fileData := CurrentOS.RegisterCLIs(s.builtin, s.goExecutableFilePath, s.targetName, maps.Values(s.clis))
 
 	fileData = append(fileData, AliasSourcery(s.goExecutableFilePath, maps.Values(s.opts.aliasers)...)...)
 
-	fileContents := CurrentOS.FunctionWrap(fmt.Sprintf("_%s_wrap_function", targetName), strings.Join(fileData, "\n"))
+	fileContents := CurrentOS.FunctionWrap(fmt.Sprintf("_%s_wrap_function", s.targetName), strings.Join(fileData, "\n"))
 
-	sourceableFile := filepath.Join(outputFolder, CurrentOS.SourceableFile(targetName))
+	sourceableFile := filepath.Join(outputFolder, CurrentOS.SourceableFile(s.targetName))
 	if err := osWriteFile(sourceableFile, []byte(fileContents), 0644); err != nil {
 		return o.Annotatef(err, "failed to write sourceable file contents")
 	}
@@ -540,7 +544,7 @@ func (s *sourcerer) generateFile(o command.Output, d *command.Data) error {
 	if s.builtin {
 		builtinArg = fmt.Sprintf(" %s", BuiltInCommandParameter)
 	}
-	goRunSourceCommand := fmt.Sprintf(`go run .%s source %q %q`, builtinArg, targetName, outputFolder)
+	goRunSourceCommand := fmt.Sprintf(`go run .%s source %q %q`, builtinArg, s.targetName, outputFolder)
 
 	o.Stdoutln(strings.Join([]string{
 		fmt.Sprintf("Sourceable file created: %q", sourceableFile),
@@ -549,7 +553,7 @@ func (s *sourcerer) generateFile(o command.Output, d *command.Data) error {
 		``,
 		"Run the following (and/or add it to your terminal profile) to finish setting up your CLIs:",
 		``,
-		color.Apply(strings.Join(CurrentOS.SourceSetup(sourceableFile, targetName, goRunSourceCommand, filepath.Dir(s.sourceLocation)), "\n"), color.Blue),
+		color.Apply(strings.Join(CurrentOS.SourceSetup(sourceableFile, s.targetName, goRunSourceCommand, filepath.Dir(s.sourceLocation)), "\n"), color.Blue),
 	}, "\n"))
 
 	return nil

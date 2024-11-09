@@ -58,6 +58,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 	for _, curOS := range []OS{Linux(), Windows()} {
 		for _, test := range []struct {
 			name              string
+			cliTargetName     string
 			clis              []CLI
 			args              []string
 			ignoreNosort      bool
@@ -74,28 +75,49 @@ func TestGenerateBinaryNode(t *testing.T) {
 			osWriteFileErrs []error
 		}{
 			{
-				name:    "errors when no target name",
+				name:    "errors when empty target name",
 				args:    []string{"source"},
-				wantErr: fmt.Errorf(`Argument "TARGET_NAME" requires at least 1 argument, got 0`),
+				wantErr: fmt.Errorf(`Invalid target name: [MatchesRegex] value "" doesn't match regex "^[a-zA-Z0-9]+$"`),
 				osChecks: map[string]*osCheck{
 					osLinux: {
 						wantStderr: []string{
-							`Argument "TARGET_NAME" requires at least 1 argument, got 0`,
+							`Invalid target name: [MatchesRegex] value "" doesn't match regex "^[a-zA-Z0-9]+$"`,
 							``,
 						},
 					},
 					osWindows: {
 						wantStderr: []string{
-							`Argument "TARGET_NAME" requires at least 1 argument, got 0`,
+							`Invalid target name: [MatchesRegex] value "" doesn't match regex "^[a-zA-Z0-9]+$"`,
 							``,
 						},
 					},
 				},
 			},
 			{
-				name:    "errors when no output folder name name",
-				args:    []string{"source", "leepFrogSource"},
-				wantErr: fmt.Errorf(`Argument "OUTPUT_DIRECTORY" requires at least 1 argument, got 0`),
+				name:          "errors when invalid target name",
+				cliTargetName: "some target name",
+				args:          []string{"source"},
+				wantErr:       fmt.Errorf(`Invalid target name: [MatchesRegex] value "some target name" doesn't match regex "^[a-zA-Z0-9]+$"`),
+				osChecks: map[string]*osCheck{
+					osLinux: {
+						wantStderr: []string{
+							`Invalid target name: [MatchesRegex] value "some target name" doesn't match regex "^[a-zA-Z0-9]+$"`,
+							``,
+						},
+					},
+					osWindows: {
+						wantStderr: []string{
+							`Invalid target name: [MatchesRegex] value "some target name" doesn't match regex "^[a-zA-Z0-9]+$"`,
+							``,
+						},
+					},
+				},
+			},
+			{
+				name:          "errors when no output folder name name",
+				cliTargetName: "leepFrogSource",
+				args:          []string{"source"},
+				wantErr:       fmt.Errorf(`Argument "OUTPUT_DIRECTORY" requires at least 1 argument, got 0`),
 				osChecks: map[string]*osCheck{
 					osLinux: {
 						wantStderr: []string{
@@ -112,9 +134,10 @@ func TestGenerateBinaryNode(t *testing.T) {
 				},
 			},
 			{
-				name:    "errors when output folder does not exist",
-				args:    []string{"source", "leepFrogSource", "/some-path"},
-				wantErr: fmt.Errorf(`validation for "OUTPUT_DIRECTORY" failed: [FileExists] file %q does not exist`, testutil.FilepathAbs(t, "/some-path")),
+				name:          "errors when output folder does not exist",
+				cliTargetName: "leepFrogSource",
+				args:          []string{"source", "/some-path"},
+				wantErr:       fmt.Errorf(`validation for "OUTPUT_DIRECTORY" failed: [FileExists] file %q does not exist`, testutil.FilepathAbs(t, "/some-path")),
 				osChecks: map[string]*osCheck{
 					osLinux: {
 						wantStderr: []string{
@@ -131,9 +154,10 @@ func TestGenerateBinaryNode(t *testing.T) {
 				},
 			},
 			{
-				name:    "errors when output folder is not a directory",
-				args:    []string{"source", "leepFrogSource", "sourcerer.go"},
-				wantErr: fmt.Errorf(`validation for "OUTPUT_DIRECTORY" failed: [IsDir] argument %q is a file`, testutil.FilepathAbs(t, "sourcerer.go")),
+				name:          "errors when output folder is not a directory",
+				cliTargetName: "leepFrogSource",
+				args:          []string{"source", "sourcerer.go"},
+				wantErr:       fmt.Errorf(`validation for "OUTPUT_DIRECTORY" failed: [IsDir] argument %q is a file`, testutil.FilepathAbs(t, "sourcerer.go")),
 				osChecks: map[string]*osCheck{
 					osLinux: {
 						wantStderr: []string{
@@ -151,7 +175,8 @@ func TestGenerateBinaryNode(t *testing.T) {
 			},
 			{
 				name:           "fails when osReadFileErr",
-				args:           []string{"source", "leepFrogSource", "cmd"},
+				cliTargetName:  "leepFrogSource",
+				args:           []string{"source", "cmd"},
 				osReadFileErr:  fmt.Errorf("read oops"),
 				wantOSReadFile: []string{fakeGoExecutableFilePath.Name()},
 				wantErr:        fmt.Errorf(`failed to read executable file: read oops`),
@@ -172,7 +197,8 @@ func TestGenerateBinaryNode(t *testing.T) {
 			},
 			{
 				name:            "fails when osWriteFileErr for copying binary file",
-				args:            []string{"source", "leepFrogSource", "cmd"},
+				cliTargetName:   "leepFrogSource",
+				args:            []string{"source", "cmd"},
 				wantOSReadFile:  []string{fakeGoExecutableFilePath.Name()},
 				osWriteFileErrs: []error{fmt.Errorf("write binary whoops")},
 				wantErr:         fmt.Errorf(`failed to copy executable file: write binary whoops`),
@@ -207,7 +233,8 @@ func TestGenerateBinaryNode(t *testing.T) {
 			},
 			{
 				name:            "fails when osWriteFileErr for creating sourceable file",
-				args:            []string{"source", "leepFrogSource", "cmd"},
+				cliTargetName:   "leepFrogSource",
+				args:            []string{"source", "cmd"},
 				wantOSReadFile:  []string{fakeGoExecutableFilePath.Name()},
 				osWriteFileErrs: []error{nil, fmt.Errorf("write sourceable whoops")},
 				wantErr:         fmt.Errorf(`failed to write sourceable file contents: write sourceable whoops`),
@@ -307,7 +334,8 @@ func TestGenerateBinaryNode(t *testing.T) {
 			},
 			{
 				name:           "generates source file when no CLIs",
-				args:           []string{"source", "leepFrogSource", "cmd"},
+				cliTargetName:  "leepFrogSource",
+				args:           []string{"source", "cmd"},
 				wantOSReadFile: []string{fakeGoExecutableFilePath.Name()},
 				osChecks: map[string]*osCheck{
 					osLinux: {
@@ -432,8 +460,9 @@ func TestGenerateBinaryNode(t *testing.T) {
 				},
 			},
 			{
-				name: "adds multiple Aliaser (singular) options at the end",
-				args: []string{"source", "leepFrogSource", "cmd"},
+				name:          "adds multiple Aliaser (singular) options at the end",
+				cliTargetName: "leepFrogSource",
+				args:          []string{"source", "cmd"},
 				opts: []Option{
 					NewAliaser("a1", "do", "some", "stuff"),
 					NewAliaser("otherAlias", "flaggable", "--args", "--at", "once"),
@@ -641,8 +670,9 @@ func TestGenerateBinaryNode(t *testing.T) {
 				},
 			},
 			{
-				name: "only verifies each CLI once",
-				args: []string{"source", "leepFrogSource", "cmd"},
+				name:          "only verifies each CLI once",
+				cliTargetName: "leepFrogSource",
+				args:          []string{"source", "cmd"},
 				opts: []Option{
 					// Note the CLI in both of these is "do"
 					NewAliaser("a1", "do", "some", "stuff"),
@@ -840,8 +870,9 @@ func TestGenerateBinaryNode(t *testing.T) {
 				},
 			},
 			{
-				name: "adds Aliasers (plural) at the end",
-				args: []string{"source", "leepFrogSource", "cmd"},
+				name:          "adds Aliasers (plural) at the end",
+				cliTargetName: "leepFrogSource",
+				args:          []string{"source", "cmd"},
 				opts: []Option{
 					Aliasers(map[string][]string{
 						"a1":         {"do", "some", "stuff"},
@@ -1052,7 +1083,8 @@ func TestGenerateBinaryNode(t *testing.T) {
 			},
 			{
 				name:           "generates source file with custom filename",
-				args:           []string{"source", "customOutputFile", "cmd"},
+				cliTargetName:  "customOutputFile",
+				args:           []string{"source", "cmd"},
 				wantOSReadFile: []string{fakeGoExecutableFilePath.Name()},
 				osChecks: map[string]*osCheck{
 					osLinux: {
@@ -1177,8 +1209,9 @@ func TestGenerateBinaryNode(t *testing.T) {
 				},
 			},
 			{
-				name: "generates source file with CLIs",
-				args: []string{"source", "leepFrogSource", "cmd"},
+				name:          "generates source file with CLIs",
+				cliTargetName: "leepFrogSource",
+				args:          []string{"source", "cmd"},
 				clis: []CLI{
 					ToCLI("x", nil),
 					ToCLI("l", nil),
@@ -1398,8 +1431,9 @@ func TestGenerateBinaryNode(t *testing.T) {
 				},
 			},
 			{
-				name: "generates source file with CLIs ignoring nosort",
-				args: []string{"source", "leepFrogSource", "cmd"},
+				name:          "generates source file with CLIs ignoring nosort",
+				cliTargetName: "leepFrogSource",
+				args:          []string{"source", "cmd"},
 				clis: []CLI{
 					ToCLI("x", nil),
 					ToCLI("l", nil),
@@ -1621,33 +1655,35 @@ func TestGenerateBinaryNode(t *testing.T) {
 			},
 			// Test `builtin` keyword
 			{
-				name: "builtin error bubbles up",
-				args: []string{"builtin", "source"},
+				name:          "builtin error bubbles up",
+				cliTargetName: "leepFrogBuiltIns",
+				args:          []string{"builtin", "source"},
 				// These should be ignored
 				clis: []CLI{
 					ToCLI("x", nil),
 					ToCLI("l", nil),
 					&testCLI{name: "basic", setup: []string{"his", "story"}},
 				},
-				wantErr: fmt.Errorf(`Argument "TARGET_NAME" requires at least 1 argument, got 0`),
+				wantErr: fmt.Errorf(`Argument "OUTPUT_DIRECTORY" requires at least 1 argument, got 0`),
 				osChecks: map[string]*osCheck{
 					osLinux: {
 						wantStderr: []string{
-							`Argument "TARGET_NAME" requires at least 1 argument, got 0`,
+							`Argument "OUTPUT_DIRECTORY" requires at least 1 argument, got 0`,
 							``,
 						},
 					},
 					osWindows: {
 						wantStderr: []string{
-							`Argument "TARGET_NAME" requires at least 1 argument, got 0`,
+							`Argument "OUTPUT_DIRECTORY" requires at least 1 argument, got 0`,
 							``,
 						},
 					},
 				},
 			},
 			{
-				name: "generates builtin source files",
-				args: []string{"builtin", "source", "leepFrogBuiltIns", "cmd"},
+				name:          "generates builtin source files",
+				cliTargetName: "leepFrogBuiltIns",
+				args:          []string{"builtin", "source", "cmd"},
 				// These should be ignored
 				clis: []CLI{
 					ToCLI("x", nil),
@@ -1908,9 +1944,10 @@ func TestGenerateBinaryNode(t *testing.T) {
 				},
 			},
 			{
-				name:   "generate-autocomplete-setup with runCLI fails if multiple CLIs",
-				args:   []string{"generate-autocomplete-setup"},
-				runCLI: true,
+				name:          "generate-autocomplete-setup with runCLI fails if multiple CLIs",
+				cliTargetName: "leepFrogSource",
+				args:          []string{"generate-autocomplete-setup"},
+				runCLI:        true,
 				clis: []CLI{
 					&testCLI{name: "basic"},
 					&testCLI{name: "other"},
@@ -1932,9 +1969,10 @@ func TestGenerateBinaryNode(t *testing.T) {
 				},
 			},
 			{
-				name:   "generates runCLI autocomplete source files using exeBaseName",
-				args:   []string{"generate-autocomplete-setup"},
-				runCLI: true,
+				name:          "generates runCLI autocomplete source files using exeBaseName",
+				cliTargetName: "leepFrogSource",
+				args:          []string{"generate-autocomplete-setup"},
+				runCLI:        true,
 				clis: []CLI{
 					&testCLI{name: "basic"},
 				},
@@ -1978,9 +2016,10 @@ func TestGenerateBinaryNode(t *testing.T) {
 				},
 			},
 			{
-				name:   "generates runCLI autocomplete source files using custom alias",
-				args:   []string{"generate-autocomplete-setup", "--alias", "abc"},
-				runCLI: true,
+				name:          "generates runCLI autocomplete source files using custom alias",
+				cliTargetName: "leepFrogSource",
+				args:          []string{"generate-autocomplete-setup", "--alias", "abc"},
+				runCLI:        true,
 				clis: []CLI{
 					&testCLI{name: "basic"},
 				},
@@ -2024,9 +2063,10 @@ func TestGenerateBinaryNode(t *testing.T) {
 				},
 			},
 			{
-				name:   "generates runCLI autocomplete fails if alias doesn't match regex",
-				args:   []string{"generate-autocomplete-setup", "--alias", "ab c"},
-				runCLI: true,
+				name:          "generates runCLI autocomplete fails if alias doesn't match regex",
+				args:          []string{"generate-autocomplete-setup", "--alias", "ab c"},
+				runCLI:        true,
+				cliTargetName: "testCLIs",
 				clis: []CLI{
 					&testCLI{name: "basic"},
 				},
@@ -2080,7 +2120,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 					testutil.StubValue(t, &NosortString, func() string { return "" })
 				}
 				o := commandtest.NewOutput()
-				err := source(test.runCLI, test.clis, fakeGoExecutableFilePath.Name(), test.args, o, test.opts...)
+				err := source(test.runCLI, test.cliTargetName, test.clis, fakeGoExecutableFilePath.Name(), test.args, o, test.opts...)
 				testutil.CmpError(t, "source(...)", test.wantErr, err)
 				o.Close()
 
@@ -2157,15 +2197,16 @@ func TestSourcerer(t *testing.T) {
 	// across tests which can be error prone and difficult to debug).
 	for _, curOS := range []OS{Linux(), Windows()} {
 		for _, test := range []struct {
-			name      string
-			clis      []CLI
-			args      []string
-			uuids     []string
-			cacheErrs []error
-			runCLI    bool
-			wantPanic any
-			osCheck   *osCheck
-			osChecks  map[string]*osCheck
+			name          string
+			cliTargetName string
+			clis          []CLI
+			args          []string
+			uuids         []string
+			cacheErrs     []error
+			runCLI        bool
+			wantPanic     any
+			osCheck       *osCheck
+			osChecks      map[string]*osCheck
 			// We need to stub osReadFile errors to be consistent across systems
 			osReadFileStub        bool
 			osReadFileResp        string
@@ -2174,8 +2215,19 @@ func TestSourcerer(t *testing.T) {
 			fakeInputFileContents []string
 		}{
 			{
-				name: "fails if invalid command branch",
-				args: []string{"wizardry", "stuff"},
+				name:          "fails if invalid target name",
+				cliTargetName: "w t f",
+				osCheck: &osCheck{
+					wantStderr: []string{
+						`Invalid target name: [MatchesRegex] value "w t f" doesn't match regex "^[a-zA-Z0-9]+$"`,
+					},
+					wantErr: fmt.Errorf(`Invalid target name: [MatchesRegex] value "w t f" doesn't match regex "^[a-zA-Z0-9]+$"`),
+				},
+			},
+			{
+				name:          "fails if invalid command branch",
+				cliTargetName: "leepFrogSource",
+				args:          []string{"wizardry", "stuff"},
 				osCheck: &osCheck{
 					wantStderr: []string{
 						"Unprocessed extra args: [wizardry stuff]",
@@ -2185,8 +2237,9 @@ func TestSourcerer(t *testing.T) {
 			},
 			// Execute tests
 			{
-				name: "fails if no cli arg",
-				args: []string{"execute"},
+				name:          "fails if no cli arg",
+				cliTargetName: "leepFrogSource",
+				args:          []string{"execute"},
 				osCheck: &osCheck{
 					wantStderr: []string{
 						`Argument "CLI" requires at least 1 argument, got 0`,
@@ -2195,8 +2248,9 @@ func TestSourcerer(t *testing.T) {
 				},
 			},
 			{
-				name: "fails if no cli arg other",
-				args: []string{},
+				name:          "fails if no cli arg other",
+				cliTargetName: "leepFrogSource",
+				args:          []string{},
 				osCheck: &osCheck{
 					wantStderr: []string{
 						"echo \"Executing a sourcerer.CLI directly through `go run` is tricky. Either generate a CLI or use the `goleep` command to directly run the file.\"",
@@ -2205,8 +2259,9 @@ func TestSourcerer(t *testing.T) {
 				},
 			},
 			{
-				name: "fails if unknown CLI",
-				args: []string{"execute", "idk"},
+				name:          "fails if unknown CLI",
+				cliTargetName: "leepFrogSource",
+				args:          []string{"execute", "idk"},
 				osCheck: &osCheck{
 					wantStderr: []string{
 						"validation for \"CLI\" failed: [MapArg] key (idk) is not in map; expected one of []",
@@ -2215,8 +2270,9 @@ func TestSourcerer(t *testing.T) {
 				},
 			},
 			{
-				name:      "fails if getCache error",
-				cacheErrs: []error{fmt.Errorf("rats")},
+				name:          "fails if getCache error",
+				cliTargetName: "leepFrogSource",
+				cacheErrs:     []error{fmt.Errorf("rats")},
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
@@ -2229,7 +2285,8 @@ func TestSourcerer(t *testing.T) {
 				},
 			},
 			{
-				name: "properly executes CLI",
+				name:          "properly executes CLI",
+				cliTargetName: "leepFrogSource",
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
@@ -2253,7 +2310,8 @@ func TestSourcerer(t *testing.T) {
 				},
 			},
 			{
-				name: "handles processing error",
+				name:          "handles processing error",
+				cliTargetName: "leepFrogSource",
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
@@ -2269,7 +2327,8 @@ func TestSourcerer(t *testing.T) {
 				},
 			},
 			{
-				name: "properly passes arguments to CLI",
+				name:          "properly passes arguments to CLI",
+				cliTargetName: "leepFrogSource",
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
@@ -2299,7 +2358,8 @@ func TestSourcerer(t *testing.T) {
 				},
 			},
 			{
-				name: "properly passes extra arguments to CLI",
+				name:          "properly passes extra arguments to CLI",
+				cliTargetName: "leepFrogSource",
 				clis: []CLI{
 					&testCLI{
 						name:       "basic",
@@ -2324,7 +2384,8 @@ func TestSourcerer(t *testing.T) {
 				},
 			},
 			{
-				name: "properly marks CLI as changed and saves",
+				name:          "properly marks CLI as changed and saves",
+				cliTargetName: "leepFrogSource",
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
@@ -2345,7 +2406,8 @@ func TestSourcerer(t *testing.T) {
 				},
 			},
 			{
-				name: "saves even if execution error",
+				name:          "saves even if execution error",
+				cliTargetName: "leepFrogSource",
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
@@ -2370,7 +2432,8 @@ func TestSourcerer(t *testing.T) {
 				},
 			},
 			{
-				name: "fails if save error",
+				name:          "fails if save error",
+				cliTargetName: "leepFrogSource",
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
@@ -2395,7 +2458,8 @@ func TestSourcerer(t *testing.T) {
 				},
 			},
 			{
-				name: "save fails if getCache error",
+				name:          "save fails if getCache error",
+				cliTargetName: "leepFrogSource",
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
@@ -2424,7 +2488,8 @@ func TestSourcerer(t *testing.T) {
 				},
 			},
 			{
-				name: "writes execute data to file",
+				name:          "writes execute data to file",
+				cliTargetName: "leepFrogSource",
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
@@ -2444,7 +2509,8 @@ func TestSourcerer(t *testing.T) {
 				},
 			},
 			{
-				name: "writes function wrapped execute data to file",
+				name:          "writes function wrapped execute data to file",
+				cliTargetName: "leepFrogSource",
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
@@ -2485,7 +2551,8 @@ func TestSourcerer(t *testing.T) {
 			},
 			// Execute with usage tests
 			{
-				name: "Execute shows usage if help flag included with no other arguments",
+				name:          "Execute shows usage if help flag included with no other arguments",
+				cliTargetName: "leepFrogSource",
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
@@ -2519,7 +2586,8 @@ func TestSourcerer(t *testing.T) {
 				},
 			},
 			{
-				name: "Usage handles usage error",
+				name:          "Usage handles usage error",
+				cliTargetName: "leepFrogSource",
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
@@ -2556,7 +2624,8 @@ func TestSourcerer(t *testing.T) {
 				},
 			},
 			{
-				name: "Usage handles non-usage error",
+				name:          "Usage handles non-usage error",
+				cliTargetName: "leepFrogSource",
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
@@ -2584,7 +2653,8 @@ func TestSourcerer(t *testing.T) {
 				},
 			},
 			{
-				name: "Execute shows usage if help flag included with some arguments",
+				name:          "Execute shows usage if help flag included with some arguments",
+				cliTargetName: "leepFrogSource",
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
@@ -2618,7 +2688,8 @@ func TestSourcerer(t *testing.T) {
 				},
 			},
 			{
-				name: "Execute shows usage if all arguments provided",
+				name:          "Execute shows usage if all arguments provided",
+				cliTargetName: "leepFrogSource",
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
@@ -2649,7 +2720,8 @@ func TestSourcerer(t *testing.T) {
 				},
 			},
 			{
-				name: "Execute shows usage if all arguments provided and some flags",
+				name:          "Execute shows usage if all arguments provided and some flags",
+				cliTargetName: "leepFrogSource",
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
@@ -2678,7 +2750,8 @@ func TestSourcerer(t *testing.T) {
 				},
 			},
 			{
-				name: "Execute shows full usage if extra arguments provided",
+				name:          "Execute shows full usage if extra arguments provided",
+				cliTargetName: "leepFrogSource",
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
@@ -2711,7 +2784,8 @@ func TestSourcerer(t *testing.T) {
 			},
 			// CLI with setup:
 			{
-				name: "SetupArg node is automatically added as required arg",
+				name:          "SetupArg node is automatically added as required arg",
+				cliTargetName: "leepFrogSource",
 				clis: []CLI{
 					&testCLI{
 						name:  "basic",
@@ -2733,7 +2807,8 @@ func TestSourcerer(t *testing.T) {
 				},
 			},
 			{
-				name: "SetupArg is properly populated",
+				name:          "SetupArg is properly populated",
+				cliTargetName: "leepFrogSource",
 				clis: []CLI{
 					&testCLI{
 						name:  "basic",
@@ -2759,7 +2834,8 @@ func TestSourcerer(t *testing.T) {
 				},
 			},
 			{
-				name: "args after SetupArg are properly populated",
+				name:          "args after SetupArg are properly populated",
+				cliTargetName: "leepFrogSource",
 				clis: []CLI{
 					&testCLI{
 						name:  "basic",
@@ -2790,9 +2866,10 @@ func TestSourcerer(t *testing.T) {
 			},
 			// Usage printing tests
 			{
-				name: "prints command usage for missing branch error",
-				clis: []CLI{&usageErrCLI{}},
-				args: []string{"execute", "uec", fakeFile},
+				name:          "prints command usage for missing branch error",
+				cliTargetName: "leepFrogSource",
+				clis:          []CLI{&usageErrCLI{}},
+				args:          []string{"execute", "uec", fakeFile},
 				osCheck: &osCheck{
 					wantStderr: []string{
 						"Branching argument must be one of [a b]",
@@ -2803,9 +2880,10 @@ func TestSourcerer(t *testing.T) {
 				},
 			},
 			{
-				name: "prints command usage for bad branch arg error",
-				clis: []CLI{&usageErrCLI{}},
-				args: []string{"execute", "uec", fakeFile, "uh"},
+				name:          "prints command usage for bad branch arg error",
+				cliTargetName: "leepFrogSource",
+				clis:          []CLI{&usageErrCLI{}},
+				args:          []string{"execute", "uec", fakeFile, "uh"},
 				osCheck: &osCheck{
 					wantStderr: []string{
 						"Branching argument must be one of [a b]",
@@ -2816,9 +2894,10 @@ func TestSourcerer(t *testing.T) {
 				},
 			},
 			{
-				name: "prints command usage for missing args error",
-				clis: []CLI{&usageErrCLI{}},
-				args: []string{"execute", "uec", fakeFile, "b"},
+				name:          "prints command usage for missing args error",
+				cliTargetName: "leepFrogSource",
+				clis:          []CLI{&usageErrCLI{}},
+				args:          []string{"execute", "uec", fakeFile, "b"},
 				osCheck: &osCheck{
 					wantStderr: []string{
 						`Argument "B_SL" requires at least 1 argument, got 0`,
@@ -2829,9 +2908,10 @@ func TestSourcerer(t *testing.T) {
 				},
 			},
 			{
-				name: "prints command usage for missing args error",
-				clis: []CLI{&usageErrCLI{}},
-				args: []string{"execute", "uec", fakeFile, "a", "un", "deux", "trois"},
+				name:          "prints command usage for missing args error",
+				cliTargetName: "leepFrogSource",
+				clis:          []CLI{&usageErrCLI{}},
+				args:          []string{"execute", "uec", fakeFile, "a", "un", "deux", "trois"},
 				osCheck: &osCheck{
 					wantStderr: []string{
 						"Unprocessed extra args: [deux trois]",
@@ -2843,15 +2923,17 @@ func TestSourcerer(t *testing.T) {
 			},
 			// List CLI tests
 			{
-				name: "lists none",
-				args: []string{ListBranchName},
+				name:          "lists none",
+				cliTargetName: "leepFrogSource",
+				args:          []string{ListBranchName},
 				osCheck: &osCheck{
 					wantStdout: []string{""},
 				},
 			},
 			{
-				name: "lists clis",
-				args: []string{ListBranchName},
+				name:          "lists clis",
+				cliTargetName: "leepFrogSource",
+				args:          []string{ListBranchName},
 				clis: []CLI{
 					&testCLI{name: "un"},
 					&testCLI{name: "deux"},
@@ -2867,8 +2949,9 @@ func TestSourcerer(t *testing.T) {
 			},
 			// Autocomplete tests
 			{
-				name: "autocomplete requires cli name",
-				args: []string{"autocomplete"},
+				name:          "autocomplete requires cli name",
+				cliTargetName: "leepFrogSource",
+				args:          []string{"autocomplete"},
 				osCheck: &osCheck{
 					wantStderr: []string{
 						`Argument "CLI" requires at least 1 argument, got 0`,
@@ -2877,9 +2960,10 @@ func TestSourcerer(t *testing.T) {
 				},
 			},
 			{
-				name: "autocomplete requires comp_type",
-				args: []string{"autocomplete", "uec"},
-				clis: []CLI{&usageErrCLI{}},
+				name:          "autocomplete requires comp_type",
+				cliTargetName: "leepFrogSource",
+				args:          []string{"autocomplete", "uec"},
+				clis:          []CLI{&usageErrCLI{}},
 				osCheck: &osCheck{
 					wantStderr: []string{
 						`Argument "COMP_TYPE" requires at least 1 argument, got 0`,
@@ -2888,9 +2972,10 @@ func TestSourcerer(t *testing.T) {
 				},
 			},
 			{
-				name: "autocomplete requires comp_point",
-				args: []string{"autocomplete", "uec", "63"},
-				clis: []CLI{&usageErrCLI{}},
+				name:          "autocomplete requires comp_point",
+				cliTargetName: "leepFrogSource",
+				args:          []string{"autocomplete", "uec", "63"},
+				clis:          []CLI{&usageErrCLI{}},
 				osCheck: &osCheck{
 					wantStderr: []string{
 						`Argument "COMP_POINT" requires at least 1 argument, got 0`,
@@ -2899,9 +2984,10 @@ func TestSourcerer(t *testing.T) {
 				},
 			},
 			{
-				name: "autocomplete requires comp_line",
-				args: []string{"autocomplete", "uec", "63", "2"},
-				clis: []CLI{&usageErrCLI{}},
+				name:          "autocomplete requires comp_line",
+				cliTargetName: "leepFrogSource",
+				args:          []string{"autocomplete", "uec", "63", "2"},
+				clis:          []CLI{&usageErrCLI{}},
 				osCheck: &osCheck{
 					wantStderr: []string{
 						`Argument "COMP_LINE" requires at least 1 argument, got 0`,
@@ -2910,9 +2996,10 @@ func TestSourcerer(t *testing.T) {
 				},
 			},
 			{
-				name: "autocomplete doesn't require passthrough args",
-				args: []string{"autocomplete", "basic", "63", "0", "h"},
-				clis: []CLI{&testCLI{name: "basic"}},
+				name:          "autocomplete doesn't require passthrough args",
+				cliTargetName: "leepFrogSource",
+				args:          []string{"autocomplete", "basic", "63", "0", "h"},
+				clis:          []CLI{&testCLI{name: "basic"}},
 				osChecks: map[string]*osCheck{
 					osLinux: {
 						wantErr: fmt.Errorf("Unprocessed extra args: []"),
@@ -2940,9 +3027,10 @@ func TestSourcerer(t *testing.T) {
 				},
 			},
 			{
-				name: "autocomplete re-prints comp line",
-				args: []string{"autocomplete", "basic", "63", "10", "hello ther"},
-				clis: []CLI{&testCLI{name: "basic"}},
+				name:          "autocomplete re-prints comp line",
+				cliTargetName: "leepFrogSource",
+				args:          []string{"autocomplete", "basic", "63", "10", "hello ther"},
+				clis:          []CLI{&testCLI{name: "basic"}},
 				osChecks: map[string]*osCheck{
 					osLinux: {
 						wantErr: fmt.Errorf("Unprocessed extra args: [ther]"),
@@ -2970,9 +3058,10 @@ func TestSourcerer(t *testing.T) {
 				},
 			},
 			{
-				name: "autocomplete doesn't re-print comp line if different COMP_TYPE",
-				args: []string{"autocomplete", "basic", "64", "10", "hello ther"},
-				clis: []CLI{&testCLI{name: "basic"}},
+				name:          "autocomplete doesn't re-print comp line if different COMP_TYPE",
+				cliTargetName: "leepFrogSource",
+				args:          []string{"autocomplete", "basic", "64", "10", "hello ther"},
+				clis:          []CLI{&testCLI{name: "basic"}},
 				osChecks: map[string]*osCheck{
 					osLinux: {
 						wantErr: fmt.Errorf("Unprocessed extra args: [ther]"),
@@ -2989,8 +3078,9 @@ func TestSourcerer(t *testing.T) {
 				},
 			},
 			{
-				name: "autocomplete requires valid cli",
-				args: []string{"autocomplete", "idk", "63", "2", "a"},
+				name:          "autocomplete requires valid cli",
+				cliTargetName: "leepFrogSource",
+				args:          []string{"autocomplete", "idk", "63", "2", "a"},
 				osCheck: &osCheck{
 					wantStderr: []string{
 						"validation for \"CLI\" failed: [MapArg] key (idk) is not in map; expected one of []\n",
@@ -3000,8 +3090,9 @@ func TestSourcerer(t *testing.T) {
 				},
 			},
 			{
-				name: "autocomplete passes empty string along for completion",
-				args: []string{"autocomplete", "basic", "63", "4", "cmd "},
+				name:          "autocomplete passes empty string along for completion",
+				cliTargetName: "leepFrogSource",
+				args:          []string{"autocomplete", "basic", "63", "4", "cmd "},
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
@@ -3019,8 +3110,9 @@ func TestSourcerer(t *testing.T) {
 				},
 			},
 			{
-				name: "autocomplete handles no suggestions empty string along for completion",
-				args: []string{"autocomplete", "basic", "63", "4", "cmd "},
+				name:          "autocomplete handles no suggestions empty string along for completion",
+				cliTargetName: "leepFrogSource",
+				args:          []string{"autocomplete", "basic", "63", "4", "cmd "},
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
@@ -3034,8 +3126,9 @@ func TestSourcerer(t *testing.T) {
 				},
 			},
 			{
-				name: "autocomplete handles single suggestion with SpacelssCompletion=true",
-				args: []string{"autocomplete", "basic", "63", "5", "cmd h"},
+				name:          "autocomplete handles single suggestion with SpacelssCompletion=true",
+				cliTargetName: "leepFrogSource",
+				args:          []string{"autocomplete", "basic", "63", "5", "cmd h"},
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
@@ -3064,8 +3157,9 @@ func TestSourcerer(t *testing.T) {
 				},
 			},
 			{
-				name: "autocomplete handles single suggestion with SpacelssCompletion=false",
-				args: []string{"autocomplete", "basic", "63", "5", "cmd h"},
+				name:          "autocomplete handles single suggestion with SpacelssCompletion=false",
+				cliTargetName: "leepFrogSource",
+				args:          []string{"autocomplete", "basic", "63", "5", "cmd h"},
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
@@ -3093,8 +3187,9 @@ func TestSourcerer(t *testing.T) {
 				},
 			},
 			{
-				name: "autocomplete doesn't complete passthrough args",
-				args: []string{"autocomplete", "basic", "63", "4", "cmd ", "al"},
+				name:          "autocomplete doesn't complete passthrough args",
+				cliTargetName: "leepFrogSource",
+				args:          []string{"autocomplete", "basic", "63", "4", "cmd ", "al"},
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
@@ -3113,6 +3208,7 @@ func TestSourcerer(t *testing.T) {
 			},
 			/*{
 				name: "autocomplete doesn't complete passthrough args",
+				cliTargetName: "leepFrogSource",
 				args: []string{"autocomplete", "basic", "0", "", "al"},
 				clis: []CLI{
 					&testCLI{
@@ -3136,8 +3232,9 @@ func TestSourcerer(t *testing.T) {
 				),
 			},*/
 			{
-				name: "autocomplete does partial completion",
-				args: []string{"autocomplete", "basic", "63", "5", "cmd b"},
+				name:          "autocomplete does partial completion",
+				cliTargetName: "leepFrogSource",
+				args:          []string{"autocomplete", "basic", "63", "5", "cmd b"},
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
@@ -3155,8 +3252,9 @@ func TestSourcerer(t *testing.T) {
 				},
 			},
 			{
-				name: "autocomplete does partial completion when --comp-line-file is set",
-				args: []string{"autocomplete", "--comp-line-file", "basic", "63", "5", fakeInputFile},
+				name:          "autocomplete does partial completion when --comp-line-file is set",
+				cliTargetName: "leepFrogSource",
+				args:          []string{"autocomplete", "--comp-line-file", "basic", "63", "5", fakeInputFile},
 				fakeInputFileContents: []string{
 					"cmd b",
 				},
@@ -3177,8 +3275,9 @@ func TestSourcerer(t *testing.T) {
 				},
 			},
 			{
-				name: "autocomplete fails if --comp-line-file is not a file",
-				args: []string{"autocomplete", "--comp-line-file", "basic", "63", "5", "not-a-file"},
+				name:          "autocomplete fails if --comp-line-file is not a file",
+				cliTargetName: "leepFrogSource",
+				args:          []string{"autocomplete", "--comp-line-file", "basic", "63", "5", "not-a-file"},
 				fakeInputFileContents: []string{
 					"cmd b",
 				},
@@ -3200,8 +3299,9 @@ func TestSourcerer(t *testing.T) {
 				},
 			},
 			{
-				name: "autocomplete goes along processors",
-				args: []string{"autocomplete", "basic", "63", "6", "cmd a "},
+				name:          "autocomplete goes along processors",
+				cliTargetName: "leepFrogSource",
+				args:          []string{"autocomplete", "basic", "63", "6", "cmd a "},
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
@@ -3220,8 +3320,9 @@ func TestSourcerer(t *testing.T) {
 				},
 			},
 			{
-				name: "autocomplete does earlier completion if cpoint is smaller",
-				args: []string{"autocomplete", "basic", "63", "5", "cmd c "},
+				name:          "autocomplete does earlier completion if cpoint is smaller",
+				cliTargetName: "leepFrogSource",
+				args:          []string{"autocomplete", "basic", "63", "5", "cmd c "},
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
@@ -3245,8 +3346,9 @@ func TestSourcerer(t *testing.T) {
 				},
 			},
 			{
-				name: "autocomplete when COMP_POINT is equal to length of COMP_LINE",
-				args: []string{"autocomplete", "basic", "63", "5", "cmd c"},
+				name:          "autocomplete when COMP_POINT is equal to length of COMP_LINE",
+				cliTargetName: "leepFrogSource",
+				args:          []string{"autocomplete", "basic", "63", "5", "cmd c"},
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
@@ -3270,8 +3372,9 @@ func TestSourcerer(t *testing.T) {
 				},
 			},
 			{
-				name: "autocomplete when COMP_POINT is greater than length of COMP_LINE (by 1)",
-				args: []string{"autocomplete", "basic", "63", "6", "cmd c"},
+				name:          "autocomplete when COMP_POINT is greater than length of COMP_LINE (by 1)",
+				cliTargetName: "leepFrogSource",
+				args:          []string{"autocomplete", "basic", "63", "6", "cmd c"},
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
@@ -3299,8 +3402,9 @@ func TestSourcerer(t *testing.T) {
 				},
 			},
 			{
-				name: "autocomplete when COMP_POINT is greater than length of COMP_LINE (by 2)",
-				args: []string{"autocomplete", "basic", "63", "7", "cmd c"},
+				name:          "autocomplete when COMP_POINT is greater than length of COMP_LINE (by 2)",
+				cliTargetName: "leepFrogSource",
+				args:          []string{"autocomplete", "basic", "63", "7", "cmd c"},
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
@@ -3328,8 +3432,9 @@ func TestSourcerer(t *testing.T) {
 				},
 			},
 			{
-				name: "autocomplete when COMP_POINT is greater than length of COMP_LINE with quoted space (by 1)",
-				args: []string{"autocomplete", "basic", "63", "7", `cmd "c`},
+				name:          "autocomplete when COMP_POINT is greater than length of COMP_LINE with quoted space (by 1)",
+				cliTargetName: "leepFrogSource",
+				args:          []string{"autocomplete", "basic", "63", "7", `cmd "c`},
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
@@ -3357,8 +3462,9 @@ func TestSourcerer(t *testing.T) {
 				},
 			},
 			{
-				name: "autocomplete when COMP_POINT is greater than length of COMP_LINE with quoted space (by 2)",
-				args: []string{"autocomplete", "basic", "63", "8", `cmd "c`},
+				name:          "autocomplete when COMP_POINT is greater than length of COMP_LINE with quoted space (by 2)",
+				cliTargetName: "leepFrogSource",
+				args:          []string{"autocomplete", "basic", "63", "8", `cmd "c`},
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
@@ -3375,9 +3481,10 @@ func TestSourcerer(t *testing.T) {
 			},
 			// Builtin command tests
 			{
-				name: "builtin execute doesn't work with provided CLIs",
-				clis: []CLI{someCLI},
-				args: []string{"builtin", "execute", someCLI.name},
+				name:          "builtin execute doesn't work with provided CLIs",
+				cliTargetName: "leepFrogSource",
+				clis:          []CLI{someCLI},
+				args:          []string{"builtin", "execute", someCLI.name},
 				osCheck: &osCheck{
 					wantStderr: []string{
 						"validation for \"CLI\" failed: [MapArg] key (basic) is not in map; expected one of [aliaser gg goleep leep_debug sourcerer]",
@@ -3387,9 +3494,10 @@ func TestSourcerer(t *testing.T) {
 				},
 			},
 			{
-				name: "builtin execute works with builtin CLIs",
-				clis: []CLI{someCLI},
-				args: []string{"builtin", "execute", "aliaser", fakeFile, "bleh", "bloop", "er"},
+				name:          "builtin execute works with builtin CLIs",
+				cliTargetName: "leepFrogSource",
+				clis:          []CLI{someCLI},
+				args:          []string{"builtin", "execute", "aliaser", fakeFile, "bleh", "bloop", "er"},
 				osChecks: map[string]*osCheck{
 					osLinux: {
 						wantFileContents: []string{
@@ -3446,9 +3554,10 @@ func TestSourcerer(t *testing.T) {
 				},
 			},
 			{
-				name: "builtin autocomplete doesn't work with provided CLIs",
-				clis: []CLI{someCLI},
-				args: []string{"builtin", "autocomplete", someCLI.name},
+				name:          "builtin autocomplete doesn't work with provided CLIs",
+				cliTargetName: "leepFrogSource",
+				clis:          []CLI{someCLI},
+				args:          []string{"builtin", "autocomplete", someCLI.name},
 				osCheck: &osCheck{
 					wantStderr: []string{
 						"validation for \"CLI\" failed: [MapArg] key (basic) is not in map; expected one of [aliaser gg goleep leep_debug sourcerer]",
@@ -3458,9 +3567,10 @@ func TestSourcerer(t *testing.T) {
 				},
 			},
 			{
-				name: "builtin autocomplete works with builtin CLIs",
-				clis: []CLI{someCLI},
-				args: []string{"builtin", "autocomplete", "gg", "63", "5", "cmd c"},
+				name:          "builtin autocomplete works with builtin CLIs",
+				cliTargetName: "leepFrogSource",
+				clis:          []CLI{someCLI},
+				args:          []string{"builtin", "autocomplete", "gg", "63", "5", "cmd c"},
 				osCheck: &osCheck{
 					wantStdout: []string{
 						"cd",
@@ -3469,7 +3579,8 @@ func TestSourcerer(t *testing.T) {
 				},
 			},
 			{
-				name: "fails if runtimeCaller error",
+				name:          "fails if runtimeCaller error",
+				cliTargetName: "leepFrogSource",
 				osCheck: &osCheck{
 					runtimeCallerMiss: true,
 					wantErr:           fmt.Errorf("failed to get source location: failed to fetch runtime.Caller"),
@@ -3480,10 +3591,11 @@ func TestSourcerer(t *testing.T) {
 			},
 			// runCLI tests (should all result in errors)
 			{
-				name:   "runCLI fails if no CLIs provided",
-				args:   []string{"builtin"},
-				runCLI: true,
-				clis:   []CLI{},
+				name:          "runCLI fails if no CLIs provided",
+				cliTargetName: "leepFrogSource",
+				args:          []string{"builtin"},
+				runCLI:        true,
+				clis:          []CLI{},
 				osCheck: &osCheck{
 					wantStderr: []string{
 						"0 CLIs provided with RunCLI(); expected exactly one",
@@ -3492,10 +3604,11 @@ func TestSourcerer(t *testing.T) {
 				},
 			},
 			{
-				name:   "runCLI fails if nil CLI provided",
-				args:   []string{"builtin"},
-				runCLI: true,
-				clis:   []CLI{nil},
+				name:          "runCLI fails if nil CLI provided",
+				cliTargetName: "leepFrogSource",
+				args:          []string{"builtin"},
+				runCLI:        true,
+				clis:          []CLI{nil},
 				osCheck: &osCheck{
 					wantStderr: []string{
 						"nil CLI provided at index 0",
@@ -3504,9 +3617,10 @@ func TestSourcerer(t *testing.T) {
 				},
 			},
 			{
-				name:   "runCLI fails if nil CLI in non-runCLI",
-				args:   []string{"builtin"},
-				runCLI: false,
+				name:          "runCLI fails if nil CLI in non-runCLI",
+				cliTargetName: "leepFrogSource",
+				args:          []string{"builtin"},
+				runCLI:        false,
 				clis: []CLI{
 					ToCLI("zero", nil),
 					ToCLI("one", nil),
@@ -3521,9 +3635,10 @@ func TestSourcerer(t *testing.T) {
 				},
 			},
 			{
-				name:   "runCLI fails if multiple CLIs provided",
-				args:   []string{"builtin"},
-				runCLI: true,
+				name:          "runCLI fails if multiple CLIs provided",
+				cliTargetName: "leepFrogSource",
+				args:          []string{"builtin"},
+				runCLI:        true,
 				clis: []CLI{
 					&testCLI{name: "basic"},
 					&testCLI{name: "other"},
@@ -3536,9 +3651,10 @@ func TestSourcerer(t *testing.T) {
 				},
 			},
 			{
-				name:   "runCLI fails if provided with builtin",
-				args:   []string{"builtin"},
-				runCLI: true,
+				name:          "runCLI fails if provided with builtin",
+				cliTargetName: "leepFrogSource",
+				args:          []string{"builtin"},
+				runCLI:        true,
 				clis: []CLI{
 					&testCLI{name: "basic"},
 				},
@@ -3550,9 +3666,10 @@ func TestSourcerer(t *testing.T) {
 				},
 			},
 			{
-				name:   "runCLI fails if provided with source",
-				args:   []string{"source"},
-				runCLI: true,
+				name:          "runCLI fails if provided with source",
+				cliTargetName: "leepFrogSource",
+				args:          []string{"source"},
+				runCLI:        true,
 				clis: []CLI{
 					&testCLI{name: "basic"},
 				},
@@ -3564,9 +3681,10 @@ func TestSourcerer(t *testing.T) {
 				},
 			},
 			{
-				name:   "runCLI fails if provided with execute",
-				args:   []string{"execute"},
-				runCLI: true,
+				name:          "runCLI fails if provided with execute",
+				cliTargetName: "leepFrogSource",
+				args:          []string{"execute"},
+				runCLI:        true,
 				clis: []CLI{
 					&testCLI{name: "basic"},
 				},
@@ -3578,9 +3696,10 @@ func TestSourcerer(t *testing.T) {
 				},
 			},
 			{
-				name:   "runCLI fails if provided with usage",
-				args:   []string{"usage"},
-				runCLI: true,
+				name:          "runCLI fails if provided with usage",
+				cliTargetName: "leepFrogSource",
+				args:          []string{"usage"},
+				runCLI:        true,
 				clis: []CLI{
 					&testCLI{name: "basic"},
 				},
@@ -3592,9 +3711,10 @@ func TestSourcerer(t *testing.T) {
 				},
 			},
 			{
-				name:   "runCLI works with autocomplete",
-				args:   []string{"autocomplete", "63", "4", "cmd "},
-				runCLI: true,
+				name:          "runCLI works with autocomplete",
+				cliTargetName: "leepFrogSource",
+				args:          []string{"autocomplete", "63", "4", "cmd "},
+				runCLI:        true,
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
@@ -3612,9 +3732,10 @@ func TestSourcerer(t *testing.T) {
 				},
 			},
 			{
-				name:   "runCLI works with autocomplete and passthrough args",
-				args:   []string{"autocomplete", "63", "4", "cmd ", "abc", "ghi"},
-				runCLI: true,
+				name:          "runCLI works with autocomplete and passthrough args",
+				cliTargetName: "leepFrogSource",
+				args:          []string{"autocomplete", "63", "4", "cmd ", "abc", "ghi"},
+				runCLI:        true,
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
@@ -3637,9 +3758,10 @@ func TestSourcerer(t *testing.T) {
 				},
 			},
 			{
-				name:   "runCLI execution works (no `execute` branching keyword required)",
-				args:   []string{"un", "--count", "6", "deux", "-b", "trois"},
-				runCLI: true,
+				name:          "runCLI execution works (no `execute` branching keyword required)",
+				cliTargetName: "leepFrogSource",
+				args:          []string{"un", "--count", "6", "deux", "-b", "trois"},
+				runCLI:        true,
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
@@ -3663,9 +3785,10 @@ func TestSourcerer(t *testing.T) {
 				},
 			},
 			{
-				name:   "runCLI execution fails if extra args",
-				args:   []string{"un", "--count", "6", "deux", "-b", "trois", "bleh"},
-				runCLI: true,
+				name:          "runCLI execution fails if extra args",
+				cliTargetName: "leepFrogSource",
+				args:          []string{"un", "--count", "6", "deux", "-b", "trois", "bleh"},
+				runCLI:        true,
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
@@ -3700,9 +3823,10 @@ func TestSourcerer(t *testing.T) {
 				},
 			},
 			{
-				name:   "runCLI execution with help flag works",
-				args:   []string{"--help"},
-				runCLI: true,
+				name:          "runCLI execution with help flag works",
+				cliTargetName: "leepFrogSource",
+				args:          []string{"--help"},
+				runCLI:        true,
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
@@ -3733,9 +3857,10 @@ func TestSourcerer(t *testing.T) {
 				},
 			},
 			{
-				name:   "runCLI execution with help flag and some args works",
-				args:   []string{"--help", "un", "--b"},
-				runCLI: true,
+				name:          "runCLI execution with help flag and some args works",
+				cliTargetName: "leepFrogSource",
+				args:          []string{"--help", "un", "--b"},
+				runCLI:        true,
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
@@ -3762,8 +3887,9 @@ func TestSourcerer(t *testing.T) {
 				},
 			},
 			{
-				name:   "runCLI fails if Setup isn't nil",
-				runCLI: true,
+				name:          "runCLI fails if Setup isn't nil",
+				cliTargetName: "leepFrogSource",
+				runCLI:        true,
 				clis: []CLI{
 					&testCLI{
 						name:  "basic",
@@ -3778,8 +3904,9 @@ func TestSourcerer(t *testing.T) {
 				},
 			},
 			{
-				name:   "runCLI fails if ExecuteData is returned",
-				runCLI: true,
+				name:          "runCLI fails if ExecuteData is returned",
+				cliTargetName: "leepFrogSource",
+				runCLI:        true,
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
@@ -3800,8 +3927,9 @@ func TestSourcerer(t *testing.T) {
 			},
 			// GoExecutableFilePath tests
 			{
-				name:   "RunCLI() gets goExecutableFilePath",
-				runCLI: true,
+				name:          "RunCLI() gets goExecutableFilePath",
+				cliTargetName: "leepFrogSource",
+				runCLI:        true,
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
@@ -3821,8 +3949,9 @@ func TestSourcerer(t *testing.T) {
 				},
 			},
 			{
-				name:   "RunCLI() fails if os.Executable error",
-				runCLI: true,
+				name:          "RunCLI() fails if os.Executable error",
+				cliTargetName: "leepFrogSource",
+				runCLI:        true,
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
@@ -3906,7 +4035,7 @@ func TestSourcerer(t *testing.T) {
 				// Run source command
 				o := commandtest.NewOutput()
 				err = testutil.CmpPanic(t, "source()", func() error {
-					return source(test.runCLI, test.clis, fakeGoExecutableFilePath.Name(), test.args, o)
+					return source(test.runCLI, test.cliTargetName, test.clis, fakeGoExecutableFilePath.Name(), test.args, o)
 				}, test.wantPanic)
 				testutil.CmpError(t, fmt.Sprintf("source(%v)", test.args), oschk.wantErr, err)
 				o.Close()
