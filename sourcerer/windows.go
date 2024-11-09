@@ -70,7 +70,7 @@ func (w *windows) SourcererGoCLI(sourceDir, targetName, outputDir string) []stri
 	return []string{
 		"Push-Location",
 		fmt.Sprintf("cd %q", sourceDir),
-		fmt.Sprintf("go run . source %q %q", targetName, outputDir),
+		fmt.Sprintf("go run . source %q", outputDir),
 		fmt.Sprintf(`. %q`, filepath.Join(outputDir, w.SourceableFile(targetName))),
 		`Pop-Location`,
 	}

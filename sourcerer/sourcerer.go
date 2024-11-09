@@ -544,7 +544,7 @@ func (s *sourcerer) generateFile(o command.Output, d *command.Data) error {
 	if s.builtin {
 		builtinArg = fmt.Sprintf(" %s", BuiltInCommandParameter)
 	}
-	goRunSourceCommand := fmt.Sprintf(`go run .%s source %q %q`, builtinArg, s.targetName, outputFolder)
+	goRunSourceCommand := fmt.Sprintf(`go run .%s source %q`, builtinArg, outputFolder)
 
 	o.Stdoutln(strings.Join([]string{
 		fmt.Sprintf("Sourceable file created: %q", sourceableFile),

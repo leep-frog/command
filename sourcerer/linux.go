@@ -102,7 +102,7 @@ func (l *linux) SourcererGoCLI(sourceDir, targetName, outputDir string) []string
 	return []string{
 		"pushd . > /dev/null",
 		fmt.Sprintf("cd %q", sourceDir),
-		fmt.Sprintf("go run . source %q %q", targetName, outputDir),
+		fmt.Sprintf("go run . source %q", outputDir),
 		fmt.Sprintf("source %q", filepath.Join(outputDir, l.SourceableFile(targetName))),
 		"popd > /dev/null",
 	}

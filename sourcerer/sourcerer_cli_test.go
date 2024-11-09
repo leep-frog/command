@@ -46,7 +46,7 @@ func TestExecute(t *testing.T) {
 							Executable: []string{
 								"pushd . > /dev/null",
 								fmt.Sprintf(`cd %q`, testutil.FilepathAbs(t, "..", "commander", "testdata")),
-								fmt.Sprintf(`go run . source "ING" %q`, testutil.FilepathAbs(t, "cli-output-dir")),
+								fmt.Sprintf(`go run . source %q`, testutil.FilepathAbs(t, "cli-output-dir")),
 								fmt.Sprintf("source %q", testutil.FilepathAbs(t, "cli-output-dir", "ING_loader.sh")),
 								"popd > /dev/null",
 							},
@@ -57,7 +57,7 @@ func TestExecute(t *testing.T) {
 							Executable: []string{
 								"Push-Location",
 								fmt.Sprintf(`cd %q`, testutil.FilepathAbs(t, "..", "commander", "testdata")),
-								fmt.Sprintf(`go run . source "ING" %q`, testutil.FilepathAbs(t, "cli-output-dir")),
+								fmt.Sprintf(`go run . source %q`, testutil.FilepathAbs(t, "cli-output-dir")),
 								fmt.Sprintf(". %q", testutil.FilepathAbs(t, "cli-output-dir", "ING_loader.ps1")),
 								"Pop-Location",
 							},
