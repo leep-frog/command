@@ -95,17 +95,17 @@ func TestGenerateBinaryNode(t *testing.T) {
 			{
 				name:    "errors when no output folder name name",
 				args:    []string{"source", "leepFrogSource"},
-				wantErr: fmt.Errorf(`Argument "OUTPUT_FOLDER" requires at least 1 argument, got 0`),
+				wantErr: fmt.Errorf(`Argument "OUTPUT_DIRECTORY" requires at least 1 argument, got 0`),
 				osChecks: map[string]*osCheck{
 					osLinux: {
 						wantStderr: []string{
-							`Argument "OUTPUT_FOLDER" requires at least 1 argument, got 0`,
+							`Argument "OUTPUT_DIRECTORY" requires at least 1 argument, got 0`,
 							``,
 						},
 					},
 					osWindows: {
 						wantStderr: []string{
-							`Argument "OUTPUT_FOLDER" requires at least 1 argument, got 0`,
+							`Argument "OUTPUT_DIRECTORY" requires at least 1 argument, got 0`,
 							``,
 						},
 					},
@@ -114,17 +114,17 @@ func TestGenerateBinaryNode(t *testing.T) {
 			{
 				name:    "errors when output folder does not exist",
 				args:    []string{"source", "leepFrogSource", "/some-path"},
-				wantErr: fmt.Errorf(`validation for "OUTPUT_FOLDER" failed: [FileExists] file %q does not exist`, testutil.FilepathAbs(t, "/some-path")),
+				wantErr: fmt.Errorf(`validation for "OUTPUT_DIRECTORY" failed: [FileExists] file %q does not exist`, testutil.FilepathAbs(t, "/some-path")),
 				osChecks: map[string]*osCheck{
 					osLinux: {
 						wantStderr: []string{
-							fmt.Sprintf(`validation for "OUTPUT_FOLDER" failed: [FileExists] file %q does not exist`, testutil.FilepathAbs(t, "/some-path")),
+							fmt.Sprintf(`validation for "OUTPUT_DIRECTORY" failed: [FileExists] file %q does not exist`, testutil.FilepathAbs(t, "/some-path")),
 							``,
 						},
 					},
 					osWindows: {
 						wantStderr: []string{
-							fmt.Sprintf(`validation for "OUTPUT_FOLDER" failed: [FileExists] file %q does not exist`, testutil.FilepathAbs(t, "/some-path")),
+							fmt.Sprintf(`validation for "OUTPUT_DIRECTORY" failed: [FileExists] file %q does not exist`, testutil.FilepathAbs(t, "/some-path")),
 							``,
 						},
 					},
@@ -133,17 +133,17 @@ func TestGenerateBinaryNode(t *testing.T) {
 			{
 				name:    "errors when output folder is not a directory",
 				args:    []string{"source", "leepFrogSource", "sourcerer.go"},
-				wantErr: fmt.Errorf(`validation for "OUTPUT_FOLDER" failed: [IsDir] argument %q is a file`, testutil.FilepathAbs(t, "sourcerer.go")),
+				wantErr: fmt.Errorf(`validation for "OUTPUT_DIRECTORY" failed: [IsDir] argument %q is a file`, testutil.FilepathAbs(t, "sourcerer.go")),
 				osChecks: map[string]*osCheck{
 					osLinux: {
 						wantStderr: []string{
-							fmt.Sprintf(`validation for "OUTPUT_FOLDER" failed: [IsDir] argument %q is a file`, testutil.FilepathAbs(t, "sourcerer.go")),
+							fmt.Sprintf(`validation for "OUTPUT_DIRECTORY" failed: [IsDir] argument %q is a file`, testutil.FilepathAbs(t, "sourcerer.go")),
 							``,
 						},
 					},
 					osWindows: {
 						wantStderr: []string{
-							fmt.Sprintf(`validation for "OUTPUT_FOLDER" failed: [IsDir] argument %q is a file`, testutil.FilepathAbs(t, "sourcerer.go")),
+							fmt.Sprintf(`validation for "OUTPUT_DIRECTORY" failed: [IsDir] argument %q is a file`, testutil.FilepathAbs(t, "sourcerer.go")),
 							``,
 						},
 					},

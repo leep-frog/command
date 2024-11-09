@@ -3,6 +3,7 @@ package sourcerer
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 
@@ -50,8 +51,8 @@ func (l *linux) ExecutableFileSuffix() string {
 	return ""
 }
 
-func (l *linux) SourceableFileSuffix() string {
-	return "sh"
+func (l *linux) SourceableFile(target string) string {
+	return fmt.Sprintf("%s_loader.sh", target)
 }
 
 func (l *linux) SourceSetup(sourceableFile, targetName, goRunSourceCommand, userDir string) []string {
@@ -97,12 +98,12 @@ func (l *linux) HandleAutocompleteError(output command.Output, compType int, err
 	}
 }
 
-func (l *linux) SourcererGoCLI(dir string, targetName string) []string {
+func (l *linux) SourcererGoCLI(sourceDir, targetName, outputDir string) []string {
 	return []string{
 		"pushd . > /dev/null",
-		fmt.Sprintf("cd %q", dir),
-		`local tmpFile="$(mktemp)"`,
-		fmt.Sprintf("go run . source %q > $tmpFile && source $tmpFile ", targetName),
+		fmt.Sprintf("cd %q", sourceDir),
+		fmt.Sprintf("go run . source %q %q", targetName, outputDir),
+		fmt.Sprintf("source %q", filepath.Join(outputDir, l.SourceableFile(targetName))),
 		"popd > /dev/null",
 	}
 }

@@ -6,8 +6,7 @@ import (
 )
 
 var (
-	sourcererDirArg    = commander.FileArgument("DIRECTORY", "Directory in which to create CLI", commander.IsDir())
-	sourcererSuffixArg = commander.Arg[string]("BINARY_SUFFIX", "Suffix for the name", commander.MinLength[string, string](1))
+	sourcererSourceDirArg = commander.FileArgument("SOURCE_DIRECTORY", "Directory in which to create CLI", commander.IsDir())
 )
 
 func SourcererCLI() CLI {
@@ -26,10 +25,11 @@ func (*SourcererCommand) Name() string {
 
 func (*SourcererCommand) Node() command.Node {
 	return commander.SerialNodes(
-		sourcererDirArg,
-		sourcererSuffixArg,
+		sourcererSourceDirArg,
+		targetNameArg,
+		outputFolderArg,
 		commander.ExecutableProcessor(func(_ command.Output, d *command.Data) ([]string, error) {
-			return CurrentOS.SourcererGoCLI(sourcererDirArg.Get(d), sourcererSuffixArg.Get(d)), nil
+			return CurrentOS.SourcererGoCLI(sourcererSourceDirArg.Get(d), targetNameArg.Get(d), outputFolderArg.Get(d)), nil
 		}),
 	)
 }

@@ -38,8 +38,8 @@ type OS interface {
 	// ExecutableFileSuffix is the suffix to add for executable files (e.g. `.exe` in Windows)
 	ExecutableFileSuffix() string
 
-	// SourceableFileSuffix is the suffix to add for sourceable files (e.g. `sh` in linux)
-	SourceableFileSuffix() string
+	// SourceableFile is the file basename to use for sourceable files (e.g. `myCLI_loader.sh` in linux)
+	SourceableFile(target string) string
 
 	// SourceSetup returns the code that should be run and/or added to a user's terminal profile
 	// after successfully running `go run . source ...`
@@ -54,7 +54,7 @@ type OS interface {
 	HandleAutocompleteError(output command.Output, compType int, err error)
 
 	//
-	SourcererGoCLI(dir string, targetName string) []string
+	SourcererGoCLI(sourceDir, targetName, outputDir string) []string
 
 	// RegisterCLIs generates the code for
 	RegisterCLIs(builtin bool, goExecutable, targetName string, cli []CLI) []string

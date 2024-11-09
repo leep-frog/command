@@ -2,6 +2,7 @@ package sourcerer
 
 import (
 	"fmt"
+	"path/filepath"
 	"sort"
 	"strings"
 
@@ -46,8 +47,8 @@ func (*windows) ExecutableFileSuffix() string {
 	return ".exe"
 }
 
-func (*windows) SourceableFileSuffix() string {
-	return "ps1"
+func (*windows) SourceableFile(target string) string {
+	return fmt.Sprintf("%s_loader.ps1", target)
 }
 
 func (*windows) SourceSetup(sourceableFile, targetName, goRunSourceCommand, userDir string) []string {
@@ -65,14 +66,12 @@ func (*windows) SourceSetup(sourceableFile, targetName, goRunSourceCommand, user
 	}
 }
 
-func (w *windows) SourcererGoCLI(dir string, targetName string) []string {
+func (w *windows) SourcererGoCLI(sourceDir, targetName, outputDir string) []string {
 	return []string{
 		"Push-Location",
-		fmt.Sprintf("cd %q", dir),
-		`$Local:tmpFile = New-TemporaryFile`,
-		fmt.Sprintf("go run . source %q > $Local:tmpFile", targetName),
-		`Copy-Item "$Local:tmpFile" "$Local:tmpFile.ps1"`,
-		`. "$Local:tmpFile.ps1"`,
+		fmt.Sprintf("cd %q", sourceDir),
+		fmt.Sprintf("go run . source %q %q", targetName, outputDir),
+		fmt.Sprintf(`. %q`, filepath.Join(outputDir, w.SourceableFile(targetName))),
 		`Pop-Location`,
 	}
 }

@@ -26,7 +26,7 @@ var (
 	fileArg         = commander.FileArgument("FILE", "Temporary file for execution")
 	targetNameRegex = commander.MatchesRegex("^[a-zA-Z0-9]+$")
 	targetNameArg   = commander.Arg("TARGET_NAME", "The base name of the created binary file", targetNameRegex)
-	outputFolderArg = commander.FileArgument("OUTPUT_FOLDER", "The folder in which to put the created binary file", commander.IsDir())
+	outputFolderArg = commander.FileArgument("OUTPUT_DIRECTORY", "The folder in which to put the created binary file", commander.IsDir())
 	passthroughArgs = commander.ListArg[string]("ARG", "Arguments that get passed through to relevant CLI command", 0, command.UnboundedList)
 	helpFlag        = commander.BoolFlag("help", commander.FlagNoShortName, "Display command's usage doc")
 	// See the below link for more details on COMP_* details:
@@ -531,7 +531,7 @@ func (s *sourcerer) generateFile(o command.Output, d *command.Data) error {
 
 	fileContents := CurrentOS.FunctionWrap(fmt.Sprintf("_%s_wrap_function", targetName), strings.Join(fileData, "\n"))
 
-	sourceableFile := filepath.Join(outputFolder, fmt.Sprintf("%s_loader.%s", targetName, CurrentOS.SourceableFileSuffix()))
+	sourceableFile := filepath.Join(outputFolder, CurrentOS.SourceableFile(targetName))
 	if err := osWriteFile(sourceableFile, []byte(fileContents), 0644); err != nil {
 		return o.Annotatef(err, "failed to write sourceable file contents")
 	}
