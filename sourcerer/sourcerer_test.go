@@ -365,7 +365,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							``,
 							color.Apply(`All steps have completed successfully!`, color.Green, color.Bold),
 							``,
-							`Run the following (and/or add it to your terminal profile) to finish setting up your CLIs:`,
+							`Run the following (and/or add it to your terminal profile) to load your CLIs in your current terminal:`,
 							``,
 							color.Apply(strings.Join([]string{
 								`# Load all of your CLIs`,
@@ -435,7 +435,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							``,
 							color.Apply(`All steps have completed successfully!`, color.Green, color.Bold),
 							``,
-							`Run the following (and/or add it to your terminal profile) to finish setting up your CLIs:`,
+							`Run the following (and/or add it to your terminal profile) to load your CLIs in your current terminal:`,
 							``,
 							color.Apply(strings.Join([]string{
 								`# Load all of your CLIs`,
@@ -449,6 +449,100 @@ func TestGenerateBinaryNode(t *testing.T) {
 								`  Pop-Location`,
 								`}`,
 							}, "\n"), color.Blue),
+						},
+						wantOsWriteFiles: []*osWriteFileArgs{
+							{
+								File:     testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource.exe"),
+								FileMode: 0744,
+								Contents: []string{fakeFileContents},
+							},
+							{
+								File:     testutil.FilepathAbs(t, "cli-output-dir", "sourcerers", "leepFrogSource_loader.ps1"),
+								FileMode: 0644,
+								Contents: []string{
+									`function _leepFrogSource_wrap_function {`,
+									`$_custom_autocomplete_leepFrogSource = {`,
+									`  param($wordToComplete, $commandAst, $compPoint)`,
+									`  $Local:tmpPassthroughArgFile = New-TemporaryFile`,
+									`  [IO.File]::WriteAllText($Local:tmpPassthroughArgFile, $commandAst.ToString())`,
+									fmt.Sprintf(`  (& %s autocomplete ($commandAst.CommandElements | Select-Object -first 1) --comp-line-file "0" $compPoint $Local:tmpPassthroughArgFile) | ForEach-Object {`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource.exe")),
+									`    "$_"`,
+									`  }`,
+									`}`,
+									``,
+									`}`, // wrap function end bracket
+									`. _leepFrogSource_wrap_function`,
+									``,
+								},
+							},
+						},
+					},
+				},
+			},
+			{
+				name:          "hides output when quiet flag is provided",
+				cliTargetName: "leepFrogSource",
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
+				args:           []string{"source", "--quiet"},
+				wantOSReadFile: []string{fakeGoExecutableFilePath.Name()},
+				osChecks: map[string]*osCheck{
+					osLinux: {
+						wantStdout: []string{
+							color.Apply("Successfully generated CLI data for leepFrogSource!", color.Green, color.Bold),
+						},
+						wantOsWriteFiles: []*osWriteFileArgs{
+							{
+								File:     testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource"),
+								FileMode: 0744,
+								Contents: []string{fakeFileContents},
+							},
+							{
+								File:     testutil.FilepathAbs(t, "cli-output-dir", "sourcerers", "leepFrogSource_loader.sh"),
+								FileMode: 0644,
+								Contents: []string{
+									`#!/bin/bash`,
+									`function _leepFrogSource_wrap_function {`,
+									`function _custom_execute_leepFrogSource {`,
+									`  # tmpFile is the file to which we write ExecuteData.Executable`,
+									`  local tmpFile=$(mktemp)`,
+									``,
+									`  # Run the go-only code`,
+									fmt.Sprintf(`  %s execute "$1" $tmpFile "${@:2}"`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource")),
+									`  # Return the error code if go code terminated with an error`,
+									`  local errorCode=$?`,
+									`  if [ $errorCode -ne 0 ]; then return $errorCode; fi`,
+									``,
+									`  # Otherwise, run the ExecuteData.Executable data`,
+									`  source $tmpFile`,
+									`  local errorCode=$?`,
+									`  if [ -z "$COMMAND_CLI_DEBUG" ]; then`,
+									`    rm $tmpFile`,
+									`  else`,
+									`    echo $tmpFile`,
+									`  fi`,
+									`  return $errorCode`,
+									`}`,
+									``,
+									`function _custom_autocomplete_leepFrogSource {`,
+									`  local tFile=$(mktemp)`,
+									fmt.Sprintf(`  %s autocomplete ${COMP_WORDS[0]} "$COMP_TYPE" $COMP_POINT "$COMP_LINE" > $tFile`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource")),
+									`  local IFS=$'\n'`,
+									`  COMPREPLY=( $(cat $tFile) )`,
+									`  rm $tFile`,
+									`}`,
+									``,
+									`}`, // wrap function end bracket
+									`_leepFrogSource_wrap_function`,
+									``,
+								},
+							},
+						},
+					},
+					osWindows: {
+						wantStdout: []string{
+							color.Apply("Successfully generated CLI data for leepFrogSource!", color.Green, color.Bold),
 						},
 						wantOsWriteFiles: []*osWriteFileArgs{
 							{
@@ -499,7 +593,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							``,
 							color.Apply(`All steps have completed successfully!`, color.Green, color.Bold),
 							``,
-							`Run the following (and/or add it to your terminal profile) to finish setting up your CLIs:`,
+							`Run the following (and/or add it to your terminal profile) to load your CLIs in your current terminal:`,
 							``,
 							color.Apply(strings.Join([]string{
 								`# Load all of your CLIs`,
@@ -612,7 +706,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							``,
 							color.Apply(`All steps have completed successfully!`, color.Green, color.Bold),
 							``,
-							`Run the following (and/or add it to your terminal profile) to finish setting up your CLIs:`,
+							`Run the following (and/or add it to your terminal profile) to load your CLIs in your current terminal:`,
 							``,
 							color.Apply(strings.Join([]string{
 								`# Load all of your CLIs`,
@@ -713,7 +807,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							``,
 							color.Apply(`All steps have completed successfully!`, color.Green, color.Bold),
 							``,
-							`Run the following (and/or add it to your terminal profile) to finish setting up your CLIs:`,
+							`Run the following (and/or add it to your terminal profile) to load your CLIs in your current terminal:`,
 							``,
 							color.Apply(strings.Join([]string{
 								`# Load all of your CLIs`,
@@ -818,7 +912,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							``,
 							color.Apply(`All steps have completed successfully!`, color.Green, color.Bold),
 							``,
-							`Run the following (and/or add it to your terminal profile) to finish setting up your CLIs:`,
+							`Run the following (and/or add it to your terminal profile) to load your CLIs in your current terminal:`,
 							``,
 							color.Apply(strings.Join([]string{
 								`# Load all of your CLIs`,
@@ -917,7 +1011,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							``,
 							color.Apply(`All steps have completed successfully!`, color.Green, color.Bold),
 							``,
-							`Run the following (and/or add it to your terminal profile) to finish setting up your CLIs:`,
+							`Run the following (and/or add it to your terminal profile) to load your CLIs in your current terminal:`,
 							``,
 							color.Apply(strings.Join([]string{
 								`# Load all of your CLIs`,
@@ -1030,7 +1124,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							``,
 							color.Apply(`All steps have completed successfully!`, color.Green, color.Bold),
 							``,
-							`Run the following (and/or add it to your terminal profile) to finish setting up your CLIs:`,
+							`Run the following (and/or add it to your terminal profile) to load your CLIs in your current terminal:`,
 							``,
 							color.Apply(strings.Join([]string{
 								`# Load all of your CLIs`,
@@ -1126,7 +1220,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							``,
 							color.Apply(`All steps have completed successfully!`, color.Green, color.Bold),
 							``,
-							`Run the following (and/or add it to your terminal profile) to finish setting up your CLIs:`,
+							`Run the following (and/or add it to your terminal profile) to load your CLIs in your current terminal:`,
 							``,
 							color.Apply(strings.Join([]string{
 								`# Load all of your CLIs`,
@@ -1196,7 +1290,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							``,
 							color.Apply(`All steps have completed successfully!`, color.Green, color.Bold),
 							``,
-							`Run the following (and/or add it to your terminal profile) to finish setting up your CLIs:`,
+							`Run the following (and/or add it to your terminal profile) to load your CLIs in your current terminal:`,
 							``,
 							color.Apply(strings.Join([]string{
 								`# Load all of your CLIs`,
@@ -1261,7 +1355,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							``,
 							color.Apply(`All steps have completed successfully!`, color.Green, color.Bold),
 							``,
-							`Run the following (and/or add it to your terminal profile) to finish setting up your CLIs:`,
+							`Run the following (and/or add it to your terminal profile) to load your CLIs in your current terminal:`,
 							``,
 							color.Apply(strings.Join([]string{
 								`# Load all of your CLIs`,
@@ -1342,7 +1436,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							``,
 							color.Apply(`All steps have completed successfully!`, color.Green, color.Bold),
 							``,
-							`Run the following (and/or add it to your terminal profile) to finish setting up your CLIs:`,
+							`Run the following (and/or add it to your terminal profile) to load your CLIs in your current terminal:`,
 							``,
 							color.Apply(strings.Join([]string{
 								`# Load all of your CLIs`,
@@ -1487,7 +1581,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							``,
 							color.Apply(`All steps have completed successfully!`, color.Green, color.Bold),
 							``,
-							`Run the following (and/or add it to your terminal profile) to finish setting up your CLIs:`,
+							`Run the following (and/or add it to your terminal profile) to load your CLIs in your current terminal:`,
 							``,
 							color.Apply(strings.Join([]string{
 								`# Load all of your CLIs`,
@@ -1568,7 +1662,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							``,
 							color.Apply(`All steps have completed successfully!`, color.Green, color.Bold),
 							``,
-							`Run the following (and/or add it to your terminal profile) to finish setting up your CLIs:`,
+							`Run the following (and/or add it to your terminal profile) to load your CLIs in your current terminal:`,
 							``,
 							color.Apply(strings.Join([]string{
 								`# Load all of your CLIs`,
@@ -1740,7 +1834,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							``,
 							color.Apply(`All steps have completed successfully!`, color.Green, color.Bold),
 							``,
-							`Run the following (and/or add it to your terminal profile) to finish setting up your CLIs:`,
+							`Run the following (and/or add it to your terminal profile) to load your CLIs in your current terminal:`,
 							``,
 							color.Apply(strings.Join([]string{
 								`# Load all of your CLIs`,
@@ -1820,7 +1914,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							``,
 							color.Apply(`All steps have completed successfully!`, color.Green, color.Bold),
 							``,
-							`Run the following (and/or add it to your terminal profile) to finish setting up your CLIs:`,
+							`Run the following (and/or add it to your terminal profile) to load your CLIs in your current terminal:`,
 							``,
 							color.Apply(strings.Join([]string{
 								`# Load all of your CLIs`,

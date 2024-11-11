@@ -41,6 +41,7 @@ var (
 	targetNameRegex = commander.MatchesRegex("^[a-zA-Z0-9]+$")
 	passthroughArgs = commander.ListArg[string]("ARG", "Arguments that get passed through to relevant CLI command", 0, command.UnboundedList)
 	helpFlag        = commander.BoolFlag("help", commander.FlagNoShortName, "Display command's usage doc")
+	quietFlag       = commander.BoolFlag("quiet", commander.FlagNoShortName, "Hide unnecessary output")
 	// See the below link for more details on COMP_* details:
 	// https://www.gnu.org/software/bash/manual/html_node/Bash-Variables.html#Bash-Variables
 	compTypeArg  = commander.Arg[int]("COMP_TYPE", "COMP_TYPE variable from bash complete function")
@@ -330,6 +331,9 @@ func (s *sourcerer) Node() command.Node {
 				),
 				SourceBranchName: commander.SerialNodes(
 					rootDirectoryArg,
+					commander.FlagProcessor(
+						quietFlag,
+					),
 					&commander.ExecutorProcessor{F: s.generateFile},
 				),
 			},
@@ -528,6 +532,7 @@ func (s *sourcerer) generateFile(o command.Output, d *command.Data) error {
 	rootDir := rootDirectoryArg.Get(d)
 	sourcerersDir := filepath.Join(rootDir, "sourcerers")
 	artifactsDir := filepath.Join(rootDir, "artifacts")
+	loud := !quietFlag.Get(d)
 
 	b, err := osReadFile(s.goExecutableFilePath)
 	if err != nil {
@@ -540,7 +545,9 @@ func (s *sourcerer) generateFile(o command.Output, d *command.Data) error {
 	}
 	s.goExecutableFilePath = newExecutableFilePath
 
-	o.Stdoutf("Binary file created: %q\n", newExecutableFilePath)
+	if loud {
+		o.Stdoutf("Binary file created: %q\n", newExecutableFilePath)
+	}
 
 	fileData := CurrentOS.RegisterCLIs(s.builtin, s.goExecutableFilePath, s.targetName, maps.Values(s.clis))
 
@@ -559,15 +566,21 @@ func (s *sourcerer) generateFile(o command.Output, d *command.Data) error {
 	}
 	goRunSourceCommand := fmt.Sprintf(`go run .%s source`, builtinArg)
 
-	o.Stdoutln(strings.Join([]string{
-		fmt.Sprintf("Sourceable file created: %q", sourceableFile),
-		``,
-		color.Apply("All steps have completed successfully!", color.Green, color.Bold),
-		``,
-		"Run the following (and/or add it to your terminal profile) to finish setting up your CLIs:",
-		``,
-		color.Apply(strings.Join(CurrentOS.SourceSetup(sourceableFile, s.targetName, goRunSourceCommand, filepath.Dir(s.sourceLocation)), "\n"), color.Blue),
-	}, "\n"))
+	if loud {
+		o.Stdoutln(strings.Join([]string{
+			fmt.Sprintf("Sourceable file created: %q", sourceableFile),
+			``,
+			color.Apply("All steps have completed successfully!", color.Green, color.Bold),
+			``,
+			"Run the following (and/or add it to your terminal profile) to load your CLIs in your current terminal:",
+			``,
+			color.Apply(strings.Join(CurrentOS.SourceSetup(sourceableFile, s.targetName, goRunSourceCommand, filepath.Dir(s.sourceLocation)), "\n"), color.Blue),
+		}, "\n"))
+	} else {
+		o.Stdoutln(strings.Join([]string{
+			color.Apply(fmt.Sprintf("Successfully generated CLI data for %s!", s.targetName), color.Green, color.Bold),
+		}, "\n"))
+	}
 
 	return nil
 }
