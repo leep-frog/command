@@ -532,16 +532,19 @@ var (
 )
 
 func (s *sourcerer) generateFile(o command.Output, d *command.Data) error {
-	rootDir := rootDirectoryArg.Get(d)
-	sourcerersDir := filepath.Join(rootDir, "sourcerers")
 	loud := !quietFlag.Get(d)
 
 	// Create the artifacts directory
+	rootDir := rootDirectoryArg.Get(d)
 	artifactsDir := filepath.Join(rootDir, "artifacts")
-	// Note: this will only result in making the `artifacts` dir and no parent dirs because
+	sourcerersDir := filepath.Join(rootDir, "sourcerers")
+	// Note: this will only result in making the `artifacts/sourcerers` dir and no parent dirs because
 	// the env arg for the root dir enforces that the root dir exists.
 	if err := osMkdirAll(artifactsDir, 0777); err != nil {
 		return o.Annotatef(err, "failed to make artifacts directory")
+	}
+	if err := osMkdirAll(sourcerersDir, 0777); err != nil {
+		return o.Annotatef(err, "failed to make sourcerers directory")
 	}
 
 	b, err := osReadFile(s.goExecutableFilePath)
