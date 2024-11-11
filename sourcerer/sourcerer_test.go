@@ -19,6 +19,7 @@ import (
 	"github.com/leep-frog/command/commander"
 	"github.com/leep-frog/command/commandertest"
 	"github.com/leep-frog/command/commandtest"
+	"github.com/leep-frog/command/internal/stubs"
 	"github.com/leep-frog/command/internal/testutil"
 )
 
@@ -68,6 +69,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 			osChecks          map[string]*osCheck
 			commandStatFile   os.FileInfo
 			commandStatErr    error
+			env               map[string]string
 			wantErr           error
 
 			wantOSReadFile  []string
@@ -114,20 +116,20 @@ func TestGenerateBinaryNode(t *testing.T) {
 				},
 			},
 			{
-				name:          "errors when no output folder name name",
+				name:          "errors when COMMAND_CLI_OUTPUT_DIR is not set",
 				cliTargetName: "leepFrogSource",
 				args:          []string{"source"},
-				wantErr:       fmt.Errorf(`Argument "OUTPUT_DIRECTORY" requires at least 1 argument, got 0`),
+				wantErr:       fmt.Errorf(`Environment variable COMMAND_CLI_OUTPUT_DIR is not set`),
 				osChecks: map[string]*osCheck{
 					osLinux: {
 						wantStderr: []string{
-							`Argument "OUTPUT_DIRECTORY" requires at least 1 argument, got 0`,
+							`Environment variable COMMAND_CLI_OUTPUT_DIR is not set`,
 							``,
 						},
 					},
 					osWindows: {
 						wantStderr: []string{
-							`Argument "OUTPUT_DIRECTORY" requires at least 1 argument, got 0`,
+							`Environment variable COMMAND_CLI_OUTPUT_DIR is not set`,
 							``,
 						},
 					},
@@ -136,18 +138,21 @@ func TestGenerateBinaryNode(t *testing.T) {
 			{
 				name:          "errors when output folder does not exist",
 				cliTargetName: "leepFrogSource",
-				args:          []string{"source", "/some-path"},
-				wantErr:       fmt.Errorf(`validation for "OUTPUT_DIRECTORY" failed: [FileExists] file %q does not exist`, testutil.FilepathAbs(t, "/some-path")),
+				env: map[string]string{
+					RootDirectoryEnvVar: "/some-path",
+				},
+				args:    []string{"source"},
+				wantErr: fmt.Errorf(`Invalid value for environment variable COMMAND_CLI_OUTPUT_DIR: [IsDir] file %q does not exist`, testutil.FilepathAbs(t, "/some-path")),
 				osChecks: map[string]*osCheck{
 					osLinux: {
 						wantStderr: []string{
-							fmt.Sprintf(`validation for "OUTPUT_DIRECTORY" failed: [FileExists] file %q does not exist`, testutil.FilepathAbs(t, "/some-path")),
+							fmt.Sprintf(`Invalid value for environment variable COMMAND_CLI_OUTPUT_DIR: [IsDir] file %q does not exist`, testutil.FilepathAbs(t, "/some-path")),
 							``,
 						},
 					},
 					osWindows: {
 						wantStderr: []string{
-							fmt.Sprintf(`validation for "OUTPUT_DIRECTORY" failed: [FileExists] file %q does not exist`, testutil.FilepathAbs(t, "/some-path")),
+							fmt.Sprintf(`Invalid value for environment variable COMMAND_CLI_OUTPUT_DIR: [IsDir] file %q does not exist`, testutil.FilepathAbs(t, "/some-path")),
 							``,
 						},
 					},
@@ -156,27 +161,33 @@ func TestGenerateBinaryNode(t *testing.T) {
 			{
 				name:          "errors when output folder is not a directory",
 				cliTargetName: "leepFrogSource",
-				args:          []string{"source", "sourcerer.go"},
-				wantErr:       fmt.Errorf(`validation for "OUTPUT_DIRECTORY" failed: [IsDir] argument %q is a file`, testutil.FilepathAbs(t, "sourcerer.go")),
+				env: map[string]string{
+					RootDirectoryEnvVar: "sourcerer.go",
+				},
+				args:    []string{"source"},
+				wantErr: fmt.Errorf(`Invalid value for environment variable COMMAND_CLI_OUTPUT_DIR: [IsDir] argument %q is a file`, testutil.FilepathAbs(t, "sourcerer.go")),
 				osChecks: map[string]*osCheck{
 					osLinux: {
 						wantStderr: []string{
-							fmt.Sprintf(`validation for "OUTPUT_DIRECTORY" failed: [IsDir] argument %q is a file`, testutil.FilepathAbs(t, "sourcerer.go")),
+							fmt.Sprintf(`Invalid value for environment variable COMMAND_CLI_OUTPUT_DIR: [IsDir] argument %q is a file`, testutil.FilepathAbs(t, "sourcerer.go")),
 							``,
 						},
 					},
 					osWindows: {
 						wantStderr: []string{
-							fmt.Sprintf(`validation for "OUTPUT_DIRECTORY" failed: [IsDir] argument %q is a file`, testutil.FilepathAbs(t, "sourcerer.go")),
+							fmt.Sprintf(`Invalid value for environment variable COMMAND_CLI_OUTPUT_DIR: [IsDir] argument %q is a file`, testutil.FilepathAbs(t, "sourcerer.go")),
 							``,
 						},
 					},
 				},
 			},
 			{
-				name:           "fails when osReadFileErr",
-				cliTargetName:  "leepFrogSource",
-				args:           []string{"source", "cmd"},
+				name:          "fails when osReadFileErr",
+				cliTargetName: "leepFrogSource",
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
+				args:           []string{"source"},
 				osReadFileErr:  fmt.Errorf("read oops"),
 				wantOSReadFile: []string{fakeGoExecutableFilePath.Name()},
 				wantErr:        fmt.Errorf(`failed to read executable file: read oops`),
@@ -196,9 +207,12 @@ func TestGenerateBinaryNode(t *testing.T) {
 				},
 			},
 			{
-				name:            "fails when osWriteFileErr for copying binary file",
-				cliTargetName:   "leepFrogSource",
-				args:            []string{"source", "cmd"},
+				name:          "fails when osWriteFileErr for copying binary file",
+				cliTargetName: "leepFrogSource",
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
+				args:            []string{"source"},
 				wantOSReadFile:  []string{fakeGoExecutableFilePath.Name()},
 				osWriteFileErrs: []error{fmt.Errorf("write binary whoops")},
 				wantErr:         fmt.Errorf(`failed to copy executable file: write binary whoops`),
@@ -206,7 +220,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 					osLinux: {
 						wantOsWriteFiles: []*osWriteFileArgs{
 							{
-								File:     testutil.FilepathAbs(t, "cmd", "leepFrogSource"),
+								File:     testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource"),
 								Contents: []string{fakeFileContents},
 								FileMode: 0744,
 							},
@@ -219,7 +233,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 					osWindows: {
 						wantOsWriteFiles: []*osWriteFileArgs{
 							{
-								File:     testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe"),
+								File:     testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource.exe"),
 								Contents: []string{fakeFileContents},
 								FileMode: 0744,
 							},
@@ -232,16 +246,19 @@ func TestGenerateBinaryNode(t *testing.T) {
 				},
 			},
 			{
-				name:            "fails when osWriteFileErr for creating sourceable file",
-				cliTargetName:   "leepFrogSource",
-				args:            []string{"source", "cmd"},
+				name:          "fails when osWriteFileErr for creating sourceable file",
+				cliTargetName: "leepFrogSource",
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
+				args:            []string{"source"},
 				wantOSReadFile:  []string{fakeGoExecutableFilePath.Name()},
 				osWriteFileErrs: []error{nil, fmt.Errorf("write sourceable whoops")},
 				wantErr:         fmt.Errorf(`failed to write sourceable file contents: write sourceable whoops`),
 				osChecks: map[string]*osCheck{
 					osLinux: {
 						wantStdout: []string{
-							fmt.Sprintf(`Binary file created: %q`, testutil.FilepathAbs(t, "cmd", "leepFrogSource")),
+							fmt.Sprintf(`Binary file created: %q`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource")),
 						},
 						wantStderr: []string{
 							`failed to write sourceable file contents: write sourceable whoops`,
@@ -249,12 +266,12 @@ func TestGenerateBinaryNode(t *testing.T) {
 						},
 						wantOsWriteFiles: []*osWriteFileArgs{
 							{
-								File:     testutil.FilepathAbs(t, "cmd", "leepFrogSource"),
+								File:     testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource"),
 								FileMode: 0744,
 								Contents: []string{fakeFileContents},
 							},
 							{
-								File:     testutil.FilepathAbs(t, "cmd", "leepFrogSource_loader.sh"),
+								File:     testutil.FilepathAbs(t, "cli-output-dir", "sourcerers", "leepFrogSource_loader.sh"),
 								FileMode: 0644,
 								Contents: []string{
 									`#!/bin/bash`,
@@ -264,7 +281,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 									`  local tmpFile=$(mktemp)`,
 									``,
 									`  # Run the go-only code`,
-									fmt.Sprintf(`  %s execute "$1" $tmpFile "${@:2}"`, testutil.FilepathAbs(t, "cmd", "leepFrogSource")),
+									fmt.Sprintf(`  %s execute "$1" $tmpFile "${@:2}"`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource")),
 									`  # Return the error code if go code terminated with an error`,
 									`  local errorCode=$?`,
 									`  if [ $errorCode -ne 0 ]; then return $errorCode; fi`,
@@ -272,7 +289,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 									`  # Otherwise, run the ExecuteData.Executable data`,
 									`  source $tmpFile`,
 									`  local errorCode=$?`,
-									`  if [ -z "$LEEP_FROG_DEBUG" ]; then`,
+									`  if [ -z "$COMMAND_CLI_DEBUG" ]; then`,
 									`    rm $tmpFile`,
 									`  else`,
 									`    echo $tmpFile`,
@@ -282,7 +299,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 									``,
 									`function _custom_autocomplete_leepFrogSource {`,
 									`  local tFile=$(mktemp)`,
-									fmt.Sprintf(`  %s autocomplete ${COMP_WORDS[0]} "$COMP_TYPE" $COMP_POINT "$COMP_LINE" > $tFile`, testutil.FilepathAbs(t, "cmd", "leepFrogSource")),
+									fmt.Sprintf(`  %s autocomplete ${COMP_WORDS[0]} "$COMP_TYPE" $COMP_POINT "$COMP_LINE" > $tFile`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource")),
 									`  local IFS=$'\n'`,
 									`  COMPREPLY=( $(cat $tFile) )`,
 									`  rm $tFile`,
@@ -297,7 +314,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 					},
 					osWindows: {
 						wantStdout: []string{
-							fmt.Sprintf(`Binary file created: %q`, testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe")),
+							fmt.Sprintf(`Binary file created: %q`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource.exe")),
 						},
 						wantStderr: []string{
 							`failed to write sourceable file contents: write sourceable whoops`,
@@ -305,12 +322,12 @@ func TestGenerateBinaryNode(t *testing.T) {
 						},
 						wantOsWriteFiles: []*osWriteFileArgs{
 							{
-								File:     testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe"),
+								File:     testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource.exe"),
 								Contents: []string{fakeFileContents},
 								FileMode: 0744,
 							},
 							{
-								File:     testutil.FilepathAbs(t, "cmd", "leepFrogSource_loader.ps1"),
+								File:     testutil.FilepathAbs(t, "cli-output-dir", "sourcerers", "leepFrogSource_loader.ps1"),
 								FileMode: 0644,
 								Contents: []string{
 									`function _leepFrogSource_wrap_function {`,
@@ -318,7 +335,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 									`  param($wordToComplete, $commandAst, $compPoint)`,
 									`  $Local:tmpPassthroughArgFile = New-TemporaryFile`,
 									`  [IO.File]::WriteAllText($Local:tmpPassthroughArgFile, $commandAst.ToString())`,
-									fmt.Sprintf(`  (& %s autocomplete ($commandAst.CommandElements | Select-Object -first 1) --comp-line-file "0" $compPoint $Local:tmpPassthroughArgFile) | ForEach-Object {`, testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe")),
+									fmt.Sprintf(`  (& %s autocomplete ($commandAst.CommandElements | Select-Object -first 1) --comp-line-file "0" $compPoint $Local:tmpPassthroughArgFile) | ForEach-Object {`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource.exe")),
 									`    "$_"`,
 									`  }`,
 									`}`,
@@ -333,15 +350,18 @@ func TestGenerateBinaryNode(t *testing.T) {
 				},
 			},
 			{
-				name:           "generates source file when no CLIs",
-				cliTargetName:  "leepFrogSource",
-				args:           []string{"source", "cmd"},
+				name:          "generates source file when no CLIs",
+				cliTargetName: "leepFrogSource",
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
+				args:           []string{"source"},
 				wantOSReadFile: []string{fakeGoExecutableFilePath.Name()},
 				osChecks: map[string]*osCheck{
 					osLinux: {
 						wantStdout: []string{
-							fmt.Sprintf(`Binary file created: %q`, testutil.FilepathAbs(t, "cmd", "leepFrogSource")),
-							fmt.Sprintf(`Sourceable file created: %q`, testutil.FilepathAbs(t, "cmd", "leepFrogSource_loader.sh")),
+							fmt.Sprintf(`Binary file created: %q`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource")),
+							fmt.Sprintf(`Sourceable file created: %q`, testutil.FilepathAbs(t, "cli-output-dir", "sourcerers", "leepFrogSource_loader.sh")),
 							``,
 							color.Apply(`All steps have completed successfully!`, color.Green, color.Bold),
 							``,
@@ -349,25 +369,25 @@ func TestGenerateBinaryNode(t *testing.T) {
 							``,
 							color.Apply(strings.Join([]string{
 								`# Load all of your CLIs`,
-								fmt.Sprintf(`source %q`, testutil.FilepathAbs(t, `cmd`, `leepFrogSource_loader.sh`)),
+								fmt.Sprintf(`source %q`, testutil.FilepathAbs(t, `cli-output-dir`, `sourcerers`, `leepFrogSource_loader.sh`)),
 								``,
 								`# Useful function to easily regenerate all of your CLIs whenever your go code changes`,
 								`function _regenerate_leepFrogSource_CLIs() {`,
 								`  pushd . > /dev/null`,
 								`  cd "\\fake\\source"`,
-								fmt.Sprintf(`  go run . source %q`, testutil.FilepathAbs(t, "cmd")),
+								`  go run . source`,
 								`  popd . > /dev/null`,
 								`}`,
 							}, "\n"), color.Blue),
 						},
 						wantOsWriteFiles: []*osWriteFileArgs{
 							{
-								File:     testutil.FilepathAbs(t, "cmd", "leepFrogSource"),
+								File:     testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource"),
 								FileMode: 0744,
 								Contents: []string{fakeFileContents},
 							},
 							{
-								File:     testutil.FilepathAbs(t, "cmd", "leepFrogSource_loader.sh"),
+								File:     testutil.FilepathAbs(t, "cli-output-dir", "sourcerers", "leepFrogSource_loader.sh"),
 								FileMode: 0644,
 								Contents: []string{
 									`#!/bin/bash`,
@@ -377,7 +397,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 									`  local tmpFile=$(mktemp)`,
 									``,
 									`  # Run the go-only code`,
-									fmt.Sprintf(`  %s execute "$1" $tmpFile "${@:2}"`, testutil.FilepathAbs(t, "cmd", "leepFrogSource")),
+									fmt.Sprintf(`  %s execute "$1" $tmpFile "${@:2}"`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource")),
 									`  # Return the error code if go code terminated with an error`,
 									`  local errorCode=$?`,
 									`  if [ $errorCode -ne 0 ]; then return $errorCode; fi`,
@@ -385,7 +405,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 									`  # Otherwise, run the ExecuteData.Executable data`,
 									`  source $tmpFile`,
 									`  local errorCode=$?`,
-									`  if [ -z "$LEEP_FROG_DEBUG" ]; then`,
+									`  if [ -z "$COMMAND_CLI_DEBUG" ]; then`,
 									`    rm $tmpFile`,
 									`  else`,
 									`    echo $tmpFile`,
@@ -395,7 +415,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 									``,
 									`function _custom_autocomplete_leepFrogSource {`,
 									`  local tFile=$(mktemp)`,
-									fmt.Sprintf(`  %s autocomplete ${COMP_WORDS[0]} "$COMP_TYPE" $COMP_POINT "$COMP_LINE" > $tFile`, testutil.FilepathAbs(t, "cmd", "leepFrogSource")),
+									fmt.Sprintf(`  %s autocomplete ${COMP_WORDS[0]} "$COMP_TYPE" $COMP_POINT "$COMP_LINE" > $tFile`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource")),
 									`  local IFS=$'\n'`,
 									`  COMPREPLY=( $(cat $tFile) )`,
 									`  rm $tFile`,
@@ -410,8 +430,8 @@ func TestGenerateBinaryNode(t *testing.T) {
 					},
 					osWindows: {
 						wantStdout: []string{
-							fmt.Sprintf(`Binary file created: %q`, testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe")),
-							fmt.Sprintf(`Sourceable file created: %q`, testutil.FilepathAbs(t, "cmd", "leepFrogSource_loader.ps1")),
+							fmt.Sprintf(`Binary file created: %q`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource.exe")),
+							fmt.Sprintf(`Sourceable file created: %q`, testutil.FilepathAbs(t, "cli-output-dir", "sourcerers", "leepFrogSource_loader.ps1")),
 							``,
 							color.Apply(`All steps have completed successfully!`, color.Green, color.Bold),
 							``,
@@ -419,25 +439,25 @@ func TestGenerateBinaryNode(t *testing.T) {
 							``,
 							color.Apply(strings.Join([]string{
 								`# Load all of your CLIs`,
-								fmt.Sprintf(`. %q`, testutil.FilepathAbs(t, "cmd", "leepFrogSource_loader.ps1")),
+								fmt.Sprintf(`. %q`, testutil.FilepathAbs(t, "cli-output-dir", "sourcerers", "leepFrogSource_loader.ps1")),
 								``,
 								`# Useful function to easily regenerate all of your CLIs whenever your go code changes`,
 								`function _regenerate_leepFrogSource_CLIs() {`,
 								`  Push-Location`,
 								`  Set-Location "\\fake\\source"`,
-								fmt.Sprintf(`  go run . source %q`, testutil.FilepathAbs(t, "cmd")),
+								`  go run . source`,
 								`  Pop-Location`,
 								`}`,
 							}, "\n"), color.Blue),
 						},
 						wantOsWriteFiles: []*osWriteFileArgs{
 							{
-								File:     testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe"),
+								File:     testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource.exe"),
 								FileMode: 0744,
 								Contents: []string{fakeFileContents},
 							},
 							{
-								File:     testutil.FilepathAbs(t, "cmd", "leepFrogSource_loader.ps1"),
+								File:     testutil.FilepathAbs(t, "cli-output-dir", "sourcerers", "leepFrogSource_loader.ps1"),
 								FileMode: 0644,
 								Contents: []string{
 									`function _leepFrogSource_wrap_function {`,
@@ -445,7 +465,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 									`  param($wordToComplete, $commandAst, $compPoint)`,
 									`  $Local:tmpPassthroughArgFile = New-TemporaryFile`,
 									`  [IO.File]::WriteAllText($Local:tmpPassthroughArgFile, $commandAst.ToString())`,
-									fmt.Sprintf(`  (& %s autocomplete ($commandAst.CommandElements | Select-Object -first 1) --comp-line-file "0" $compPoint $Local:tmpPassthroughArgFile) | ForEach-Object {`, testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe")),
+									fmt.Sprintf(`  (& %s autocomplete ($commandAst.CommandElements | Select-Object -first 1) --comp-line-file "0" $compPoint $Local:tmpPassthroughArgFile) | ForEach-Object {`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource.exe")),
 									`    "$_"`,
 									`  }`,
 									`}`,
@@ -462,7 +482,10 @@ func TestGenerateBinaryNode(t *testing.T) {
 			{
 				name:          "adds multiple Aliaser (singular) options at the end",
 				cliTargetName: "leepFrogSource",
-				args:          []string{"source", "cmd"},
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
+				args: []string{"source"},
 				opts: []Option{
 					NewAliaser("a1", "do", "some", "stuff"),
 					NewAliaser("otherAlias", "flaggable", "--args", "--at", "once"),
@@ -471,8 +494,8 @@ func TestGenerateBinaryNode(t *testing.T) {
 				osChecks: map[string]*osCheck{
 					osLinux: {
 						wantStdout: []string{
-							fmt.Sprintf(`Binary file created: %q`, testutil.FilepathAbs(t, "cmd", "leepFrogSource")),
-							fmt.Sprintf(`Sourceable file created: %q`, testutil.FilepathAbs(t, "cmd", "leepFrogSource_loader.sh")),
+							fmt.Sprintf(`Binary file created: %q`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource")),
+							fmt.Sprintf(`Sourceable file created: %q`, testutil.FilepathAbs(t, "cli-output-dir", "sourcerers", "leepFrogSource_loader.sh")),
 							``,
 							color.Apply(`All steps have completed successfully!`, color.Green, color.Bold),
 							``,
@@ -480,25 +503,25 @@ func TestGenerateBinaryNode(t *testing.T) {
 							``,
 							color.Apply(strings.Join([]string{
 								`# Load all of your CLIs`,
-								fmt.Sprintf(`source %q`, testutil.FilepathAbs(t, `cmd`, `leepFrogSource_loader.sh`)),
+								fmt.Sprintf(`source %q`, testutil.FilepathAbs(t, `cli-output-dir`, `sourcerers`, `leepFrogSource_loader.sh`)),
 								``,
 								`# Useful function to easily regenerate all of your CLIs whenever your go code changes`,
 								`function _regenerate_leepFrogSource_CLIs() {`,
 								`  pushd . > /dev/null`,
 								`  cd "\\fake\\source"`,
-								fmt.Sprintf(`  go run . source %q`, testutil.FilepathAbs(t, "cmd")),
+								`  go run . source`,
 								`  popd . > /dev/null`,
 								`}`,
 							}, "\n"), color.Blue),
 						},
 						wantOsWriteFiles: []*osWriteFileArgs{
 							{
-								File:     testutil.FilepathAbs(t, "cmd", "leepFrogSource"),
+								File:     testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource"),
 								FileMode: 0744,
 								Contents: []string{fakeFileContents},
 							},
 							{
-								File:     testutil.FilepathAbs(t, "cmd", "leepFrogSource_loader.sh"),
+								File:     testutil.FilepathAbs(t, "cli-output-dir", "sourcerers", "leepFrogSource_loader.sh"),
 								FileMode: 0644,
 								Contents: []string{
 									`#!/bin/bash`,
@@ -508,7 +531,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 									`  local tmpFile=$(mktemp)`,
 									``,
 									`  # Run the go-only code`,
-									fmt.Sprintf(`  %s execute "$1" $tmpFile "${@:2}"`, testutil.FilepathAbs(t, "cmd", "leepFrogSource")),
+									fmt.Sprintf(`  %s execute "$1" $tmpFile "${@:2}"`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource")),
 									`  # Return the error code if go code terminated with an error`,
 									`  local errorCode=$?`,
 									`  if [ $errorCode -ne 0 ]; then return $errorCode; fi`,
@@ -516,7 +539,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 									`  # Otherwise, run the ExecuteData.Executable data`,
 									`  source $tmpFile`,
 									`  local errorCode=$?`,
-									`  if [ -z "$LEEP_FROG_DEBUG" ]; then`,
+									`  if [ -z "$COMMAND_CLI_DEBUG" ]; then`,
 									`    rm $tmpFile`,
 									`  else`,
 									`    echo $tmpFile`,
@@ -526,7 +549,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 									``,
 									`function _custom_autocomplete_leepFrogSource {`,
 									`  local tFile=$(mktemp)`,
-									fmt.Sprintf(`  %s autocomplete ${COMP_WORDS[0]} "$COMP_TYPE" $COMP_POINT "$COMP_LINE" > $tFile`, testutil.FilepathAbs(t, "cmd", "leepFrogSource")),
+									fmt.Sprintf(`  %s autocomplete ${COMP_WORDS[0]} "$COMP_TYPE" $COMP_POINT "$COMP_LINE" > $tFile`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource")),
 									`  local IFS=$'\n'`,
 									`  COMPREPLY=( $(cat $tFile) )`,
 									`  rm $tFile`,
@@ -534,7 +557,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 									``,
 									`function _leep_frog_autocompleter {`,
 									`  local tFile=$(mktemp)`,
-									fmt.Sprintf(`  %s autocomplete "$1" "$COMP_TYPE" $COMP_POINT "$COMP_LINE" "${@:2}" > $tFile`, testutil.FilepathAbs(t, "cmd", "leepFrogSource")),
+									fmt.Sprintf(`  %s autocomplete "$1" "$COMP_TYPE" $COMP_POINT "$COMP_LINE" "${@:2}" > $tFile`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource")),
 									`  local IFS='`,
 									`';`,
 									`  COMPREPLY=( $(cat $tFile) )`,
@@ -584,8 +607,8 @@ func TestGenerateBinaryNode(t *testing.T) {
 					},
 					osWindows: {
 						wantStdout: []string{
-							fmt.Sprintf(`Binary file created: %q`, testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe")),
-							fmt.Sprintf(`Sourceable file created: %q`, testutil.FilepathAbs(t, "cmd", "leepFrogSource_loader.ps1")),
+							fmt.Sprintf(`Binary file created: %q`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource.exe")),
+							fmt.Sprintf(`Sourceable file created: %q`, testutil.FilepathAbs(t, "cli-output-dir", "sourcerers", "leepFrogSource_loader.ps1")),
 							``,
 							color.Apply(`All steps have completed successfully!`, color.Green, color.Bold),
 							``,
@@ -593,25 +616,25 @@ func TestGenerateBinaryNode(t *testing.T) {
 							``,
 							color.Apply(strings.Join([]string{
 								`# Load all of your CLIs`,
-								fmt.Sprintf(`. %q`, testutil.FilepathAbs(t, "cmd", "leepFrogSource_loader.ps1")),
+								fmt.Sprintf(`. %q`, testutil.FilepathAbs(t, "cli-output-dir", "sourcerers", "leepFrogSource_loader.ps1")),
 								``,
 								`# Useful function to easily regenerate all of your CLIs whenever your go code changes`,
 								`function _regenerate_leepFrogSource_CLIs() {`,
 								`  Push-Location`,
 								`  Set-Location "\\fake\\source"`,
-								fmt.Sprintf(`  go run . source %q`, testutil.FilepathAbs(t, "cmd")),
+								`  go run . source`,
 								`  Pop-Location`,
 								`}`,
 							}, "\n"), color.Blue),
 						},
 						wantOsWriteFiles: []*osWriteFileArgs{
 							{
-								File:     testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe"),
+								File:     testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource.exe"),
 								FileMode: 0744,
 								Contents: []string{fakeFileContents},
 							},
 							{
-								File:     testutil.FilepathAbs(t, "cmd", "leepFrogSource_loader.ps1"),
+								File:     testutil.FilepathAbs(t, "cli-output-dir", "sourcerers", "leepFrogSource_loader.ps1"),
 								FileMode: 0644,
 								Contents: []string{
 									`function _leepFrogSource_wrap_function {`,
@@ -619,7 +642,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 									`  param($wordToComplete, $commandAst, $compPoint)`,
 									`  $Local:tmpPassthroughArgFile = New-TemporaryFile`,
 									`  [IO.File]::WriteAllText($Local:tmpPassthroughArgFile, $commandAst.ToString())`,
-									fmt.Sprintf(`  (& %s autocomplete ($commandAst.CommandElements | Select-Object -first 1) --comp-line-file "0" $compPoint $Local:tmpPassthroughArgFile) | ForEach-Object {`, testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe")),
+									fmt.Sprintf(`  (& %s autocomplete ($commandAst.CommandElements | Select-Object -first 1) --comp-line-file "0" $compPoint $Local:tmpPassthroughArgFile) | ForEach-Object {`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource.exe")),
 									`    "$_"`,
 									`  }`,
 									`}`,
@@ -635,7 +658,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 									`  param($wordToComplete, $commandAst, $compPoint)`,
 									`  $Local:tmpPassthroughArgFile = New-TemporaryFile`,
 									`  [IO.File]::WriteAllText($Local:tmpPassthroughArgFile, $commandAst.ToString())`,
-									fmt.Sprintf(`  (Invoke-Expression '& %s autocomplete "do" --comp-line-file "0" $compPoint $Local:tmpPassthroughArgFile "some" "stuff"') | ForEach-Object {`, testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe")),
+									fmt.Sprintf(`  (Invoke-Expression '& %s autocomplete "do" --comp-line-file "0" $compPoint $Local:tmpPassthroughArgFile "some" "stuff"') | ForEach-Object {`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource.exe")),
 									`    "$_"`,
 									`  }`,
 									`}`,
@@ -653,7 +676,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 									`  param($wordToComplete, $commandAst, $compPoint)`,
 									`  $Local:tmpPassthroughArgFile = New-TemporaryFile`,
 									`  [IO.File]::WriteAllText($Local:tmpPassthroughArgFile, $commandAst.ToString())`,
-									fmt.Sprintf(`  (Invoke-Expression '& %s autocomplete "flaggable" --comp-line-file "0" $compPoint $Local:tmpPassthroughArgFile "--args" "--at" "once"') | ForEach-Object {`, testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe")),
+									fmt.Sprintf(`  (Invoke-Expression '& %s autocomplete "flaggable" --comp-line-file "0" $compPoint $Local:tmpPassthroughArgFile "--args" "--at" "once"') | ForEach-Object {`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource.exe")),
 									`    "$_"`,
 									`  }`,
 									`}`,
@@ -672,7 +695,10 @@ func TestGenerateBinaryNode(t *testing.T) {
 			{
 				name:          "only verifies each CLI once",
 				cliTargetName: "leepFrogSource",
-				args:          []string{"source", "cmd"},
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
+				args: []string{"source"},
 				opts: []Option{
 					// Note the CLI in both of these is "do"
 					NewAliaser("a1", "do", "some", "stuff"),
@@ -682,8 +708,8 @@ func TestGenerateBinaryNode(t *testing.T) {
 				osChecks: map[string]*osCheck{
 					osLinux: {
 						wantStdout: []string{
-							fmt.Sprintf(`Binary file created: %q`, testutil.FilepathAbs(t, "cmd", "leepFrogSource")),
-							fmt.Sprintf(`Sourceable file created: %q`, testutil.FilepathAbs(t, "cmd", "leepFrogSource_loader.sh")),
+							fmt.Sprintf(`Binary file created: %q`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource")),
+							fmt.Sprintf(`Sourceable file created: %q`, testutil.FilepathAbs(t, "cli-output-dir", "sourcerers", "leepFrogSource_loader.sh")),
 							``,
 							color.Apply(`All steps have completed successfully!`, color.Green, color.Bold),
 							``,
@@ -691,25 +717,25 @@ func TestGenerateBinaryNode(t *testing.T) {
 							``,
 							color.Apply(strings.Join([]string{
 								`# Load all of your CLIs`,
-								fmt.Sprintf(`source %q`, testutil.FilepathAbs(t, `cmd`, `leepFrogSource_loader.sh`)),
+								fmt.Sprintf(`source %q`, testutil.FilepathAbs(t, `cli-output-dir`, `sourcerers`, `leepFrogSource_loader.sh`)),
 								``,
 								`# Useful function to easily regenerate all of your CLIs whenever your go code changes`,
 								`function _regenerate_leepFrogSource_CLIs() {`,
 								`  pushd . > /dev/null`,
 								`  cd "\\fake\\source"`,
-								fmt.Sprintf(`  go run . source %q`, testutil.FilepathAbs(t, "cmd")),
+								`  go run . source`,
 								`  popd . > /dev/null`,
 								`}`,
 							}, "\n"), color.Blue),
 						},
 						wantOsWriteFiles: []*osWriteFileArgs{
 							{
-								File:     testutil.FilepathAbs(t, "cmd", "leepFrogSource"),
+								File:     testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource"),
 								FileMode: 0744,
 								Contents: []string{fakeFileContents},
 							},
 							{
-								File:     testutil.FilepathAbs(t, "cmd", "leepFrogSource_loader.sh"),
+								File:     testutil.FilepathAbs(t, "cli-output-dir", "sourcerers", "leepFrogSource_loader.sh"),
 								FileMode: 0644,
 								Contents: []string{
 									`#!/bin/bash`,
@@ -719,7 +745,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 									`  local tmpFile=$(mktemp)`,
 									``,
 									`  # Run the go-only code`,
-									fmt.Sprintf(`  %s execute "$1" $tmpFile "${@:2}"`, testutil.FilepathAbs(t, "cmd", "leepFrogSource")),
+									fmt.Sprintf(`  %s execute "$1" $tmpFile "${@:2}"`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource")),
 									`  # Return the error code if go code terminated with an error`,
 									`  local errorCode=$?`,
 									`  if [ $errorCode -ne 0 ]; then return $errorCode; fi`,
@@ -727,7 +753,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 									`  # Otherwise, run the ExecuteData.Executable data`,
 									`  source $tmpFile`,
 									`  local errorCode=$?`,
-									`  if [ -z "$LEEP_FROG_DEBUG" ]; then`,
+									`  if [ -z "$COMMAND_CLI_DEBUG" ]; then`,
 									`    rm $tmpFile`,
 									`  else`,
 									`    echo $tmpFile`,
@@ -737,7 +763,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 									``,
 									`function _custom_autocomplete_leepFrogSource {`,
 									`  local tFile=$(mktemp)`,
-									fmt.Sprintf(`  %s autocomplete ${COMP_WORDS[0]} "$COMP_TYPE" $COMP_POINT "$COMP_LINE" > $tFile`, testutil.FilepathAbs(t, "cmd", "leepFrogSource")),
+									fmt.Sprintf(`  %s autocomplete ${COMP_WORDS[0]} "$COMP_TYPE" $COMP_POINT "$COMP_LINE" > $tFile`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource")),
 									`  local IFS=$'\n'`,
 									`  COMPREPLY=( $(cat $tFile) )`,
 									`  rm $tFile`,
@@ -745,7 +771,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 									``,
 									`function _leep_frog_autocompleter {`,
 									`  local tFile=$(mktemp)`,
-									fmt.Sprintf(`  %s autocomplete "$1" "$COMP_TYPE" $COMP_POINT "$COMP_LINE" "${@:2}" > $tFile`, testutil.FilepathAbs(t, "cmd", "leepFrogSource")),
+									fmt.Sprintf(`  %s autocomplete "$1" "$COMP_TYPE" $COMP_POINT "$COMP_LINE" "${@:2}" > $tFile`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource")),
 									`  local IFS='`,
 									`';`,
 									`  COMPREPLY=( $(cat $tFile) )`,
@@ -787,8 +813,8 @@ func TestGenerateBinaryNode(t *testing.T) {
 					},
 					osWindows: {
 						wantStdout: []string{
-							fmt.Sprintf(`Binary file created: %q`, testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe")),
-							fmt.Sprintf(`Sourceable file created: %q`, testutil.FilepathAbs(t, "cmd", "leepFrogSource_loader.ps1")),
+							fmt.Sprintf(`Binary file created: %q`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource.exe")),
+							fmt.Sprintf(`Sourceable file created: %q`, testutil.FilepathAbs(t, "cli-output-dir", "sourcerers", "leepFrogSource_loader.ps1")),
 							``,
 							color.Apply(`All steps have completed successfully!`, color.Green, color.Bold),
 							``,
@@ -796,25 +822,25 @@ func TestGenerateBinaryNode(t *testing.T) {
 							``,
 							color.Apply(strings.Join([]string{
 								`# Load all of your CLIs`,
-								fmt.Sprintf(`. %q`, testutil.FilepathAbs(t, "cmd", "leepFrogSource_loader.ps1")),
+								fmt.Sprintf(`. %q`, testutil.FilepathAbs(t, "cli-output-dir", "sourcerers", "leepFrogSource_loader.ps1")),
 								``,
 								`# Useful function to easily regenerate all of your CLIs whenever your go code changes`,
 								`function _regenerate_leepFrogSource_CLIs() {`,
 								`  Push-Location`,
 								`  Set-Location "\\fake\\source"`,
-								fmt.Sprintf(`  go run . source %q`, testutil.FilepathAbs(t, "cmd")),
+								`  go run . source`,
 								`  Pop-Location`,
 								`}`,
 							}, "\n"), color.Blue),
 						},
 						wantOsWriteFiles: []*osWriteFileArgs{
 							{
-								File:     testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe"),
+								File:     testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource.exe"),
 								FileMode: 0744,
 								Contents: []string{fakeFileContents},
 							},
 							{
-								File:     testutil.FilepathAbs(t, "cmd", "leepFrogSource_loader.ps1"),
+								File:     testutil.FilepathAbs(t, "cli-output-dir", "sourcerers", "leepFrogSource_loader.ps1"),
 								FileMode: 0644,
 								Contents: []string{
 									`function _leepFrogSource_wrap_function {`,
@@ -822,7 +848,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 									`  param($wordToComplete, $commandAst, $compPoint)`,
 									`  $Local:tmpPassthroughArgFile = New-TemporaryFile`,
 									`  [IO.File]::WriteAllText($Local:tmpPassthroughArgFile, $commandAst.ToString())`,
-									fmt.Sprintf(`  (& %s autocomplete ($commandAst.CommandElements | Select-Object -first 1) --comp-line-file "0" $compPoint $Local:tmpPassthroughArgFile) | ForEach-Object {`, testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe")),
+									fmt.Sprintf(`  (& %s autocomplete ($commandAst.CommandElements | Select-Object -first 1) --comp-line-file "0" $compPoint $Local:tmpPassthroughArgFile) | ForEach-Object {`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource.exe")),
 									`    "$_"`,
 									`  }`,
 									`}`,
@@ -838,7 +864,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 									`  param($wordToComplete, $commandAst, $compPoint)`,
 									`  $Local:tmpPassthroughArgFile = New-TemporaryFile`,
 									`  [IO.File]::WriteAllText($Local:tmpPassthroughArgFile, $commandAst.ToString())`,
-									fmt.Sprintf(`  (Invoke-Expression '& %s autocomplete "do" --comp-line-file "0" $compPoint $Local:tmpPassthroughArgFile "some" "stuff"') | ForEach-Object {`, testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe")),
+									fmt.Sprintf(`  (Invoke-Expression '& %s autocomplete "do" --comp-line-file "0" $compPoint $Local:tmpPassthroughArgFile "some" "stuff"') | ForEach-Object {`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource.exe")),
 									`    "$_"`,
 									`  }`,
 									`}`,
@@ -853,7 +879,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 									`  param($wordToComplete, $commandAst, $compPoint)`,
 									`  $Local:tmpPassthroughArgFile = New-TemporaryFile`,
 									`  [IO.File]::WriteAllText($Local:tmpPassthroughArgFile, $commandAst.ToString())`,
-									fmt.Sprintf(`  (Invoke-Expression '& %s autocomplete "do" --comp-line-file "0" $compPoint $Local:tmpPassthroughArgFile "other" "stuff"') | ForEach-Object {`, testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe")),
+									fmt.Sprintf(`  (Invoke-Expression '& %s autocomplete "do" --comp-line-file "0" $compPoint $Local:tmpPassthroughArgFile "other" "stuff"') | ForEach-Object {`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource.exe")),
 									`    "$_"`,
 									`  }`,
 									`}`,
@@ -872,7 +898,10 @@ func TestGenerateBinaryNode(t *testing.T) {
 			{
 				name:          "adds Aliasers (plural) at the end",
 				cliTargetName: "leepFrogSource",
-				args:          []string{"source", "cmd"},
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
+				args: []string{"source"},
 				opts: []Option{
 					Aliasers(map[string][]string{
 						"a1":         {"do", "some", "stuff"},
@@ -883,8 +912,8 @@ func TestGenerateBinaryNode(t *testing.T) {
 				osChecks: map[string]*osCheck{
 					osLinux: {
 						wantStdout: []string{
-							fmt.Sprintf(`Binary file created: %q`, testutil.FilepathAbs(t, "cmd", "leepFrogSource")),
-							fmt.Sprintf(`Sourceable file created: %q`, testutil.FilepathAbs(t, "cmd", "leepFrogSource_loader.sh")),
+							fmt.Sprintf(`Binary file created: %q`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource")),
+							fmt.Sprintf(`Sourceable file created: %q`, testutil.FilepathAbs(t, "cli-output-dir", "sourcerers", "leepFrogSource_loader.sh")),
 							``,
 							color.Apply(`All steps have completed successfully!`, color.Green, color.Bold),
 							``,
@@ -892,25 +921,25 @@ func TestGenerateBinaryNode(t *testing.T) {
 							``,
 							color.Apply(strings.Join([]string{
 								`# Load all of your CLIs`,
-								fmt.Sprintf(`source %q`, testutil.FilepathAbs(t, `cmd`, `leepFrogSource_loader.sh`)),
+								fmt.Sprintf(`source %q`, testutil.FilepathAbs(t, `cli-output-dir`, `sourcerers`, `leepFrogSource_loader.sh`)),
 								``,
 								`# Useful function to easily regenerate all of your CLIs whenever your go code changes`,
 								`function _regenerate_leepFrogSource_CLIs() {`,
 								`  pushd . > /dev/null`,
 								`  cd "\\fake\\source"`,
-								fmt.Sprintf(`  go run . source %q`, testutil.FilepathAbs(t, "cmd")),
+								`  go run . source`,
 								`  popd . > /dev/null`,
 								`}`,
 							}, "\n"), color.Blue),
 						},
 						wantOsWriteFiles: []*osWriteFileArgs{
 							{
-								File:     testutil.FilepathAbs(t, "cmd", "leepFrogSource"),
+								File:     testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource"),
 								FileMode: 0744,
 								Contents: []string{fakeFileContents},
 							},
 							{
-								File:     testutil.FilepathAbs(t, "cmd", "leepFrogSource_loader.sh"),
+								File:     testutil.FilepathAbs(t, "cli-output-dir", "sourcerers", "leepFrogSource_loader.sh"),
 								FileMode: 0644,
 								Contents: []string{
 									`#!/bin/bash`,
@@ -920,7 +949,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 									`  local tmpFile=$(mktemp)`,
 									``,
 									`  # Run the go-only code`,
-									fmt.Sprintf(`  %s execute "$1" $tmpFile "${@:2}"`, testutil.FilepathAbs(t, "cmd", "leepFrogSource")),
+									fmt.Sprintf(`  %s execute "$1" $tmpFile "${@:2}"`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource")),
 									`  # Return the error code if go code terminated with an error`,
 									`  local errorCode=$?`,
 									`  if [ $errorCode -ne 0 ]; then return $errorCode; fi`,
@@ -928,7 +957,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 									`  # Otherwise, run the ExecuteData.Executable data`,
 									`  source $tmpFile`,
 									`  local errorCode=$?`,
-									`  if [ -z "$LEEP_FROG_DEBUG" ]; then`,
+									`  if [ -z "$COMMAND_CLI_DEBUG" ]; then`,
 									`    rm $tmpFile`,
 									`  else`,
 									`    echo $tmpFile`,
@@ -938,7 +967,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 									``,
 									`function _custom_autocomplete_leepFrogSource {`,
 									`  local tFile=$(mktemp)`,
-									fmt.Sprintf(`  %s autocomplete ${COMP_WORDS[0]} "$COMP_TYPE" $COMP_POINT "$COMP_LINE" > $tFile`, testutil.FilepathAbs(t, "cmd", "leepFrogSource")),
+									fmt.Sprintf(`  %s autocomplete ${COMP_WORDS[0]} "$COMP_TYPE" $COMP_POINT "$COMP_LINE" > $tFile`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource")),
 									`  local IFS=$'\n'`,
 									`  COMPREPLY=( $(cat $tFile) )`,
 									`  rm $tFile`,
@@ -946,7 +975,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 									``,
 									`function _leep_frog_autocompleter {`,
 									`  local tFile=$(mktemp)`,
-									fmt.Sprintf(`  %s autocomplete "$1" "$COMP_TYPE" $COMP_POINT "$COMP_LINE" "${@:2}" > $tFile`, testutil.FilepathAbs(t, "cmd", "leepFrogSource")),
+									fmt.Sprintf(`  %s autocomplete "$1" "$COMP_TYPE" $COMP_POINT "$COMP_LINE" "${@:2}" > $tFile`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource")),
 									`  local IFS='`,
 									`';`,
 									`  COMPREPLY=( $(cat $tFile) )`,
@@ -996,8 +1025,8 @@ func TestGenerateBinaryNode(t *testing.T) {
 					},
 					osWindows: {
 						wantStdout: []string{
-							fmt.Sprintf(`Binary file created: %q`, testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe")),
-							fmt.Sprintf(`Sourceable file created: %q`, testutil.FilepathAbs(t, "cmd", "leepFrogSource_loader.ps1")),
+							fmt.Sprintf(`Binary file created: %q`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource.exe")),
+							fmt.Sprintf(`Sourceable file created: %q`, testutil.FilepathAbs(t, "cli-output-dir", "sourcerers", "leepFrogSource_loader.ps1")),
 							``,
 							color.Apply(`All steps have completed successfully!`, color.Green, color.Bold),
 							``,
@@ -1005,25 +1034,25 @@ func TestGenerateBinaryNode(t *testing.T) {
 							``,
 							color.Apply(strings.Join([]string{
 								`# Load all of your CLIs`,
-								fmt.Sprintf(`. %q`, testutil.FilepathAbs(t, "cmd", "leepFrogSource_loader.ps1")),
+								fmt.Sprintf(`. %q`, testutil.FilepathAbs(t, "cli-output-dir", "sourcerers", "leepFrogSource_loader.ps1")),
 								``,
 								`# Useful function to easily regenerate all of your CLIs whenever your go code changes`,
 								`function _regenerate_leepFrogSource_CLIs() {`,
 								`  Push-Location`,
 								`  Set-Location "\\fake\\source"`,
-								fmt.Sprintf(`  go run . source %q`, testutil.FilepathAbs(t, "cmd")),
+								`  go run . source`,
 								`  Pop-Location`,
 								`}`,
 							}, "\n"), color.Blue),
 						},
 						wantOsWriteFiles: []*osWriteFileArgs{
 							{
-								File:     testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe"),
+								File:     testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource.exe"),
 								FileMode: 0744,
 								Contents: []string{fakeFileContents},
 							},
 							{
-								File:     testutil.FilepathAbs(t, "cmd", "leepFrogSource_loader.ps1"),
+								File:     testutil.FilepathAbs(t, "cli-output-dir", "sourcerers", "leepFrogSource_loader.ps1"),
 								FileMode: 0644,
 								Contents: []string{
 									`function _leepFrogSource_wrap_function {`,
@@ -1031,7 +1060,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 									`  param($wordToComplete, $commandAst, $compPoint)`,
 									`  $Local:tmpPassthroughArgFile = New-TemporaryFile`,
 									`  [IO.File]::WriteAllText($Local:tmpPassthroughArgFile, $commandAst.ToString())`,
-									fmt.Sprintf(`  (& %s autocomplete ($commandAst.CommandElements | Select-Object -first 1) --comp-line-file "0" $compPoint $Local:tmpPassthroughArgFile) | ForEach-Object {`, testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe")),
+									fmt.Sprintf(`  (& %s autocomplete ($commandAst.CommandElements | Select-Object -first 1) --comp-line-file "0" $compPoint $Local:tmpPassthroughArgFile) | ForEach-Object {`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource.exe")),
 									`    "$_"`,
 									`  }`,
 									`}`,
@@ -1047,7 +1076,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 									`  param($wordToComplete, $commandAst, $compPoint)`,
 									`  $Local:tmpPassthroughArgFile = New-TemporaryFile`,
 									`  [IO.File]::WriteAllText($Local:tmpPassthroughArgFile, $commandAst.ToString())`,
-									fmt.Sprintf(`  (Invoke-Expression '& %s autocomplete "do" --comp-line-file "0" $compPoint $Local:tmpPassthroughArgFile "some" "stuff"') | ForEach-Object {`, testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe")),
+									fmt.Sprintf(`  (Invoke-Expression '& %s autocomplete "do" --comp-line-file "0" $compPoint $Local:tmpPassthroughArgFile "some" "stuff"') | ForEach-Object {`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource.exe")),
 									`    "$_"`,
 									`  }`,
 									`}`,
@@ -1065,7 +1094,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 									`  param($wordToComplete, $commandAst, $compPoint)`,
 									`  $Local:tmpPassthroughArgFile = New-TemporaryFile`,
 									`  [IO.File]::WriteAllText($Local:tmpPassthroughArgFile, $commandAst.ToString())`,
-									fmt.Sprintf(`  (Invoke-Expression '& %s autocomplete "flaggable" --comp-line-file "0" $compPoint $Local:tmpPassthroughArgFile "--args" "--at" "once"') | ForEach-Object {`, testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe")),
+									fmt.Sprintf(`  (Invoke-Expression '& %s autocomplete "flaggable" --comp-line-file "0" $compPoint $Local:tmpPassthroughArgFile "--args" "--at" "once"') | ForEach-Object {`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource.exe")),
 									`    "$_"`,
 									`  }`,
 									`}`,
@@ -1082,15 +1111,18 @@ func TestGenerateBinaryNode(t *testing.T) {
 				},
 			},
 			{
-				name:           "generates source file with custom filename",
-				cliTargetName:  "customOutputFile",
-				args:           []string{"source", "cmd"},
+				name:          "generates source file with custom filename",
+				cliTargetName: "customOutputFile",
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
+				args:           []string{"source"},
 				wantOSReadFile: []string{fakeGoExecutableFilePath.Name()},
 				osChecks: map[string]*osCheck{
 					osLinux: {
 						wantStdout: []string{
-							fmt.Sprintf(`Binary file created: %q`, testutil.FilepathAbs(t, "cmd", "customOutputFile")),
-							fmt.Sprintf(`Sourceable file created: %q`, testutil.FilepathAbs(t, "cmd", "customOutputFile_loader.sh")),
+							fmt.Sprintf(`Binary file created: %q`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "customOutputFile")),
+							fmt.Sprintf(`Sourceable file created: %q`, testutil.FilepathAbs(t, "cli-output-dir", "sourcerers", "customOutputFile_loader.sh")),
 							``,
 							color.Apply(`All steps have completed successfully!`, color.Green, color.Bold),
 							``,
@@ -1098,25 +1130,25 @@ func TestGenerateBinaryNode(t *testing.T) {
 							``,
 							color.Apply(strings.Join([]string{
 								`# Load all of your CLIs`,
-								fmt.Sprintf(`source %q`, testutil.FilepathAbs(t, `cmd`, `customOutputFile_loader.sh`)),
+								fmt.Sprintf(`source %q`, testutil.FilepathAbs(t, `cli-output-dir`, `sourcerers`, `customOutputFile_loader.sh`)),
 								``,
 								`# Useful function to easily regenerate all of your CLIs whenever your go code changes`,
 								`function _regenerate_customOutputFile_CLIs() {`,
 								`  pushd . > /dev/null`,
 								`  cd "\\fake\\source"`,
-								fmt.Sprintf(`  go run . source %q`, testutil.FilepathAbs(t, "cmd")),
+								`  go run . source`,
 								`  popd . > /dev/null`,
 								`}`,
 							}, "\n"), color.Blue),
 						},
 						wantOsWriteFiles: []*osWriteFileArgs{
 							{
-								File:     testutil.FilepathAbs(t, "cmd", "customOutputFile"),
+								File:     testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "customOutputFile"),
 								FileMode: 0744,
 								Contents: []string{fakeFileContents},
 							},
 							{
-								File:     testutil.FilepathAbs(t, "cmd", "customOutputFile_loader.sh"),
+								File:     testutil.FilepathAbs(t, "cli-output-dir", "sourcerers", "customOutputFile_loader.sh"),
 								FileMode: 0644,
 								Contents: []string{
 									`#!/bin/bash`,
@@ -1126,7 +1158,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 									`  local tmpFile=$(mktemp)`,
 									``,
 									`  # Run the go-only code`,
-									fmt.Sprintf(`  %s execute "$1" $tmpFile "${@:2}"`, testutil.FilepathAbs(t, "cmd", "customOutputFile")),
+									fmt.Sprintf(`  %s execute "$1" $tmpFile "${@:2}"`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "customOutputFile")),
 									`  # Return the error code if go code terminated with an error`,
 									`  local errorCode=$?`,
 									`  if [ $errorCode -ne 0 ]; then return $errorCode; fi`,
@@ -1134,7 +1166,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 									`  # Otherwise, run the ExecuteData.Executable data`,
 									`  source $tmpFile`,
 									`  local errorCode=$?`,
-									`  if [ -z "$LEEP_FROG_DEBUG" ]; then`,
+									`  if [ -z "$COMMAND_CLI_DEBUG" ]; then`,
 									`    rm $tmpFile`,
 									`  else`,
 									`    echo $tmpFile`,
@@ -1144,7 +1176,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 									``,
 									`function _custom_autocomplete_customOutputFile {`,
 									`  local tFile=$(mktemp)`,
-									fmt.Sprintf(`  %s autocomplete ${COMP_WORDS[0]} "$COMP_TYPE" $COMP_POINT "$COMP_LINE" > $tFile`, testutil.FilepathAbs(t, "cmd", "customOutputFile")),
+									fmt.Sprintf(`  %s autocomplete ${COMP_WORDS[0]} "$COMP_TYPE" $COMP_POINT "$COMP_LINE" > $tFile`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "customOutputFile")),
 									`  local IFS=$'\n'`,
 									`  COMPREPLY=( $(cat $tFile) )`,
 									`  rm $tFile`,
@@ -1159,8 +1191,8 @@ func TestGenerateBinaryNode(t *testing.T) {
 					},
 					osWindows: {
 						wantStdout: []string{
-							fmt.Sprintf(`Binary file created: %q`, testutil.FilepathAbs(t, "cmd", "customOutputFile.exe")),
-							fmt.Sprintf(`Sourceable file created: %q`, testutil.FilepathAbs(t, "cmd", "customOutputFile_loader.ps1")),
+							fmt.Sprintf(`Binary file created: %q`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "customOutputFile.exe")),
+							fmt.Sprintf(`Sourceable file created: %q`, testutil.FilepathAbs(t, "cli-output-dir", "sourcerers", "customOutputFile_loader.ps1")),
 							``,
 							color.Apply(`All steps have completed successfully!`, color.Green, color.Bold),
 							``,
@@ -1168,25 +1200,25 @@ func TestGenerateBinaryNode(t *testing.T) {
 							``,
 							color.Apply(strings.Join([]string{
 								`# Load all of your CLIs`,
-								fmt.Sprintf(`. %q`, testutil.FilepathAbs(t, "cmd", "customOutputFile_loader.ps1")),
+								fmt.Sprintf(`. %q`, testutil.FilepathAbs(t, "cli-output-dir", "sourcerers", "customOutputFile_loader.ps1")),
 								``,
 								`# Useful function to easily regenerate all of your CLIs whenever your go code changes`,
 								`function _regenerate_customOutputFile_CLIs() {`,
 								`  Push-Location`,
 								`  Set-Location "\\fake\\source"`,
-								fmt.Sprintf(`  go run . source %q`, testutil.FilepathAbs(t, "cmd")),
+								`  go run . source`,
 								`  Pop-Location`,
 								`}`,
 							}, "\n"), color.Blue),
 						},
 						wantOsWriteFiles: []*osWriteFileArgs{
 							{
-								File:     testutil.FilepathAbs(t, "cmd", "customOutputFile.exe"),
+								File:     testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "customOutputFile.exe"),
 								FileMode: 0744,
 								Contents: []string{fakeFileContents},
 							},
 							{
-								File:     testutil.FilepathAbs(t, "cmd", "customOutputFile_loader.ps1"),
+								File:     testutil.FilepathAbs(t, "cli-output-dir", "sourcerers", "customOutputFile_loader.ps1"),
 								FileMode: 0644,
 								Contents: []string{
 									`function _customOutputFile_wrap_function {`,
@@ -1194,7 +1226,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 									`  param($wordToComplete, $commandAst, $compPoint)`,
 									`  $Local:tmpPassthroughArgFile = New-TemporaryFile`,
 									`  [IO.File]::WriteAllText($Local:tmpPassthroughArgFile, $commandAst.ToString())`,
-									fmt.Sprintf(`  (& %s autocomplete ($commandAst.CommandElements | Select-Object -first 1) --comp-line-file "0" $compPoint $Local:tmpPassthroughArgFile) | ForEach-Object {`, testutil.FilepathAbs(t, "cmd", "customOutputFile.exe")),
+									fmt.Sprintf(`  (& %s autocomplete ($commandAst.CommandElements | Select-Object -first 1) --comp-line-file "0" $compPoint $Local:tmpPassthroughArgFile) | ForEach-Object {`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "customOutputFile.exe")),
 									`    "$_"`,
 									`  }`,
 									`}`,
@@ -1211,7 +1243,10 @@ func TestGenerateBinaryNode(t *testing.T) {
 			{
 				name:          "generates source file with CLIs",
 				cliTargetName: "leepFrogSource",
-				args:          []string{"source", "cmd"},
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
+				args: []string{"source"},
 				clis: []CLI{
 					ToCLI("x", nil),
 					ToCLI("l", nil),
@@ -1221,8 +1256,8 @@ func TestGenerateBinaryNode(t *testing.T) {
 				osChecks: map[string]*osCheck{
 					osLinux: {
 						wantStdout: []string{
-							fmt.Sprintf(`Binary file created: %q`, testutil.FilepathAbs(t, "cmd", "leepFrogSource")),
-							fmt.Sprintf(`Sourceable file created: %q`, testutil.FilepathAbs(t, "cmd", "leepFrogSource_loader.sh")),
+							fmt.Sprintf(`Binary file created: %q`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource")),
+							fmt.Sprintf(`Sourceable file created: %q`, testutil.FilepathAbs(t, "cli-output-dir", "sourcerers", "leepFrogSource_loader.sh")),
 							``,
 							color.Apply(`All steps have completed successfully!`, color.Green, color.Bold),
 							``,
@@ -1230,25 +1265,25 @@ func TestGenerateBinaryNode(t *testing.T) {
 							``,
 							color.Apply(strings.Join([]string{
 								`# Load all of your CLIs`,
-								fmt.Sprintf(`source %q`, testutil.FilepathAbs(t, `cmd`, `leepFrogSource_loader.sh`)),
+								fmt.Sprintf(`source %q`, testutil.FilepathAbs(t, `cli-output-dir`, `sourcerers`, `leepFrogSource_loader.sh`)),
 								``,
 								`# Useful function to easily regenerate all of your CLIs whenever your go code changes`,
 								`function _regenerate_leepFrogSource_CLIs() {`,
 								`  pushd . > /dev/null`,
 								`  cd "\\fake\\source"`,
-								fmt.Sprintf(`  go run . source %q`, testutil.FilepathAbs(t, "cmd")),
+								`  go run . source`,
 								`  popd . > /dev/null`,
 								`}`,
 							}, "\n"), color.Blue),
 						},
 						wantOsWriteFiles: []*osWriteFileArgs{
 							{
-								File:     testutil.FilepathAbs(t, "cmd", "leepFrogSource"),
+								File:     testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource"),
 								FileMode: 0744,
 								Contents: []string{fakeFileContents},
 							},
 							{
-								File:     testutil.FilepathAbs(t, "cmd", "leepFrogSource_loader.sh"),
+								File:     testutil.FilepathAbs(t, "cli-output-dir", "sourcerers", "leepFrogSource_loader.sh"),
 								FileMode: 0644,
 								Contents: []string{
 									`#!/bin/bash`,
@@ -1258,7 +1293,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 									`  local tmpFile=$(mktemp)`,
 									``,
 									`  # Run the go-only code`,
-									fmt.Sprintf(`  %s execute "$1" $tmpFile "${@:2}"`, testutil.FilepathAbs(t, "cmd", "leepFrogSource")),
+									fmt.Sprintf(`  %s execute "$1" $tmpFile "${@:2}"`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource")),
 									`  # Return the error code if go code terminated with an error`,
 									`  local errorCode=$?`,
 									`  if [ $errorCode -ne 0 ]; then return $errorCode; fi`,
@@ -1266,7 +1301,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 									`  # Otherwise, run the ExecuteData.Executable data`,
 									`  source $tmpFile`,
 									`  local errorCode=$?`,
-									`  if [ -z "$LEEP_FROG_DEBUG" ]; then`,
+									`  if [ -z "$COMMAND_CLI_DEBUG" ]; then`,
 									`    rm $tmpFile`,
 									`  else`,
 									`    echo $tmpFile`,
@@ -1276,7 +1311,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 									``,
 									`function _custom_autocomplete_leepFrogSource {`,
 									`  local tFile=$(mktemp)`,
-									fmt.Sprintf(`  %s autocomplete ${COMP_WORDS[0]} "$COMP_TYPE" $COMP_POINT "$COMP_LINE" > $tFile`, testutil.FilepathAbs(t, "cmd", "leepFrogSource")),
+									fmt.Sprintf(`  %s autocomplete ${COMP_WORDS[0]} "$COMP_TYPE" $COMP_POINT "$COMP_LINE" > $tFile`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource")),
 									`  local IFS=$'\n'`,
 									`  COMPREPLY=( $(cat $tFile) )`,
 									`  rm $tFile`,
@@ -1302,8 +1337,8 @@ func TestGenerateBinaryNode(t *testing.T) {
 					},
 					osWindows: {
 						wantStdout: []string{
-							fmt.Sprintf(`Binary file created: %q`, testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe")),
-							fmt.Sprintf(`Sourceable file created: %q`, testutil.FilepathAbs(t, "cmd", "leepFrogSource_loader.ps1")),
+							fmt.Sprintf(`Binary file created: %q`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource.exe")),
+							fmt.Sprintf(`Sourceable file created: %q`, testutil.FilepathAbs(t, "cli-output-dir", "sourcerers", "leepFrogSource_loader.ps1")),
 							``,
 							color.Apply(`All steps have completed successfully!`, color.Green, color.Bold),
 							``,
@@ -1311,25 +1346,25 @@ func TestGenerateBinaryNode(t *testing.T) {
 							``,
 							color.Apply(strings.Join([]string{
 								`# Load all of your CLIs`,
-								fmt.Sprintf(`. %q`, testutil.FilepathAbs(t, "cmd", "leepFrogSource_loader.ps1")),
+								fmt.Sprintf(`. %q`, testutil.FilepathAbs(t, "cli-output-dir", "sourcerers", "leepFrogSource_loader.ps1")),
 								``,
 								`# Useful function to easily regenerate all of your CLIs whenever your go code changes`,
 								`function _regenerate_leepFrogSource_CLIs() {`,
 								`  Push-Location`,
 								`  Set-Location "\\fake\\source"`,
-								fmt.Sprintf(`  go run . source %q`, testutil.FilepathAbs(t, "cmd")),
+								`  go run . source`,
 								`  Pop-Location`,
 								`}`,
 							}, "\n"), color.Blue),
 						},
 						wantOsWriteFiles: []*osWriteFileArgs{
 							{
-								File:     testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe"),
+								File:     testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource.exe"),
 								FileMode: 0744,
 								Contents: []string{fakeFileContents},
 							},
 							{
-								File:     testutil.FilepathAbs(t, "cmd", "leepFrogSource_loader.ps1"),
+								File:     testutil.FilepathAbs(t, "cli-output-dir", "sourcerers", "leepFrogSource_loader.ps1"),
 								FileMode: 0644,
 								Contents: []string{
 									`function _leepFrogSource_wrap_function {`,
@@ -1337,7 +1372,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 									`  param($wordToComplete, $commandAst, $compPoint)`,
 									`  $Local:tmpPassthroughArgFile = New-TemporaryFile`,
 									`  [IO.File]::WriteAllText($Local:tmpPassthroughArgFile, $commandAst.ToString())`,
-									fmt.Sprintf(`  (& %s autocomplete ($commandAst.CommandElements | Select-Object -first 1) --comp-line-file "0" $compPoint $Local:tmpPassthroughArgFile) | ForEach-Object {`, testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe")),
+									fmt.Sprintf(`  (& %s autocomplete ($commandAst.CommandElements | Select-Object -first 1) --comp-line-file "0" $compPoint $Local:tmpPassthroughArgFile) | ForEach-Object {`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource.exe")),
 									`    "$_"`,
 									`  }`,
 									`}`,
@@ -1356,7 +1391,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 									`  $Local:setupTmpFile = New-TemporaryFile`,
 									`  _setup_for_basic_cli > "$Local:setupTmpFile"`,
 									`  Copy-Item "$Local:setupTmpFile" "$Local:setupTmpFile.txt"`,
-									fmt.Sprintf(`  & %s execute "basic" $Local:tmpFile "$Local:setupTmpFile.txt" $args`, testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe")),
+									fmt.Sprintf(`  & %s execute "basic" $Local:tmpFile "$Local:setupTmpFile.txt" $args`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource.exe")),
 									`  # Return error if failed`,
 									`  If (!$?) {`,
 									`    Write-Error "Go execution failed"`,
@@ -1380,7 +1415,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 									`  $Local:tmpFile = New-TemporaryFile`,
 									``,
 									`  # Run the go-only code`,
-									fmt.Sprintf(`  & %s execute "l" $Local:tmpFile $args`, testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe")),
+									fmt.Sprintf(`  & %s execute "l" $Local:tmpFile $args`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource.exe")),
 									`  # Return error if failed`,
 									`  If (!$?) {`,
 									`    Write-Error "Go execution failed"`,
@@ -1404,7 +1439,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 									`  $Local:tmpFile = New-TemporaryFile`,
 									``,
 									`  # Run the go-only code`,
-									fmt.Sprintf(`  & %s execute "x" $Local:tmpFile $args`, testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe")),
+									fmt.Sprintf(`  & %s execute "x" $Local:tmpFile $args`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource.exe")),
 									`  # Return error if failed`,
 									`  If (!$?) {`,
 									`    Write-Error "Go execution failed"`,
@@ -1433,7 +1468,10 @@ func TestGenerateBinaryNode(t *testing.T) {
 			{
 				name:          "generates source file with CLIs ignoring nosort",
 				cliTargetName: "leepFrogSource",
-				args:          []string{"source", "cmd"},
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
+				args: []string{"source"},
 				clis: []CLI{
 					ToCLI("x", nil),
 					ToCLI("l", nil),
@@ -1444,8 +1482,8 @@ func TestGenerateBinaryNode(t *testing.T) {
 				osChecks: map[string]*osCheck{
 					osLinux: {
 						wantStdout: []string{
-							fmt.Sprintf(`Binary file created: %q`, testutil.FilepathAbs(t, "cmd", "leepFrogSource")),
-							fmt.Sprintf(`Sourceable file created: %q`, testutil.FilepathAbs(t, "cmd", "leepFrogSource_loader.sh")),
+							fmt.Sprintf(`Binary file created: %q`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource")),
+							fmt.Sprintf(`Sourceable file created: %q`, testutil.FilepathAbs(t, "cli-output-dir", "sourcerers", "leepFrogSource_loader.sh")),
 							``,
 							color.Apply(`All steps have completed successfully!`, color.Green, color.Bold),
 							``,
@@ -1453,25 +1491,25 @@ func TestGenerateBinaryNode(t *testing.T) {
 							``,
 							color.Apply(strings.Join([]string{
 								`# Load all of your CLIs`,
-								fmt.Sprintf(`source %q`, testutil.FilepathAbs(t, `cmd`, `leepFrogSource_loader.sh`)),
+								fmt.Sprintf(`source %q`, testutil.FilepathAbs(t, `cli-output-dir`, `sourcerers`, `leepFrogSource_loader.sh`)),
 								``,
 								`# Useful function to easily regenerate all of your CLIs whenever your go code changes`,
 								`function _regenerate_leepFrogSource_CLIs() {`,
 								`  pushd . > /dev/null`,
 								`  cd "\\fake\\source"`,
-								fmt.Sprintf(`  go run . source %q`, testutil.FilepathAbs(t, "cmd")),
+								`  go run . source`,
 								`  popd . > /dev/null`,
 								`}`,
 							}, "\n"), color.Blue),
 						},
 						wantOsWriteFiles: []*osWriteFileArgs{
 							{
-								File:     testutil.FilepathAbs(t, "cmd", "leepFrogSource"),
+								File:     testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource"),
 								FileMode: 0744,
 								Contents: []string{fakeFileContents},
 							},
 							{
-								File:     testutil.FilepathAbs(t, "cmd", "leepFrogSource_loader.sh"),
+								File:     testutil.FilepathAbs(t, "cli-output-dir", "sourcerers", "leepFrogSource_loader.sh"),
 								FileMode: 0644,
 								Contents: []string{
 									`#!/bin/bash`,
@@ -1481,7 +1519,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 									`  local tmpFile=$(mktemp)`,
 									``,
 									`  # Run the go-only code`,
-									fmt.Sprintf(`  %s execute "$1" $tmpFile "${@:2}"`, testutil.FilepathAbs(t, "cmd", "leepFrogSource")),
+									fmt.Sprintf(`  %s execute "$1" $tmpFile "${@:2}"`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource")),
 									`  # Return the error code if go code terminated with an error`,
 									`  local errorCode=$?`,
 									`  if [ $errorCode -ne 0 ]; then return $errorCode; fi`,
@@ -1489,7 +1527,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 									`  # Otherwise, run the ExecuteData.Executable data`,
 									`  source $tmpFile`,
 									`  local errorCode=$?`,
-									`  if [ -z "$LEEP_FROG_DEBUG" ]; then`,
+									`  if [ -z "$COMMAND_CLI_DEBUG" ]; then`,
 									`    rm $tmpFile`,
 									`  else`,
 									`    echo $tmpFile`,
@@ -1499,7 +1537,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 									``,
 									`function _custom_autocomplete_leepFrogSource {`,
 									`  local tFile=$(mktemp)`,
-									fmt.Sprintf(`  %s autocomplete ${COMP_WORDS[0]} "$COMP_TYPE" $COMP_POINT "$COMP_LINE" > $tFile`, testutil.FilepathAbs(t, "cmd", "leepFrogSource")),
+									fmt.Sprintf(`  %s autocomplete ${COMP_WORDS[0]} "$COMP_TYPE" $COMP_POINT "$COMP_LINE" > $tFile`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource")),
 									`  local IFS=$'\n'`,
 									`  COMPREPLY=( $(cat $tFile) )`,
 									`  rm $tFile`,
@@ -1525,8 +1563,8 @@ func TestGenerateBinaryNode(t *testing.T) {
 					},
 					osWindows: {
 						wantStdout: []string{
-							fmt.Sprintf(`Binary file created: %q`, testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe")),
-							fmt.Sprintf(`Sourceable file created: %q`, testutil.FilepathAbs(t, "cmd", "leepFrogSource_loader.ps1")),
+							fmt.Sprintf(`Binary file created: %q`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource.exe")),
+							fmt.Sprintf(`Sourceable file created: %q`, testutil.FilepathAbs(t, "cli-output-dir", "sourcerers", "leepFrogSource_loader.ps1")),
 							``,
 							color.Apply(`All steps have completed successfully!`, color.Green, color.Bold),
 							``,
@@ -1534,25 +1572,25 @@ func TestGenerateBinaryNode(t *testing.T) {
 							``,
 							color.Apply(strings.Join([]string{
 								`# Load all of your CLIs`,
-								fmt.Sprintf(`. %q`, testutil.FilepathAbs(t, "cmd", "leepFrogSource_loader.ps1")),
+								fmt.Sprintf(`. %q`, testutil.FilepathAbs(t, "cli-output-dir", "sourcerers", "leepFrogSource_loader.ps1")),
 								``,
 								`# Useful function to easily regenerate all of your CLIs whenever your go code changes`,
 								`function _regenerate_leepFrogSource_CLIs() {`,
 								`  Push-Location`,
 								`  Set-Location "\\fake\\source"`,
-								fmt.Sprintf(`  go run . source %q`, testutil.FilepathAbs(t, "cmd")),
+								`  go run . source`,
 								`  Pop-Location`,
 								`}`,
 							}, "\n"), color.Blue),
 						},
 						wantOsWriteFiles: []*osWriteFileArgs{
 							{
-								File:     testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe"),
+								File:     testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource.exe"),
 								FileMode: 0744,
 								Contents: []string{fakeFileContents},
 							},
 							{
-								File:     testutil.FilepathAbs(t, "cmd", "leepFrogSource_loader.ps1"),
+								File:     testutil.FilepathAbs(t, "cli-output-dir", "sourcerers", "leepFrogSource_loader.ps1"),
 								FileMode: 0644,
 								Contents: []string{
 									`function _leepFrogSource_wrap_function {`,
@@ -1560,7 +1598,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 									`  param($wordToComplete, $commandAst, $compPoint)`,
 									`  $Local:tmpPassthroughArgFile = New-TemporaryFile`,
 									`  [IO.File]::WriteAllText($Local:tmpPassthroughArgFile, $commandAst.ToString())`,
-									fmt.Sprintf(`  (& %s autocomplete ($commandAst.CommandElements | Select-Object -first 1) --comp-line-file "0" $compPoint $Local:tmpPassthroughArgFile) | ForEach-Object {`, testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe")),
+									fmt.Sprintf(`  (& %s autocomplete ($commandAst.CommandElements | Select-Object -first 1) --comp-line-file "0" $compPoint $Local:tmpPassthroughArgFile) | ForEach-Object {`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource.exe")),
 									`    "$_"`,
 									`  }`,
 									`}`,
@@ -1579,7 +1617,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 									`  $Local:setupTmpFile = New-TemporaryFile`,
 									`  _setup_for_basic_cli > "$Local:setupTmpFile"`,
 									`  Copy-Item "$Local:setupTmpFile" "$Local:setupTmpFile.txt"`,
-									fmt.Sprintf(`  & %s execute "basic" $Local:tmpFile "$Local:setupTmpFile.txt" $args`, testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe")),
+									fmt.Sprintf(`  & %s execute "basic" $Local:tmpFile "$Local:setupTmpFile.txt" $args`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource.exe")),
 									`  # Return error if failed`,
 									`  If (!$?) {`,
 									`    Write-Error "Go execution failed"`,
@@ -1603,7 +1641,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 									`  $Local:tmpFile = New-TemporaryFile`,
 									``,
 									`  # Run the go-only code`,
-									fmt.Sprintf(`  & %s execute "l" $Local:tmpFile $args`, testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe")),
+									fmt.Sprintf(`  & %s execute "l" $Local:tmpFile $args`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource.exe")),
 									`  # Return error if failed`,
 									`  If (!$?) {`,
 									`    Write-Error "Go execution failed"`,
@@ -1627,7 +1665,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 									`  $Local:tmpFile = New-TemporaryFile`,
 									``,
 									`  # Run the go-only code`,
-									fmt.Sprintf(`  & %s execute "x" $Local:tmpFile $args`, testutil.FilepathAbs(t, "cmd", "leepFrogSource.exe")),
+									fmt.Sprintf(`  & %s execute "x" $Local:tmpFile $args`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource.exe")),
 									`  # Return error if failed`,
 									`  If (!$?) {`,
 									`    Write-Error "Go execution failed"`,
@@ -1664,17 +1702,17 @@ func TestGenerateBinaryNode(t *testing.T) {
 					ToCLI("l", nil),
 					&testCLI{name: "basic", setup: []string{"his", "story"}},
 				},
-				wantErr: fmt.Errorf(`Argument "OUTPUT_DIRECTORY" requires at least 1 argument, got 0`),
+				wantErr: fmt.Errorf(`Environment variable COMMAND_CLI_OUTPUT_DIR is not set`),
 				osChecks: map[string]*osCheck{
 					osLinux: {
 						wantStderr: []string{
-							`Argument "OUTPUT_DIRECTORY" requires at least 1 argument, got 0`,
+							`Environment variable COMMAND_CLI_OUTPUT_DIR is not set`,
 							``,
 						},
 					},
 					osWindows: {
 						wantStderr: []string{
-							`Argument "OUTPUT_DIRECTORY" requires at least 1 argument, got 0`,
+							`Environment variable COMMAND_CLI_OUTPUT_DIR is not set`,
 							``,
 						},
 					},
@@ -1683,7 +1721,10 @@ func TestGenerateBinaryNode(t *testing.T) {
 			{
 				name:          "generates builtin source files",
 				cliTargetName: "myCustomBuiltIns", // Note: this should be overriden in output below
-				args:          []string{"builtin", "source", "cmd"},
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
+				args: []string{"builtin", "source"},
 				// These should be ignored
 				clis: []CLI{
 					ToCLI("x", nil),
@@ -1694,8 +1735,8 @@ func TestGenerateBinaryNode(t *testing.T) {
 				osChecks: map[string]*osCheck{
 					osLinux: {
 						wantStdout: []string{
-							fmt.Sprintf(`Binary file created: %q`, testutil.FilepathAbs(t, "cmd", "leepFrogCLIBuiltIns")),
-							fmt.Sprintf(`Sourceable file created: %q`, testutil.FilepathAbs(t, "cmd", "leepFrogCLIBuiltIns_loader.sh")),
+							fmt.Sprintf(`Binary file created: %q`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogCLIBuiltIns")),
+							fmt.Sprintf(`Sourceable file created: %q`, testutil.FilepathAbs(t, "cli-output-dir", "sourcerers", "leepFrogCLIBuiltIns_loader.sh")),
 							``,
 							color.Apply(`All steps have completed successfully!`, color.Green, color.Bold),
 							``,
@@ -1703,25 +1744,25 @@ func TestGenerateBinaryNode(t *testing.T) {
 							``,
 							color.Apply(strings.Join([]string{
 								`# Load all of your CLIs`,
-								fmt.Sprintf(`source %q`, testutil.FilepathAbs(t, `cmd`, `leepFrogCLIBuiltIns_loader.sh`)),
+								fmt.Sprintf(`source %q`, testutil.FilepathAbs(t, `cli-output-dir`, `sourcerers`, `leepFrogCLIBuiltIns_loader.sh`)),
 								``,
 								`# Useful function to easily regenerate all of your CLIs whenever your go code changes`,
 								`function _regenerate_leepFrogCLIBuiltIns_CLIs() {`,
 								`  pushd . > /dev/null`,
 								`  cd "\\fake\\source"`,
-								fmt.Sprintf(`  go run . builtin source %q`, testutil.FilepathAbs(t, "cmd")),
+								`  go run . builtin source`,
 								`  popd . > /dev/null`,
 								`}`,
 							}, "\n"), color.Blue),
 						},
 						wantOsWriteFiles: []*osWriteFileArgs{
 							{
-								File:     testutil.FilepathAbs(t, "cmd", "leepFrogCLIBuiltIns"),
+								File:     testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogCLIBuiltIns"),
 								FileMode: 0744,
 								Contents: []string{fakeFileContents},
 							},
 							{
-								File:     testutil.FilepathAbs(t, "cmd", "leepFrogCLIBuiltIns_loader.sh"),
+								File:     testutil.FilepathAbs(t, "cli-output-dir", "sourcerers", "leepFrogCLIBuiltIns_loader.sh"),
 								FileMode: 0644,
 								Contents: []string{
 									`#!/bin/bash`,
@@ -1731,7 +1772,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 									`  local tmpFile=$(mktemp)`,
 									``,
 									`  # Run the go-only code`,
-									fmt.Sprintf(`  %s builtin execute "$1" $tmpFile "${@:2}"`, testutil.FilepathAbs(t, "cmd", "leepFrogCLIBuiltIns")),
+									fmt.Sprintf(`  %s builtin execute "$1" $tmpFile "${@:2}"`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogCLIBuiltIns")),
 									`  # Return the error code if go code terminated with an error`,
 									`  local errorCode=$?`,
 									`  if [ $errorCode -ne 0 ]; then return $errorCode; fi`,
@@ -1739,7 +1780,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 									`  # Otherwise, run the ExecuteData.Executable data`,
 									`  source $tmpFile`,
 									`  local errorCode=$?`,
-									`  if [ -z "$LEEP_FROG_DEBUG" ]; then`,
+									`  if [ -z "$COMMAND_CLI_DEBUG" ]; then`,
 									`    rm $tmpFile`,
 									`  else`,
 									`    echo $tmpFile`,
@@ -1749,7 +1790,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 									``,
 									`function _custom_autocomplete_leepFrogCLIBuiltIns {`,
 									`  local tFile=$(mktemp)`,
-									fmt.Sprintf(`  %s builtin autocomplete ${COMP_WORDS[0]} "$COMP_TYPE" $COMP_POINT "$COMP_LINE" > $tFile`, testutil.FilepathAbs(t, "cmd", "leepFrogCLIBuiltIns")),
+									fmt.Sprintf(`  %s builtin autocomplete ${COMP_WORDS[0]} "$COMP_TYPE" $COMP_POINT "$COMP_LINE" > $tFile`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogCLIBuiltIns")),
 									`  local IFS=$'\n'`,
 									`  COMPREPLY=( $(cat $tFile) )`,
 									`  rm $tFile`,
@@ -1774,8 +1815,8 @@ func TestGenerateBinaryNode(t *testing.T) {
 					},
 					osWindows: {
 						wantStdout: []string{
-							fmt.Sprintf(`Binary file created: %q`, testutil.FilepathAbs(t, "cmd", "leepFrogCLIBuiltIns.exe")),
-							fmt.Sprintf(`Sourceable file created: %q`, testutil.FilepathAbs(t, "cmd", "leepFrogCLIBuiltIns_loader.ps1")),
+							fmt.Sprintf(`Binary file created: %q`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogCLIBuiltIns.exe")),
+							fmt.Sprintf(`Sourceable file created: %q`, testutil.FilepathAbs(t, "cli-output-dir", "sourcerers", "leepFrogCLIBuiltIns_loader.ps1")),
 							``,
 							color.Apply(`All steps have completed successfully!`, color.Green, color.Bold),
 							``,
@@ -1783,25 +1824,25 @@ func TestGenerateBinaryNode(t *testing.T) {
 							``,
 							color.Apply(strings.Join([]string{
 								`# Load all of your CLIs`,
-								fmt.Sprintf(`. %q`, testutil.FilepathAbs(t, "cmd", "leepFrogCLIBuiltIns_loader.ps1")),
+								fmt.Sprintf(`. %q`, testutil.FilepathAbs(t, "cli-output-dir", "sourcerers", "leepFrogCLIBuiltIns_loader.ps1")),
 								``,
 								`# Useful function to easily regenerate all of your CLIs whenever your go code changes`,
 								`function _regenerate_leepFrogCLIBuiltIns_CLIs() {`,
 								`  Push-Location`,
 								`  Set-Location "\\fake\\source"`,
-								fmt.Sprintf(`  go run . builtin source %q`, testutil.FilepathAbs(t, "cmd")),
+								`  go run . builtin source`,
 								`  Pop-Location`,
 								`}`,
 							}, "\n"), color.Blue),
 						},
 						wantOsWriteFiles: []*osWriteFileArgs{
 							{
-								File:     testutil.FilepathAbs(t, "cmd", "leepFrogCLIBuiltIns.exe"),
+								File:     testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogCLIBuiltIns.exe"),
 								FileMode: 0744,
 								Contents: []string{fakeFileContents},
 							},
 							{
-								File:     testutil.FilepathAbs(t, "cmd", "leepFrogCLIBuiltIns_loader.ps1"),
+								File:     testutil.FilepathAbs(t, "cli-output-dir", "sourcerers", "leepFrogCLIBuiltIns_loader.ps1"),
 								FileMode: 0644,
 								Contents: []string{
 									`function _leepFrogCLIBuiltIns_wrap_function {`,
@@ -1809,7 +1850,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 									`  param($wordToComplete, $commandAst, $compPoint)`,
 									`  $Local:tmpPassthroughArgFile = New-TemporaryFile`,
 									`  [IO.File]::WriteAllText($Local:tmpPassthroughArgFile, $commandAst.ToString())`,
-									fmt.Sprintf(`  (& %s builtin autocomplete ($commandAst.CommandElements | Select-Object -first 1) --comp-line-file "0" $compPoint $Local:tmpPassthroughArgFile) | ForEach-Object {`, testutil.FilepathAbs(t, "cmd", "leepFrogCLIBuiltIns.exe")),
+									fmt.Sprintf(`  (& %s builtin autocomplete ($commandAst.CommandElements | Select-Object -first 1) --comp-line-file "0" $compPoint $Local:tmpPassthroughArgFile) | ForEach-Object {`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogCLIBuiltIns.exe")),
 									`    "$_"`,
 									`  }`,
 									`}`,
@@ -1821,7 +1862,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 									`  $Local:tmpFile = New-TemporaryFile`,
 									``,
 									`  # Run the go-only code`,
-									fmt.Sprintf(`  & %s builtin execute "aliaser" $Local:tmpFile $args`, testutil.FilepathAbs(t, "cmd", "leepFrogCLIBuiltIns.exe")),
+									fmt.Sprintf(`  & %s builtin execute "aliaser" $Local:tmpFile $args`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogCLIBuiltIns.exe")),
 									`  # Return error if failed`,
 									`  If (!$?) {`,
 									`    Write-Error "Go execution failed"`,
@@ -1845,7 +1886,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 									`  $Local:tmpFile = New-TemporaryFile`,
 									``,
 									`  # Run the go-only code`,
-									fmt.Sprintf(`  & %s builtin execute "gg" $Local:tmpFile $args`, testutil.FilepathAbs(t, "cmd", "leepFrogCLIBuiltIns.exe")),
+									fmt.Sprintf(`  & %s builtin execute "gg" $Local:tmpFile $args`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogCLIBuiltIns.exe")),
 									`  # Return error if failed`,
 									`  If (!$?) {`,
 									`    Write-Error "Go execution failed"`,
@@ -1869,7 +1910,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 									`  $Local:tmpFile = New-TemporaryFile`,
 									``,
 									`  # Run the go-only code`,
-									fmt.Sprintf(`  & %s builtin execute "goleep" $Local:tmpFile $args`, testutil.FilepathAbs(t, "cmd", "leepFrogCLIBuiltIns.exe")),
+									fmt.Sprintf(`  & %s builtin execute "goleep" $Local:tmpFile $args`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogCLIBuiltIns.exe")),
 									`  # Return error if failed`,
 									`  If (!$?) {`,
 									`    Write-Error "Go execution failed"`,
@@ -1893,7 +1934,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 									`  $Local:tmpFile = New-TemporaryFile`,
 									``,
 									`  # Run the go-only code`,
-									fmt.Sprintf(`  & %s builtin execute "leep_debug" $Local:tmpFile $args`, testutil.FilepathAbs(t, "cmd", "leepFrogCLIBuiltIns.exe")),
+									fmt.Sprintf(`  & %s builtin execute "leep_debug" $Local:tmpFile $args`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogCLIBuiltIns.exe")),
 									`  # Return error if failed`,
 									`  If (!$?) {`,
 									`    Write-Error "Go execution failed"`,
@@ -1917,7 +1958,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 									`  $Local:tmpFile = New-TemporaryFile`,
 									``,
 									`  # Run the go-only code`,
-									fmt.Sprintf(`  & %s builtin execute "sourcerer" $Local:tmpFile $args`, testutil.FilepathAbs(t, "cmd", "leepFrogCLIBuiltIns.exe")),
+									fmt.Sprintf(`  & %s builtin execute "sourcerer" $Local:tmpFile $args`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogCLIBuiltIns.exe")),
 									`  # Return error if failed`,
 									`  If (!$?) {`,
 									`    Write-Error "Go execution failed"`,
@@ -2120,6 +2161,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 					testutil.StubValue(t, &NosortString, func() string { return "" })
 				}
 				o := commandtest.NewOutput()
+				stubs.StubEnv(t, test.env)
 				err := source(test.runCLI, test.cliTargetName, test.clis, fakeGoExecutableFilePath.Name(), test.args, o, test.opts...)
 				testutil.CmpError(t, "source(...)", test.wantErr, err)
 				o.Close()
@@ -2180,6 +2222,8 @@ func TestSourcerer(t *testing.T) {
 		},
 	}
 
+	_ = someCLI
+
 	type osCheck struct {
 		runtimeCallerMiss bool
 		wantErr           error
@@ -2197,16 +2241,18 @@ func TestSourcerer(t *testing.T) {
 	// across tests which can be error prone and difficult to debug).
 	for _, curOS := range []OS{Linux(), Windows()} {
 		for _, test := range []struct {
-			name          string
-			cliTargetName string
-			clis          []CLI
-			args          []string
-			uuids         []string
-			cacheErrs     []error
-			runCLI        bool
-			wantPanic     any
-			osCheck       *osCheck
-			osChecks      map[string]*osCheck
+			name              string
+			cliTargetName     string
+			clis              []CLI
+			args              []string
+			env               map[string]string
+			uuids             []string
+			cacheErrs         []error
+			wantGetCacheCalls []string
+			runCLI            bool
+			wantPanic         any
+			osCheck           *osCheck
+			osChecks          map[string]*osCheck
 			// We need to stub osReadFile errors to be consistent across systems
 			osReadFileStub        bool
 			osReadFileResp        string
@@ -2270,7 +2316,7 @@ func TestSourcerer(t *testing.T) {
 				},
 			},
 			{
-				name:          "fails if getCache error",
+				name:          "fails if environment variable is not set",
 				cliTargetName: "leepFrogSource",
 				cacheErrs:     []error{fmt.Errorf("rats")},
 				clis: []CLI{
@@ -2280,6 +2326,59 @@ func TestSourcerer(t *testing.T) {
 				},
 				args: []string{"execute", "basic"},
 				osCheck: &osCheck{
+					wantErr:    fmt.Errorf("Environment variable COMMAND_CLI_OUTPUT_DIR is not set"),
+					wantStderr: []string{"Environment variable COMMAND_CLI_OUTPUT_DIR is not set"},
+				},
+			},
+			{
+				name:          "fails if environment variable does not exist",
+				cliTargetName: "leepFrogSource",
+				env: map[string]string{
+					RootDirectoryEnvVar: "some-path",
+				},
+				clis: []CLI{
+					&testCLI{
+						name: "basic",
+					},
+				},
+				args: []string{"execute", "basic"},
+				osCheck: &osCheck{
+					wantErr:    fmt.Errorf("Invalid value for environment variable COMMAND_CLI_OUTPUT_DIR: [IsDir] file %q does not exist", testutil.FilepathAbs(t, "some-path")),
+					wantStderr: []string{fmt.Sprintf("Invalid value for environment variable COMMAND_CLI_OUTPUT_DIR: [IsDir] file %q does not exist", testutil.FilepathAbs(t, "some-path"))},
+				},
+			},
+			{
+				name:          "fails if environment variable is not a directory",
+				cliTargetName: "leepFrogSource",
+				env: map[string]string{
+					RootDirectoryEnvVar: "sourcerer_test.go",
+				},
+				clis: []CLI{
+					&testCLI{
+						name: "basic",
+					},
+				},
+				args: []string{"execute", "basic"},
+				osCheck: &osCheck{
+					wantErr:    fmt.Errorf("Invalid value for environment variable COMMAND_CLI_OUTPUT_DIR: [IsDir] argument %q is a file", testutil.FilepathAbs(t, "sourcerer_test.go")),
+					wantStderr: []string{fmt.Sprintf("Invalid value for environment variable COMMAND_CLI_OUTPUT_DIR: [IsDir] argument %q is a file", testutil.FilepathAbs(t, "sourcerer_test.go"))},
+				},
+			},
+			{
+				name:          "fails if getCache error",
+				cliTargetName: "leepFrogSource",
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
+				cacheErrs: []error{fmt.Errorf("rats")},
+				clis: []CLI{
+					&testCLI{
+						name: "basic",
+					},
+				},
+				args:              []string{"execute", "basic"},
+				wantGetCacheCalls: []string{testutil.FilepathAbs(t, "cli-output-dir", "cache")},
+				osCheck: &osCheck{
 					wantErr:    fmt.Errorf("failed to load cache from environment variable: rats"),
 					wantStderr: []string{"failed to load cache from environment variable: rats"},
 				},
@@ -2287,6 +2386,9 @@ func TestSourcerer(t *testing.T) {
 			{
 				name:          "properly executes CLI",
 				cliTargetName: "leepFrogSource",
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
@@ -2304,7 +2406,8 @@ func TestSourcerer(t *testing.T) {
 						},
 					},
 				},
-				args: []string{"execute", "basic", fakeFile},
+				args:              []string{"execute", "basic", fakeFile},
+				wantGetCacheCalls: []string{testutil.FilepathAbs(t, "cli-output-dir", "cache")},
 				osCheck: &osCheck{
 					wantStdout: []string{"Output:"},
 				},
@@ -2312,6 +2415,9 @@ func TestSourcerer(t *testing.T) {
 			{
 				name:          "handles processing error",
 				cliTargetName: "leepFrogSource",
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
@@ -2320,7 +2426,8 @@ func TestSourcerer(t *testing.T) {
 						},
 					},
 				},
-				args: []string{"execute", "basic", fakeFile},
+				args:              []string{"execute", "basic", fakeFile},
+				wantGetCacheCalls: []string{testutil.FilepathAbs(t, "cli-output-dir", "cache")},
 				osCheck: &osCheck{
 					wantStderr: []string{"oops"},
 					wantErr:    fmt.Errorf("oops"),
@@ -2329,6 +2436,9 @@ func TestSourcerer(t *testing.T) {
 			{
 				name:          "properly passes arguments to CLI",
 				cliTargetName: "leepFrogSource",
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
@@ -2349,7 +2459,8 @@ func TestSourcerer(t *testing.T) {
 						},
 					},
 				},
-				args: []string{"execute", "basic", fakeFile, "un", "deux", "trois"},
+				args:              []string{"execute", "basic", fakeFile, "un", "deux", "trois"},
+				wantGetCacheCalls: []string{testutil.FilepathAbs(t, "cli-output-dir", "cache")},
 				osCheck: &osCheck{
 					wantStdout: []string{
 						"Output:",
@@ -2360,13 +2471,17 @@ func TestSourcerer(t *testing.T) {
 			{
 				name:          "properly passes extra arguments to CLI",
 				cliTargetName: "leepFrogSource",
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
 				clis: []CLI{
 					&testCLI{
 						name:       "basic",
 						processors: []command.Processor{commander.ListArg[string]("SL", "test", 1, 1)},
 					},
 				},
-				args: []string{"execute", "basic", fakeFile, "un", "deux", "trois", "quatre"},
+				args:              []string{"execute", "basic", fakeFile, "un", "deux", "trois", "quatre"},
+				wantGetCacheCalls: []string{testutil.FilepathAbs(t, "cli-output-dir", "cache")},
 				osCheck: &osCheck{
 					wantStderr: []string{
 						"Unprocessed extra args: [trois quatre]",
@@ -2386,6 +2501,9 @@ func TestSourcerer(t *testing.T) {
 			{
 				name:          "properly marks CLI as changed and saves",
 				cliTargetName: "leepFrogSource",
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
@@ -2397,6 +2515,12 @@ func TestSourcerer(t *testing.T) {
 					},
 				},
 				args: []string{"execute", "basic", fakeFile},
+				wantGetCacheCalls: []string{
+					// load
+					testutil.FilepathAbs(t, "cli-output-dir", "cache"),
+					// save
+					testutil.FilepathAbs(t, "cli-output-dir", "cache"),
+				},
 				osCheck: &osCheck{
 					wantCLIs: map[string]CLI{
 						"basic": &testCLI{
@@ -2406,7 +2530,10 @@ func TestSourcerer(t *testing.T) {
 				},
 			},
 			{
-				name:          "saves even if execution error",
+				name: "saves even if execution error",
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
 				cliTargetName: "leepFrogSource",
 				clis: []CLI{
 					&testCLI{
@@ -2419,6 +2546,12 @@ func TestSourcerer(t *testing.T) {
 					},
 				},
 				args: []string{"execute", "basic", fakeFile},
+				wantGetCacheCalls: []string{
+					// load
+					testutil.FilepathAbs(t, "cli-output-dir", "cache"),
+					// save
+					testutil.FilepathAbs(t, "cli-output-dir", "cache"),
+				},
 				osCheck: &osCheck{
 					wantCLIs: map[string]CLI{
 						"basic": &testCLI{
@@ -2434,6 +2567,9 @@ func TestSourcerer(t *testing.T) {
 			{
 				name:          "fails if save error",
 				cliTargetName: "leepFrogSource",
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
@@ -2445,6 +2581,12 @@ func TestSourcerer(t *testing.T) {
 					},
 				},
 				args: []string{"execute", "basic", fakeFile},
+				wantGetCacheCalls: []string{
+					// load
+					testutil.FilepathAbs(t, "cli-output-dir", "cache"),
+					// save
+					testutil.FilepathAbs(t, "cli-output-dir", "cache"),
+				},
 				osCheck: &osCheck{
 					wantErr: fmt.Errorf("failed to save cli data: failed to save cli \"basic\": failed to marshal struct to json: json: unsupported value: encountered a cycle via map[string]interface {}"),
 					wantStderr: []string{
@@ -2460,6 +2602,9 @@ func TestSourcerer(t *testing.T) {
 			{
 				name:          "save fails if getCache error",
 				cliTargetName: "leepFrogSource",
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
@@ -2475,6 +2620,12 @@ func TestSourcerer(t *testing.T) {
 					fmt.Errorf("whoops"), // Failed save
 				},
 				args: []string{"execute", "basic", fakeFile},
+				wantGetCacheCalls: []string{
+					// load
+					testutil.FilepathAbs(t, "cli-output-dir", "cache"),
+					// save
+					testutil.FilepathAbs(t, "cli-output-dir", "cache"),
+				},
 				osCheck: &osCheck{
 					wantErr: fmt.Errorf("failed to save cli data: whoops"),
 					wantStderr: []string{
@@ -2490,6 +2641,9 @@ func TestSourcerer(t *testing.T) {
 			{
 				name:          "writes execute data to file",
 				cliTargetName: "leepFrogSource",
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
@@ -2499,7 +2653,8 @@ func TestSourcerer(t *testing.T) {
 						},
 					},
 				},
-				args: []string{"execute", "basic", f.Name()},
+				args:              []string{"execute", "basic", f.Name()},
+				wantGetCacheCalls: []string{testutil.FilepathAbs(t, "cli-output-dir", "cache")},
 				osCheck: &osCheck{
 					wantOutput: []string{
 						"echo",
@@ -2511,6 +2666,9 @@ func TestSourcerer(t *testing.T) {
 			{
 				name:          "writes function wrapped execute data to file",
 				cliTargetName: "leepFrogSource",
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
@@ -2521,8 +2679,9 @@ func TestSourcerer(t *testing.T) {
 						},
 					},
 				},
-				args:  []string{"execute", "basic", f.Name()},
-				uuids: []string{"some-uuid"},
+				args:              []string{"execute", "basic", f.Name()},
+				wantGetCacheCalls: []string{testutil.FilepathAbs(t, "cli-output-dir", "cache")},
+				uuids:             []string{"some-uuid"},
 				osChecks: map[string]*osCheck{
 					osLinux: {
 						wantOutput: []string{
@@ -2553,6 +2712,9 @@ func TestSourcerer(t *testing.T) {
 			{
 				name:          "Execute shows usage if help flag included with no other arguments",
 				cliTargetName: "leepFrogSource",
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
@@ -2567,7 +2729,8 @@ func TestSourcerer(t *testing.T) {
 						},
 					},
 				},
-				args: []string{"execute", "basic", fakeFile, "--help"},
+				args:              []string{"execute", "basic", fakeFile, "--help"},
+				wantGetCacheCalls: []string{testutil.FilepathAbs(t, "cli-output-dir", "cache")},
 				osCheck: &osCheck{
 					wantStdout: []string{
 						strings.Join([]string{
@@ -2588,6 +2751,9 @@ func TestSourcerer(t *testing.T) {
 			{
 				name:          "Usage handles usage error",
 				cliTargetName: "leepFrogSource",
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
@@ -2605,7 +2771,8 @@ func TestSourcerer(t *testing.T) {
 						},
 					},
 				},
-				args: []string{"execute", "basic", fakeFile, "--help", "third"},
+				args:              []string{"execute", "basic", fakeFile, "--help", "third"},
+				wantGetCacheCalls: []string{testutil.FilepathAbs(t, "cli-output-dir", "cache")},
 				osCheck: &osCheck{
 					wantErr: fmt.Errorf("Branching argument must be one of [first second]"),
 					wantStderr: []string{
@@ -2626,6 +2793,9 @@ func TestSourcerer(t *testing.T) {
 			{
 				name:          "Usage handles non-usage error",
 				cliTargetName: "leepFrogSource",
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
@@ -2646,7 +2816,8 @@ func TestSourcerer(t *testing.T) {
 						},
 					},
 				},
-				args: []string{"execute", "basic", fakeFile, "--help"},
+				args:              []string{"execute", "basic", fakeFile, "--help"},
+				wantGetCacheCalls: []string{testutil.FilepathAbs(t, "cli-output-dir", "cache")},
 				osCheck: &osCheck{
 					wantErr:    fmt.Errorf("rats"),
 					wantStderr: []string{"rats"},
@@ -2655,6 +2826,9 @@ func TestSourcerer(t *testing.T) {
 			{
 				name:          "Execute shows usage if help flag included with some arguments",
 				cliTargetName: "leepFrogSource",
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
@@ -2669,7 +2843,8 @@ func TestSourcerer(t *testing.T) {
 						},
 					},
 				},
-				args: []string{"execute", "basic", fakeFile, "--help", "un"},
+				args:              []string{"execute", "basic", fakeFile, "--help", "un"},
+				wantGetCacheCalls: []string{testutil.FilepathAbs(t, "cli-output-dir", "cache")},
 				osCheck: &osCheck{
 					wantStdout: []string{
 						strings.Join([]string{
@@ -2690,6 +2865,9 @@ func TestSourcerer(t *testing.T) {
 			{
 				name:          "Execute shows usage if all arguments provided",
 				cliTargetName: "leepFrogSource",
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
@@ -2704,7 +2882,8 @@ func TestSourcerer(t *testing.T) {
 						},
 					},
 				},
-				args: []string{"execute", "basic", fakeFile, "--help", "un", "deux"},
+				args:              []string{"execute", "basic", fakeFile, "--help", "un", "deux"},
+				wantGetCacheCalls: []string{testutil.FilepathAbs(t, "cli-output-dir", "cache")},
 				osCheck: &osCheck{
 					wantStdout: []string{
 						strings.Join([]string{
@@ -2722,6 +2901,9 @@ func TestSourcerer(t *testing.T) {
 			{
 				name:          "Execute shows usage if all arguments provided and some flags",
 				cliTargetName: "leepFrogSource",
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
@@ -2736,7 +2918,8 @@ func TestSourcerer(t *testing.T) {
 						},
 					},
 				},
-				args: []string{"execute", "basic", fakeFile, "-b", "un", "deux", "-s", "hi", "--help"},
+				args:              []string{"execute", "basic", fakeFile, "-b", "un", "deux", "-s", "hi", "--help"},
+				wantGetCacheCalls: []string{testutil.FilepathAbs(t, "cli-output-dir", "cache")},
 				osCheck: &osCheck{
 					wantStdout: []string{
 						strings.Join([]string{
@@ -2752,6 +2935,9 @@ func TestSourcerer(t *testing.T) {
 			{
 				name:          "Execute shows full usage if extra arguments provided",
 				cliTargetName: "leepFrogSource",
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
@@ -2766,7 +2952,8 @@ func TestSourcerer(t *testing.T) {
 						},
 					},
 				},
-				args: []string{"execute", "basic", fakeFile, "--help", "un", "deux", "trois", "quatre"},
+				args:              []string{"execute", "basic", fakeFile, "--help", "un", "deux", "trois", "quatre"},
+				wantGetCacheCalls: []string{testutil.FilepathAbs(t, "cli-output-dir", "cache")},
 				osCheck: &osCheck{
 					// wantErr: fmt.Errorf("Unprocessed extra args: [quatre]"),
 					wantStdout: []string{
@@ -2786,6 +2973,9 @@ func TestSourcerer(t *testing.T) {
 			{
 				name:          "SetupArg node is automatically added as required arg",
 				cliTargetName: "leepFrogSource",
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
 				clis: []CLI{
 					&testCLI{
 						name:  "basic",
@@ -2799,6 +2989,7 @@ func TestSourcerer(t *testing.T) {
 				args: []string{
 					"execute", "basic", fakeFile,
 				},
+				wantGetCacheCalls: []string{testutil.FilepathAbs(t, "cli-output-dir", "cache")},
 				osCheck: &osCheck{
 					wantErr: fmt.Errorf(`Argument "SETUP_FILE" requires at least 1 argument, got 0`),
 					wantStderr: []string{
@@ -2809,6 +3000,9 @@ func TestSourcerer(t *testing.T) {
 			{
 				name:          "SetupArg is properly populated",
 				cliTargetName: "leepFrogSource",
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
 				clis: []CLI{
 					&testCLI{
 						name:  "basic",
@@ -2826,6 +3020,7 @@ func TestSourcerer(t *testing.T) {
 					// SetupArg needs to be a real file, hence why it's this.
 					"sourcerer.go",
 				},
+				wantGetCacheCalls: []string{testutil.FilepathAbs(t, "cli-output-dir", "cache")},
 				osCheck: &osCheck{
 					wantStdout: []string{
 						// false is for data.complexecute
@@ -2836,6 +3031,9 @@ func TestSourcerer(t *testing.T) {
 			{
 				name:          "args after SetupArg are properly populated",
 				cliTargetName: "leepFrogSource",
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
 				clis: []CLI{
 					&testCLI{
 						name:  "basic",
@@ -2857,6 +3055,7 @@ func TestSourcerer(t *testing.T) {
 					"sourcerer.go",
 					"5",
 				},
+				wantGetCacheCalls: []string{testutil.FilepathAbs(t, "cli-output-dir", "cache")},
 				osCheck: &osCheck{
 					wantStdout: []string{
 						// false is for data.complexecute
@@ -2868,8 +3067,12 @@ func TestSourcerer(t *testing.T) {
 			{
 				name:          "prints command usage for missing branch error",
 				cliTargetName: "leepFrogSource",
-				clis:          []CLI{&usageErrCLI{}},
-				args:          []string{"execute", "uec", fakeFile},
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
+				clis:              []CLI{&usageErrCLI{}},
+				args:              []string{"execute", "uec", fakeFile},
+				wantGetCacheCalls: []string{testutil.FilepathAbs(t, "cli-output-dir", "cache")},
 				osCheck: &osCheck{
 					wantStderr: []string{
 						"Branching argument must be one of [a b]",
@@ -2882,8 +3085,12 @@ func TestSourcerer(t *testing.T) {
 			{
 				name:          "prints command usage for bad branch arg error",
 				cliTargetName: "leepFrogSource",
-				clis:          []CLI{&usageErrCLI{}},
-				args:          []string{"execute", "uec", fakeFile, "uh"},
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
+				clis:              []CLI{&usageErrCLI{}},
+				args:              []string{"execute", "uec", fakeFile, "uh"},
+				wantGetCacheCalls: []string{testutil.FilepathAbs(t, "cli-output-dir", "cache")},
 				osCheck: &osCheck{
 					wantStderr: []string{
 						"Branching argument must be one of [a b]",
@@ -2896,8 +3103,12 @@ func TestSourcerer(t *testing.T) {
 			{
 				name:          "prints command usage for missing args error",
 				cliTargetName: "leepFrogSource",
-				clis:          []CLI{&usageErrCLI{}},
-				args:          []string{"execute", "uec", fakeFile, "b"},
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
+				clis:              []CLI{&usageErrCLI{}},
+				args:              []string{"execute", "uec", fakeFile, "b"},
+				wantGetCacheCalls: []string{testutil.FilepathAbs(t, "cli-output-dir", "cache")},
 				osCheck: &osCheck{
 					wantStderr: []string{
 						`Argument "B_SL" requires at least 1 argument, got 0`,
@@ -2910,8 +3121,12 @@ func TestSourcerer(t *testing.T) {
 			{
 				name:          "prints command usage for missing args error",
 				cliTargetName: "leepFrogSource",
-				clis:          []CLI{&usageErrCLI{}},
-				args:          []string{"execute", "uec", fakeFile, "a", "un", "deux", "trois"},
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
+				clis:              []CLI{&usageErrCLI{}},
+				args:              []string{"execute", "uec", fakeFile, "a", "un", "deux", "trois"},
+				wantGetCacheCalls: []string{testutil.FilepathAbs(t, "cli-output-dir", "cache")},
 				osCheck: &osCheck{
 					wantStderr: []string{
 						"Unprocessed extra args: [deux trois]",
@@ -2925,7 +3140,10 @@ func TestSourcerer(t *testing.T) {
 			{
 				name:          "lists none",
 				cliTargetName: "leepFrogSource",
-				args:          []string{ListBranchName},
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
+				args: []string{ListBranchName},
 				osCheck: &osCheck{
 					wantStdout: []string{""},
 				},
@@ -2933,7 +3151,10 @@ func TestSourcerer(t *testing.T) {
 			{
 				name:          "lists clis",
 				cliTargetName: "leepFrogSource",
-				args:          []string{ListBranchName},
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
+				args: []string{ListBranchName},
 				clis: []CLI{
 					&testCLI{name: "un"},
 					&testCLI{name: "deux"},
@@ -2951,7 +3172,10 @@ func TestSourcerer(t *testing.T) {
 			{
 				name:          "autocomplete requires cli name",
 				cliTargetName: "leepFrogSource",
-				args:          []string{"autocomplete"},
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
+				args: []string{"autocomplete"},
 				osCheck: &osCheck{
 					wantStderr: []string{
 						`Argument "CLI" requires at least 1 argument, got 0`,
@@ -2962,8 +3186,12 @@ func TestSourcerer(t *testing.T) {
 			{
 				name:          "autocomplete requires comp_type",
 				cliTargetName: "leepFrogSource",
-				args:          []string{"autocomplete", "uec"},
-				clis:          []CLI{&usageErrCLI{}},
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
+				args:              []string{"autocomplete", "uec"},
+				clis:              []CLI{&usageErrCLI{}},
+				wantGetCacheCalls: []string{testutil.FilepathAbs(t, "cli-output-dir", "cache")},
 				osCheck: &osCheck{
 					wantStderr: []string{
 						`Argument "COMP_TYPE" requires at least 1 argument, got 0`,
@@ -2974,8 +3202,12 @@ func TestSourcerer(t *testing.T) {
 			{
 				name:          "autocomplete requires comp_point",
 				cliTargetName: "leepFrogSource",
-				args:          []string{"autocomplete", "uec", "63"},
-				clis:          []CLI{&usageErrCLI{}},
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
+				args:              []string{"autocomplete", "uec", "63"},
+				clis:              []CLI{&usageErrCLI{}},
+				wantGetCacheCalls: []string{testutil.FilepathAbs(t, "cli-output-dir", "cache")},
 				osCheck: &osCheck{
 					wantStderr: []string{
 						`Argument "COMP_POINT" requires at least 1 argument, got 0`,
@@ -2986,8 +3218,12 @@ func TestSourcerer(t *testing.T) {
 			{
 				name:          "autocomplete requires comp_line",
 				cliTargetName: "leepFrogSource",
-				args:          []string{"autocomplete", "uec", "63", "2"},
-				clis:          []CLI{&usageErrCLI{}},
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
+				args:              []string{"autocomplete", "uec", "63", "2"},
+				clis:              []CLI{&usageErrCLI{}},
+				wantGetCacheCalls: []string{testutil.FilepathAbs(t, "cli-output-dir", "cache")},
 				osCheck: &osCheck{
 					wantStderr: []string{
 						`Argument "COMP_LINE" requires at least 1 argument, got 0`,
@@ -2998,8 +3234,12 @@ func TestSourcerer(t *testing.T) {
 			{
 				name:          "autocomplete doesn't require passthrough args",
 				cliTargetName: "leepFrogSource",
-				args:          []string{"autocomplete", "basic", "63", "0", "h"},
-				clis:          []CLI{&testCLI{name: "basic"}},
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
+				args:              []string{"autocomplete", "basic", "63", "0", "h"},
+				clis:              []CLI{&testCLI{name: "basic"}},
+				wantGetCacheCalls: []string{testutil.FilepathAbs(t, "cli-output-dir", "cache")},
 				osChecks: map[string]*osCheck{
 					osLinux: {
 						wantErr: fmt.Errorf("Unprocessed extra args: []"),
@@ -3029,8 +3269,12 @@ func TestSourcerer(t *testing.T) {
 			{
 				name:          "autocomplete re-prints comp line",
 				cliTargetName: "leepFrogSource",
-				args:          []string{"autocomplete", "basic", "63", "10", "hello ther"},
-				clis:          []CLI{&testCLI{name: "basic"}},
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
+				args:              []string{"autocomplete", "basic", "63", "10", "hello ther"},
+				clis:              []CLI{&testCLI{name: "basic"}},
+				wantGetCacheCalls: []string{testutil.FilepathAbs(t, "cli-output-dir", "cache")},
 				osChecks: map[string]*osCheck{
 					osLinux: {
 						wantErr: fmt.Errorf("Unprocessed extra args: [ther]"),
@@ -3060,8 +3304,12 @@ func TestSourcerer(t *testing.T) {
 			{
 				name:          "autocomplete doesn't re-print comp line if different COMP_TYPE",
 				cliTargetName: "leepFrogSource",
-				args:          []string{"autocomplete", "basic", "64", "10", "hello ther"},
-				clis:          []CLI{&testCLI{name: "basic"}},
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
+				args:              []string{"autocomplete", "basic", "64", "10", "hello ther"},
+				clis:              []CLI{&testCLI{name: "basic"}},
+				wantGetCacheCalls: []string{testutil.FilepathAbs(t, "cli-output-dir", "cache")},
 				osChecks: map[string]*osCheck{
 					osLinux: {
 						wantErr: fmt.Errorf("Unprocessed extra args: [ther]"),
@@ -3080,7 +3328,10 @@ func TestSourcerer(t *testing.T) {
 			{
 				name:          "autocomplete requires valid cli",
 				cliTargetName: "leepFrogSource",
-				args:          []string{"autocomplete", "idk", "63", "2", "a"},
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
+				args: []string{"autocomplete", "idk", "63", "2", "a"},
 				osCheck: &osCheck{
 					wantStderr: []string{
 						"validation for \"CLI\" failed: [MapArg] key (idk) is not in map; expected one of []\n",
@@ -3092,7 +3343,10 @@ func TestSourcerer(t *testing.T) {
 			{
 				name:          "autocomplete passes empty string along for completion",
 				cliTargetName: "leepFrogSource",
-				args:          []string{"autocomplete", "basic", "63", "4", "cmd "},
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
+				args: []string{"autocomplete", "basic", "63", "4", "cmd "},
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
@@ -3101,6 +3355,7 @@ func TestSourcerer(t *testing.T) {
 						},
 					},
 				},
+				wantGetCacheCalls: []string{testutil.FilepathAbs(t, "cli-output-dir", "cache")},
 				osCheck: &osCheck{
 					wantStdout: autocompleteSuggestions(
 						"alpha",
@@ -3112,7 +3367,10 @@ func TestSourcerer(t *testing.T) {
 			{
 				name:          "autocomplete handles no suggestions empty string along for completion",
 				cliTargetName: "leepFrogSource",
-				args:          []string{"autocomplete", "basic", "63", "4", "cmd "},
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
+				args: []string{"autocomplete", "basic", "63", "4", "cmd "},
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
@@ -3121,6 +3379,7 @@ func TestSourcerer(t *testing.T) {
 						},
 					},
 				},
+				wantGetCacheCalls: []string{testutil.FilepathAbs(t, "cli-output-dir", "cache")},
 				osCheck: &osCheck{
 					wantStdout: []string{""},
 				},
@@ -3128,7 +3387,10 @@ func TestSourcerer(t *testing.T) {
 			{
 				name:          "autocomplete handles single suggestion with SpacelssCompletion=true",
 				cliTargetName: "leepFrogSource",
-				args:          []string{"autocomplete", "basic", "63", "5", "cmd h"},
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
+				args: []string{"autocomplete", "basic", "63", "5", "cmd h"},
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
@@ -3142,6 +3404,7 @@ func TestSourcerer(t *testing.T) {
 						},
 					},
 				},
+				wantGetCacheCalls: []string{testutil.FilepathAbs(t, "cli-output-dir", "cache")},
 				osChecks: map[string]*osCheck{
 					osLinux: {
 						wantStdout: []string{
@@ -3159,7 +3422,10 @@ func TestSourcerer(t *testing.T) {
 			{
 				name:          "autocomplete handles single suggestion with SpacelssCompletion=false",
 				cliTargetName: "leepFrogSource",
-				args:          []string{"autocomplete", "basic", "63", "5", "cmd h"},
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
+				args: []string{"autocomplete", "basic", "63", "5", "cmd h"},
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
@@ -3173,6 +3439,7 @@ func TestSourcerer(t *testing.T) {
 						},
 					},
 				},
+				wantGetCacheCalls: []string{testutil.FilepathAbs(t, "cli-output-dir", "cache")},
 				osChecks: map[string]*osCheck{
 					osLinux: {
 						wantStdout: []string{
@@ -3189,7 +3456,10 @@ func TestSourcerer(t *testing.T) {
 			{
 				name:          "autocomplete doesn't complete passthrough args",
 				cliTargetName: "leepFrogSource",
-				args:          []string{"autocomplete", "basic", "63", "4", "cmd ", "al"},
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
+				args: []string{"autocomplete", "basic", "63", "4", "cmd ", "al"},
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
@@ -3198,6 +3468,7 @@ func TestSourcerer(t *testing.T) {
 						},
 					},
 				},
+				wantGetCacheCalls: []string{testutil.FilepathAbs(t, "cli-output-dir", "cache")},
 				osCheck: &osCheck{
 					wantStdout: autocompleteSuggestions(
 						"alpha",
@@ -3209,6 +3480,10 @@ func TestSourcerer(t *testing.T) {
 			/*{
 				name: "autocomplete doesn't complete passthrough args",
 				cliTargetName: "leepFrogSource",
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
+				wantGetCacheCalls: []string{testutil.FilepathAbs(t, "cli-output-dir", "cache")},
 				args: []string{"autocomplete", "basic", "0", "", "al"},
 				clis: []CLI{
 					&testCLI{
@@ -3234,7 +3509,11 @@ func TestSourcerer(t *testing.T) {
 			{
 				name:          "autocomplete does partial completion",
 				cliTargetName: "leepFrogSource",
-				args:          []string{"autocomplete", "basic", "63", "5", "cmd b"},
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
+				wantGetCacheCalls: []string{testutil.FilepathAbs(t, "cli-output-dir", "cache")},
+				args:              []string{"autocomplete", "basic", "63", "5", "cmd b"},
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
@@ -3254,7 +3533,11 @@ func TestSourcerer(t *testing.T) {
 			{
 				name:          "autocomplete does partial completion when --comp-line-file is set",
 				cliTargetName: "leepFrogSource",
-				args:          []string{"autocomplete", "--comp-line-file", "basic", "63", "5", fakeInputFile},
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
+				wantGetCacheCalls: []string{testutil.FilepathAbs(t, "cli-output-dir", "cache")},
+				args:              []string{"autocomplete", "--comp-line-file", "basic", "63", "5", fakeInputFile},
 				fakeInputFileContents: []string{
 					"cmd b",
 				},
@@ -3277,7 +3560,11 @@ func TestSourcerer(t *testing.T) {
 			{
 				name:          "autocomplete fails if --comp-line-file is not a file",
 				cliTargetName: "leepFrogSource",
-				args:          []string{"autocomplete", "--comp-line-file", "basic", "63", "5", "not-a-file"},
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
+				wantGetCacheCalls: []string{testutil.FilepathAbs(t, "cli-output-dir", "cache")},
+				args:              []string{"autocomplete", "--comp-line-file", "basic", "63", "5", "not-a-file"},
 				fakeInputFileContents: []string{
 					"cmd b",
 				},
@@ -3301,7 +3588,11 @@ func TestSourcerer(t *testing.T) {
 			{
 				name:          "autocomplete goes along processors",
 				cliTargetName: "leepFrogSource",
-				args:          []string{"autocomplete", "basic", "63", "6", "cmd a "},
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
+				wantGetCacheCalls: []string{testutil.FilepathAbs(t, "cli-output-dir", "cache")},
+				args:              []string{"autocomplete", "basic", "63", "6", "cmd a "},
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
@@ -3322,7 +3613,11 @@ func TestSourcerer(t *testing.T) {
 			{
 				name:          "autocomplete does earlier completion if cpoint is smaller",
 				cliTargetName: "leepFrogSource",
-				args:          []string{"autocomplete", "basic", "63", "5", "cmd c "},
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
+				wantGetCacheCalls: []string{testutil.FilepathAbs(t, "cli-output-dir", "cache")},
+				args:              []string{"autocomplete", "basic", "63", "5", "cmd c "},
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
@@ -3348,7 +3643,11 @@ func TestSourcerer(t *testing.T) {
 			{
 				name:          "autocomplete when COMP_POINT is equal to length of COMP_LINE",
 				cliTargetName: "leepFrogSource",
-				args:          []string{"autocomplete", "basic", "63", "5", "cmd c"},
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
+				wantGetCacheCalls: []string{testutil.FilepathAbs(t, "cli-output-dir", "cache")},
+				args:              []string{"autocomplete", "basic", "63", "5", "cmd c"},
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
@@ -3374,7 +3673,11 @@ func TestSourcerer(t *testing.T) {
 			{
 				name:          "autocomplete when COMP_POINT is greater than length of COMP_LINE (by 1)",
 				cliTargetName: "leepFrogSource",
-				args:          []string{"autocomplete", "basic", "63", "6", "cmd c"},
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
+				wantGetCacheCalls: []string{testutil.FilepathAbs(t, "cli-output-dir", "cache")},
+				args:              []string{"autocomplete", "basic", "63", "6", "cmd c"},
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
@@ -3404,7 +3707,11 @@ func TestSourcerer(t *testing.T) {
 			{
 				name:          "autocomplete when COMP_POINT is greater than length of COMP_LINE (by 2)",
 				cliTargetName: "leepFrogSource",
-				args:          []string{"autocomplete", "basic", "63", "7", "cmd c"},
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
+				wantGetCacheCalls: []string{testutil.FilepathAbs(t, "cli-output-dir", "cache")},
+				args:              []string{"autocomplete", "basic", "63", "7", "cmd c"},
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
@@ -3434,7 +3741,11 @@ func TestSourcerer(t *testing.T) {
 			{
 				name:          "autocomplete when COMP_POINT is greater than length of COMP_LINE with quoted space (by 1)",
 				cliTargetName: "leepFrogSource",
-				args:          []string{"autocomplete", "basic", "63", "7", `cmd "c`},
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
+				wantGetCacheCalls: []string{testutil.FilepathAbs(t, "cli-output-dir", "cache")},
+				args:              []string{"autocomplete", "basic", "63", "7", `cmd "c`},
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
@@ -3464,7 +3775,11 @@ func TestSourcerer(t *testing.T) {
 			{
 				name:          "autocomplete when COMP_POINT is greater than length of COMP_LINE with quoted space (by 2)",
 				cliTargetName: "leepFrogSource",
-				args:          []string{"autocomplete", "basic", "63", "8", `cmd "c`},
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
+				wantGetCacheCalls: []string{testutil.FilepathAbs(t, "cli-output-dir", "cache")},
+				args:              []string{"autocomplete", "basic", "63", "8", `cmd "c`},
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
@@ -3484,7 +3799,10 @@ func TestSourcerer(t *testing.T) {
 				name:          "builtin execute doesn't work with provided CLIs",
 				cliTargetName: "leepFrogSource",
 				clis:          []CLI{someCLI},
-				args:          []string{"builtin", "execute", someCLI.name},
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
+				args: []string{"builtin", "execute", someCLI.name},
 				osCheck: &osCheck{
 					wantStderr: []string{
 						"validation for \"CLI\" failed: [MapArg] key (basic) is not in map; expected one of [aliaser gg goleep leep_debug sourcerer]",
@@ -3497,7 +3815,11 @@ func TestSourcerer(t *testing.T) {
 				name:          "builtin execute works with builtin CLIs",
 				cliTargetName: "leepFrogSource",
 				clis:          []CLI{someCLI},
-				args:          []string{"builtin", "execute", "aliaser", fakeFile, "bleh", "bloop", "er"},
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
+				wantGetCacheCalls: []string{testutil.FilepathAbs(t, "cli-output-dir", "cache")},
+				args:              []string{"builtin", "execute", "aliaser", fakeFile, "bleh", "bloop", "er"},
 				osChecks: map[string]*osCheck{
 					osLinux: {
 						wantFileContents: []string{
@@ -3557,7 +3879,10 @@ func TestSourcerer(t *testing.T) {
 				name:          "builtin autocomplete doesn't work with provided CLIs",
 				cliTargetName: "leepFrogSource",
 				clis:          []CLI{someCLI},
-				args:          []string{"builtin", "autocomplete", someCLI.name},
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
+				args: []string{"builtin", "autocomplete", someCLI.name},
 				osCheck: &osCheck{
 					wantStderr: []string{
 						"validation for \"CLI\" failed: [MapArg] key (basic) is not in map; expected one of [aliaser gg goleep leep_debug sourcerer]",
@@ -3570,7 +3895,11 @@ func TestSourcerer(t *testing.T) {
 				name:          "builtin autocomplete works with builtin CLIs",
 				cliTargetName: "leepFrogSource",
 				clis:          []CLI{someCLI},
-				args:          []string{"builtin", "autocomplete", "gg", "63", "5", "cmd c"},
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
+				wantGetCacheCalls: []string{testutil.FilepathAbs(t, "cli-output-dir", "cache")},
+				args:              []string{"builtin", "autocomplete", "gg", "63", "5", "cmd c"},
 				osCheck: &osCheck{
 					wantStdout: []string{
 						"cd",
@@ -3593,9 +3922,12 @@ func TestSourcerer(t *testing.T) {
 			{
 				name:          "runCLI fails if no CLIs provided",
 				cliTargetName: "leepFrogSource",
-				args:          []string{"builtin"},
 				runCLI:        true,
-				clis:          []CLI{},
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
+				args: []string{"builtin"},
+				clis: []CLI{},
 				osCheck: &osCheck{
 					wantStderr: []string{
 						"0 CLIs provided with RunCLI(); expected exactly one",
@@ -3606,9 +3938,12 @@ func TestSourcerer(t *testing.T) {
 			{
 				name:          "runCLI fails if nil CLI provided",
 				cliTargetName: "leepFrogSource",
-				args:          []string{"builtin"},
 				runCLI:        true,
-				clis:          []CLI{nil},
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
+				args: []string{"builtin"},
+				clis: []CLI{nil},
 				osCheck: &osCheck{
 					wantStderr: []string{
 						"nil CLI provided at index 0",
@@ -3619,8 +3954,11 @@ func TestSourcerer(t *testing.T) {
 			{
 				name:          "runCLI fails if nil CLI in non-runCLI",
 				cliTargetName: "leepFrogSource",
-				args:          []string{"builtin"},
 				runCLI:        false,
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
+				args: []string{"builtin"},
 				clis: []CLI{
 					ToCLI("zero", nil),
 					ToCLI("one", nil),
@@ -3637,8 +3975,11 @@ func TestSourcerer(t *testing.T) {
 			{
 				name:          "runCLI fails if multiple CLIs provided",
 				cliTargetName: "leepFrogSource",
-				args:          []string{"builtin"},
 				runCLI:        true,
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
+				args: []string{"builtin"},
 				clis: []CLI{
 					&testCLI{name: "basic"},
 					&testCLI{name: "other"},
@@ -3651,10 +3992,31 @@ func TestSourcerer(t *testing.T) {
 				},
 			},
 			{
+				name:          "runCLI fails if invalid CLI root dir",
+				cliTargetName: "leepFrogSource",
+				runCLI:        true,
+				env: map[string]string{
+					RootDirectoryEnvVar: "ummmm",
+				},
+				clis: []CLI{
+					&testCLI{name: "basic"},
+				},
+				osCheck: &osCheck{
+					wantStderr: []string{
+						fmt.Sprintf(`Invalid value for environment variable COMMAND_CLI_OUTPUT_DIR: [IsDir] file %q does not exist`, testutil.FilepathAbs(t, "ummmm")),
+					},
+					wantErr: fmt.Errorf(`Invalid value for environment variable COMMAND_CLI_OUTPUT_DIR: [IsDir] file %q does not exist`, testutil.FilepathAbs(t, "ummmm")),
+				},
+			},
+			{
 				name:          "runCLI fails if provided with builtin",
 				cliTargetName: "leepFrogSource",
-				args:          []string{"builtin"},
 				runCLI:        true,
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
+				wantGetCacheCalls: []string{testutil.FilepathAbs(t, "cli-output-dir", "cache")},
+				args:              []string{"builtin"},
 				clis: []CLI{
 					&testCLI{name: "basic"},
 				},
@@ -3668,8 +4030,12 @@ func TestSourcerer(t *testing.T) {
 			{
 				name:          "runCLI fails if provided with source",
 				cliTargetName: "leepFrogSource",
-				args:          []string{"source"},
 				runCLI:        true,
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
+				wantGetCacheCalls: []string{testutil.FilepathAbs(t, "cli-output-dir", "cache")},
+				args:              []string{"source"},
 				clis: []CLI{
 					&testCLI{name: "basic"},
 				},
@@ -3683,8 +4049,12 @@ func TestSourcerer(t *testing.T) {
 			{
 				name:          "runCLI fails if provided with execute",
 				cliTargetName: "leepFrogSource",
-				args:          []string{"execute"},
 				runCLI:        true,
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
+				wantGetCacheCalls: []string{testutil.FilepathAbs(t, "cli-output-dir", "cache")},
+				args:              []string{"execute"},
 				clis: []CLI{
 					&testCLI{name: "basic"},
 				},
@@ -3698,8 +4068,12 @@ func TestSourcerer(t *testing.T) {
 			{
 				name:          "runCLI fails if provided with usage",
 				cliTargetName: "leepFrogSource",
-				args:          []string{"usage"},
 				runCLI:        true,
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
+				wantGetCacheCalls: []string{testutil.FilepathAbs(t, "cli-output-dir", "cache")},
+				args:              []string{"usage"},
 				clis: []CLI{
 					&testCLI{name: "basic"},
 				},
@@ -3713,8 +4087,12 @@ func TestSourcerer(t *testing.T) {
 			{
 				name:          "runCLI works with autocomplete",
 				cliTargetName: "leepFrogSource",
-				args:          []string{"autocomplete", "63", "4", "cmd "},
 				runCLI:        true,
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
+				wantGetCacheCalls: []string{testutil.FilepathAbs(t, "cli-output-dir", "cache")},
+				args:              []string{"autocomplete", "63", "4", "cmd "},
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
@@ -3734,8 +4112,12 @@ func TestSourcerer(t *testing.T) {
 			{
 				name:          "runCLI works with autocomplete and passthrough args",
 				cliTargetName: "leepFrogSource",
-				args:          []string{"autocomplete", "63", "4", "cmd ", "abc", "ghi"},
 				runCLI:        true,
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
+				wantGetCacheCalls: []string{testutil.FilepathAbs(t, "cli-output-dir", "cache")},
+				args:              []string{"autocomplete", "63", "4", "cmd ", "abc", "ghi"},
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
@@ -3760,8 +4142,44 @@ func TestSourcerer(t *testing.T) {
 			{
 				name:          "runCLI execution works (no `execute` branching keyword required)",
 				cliTargetName: "leepFrogSource",
-				args:          []string{"un", "--count", "6", "deux", "-b", "trois"},
 				runCLI:        true,
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
+				wantGetCacheCalls: []string{testutil.FilepathAbs(t, "cli-output-dir", "cache")},
+				args:              []string{"un", "--count", "6", "deux", "-b", "trois"},
+				clis: []CLI{
+					&testCLI{
+						name: "basic",
+						processors: []command.Processor{
+							commander.FlagProcessor(
+								commander.BoolFlag("b", 'b', "B desc"),
+								commander.Flag[int]("count", commander.FlagNoShortName, "Cnt desc"),
+							),
+							commander.ListArg[string]("SS", "desc", 0, command.UnboundedList),
+							&commander.ExecutorProcessor{func(o command.Output, d *command.Data) error {
+								o.Stdoutln(d.Values)
+								return nil
+							}},
+						},
+					},
+				},
+				osCheck: &osCheck{
+					wantStdout: []string{
+						"map[SS:[un deux trois] b:true count:6]",
+					},
+				},
+			},
+			{
+				name:          "runCLI execution works with other CLI root dir",
+				cliTargetName: "leepFrogSource",
+				runCLI:        true,
+				env: map[string]string{
+					// This is different from previous test
+					RootDirectoryEnvVar: filepath.Join("cmd", "test_goleeper"),
+				},
+				wantGetCacheCalls: []string{testutil.FilepathAbs(t, "cmd", "test_goleeper", "cache")},
+				args:              []string{"un", "--count", "6", "deux", "-b", "trois"},
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
@@ -3787,8 +4205,12 @@ func TestSourcerer(t *testing.T) {
 			{
 				name:          "runCLI execution fails if extra args",
 				cliTargetName: "leepFrogSource",
-				args:          []string{"un", "--count", "6", "deux", "-b", "trois", "bleh"},
 				runCLI:        true,
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
+				wantGetCacheCalls: []string{testutil.FilepathAbs(t, "cli-output-dir", "cache")},
+				args:              []string{"un", "--count", "6", "deux", "-b", "trois", "bleh"},
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
@@ -3825,8 +4247,12 @@ func TestSourcerer(t *testing.T) {
 			{
 				name:          "runCLI execution with help flag works",
 				cliTargetName: "leepFrogSource",
-				args:          []string{"--help"},
 				runCLI:        true,
+				args:          []string{"--help"},
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
+				wantGetCacheCalls: []string{testutil.FilepathAbs(t, "cli-output-dir", "cache")},
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
@@ -3859,8 +4285,12 @@ func TestSourcerer(t *testing.T) {
 			{
 				name:          "runCLI execution with help flag and some args works",
 				cliTargetName: "leepFrogSource",
-				args:          []string{"--help", "un", "--b"},
 				runCLI:        true,
+				args:          []string{"--help", "un", "--b"},
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
+				wantGetCacheCalls: []string{testutil.FilepathAbs(t, "cli-output-dir", "cache")},
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
@@ -3890,6 +4320,10 @@ func TestSourcerer(t *testing.T) {
 				name:          "runCLI fails if Setup isn't nil",
 				cliTargetName: "leepFrogSource",
 				runCLI:        true,
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
+				wantGetCacheCalls: []string{testutil.FilepathAbs(t, "cli-output-dir", "cache")},
 				clis: []CLI{
 					&testCLI{
 						name:  "basic",
@@ -3907,6 +4341,10 @@ func TestSourcerer(t *testing.T) {
 				name:          "runCLI fails if ExecuteData is returned",
 				cliTargetName: "leepFrogSource",
 				runCLI:        true,
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
+				wantGetCacheCalls: []string{testutil.FilepathAbs(t, "cli-output-dir", "cache")},
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
@@ -3930,6 +4368,10 @@ func TestSourcerer(t *testing.T) {
 				name:          "RunCLI() gets goExecutableFilePath",
 				cliTargetName: "leepFrogSource",
 				runCLI:        true,
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
+				wantGetCacheCalls: []string{testutil.FilepathAbs(t, "cli-output-dir", "cache")},
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
@@ -3952,6 +4394,10 @@ func TestSourcerer(t *testing.T) {
 				name:          "RunCLI() fails if os.Executable error",
 				cliTargetName: "leepFrogSource",
 				runCLI:        true,
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
+				wantGetCacheCalls: []string{testutil.FilepathAbs(t, "cli-output-dir", "cache")},
 				clis: []CLI{
 					&testCLI{
 						name: "basic",
@@ -3976,6 +4422,7 @@ func TestSourcerer(t *testing.T) {
 		} {
 			t.Run(fmt.Sprintf("[%s] %s", curOS.Name(), test.name), func(t *testing.T) {
 				StubExecutableFile(t, "osArgs-at-zero", test.osExecutableErr)
+				stubs.StubEnv(t, test.env)
 				if test.osReadFileStub {
 					testutil.StubValue(t, &osReadFile, func(b string) ([]byte, error) {
 						return []byte(test.osReadFileResp), test.osReadFileErr
@@ -4023,7 +4470,9 @@ func TestSourcerer(t *testing.T) {
 
 				// Stub out real cache
 				cash := cachetest.NewTestCache(t)
-				testutil.StubValue(t, &getCache, func() (*cache.Cache, error) {
+				var gotGetCacheCalls []string
+				testutil.StubValue(t, &getCacheStub, func(s string) (*cache.Cache, error) {
+					gotGetCacheCalls = append(gotGetCacheCalls, s)
 					if len(test.cacheErrs) == 0 {
 						return cash, nil
 					}
@@ -4056,6 +4505,10 @@ func TestSourcerer(t *testing.T) {
 				}
 				if diff := cmp.Diff(strings.Join(wantStderr, "\n"), o.GetStderr()); diff != "" {
 					t.Errorf("source(%v) sent incorrect stderr (-want, +got):\n%s", test.args, diff)
+				}
+
+				if diff := cmp.Diff(test.wantGetCacheCalls, gotGetCacheCalls); diff != "" {
+					t.Errorf("source(%v) made incorrect getCache calls (-want, +got):\n%s", test.args, diff)
 				}
 
 				if uuidIdx != len(test.uuids) {

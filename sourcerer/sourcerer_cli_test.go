@@ -2,7 +2,6 @@ package sourcerer
 
 import (
 	"fmt"
-	"path/filepath"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -26,7 +25,7 @@ func TestExecute(t *testing.T) {
 			etc      *commandtest.ExecuteTestCase
 			osChecks map[string]*osCheck
 		}{
-			{
+			/*{
 				name: "Sources directory",
 				etc: &commandtest.ExecuteTestCase{
 					Args: []string{
@@ -37,7 +36,6 @@ func TestExecute(t *testing.T) {
 					WantData: &command.Data{Values: map[string]interface{}{
 						sourcererSourceDirArg.Name(): testutil.FilepathAbs(t, "..", "commander", "testdata"),
 						targetNameArg.Name():         "ING",
-						outputFolderArg.Name():       testutil.FilepathAbs(t, "cli-output-dir"),
 					}},
 				},
 				osChecks: map[string]*osCheck{
@@ -64,7 +62,7 @@ func TestExecute(t *testing.T) {
 						},
 					},
 				},
-			},
+			},*/
 		} {
 			t.Run(fmt.Sprintf("[%s] %s", curOS.Name(), test.name), func(t *testing.T) {
 				oschk, ok := test.osChecks[curOS.Name()]

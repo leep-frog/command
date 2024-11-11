@@ -12,11 +12,11 @@ import (
 const (
 	// ShellOSEnvVar is an environment variable pointing to the
 	// directory used for the shell-level cache.
-	ShellOSEnvVar = "LEEP_CACHE_SHELL_DIR"
+	ShellOSEnvVar = "COMMAND_CLI_CACHE_SHELL_DIR"
 	// ShellDataKey is the data key used to store the shell-level cache.
 	// Callers should use the `ShellProcessor` and `ShellFromData` functions
 	// rather than using this key.
-	ShellDataKey = "LEEP_CACHE_SHELL"
+	ShellDataKey = "COMMAND_CLI_CACHE_SHELL"
 )
 
 var (

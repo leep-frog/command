@@ -92,7 +92,10 @@ func TestExecute(t *testing.T) {
 	_ = rcNode
 	_ = rcErrNode
 
-	envArgProcessor := EnvArg("ENV_VAR")
+	envArgProcessor := &EnvArg{
+		Name:     "ENV_VAR",
+		Optional: true,
+	}
 	optionalString := OptionalArg[string]("opt-arg", "desc")
 	stringFlag := Flag[string]("opt-flag", 'o', "flag-desc")
 	simpleBoolFlag := BoolFlag("bool-flag", 'b', "bool-flag-desc")

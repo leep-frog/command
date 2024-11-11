@@ -25,6 +25,9 @@ func TestDebugger(t *testing.T) {
 						fos.SetEnvVar(commander.DebugEnvVar, "1"),
 					},
 				},
+				Env: map[string]string{
+					RootDirectoryEnvVar: ".",
+				},
 			},
 		},
 		{
@@ -32,6 +35,7 @@ func TestDebugger(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				WantStdout: "Exiting debug mode.\n",
 				Env: map[string]string{
+					RootDirectoryEnvVar:   ".",
 					commander.DebugEnvVar: "1",
 				},
 				WantExecuteData: &command.ExecuteData{

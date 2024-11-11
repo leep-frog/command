@@ -22,11 +22,23 @@ import (
 	"golang.org/x/exp/maps"
 )
 
+const (
+	// RootDirectoryEnvVar is the directory in which all artifact files needed will be created and stored.
+	RootDirectoryEnvVar = "COMMAND_CLI_OUTPUT_DIR"
+)
+
 var (
+	rootDirectoryArg = &commander.EnvArg{
+		Name: RootDirectoryEnvVar,
+		Validators: []*commander.ValidatorOption[string]{
+			commander.IsDir(),
+		},
+		Transformers: []*commander.Transformer[string]{
+			commander.FileTransformer(),
+		},
+	}
 	fileArg         = commander.FileArgument("FILE", "Temporary file for execution")
 	targetNameRegex = commander.MatchesRegex("^[a-zA-Z0-9]+$")
-	targetNameArg   = commander.Arg("TARGET_NAME", "The base name of the created binary file", targetNameRegex)
-	outputFolderArg = commander.FileArgument("OUTPUT_DIRECTORY", "The folder in which to put the created binary file", commander.IsDir())
 	passthroughArgs = commander.ListArg[string]("ARG", "Arguments that get passed through to relevant CLI command", 0, command.UnboundedList)
 	helpFlag        = commander.BoolFlag("help", commander.FlagNoShortName, "Display command's usage doc")
 	// See the below link for more details on COMP_* details:
@@ -108,7 +120,7 @@ func (s *sourcerer) executeExecutor(output command.Output, d *command.Data) erro
 
 	// Save the CLI if it has changed.
 	if cli.Changed() {
-		if err := save(cli); err != nil {
+		if err := save(cli, d); err != nil {
 			return output.Stderrf("failed to save cli data: %v\n", err)
 		}
 	}
@@ -164,24 +176,20 @@ func (s *sourcerer) autocompleteExecutor(o command.Output, d *command.Data) erro
 	return nil
 }
 
-// separate method for testing
 var (
-	// EnvCacheVar is the environment variable pointing to the path for caching.
-	// var so it can be modified for tests
-	EnvCacheVar = "COMMAND_CLI_CACHE"
-	// getCache is a variable function so it can be swapped in tests
-	getCache = func() (*cache.Cache, error) {
-		home, err := os.UserHomeDir()
-		if err != nil {
-			return nil, fmt.Errorf("failed to get user's home directory: %v", err)
-		}
-		return cache.FromEnvVarOrDir(EnvCacheVar, filepath.Join(home, ".command-cli-cache"))
+	// getCacheStub is a variable function so it can be swapped in tests
+	getCacheStub = func(dir string) (*cache.Cache, error) {
+		return cache.FromDir(dir)
 	}
 )
 
-func load(cli CLI) error {
+func getCache(d *command.Data) (*cache.Cache, error) {
+	return getCacheStub(filepath.Join(rootDirectoryArg.Get(d), "cache"))
+}
+
+func load(cli CLI, d *command.Data) error {
 	ck := cacheKey(cli)
-	cash, err := getCache()
+	cash, err := getCache(d)
 	if err != nil {
 		return fmt.Errorf("failed to load cache from environment variable: %v", err)
 	}
@@ -223,9 +231,12 @@ const (
 )
 
 func (s *sourcerer) Node() command.Node {
-	loadCLIArg := commander.SuperSimpleProcessor(func(i *command.Input, d *command.Data) error {
-		return load((*s.cliArg.Processor).Get(d))
-	})
+	loadCLIArg := commander.SerialNodes(
+		rootDirectoryArg,
+		commander.SuperSimpleProcessor(func(i *command.Input, d *command.Data) error {
+			return load((*s.cliArg.Processor).Get(d), d)
+		}),
+	)
 
 	autocompleteBranchNode := func(runCLI bool) command.Node {
 		nodes := []command.Processor{
@@ -318,7 +329,7 @@ func (s *sourcerer) Node() command.Node {
 					&commander.ExecutorProcessor{F: s.executeExecutor},
 				),
 				SourceBranchName: commander.SerialNodes(
-					outputFolderArg,
+					rootDirectoryArg,
 					&commander.ExecutorProcessor{F: s.generateFile},
 				),
 			},
@@ -514,14 +525,16 @@ var (
 )
 
 func (s *sourcerer) generateFile(o command.Output, d *command.Data) error {
-	outputFolder := outputFolderArg.Get(d)
+	rootDir := rootDirectoryArg.Get(d)
+	sourcerersDir := filepath.Join(rootDir, "sourcerers")
+	artifactsDir := filepath.Join(rootDir, "artifacts")
 
 	b, err := osReadFile(s.goExecutableFilePath)
 	if err != nil {
 		return o.Annotatef(err, "failed to read executable file")
 	}
 
-	newExecutableFilePath := filepath.Join(outputFolder, fmt.Sprintf("%s%s", s.targetName, CurrentOS.ExecutableFileSuffix()))
+	newExecutableFilePath := filepath.Join(artifactsDir, fmt.Sprintf("%s%s", s.targetName, CurrentOS.ExecutableFileSuffix()))
 	if err := osWriteFile(newExecutableFilePath, b, 0744); err != nil {
 		return o.Annotatef(err, "failed to copy executable file")
 	}
@@ -535,7 +548,7 @@ func (s *sourcerer) generateFile(o command.Output, d *command.Data) error {
 
 	fileContents := CurrentOS.FunctionWrap(fmt.Sprintf("_%s_wrap_function", s.targetName), strings.Join(fileData, "\n"))
 
-	sourceableFile := filepath.Join(outputFolder, CurrentOS.SourceableFile(s.targetName))
+	sourceableFile := filepath.Join(sourcerersDir, CurrentOS.SourceableFile(s.targetName))
 	if err := osWriteFile(sourceableFile, []byte(fileContents), 0644); err != nil {
 		return o.Annotatef(err, "failed to write sourceable file contents")
 	}
@@ -544,7 +557,7 @@ func (s *sourcerer) generateFile(o command.Output, d *command.Data) error {
 	if s.builtin {
 		builtinArg = fmt.Sprintf(" %s", BuiltInCommandParameter)
 	}
-	goRunSourceCommand := fmt.Sprintf(`go run .%s source %q`, builtinArg, outputFolder)
+	goRunSourceCommand := fmt.Sprintf(`go run .%s source`, builtinArg)
 
 	o.Stdoutln(strings.Join([]string{
 		fmt.Sprintf("Sourceable file created: %q", sourceableFile),
@@ -559,9 +572,9 @@ func (s *sourcerer) generateFile(o command.Output, d *command.Data) error {
 	return nil
 }
 
-func save(c CLI) error {
+func save(c CLI, d *command.Data) error {
 	ck := cacheKey(c)
-	cash, err := getCache()
+	cash, err := getCache(d)
 	if err != nil {
 		return err
 	}

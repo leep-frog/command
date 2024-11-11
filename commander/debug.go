@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	DebugEnvVar = "LEEP_FROG_DEBUG"
+	DebugEnvVar = "COMMAND_CLI_DEBUG"
 )
 
 // DebugMode returns whether or not debug mode is active.
