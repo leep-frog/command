@@ -67,12 +67,12 @@ func TestGenerateBinaryNode(t *testing.T) {
 			runtimeCallerMiss bool
 			runCLI            bool
 			osChecks          map[string]*osCheck
-			commandStatFile   os.FileInfo
-			commandStatErr    error
+			osMkdirAllErr     error
 			env               map[string]string
 			wantErr           error
 
 			wantOSReadFile  []string
+			wantMkdirAll    []string
 			osReadFileErr   error
 			osWriteFileErrs []error
 		}{
@@ -182,6 +182,31 @@ func TestGenerateBinaryNode(t *testing.T) {
 				},
 			},
 			{
+				name:          "fails if fail to make artifacts directory osStatErr",
+				cliTargetName: "leepFrogSource",
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
+				args:          []string{"source"},
+				osMkdirAllErr: fmt.Errorf("mkdir-all oops"),
+				wantMkdirAll:  []string{testutil.FilepathAbs(t, "cli-output-dir", "artifacts")},
+				wantErr:       fmt.Errorf(`failed to make artifacts directory: mkdir-all oops`),
+				osChecks: map[string]*osCheck{
+					osLinux: {
+						wantStderr: []string{
+							`failed to make artifacts directory: mkdir-all oops`,
+							``,
+						},
+					},
+					osWindows: {
+						wantStderr: []string{
+							`failed to make artifacts directory: mkdir-all oops`,
+							``,
+						},
+					},
+				},
+			},
+			{
 				name:          "fails when osReadFileErr",
 				cliTargetName: "leepFrogSource",
 				env: map[string]string{
@@ -191,6 +216,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 				osReadFileErr:  fmt.Errorf("read oops"),
 				wantOSReadFile: []string{fakeGoExecutableFilePath.Name()},
 				wantErr:        fmt.Errorf(`failed to read executable file: read oops`),
+				wantMkdirAll:   []string{testutil.FilepathAbs(t, "cli-output-dir", "artifacts")},
 				osChecks: map[string]*osCheck{
 					osLinux: {
 						wantStderr: []string{
@@ -216,6 +242,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 				wantOSReadFile:  []string{fakeGoExecutableFilePath.Name()},
 				osWriteFileErrs: []error{fmt.Errorf("write binary whoops")},
 				wantErr:         fmt.Errorf(`failed to copy executable file: write binary whoops`),
+				wantMkdirAll:    []string{testutil.FilepathAbs(t, "cli-output-dir", "artifacts")},
 				osChecks: map[string]*osCheck{
 					osLinux: {
 						wantOsWriteFiles: []*osWriteFileArgs{
@@ -255,6 +282,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 				wantOSReadFile:  []string{fakeGoExecutableFilePath.Name()},
 				osWriteFileErrs: []error{nil, fmt.Errorf("write sourceable whoops")},
 				wantErr:         fmt.Errorf(`failed to write sourceable file contents: write sourceable whoops`),
+				wantMkdirAll:    []string{testutil.FilepathAbs(t, "cli-output-dir", "artifacts")},
 				osChecks: map[string]*osCheck{
 					osLinux: {
 						wantStdout: []string{
@@ -357,6 +385,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 				},
 				args:           []string{"source"},
 				wantOSReadFile: []string{fakeGoExecutableFilePath.Name()},
+				wantMkdirAll:   []string{testutil.FilepathAbs(t, "cli-output-dir", "artifacts")},
 				osChecks: map[string]*osCheck{
 					osLinux: {
 						wantStdout: []string{
@@ -487,6 +516,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 				},
 				args:           []string{"source", "--quiet"},
 				wantOSReadFile: []string{fakeGoExecutableFilePath.Name()},
+				wantMkdirAll:   []string{testutil.FilepathAbs(t, "cli-output-dir", "artifacts")},
 				osChecks: map[string]*osCheck{
 					osLinux: {
 						wantStdout: []string{
@@ -585,6 +615,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 					NewAliaser("otherAlias", "flaggable", "--args", "--at", "once"),
 				},
 				wantOSReadFile: []string{fakeGoExecutableFilePath.Name()},
+				wantMkdirAll:   []string{testutil.FilepathAbs(t, "cli-output-dir", "artifacts")},
 				osChecks: map[string]*osCheck{
 					osLinux: {
 						wantStdout: []string{
@@ -799,6 +830,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 					NewAliaser("otherAlias", "do", "other", "stuff"),
 				},
 				wantOSReadFile: []string{fakeGoExecutableFilePath.Name()},
+				wantMkdirAll:   []string{testutil.FilepathAbs(t, "cli-output-dir", "artifacts")},
 				osChecks: map[string]*osCheck{
 					osLinux: {
 						wantStdout: []string{
@@ -1003,6 +1035,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 					}),
 				},
 				wantOSReadFile: []string{fakeGoExecutableFilePath.Name()},
+				wantMkdirAll:   []string{testutil.FilepathAbs(t, "cli-output-dir", "artifacts")},
 				osChecks: map[string]*osCheck{
 					osLinux: {
 						wantStdout: []string{
@@ -1212,6 +1245,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 				},
 				args:           []string{"source"},
 				wantOSReadFile: []string{fakeGoExecutableFilePath.Name()},
+				wantMkdirAll:   []string{testutil.FilepathAbs(t, "cli-output-dir", "artifacts")},
 				osChecks: map[string]*osCheck{
 					osLinux: {
 						wantStdout: []string{
@@ -1347,6 +1381,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 					&testCLI{name: "basic", setup: []string{"his", "story"}},
 				},
 				wantOSReadFile: []string{fakeGoExecutableFilePath.Name()},
+				wantMkdirAll:   []string{testutil.FilepathAbs(t, "cli-output-dir", "artifacts")},
 				osChecks: map[string]*osCheck{
 					osLinux: {
 						wantStdout: []string{
@@ -1573,6 +1608,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 				},
 				ignoreNosort:   true,
 				wantOSReadFile: []string{fakeGoExecutableFilePath.Name()},
+				wantMkdirAll:   []string{testutil.FilepathAbs(t, "cli-output-dir", "artifacts")},
 				osChecks: map[string]*osCheck{
 					osLinux: {
 						wantStdout: []string{
@@ -1826,6 +1862,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 					&testCLI{name: "basic", setup: []string{"his", "story"}},
 				},
 				wantOSReadFile: []string{fakeGoExecutableFilePath.Name()},
+				wantMkdirAll:   []string{testutil.FilepathAbs(t, "cli-output-dir", "artifacts")},
 				osChecks: map[string]*osCheck{
 					osLinux: {
 						wantStdout: []string{
@@ -2230,8 +2267,13 @@ func TestGenerateBinaryNode(t *testing.T) {
 				}
 
 				testutil.StubValue(t, &CurrentOS, curOS)
-				testutil.StubValue(t, &commandStat, func(name string) (os.FileInfo, error) {
-					return test.commandStatFile, test.commandStatErr
+				var gotMkdirAllNames []string
+				testutil.StubValue(t, &osMkdirAll, func(name string, perm fs.FileMode) error {
+					gotMkdirAllNames = append(gotMkdirAllNames, name)
+					if diff := cmp.Diff(fs.FileMode(0777), perm); diff != "" {
+						t.Errorf("source(%v) sent incorrect permission value to os.MkdirAll (-want, +got):\n%s", test.args, diff)
+					}
+					return test.osMkdirAllErr
 				})
 
 				var gotOSReadFile []string
@@ -2262,18 +2304,22 @@ func TestGenerateBinaryNode(t *testing.T) {
 
 				// append to add a final newline (which should *always* be present).
 				if diff := cmp.Diff(strings.Join(append(oschk.wantStdout, ""), "\n"), o.GetStdout()); diff != "" {
-					t.Errorf("source(%v) sent incorrect data to stdout (-wamt, +got):\n%s", test.args, diff)
+					t.Errorf("source(%v) sent incorrect data to stdout (-want, +got):\n%s", test.args, diff)
 				}
 				if diff := cmp.Diff(strings.Join(oschk.wantStderr, "\n"), o.GetStderr()); diff != "" {
-					t.Errorf("source(%v) sent incorrect data to stderr (-wamt, +got):\n%s", test.args, diff)
+					t.Errorf("source(%v) sent incorrect data to stderr (-want, +got):\n%s", test.args, diff)
 				}
 
 				if diff := cmp.Diff(test.wantOSReadFile, gotOSReadFile); diff != "" {
-					t.Errorf("source(%v) executed incorrect os.ReadFile commands (-wamt, +got):\n%s", test.args, diff)
+					t.Errorf("source(%v) executed incorrect os.ReadFile commands (-want, +got):\n%s", test.args, diff)
 				}
 
 				if diff := cmp.Diff(oschk.wantOsWriteFiles, gotOSWriteFile); diff != "" {
-					t.Errorf("source(%v) executed incorrect os.WriteFile commands (-wamt, +got):\n%s", test.args, diff)
+					t.Errorf("source(%v) executed incorrect os.WriteFile commands (-want, +got):\n%s", test.args, diff)
+				}
+
+				if diff := cmp.Diff(test.wantMkdirAll, gotMkdirAllNames); diff != "" {
+					t.Errorf("source(%v) executed incorrect os.MkdirAll commands (-want, +got):\n%s", test.args, diff)
 				}
 			})
 		}

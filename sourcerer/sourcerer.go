@@ -185,6 +185,9 @@ var (
 )
 
 func getCache(d *command.Data) (*cache.Cache, error) {
+	// Note that the cache.FromDir will create the directory if it does not exist
+	// This will only result in making the `cache` dir and no parent dirs because
+	// the env arg for the root dir enforces that the root dir exists.
 	return getCacheStub(filepath.Join(rootDirectoryArg.Get(d), "cache"))
 }
 
@@ -525,14 +528,21 @@ func getSourceLoc() (string, error) {
 }
 
 var (
-	commandStat = commander.Stat
+	osMkdirAll = os.MkdirAll
 )
 
 func (s *sourcerer) generateFile(o command.Output, d *command.Data) error {
 	rootDir := rootDirectoryArg.Get(d)
 	sourcerersDir := filepath.Join(rootDir, "sourcerers")
-	artifactsDir := filepath.Join(rootDir, "artifacts")
 	loud := !quietFlag.Get(d)
+
+	// Create the artifacts directory
+	artifactsDir := filepath.Join(rootDir, "artifacts")
+	// Note: this will only result in making the `artifacts` dir and no parent dirs because
+	// the env arg for the root dir enforces that the root dir exists.
+	if err := osMkdirAll(artifactsDir, 0777); err != nil {
+		return o.Annotatef(err, "failed to make artifacts directory")
+	}
 
 	b, err := osReadFile(s.goExecutableFilePath)
 	if err != nil {
