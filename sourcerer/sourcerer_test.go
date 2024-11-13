@@ -19,6 +19,7 @@ import (
 	"github.com/leep-frog/command/commander"
 	"github.com/leep-frog/command/commandertest"
 	"github.com/leep-frog/command/commandtest"
+	"github.com/leep-frog/command/internal/spycommandertest"
 	"github.com/leep-frog/command/internal/stubs"
 	"github.com/leep-frog/command/internal/testutil"
 )
@@ -33,6 +34,16 @@ const (
 	osWindows = "windows"
 )
 
+type osWriteFileArgs struct {
+	File     string
+	Contents []string
+	FileMode os.FileMode
+}
+
+func (o *osWriteFileArgs) String() string {
+	return fmt.Sprintf("%s\n%v\n%s", o.File, o.FileMode, strings.Join(o.Contents, "\n"))
+}
+
 func TestGenerateBinaryNode(t *testing.T) {
 	testutil.StubValue(t, &runtimeCaller, func(int) (uintptr, string, int, bool) {
 		return 0, testutil.FilepathAbs(t, "/", "fake", "source", "location"), 0, true
@@ -40,12 +51,6 @@ func TestGenerateBinaryNode(t *testing.T) {
 	fakeGoExecutableFilePath := testutil.TempFile(t, "leepFrogSourcererTest")
 	exeBaseName := filepath.Base(fakeGoExecutableFilePath.Name())
 	_ = exeBaseName
-
-	type osWriteFileArgs struct {
-		File     string
-		Contents []string
-		FileMode os.FileMode
-	}
 
 	type osCheck struct {
 		wantOsWriteFiles []*osWriteFileArgs
@@ -358,6 +363,8 @@ func TestGenerateBinaryNode(t *testing.T) {
 									`  rm $tFile`,
 									`}`,
 									``,
+									`alias leepFrogSource='_custom_execute_leepFrogSource leepFrogSource'`,
+									`{ { type complete > /dev/null 2>&1 ; } && complete -F _custom_autocomplete_leepFrogSource -o nosort leepFrogSource ; } || { echo 'shell function "complete" either failed or does not exist; if using zsh, be sure to set up bashcompinit' 1>&2 ; }`,
 									`}`, // wrap function end bracket
 									`_leepFrogSource_wrap_function`,
 									``,
@@ -393,6 +400,30 @@ func TestGenerateBinaryNode(t *testing.T) {
 									`  }`,
 									`}`,
 									``,
+									``,
+									`function _custom_execute_leepFrogSource_leepFrogSource {`,
+									``,
+									`  # tmpFile is the file to which we write ExecuteData.Executable`,
+									`  $Local:tmpFile = New-TemporaryFile`,
+									``,
+									`  # Run the go-only code`,
+									`  & c:\Users\gleep\Desktop\Coding\go\src\command\sourcerer\cli-output-dir\artifacts\leepFrogSource.exe execute "leepFrogSource" $Local:tmpFile $args`,
+									`  # Return error if failed`,
+									`  If (!$?) {`,
+									`    Write-Error "Go execution failed"`,
+									`  } else {`,
+									`    # If success, run the ExecuteData.Executable data`,
+									`    Copy-Item "$Local:tmpFile" "$Local:tmpFile.ps1"`,
+									`    . "$Local:tmpFile.ps1"`,
+									`    If (!$?) {`,
+									`      Write-Error "ExecuteData execution failed"`,
+									`    }`,
+									`  }`,
+									`}`,
+									``,
+									`(Get-Alias) | Where { $_.NAME -match '^leepFrogSource$'} | ForEach-Object { del alias:${_} -Force }`,
+									`Set-Alias leepFrogSource _custom_execute_leepFrogSource_leepFrogSource`,
+									`Register-ArgumentCompleter -CommandName leepFrogSource -ScriptBlock $_custom_autocomplete_leepFrogSource`,
 									`}`, // wrap function end bracket
 									`. _leepFrogSource_wrap_function`,
 									``,
@@ -417,7 +448,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							fmt.Sprintf(`Binary file created: %q`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource")),
 							fmt.Sprintf(`Sourceable file created: %q`, testutil.FilepathAbs(t, "cli-output-dir", "sourcerers", "leepFrogSource_loader.sh")),
 							``,
-							color.Apply(`Successfully generated CLIs () from leepFrogSource!`, color.Green, color.Bold),
+							color.Apply(`Successfully generated CLIs (leepFrogSource) from leepFrogSource!`, color.Green, color.Bold),
 							``,
 							`Run the following (and/or add it to your terminal profile) to load your CLIs in your current terminal:`,
 							``,
@@ -475,6 +506,8 @@ func TestGenerateBinaryNode(t *testing.T) {
 									`  rm $tFile`,
 									`}`,
 									``,
+									`alias leepFrogSource='_custom_execute_leepFrogSource leepFrogSource'`,
+									`{ { type complete > /dev/null 2>&1 ; } && complete -F _custom_autocomplete_leepFrogSource -o nosort leepFrogSource ; } || { echo 'shell function "complete" either failed or does not exist; if using zsh, be sure to set up bashcompinit' 1>&2 ; }`,
 									`}`, // wrap function end bracket
 									`_leepFrogSource_wrap_function`,
 									``,
@@ -487,7 +520,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							fmt.Sprintf(`Binary file created: %q`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource.exe")),
 							fmt.Sprintf(`Sourceable file created: %q`, testutil.FilepathAbs(t, "cli-output-dir", "sourcerers", "leepFrogSource_loader.ps1")),
 							``,
-							color.Apply(`Successfully generated CLIs () from leepFrogSource!`, color.Green, color.Bold),
+							color.Apply(`Successfully generated CLIs (leepFrogSource) from leepFrogSource!`, color.Green, color.Bold),
 							``,
 							`Run the following (and/or add it to your terminal profile) to load your CLIs in your current terminal:`,
 							``,
@@ -524,6 +557,30 @@ func TestGenerateBinaryNode(t *testing.T) {
 									`  }`,
 									`}`,
 									``,
+									``,
+									`function _custom_execute_leepFrogSource_leepFrogSource {`,
+									``,
+									`  # tmpFile is the file to which we write ExecuteData.Executable`,
+									`  $Local:tmpFile = New-TemporaryFile`,
+									``,
+									`  # Run the go-only code`,
+									`  & c:\Users\gleep\Desktop\Coding\go\src\command\sourcerer\cli-output-dir\artifacts\leepFrogSource.exe execute "leepFrogSource" $Local:tmpFile $args`,
+									`  # Return error if failed`,
+									`  If (!$?) {`,
+									`    Write-Error "Go execution failed"`,
+									`  } else {`,
+									`    # If success, run the ExecuteData.Executable data`,
+									`    Copy-Item "$Local:tmpFile" "$Local:tmpFile.ps1"`,
+									`    . "$Local:tmpFile.ps1"`,
+									`    If (!$?) {`,
+									`      Write-Error "ExecuteData execution failed"`,
+									`    }`,
+									`  }`,
+									`}`,
+									``,
+									`(Get-Alias) | Where { $_.NAME -match '^leepFrogSource$'} | ForEach-Object { del alias:${_} -Force }`,
+									`Set-Alias leepFrogSource _custom_execute_leepFrogSource_leepFrogSource`,
+									`Register-ArgumentCompleter -CommandName leepFrogSource -ScriptBlock $_custom_autocomplete_leepFrogSource`,
 									`}`, // wrap function end bracket
 									`. _leepFrogSource_wrap_function`,
 									``,
@@ -545,7 +602,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 				osChecks: map[string]*osCheck{
 					osLinux: {
 						wantStdout: []string{
-							color.Apply("Successfully generated CLIs () from leepFrogSource!", color.Green, color.Bold),
+							color.Apply("Successfully generated CLIs (leepFrogSource) from leepFrogSource!", color.Green, color.Bold),
 						},
 						wantOsWriteFiles: []*osWriteFileArgs{
 							{
@@ -588,6 +645,8 @@ func TestGenerateBinaryNode(t *testing.T) {
 									`  rm $tFile`,
 									`}`,
 									``,
+									`alias leepFrogSource='_custom_execute_leepFrogSource leepFrogSource'`,
+									`{ { type complete > /dev/null 2>&1 ; } && complete -F _custom_autocomplete_leepFrogSource -o nosort leepFrogSource ; } || { echo 'shell function "complete" either failed or does not exist; if using zsh, be sure to set up bashcompinit' 1>&2 ; }`,
 									`}`, // wrap function end bracket
 									`_leepFrogSource_wrap_function`,
 									``,
@@ -597,7 +656,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 					},
 					osWindows: {
 						wantStdout: []string{
-							color.Apply("Successfully generated CLIs () from leepFrogSource!", color.Green, color.Bold),
+							color.Apply("Successfully generated CLIs (leepFrogSource) from leepFrogSource!", color.Green, color.Bold),
 						},
 						wantOsWriteFiles: []*osWriteFileArgs{
 							{
@@ -619,6 +678,30 @@ func TestGenerateBinaryNode(t *testing.T) {
 									`  }`,
 									`}`,
 									``,
+									``,
+									`function _custom_execute_leepFrogSource_leepFrogSource {`,
+									``,
+									`  # tmpFile is the file to which we write ExecuteData.Executable`,
+									`  $Local:tmpFile = New-TemporaryFile`,
+									``,
+									`  # Run the go-only code`,
+									`  & c:\Users\gleep\Desktop\Coding\go\src\command\sourcerer\cli-output-dir\artifacts\leepFrogSource.exe execute "leepFrogSource" $Local:tmpFile $args`,
+									`  # Return error if failed`,
+									`  If (!$?) {`,
+									`    Write-Error "Go execution failed"`,
+									`  } else {`,
+									`    # If success, run the ExecuteData.Executable data`,
+									`    Copy-Item "$Local:tmpFile" "$Local:tmpFile.ps1"`,
+									`    . "$Local:tmpFile.ps1"`,
+									`    If (!$?) {`,
+									`      Write-Error "ExecuteData execution failed"`,
+									`    }`,
+									`  }`,
+									`}`,
+									``,
+									`(Get-Alias) | Where { $_.NAME -match '^leepFrogSource$'} | ForEach-Object { del alias:${_} -Force }`,
+									`Set-Alias leepFrogSource _custom_execute_leepFrogSource_leepFrogSource`,
+									`Register-ArgumentCompleter -CommandName leepFrogSource -ScriptBlock $_custom_autocomplete_leepFrogSource`,
 									`}`, // wrap function end bracket
 									`. _leepFrogSource_wrap_function`,
 									``,
@@ -647,7 +730,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							fmt.Sprintf(`Binary file created: %q`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource")),
 							fmt.Sprintf(`Sourceable file created: %q`, testutil.FilepathAbs(t, "cli-output-dir", "sourcerers", "leepFrogSource_loader.sh")),
 							``,
-							color.Apply(`Successfully generated CLIs () from leepFrogSource!`, color.Green, color.Bold),
+							color.Apply(`Successfully generated CLIs (leepFrogSource) from leepFrogSource!`, color.Green, color.Bold),
 							``,
 							`Run the following (and/or add it to your terminal profile) to load your CLIs in your current terminal:`,
 							``,
@@ -705,6 +788,8 @@ func TestGenerateBinaryNode(t *testing.T) {
 									`  rm $tFile`,
 									`}`,
 									``,
+									`alias leepFrogSource='_custom_execute_leepFrogSource leepFrogSource'`,
+									`{ { type complete > /dev/null 2>&1 ; } && complete -F _custom_autocomplete_leepFrogSource -o nosort leepFrogSource ; } || { echo 'shell function "complete" either failed or does not exist; if using zsh, be sure to set up bashcompinit' 1>&2 ; }`,
 									`function _leep_frog_autocompleter {`,
 									`  local tFile=$(mktemp)`,
 									fmt.Sprintf(`  %s autocomplete "$1" "$COMP_TYPE" $COMP_POINT "$COMP_LINE" "${@:2}" > $tFile`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource")),
@@ -760,7 +845,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							fmt.Sprintf(`Binary file created: %q`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource.exe")),
 							fmt.Sprintf(`Sourceable file created: %q`, testutil.FilepathAbs(t, "cli-output-dir", "sourcerers", "leepFrogSource_loader.ps1")),
 							``,
-							color.Apply(`Successfully generated CLIs () from leepFrogSource!`, color.Green, color.Bold),
+							color.Apply(`Successfully generated CLIs (leepFrogSource) from leepFrogSource!`, color.Green, color.Bold),
 							``,
 							`Run the following (and/or add it to your terminal profile) to load your CLIs in your current terminal:`,
 							``,
@@ -797,6 +882,30 @@ func TestGenerateBinaryNode(t *testing.T) {
 									`  }`,
 									`}`,
 									``,
+									``,
+									`function _custom_execute_leepFrogSource_leepFrogSource {`,
+									``,
+									`  # tmpFile is the file to which we write ExecuteData.Executable`,
+									`  $Local:tmpFile = New-TemporaryFile`,
+									``,
+									`  # Run the go-only code`,
+									`  & c:\Users\gleep\Desktop\Coding\go\src\command\sourcerer\cli-output-dir\artifacts\leepFrogSource.exe execute "leepFrogSource" $Local:tmpFile $args`,
+									`  # Return error if failed`,
+									`  If (!$?) {`,
+									`    Write-Error "Go execution failed"`,
+									`  } else {`,
+									`    # If success, run the ExecuteData.Executable data`,
+									`    Copy-Item "$Local:tmpFile" "$Local:tmpFile.ps1"`,
+									`    . "$Local:tmpFile.ps1"`,
+									`    If (!$?) {`,
+									`      Write-Error "ExecuteData execution failed"`,
+									`    }`,
+									`  }`,
+									`}`,
+									``,
+									`(Get-Alias) | Where { $_.NAME -match '^leepFrogSource$'} | ForEach-Object { del alias:${_} -Force }`,
+									`Set-Alias leepFrogSource _custom_execute_leepFrogSource_leepFrogSource`,
+									`Register-ArgumentCompleter -CommandName leepFrogSource -ScriptBlock $_custom_autocomplete_leepFrogSource`,
 									`if (!(Test-Path alias:do) -or !(Get-Alias do | where {$_.DEFINITION -match "_custom_execute_"}).NAME) {`,
 									`  throw "The CLI provided (do) is not a sourcerer-generated command"`,
 									`}`,
@@ -862,7 +971,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							fmt.Sprintf(`Binary file created: %q`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource")),
 							fmt.Sprintf(`Sourceable file created: %q`, testutil.FilepathAbs(t, "cli-output-dir", "sourcerers", "leepFrogSource_loader.sh")),
 							``,
-							color.Apply(`Successfully generated CLIs () from leepFrogSource!`, color.Green, color.Bold),
+							color.Apply(`Successfully generated CLIs (leepFrogSource) from leepFrogSource!`, color.Green, color.Bold),
 							``,
 							`Run the following (and/or add it to your terminal profile) to load your CLIs in your current terminal:`,
 							``,
@@ -920,6 +1029,8 @@ func TestGenerateBinaryNode(t *testing.T) {
 									`  rm $tFile`,
 									`}`,
 									``,
+									`alias leepFrogSource='_custom_execute_leepFrogSource leepFrogSource'`,
+									`{ { type complete > /dev/null 2>&1 ; } && complete -F _custom_autocomplete_leepFrogSource -o nosort leepFrogSource ; } || { echo 'shell function "complete" either failed or does not exist; if using zsh, be sure to set up bashcompinit' 1>&2 ; }`,
 									`function _leep_frog_autocompleter {`,
 									`  local tFile=$(mktemp)`,
 									fmt.Sprintf(`  %s autocomplete "$1" "$COMP_TYPE" $COMP_POINT "$COMP_LINE" "${@:2}" > $tFile`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource")),
@@ -967,7 +1078,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							fmt.Sprintf(`Binary file created: %q`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource.exe")),
 							fmt.Sprintf(`Sourceable file created: %q`, testutil.FilepathAbs(t, "cli-output-dir", "sourcerers", "leepFrogSource_loader.ps1")),
 							``,
-							color.Apply(`Successfully generated CLIs () from leepFrogSource!`, color.Green, color.Bold),
+							color.Apply(`Successfully generated CLIs (leepFrogSource) from leepFrogSource!`, color.Green, color.Bold),
 							``,
 							`Run the following (and/or add it to your terminal profile) to load your CLIs in your current terminal:`,
 							``,
@@ -1004,6 +1115,30 @@ func TestGenerateBinaryNode(t *testing.T) {
 									`  }`,
 									`}`,
 									``,
+									``,
+									`function _custom_execute_leepFrogSource_leepFrogSource {`,
+									``,
+									`  # tmpFile is the file to which we write ExecuteData.Executable`,
+									`  $Local:tmpFile = New-TemporaryFile`,
+									``,
+									`  # Run the go-only code`,
+									`  & c:\Users\gleep\Desktop\Coding\go\src\command\sourcerer\cli-output-dir\artifacts\leepFrogSource.exe execute "leepFrogSource" $Local:tmpFile $args`,
+									`  # Return error if failed`,
+									`  If (!$?) {`,
+									`    Write-Error "Go execution failed"`,
+									`  } else {`,
+									`    # If success, run the ExecuteData.Executable data`,
+									`    Copy-Item "$Local:tmpFile" "$Local:tmpFile.ps1"`,
+									`    . "$Local:tmpFile.ps1"`,
+									`    If (!$?) {`,
+									`      Write-Error "ExecuteData execution failed"`,
+									`    }`,
+									`  }`,
+									`}`,
+									``,
+									`(Get-Alias) | Where { $_.NAME -match '^leepFrogSource$'} | ForEach-Object { del alias:${_} -Force }`,
+									`Set-Alias leepFrogSource _custom_execute_leepFrogSource_leepFrogSource`,
+									`Register-ArgumentCompleter -CommandName leepFrogSource -ScriptBlock $_custom_autocomplete_leepFrogSource`,
 									`if (!(Test-Path alias:do) -or !(Get-Alias do | where {$_.DEFINITION -match "_custom_execute_"}).NAME) {`,
 									`  throw "The CLI provided (do) is not a sourcerer-generated command"`,
 									`}`,
@@ -1067,7 +1202,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							fmt.Sprintf(`Binary file created: %q`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource")),
 							fmt.Sprintf(`Sourceable file created: %q`, testutil.FilepathAbs(t, "cli-output-dir", "sourcerers", "leepFrogSource_loader.sh")),
 							``,
-							color.Apply(`Successfully generated CLIs () from leepFrogSource!`, color.Green, color.Bold),
+							color.Apply(`Successfully generated CLIs (leepFrogSource) from leepFrogSource!`, color.Green, color.Bold),
 							``,
 							`Run the following (and/or add it to your terminal profile) to load your CLIs in your current terminal:`,
 							``,
@@ -1125,6 +1260,8 @@ func TestGenerateBinaryNode(t *testing.T) {
 									`  rm $tFile`,
 									`}`,
 									``,
+									`alias leepFrogSource='_custom_execute_leepFrogSource leepFrogSource'`,
+									`{ { type complete > /dev/null 2>&1 ; } && complete -F _custom_autocomplete_leepFrogSource -o nosort leepFrogSource ; } || { echo 'shell function "complete" either failed or does not exist; if using zsh, be sure to set up bashcompinit' 1>&2 ; }`,
 									`function _leep_frog_autocompleter {`,
 									`  local tFile=$(mktemp)`,
 									fmt.Sprintf(`  %s autocomplete "$1" "$COMP_TYPE" $COMP_POINT "$COMP_LINE" "${@:2}" > $tFile`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource")),
@@ -1180,7 +1317,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							fmt.Sprintf(`Binary file created: %q`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource.exe")),
 							fmt.Sprintf(`Sourceable file created: %q`, testutil.FilepathAbs(t, "cli-output-dir", "sourcerers", "leepFrogSource_loader.ps1")),
 							``,
-							color.Apply(`Successfully generated CLIs () from leepFrogSource!`, color.Green, color.Bold),
+							color.Apply(`Successfully generated CLIs (leepFrogSource) from leepFrogSource!`, color.Green, color.Bold),
 							``,
 							`Run the following (and/or add it to your terminal profile) to load your CLIs in your current terminal:`,
 							``,
@@ -1217,6 +1354,30 @@ func TestGenerateBinaryNode(t *testing.T) {
 									`  }`,
 									`}`,
 									``,
+									``,
+									`function _custom_execute_leepFrogSource_leepFrogSource {`,
+									``,
+									`  # tmpFile is the file to which we write ExecuteData.Executable`,
+									`  $Local:tmpFile = New-TemporaryFile`,
+									``,
+									`  # Run the go-only code`,
+									`  & c:\Users\gleep\Desktop\Coding\go\src\command\sourcerer\cli-output-dir\artifacts\leepFrogSource.exe execute "leepFrogSource" $Local:tmpFile $args`,
+									`  # Return error if failed`,
+									`  If (!$?) {`,
+									`    Write-Error "Go execution failed"`,
+									`  } else {`,
+									`    # If success, run the ExecuteData.Executable data`,
+									`    Copy-Item "$Local:tmpFile" "$Local:tmpFile.ps1"`,
+									`    . "$Local:tmpFile.ps1"`,
+									`    If (!$?) {`,
+									`      Write-Error "ExecuteData execution failed"`,
+									`    }`,
+									`  }`,
+									`}`,
+									``,
+									`(Get-Alias) | Where { $_.NAME -match '^leepFrogSource$'} | ForEach-Object { del alias:${_} -Force }`,
+									`Set-Alias leepFrogSource _custom_execute_leepFrogSource_leepFrogSource`,
+									`Register-ArgumentCompleter -CommandName leepFrogSource -ScriptBlock $_custom_autocomplete_leepFrogSource`,
 									`if (!(Test-Path alias:do) -or !(Get-Alias do | where {$_.DEFINITION -match "_custom_execute_"}).NAME) {`,
 									`  throw "The CLI provided (do) is not a sourcerer-generated command"`,
 									`}`,
@@ -1277,7 +1438,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							fmt.Sprintf(`Binary file created: %q`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "customOutputFile")),
 							fmt.Sprintf(`Sourceable file created: %q`, testutil.FilepathAbs(t, "cli-output-dir", "sourcerers", "customOutputFile_loader.sh")),
 							``,
-							color.Apply(`Successfully generated CLIs () from customOutputFile!`, color.Green, color.Bold),
+							color.Apply(`Successfully generated CLIs (customOutputFile) from customOutputFile!`, color.Green, color.Bold),
 							``,
 							`Run the following (and/or add it to your terminal profile) to load your CLIs in your current terminal:`,
 							``,
@@ -1335,6 +1496,8 @@ func TestGenerateBinaryNode(t *testing.T) {
 									`  rm $tFile`,
 									`}`,
 									``,
+									`alias customOutputFile='_custom_execute_customOutputFile customOutputFile'`,
+									`{ { type complete > /dev/null 2>&1 ; } && complete -F _custom_autocomplete_customOutputFile -o nosort customOutputFile ; } || { echo 'shell function "complete" either failed or does not exist; if using zsh, be sure to set up bashcompinit' 1>&2 ; }`,
 									`}`, // wrap function end bracket
 									`_customOutputFile_wrap_function`,
 									``,
@@ -1347,7 +1510,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							fmt.Sprintf(`Binary file created: %q`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "customOutputFile.exe")),
 							fmt.Sprintf(`Sourceable file created: %q`, testutil.FilepathAbs(t, "cli-output-dir", "sourcerers", "customOutputFile_loader.ps1")),
 							``,
-							color.Apply(`Successfully generated CLIs () from customOutputFile!`, color.Green, color.Bold),
+							color.Apply(`Successfully generated CLIs (customOutputFile) from customOutputFile!`, color.Green, color.Bold),
 							``,
 							`Run the following (and/or add it to your terminal profile) to load your CLIs in your current terminal:`,
 							``,
@@ -1384,11 +1547,91 @@ func TestGenerateBinaryNode(t *testing.T) {
 									`  }`,
 									`}`,
 									``,
+									``,
+									`function _custom_execute_customOutputFile_customOutputFile {`,
+									``,
+									`  # tmpFile is the file to which we write ExecuteData.Executable`,
+									`  $Local:tmpFile = New-TemporaryFile`,
+									``,
+									`  # Run the go-only code`,
+									`  & c:\Users\gleep\Desktop\Coding\go\src\command\sourcerer\cli-output-dir\artifacts\customOutputFile.exe execute "customOutputFile" $Local:tmpFile $args`,
+									`  # Return error if failed`,
+									`  If (!$?) {`,
+									`    Write-Error "Go execution failed"`,
+									`  } else {`,
+									`    # If success, run the ExecuteData.Executable data`,
+									`    Copy-Item "$Local:tmpFile" "$Local:tmpFile.ps1"`,
+									`    . "$Local:tmpFile.ps1"`,
+									`    If (!$?) {`,
+									`      Write-Error "ExecuteData execution failed"`,
+									`    }`,
+									`  }`,
+									`}`,
+									``,
+									`(Get-Alias) | Where { $_.NAME -match '^customOutputFile$'} | ForEach-Object { del alias:${_} -Force }`,
+									`Set-Alias customOutputFile _custom_execute_customOutputFile_customOutputFile`,
+									`Register-ArgumentCompleter -CommandName customOutputFile -ScriptBlock $_custom_autocomplete_customOutputFile`,
 									`}`, // wrap function end bracket
 									`. _customOutputFile_wrap_function`,
 									``,
 								},
 							},
+						},
+					},
+				},
+			},
+			{
+				name:          "fails if clashing cli names",
+				cliTargetName: "leepFrogSource",
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
+				args: []string{"source"},
+				clis: []CLI{
+					ToCLI("abc", nil),
+					ToCLI("def", nil),
+					&testCLI{name: "abc", setup: []string{"his", "story"}},
+				},
+				wantErr: fmt.Errorf(`multiple CLIs with the same name ("abc"); note: a top-level CLI is generated with the provided targetName, so that must be different than all names of the provided CLIs`),
+				osChecks: map[string]*osCheck{
+					osLinux: {
+						wantStderr: []string{
+							`multiple CLIs with the same name ("abc"); note: a top-level CLI is generated with the provided targetName, so that must be different than all names of the provided CLIs`,
+							``,
+						},
+					},
+					osWindows: {
+						wantStderr: []string{
+							`multiple CLIs with the same name ("abc"); note: a top-level CLI is generated with the provided targetName, so that must be different than all names of the provided CLIs`,
+							``,
+						},
+					},
+				},
+			},
+			{
+				name:          "fails if clashing target and cli name",
+				cliTargetName: "leepFrogSource",
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
+				args: []string{"source"},
+				clis: []CLI{
+					ToCLI("leepFrogSource", nil),
+					&testCLI{name: "abc", setup: []string{"his", "story"}},
+					ToCLI("def", nil),
+				},
+				wantErr: fmt.Errorf(`multiple CLIs with the same name ("leepFrogSource"); note: a top-level CLI is generated with the provided targetName, so that must be different than all names of the provided CLIs`),
+				osChecks: map[string]*osCheck{
+					osLinux: {
+						wantStderr: []string{
+							`multiple CLIs with the same name ("leepFrogSource"); note: a top-level CLI is generated with the provided targetName, so that must be different than all names of the provided CLIs`,
+							``,
+						},
+					},
+					osWindows: {
+						wantStderr: []string{
+							`multiple CLIs with the same name ("leepFrogSource"); note: a top-level CLI is generated with the provided targetName, so that must be different than all names of the provided CLIs`,
+							``,
 						},
 					},
 				},
@@ -1413,7 +1656,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							fmt.Sprintf(`Binary file created: %q`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource")),
 							fmt.Sprintf(`Sourceable file created: %q`, testutil.FilepathAbs(t, "cli-output-dir", "sourcerers", "leepFrogSource_loader.sh")),
 							``,
-							color.Apply(`Successfully generated CLIs (basic, l, x) from leepFrogSource!`, color.Green, color.Bold),
+							color.Apply(`Successfully generated CLIs (basic, l, leepFrogSource, x) from leepFrogSource!`, color.Green, color.Bold),
 							``,
 							`Run the following (and/or add it to your terminal profile) to load your CLIs in your current terminal:`,
 							``,
@@ -1480,6 +1723,8 @@ func TestGenerateBinaryNode(t *testing.T) {
 									`{ { type complete > /dev/null 2>&1 ; } && complete -F _custom_autocomplete_leepFrogSource -o nosort basic ; } || { echo 'shell function "complete" either failed or does not exist; if using zsh, be sure to set up bashcompinit' 1>&2 ; }`,
 									`alias l='_custom_execute_leepFrogSource l'`,
 									`{ { type complete > /dev/null 2>&1 ; } && complete -F _custom_autocomplete_leepFrogSource -o nosort l ; } || { echo 'shell function "complete" either failed or does not exist; if using zsh, be sure to set up bashcompinit' 1>&2 ; }`,
+									`alias leepFrogSource='_custom_execute_leepFrogSource leepFrogSource'`,
+									`{ { type complete > /dev/null 2>&1 ; } && complete -F _custom_autocomplete_leepFrogSource -o nosort leepFrogSource ; } || { echo 'shell function "complete" either failed or does not exist; if using zsh, be sure to set up bashcompinit' 1>&2 ; }`,
 									"alias x='_custom_execute_leepFrogSource x'",
 									`{ { type complete > /dev/null 2>&1 ; } && complete -F _custom_autocomplete_leepFrogSource -o nosort x ; } || { echo 'shell function "complete" either failed or does not exist; if using zsh, be sure to set up bashcompinit' 1>&2 ; }`,
 									`}`, // wrap function end bracket
@@ -1494,7 +1739,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							fmt.Sprintf(`Binary file created: %q`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource.exe")),
 							fmt.Sprintf(`Sourceable file created: %q`, testutil.FilepathAbs(t, "cli-output-dir", "sourcerers", "leepFrogSource_loader.ps1")),
 							``,
-							color.Apply(`Successfully generated CLIs (basic, l, x) from leepFrogSource!`, color.Green, color.Bold),
+							color.Apply(`Successfully generated CLIs (basic, l, leepFrogSource, x) from leepFrogSource!`, color.Green, color.Bold),
 							``,
 							`Run the following (and/or add it to your terminal profile) to load your CLIs in your current terminal:`,
 							``,
@@ -1587,6 +1832,30 @@ func TestGenerateBinaryNode(t *testing.T) {
 									`Set-Alias l _custom_execute_leepFrogSource_l`,
 									`Register-ArgumentCompleter -CommandName l -ScriptBlock $_custom_autocomplete_leepFrogSource`,
 									``,
+									`function _custom_execute_leepFrogSource_leepFrogSource {`,
+									``,
+									`  # tmpFile is the file to which we write ExecuteData.Executable`,
+									`  $Local:tmpFile = New-TemporaryFile`,
+									``,
+									`  # Run the go-only code`,
+									`  & c:\Users\gleep\Desktop\Coding\go\src\command\sourcerer\cli-output-dir\artifacts\leepFrogSource.exe execute "leepFrogSource" $Local:tmpFile $args`,
+									`  # Return error if failed`,
+									`  If (!$?) {`,
+									`    Write-Error "Go execution failed"`,
+									`  } else {`,
+									`    # If success, run the ExecuteData.Executable data`,
+									`    Copy-Item "$Local:tmpFile" "$Local:tmpFile.ps1"`,
+									`    . "$Local:tmpFile.ps1"`,
+									`    If (!$?) {`,
+									`      Write-Error "ExecuteData execution failed"`,
+									`    }`,
+									`  }`,
+									`}`,
+									``,
+									`(Get-Alias) | Where { $_.NAME -match '^leepFrogSource$'} | ForEach-Object { del alias:${_} -Force }`,
+									`Set-Alias leepFrogSource _custom_execute_leepFrogSource_leepFrogSource`,
+									`Register-ArgumentCompleter -CommandName leepFrogSource -ScriptBlock $_custom_autocomplete_leepFrogSource`,
+									``,
 									`function _custom_execute_leepFrogSource_x {`,
 									``,
 									`  # tmpFile is the file to which we write ExecuteData.Executable`,
@@ -1640,7 +1909,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							fmt.Sprintf(`Binary file created: %q`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource")),
 							fmt.Sprintf(`Sourceable file created: %q`, testutil.FilepathAbs(t, "cli-output-dir", "sourcerers", "leepFrogSource_loader.sh")),
 							``,
-							color.Apply(`Successfully generated CLIs (basic, l, x) from leepFrogSource!`, color.Green, color.Bold),
+							color.Apply(`Successfully generated CLIs (basic, l, leepFrogSource, x) from leepFrogSource!`, color.Green, color.Bold),
 							``,
 							`Run the following (and/or add it to your terminal profile) to load your CLIs in your current terminal:`,
 							``,
@@ -1707,6 +1976,8 @@ func TestGenerateBinaryNode(t *testing.T) {
 									`{ { type complete > /dev/null 2>&1 ; } && complete -F _custom_autocomplete_leepFrogSource  basic ; } || { echo 'shell function "complete" either failed or does not exist; if using zsh, be sure to set up bashcompinit' 1>&2 ; }`,
 									`alias l='_custom_execute_leepFrogSource l'`,
 									`{ { type complete > /dev/null 2>&1 ; } && complete -F _custom_autocomplete_leepFrogSource  l ; } || { echo 'shell function "complete" either failed or does not exist; if using zsh, be sure to set up bashcompinit' 1>&2 ; }`,
+									`alias leepFrogSource='_custom_execute_leepFrogSource leepFrogSource'`,
+									`{ { type complete > /dev/null 2>&1 ; } && complete -F _custom_autocomplete_leepFrogSource  leepFrogSource ; } || { echo 'shell function "complete" either failed or does not exist; if using zsh, be sure to set up bashcompinit' 1>&2 ; }`,
 									"alias x='_custom_execute_leepFrogSource x'",
 									`{ { type complete > /dev/null 2>&1 ; } && complete -F _custom_autocomplete_leepFrogSource  x ; } || { echo 'shell function "complete" either failed or does not exist; if using zsh, be sure to set up bashcompinit' 1>&2 ; }`,
 									`}`, // wrap function end bracket
@@ -1721,7 +1992,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							fmt.Sprintf(`Binary file created: %q`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource.exe")),
 							fmt.Sprintf(`Sourceable file created: %q`, testutil.FilepathAbs(t, "cli-output-dir", "sourcerers", "leepFrogSource_loader.ps1")),
 							``,
-							color.Apply(`Successfully generated CLIs (basic, l, x) from leepFrogSource!`, color.Green, color.Bold),
+							color.Apply(`Successfully generated CLIs (basic, l, leepFrogSource, x) from leepFrogSource!`, color.Green, color.Bold),
 							``,
 							`Run the following (and/or add it to your terminal profile) to load your CLIs in your current terminal:`,
 							``,
@@ -1813,6 +2084,30 @@ func TestGenerateBinaryNode(t *testing.T) {
 									`(Get-Alias) | Where { $_.NAME -match '^l$'} | ForEach-Object { del alias:${_} -Force }`,
 									`Set-Alias l _custom_execute_leepFrogSource_l`,
 									`Register-ArgumentCompleter -CommandName l -ScriptBlock $_custom_autocomplete_leepFrogSource`,
+									``,
+									`function _custom_execute_leepFrogSource_leepFrogSource {`,
+									``,
+									`  # tmpFile is the file to which we write ExecuteData.Executable`,
+									`  $Local:tmpFile = New-TemporaryFile`,
+									``,
+									`  # Run the go-only code`,
+									`  & c:\Users\gleep\Desktop\Coding\go\src\command\sourcerer\cli-output-dir\artifacts\leepFrogSource.exe execute "leepFrogSource" $Local:tmpFile $args`,
+									`  # Return error if failed`,
+									`  If (!$?) {`,
+									`    Write-Error "Go execution failed"`,
+									`  } else {`,
+									`    # If success, run the ExecuteData.Executable data`,
+									`    Copy-Item "$Local:tmpFile" "$Local:tmpFile.ps1"`,
+									`    . "$Local:tmpFile.ps1"`,
+									`    If (!$?) {`,
+									`      Write-Error "ExecuteData execution failed"`,
+									`    }`,
+									`  }`,
+									`}`,
+									``,
+									`(Get-Alias) | Where { $_.NAME -match '^leepFrogSource$'} | ForEach-Object { del alias:${_} -Force }`,
+									`Set-Alias leepFrogSource _custom_execute_leepFrogSource_leepFrogSource`,
+									`Register-ArgumentCompleter -CommandName leepFrogSource -ScriptBlock $_custom_autocomplete_leepFrogSource`,
 									``,
 									`function _custom_execute_leepFrogSource_x {`,
 									``,
@@ -1894,7 +2189,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							fmt.Sprintf(`Binary file created: %q`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogCLIBuiltIns")),
 							fmt.Sprintf(`Sourceable file created: %q`, testutil.FilepathAbs(t, "cli-output-dir", "sourcerers", "leepFrogCLIBuiltIns_loader.sh")),
 							``,
-							color.Apply(`Successfully generated CLIs (aliaser, gg, goleep, leep_debug) from leepFrogCLIBuiltIns!`, color.Green, color.Bold),
+							color.Apply(`Successfully generated CLIs (aliaser, gg, goleep, leepFrogCLIBuiltIns, leep_debug) from leepFrogCLIBuiltIns!`, color.Green, color.Bold),
 							``,
 							`Run the following (and/or add it to your terminal profile) to load your CLIs in your current terminal:`,
 							``,
@@ -1958,6 +2253,8 @@ func TestGenerateBinaryNode(t *testing.T) {
 									`{ { type complete > /dev/null 2>&1 ; } && complete -F _custom_autocomplete_leepFrogCLIBuiltIns -o nosort gg ; } || { echo 'shell function "complete" either failed or does not exist; if using zsh, be sure to set up bashcompinit' 1>&2 ; }`,
 									`alias goleep='_custom_execute_leepFrogCLIBuiltIns goleep'`,
 									`{ { type complete > /dev/null 2>&1 ; } && complete -F _custom_autocomplete_leepFrogCLIBuiltIns -o nosort goleep ; } || { echo 'shell function "complete" either failed or does not exist; if using zsh, be sure to set up bashcompinit' 1>&2 ; }`,
+									`alias leepFrogCLIBuiltIns='_custom_execute_leepFrogCLIBuiltIns leepFrogCLIBuiltIns'`,
+									`{ { type complete > /dev/null 2>&1 ; } && complete -F _custom_autocomplete_leepFrogCLIBuiltIns -o nosort leepFrogCLIBuiltIns ; } || { echo 'shell function "complete" either failed or does not exist; if using zsh, be sure to set up bashcompinit' 1>&2 ; }`,
 									`alias leep_debug='_custom_execute_leepFrogCLIBuiltIns leep_debug'`,
 									`{ { type complete > /dev/null 2>&1 ; } && complete -F _custom_autocomplete_leepFrogCLIBuiltIns -o nosort leep_debug ; } || { echo 'shell function "complete" either failed or does not exist; if using zsh, be sure to set up bashcompinit' 1>&2 ; }`,
 									`}`, // wrap function end bracket
@@ -1972,7 +2269,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 							fmt.Sprintf(`Binary file created: %q`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogCLIBuiltIns.exe")),
 							fmt.Sprintf(`Sourceable file created: %q`, testutil.FilepathAbs(t, "cli-output-dir", "sourcerers", "leepFrogCLIBuiltIns_loader.ps1")),
 							``,
-							color.Apply(`Successfully generated CLIs (aliaser, gg, goleep, leep_debug) from leepFrogCLIBuiltIns!`, color.Green, color.Bold),
+							color.Apply(`Successfully generated CLIs (aliaser, gg, goleep, leepFrogCLIBuiltIns, leep_debug) from leepFrogCLIBuiltIns!`, color.Green, color.Bold),
 							``,
 							`Run the following (and/or add it to your terminal profile) to load your CLIs in your current terminal:`,
 							``,
@@ -2081,6 +2378,30 @@ func TestGenerateBinaryNode(t *testing.T) {
 									`(Get-Alias) | Where { $_.NAME -match '^goleep$'} | ForEach-Object { del alias:${_} -Force }`,
 									`Set-Alias goleep _custom_execute_leepFrogCLIBuiltIns_goleep`,
 									`Register-ArgumentCompleter -CommandName goleep -ScriptBlock $_custom_autocomplete_leepFrogCLIBuiltIns`,
+									``,
+									`function _custom_execute_leepFrogCLIBuiltIns_leepFrogCLIBuiltIns {`,
+									``,
+									`  # tmpFile is the file to which we write ExecuteData.Executable`,
+									`  $Local:tmpFile = New-TemporaryFile`,
+									``,
+									`  # Run the go-only code`,
+									`  & c:\Users\gleep\Desktop\Coding\go\src\command\sourcerer\cli-output-dir\artifacts\leepFrogCLIBuiltIns.exe builtin execute "leepFrogCLIBuiltIns" $Local:tmpFile $args`,
+									`  # Return error if failed`,
+									`  If (!$?) {`,
+									`    Write-Error "Go execution failed"`,
+									`  } else {`,
+									`    # If success, run the ExecuteData.Executable data`,
+									`    Copy-Item "$Local:tmpFile" "$Local:tmpFile.ps1"`,
+									`    . "$Local:tmpFile.ps1"`,
+									`    If (!$?) {`,
+									`      Write-Error "ExecuteData execution failed"`,
+									`    }`,
+									`  }`,
+									`}`,
+									``,
+									`(Get-Alias) | Where { $_.NAME -match '^leepFrogCLIBuiltIns$'} | ForEach-Object { del alias:${_} -Force }`,
+									`Set-Alias leepFrogCLIBuiltIns _custom_execute_leepFrogCLIBuiltIns_leepFrogCLIBuiltIns`,
+									`Register-ArgumentCompleter -CommandName leepFrogCLIBuiltIns -ScriptBlock $_custom_autocomplete_leepFrogCLIBuiltIns`,
 									``,
 									`function _custom_execute_leepFrogCLIBuiltIns_leep_debug {`,
 									``,
@@ -2403,6 +2724,7 @@ func TestSourcerer(t *testing.T) {
 			osReadFileErr         error
 			osExecutableErr       error
 			fakeInputFileContents []string
+			runResponseTester     *spycommandertest.RunResponseTester
 		}{
 			{
 				name:          "fails if invalid target name",
@@ -2454,9 +2776,9 @@ func TestSourcerer(t *testing.T) {
 				args:          []string{"execute", "idk"},
 				osCheck: &osCheck{
 					wantStderr: []string{
-						"validation for \"CLI\" failed: [MapArg] key (idk) is not in map; expected one of []",
+						"validation for \"CLI\" failed: [MapArg] key (idk) is not in map; expected one of [leepFrogSource]",
 					},
-					wantErr: fmt.Errorf("validation for \"CLI\" failed: [MapArg] key (idk) is not in map; expected one of []"),
+					wantErr: fmt.Errorf("validation for \"CLI\" failed: [MapArg] key (idk) is not in map; expected one of [leepFrogSource]"),
 				},
 			},
 			{
@@ -3289,7 +3611,7 @@ func TestSourcerer(t *testing.T) {
 				},
 				args: []string{ListBranchName},
 				osCheck: &osCheck{
-					wantStdout: []string{""},
+					wantStdout: []string{"leepFrogSource"},
 				},
 			},
 			{
@@ -3307,6 +3629,7 @@ func TestSourcerer(t *testing.T) {
 				osCheck: &osCheck{
 					wantStdout: []string{
 						"deux",
+						"leepFrogSource",
 						"trois",
 						"un",
 					},
@@ -3478,9 +3801,9 @@ func TestSourcerer(t *testing.T) {
 				args: []string{"autocomplete", "idk", "63", "2", "a"},
 				osCheck: &osCheck{
 					wantStderr: []string{
-						"validation for \"CLI\" failed: [MapArg] key (idk) is not in map; expected one of []\n",
+						"validation for \"CLI\" failed: [MapArg] key (idk) is not in map; expected one of [leepFrogSource]\n",
 					},
-					wantErr:         fmt.Errorf("validation for \"CLI\" failed: [MapArg] key (idk) is not in map; expected one of []"),
+					wantErr:         fmt.Errorf("validation for \"CLI\" failed: [MapArg] key (idk) is not in map; expected one of [leepFrogSource]"),
 					noStderrNewline: true,
 				},
 			},
@@ -3938,6 +4261,122 @@ func TestSourcerer(t *testing.T) {
 					wantStdout: []string{""},
 				},
 			},
+			// Top-level CLI tests
+			{
+				name:          "top-level CLI prints out help command",
+				cliTargetName: "leepFrogSource",
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
+				wantGetCacheCalls: []string{testutil.FilepathAbs(t, "cli-output-dir", "cache")},
+				args:              []string{"execute", "leepFrogSource", fakeFile, "--help"},
+				osCheck: &osCheck{
+					wantStdout: []string{
+						`This is a CLI for running generic cross-CLI utility commands for all CLIs generated with this target name`,
+						`┓`,
+						`┃   Regenerate all CLI artifacts and executables using the current go source code`,
+						`┗━━ reload --builtin|-b`,
+						``,
+						`Flags:`,
+						`  [b] builtin: Whether or not the built-in CLIs should be used instead of user-defined ones`,
+					},
+				},
+			},
+			{
+				name:          "top-level CLI fails if no branching argument provided",
+				cliTargetName: "leepFrogSource",
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
+				wantGetCacheCalls: []string{testutil.FilepathAbs(t, "cli-output-dir", "cache")},
+				args:              []string{"execute", "leepFrogSource", fakeFile},
+				osCheck: &osCheck{
+					wantErr: fmt.Errorf("Branching argument must be one of [reload]"),
+					wantStderr: []string{
+						`Branching argument must be one of [reload]`,
+						``,
+						`======= Command Usage =======`,
+						`This is a CLI for running generic cross-CLI utility commands for all CLIs generated with this target name`,
+						`┓`,
+						`┃   Regenerate all CLI artifacts and executables using the current go source code`,
+						`┗━━ reload --builtin|-b`,
+						``,
+						`Flags:`,
+						`  [b] builtin: Whether or not the built-in CLIs should be used instead of user-defined ones`,
+					},
+				},
+			},
+			{
+				name:          "top-level CLI reload fails on shell command error",
+				cliTargetName: "leepFrogSource",
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
+				wantGetCacheCalls: []string{testutil.FilepathAbs(t, "cli-output-dir", "cache")},
+				args:              []string{"execute", "leepFrogSource", fakeFile, "reload"},
+				osCheck: &osCheck{
+					wantStdout: []string{"regular output"},
+					wantStderr: []string{
+						"regular errput",
+						"failed to execute shell command: whoops",
+					},
+					wantErr: fmt.Errorf("failed to execute shell command: whoops"),
+				},
+				runResponseTester: &spycommandertest.RunResponseTester{
+					RunResponses: []*commandtest.FakeRun{{
+						Stdout: []string{"regular output"},
+						Stderr: []string{"regular errput"},
+						Err:    fmt.Errorf("whoops"),
+					}},
+					Want: []*commandtest.RunContents{{
+						Name: "go",
+						Args: []string{"run", ".", "source"},
+						Dir:  filepath.Dir("/fake/source/location/main.go"),
+					}},
+				},
+			},
+			{
+				name:          "top-level CLI reloads CLIs and forwards output",
+				cliTargetName: "leepFrogSource",
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
+				wantGetCacheCalls: []string{testutil.FilepathAbs(t, "cli-output-dir", "cache")},
+				args:              []string{"execute", "leepFrogSource", fakeFile, "reload"},
+				osCheck: &osCheck{
+					wantStdout: []string{"regular output"},
+					wantStderr: []string{"regular errput"},
+				},
+				runResponseTester: &spycommandertest.RunResponseTester{
+					RunResponses: []*commandtest.FakeRun{{
+						Stdout: []string{"regular output"},
+						Stderr: []string{"regular errput"},
+					}},
+					Want: []*commandtest.RunContents{{
+						Name: "go",
+						Args: []string{"run", ".", "source"},
+						Dir:  filepath.Dir("/fake/source/location/main.go"),
+					}},
+				},
+			},
+			{
+				name:          "top-level CLI reloads builtin CLIs",
+				cliTargetName: "leepFrogSource",
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
+				wantGetCacheCalls: []string{testutil.FilepathAbs(t, "cli-output-dir", "cache")},
+				args:              []string{"execute", "leepFrogSource", fakeFile, "reload", "--builtin"},
+				osCheck:           &osCheck{},
+				runResponseTester: &spycommandertest.RunResponseTester{
+					RunResponses: []*commandtest.FakeRun{{}},
+					Want: []*commandtest.RunContents{{
+						Name: "go",
+						Args: []string{"run", ".", "builtin", "source"},
+						Dir:  filepath.Dir("/fake/source/location/main.go"),
+					}},
+				},
+			},
 			// Builtin command tests
 			{
 				name:          "builtin execute doesn't work with provided CLIs",
@@ -3949,9 +4388,9 @@ func TestSourcerer(t *testing.T) {
 				args: []string{"builtin", "execute", someCLI.name},
 				osCheck: &osCheck{
 					wantStderr: []string{
-						"validation for \"CLI\" failed: [MapArg] key (basic) is not in map; expected one of [aliaser gg goleep leep_debug]",
+						"validation for \"CLI\" failed: [MapArg] key (basic) is not in map; expected one of [aliaser gg goleep leepFrogCLIBuiltIns leep_debug]",
 					},
-					wantErr:         fmt.Errorf("validation for \"CLI\" failed: [MapArg] key (basic) is not in map; expected one of [aliaser gg goleep leep_debug]"),
+					wantErr:         fmt.Errorf("validation for \"CLI\" failed: [MapArg] key (basic) is not in map; expected one of [aliaser gg goleep leepFrogCLIBuiltIns leep_debug]"),
 					noStdoutNewline: true,
 				},
 			},
@@ -4029,9 +4468,9 @@ func TestSourcerer(t *testing.T) {
 				args: []string{"builtin", "autocomplete", someCLI.name},
 				osCheck: &osCheck{
 					wantStderr: []string{
-						"validation for \"CLI\" failed: [MapArg] key (basic) is not in map; expected one of [aliaser gg goleep leep_debug]",
+						"validation for \"CLI\" failed: [MapArg] key (basic) is not in map; expected one of [aliaser gg goleep leepFrogCLIBuiltIns leep_debug]",
 					},
-					wantErr:         fmt.Errorf("validation for \"CLI\" failed: [MapArg] key (basic) is not in map; expected one of [aliaser gg goleep leep_debug]"),
+					wantErr:         fmt.Errorf("validation for \"CLI\" failed: [MapArg] key (basic) is not in map; expected one of [aliaser gg goleep leepFrogCLIBuiltIns leep_debug]"),
 					noStdoutNewline: true,
 				},
 			},
@@ -4566,6 +5005,11 @@ func TestSourcerer(t *testing.T) {
 		} {
 			t.Run(fmt.Sprintf("[%s] %s", curOS.Name(), test.name), func(t *testing.T) {
 				StubExecutableFile(t, "osArgs-at-zero", test.osExecutableErr)
+
+				if test.runResponseTester == nil {
+					test.runResponseTester = &spycommandertest.RunResponseTester{}
+				}
+				test.runResponseTester.Setup(t)
 				stubs.StubEnv(t, test.env)
 				if test.osReadFileStub {
 					testutil.StubValue(t, &osReadFile, func(b string) ([]byte, error) {
@@ -4658,6 +5102,9 @@ func TestSourcerer(t *testing.T) {
 				if uuidIdx != len(test.uuids) {
 					t.Errorf("Unnecessary uuid stubs. %d stubs, but only %d calls", len(test.uuids), uuidIdx)
 				}
+
+				// Check run responses
+				test.runResponseTester.Check(t, fmt.Sprintf("source(%v)", test.args))
 
 				// Check file contents
 				cmpFile(t, "Sourcing produced incorrect file contents", f.Name(), oschk.wantOutput)

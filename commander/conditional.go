@@ -58,3 +58,25 @@ func IfElseData(dataArg string, t, f command.Processor) command.Processor {
 func IfData(dataArg string, p command.Processor) command.Processor {
 	return IfElseData(dataArg, p, nil)
 }
+
+// ClosureProcessor returns a `command.Processor` that runs the processor
+// returned by the provided function.
+func ClosureProcessor(f func(i *command.Input, d *command.Data) command.Processor) command.Processor {
+	return &wrappedProcessor{f}
+}
+
+type wrappedProcessor struct {
+	f func(i *command.Input, d *command.Data) command.Processor
+}
+
+func (w *wrappedProcessor) Execute(i *command.Input, o command.Output, d *command.Data, e *command.ExecuteData) error {
+	return w.f(i, d).Execute(i, o, d, e)
+}
+
+func (w *wrappedProcessor) Complete(i *command.Input, d *command.Data) (*command.Completion, error) {
+	return w.f(i, d).Complete(i, d)
+}
+
+func (w *wrappedProcessor) Usage(i *command.Input, d *command.Data, u *command.Usage) error {
+	return w.f(i, d).Usage(i, d, u)
+}

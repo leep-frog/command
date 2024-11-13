@@ -428,11 +428,24 @@ func (s *sourcerer) initSourcerer(runCLI, builtin bool, targetName string, clis 
 	}
 
 	cliMap := map[string]CLI{}
+
+	if !runCLI {
+		clis = append(clis, &topLevelCLI{
+			name:           targetName,
+			sourceLocation: sourceLocation,
+		})
+	}
+
 	for i, c := range clis {
 		if c == nil {
 			return fmt.Errorf("nil CLI provided at index %d", i)
 		}
-		cliMap[c.Name()] = c
+
+		name := c.Name()
+		if _, ok := cliMap[name]; ok {
+			return fmt.Errorf("multiple CLIs with the same name (%q); note: a top-level CLI is generated with the provided targetName, so that must be different than all names of the provided CLIs", name)
+		}
+		cliMap[name] = c
 	}
 
 	s.clis = cliMap
@@ -612,4 +625,41 @@ func save(c CLI, d *command.Data) error {
 
 func cacheKey(cli CLI) string {
 	return fmt.Sprintf("leep-frog-cache-key-%s.json", cli.Name())
+}
+
+type topLevelCLI struct {
+	name           string
+	sourceLocation string
+}
+
+func (t *topLevelCLI) Name() string    { return t.name }
+func (t *topLevelCLI) Setup() []string { return nil }
+func (t *topLevelCLI) Changed() bool   { return false }
+
+func (t *topLevelCLI) Node() command.Node {
+	builtinFlag := commander.BoolFlag("builtin", 'b', "Whether or not the built-in CLIs should be used instead of user-defined ones")
+	return commander.SerialNodes(
+		commander.Description("This is a CLI for running generic cross-CLI utility commands for all CLIs generated with this target name"),
+		&commander.BranchNode{
+			Branches: map[string]command.Node{
+				"reload": commander.SerialNodes(
+					commander.Description("Regenerate all CLI artifacts and executables using the current go source code"),
+					commander.FlagProcessor(builtinFlag),
+					commander.ClosureProcessor(func(i *command.Input, d *command.Data) command.Processor {
+						args := []string{"run", ".", "source"}
+						if builtinFlag.Get(d) {
+							args = []string{"run", ".", "builtin", "source"}
+						}
+						return &commander.ShellCommand[string]{
+							Dir:               filepath.Dir(t.sourceLocation),
+							CommandName:       "go",
+							Args:              args,
+							DontRunOnComplete: true,
+							ForwardStdout:     true,
+						}
+					}),
+				),
+			},
+		},
+	)
 }

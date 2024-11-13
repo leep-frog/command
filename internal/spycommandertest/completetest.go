@@ -37,7 +37,7 @@ func AutocompleteTest(t *testing.T, ctc *commandtest.CompleteTestCase, ictc *spy
 	}
 
 	testers := []commandTester{
-		&runResponseTester{ctc.RunResponses, ctc.WantRunContents, nil},
+		&RunResponseTester{ctc.RunResponses, ctc.WantRunContents, nil},
 		&errorTester{
 			ctc.WantErr,
 			ictc.SkipErrorTypeCheck,

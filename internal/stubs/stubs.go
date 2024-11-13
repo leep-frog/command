@@ -39,3 +39,8 @@ func StubGetwd(t *testing.T, wd string, err error) {
 		return wd, err
 	})
 }
+
+// StubRun stubs the cmd.Run() method with the provided function.
+func StubRun(t *testing.T, f func(cmd *exec.Cmd) error) {
+	testutil.StubValue(t, &Run, f)
+}

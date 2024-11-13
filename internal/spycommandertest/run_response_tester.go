@@ -13,9 +13,9 @@ import (
 	"github.com/leep-frog/command/internal/testutil"
 )
 
-type runResponseTester struct {
-	runResponses   []*commandtest.FakeRun
-	want           []*commandtest.RunContents
+type RunResponseTester struct {
+	RunResponses   []*commandtest.FakeRun
+	Want           []*commandtest.RunContents
 	gotRunContents []*commandtest.RunContents
 }
 
@@ -27,9 +27,9 @@ func (f *fakeWriteCloser) Close() error {
 	return nil
 }
 
-func (rrt *runResponseTester) stubRunResponses(t *testing.T) func(cmd *exec.Cmd) error {
+func (rrt *RunResponseTester) stubRunResponses(t *testing.T) func(cmd *exec.Cmd) error {
 	return func(cmd *exec.Cmd) error {
-		if len(rrt.runResponses) == 0 {
+		if len(rrt.RunResponses) == 0 {
 			t.Fatalf("ran out of stubbed run responses")
 		}
 
@@ -46,8 +46,8 @@ func (rrt *runResponseTester) stubRunResponses(t *testing.T) func(cmd *exec.Cmd)
 		// like by msys for example.
 		rrt.gotRunContents = append(rrt.gotRunContents, &commandtest.RunContents{cmd.Args[0], cmd.Args[1:], cmd.Dir, stdinContents})
 
-		r := rrt.runResponses[0]
-		rrt.runResponses = rrt.runResponses[1:]
+		r := rrt.RunResponses[0]
+		rrt.RunResponses = rrt.RunResponses[1:]
 		testutil.Write(t, cmd.Stdout, r.Stdout)
 		testutil.Write(t, cmd.Stderr, r.Stderr)
 		if r.F != nil {
@@ -57,8 +57,12 @@ func (rrt *runResponseTester) stubRunResponses(t *testing.T) func(cmd *exec.Cmd)
 	}
 }
 
-func (rrt *runResponseTester) setup(t *testing.T, tc *testContext) {
-	testutil.StubValue(t, &stubs.Run, rrt.stubRunResponses(t))
+func (rrt *RunResponseTester) setup(t *testing.T, tc *testContext) {
+	rrt.Setup(t)
+}
+
+func (rrt *RunResponseTester) Setup(t *testing.T) {
+	stubs.StubRun(t, rrt.stubRunResponses(t))
 	testutil.StubValue(t, &stubs.StubStdinPipe, func(cmd *exec.Cmd) (io.WriteCloser, error) {
 		if cmd.Stdin != nil {
 			return nil, fmt.Errorf("cmd.Stdin is already set")
@@ -69,14 +73,18 @@ func (rrt *runResponseTester) setup(t *testing.T, tc *testContext) {
 	})
 }
 
-func (rrt *runResponseTester) check(t *testing.T, tc *testContext) {
+func (rrt *RunResponseTester) check(t *testing.T, tc *testContext) {
+	rrt.Check(t, tc.prefix)
+}
+
+func (rrt *RunResponseTester) Check(t *testing.T, prefix string) {
 	t.Helper()
-	if len(rrt.runResponses) > 0 {
-		t.Errorf("unused run responses: %v", rrt.runResponses)
+	if len(rrt.RunResponses) > 0 {
+		t.Errorf("unused run responses: %v", rrt.RunResponses)
 	}
 
 	// Check proper commands were run.
-	if diff := cmp.Diff(rrt.want, rrt.gotRunContents); diff != "" {
-		t.Errorf("%s produced unexpected shell commands:\n%s", tc.prefix, diff)
+	if diff := cmp.Diff(rrt.Want, rrt.gotRunContents); diff != "" {
+		t.Errorf("%s produced unexpected shell commands:\n%s", prefix, diff)
 	}
 }

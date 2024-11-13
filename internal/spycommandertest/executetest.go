@@ -130,7 +130,7 @@ func ExecuteTest(t *testing.T, etc *commandtest.ExecuteTestCase, ietc *spycomman
 			ietc.WantIsValidationError,
 		},
 		&executeDataTester{etc.WantExecuteData},
-		&runResponseTester{etc.RunResponses, etc.WantRunContents, nil},
+		&RunResponseTester{etc.RunResponses, etc.WantRunContents, nil},
 		&dataTester{etc.SkipDataCheck, etc.WantData, etc.DataCmpOpts},
 		&inputTester{ietc.SkipInputCheck, ietc.WantInput},
 		&envTester{},
