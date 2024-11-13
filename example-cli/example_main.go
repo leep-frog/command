@@ -13,7 +13,7 @@ import (
 
 func main() {
 	// sourcerer.Source returns 0 if the command resulted in success and 1 otherwise. Using `os.Exit` in this way ensures that your Go errors result in the appropriate command exit status in bash.
-	// os.Exit(sourcerer.Source([]sourcerer.CLI{
+	// os.Exit(sourcerer.Source("exampleCLI", []sourcerer.CLI{
 	// &myFirstCommand{},
 	// &mySecondCommand,
 	// &myThirdCommand,

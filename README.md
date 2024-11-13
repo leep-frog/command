@@ -46,7 +46,7 @@ func main() {
     // Put CLI options (e.g. Aliasers) here
   }
 
-  os.Exit(sourcerer.Source(clis, opts...))
+  os.Exit(sourcerer.Source("myCLI", clis, opts...))
 }
 ```
 
