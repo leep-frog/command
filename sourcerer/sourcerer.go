@@ -580,18 +580,18 @@ func (s *sourcerer) generateFile(o command.Output, d *command.Data) error {
 	goRunSourceCommand := fmt.Sprintf(`go run .%s source`, builtinArg)
 
 	if loud {
+		o.Stdoutln(fmt.Sprintf("Sourceable file created: %q\n", sourceableFile))
+	}
+
+	cliNames := maps.Keys(s.clis)
+	slices.Sort(cliNames)
+	o.Stdoutln(color.Apply(fmt.Sprintf("Successfully generated CLIs (%s) from %s!", strings.Join(cliNames, ", "), s.targetName), color.Green, color.Bold))
+	if loud {
 		o.Stdoutln(strings.Join([]string{
-			fmt.Sprintf("Sourceable file created: %q", sourceableFile),
-			``,
-			color.Apply("All steps have completed successfully!", color.Green, color.Bold),
 			``,
 			"Run the following (and/or add it to your terminal profile) to load your CLIs in your current terminal:",
 			``,
 			color.Apply(strings.Join(CurrentOS.SourceSetup(sourceableFile, s.targetName, goRunSourceCommand, filepath.Dir(s.sourceLocation)), "\n"), color.Blue),
-		}, "\n"))
-	} else {
-		o.Stdoutln(strings.Join([]string{
-			color.Apply(fmt.Sprintf("Successfully generated CLI data for %s!", s.targetName), color.Green, color.Bold),
 		}, "\n"))
 	}
 
