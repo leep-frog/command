@@ -412,7 +412,6 @@ func Source(targetName string, clis []CLI, opts ...Option) int {
 
 func (s *sourcerer) initBuiltInSourcerer() error {
 	return s.initSourcerer(false, true, "leepFrogCLIBuiltIns", []CLI{
-		&SourcererCommand{},
 		&AliaserCommand{s.goExecutableFilePath},
 		&Debugger{},
 		&GoLeep{},
