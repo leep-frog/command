@@ -655,6 +655,7 @@ func (t *topLevelCLI) Node() command.Node {
 						return nil
 					}},
 					rootDirectoryArg,
+					commander.PrintlnProcessor("HERIO 1"),
 					commander.ClosureProcessor(func(i *command.Input, d *command.Data) command.Processor {
 						args := []string{"run", ".", "source"}
 						if builtinFlag.Get(d) {
