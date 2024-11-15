@@ -645,6 +645,16 @@ func (t *topLevelCLI) Node() command.Node {
 				"reload": commander.SerialNodes(
 					commander.Description("Regenerate all CLI artifacts and executables using the current go source code"),
 					commander.FlagProcessor(builtinFlag),
+					&commander.ExecutorProcessor{func(o command.Output, d *command.Data) error {
+						temp, err := os.MkdirTemp("", "leep-frog-top-level-cli")
+						if err != nil {
+							return fmt.Errorf("failed to create temp directory")
+						}
+
+						d.Set("TEMP_DIR", temp)
+						return nil
+					}},
+					rootDirectoryArg,
 					commander.ClosureProcessor(func(i *command.Input, d *command.Data) command.Processor {
 						args := []string{"run", ".", "source"}
 						if builtinFlag.Get(d) {
@@ -654,6 +664,26 @@ func (t *topLevelCLI) Node() command.Node {
 							Dir:               filepath.Dir(t.sourceLocation),
 							CommandName:       "go",
 							Args:              args,
+							DontRunOnComplete: true,
+							ForwardStdout:     true,
+							Env: []string{
+								fmt.Sprintf("%s=%s", RootDirectoryEnvVar, d.String("TEMP_DIR")),
+							},
+						}
+					}),
+					commander.ClosureProcessor(func(i *command.Input, d *command.Data) command.Processor {
+						// TODO: Use os.CopyFS in go 1.23
+						return &commander.ShellCommand[string]{
+							Dir:         d.String("TEMP_DIR"),
+							CommandName: "cp",
+							Args: []string{
+								ValueByOS(map[string]string{
+									Windows().Name(): "-Recurse",
+									Linux().Name():   "-a",
+								}),
+								"*",
+								rootDirectoryArg.Get(d),
+							},
 							DontRunOnComplete: true,
 							ForwardStdout:     true,
 						}

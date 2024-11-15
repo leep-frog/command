@@ -63,6 +63,8 @@ type ShellCommand[T any] struct {
 	Dir string
 	// Stdin is the `io.Reader` to forward for use in `exec.Command`
 	Stdin io.Reader
+	// Env is the additional environment variables to include
+	Env []string
 
 	// This is still a work-in-progress
 	// stdinPipeFn is a function that will be run with the output of cmd.StdinPipe
@@ -173,6 +175,8 @@ func (bn *ShellCommand[T]) Run(output command.Output, data *command.Data) (T, er
 	var rawOut bytes.Buffer
 	stdoutWriters := []io.Writer{&rawOut}
 	cmd := exec.Command(bn.CommandName, bn.Args...)
+	cmd.Env = append(cmd.Env, bn.Env...)
+
 	cmd.Dir = bn.Dir
 	if bn.ForwardStdout && output != nil {
 		stdoutWriters = append(stdoutWriters, command.StdoutWriter(output))
