@@ -647,10 +647,7 @@ func (t *topLevelCLI) Node() command.Node {
 					commander.FlagProcessor(builtinFlag),
 					rootDirectoryArg,
 					commander.PrintlnProcessor("HERIO 1"),
-					&commander.ExecutorProcessor{func(o command.Output, d *command.Data) error {
-						fmt.Println("YOOOOO")
-						fmt.Println("root", rootDirectoryArg.Get(d))
-						o.Stdoutln(rootDirectoryArg.Get(d))
+					commander.SimpleProcessor(func(i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
 						temp, err := os.MkdirTemp(rootDirectoryArg.Get(d), "top-level-cli-*")
 						if err != nil {
 							return fmt.Errorf("failed to create temp directory")
@@ -659,7 +656,7 @@ func (t *topLevelCLI) Node() command.Node {
 						fmt.Println("TEMP", temp)
 						d.Set("TEMP_DIR", temp)
 						return nil
-					}},
+					}, nil),
 
 					commander.PrintlnProcessor("HERIO 1"),
 					commander.ClosureProcessor(func(i *command.Input, d *command.Data) command.Processor {
