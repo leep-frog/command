@@ -666,6 +666,7 @@ func (t *topLevelCLI) Node() command.Node {
 						}
 
 						fmt.Println("WTHf", filepath.Dir(t.sourceLocation), "PRE", d.String("TEMP_DIR"), "POST")
+						fmt.Println("FINAL", RootDirectoryEnvVar, d.String("TEMP_DIR"))
 						return &commander.ShellCommand[string]{
 							Dir:               filepath.Dir(t.sourceLocation),
 							CommandName:       "go",
