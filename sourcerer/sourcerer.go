@@ -649,7 +649,7 @@ func (t *topLevelCLI) Node() command.Node {
 					commander.PrintlnProcessor("HERIO 1"),
 					&commander.ExecutorProcessor{func(o command.Output, d *command.Data) error {
 						fmt.Println("YOOOOO")
-						fmt.Println(rootDirectoryArg.Get(d))
+						fmt.Println("root", rootDirectoryArg.Get(d))
 						o.Stdoutln(rootDirectoryArg.Get(d))
 						temp, err := os.MkdirTemp(rootDirectoryArg.Get(d), "top-level-cli-*")
 						if err != nil {
@@ -667,7 +667,7 @@ func (t *topLevelCLI) Node() command.Node {
 							args = []string{"run", ".", "builtin", "source"}
 						}
 
-						fmt.Println("WTHf", t.sourceLocation)
+						fmt.Println("WTHf", filepath.Dir(t.sourceLocation), d.String("TEMP_DIR"))
 						return &commander.ShellCommand[string]{
 							Dir:               filepath.Dir(t.sourceLocation),
 							CommandName:       "go",
@@ -679,9 +679,10 @@ func (t *topLevelCLI) Node() command.Node {
 							},
 						}
 					}),
-					commander.PrintlnProcessor("HERIO"),
+					commander.PrintlnProcessor("HERIO 2"),
 					commander.ClosureProcessor(func(i *command.Input, d *command.Data) command.Processor {
 						// TODO: Use os.CopyFS in go 1.23
+						fmt.Println("here too")
 						return &commander.ShellCommand[string]{
 							CommandName: "cp",
 							Args: []string{
