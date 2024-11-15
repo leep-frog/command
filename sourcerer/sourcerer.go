@@ -647,7 +647,8 @@ func (t *topLevelCLI) Node() command.Node {
 					commander.FlagProcessor(builtinFlag),
 					rootDirectoryArg,
 					&commander.ExecutorProcessor{func(o command.Output, d *command.Data) error {
-						temp, err := os.MkdirTemp(filepath.Join(rootDirectoryArg.Get(d), "tmp"), "top-level-cli-*")
+						o.Stdoutln(rootDirectoryArg.Get(d))
+						temp, err := os.MkdirTemp(rootDirectoryArg.Get(d), "top-level-cli-*")
 						if err != nil {
 							return fmt.Errorf("failed to create temp directory")
 						}
