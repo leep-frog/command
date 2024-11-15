@@ -544,6 +544,7 @@ var (
 )
 
 func (s *sourcerer) generateFile(o command.Output, d *command.Data) error {
+	fmt.Println("HERE at least")
 	loud := !quietFlag.Get(d)
 
 	// Create the artifacts directory
