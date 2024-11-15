@@ -75,6 +75,9 @@ type OS interface {
 // ValueByOS will return the value that is associated
 // with the current OS. If there is no match, then the
 // function will panic.
+//
+// NOTE: Ideally, this should not be used and any instances of this should be added into the OS interface
+// above.
 func ValueByOS[T any](values map[string]T) T {
 	if v, ok := values[CurrentOS.Name()]; ok {
 		return v
