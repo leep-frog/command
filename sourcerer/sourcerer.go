@@ -666,6 +666,8 @@ func (t *topLevelCLI) Node() command.Node {
 						if builtinFlag.Get(d) {
 							args = []string{"run", ".", "builtin", "source"}
 						}
+
+						fmt.Println("WTHf", t.sourceLocation)
 						return &commander.ShellCommand[string]{
 							Dir:               filepath.Dir(t.sourceLocation),
 							CommandName:       "go",
