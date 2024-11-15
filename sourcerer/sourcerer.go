@@ -658,7 +658,7 @@ func (t *topLevelCLI) Node() command.Node {
 						return nil
 					}, nil),
 
-					commander.PrintlnProcessor("HERIO 1"),
+					commander.PrintlnProcessor("HERIO 2"),
 					commander.ClosureProcessor(func(i *command.Input, d *command.Data) command.Processor {
 						args := []string{"run", ".", "source"}
 						if builtinFlag.Get(d) {
@@ -667,8 +667,9 @@ func (t *topLevelCLI) Node() command.Node {
 
 						fmt.Println("WTHf", filepath.Dir(t.sourceLocation), "PRE", d.String("TEMP_DIR"), "POST")
 						return &commander.ShellCommand[string]{
-							Dir:               filepath.Dir(t.sourceLocation),
-							CommandName:       "go",
+							// Dir:               filepath.Dir(t.sourceLocation),
+							// CommandName:       "go",
+							CommandName:       "echo",
 							Args:              args,
 							DontRunOnComplete: true,
 							ForwardStdout:     true,
@@ -677,24 +678,24 @@ func (t *topLevelCLI) Node() command.Node {
 							},
 						}
 					}),
-					commander.PrintlnProcessor("HERIO 2"),
-					commander.ClosureProcessor(func(i *command.Input, d *command.Data) command.Processor {
-						// TODO: Use os.CopyFS in go 1.23
-						fmt.Println("here too")
-						return &commander.ShellCommand[string]{
-							CommandName: "cp",
-							Args: []string{
-								ValueByOS(map[string]string{
-									Windows().Name(): "-Recurse",
-									Linux().Name():   "-a",
-								}),
-								filepath.Join(d.String("TEMP_DIR"), "*"),
-								rootDirectoryArg.Get(d),
-							},
-							DontRunOnComplete: true,
-							ForwardStdout:     true,
-						}
-					}),
+					commander.PrintlnProcessor("HERIO 3"),
+					// commander.ClosureProcessor(func(i *command.Input, d *command.Data) command.Processor {
+					// 	// TODO: Use os.CopyFS in go 1.23
+					// 	fmt.Println("here too")
+					// 	return &commander.ShellCommand[string]{
+					// 		CommandName: "cp",
+					// 		Args: []string{
+					// 			ValueByOS(map[string]string{
+					// 				Windows().Name(): "-Recurse",
+					// 				Linux().Name():   "-a",
+					// 			}),
+					// 			filepath.Join(d.String("TEMP_DIR"), "*"),
+					// 			rootDirectoryArg.Get(d),
+					// 		},
+					// 		DontRunOnComplete: true,
+					// 		ForwardStdout:     true,
+					// 	}
+					// }),
 				),
 			},
 		},
