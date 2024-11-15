@@ -645,8 +645,9 @@ func (t *topLevelCLI) Node() command.Node {
 				"reload": commander.SerialNodes(
 					commander.Description("Regenerate all CLI artifacts and executables using the current go source code"),
 					commander.FlagProcessor(builtinFlag),
+					rootDirectoryArg,
 					&commander.ExecutorProcessor{func(o command.Output, d *command.Data) error {
-						temp, err := os.MkdirTemp("", "top-level-cli-*")
+						temp, err := os.MkdirTemp(filepath.Join(rootDirectoryArg.Get(d), "tmp"), "top-level-cli-*")
 						if err != nil {
 							return fmt.Errorf("failed to create temp directory")
 						}
@@ -654,7 +655,7 @@ func (t *topLevelCLI) Node() command.Node {
 						d.Set("TEMP_DIR", temp)
 						return nil
 					}},
-					rootDirectoryArg,
+
 					commander.PrintlnProcessor("HERIO 1"),
 					commander.ClosureProcessor(func(i *command.Input, d *command.Data) command.Processor {
 						args := []string{"run", ".", "source"}
