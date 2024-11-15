@@ -646,7 +646,10 @@ func (t *topLevelCLI) Node() command.Node {
 					commander.Description("Regenerate all CLI artifacts and executables using the current go source code"),
 					commander.FlagProcessor(builtinFlag),
 					rootDirectoryArg,
+					commander.PrintlnProcessor("HERIO 1"),
 					&commander.ExecutorProcessor{func(o command.Output, d *command.Data) error {
+						fmt.Println("YOOOOO")
+						fmt.Println(rootDirectoryArg.Get(d))
 						o.Stdoutln(rootDirectoryArg.Get(d))
 						temp, err := os.MkdirTemp(rootDirectoryArg.Get(d), "top-level-cli-*")
 						if err != nil {
