@@ -671,6 +671,7 @@ func (t *topLevelCLI) Node() command.Node {
 							},
 						}
 					}),
+					commander.PrintlnProcessor("HERIO"),
 					commander.ClosureProcessor(func(i *command.Input, d *command.Data) command.Processor {
 						// TODO: Use os.CopyFS in go 1.23
 						return &commander.ShellCommand[string]{
