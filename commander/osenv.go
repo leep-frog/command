@@ -45,6 +45,7 @@ func (ea *EnvArg) Execute(i *command.Input, o command.Output, d *command.Data, e
 }
 
 func (ea *EnvArg) run(d *command.Data) error {
+	fmt.Println("YUP")
 	s, ok := command.OSLookupEnv(ea.Name)
 	if !ok {
 		if ea.Optional {
