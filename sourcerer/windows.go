@@ -66,14 +66,12 @@ func (*windows) SourceSetup(sourceableFile, targetName, goRunSourceCommand, user
 	}
 }
 
-func (w *windows) SourcererGoCLI(sourceDir, targetName, outputDir string) []string {
-	return []string{
-		"Push-Location",
-		fmt.Sprintf("cd %q", sourceDir),
-		fmt.Sprintf("go run . source %q", outputDir),
-		fmt.Sprintf(`. %q`, filepath.Join(outputDir, w.SourceableFile(targetName))),
-		`Pop-Location`,
-	}
+func (w *windows) SourceFileCommand(sourcerersDir, targetName string) string {
+	return fmt.Sprintf(`. %q`, filepath.Join(sourcerersDir, w.SourceableFile(targetName)))
+}
+
+func (w *windows) RecursiveCopyDir(src, dst string) string {
+	return fmt.Sprintf("Copy-Item -Recurse -Force %q %q", filepath.Join(src, "*"), dst)
 }
 
 func (w *windows) RegisterRunCLIAutocomplete(goExecutable, alias string) []string {

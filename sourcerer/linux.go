@@ -98,14 +98,12 @@ func (l *linux) HandleAutocompleteError(output command.Output, compType int, err
 	}
 }
 
-func (l *linux) SourcererGoCLI(sourceDir, targetName, outputDir string) []string {
-	return []string{
-		"pushd . > /dev/null",
-		fmt.Sprintf("cd %q", sourceDir),
-		fmt.Sprintf("go run . source %q", outputDir),
-		fmt.Sprintf("source %q", filepath.Join(outputDir, l.SourceableFile(targetName))),
-		"popd > /dev/null",
-	}
+func (l *linux) SourceFileCommand(sourcerersDir, targetName string) string {
+	return fmt.Sprintf("source %q", filepath.Join(sourcerersDir, l.SourceableFile(targetName)))
+}
+
+func (l *linux) RecursiveCopyDir(src, dst string) string {
+	return fmt.Sprintf("cp -a %q %q", filepath.Join(src, "*"), dst)
 }
 
 func (l *linux) RegisterRunCLIAutocomplete(goExecutable, alias string) []string {

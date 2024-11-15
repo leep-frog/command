@@ -433,6 +433,7 @@ func (s *sourcerer) initSourcerer(runCLI, builtin bool, targetName string, clis 
 		clis = append(clis, &topLevelCLI{
 			name:           targetName,
 			sourceLocation: sourceLocation,
+			targetName:     targetName,
 		})
 	}
 
@@ -543,14 +544,17 @@ var (
 	osMkdirAll = os.MkdirAll
 )
 
+const (
+	sourcerersDirName = "sourcerers"
+)
+
 func (s *sourcerer) generateFile(o command.Output, d *command.Data) error {
-	fmt.Println("HERE at least")
 	loud := !quietFlag.Get(d)
 
 	// Create the artifacts directory
 	rootDir := rootDirectoryArg.Get(d)
 	artifactsDir := filepath.Join(rootDir, "artifacts")
-	sourcerersDir := filepath.Join(rootDir, "sourcerers")
+	sourcerersDir := filepath.Join(rootDir, sourcerersDirName)
 	// Note: this will only result in making the `artifacts/sourcerers` dir and no parent dirs because
 	// the env arg for the root dir enforces that the root dir exists.
 	if err := osMkdirAll(artifactsDir, 0777); err != nil {
@@ -630,6 +634,7 @@ func cacheKey(cli CLI) string {
 
 type topLevelCLI struct {
 	name           string
+	targetName     string
 	sourceLocation string
 }
 
@@ -639,35 +644,41 @@ func (t *topLevelCLI) Changed() bool   { return false }
 
 func (t *topLevelCLI) Node() command.Node {
 	builtinFlag := commander.BoolFlag("builtin", 'b', "Whether or not the built-in CLIs should be used instead of user-defined ones")
+	tempDirArg := &commander.GetProcessor[string]{
+		Name: "TEMP_DIR",
+		Processor: commander.SimpleProcessor(func(i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
+			temp, err := os.MkdirTemp("", "top-level-cli-*")
+			if err != nil {
+				return fmt.Errorf("failed to create temp directory")
+			}
+
+			d.Set("TEMP_DIR", temp)
+			return nil
+		}, nil),
+	}
+
 	return commander.SerialNodes(
 		commander.Description("This is a CLI for running generic cross-CLI utility commands for all CLIs generated with this target name"),
 		&commander.BranchNode{
 			Branches: map[string]command.Node{
 				"reload": commander.SerialNodes(
 					commander.Description("Regenerate all CLI artifacts and executables using the current go source code"),
-					commander.FlagProcessor(builtinFlag),
+					commander.FlagProcessor(
+						builtinFlag,
+						quietFlag,
+					),
 					rootDirectoryArg,
-					commander.PrintlnProcessor("HERIO 1"),
-					commander.SimpleProcessor(func(i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
-						temp, err := os.MkdirTemp(rootDirectoryArg.Get(d), "top-level-cli-*")
-						if err != nil {
-							return fmt.Errorf("failed to create temp directory")
-						}
-
-						fmt.Println("TEMP", temp)
-						d.Set("TEMP_DIR", temp)
-						return nil
-					}, nil),
-
-					commander.PrintlnProcessor("HERIO 2"),
+					tempDirArg,
 					commander.ClosureProcessor(func(i *command.Input, d *command.Data) command.Processor {
 						args := []string{"run", ".", "source"}
 						if builtinFlag.Get(d) {
 							args = []string{"run", ".", "builtin", "source"}
 						}
 
-						fmt.Println("WTHf", filepath.Dir(t.sourceLocation), "PRE", d.String("TEMP_DIR"), "POST")
-						fmt.Println("FINAL", RootDirectoryEnvVar, d.String("TEMP_DIR"))
+						if quietFlag.Get(d) {
+							args = append(args, fmt.Sprintf("--%s", quietFlag.Name()))
+						}
+
 						return &commander.ShellCommand[string]{
 							Dir:               filepath.Dir(t.sourceLocation),
 							CommandName:       "go",
@@ -675,28 +686,19 @@ func (t *topLevelCLI) Node() command.Node {
 							DontRunOnComplete: true,
 							ForwardStdout:     true,
 							Env: []string{
-								fmt.Sprintf("%s=%s", RootDirectoryEnvVar, d.String("TEMP_DIR")),
+								fmt.Sprintf("%s=%s", RootDirectoryEnvVar, tempDirArg.Get(d)),
 							},
 						}
 					}),
-					commander.PrintlnProcessor("HERIO 3"),
-					// commander.ClosureProcessor(func(i *command.Input, d *command.Data) command.Processor {
-					// 	// TODO: Use os.CopyFS in go 1.23
-					// 	fmt.Println("here too")
-					// 	return &commander.ShellCommand[string]{
-					// 		CommandName: "cp",
-					// 		Args: []string{
-					// 			ValueByOS(map[string]string{
-					// 				Windows().Name(): "-Recurse",
-					// 				Linux().Name():   "-a",
-					// 			}),
-					// 			filepath.Join(d.String("TEMP_DIR"), "*"),
-					// 			rootDirectoryArg.Get(d),
-					// 		},
-					// 		DontRunOnComplete: true,
-					// 		ForwardStdout:     true,
-					// 	}
-					// }),
+
+					// TODO: Use os.CopyFS in go 1.23 (once cit allows 1.23)
+					commander.ExecutableProcessor(func(o command.Output, d *command.Data) ([]string, error) {
+						return []string{
+							CurrentOS.RecursiveCopyDir(tempDirArg.Get(d), rootDirectoryArg.Get(d)),
+							CurrentOS.SourceFileCommand(filepath.Join(rootDirectoryArg.Get(d), sourcerersDirName), t.targetName),
+						}, nil
+					}),
+					commander.FunctionWrap(),
 				),
 			},
 		},

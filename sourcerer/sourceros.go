@@ -53,8 +53,11 @@ type OS interface {
 	// HandleAutocompleteError should output error info on `Autocomplete` failure
 	HandleAutocompleteError(output command.Output, compType int, err error)
 
-	//
-	SourcererGoCLI(sourceDir, targetName, outputDir string) []string
+	// SourceFileCommand should return the command to source the provided file.
+	SourceFileCommand(sourcerersDir, targetName string) string
+
+	// RecursiveCopyDir should return the command to recusrively copy contents from src to dst.
+	RecursiveCopyDir(src, dst string) string
 
 	// RegisterCLIs generates the code for
 	RegisterCLIs(builtin bool, goExecutable, targetName string, cli []CLI) []string

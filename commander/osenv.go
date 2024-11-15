@@ -45,7 +45,6 @@ func (ea *EnvArg) Execute(i *command.Input, o command.Output, d *command.Data, e
 }
 
 func (ea *EnvArg) run(d *command.Data) error {
-	fmt.Println("YUP", ea.Name)
 	s, ok := command.OSLookupEnv(ea.Name)
 	if !ok {
 		if ea.Optional {
@@ -68,7 +67,6 @@ func (ea *EnvArg) run(d *command.Data) error {
 		}
 	}
 	d.Set(ea.Name, s)
-	fmt.Println("Done", ea.Name, s)
 	return nil
 }
 

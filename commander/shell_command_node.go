@@ -175,7 +175,7 @@ func (bn *ShellCommand[T]) Run(output command.Output, data *command.Data) (T, er
 	var rawOut bytes.Buffer
 	stdoutWriters := []io.Writer{&rawOut}
 	cmd := exec.Command(bn.CommandName, bn.Args...)
-	cmd.Env = append(cmd.Env, bn.Env...)
+	cmd.Env = append(cmd.Environ(), bn.Env...)
 
 	cmd.Dir = bn.Dir
 	if bn.ForwardStdout && output != nil {
