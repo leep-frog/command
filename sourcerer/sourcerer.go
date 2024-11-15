@@ -656,6 +656,7 @@ func (t *topLevelCLI) Node() command.Node {
 							return fmt.Errorf("failed to create temp directory")
 						}
 
+						fmt.Println("TEMP", temp)
 						d.Set("TEMP_DIR", temp)
 						return nil
 					}},
@@ -667,7 +668,7 @@ func (t *topLevelCLI) Node() command.Node {
 							args = []string{"run", ".", "builtin", "source"}
 						}
 
-						fmt.Println("WTHf", filepath.Dir(t.sourceLocation), d.String("TEMP_DIR"))
+						fmt.Println("WTHf", filepath.Dir(t.sourceLocation), "PRE", d.String("TEMP_DIR"), "POST")
 						return &commander.ShellCommand[string]{
 							Dir:               filepath.Dir(t.sourceLocation),
 							CommandName:       "go",
