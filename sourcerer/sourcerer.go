@@ -646,7 +646,7 @@ func (t *topLevelCLI) Node() command.Node {
 					commander.Description("Regenerate all CLI artifacts and executables using the current go source code"),
 					commander.FlagProcessor(builtinFlag),
 					&commander.ExecutorProcessor{func(o command.Output, d *command.Data) error {
-						temp, err := os.MkdirTemp("", "leep-frog-top-level-cli")
+						temp, err := os.MkdirTemp("", "top-level-cli-*")
 						if err != nil {
 							return fmt.Errorf("failed to create temp directory")
 						}
@@ -674,14 +674,13 @@ func (t *topLevelCLI) Node() command.Node {
 					commander.ClosureProcessor(func(i *command.Input, d *command.Data) command.Processor {
 						// TODO: Use os.CopyFS in go 1.23
 						return &commander.ShellCommand[string]{
-							Dir:         d.String("TEMP_DIR"),
 							CommandName: "cp",
 							Args: []string{
 								ValueByOS(map[string]string{
 									Windows().Name(): "-Recurse",
 									Linux().Name():   "-a",
 								}),
-								"*",
+								filepath.Join(d.String("TEMP_DIR"), "*"),
 								rootDirectoryArg.Get(d),
 							},
 							DontRunOnComplete: true,
