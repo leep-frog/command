@@ -673,9 +673,9 @@ func (t *topLevelCLI) Node() command.Node {
 							Args:              args,
 							DontRunOnComplete: true,
 							ForwardStdout:     true,
-							// Env: []string{
-							// 	fmt.Sprintf("%s=%s", RootDirectoryEnvVar, d.String("TEMP_DIR")),
-							// },
+							Env: []string{
+								fmt.Sprintf("%s=%s", RootDirectoryEnvVar, d.String("TEMP_DIR")),
+							},
 						}
 					}),
 					commander.PrintlnProcessor("HERIO 3"),
