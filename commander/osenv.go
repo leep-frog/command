@@ -68,7 +68,7 @@ func (ea *EnvArg) run(d *command.Data) error {
 		}
 	}
 	d.Set(ea.Name, s)
-	fmt.Println("Done", ea.Name)
+	fmt.Println("Done", ea.Name, s)
 	return nil
 }
 
