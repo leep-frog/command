@@ -44,6 +44,11 @@ func (o *osWriteFileArgs) String() string {
 	return fmt.Sprintf("%s\n%v\n%s", o.File, o.FileMode, strings.Join(o.Contents, "\n"))
 }
 
+type mkdirResponse struct {
+	resp string
+	err  error
+}
+
 func TestGenerateBinaryNode(t *testing.T) {
 	testutil.StubValue(t, &runtimeCaller, func(int) (uintptr, string, int, bool) {
 		return 0, testutil.FilepathAbs(t, "/", "fake", "source", "location"), 0, true
@@ -407,7 +412,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 									`  $Local:tmpFile = New-TemporaryFile`,
 									``,
 									`  # Run the go-only code`,
-									`  & c:\Users\gleep\Desktop\Coding\go\src\command\sourcerer\cli-output-dir\artifacts\leepFrogSource.exe execute "leepFrogSource" $Local:tmpFile $args`,
+									fmt.Sprintf(`  & %s execute "leepFrogSource" $Local:tmpFile $args`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource.exe")),
 									`  # Return error if failed`,
 									`  If (!$?) {`,
 									`    Write-Error "Go execution failed"`,
@@ -564,7 +569,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 									`  $Local:tmpFile = New-TemporaryFile`,
 									``,
 									`  # Run the go-only code`,
-									`  & c:\Users\gleep\Desktop\Coding\go\src\command\sourcerer\cli-output-dir\artifacts\leepFrogSource.exe execute "leepFrogSource" $Local:tmpFile $args`,
+									fmt.Sprintf(`  & %s execute "leepFrogSource" $Local:tmpFile $args`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource.exe")),
 									`  # Return error if failed`,
 									`  If (!$?) {`,
 									`    Write-Error "Go execution failed"`,
@@ -685,7 +690,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 									`  $Local:tmpFile = New-TemporaryFile`,
 									``,
 									`  # Run the go-only code`,
-									`  & c:\Users\gleep\Desktop\Coding\go\src\command\sourcerer\cli-output-dir\artifacts\leepFrogSource.exe execute "leepFrogSource" $Local:tmpFile $args`,
+									fmt.Sprintf(`  & %s execute "leepFrogSource" $Local:tmpFile $args`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource.exe")),
 									`  # Return error if failed`,
 									`  If (!$?) {`,
 									`    Write-Error "Go execution failed"`,
@@ -889,7 +894,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 									`  $Local:tmpFile = New-TemporaryFile`,
 									``,
 									`  # Run the go-only code`,
-									`  & c:\Users\gleep\Desktop\Coding\go\src\command\sourcerer\cli-output-dir\artifacts\leepFrogSource.exe execute "leepFrogSource" $Local:tmpFile $args`,
+									fmt.Sprintf(`  & %s execute "leepFrogSource" $Local:tmpFile $args`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource.exe")),
 									`  # Return error if failed`,
 									`  If (!$?) {`,
 									`    Write-Error "Go execution failed"`,
@@ -1122,7 +1127,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 									`  $Local:tmpFile = New-TemporaryFile`,
 									``,
 									`  # Run the go-only code`,
-									`  & c:\Users\gleep\Desktop\Coding\go\src\command\sourcerer\cli-output-dir\artifacts\leepFrogSource.exe execute "leepFrogSource" $Local:tmpFile $args`,
+									fmt.Sprintf(`  & %s execute "leepFrogSource" $Local:tmpFile $args`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource.exe")),
 									`  # Return error if failed`,
 									`  If (!$?) {`,
 									`    Write-Error "Go execution failed"`,
@@ -1361,7 +1366,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 									`  $Local:tmpFile = New-TemporaryFile`,
 									``,
 									`  # Run the go-only code`,
-									`  & c:\Users\gleep\Desktop\Coding\go\src\command\sourcerer\cli-output-dir\artifacts\leepFrogSource.exe execute "leepFrogSource" $Local:tmpFile $args`,
+									fmt.Sprintf(`  & %s execute "leepFrogSource" $Local:tmpFile $args`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource.exe")),
 									`  # Return error if failed`,
 									`  If (!$?) {`,
 									`    Write-Error "Go execution failed"`,
@@ -1554,7 +1559,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 									`  $Local:tmpFile = New-TemporaryFile`,
 									``,
 									`  # Run the go-only code`,
-									`  & c:\Users\gleep\Desktop\Coding\go\src\command\sourcerer\cli-output-dir\artifacts\customOutputFile.exe execute "customOutputFile" $Local:tmpFile $args`,
+									fmt.Sprintf(`  & %s execute "customOutputFile" $Local:tmpFile $args`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "customOutputFile.exe")),
 									`  # Return error if failed`,
 									`  If (!$?) {`,
 									`    Write-Error "Go execution failed"`,
@@ -1838,7 +1843,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 									`  $Local:tmpFile = New-TemporaryFile`,
 									``,
 									`  # Run the go-only code`,
-									`  & c:\Users\gleep\Desktop\Coding\go\src\command\sourcerer\cli-output-dir\artifacts\leepFrogSource.exe execute "leepFrogSource" $Local:tmpFile $args`,
+									fmt.Sprintf(`  & %s execute "leepFrogSource" $Local:tmpFile $args`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource.exe")),
 									`  # Return error if failed`,
 									`  If (!$?) {`,
 									`    Write-Error "Go execution failed"`,
@@ -2091,7 +2096,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 									`  $Local:tmpFile = New-TemporaryFile`,
 									``,
 									`  # Run the go-only code`,
-									`  & c:\Users\gleep\Desktop\Coding\go\src\command\sourcerer\cli-output-dir\artifacts\leepFrogSource.exe execute "leepFrogSource" $Local:tmpFile $args`,
+									fmt.Sprintf(`  & %s execute "leepFrogSource" $Local:tmpFile $args`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogSource.exe")),
 									`  # Return error if failed`,
 									`  If (!$?) {`,
 									`    Write-Error "Go execution failed"`,
@@ -2385,7 +2390,7 @@ func TestGenerateBinaryNode(t *testing.T) {
 									`  $Local:tmpFile = New-TemporaryFile`,
 									``,
 									`  # Run the go-only code`,
-									`  & c:\Users\gleep\Desktop\Coding\go\src\command\sourcerer\cli-output-dir\artifacts\leepFrogCLIBuiltIns.exe builtin execute "leepFrogCLIBuiltIns" $Local:tmpFile $args`,
+									fmt.Sprintf(`  & %s builtin execute "leepFrogCLIBuiltIns" $Local:tmpFile $args`, testutil.FilepathAbs(t, "cli-output-dir", "artifacts", "leepFrogCLIBuiltIns.exe")),
 									`  # Return error if failed`,
 									`  If (!$?) {`,
 									`    Write-Error "Go execution failed"`,
@@ -2722,6 +2727,8 @@ func TestSourcerer(t *testing.T) {
 			osReadFileStub        bool
 			osReadFileResp        string
 			osReadFileErr         error
+			osMkdirTempResponses  []*mkdirResponse
+			wantMkdirTempInputs   [][]string
 			osExecutableErr       error
 			fakeInputFileContents []string
 			runResponseTester     *spycommandertest.RunResponseTester
@@ -4275,10 +4282,11 @@ func TestSourcerer(t *testing.T) {
 						`This is a CLI for running generic cross-CLI utility commands for all CLIs generated with this target name`,
 						`┓`,
 						`┃   Regenerate all CLI artifacts and executables using the current go source code`,
-						`┗━━ reload --builtin|-b`,
+						`┗━━ reload --builtin|-b --quiet|-q`,
 						``,
 						`Flags:`,
 						`  [b] builtin: Whether or not the built-in CLIs should be used instead of user-defined ones`,
+						`  [q] quiet: Hide unnecessary output`,
 					},
 				},
 			},
@@ -4299,11 +4307,32 @@ func TestSourcerer(t *testing.T) {
 						`This is a CLI for running generic cross-CLI utility commands for all CLIs generated with this target name`,
 						`┓`,
 						`┃   Regenerate all CLI artifacts and executables using the current go source code`,
-						`┗━━ reload --builtin|-b`,
+						`┗━━ reload --builtin|-b --quiet|-q`,
 						``,
 						`Flags:`,
 						`  [b] builtin: Whether or not the built-in CLIs should be used instead of user-defined ones`,
+						`  [q] quiet: Hide unnecessary output`,
 					},
+				},
+			},
+			{
+				name:          "top-level CLI reload fails on MkdirTemp error",
+				cliTargetName: "leepFrogSource",
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
+				osMkdirTempResponses: []*mkdirResponse{{
+					resp: testutil.FilepathAbs(t, "fake-temp-dir"),
+					err:  fmt.Errorf("mkdir oops"),
+				}},
+				wantMkdirTempInputs: [][]string{{"", "top-level-cli-*"}},
+				wantGetCacheCalls:   []string{testutil.FilepathAbs(t, "cli-output-dir", "cache")},
+				args:                []string{"execute", "leepFrogSource", fakeFile, "reload"},
+				osCheck: &osCheck{
+					wantStderr: []string{
+						"failed to create temp directory: mkdir oops",
+					},
+					wantErr: fmt.Errorf("failed to create temp directory: mkdir oops"),
 				},
 			},
 			{
@@ -4312,8 +4341,12 @@ func TestSourcerer(t *testing.T) {
 				env: map[string]string{
 					RootDirectoryEnvVar: "cli-output-dir",
 				},
-				wantGetCacheCalls: []string{testutil.FilepathAbs(t, "cli-output-dir", "cache")},
-				args:              []string{"execute", "leepFrogSource", fakeFile, "reload"},
+				osMkdirTempResponses: []*mkdirResponse{{
+					resp: testutil.FilepathAbs(t, "fake-temp-dir"),
+				}},
+				wantMkdirTempInputs: [][]string{{"", "top-level-cli-*"}},
+				wantGetCacheCalls:   []string{testutil.FilepathAbs(t, "cli-output-dir", "cache")},
+				args:                []string{"execute", "leepFrogSource", fakeFile, "reload"},
 				osCheck: &osCheck{
 					wantStdout: []string{"regular output"},
 					wantStderr: []string{
@@ -4343,10 +4376,38 @@ func TestSourcerer(t *testing.T) {
 				},
 				wantGetCacheCalls: []string{testutil.FilepathAbs(t, "cli-output-dir", "cache")},
 				args:              []string{"execute", "leepFrogSource", fakeFile, "reload"},
-				osCheck: &osCheck{
-					wantStdout: []string{"regular output"},
-					wantStderr: []string{"regular errput"},
+				osMkdirTempResponses: []*mkdirResponse{{
+					resp: testutil.FilepathAbs(t, "fake-temp-dir"),
+				}},
+				wantMkdirTempInputs: [][]string{{"", "top-level-cli-*"}},
+				osChecks: map[string]*osCheck{
+					"linux": {
+						wantStdout: []string{"regular output"},
+						wantStderr: []string{"regular errput"},
+						wantFileContents: []string{
+							`#!/bin/bash`,
+							`function _leep_execute_data_function_wrap_uuid1 {`,
+							fmt.Sprintf(`cp -a %q/* %q`, testutil.FilepathAbs(t, "fake-temp-dir"), testutil.FilepathAbs(t, "cli-output-dir")),
+							fmt.Sprintf(`source %q`, testutil.FilepathAbs(t, "cli-output-dir", "sourcerers", "leepFrogSource_loader.sh")),
+							`}`,
+							`_leep_execute_data_function_wrap_uuid1`,
+							``,
+						},
+					},
+					"windows": {
+						wantStdout: []string{"regular output"},
+						wantStderr: []string{"regular errput"},
+						wantFileContents: []string{
+							`function _leep_execute_data_function_wrap_uuid1 {`,
+							fmt.Sprintf(`Copy-Item -Recurse -Force %q %q`, testutil.FilepathAbs(t, "fake-temp-dir", "*"), testutil.FilepathAbs(t, "cli-output-dir")),
+							fmt.Sprintf(`. %q`, testutil.FilepathAbs(t, "cli-output-dir", "sourcerers", "leepFrogSource_loader.ps1")),
+							`}`,
+							`. _leep_execute_data_function_wrap_uuid1`,
+							``,
+						},
+					},
 				},
+				uuids: []string{"uuid1"},
 				runResponseTester: &spycommandertest.RunResponseTester{
 					RunResponses: []*commandtest.FakeRun{{
 						Stdout: []string{"regular output"},
@@ -4367,12 +4428,84 @@ func TestSourcerer(t *testing.T) {
 				},
 				wantGetCacheCalls: []string{testutil.FilepathAbs(t, "cli-output-dir", "cache")},
 				args:              []string{"execute", "leepFrogSource", fakeFile, "reload", "--builtin"},
-				osCheck:           &osCheck{},
+				osMkdirTempResponses: []*mkdirResponse{{
+					resp: testutil.FilepathAbs(t, "fake-temp-dir"),
+				}},
+				wantMkdirTempInputs: [][]string{{"", "top-level-cli-*"}},
+				osChecks: map[string]*osCheck{
+					"linux": {
+						wantFileContents: []string{
+							`#!/bin/bash`,
+							`function _leep_execute_data_function_wrap_uuid1 {`,
+							fmt.Sprintf(`cp -a %q/* %q`, testutil.FilepathAbs(t, "fake-temp-dir"), testutil.FilepathAbs(t, "cli-output-dir")),
+							fmt.Sprintf(`source %q`, testutil.FilepathAbs(t, "cli-output-dir", "sourcerers", "leepFrogCLIBuiltIns_loader.sh")),
+							`}`,
+							`_leep_execute_data_function_wrap_uuid1`,
+							``,
+						},
+					},
+					"windows": {
+						wantFileContents: []string{
+							`function _leep_execute_data_function_wrap_uuid1 {`,
+							fmt.Sprintf(`Copy-Item -Recurse -Force %q %q`, testutil.FilepathAbs(t, "fake-temp-dir", "*"), testutil.FilepathAbs(t, "cli-output-dir")),
+							fmt.Sprintf(`. %q`, testutil.FilepathAbs(t, "cli-output-dir", "sourcerers", "leepFrogCLIBuiltIns_loader.ps1")),
+							`}`,
+							`. _leep_execute_data_function_wrap_uuid1`,
+							``,
+						},
+					},
+				},
+				uuids: []string{"uuid1"},
 				runResponseTester: &spycommandertest.RunResponseTester{
 					RunResponses: []*commandtest.FakeRun{{}},
 					Want: []*commandtest.RunContents{{
 						Name: "go",
 						Args: []string{"run", ".", "builtin", "source"},
+						Dir:  filepath.Dir("/fake/source/location/main.go"),
+					}},
+				},
+			},
+			{
+				name:          "top-level CLI reloads CLIs quietly",
+				cliTargetName: "leepFrogSource",
+				env: map[string]string{
+					RootDirectoryEnvVar: "cli-output-dir",
+				},
+				wantGetCacheCalls: []string{testutil.FilepathAbs(t, "cli-output-dir", "cache")},
+				args:              []string{"execute", "leepFrogSource", fakeFile, "reload", "--quiet"},
+				osMkdirTempResponses: []*mkdirResponse{{
+					resp: testutil.FilepathAbs(t, "fake-temp-dir"),
+				}},
+				wantMkdirTempInputs: [][]string{{"", "top-level-cli-*"}},
+				osChecks: map[string]*osCheck{
+					"linux": {
+						wantFileContents: []string{
+							`#!/bin/bash`,
+							`function _leep_execute_data_function_wrap_uuid1 {`,
+							fmt.Sprintf(`cp -a %q/* %q`, testutil.FilepathAbs(t, "fake-temp-dir"), testutil.FilepathAbs(t, "cli-output-dir")),
+							fmt.Sprintf(`source %q`, testutil.FilepathAbs(t, "cli-output-dir", "sourcerers", "leepFrogSource_loader.sh")),
+							`}`,
+							`_leep_execute_data_function_wrap_uuid1`,
+							``,
+						},
+					},
+					"windows": {
+						wantFileContents: []string{
+							`function _leep_execute_data_function_wrap_uuid1 {`,
+							fmt.Sprintf(`Copy-Item -Recurse -Force %q %q`, testutil.FilepathAbs(t, "fake-temp-dir", "*"), testutil.FilepathAbs(t, "cli-output-dir")),
+							fmt.Sprintf(`. %q`, testutil.FilepathAbs(t, "cli-output-dir", "sourcerers", "leepFrogSource_loader.ps1")),
+							`}`,
+							`. _leep_execute_data_function_wrap_uuid1`,
+							``,
+						},
+					},
+				},
+				uuids: []string{"uuid1"},
+				runResponseTester: &spycommandertest.RunResponseTester{
+					RunResponses: []*commandtest.FakeRun{{}},
+					Want: []*commandtest.RunContents{{
+						Name: "go",
+						Args: []string{"run", ".", "source", "--quiet"},
 						Dir:  filepath.Dir("/fake/source/location/main.go"),
 					}},
 				},
@@ -5010,12 +5143,25 @@ func TestSourcerer(t *testing.T) {
 					test.runResponseTester = &spycommandertest.RunResponseTester{}
 				}
 				test.runResponseTester.Setup(t)
+
 				stubs.StubEnv(t, test.env)
 				if test.osReadFileStub {
 					testutil.StubValue(t, &osReadFile, func(b string) ([]byte, error) {
 						return []byte(test.osReadFileResp), test.osReadFileErr
 					})
 				}
+
+				var gotMkdirTempInputs [][]string
+				testutil.StubValue(t, &osMkdirTemp, func(name string, pattern string) (string, error) {
+					gotMkdirTempInputs = append(gotMkdirTempInputs, []string{name, pattern})
+					if len(test.osMkdirTempResponses) == 0 {
+						t.Fatalf("Ran out of osMkdirTempResponses")
+					}
+					resp := test.osMkdirTempResponses[0]
+					test.osMkdirTempResponses = test.osMkdirTempResponses[1:]
+					return resp.resp, resp.err
+				})
+
 				testutil.StubValue(t, &CurrentOS, curOS)
 				oschk, ok := test.osChecks[curOS.Name()]
 				if !ok {
@@ -5024,6 +5170,9 @@ func TestSourcerer(t *testing.T) {
 
 				var uuidIdx int
 				testutil.StubValue(t, &getUuid, func() string {
+					if uuidIdx >= len(test.uuids) {
+						t.Fatalf("Ran out of uuid stubs")
+					}
 					r := test.uuids[uuidIdx]
 					uuidIdx++
 					return r
@@ -5101,6 +5250,10 @@ func TestSourcerer(t *testing.T) {
 
 				if uuidIdx != len(test.uuids) {
 					t.Errorf("Unnecessary uuid stubs. %d stubs, but only %d calls", len(test.uuids), uuidIdx)
+				}
+
+				if diff := cmp.Diff(test.wantMkdirTempInputs, gotMkdirTempInputs); diff != "" {
+					t.Errorf("source(%v) executed incorrect os.MkdirTemp commands (-want, +got):\n%s", test.args, diff)
 				}
 
 				// Check run responses

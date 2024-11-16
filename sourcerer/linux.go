@@ -103,7 +103,9 @@ func (l *linux) SourceFileCommand(sourcerersDir, targetName string) string {
 }
 
 func (l *linux) RecursiveCopyDir(src, dst string) string {
-	return fmt.Sprintf("cp -a %q %q", filepath.Join(src, "*"), dst)
+	// Need the `/*` outside of the quotes, otherwise bash thinks
+	// the directory name simply contains a `*` character.
+	return fmt.Sprintf("cp -a %q/* %q", src, dst)
 }
 
 func (l *linux) RegisterRunCLIAutocomplete(goExecutable, alias string) []string {

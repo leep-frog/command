@@ -41,7 +41,7 @@ var (
 	targetNameRegex = commander.MatchesRegex("^[a-zA-Z0-9]+$")
 	passthroughArgs = commander.ListArg[string]("ARG", "Arguments that get passed through to relevant CLI command", 0, command.UnboundedList)
 	helpFlag        = commander.BoolFlag("help", commander.FlagNoShortName, "Display command's usage doc")
-	quietFlag       = commander.BoolFlag("quiet", commander.FlagNoShortName, "Hide unnecessary output")
+	quietFlag       = commander.BoolFlag("quiet", 'q', "Hide unnecessary output")
 	// See the below link for more details on COMP_* details:
 	// https://www.gnu.org/software/bash/manual/html_node/Bash-Variables.html#Bash-Variables
 	compTypeArg  = commander.Arg[int]("COMP_TYPE", "COMP_TYPE variable from bash complete function")
@@ -410,8 +410,12 @@ func Source(targetName string, clis []CLI, opts ...Option) int {
 	return 0
 }
 
+const (
+	builtinTargetName = "leepFrogCLIBuiltIns"
+)
+
 func (s *sourcerer) initBuiltInSourcerer() error {
-	return s.initSourcerer(false, true, "leepFrogCLIBuiltIns", []CLI{
+	return s.initSourcerer(false, true, builtinTargetName, []CLI{
 		&AliaserCommand{s.goExecutableFilePath},
 		&Debugger{},
 		&GoLeep{},
@@ -541,7 +545,8 @@ func getSourceLoc() (string, error) {
 }
 
 var (
-	osMkdirAll = os.MkdirAll
+	osMkdirAll  = os.MkdirAll
+	osMkdirTemp = os.MkdirTemp
 )
 
 const (
@@ -647,9 +652,9 @@ func (t *topLevelCLI) Node() command.Node {
 	tempDirArg := &commander.GetProcessor[string]{
 		Name: "TEMP_DIR",
 		Processor: commander.SimpleProcessor(func(i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
-			temp, err := os.MkdirTemp("", "top-level-cli-*")
+			temp, err := osMkdirTemp("", "top-level-cli-*")
 			if err != nil {
-				return fmt.Errorf("failed to create temp directory")
+				return o.Annotate(err, "failed to create temp directory")
 			}
 
 			d.Set("TEMP_DIR", temp)
@@ -693,9 +698,13 @@ func (t *topLevelCLI) Node() command.Node {
 
 					// TODO: Use os.CopyFS in go 1.23 (once cit allows 1.23)
 					commander.ExecutableProcessor(func(o command.Output, d *command.Data) ([]string, error) {
+						targetName := t.targetName
+						if builtinFlag.Get(d) {
+							targetName = builtinTargetName
+						}
 						return []string{
 							CurrentOS.RecursiveCopyDir(tempDirArg.Get(d), rootDirectoryArg.Get(d)),
-							CurrentOS.SourceFileCommand(filepath.Join(rootDirectoryArg.Get(d), sourcerersDirName), t.targetName),
+							CurrentOS.SourceFileCommand(filepath.Join(rootDirectoryArg.Get(d), sourcerersDirName), targetName),
 						}, nil
 					}),
 					commander.FunctionWrap(),
