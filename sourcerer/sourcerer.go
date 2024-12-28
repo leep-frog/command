@@ -42,6 +42,7 @@ var (
 	passthroughArgs = commander.ListArg[string]("ARG", "Arguments that get passed through to relevant CLI command", 0, command.UnboundedList)
 	helpFlag        = commander.BoolFlag("help", commander.FlagNoShortName, "Display command's usage doc")
 	quietFlag       = commander.BoolFlag("quiet", 'q', "Hide unnecessary output")
+	shadowDirFlag   = commander.Flag("shadow-dir", commander.FlagNoShortName, fmt.Sprintf("Location to use for executable file location in sourceable files (default is path in %s environment variable)", RootDirectoryEnvVar), commander.HiddenArg[string](), commander.IsDir())
 	// See the below link for more details on COMP_* details:
 	// https://www.gnu.org/software/bash/manual/html_node/Bash-Variables.html#Bash-Variables
 	compTypeArg  = commander.Arg[int]("COMP_TYPE", "COMP_TYPE variable from bash complete function")
@@ -336,6 +337,7 @@ func (s *sourcerer) Node() command.Node {
 					rootDirectoryArg,
 					commander.FlagProcessor(
 						quietFlag,
+						shadowDirFlag,
 					),
 					&commander.ExecutorProcessor{F: s.generateFile},
 				),
@@ -550,6 +552,7 @@ var (
 )
 
 const (
+	artifactsDirName  = "artifacts"
 	sourcerersDirName = "sourcerers"
 )
 
@@ -558,7 +561,7 @@ func (s *sourcerer) generateFile(o command.Output, d *command.Data) error {
 
 	// Create the artifacts directory
 	rootDir := rootDirectoryArg.Get(d)
-	artifactsDir := filepath.Join(rootDir, "artifacts")
+	artifactsDir := filepath.Join(rootDir, artifactsDirName)
 	sourcerersDir := filepath.Join(rootDir, sourcerersDirName)
 	// Note: this will only result in making the `artifacts/sourcerers` dir and no parent dirs because
 	// the env arg for the root dir enforces that the root dir exists.
@@ -574,19 +577,23 @@ func (s *sourcerer) generateFile(o command.Output, d *command.Data) error {
 		return o.Annotatef(err, "failed to read executable file")
 	}
 
-	newExecutableFilePath := filepath.Join(artifactsDir, fmt.Sprintf("%s%s", s.targetName, CurrentOS.ExecutableFileSuffix()))
+	executableFileName := fmt.Sprintf("%s%s", s.targetName, CurrentOS.ExecutableFileSuffix())
+	newExecutableFilePath := filepath.Join(artifactsDir, executableFileName)
+	shadowExecutableFilePath := newExecutableFilePath
+	if shadowDirFlag.Provided(d) {
+		shadowExecutableFilePath = filepath.Join(shadowDirFlag.Get(d), artifactsDirName, executableFileName)
+	}
 	if err := osWriteFile(newExecutableFilePath, b, 0744); err != nil {
 		return o.Annotatef(err, "failed to copy executable file")
 	}
-	s.goExecutableFilePath = newExecutableFilePath
 
 	if loud {
 		o.Stdoutf("Binary file created: %q\n", newExecutableFilePath)
 	}
 
-	fileData := CurrentOS.RegisterCLIs(s.builtin, s.goExecutableFilePath, s.targetName, maps.Values(s.clis))
+	fileData := CurrentOS.RegisterCLIs(s.builtin, shadowExecutableFilePath, s.targetName, maps.Values(s.clis))
 
-	fileData = append(fileData, AliasSourcery(s.goExecutableFilePath, maps.Values(s.opts.aliasers)...)...)
+	fileData = append(fileData, AliasSourcery(shadowExecutableFilePath, maps.Values(s.opts.aliasers)...)...)
 
 	fileContents := CurrentOS.FunctionWrap(fmt.Sprintf("_%s_wrap_function", s.targetName), strings.Join(fileData, "\n"))
 
@@ -679,6 +686,7 @@ func (t *topLevelCLI) Node() command.Node {
 						if builtinFlag.Get(d) {
 							args = []string{"run", ".", "builtin", "source"}
 						}
+						args = append(args, fmt.Sprintf("--%s", shadowDirFlag.Name()), rootDirectoryArg.Get(d))
 
 						if quietFlag.Get(d) {
 							args = append(args, fmt.Sprintf("--%s", quietFlag.Name()))
