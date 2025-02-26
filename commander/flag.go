@@ -473,25 +473,28 @@ func Flag[T any](name string, shortName rune, desc string, opts ...ArgumentOptio
 }
 
 // BoolFlag creates a `FlagInterface` for a boolean argument.
-func BoolFlag(name string, shortName rune, desc string) FlagWithType[bool] {
-	return &boolFlag[bool]{
-		name:      name,
-		desc:      desc,
-		shortName: shortName,
-		trueValue: true,
-	}
+func BoolFlag(name string, shortName rune, desc string, opts ...BoolFlagOption[bool]) FlagWithType[bool] {
+	return createBoolFlag[bool](name, shortName, desc, true, nil, opts...)
 }
 
 // BoolValueFlag creates a boolean `FlagInterface` whose data value gets set to
 // `trueValue` if the flag is provided.
-func BoolValueFlag[T any](name string, shortName rune, desc string, trueValue T) *boolFlag[T] {
-	return &boolFlag[T]{name, shortName, desc, trueValue, nil}
+func BoolValueFlag[T any](name string, shortName rune, desc string, trueValue T, opts ...BoolFlagOption[T]) *boolFlag[T] {
+	return createBoolFlag[T](name, shortName, desc, trueValue, nil, opts...)
 }
 
 // BoolValuesFlag creates a boolean `FlagInterface` whose data value gets set to
 // `trueValue` if the flag is provided. Otherwise, it gets set to `falseValue`
-func BoolValuesFlag[T any](name string, shortName rune, desc string, trueValue, falseValue T) *boolFlag[T] {
-	return &boolFlag[T]{name, shortName, desc, trueValue, &falseValue}
+func BoolValuesFlag[T any](name string, shortName rune, desc string, trueValue, falseValue T, opts ...BoolFlagOption[T]) *boolFlag[T] {
+	return createBoolFlag[T](name, shortName, desc, trueValue, &falseValue, opts...)
+}
+
+func createBoolFlag[T any](name string, shortName rune, desc string, trueValue T, falseValue *T, opts ...BoolFlagOption[T]) *boolFlag[T] {
+	bf := &boolFlag[T]{name, shortName, desc, trueValue, falseValue, false}
+	for _, opt := range opts {
+		opt.modifyBoolFlag(bf)
+	}
+	return bf
 }
 
 type boolFlag[T any] struct {
@@ -500,6 +503,7 @@ type boolFlag[T any] struct {
 	desc       string
 	trueValue  T
 	falseValue *T
+	hidden     bool
 }
 
 // TrueValue returns the value used when the boolean flag is set.
@@ -555,7 +559,9 @@ func (bf *boolFlag[T]) Usage(i *command.Input, d *command.Data, u *command.Usage
 }
 
 func (bf *boolFlag[T]) FlagUsage(d *command.Data, u *command.Usage) error {
-	u.AddFlag(bf.name, bf.shortName, "UNUSED", bf.desc, 0, 0)
+	if !bf.hidden {
+		u.AddFlag(bf.name, bf.shortName, "UNUSED", bf.desc, 0, 0)
+	}
 	return nil
 }
 
@@ -579,8 +585,21 @@ func (bf *boolFlag[T]) Provided(d *command.Data) bool {
 	return d.Has(bf.name)
 }
 
+type BoolFlagOption[T any] interface {
+	modifyBoolFlag(bf *boolFlag[T])
+}
+
 func (bf *boolFlag[T]) AddOptions(opts ...ArgumentOption[T]) FlagWithType[T] {
-	panic("Options cannot be added to a boolean flag")
+
+	for _, opt := range opts {
+		boolOpt, ok := opt.(BoolFlagOption[T])
+		if !ok {
+			panic("Provided option is incompatible with BoolFlag")
+		}
+		boolOpt.modifyBoolFlag(bf)
+	}
+
+	return bf
 }
 
 type optionalFlag[T any] struct {

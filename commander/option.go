@@ -130,8 +130,13 @@ func (dao *defaultArgumentOption[T]) modifyArgumentOption(ao *argumentOption[T])
 	ao._default = dao
 }
 
+type ArgumentAndBoolFlagOption[T any] interface {
+	ArgumentOption[T]
+	BoolFlagOption[T]
+}
+
 // HiddenArg is an `ArgumentOption` that hides an argument from a command's usage text.
-func HiddenArg[T any]() ArgumentOption[T] {
+func HiddenArg[T any]() ArgumentAndBoolFlagOption[T] {
 	return &hiddenArg[T]{}
 }
 
@@ -139,4 +144,8 @@ type hiddenArg[T any] struct{}
 
 func (ha *hiddenArg[T]) modifyArgumentOption(ao *argumentOption[T]) {
 	ao.hideUsage = true
+}
+
+func (ha *hiddenArg[T]) modifyBoolFlag(bf *boolFlag[T]) {
+	bf.hidden = true
 }

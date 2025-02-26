@@ -961,6 +961,31 @@ func TestUsage(t *testing.T) {
 				WantIsValidationError: true,
 			},
 		},
+		{
+			name: "hides flags",
+			etc: &commandtest.ExecuteTestCase{
+				Node: SerialNodes(FlagProcessor(
+					BoolFlag("un", '1', "One"),
+					BoolFlag("deux", '2', "Two", HiddenArg[bool]()),
+					BoolFlag("trois", '3', "Three"),
+					BoolValueFlag("quatre", '4', "Four", 444, HiddenArg[int]()),
+					BoolValueFlag("cinco", '5', "Five", 555),
+					BoolValuesFlag("six", '6', "Six", "6", "60", HiddenArg[string]()),
+					BoolValuesFlag("seven", '7', "Seven", "7", "777"),
+					BoolFlag("eight", '8', "Eight").AddOptions(HiddenArg[bool]()),
+				)),
+				WantStdout: strings.Join([]string{
+					`--un|-1 --trois|-3 --cinco|-5 --seven|-7`,
+					``,
+					`Flags:`,
+					`  [5] cinco: Five`,
+					`  [7] seven: Seven`,
+					`  [3] trois: Three`,
+					`  [1] un: One`,
+					``,
+				}, "\n"),
+			},
+		},
 		// ListFlag(1, 0) usage tests
 		{
 			name: "ListFlag(1, 0) and no flag prints flag usage",

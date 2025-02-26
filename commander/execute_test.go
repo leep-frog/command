@@ -10394,6 +10394,10 @@ func TestBoolFlag(t *testing.T) {
 	}
 }
 
+type fakeOpt[T any] struct{}
+
+func (fo *fakeOpt[T]) modifyArgumentOption(*argumentOption[T]) {}
+
 func TestPanics(t *testing.T) {
 	for _, test := range []struct {
 		name string
@@ -10412,9 +10416,9 @@ func TestPanics(t *testing.T) {
 		{
 			name: "Can't add options to a boolean flag",
 			f: func() {
-				BoolFlag("b", 'b', testDesc).AddOptions()
+				BoolFlag("b", 'b', testDesc).AddOptions(&fakeOpt[bool]{})
 			},
-			want: "Options cannot be added to a boolean flag",
+			want: "Provided option is incompatible with BoolFlag",
 		},
 		{
 			name: "Can't create arg for unsupported type",
