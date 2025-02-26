@@ -42,7 +42,7 @@ var (
 	passthroughArgs = commander.ListArg[string]("ARG", "Arguments that get passed through to relevant CLI command", 0, command.UnboundedList)
 	helpFlag        = commander.BoolFlag("help", commander.FlagNoShortName, "Display command's usage doc")
 	quietFlag       = commander.BoolFlag("quiet", 'q', "Hide unnecessary output")
-	shadowDirFlag   = commander.Flag("shadow-dir", commander.FlagNoShortName, fmt.Sprintf("Location to use for executable file location in sourceable files (default is path in %s environment variable)", RootDirectoryEnvVar), commander.HiddenArg[string](), commander.IsDir())
+	shadowDirFlag   = commander.Flag("shadow-dir", commander.FlagNoShortName, fmt.Sprintf("Location to use for executable file location in sourceable files (default is path in %s environment variable)", RootDirectoryEnvVar), commander.Hidden[string](), commander.IsDir())
 	// See the below link for more details on COMP_* details:
 	// https://www.gnu.org/software/bash/manual/html_node/Bash-Variables.html#Bash-Variables
 	compTypeArg  = commander.Arg[int]("COMP_TYPE", "COMP_TYPE variable from bash complete function")

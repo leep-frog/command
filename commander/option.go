@@ -135,8 +135,8 @@ type ArgumentAndBoolFlagOption[T any] interface {
 	BoolFlagOption[T]
 }
 
-// HiddenArg is an `ArgumentOption` that hides an argument from a command's usage text.
-func HiddenArg[T any]() ArgumentAndBoolFlagOption[T] {
+// Hidden is an `ArgumentOption` that hides an argument from a command's usage text.
+func Hidden[T any]() ArgumentAndBoolFlagOption[T] {
 	return &hiddenArg[T]{}
 }
 

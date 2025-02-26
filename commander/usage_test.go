@@ -127,7 +127,7 @@ func TestUsage(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Node: SerialNodes(
 					Arg[string]("SARG1", "desc"),
-					Arg("SARG2", "desc", HiddenArg[string]()),
+					Arg("SARG2", "desc", Hidden[string]()),
 					Arg[string]("SARG3", "desc"),
 				),
 				WantStdout: strings.Join([]string{
@@ -966,13 +966,13 @@ func TestUsage(t *testing.T) {
 			etc: &commandtest.ExecuteTestCase{
 				Node: SerialNodes(FlagProcessor(
 					BoolFlag("un", '1', "One"),
-					BoolFlag("deux", '2', "Two", HiddenArg[bool]()),
+					BoolFlag("deux", '2', "Two", Hidden[bool]()),
 					BoolFlag("trois", '3', "Three"),
-					BoolValueFlag("quatre", '4', "Four", 444, HiddenArg[int]()),
+					BoolValueFlag("quatre", '4', "Four", 444, Hidden[int]()),
 					BoolValueFlag("cinco", '5', "Five", 555),
-					BoolValuesFlag("six", '6', "Six", "6", "60", HiddenArg[string]()),
+					BoolValuesFlag("six", '6', "Six", "6", "60", Hidden[string]()),
 					BoolValuesFlag("seven", '7', "Seven", "7", "777"),
-					BoolFlag("eight", '8', "Eight").AddOptions(HiddenArg[bool]()),
+					BoolFlag("eight", '8', "Eight").AddOptions(Hidden[bool]()),
 				)),
 				WantStdout: strings.Join([]string{
 					`--un|-1 --trois|-3 --cinco|-5 --seven|-7`,
