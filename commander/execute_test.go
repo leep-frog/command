@@ -7705,6 +7705,125 @@ func TestExecute(t *testing.T) {
 				}
 			}(),
 		},
+		// DryRun tests
+		{
+			name: "DryRun outputs empty execution",
+			etc: &commandtest.ExecuteTestCase{
+				Node: SerialNodes(
+					DryRun(),
+				),
+				WantStdout: strings.Join([]string{
+					"# Dry Run Summary",
+					"# Number of executor functions: 0",
+					"# Shell executables:",
+					"",
+				}, "\n"),
+			},
+		},
+		{
+			name: "DryRun handles execution function",
+			etc: &commandtest.ExecuteTestCase{
+				Node: SerialNodes(
+					&ExecutorProcessor{func(o command.Output, d *command.Data) error {
+						o.Stdoutf("Inside function")
+						return nil
+					}},
+					DryRun(),
+				),
+				WantStdout: strings.Join([]string{
+					"# Dry Run Summary",
+					"# Number of executor functions: 1",
+					"# Shell executables:",
+					"",
+				}, "\n"),
+			},
+		},
+		{
+			name: "DryRun handles executables",
+			etc: &commandtest.ExecuteTestCase{
+				Node: SerialNodes(
+					ExecutableProcessor(func(o command.Output, d *command.Data) ([]string, error) {
+						return []string{"hello"}, nil
+					}),
+					DryRun(),
+				),
+				WantStdout: strings.Join([]string{
+					"# Dry Run Summary",
+					"# Number of executor functions: 0",
+					"# Shell executables:",
+					"hello",
+					"",
+				}, "\n"),
+			},
+		},
+		{
+			name: "DryRun handles multiple executors and executables",
+			etc: &commandtest.ExecuteTestCase{
+				Node: SerialNodes(
+					&ExecutorProcessor{func(o command.Output, d *command.Data) error {
+						o.Stdoutf("Top function")
+						return nil
+					}},
+					ExecutableProcessor(func(o command.Output, d *command.Data) ([]string, error) {
+						return []string{"echo hello"}, nil
+					}),
+					&ExecutorProcessor{func(o command.Output, d *command.Data) error {
+						o.Stdoutf("Middle function")
+						return nil
+					}},
+					SimpleExecutableProcessor("echo there, general kenobi"),
+					&ExecutorProcessor{func(o command.Output, d *command.Data) error {
+						o.Stdoutf("Bottom function")
+						return nil
+					}},
+					DryRun(),
+				),
+				WantStdout: strings.Join([]string{
+					"# Dry Run Summary",
+					"# Number of executor functions: 3",
+					"# Shell executables:",
+					"echo hello",
+					"echo there, general kenobi",
+					"",
+				}, "\n"),
+			},
+		},
+		{
+			name: "things after DryRun run normally",
+			etc: &commandtest.ExecuteTestCase{
+				Node: SerialNodes(
+					&ExecutorProcessor{func(o command.Output, d *command.Data) error {
+						o.Stdoutf("Top function")
+						return nil
+					}},
+					ExecutableProcessor(func(o command.Output, d *command.Data) ([]string, error) {
+						return []string{"echo hello"}, nil
+					}),
+					&ExecutorProcessor{func(o command.Output, d *command.Data) error {
+						o.Stdoutf("Middle function")
+						return nil
+					}},
+					DryRun(),
+					SimpleExecutableProcessor("echo there, general kenobi"),
+					&ExecutorProcessor{func(o command.Output, d *command.Data) error {
+						o.Stdoutf("Bottom function")
+						return nil
+					}},
+				),
+				WantStdout: strings.Join([]string{
+					"# Dry Run Summary",
+					"# Number of executor functions: 2",
+					"# Shell executables:",
+					"echo hello",
+					"Bottom function",
+				}, "\n"),
+				WantExecuteData: &command.ExecuteData{
+					Executable: []string{
+						"echo there, general kenobi",
+					},
+				},
+			},
+		},
 		/* Useful for commenting out tests. */
 	} {
 		t.Run(test.name, func(t *testing.T) {

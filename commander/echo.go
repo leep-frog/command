@@ -1,10 +1,39 @@
 package commander
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/leep-frog/command/command"
 )
+
+// DryRun is a `command.Processor` that outputs what would happen at a point
+// in the graph execution, without actually executing it. Note that any nodes
+// after this one will still be executed as normal.
+//
+// Note that this will always be run. To run this conditionally, consider using
+// this in conjunction with `IfData` and `BoolFlag`.
+//
+//	commander.SerialNodes(
+//		FlagProcessor(BoolFlag("dry-run", 'd', "Dry-run mode")),
+//		IfData("dry-run", DryRun()),
+//	)
+func DryRun() command.Processor {
+	return SimpleProcessor(func(i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
+
+		summary := append([]string{
+			"# Dry Run Summary",
+			fmt.Sprintf("# Number of executor functions: %d", len(ed.Executor)),
+			"# Shell executables:"},
+			ed.Executable...,
+		)
+
+		o.Stdoutln(strings.Join(summary, "\n"))
+		ed.Executable = nil
+		ed.Executor = nil
+		return nil
+	}, nil)
+}
 
 // EchoExecuteDataProcessor is a `command.Processor` that outputs the current command.ExecuteData contents.
 type EchoExecuteDataProcessor struct {
