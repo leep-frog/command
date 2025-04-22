@@ -11,13 +11,7 @@ import (
 // in the graph execution, without actually executing it. Note that any nodes
 // after this one will still be executed as normal.
 //
-// Note that this will always be run. To run this conditionally, consider using
-// this in conjunction with `IfData` and `BoolFlag`.
-//
-//	commander.SerialNodes(
-//		FlagProcessor(BoolFlag("dry-run", 'd', "Dry-run mode")),
-//		IfData("dry-run", DryRun()),
-//	)
+// Note that this will always be run. To run this conditionally, use `DryRunWrap`.
 func DryRun() command.Processor {
 	return SimpleProcessor(func(i *command.Input, o command.Output, d *command.Data, ed *command.ExecuteData) error {
 
@@ -33,6 +27,19 @@ func DryRun() command.Processor {
 		ed.Executor = nil
 		return nil
 	}, nil)
+}
+
+// DryRunWrap wraps the provided `command.Processor` with dry-run logic such
+// that if the provided `BoolFlag` is set, then the provided node will be
+// executed in dry-run mode. See `DryRun` for more details.
+func DryRunWrap(bf FlagWithType[bool], node command.Processor) command.Node {
+	return SerialNodes(
+		FlagProcessor(
+			bf,
+		),
+		node,
+		IfData(bf.Name(), DryRun()),
+	)
 }
 
 // EchoExecuteDataProcessor is a `command.Processor` that outputs the current command.ExecuteData contents.

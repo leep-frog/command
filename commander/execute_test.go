@@ -7824,6 +7824,122 @@ func TestExecute(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "DryRunWrap - does not run dry-run if dry-run flag is not provided",
+			etc: &commandtest.ExecuteTestCase{
+				Node: DryRunWrap(BoolFlag("dry-run", 'd', "Dry run"), SerialNodes(
+					&ExecutorProcessor{func(o command.Output, d *command.Data) error {
+						o.Stdoutf("Top function")
+						return nil
+					}},
+					ExecutableProcessor(func(o command.Output, d *command.Data) ([]string, error) {
+						return []string{"echo hello"}, nil
+					}),
+					&ExecutorProcessor{func(o command.Output, d *command.Data) error {
+						o.Stdoutf("Middle function")
+						return nil
+					}},
+					SimpleExecutableProcessor("echo there, general kenobi"),
+					&ExecutorProcessor{func(o command.Output, d *command.Data) error {
+						o.Stdoutf("Bottom function")
+						return nil
+					}},
+				)),
+				WantStdout: "Top functionMiddle functionBottom function",
+				WantExecuteData: &command.ExecuteData{
+					Executable: []string{
+						"echo hello",
+						"echo there, general kenobi",
+					},
+				},
+			},
+		},
+		{
+			name: "DryRunWrap - runs dry-run if dry-run flag is provided",
+			etc: &commandtest.ExecuteTestCase{
+				Args: []string{"--dry-run"},
+				Node: DryRunWrap(BoolFlag("dry-run", 'd', "Dry run"), SerialNodes(
+					&ExecutorProcessor{func(o command.Output, d *command.Data) error {
+						o.Stdoutf("Top function")
+						return nil
+					}},
+					ExecutableProcessor(func(o command.Output, d *command.Data) ([]string, error) {
+						return []string{"echo hello"}, nil
+					}),
+					&ExecutorProcessor{func(o command.Output, d *command.Data) error {
+						o.Stdoutf("Middle function")
+						return nil
+					}},
+					SimpleExecutableProcessor("echo there, general kenobi"),
+					&ExecutorProcessor{func(o command.Output, d *command.Data) error {
+						o.Stdoutf("Bottom function")
+						return nil
+					}},
+				)),
+				WantStdout: strings.Join([]string{
+					"# Dry Run Summary",
+					"# Number of executor functions: 3",
+					"# Shell executables:",
+					"echo hello",
+					"echo there, general kenobi",
+					"",
+				}, "\n"),
+				WantData: &command.Data{Values: map[string]interface{}{
+					"dry-run": true,
+				}},
+			},
+			ietc: &spycommandtest.ExecuteTestCase{
+				SkipInputCheck: true,
+				WantInput: &spycommandtest.SpyInput{
+					Args: []*spycommand.InputArg{
+						{Value: "--dry-run"},
+					},
+				},
+			},
+		},
+		{
+			name: "DryRunWrap - runs dry-run if dry-run short flag is provided",
+			etc: &commandtest.ExecuteTestCase{
+				Args: []string{"-d"},
+				Node: DryRunWrap(BoolFlag("dry-run", 'd', "Dry run"), SerialNodes(
+					&ExecutorProcessor{func(o command.Output, d *command.Data) error {
+						o.Stdoutf("Top function")
+						return nil
+					}},
+					ExecutableProcessor(func(o command.Output, d *command.Data) ([]string, error) {
+						return []string{"echo hello"}, nil
+					}),
+					&ExecutorProcessor{func(o command.Output, d *command.Data) error {
+						o.Stdoutf("Middle function")
+						return nil
+					}},
+					SimpleExecutableProcessor("echo there, general kenobi"),
+					&ExecutorProcessor{func(o command.Output, d *command.Data) error {
+						o.Stdoutf("Bottom function")
+						return nil
+					}},
+				)),
+				WantStdout: strings.Join([]string{
+					"# Dry Run Summary",
+					"# Number of executor functions: 3",
+					"# Shell executables:",
+					"echo hello",
+					"echo there, general kenobi",
+					"",
+				}, "\n"),
+				WantData: &command.Data{Values: map[string]interface{}{
+					"dry-run": true,
+				}},
+			},
+			ietc: &spycommandtest.ExecuteTestCase{
+				SkipInputCheck: true,
+				WantInput: &spycommandtest.SpyInput{
+					Args: []*spycommand.InputArg{
+						{Value: "-d"},
+					},
+				},
+			},
+		},
 		/* Useful for commenting out tests. */
 	} {
 		t.Run(test.name, func(t *testing.T) {
