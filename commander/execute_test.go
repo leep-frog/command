@@ -82,6 +82,15 @@ func (ee *errorEdge) UsageNext(input *command.Input, data *command.Data) (comman
 	return nil, nil
 }
 
+type ExecuteTest struct {
+	name       string
+	etc        *commandtest.ExecuteTestCase
+	ietc       *spycommandtest.ExecuteTestCase
+	osGetwd    string
+	osGetwdErr error
+	postCheck  func(*testing.T)
+}
+
 func TestExecute(t *testing.T) {
 
 	StubRuntimeCaller(t, "some/file/path", true)
@@ -92,23 +101,19 @@ func TestExecute(t *testing.T) {
 	_ = rcNode
 	_ = rcErrNode
 
-	envArgProcessor := &EnvArg{
+	optionalEnvArg := &EnvArg{
 		Name:     "ENV_VAR",
 		Optional: true,
+	}
+	requiredEnvArg := &EnvArg{
+		Name: "ENV_VAR",
 	}
 	optionalString := OptionalArg[string]("opt-arg", "desc")
 	stringFlag := Flag[string]("opt-flag", 'o', "flag-desc")
 	simpleBoolFlag := BoolFlag("bool-flag", 'b', "bool-flag-desc")
 
 	fos := &commandtest.FakeOS{}
-	for _, test := range []struct {
-		name       string
-		etc        *commandtest.ExecuteTestCase
-		ietc       *spycommandtest.ExecuteTestCase
-		osGetwd    string
-		osGetwdErr error
-		postCheck  func(*testing.T)
-	}{
+	for _, test := range []*ExecuteTest{
 		{
 			name: "handles nil node",
 		},
@@ -2193,49 +2198,175 @@ func TestExecute(t *testing.T) {
 				},
 			},
 		},
-		// osenv tests
+		// EnvArg tests
 		{
-			name: "EnvArg returns nil if no env",
+			name: "Optional EnvArg returns nil if no env",
 			etc: &commandtest.ExecuteTestCase{
 				Node: SerialNodes(
-					envArgProcessor,
+					optionalEnvArg,
 				),
 			},
 		},
 		{
-			name: "EnvArg adds environment variable to data",
+			name: "Required EnvArg returns nil if no env",
+			etc: &commandtest.ExecuteTestCase{
+				Node: SerialNodes(
+					requiredEnvArg,
+				),
+				WantStderr: "Environment variable ENV_VAR is not set\n",
+				WantErr:    fmt.Errorf("Environment variable ENV_VAR is not set"),
+			},
+		},
+		{
+			name: "Optional EnvArg adds environment variable to data",
 			etc: &commandtest.ExecuteTestCase{
 				Env: map[string]string{
-					envArgProcessor.Name: "heyo",
-					"other":              "env-var",
+					optionalEnvArg.Name: "heyo",
+					"other":             "env-var",
 				},
 				Node: SerialNodes(
-					envArgProcessor,
+					optionalEnvArg,
 					&ExecutorProcessor{func(o command.Output, d *command.Data) error {
-						o.Stdoutln(envArgProcessor.Provided(d), envArgProcessor.Get(d))
+						o.Stdoutln(optionalEnvArg.Provided(d), optionalEnvArg.Get(d))
 						return nil
 					}},
 				),
 				WantStdout: "true heyo\n",
 				WantData: &command.Data{
 					Values: map[string]interface{}{
-						envArgProcessor.Name: "heyo",
+						optionalEnvArg.Name: "heyo",
 					},
 				},
 			},
 		},
 		{
-			name: "EnvArg does nothing if variable not defined",
+			name: "Required EnvArg adds environment variable to data",
+			etc: &commandtest.ExecuteTestCase{
+				Env: map[string]string{
+					requiredEnvArg.Name: "heyo",
+					"other":             "env-var",
+				},
+				Node: SerialNodes(
+					requiredEnvArg,
+					&ExecutorProcessor{func(o command.Output, d *command.Data) error {
+						o.Stdoutln(requiredEnvArg.Provided(d), requiredEnvArg.Get(d))
+						return nil
+					}},
+				),
+				WantStdout: "true heyo\n",
+				WantData: &command.Data{
+					Values: map[string]interface{}{
+						requiredEnvArg.Name: "heyo",
+					},
+				},
+			},
+		},
+		{
+			name: "Optional EnvArg does nothing if variable not defined",
 			etc: &commandtest.ExecuteTestCase{
 				Node: SerialNodes(
-					envArgProcessor,
+					optionalEnvArg,
 					&ExecutorProcessor{func(o command.Output, d *command.Data) error {
-						o.Stdoutln(envArgProcessor.Provided(d))
+						o.Stdoutln(optionalEnvArg.Provided(d))
 						return nil
 					}},
 				),
 				WantStdout: "false\n",
 			},
+		},
+		{
+			name: "EnvArg validation fails",
+			etc: &commandtest.ExecuteTestCase{
+				Env: map[string]string{
+					"ENV_VAR": "hello",
+				},
+				Node: SerialNodes(
+					&EnvArg{
+						Name: "ENV_VAR",
+						Validators: []*ValidatorOption[string]{
+							MaxLength[string, string](4),
+						},
+					},
+				),
+				WantStderr: "Invalid value for environment variable ENV_VAR: [MaxLength] length must be at most 4\n",
+				WantErr:    fmt.Errorf("Invalid value for environment variable ENV_VAR: [MaxLength] length must be at most 4"),
+			},
+		},
+		{
+			name: "EnvArg validation succeeds",
+			etc: &commandtest.ExecuteTestCase{
+				Env: map[string]string{
+					"ENV_VAR": "hello",
+				},
+				Node: SerialNodes(
+					&EnvArg{
+						Name: "ENV_VAR",
+						Validators: []*ValidatorOption[string]{
+							MinLength[string, string](4),
+						},
+					},
+				),
+				WantData: &command.Data{
+					Values: map[string]interface{}{
+						requiredEnvArg.Name: "hello",
+					},
+				},
+			},
+		},
+		{
+			name: "EnvArg transformation fails",
+			etc: &commandtest.ExecuteTestCase{
+				Env: map[string]string{
+					"ENV_VAR": "HELLO",
+				},
+				Node: SerialNodes(
+					&EnvArg{
+						Name: "ENV_VAR",
+						Transformers: []*Transformer[string]{
+							{func(s string, d *command.Data) (string, error) {
+								return "nope", fmt.Errorf("oopsie")
+							}},
+						},
+					},
+				),
+				WantStderr: "Environment variable transformation failed: oopsie\n",
+				WantErr:    fmt.Errorf("Environment variable transformation failed: oopsie"),
+			},
+		},
+		{
+			name: "EnvArg gets transformed",
+			etc: func() *commandtest.ExecuteTestCase {
+				transformedArg := &EnvArg{
+					Name: "TRANSFORMED_ENV_VAR",
+					Transformers: []*Transformer[string]{
+						{func(s string, d *command.Data) (string, error) {
+							return strings.ToLower(s), nil
+						}},
+						{func(s string, d *command.Data) (string, error) {
+							return s + " there", nil
+						}},
+					},
+				}
+
+				return &commandtest.ExecuteTestCase{
+					Env: map[string]string{
+						transformedArg.Name: "HELLO",
+					},
+					Node: SerialNodes(
+						transformedArg,
+						&ExecutorProcessor{func(o command.Output, d *command.Data) error {
+							o.Stdoutln(transformedArg.Get(d))
+							return nil
+						}},
+					),
+					WantStdout: "hello there\n",
+					WantData: &command.Data{
+						Values: map[string]interface{}{
+							transformedArg.Name: "hello there",
+						},
+					},
+				}
+			}(),
 		},
 		{
 			name: "SetEnvVar sets variable",
@@ -9560,6 +9691,189 @@ func TestComplete(t *testing.T) {
 					},
 				},
 			},
+		},
+		// EnvArg tests
+		{
+			name:    "Doesn't compute env arg if DontRunOnComplete is true and variable is not provided",
+			osGetwd: "some/dir",
+			ctc: func() *commandtest.CompleteTestCase {
+				envArg := &EnvArg{Name: "ENV_VAR", DontRunOnComplete: true}
+				return &commandtest.CompleteTestCase{
+					Args: "cmd ",
+					Node: SerialNodes(
+						envArg,
+						Arg[string]("X", "desc", CompleterFromFunc[string](func(s string, d *command.Data) (*command.Completion, error) {
+							if envArg.Provided(d) {
+								return &command.Completion{
+									Suggestions: []string{"wrongo"},
+								}, nil
+							}
+							return &command.Completion{
+								Suggestions: []string{"correct"},
+							}, nil
+						})),
+					),
+					Want: &command.Autocompletion{
+						Suggestions: []string{"correct"},
+					},
+					WantData: &command.Data{
+						Values: map[string]interface{}{
+							"X": "",
+						},
+					},
+				}
+			}(),
+		},
+		{
+			name:    "Doesn't compute env arg if DontRunOnComplete is true and variable is provided",
+			osGetwd: "some/dir",
+			ctc: func() *commandtest.CompleteTestCase {
+				envArg := &EnvArg{Name: "ENV_VAR", DontRunOnComplete: true}
+				return &commandtest.CompleteTestCase{
+					Args: "cmd ",
+					Env: map[string]string{
+						envArg.Name: "some-value",
+					},
+					Node: SerialNodes(
+						envArg,
+						Arg[string]("X", "desc", CompleterFromFunc[string](func(s string, d *command.Data) (*command.Completion, error) {
+							if envArg.Provided(d) {
+								return &command.Completion{
+									Suggestions: []string{"wrongo"},
+								}, nil
+							}
+							return &command.Completion{
+								Suggestions: []string{"correct"},
+							}, nil
+						})),
+					),
+					Want: &command.Autocompletion{
+						Suggestions: []string{"correct"},
+					},
+					WantData: &command.Data{
+						Values: map[string]interface{}{
+							"X": "",
+						},
+					},
+				}
+			}(),
+		},
+		{
+			name:    "Fails if env arg is not set for required env arg",
+			osGetwd: "some/dir",
+			ctc: func() *commandtest.CompleteTestCase {
+				envArg := &EnvArg{Name: "ENV_VAR"}
+				return &commandtest.CompleteTestCase{
+					Args: "cmd ",
+					Node: SerialNodes(
+						envArg,
+					),
+					WantErr: fmt.Errorf("Environment variable ENV_VAR is not set"),
+				}
+			}(),
+		},
+		{
+			name:    "Fine if env arg is not set for optional env arg",
+			osGetwd: "some/dir",
+			ctc: func() *commandtest.CompleteTestCase {
+				envArg := &EnvArg{Name: "ENV_VAR", Optional: true}
+				return &commandtest.CompleteTestCase{
+					Args: "cmd ",
+					Node: SerialNodes(
+						envArg,
+						Arg[string]("X", "desc", CompleterFromFunc[string](func(s string, d *command.Data) (*command.Completion, error) {
+							if envArg.Provided(d) {
+								return &command.Completion{
+									Suggestions: []string{"nope"},
+								}, nil
+							}
+							return &command.Completion{
+								Suggestions: []string{"yup"},
+							}, nil
+						})),
+					),
+					Want: &command.Autocompletion{
+						Suggestions: []string{"yup"},
+					},
+					WantData: &command.Data{
+						Values: map[string]interface{}{
+							"X": "",
+						},
+					},
+				}
+			}(),
+		},
+		{
+			name:    "Computes required env arg",
+			osGetwd: "some/dir",
+			ctc: func() *commandtest.CompleteTestCase {
+				envArg := &EnvArg{Name: "ENV_VAR", Transformers: []*Transformer[string]{{func(s string, d *command.Data) (string, error) {
+					return s + ".suffix", nil
+				}}}}
+				return &commandtest.CompleteTestCase{
+					Args: "cmd ",
+					Env: map[string]string{
+						envArg.Name: "some-value",
+					},
+					Node: SerialNodes(
+						envArg,
+						Arg[string]("X", "desc", CompleterFromFunc[string](func(s string, d *command.Data) (*command.Completion, error) {
+							if envArg.Provided(d) {
+								return &command.Completion{
+									Suggestions: []string{"correct", envArg.Get(d)},
+								}, nil
+							}
+							return &command.Completion{
+								Suggestions: []string{"wrongo"},
+							}, nil
+						})),
+					),
+					Want: &command.Autocompletion{
+						Suggestions: []string{"correct", "some-value.suffix"},
+					},
+					WantData: &command.Data{
+						Values: map[string]interface{}{
+							"X":       "",
+							"ENV_VAR": "some-value.suffix",
+						},
+					},
+				}
+			}(),
+		},
+		{
+			name:    "Computes optional env arg",
+			osGetwd: "some/dir",
+			ctc: func() *commandtest.CompleteTestCase {
+				envArg := &EnvArg{Name: "ENV_VAR"}
+				return &commandtest.CompleteTestCase{
+					Args: "cmd ",
+					Env: map[string]string{
+						envArg.Name: "some-value",
+					},
+					Node: SerialNodes(
+						envArg,
+						Arg[string]("X", "desc", CompleterFromFunc[string](func(s string, d *command.Data) (*command.Completion, error) {
+							if envArg.Provided(d) {
+								return &command.Completion{
+									Suggestions: []string{"correct", envArg.Get(d)},
+								}, nil
+							}
+							return &command.Completion{
+								Suggestions: []string{"wrongo"},
+							}, nil
+						})),
+					),
+					Want: &command.Autocompletion{
+						Suggestions: []string{"correct", "some-value"},
+					},
+					WantData: &command.Data{
+						Values: map[string]interface{}{
+							"X":       "",
+							"ENV_VAR": "some-value",
+						},
+					},
+				}
+			}(),
 		},
 		// Getwd tests
 		{
