@@ -9694,8 +9694,7 @@ func TestComplete(t *testing.T) {
 		},
 		// EnvArg tests
 		{
-			name:    "Doesn't compute env arg if DontRunOnComplete is true and variable is not provided",
-			osGetwd: "some/dir",
+			name: "Doesn't compute env arg if DontRunOnComplete is true and variable is not provided",
 			ctc: func() *commandtest.CompleteTestCase {
 				envArg := &EnvArg{Name: "ENV_VAR", DontRunOnComplete: true}
 				return &commandtest.CompleteTestCase{
@@ -9725,8 +9724,7 @@ func TestComplete(t *testing.T) {
 			}(),
 		},
 		{
-			name:    "Doesn't compute env arg if DontRunOnComplete is true and variable is provided",
-			osGetwd: "some/dir",
+			name: "Doesn't compute env arg if DontRunOnComplete is true and variable is provided",
 			ctc: func() *commandtest.CompleteTestCase {
 				envArg := &EnvArg{Name: "ENV_VAR", DontRunOnComplete: true}
 				return &commandtest.CompleteTestCase{
@@ -9759,8 +9757,7 @@ func TestComplete(t *testing.T) {
 			}(),
 		},
 		{
-			name:    "Fails if env arg is not set for required env arg",
-			osGetwd: "some/dir",
+			name: "Fails if env arg is not set for required env arg",
 			ctc: func() *commandtest.CompleteTestCase {
 				envArg := &EnvArg{Name: "ENV_VAR"}
 				return &commandtest.CompleteTestCase{
@@ -9773,8 +9770,7 @@ func TestComplete(t *testing.T) {
 			}(),
 		},
 		{
-			name:    "Fine if env arg is not set for optional env arg",
-			osGetwd: "some/dir",
+			name: "Fine if env arg is not set for optional env arg",
 			ctc: func() *commandtest.CompleteTestCase {
 				envArg := &EnvArg{Name: "ENV_VAR", Optional: true}
 				return &commandtest.CompleteTestCase{
@@ -9804,12 +9800,15 @@ func TestComplete(t *testing.T) {
 			}(),
 		},
 		{
-			name:    "Computes required env arg",
-			osGetwd: "some/dir",
+			name: "Computes required env arg",
 			ctc: func() *commandtest.CompleteTestCase {
-				envArg := &EnvArg{Name: "ENV_VAR", Transformers: []*Transformer[string]{{func(s string, d *command.Data) (string, error) {
-					return s + ".suffix", nil
-				}}}}
+				envArg := &EnvArg{
+					Name: "ENV_VAR",
+					Transformers: []*Transformer[string]{{func(s string, d *command.Data) (string, error) {
+						return s + ".suffix", nil
+					}}},
+					Validators: []*ValidatorOption[string]{MinLength[string, string](9)},
+				}
 				return &commandtest.CompleteTestCase{
 					Args: "cmd ",
 					Env: map[string]string{
@@ -9841,8 +9840,7 @@ func TestComplete(t *testing.T) {
 			}(),
 		},
 		{
-			name:    "Computes optional env arg",
-			osGetwd: "some/dir",
+			name: "Computes optional env arg",
 			ctc: func() *commandtest.CompleteTestCase {
 				envArg := &EnvArg{Name: "ENV_VAR"}
 				return &commandtest.CompleteTestCase{
@@ -9872,6 +9870,42 @@ func TestComplete(t *testing.T) {
 							"ENV_VAR": "some-value",
 						},
 					},
+				}
+			}(),
+		},
+		{
+			name: "fails if EnvArg transformation fails",
+			ctc: func() *commandtest.CompleteTestCase {
+				envArg := &EnvArg{Name: "ENV_VAR", Transformers: []*Transformer[string]{{func(s string, d *command.Data) (string, error) {
+					return s + ".suffix", fmt.Errorf("nope")
+				}}}}
+				return &commandtest.CompleteTestCase{
+					Args: "cmd ",
+					Env: map[string]string{
+						envArg.Name: "some-value",
+					},
+					Node: SerialNodes(
+						envArg,
+					),
+					WantErr: fmt.Errorf("Environment variable transformation failed: nope"),
+				}
+			}(),
+		},
+		{
+			name: "fails if EnvArg valiation fails",
+			ctc: func() *commandtest.CompleteTestCase {
+				envArg := &EnvArg{Name: "ENV_VAR", Validators: []*ValidatorOption[string]{
+					MinLength[string, string](10),
+				}}
+				return &commandtest.CompleteTestCase{
+					Args: "cmd ",
+					Env: map[string]string{
+						envArg.Name: "abc",
+					},
+					Node: SerialNodes(
+						envArg,
+					),
+					WantErr: fmt.Errorf("Invalid value for environment variable ENV_VAR: [MinLength] length must be at least 10"),
 				}
 			}(),
 		},
